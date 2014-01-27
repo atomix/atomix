@@ -1,7 +1,7 @@
 {
-  "description": "A fast, reliable event processing framework.",
+  "description": "An implementation of the Raft consensus protocol.",
   "licenses": ["The Apache Software License Version 2.0"],
   "author": "Jordan Halterman",
-  "keywords": ["event", "processing", "real-time"],
-  "homepage": "https://github.com/kuujo/vertigo"
+  "keywords": ["raft", "consensus", "clustering", "state machine"],
+  "homepage": "https://github.com/kuujo/vertx-raft"
 }

@@ -44,11 +44,15 @@ public class DefaultReplicationService implements ReplicationService {
   private long startTimer;
 
   public DefaultReplicationService(Vertx vertx) {
-    this(vertx, new DefaultStateMachine());
+    this(UUID.randomUUID().toString(), vertx, new DefaultStateMachine());
   }
 
-  public DefaultReplicationService(Vertx vertx, StateMachine stateMachine) {
-    this.address = UUID.randomUUID().toString();
+  public DefaultReplicationService(String address, Vertx vertx) {
+    this(address, vertx, new DefaultStateMachine());
+  }
+
+  public DefaultReplicationService(String address, Vertx vertx, StateMachine stateMachine) {
+    this.address = address;
     this.vertx = vertx;
     this.stateMachine = stateMachine;
     endpoint = new DefaultReplicationServiceEndpoint(address, vertx);
