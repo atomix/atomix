@@ -15,6 +15,8 @@
  */
 package net.kuujo.raft;
 
+import java.util.Set;
+
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
@@ -99,6 +101,34 @@ public interface ReplicationService {
    *   The replication service.
    */
   ReplicationService removeMember(String address);
+
+  /**
+   * Sets cluster members.
+   *
+   * @param addresses
+   *   A list of cluster addresses.
+   * @return
+   *   The replication service.
+   */
+  public ReplicationService setMembers(String... addresses);
+
+  /**
+   * Sets cluster members.
+   *
+   * @param addresses
+   *   A set of cluster addresses.
+   * @return
+   *   The replication service.
+   */
+  public ReplicationService setMembers(Set<String> addresses);
+
+  /**
+   * Returns a set of current known cluster members.
+   *
+   * @return
+   *   A set of current cluster members.
+   */
+  public Set<String> members();
 
   /**
    * Registers a state machine command.

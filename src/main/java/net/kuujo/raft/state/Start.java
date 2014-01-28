@@ -42,22 +42,22 @@ public class Start extends State {
   }
 
   @Override
-  public void handlePing(PingRequest request) {
+  public void ping(PingRequest request) {
     request.error("Service not started.");
   }
 
   @Override
-  public void handleSync(SyncRequest request) {
+  public void sync(SyncRequest request) {
     request.error("Service not started.");
   }
 
   @Override
-  public void handlePoll(PollRequest request) {
+  public void poll(PollRequest request) {
     request.error("Service not started.");
   }
 
   @Override
-  public void handleSubmit(SubmitRequest request) {
+  public void submit(SubmitRequest request) {
     request.error("Service not started.");
   }
 

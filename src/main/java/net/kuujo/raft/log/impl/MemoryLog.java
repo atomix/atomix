@@ -22,8 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.DefaultFutureResult;
+
 import net.kuujo.raft.Command;
-import net.kuujo.raft.impl.DefaultCommand;
 import net.kuujo.raft.log.CommandEntry;
 import net.kuujo.raft.log.Entry;
 import net.kuujo.raft.log.Log;
@@ -41,94 +44,94 @@ public class MemoryLog implements Log {
   private long floor;
 
   @Override
-  public void init() {
-    
+  public void init(Handler<AsyncResult<Void>> doneHandler) {
+    result(null, doneHandler);
   }
 
   @Override
-  public long appendEntry(Entry entry) {
-    long index = lastIndex() + 1;
+  public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
+    long index = (!log.isEmpty() ? log.lastKey() : -1) + 1;
     log.put(index, entry);
     if (entry.type().equals(Type.COMMAND)) {
       Command command = ((CommandEntry) entry).command();
-      commands.put(command instanceof DefaultCommand ? ((DefaultCommand) command).setLog(this).id() : command.id(), index);
+      commands.put(command.setLog(this).id(), index);
     }
-    return index;
+    return result(index, doneHandler);
   }
 
   @Override
-  public boolean containsEntry(long index) {
-    return log.containsKey(index);
+  public Log containsEntry(long index, Handler<AsyncResult<Boolean>> containsHandler) {
+    return result(log.containsKey(index), containsHandler);
   }
 
   @Override
-  public Entry entry(long index) {
-    return log.get(index);
+  public Log entry(long index, Handler<AsyncResult<Entry>> entryHandler) {
+    return result(log.get(index), entryHandler);
   }
 
   @Override
-  public long firstIndex() {
-    return !log.isEmpty() ? log.firstKey() : -1;
+  public Log firstIndex(Handler<AsyncResult<Long>> handler) {
+    return result(!log.isEmpty() ? log.firstKey() : -1, handler);
   }
 
   @Override
-  public long firstTerm() {
-    return !log.isEmpty() ? log.firstEntry().getValue().term() : -1;
+  public Log firstTerm(Handler<AsyncResult<Long>> handler) {
+    return result(!log.isEmpty() ? log.firstEntry().getValue().term() : -1, handler);
   }
 
   @Override
-  public Entry firstEntry() {
-    return !log.isEmpty() ? log.firstEntry().getValue() : null;
+  public Log firstEntry(Handler<AsyncResult<Entry>> handler) {
+    return result(!log.isEmpty() ? log.firstEntry().getValue() : null, handler);
   }
 
   @Override
-  public long lastIndex() {
-    return !log.isEmpty() ? log.lastKey() : -1;
+  public Log lastIndex(Handler<AsyncResult<Long>> handler) {
+    return result(!log.isEmpty() ? log.lastKey() : -1, handler);
   }
 
   @Override
-  public long lastTerm() {
-    return !log.isEmpty() ? log.lastEntry().getValue().term() : -1;
+  public Log lastTerm(Handler<AsyncResult<Long>> handler) {
+    return result(!log.isEmpty() ? log.lastEntry().getValue().term() : -1, handler);
   }
 
   @Override
-  public Entry lastEntry() {
-    return !log.isEmpty() ? log.lastEntry().getValue() : null;
+  public Log lastEntry(Handler<AsyncResult<Entry>> handler) {
+    return result(!log.isEmpty() ? log.lastEntry().getValue() : null, handler);
   }
 
   @Override
-  public List<Entry> entries(long start, long end) {
+  public Log entries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
     List<Entry> entries = new ArrayList<>();
     for (Map.Entry<Long, Entry> entry : log.subMap(start, end).entrySet()) {
       entries.add(entry.getValue());
     }
-    return entries;
+    return result(entries, doneHandler);
   }
 
   @Override
-  public Entry removeEntry(long index) {
-    return log.remove(index);
+  public Log removeEntry(long index, Handler<AsyncResult<Entry>> doneHandler) {
+    return result(log.remove(index), doneHandler);
   }
 
   @Override
-  public Log removeBefore(long index) {
+  public Log removeBefore(long index, Handler<AsyncResult<Void>> doneHandler) {
     log.headMap(index);
-    return this;
+    return result(null, doneHandler);
   }
 
   @Override
-  public Log removeAfter(long index) {
+  public Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler) {
     log.tailMap(index);
-    return this;
+    return result(null, doneHandler);
   }
 
   @Override
-  public long floor() {
-    return floor;
+  public Log floor(Handler<AsyncResult<Long>> doneHandler) {
+    return result(floor, doneHandler);
   }
 
   @Override
-  public Log floor(long index) {
+  public Log floor(long index, Handler<AsyncResult<Void>> doneHandler) {
     floor = index;
 
     // Sort the freed list.
@@ -148,11 +151,16 @@ public class MemoryLog implements Log {
     if (removed) {
       rewrite();
     }
-    return this;
+    return result(null, doneHandler);
   }
 
   @Override
   public void free(String command) {
+    free(command, null);
+  }
+
+  @Override
+  public void free(String command, Handler<AsyncResult<Void>> doneHandler) {
     if (commands.containsKey(command)) {
       long index = commands.get(command);
       if (index < floor) {
@@ -164,6 +172,17 @@ public class MemoryLog implements Log {
         freed.add(index);
       }
     }
+    result(null, doneHandler);
+  }
+
+  @Override
+  public void free(Command command) {
+    free(command.id());
+  }
+
+  @Override
+  public void free(Command command, Handler<AsyncResult<Void>> doneHandler) {
+    free(command.id(), doneHandler);
   }
 
   /**
@@ -182,6 +201,14 @@ public class MemoryLog implements Log {
         empty.add(i);
       }
     }
+  }
+
+  /**
+   * Creates a triggers a result.
+   */
+  private <T> Log result(T result, Handler<AsyncResult<T>> handler) {
+    new DefaultFutureResult<T>().setHandler(handler).setResult(result);
+    return this;
   }
 
 }

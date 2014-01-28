@@ -122,36 +122,36 @@ public abstract class State {
   public abstract void configure(Set<String> members);
 
   /**
-   * Handles a ping request.
+   * Executes a ping request.
    *
    * @param request
-   *   The ping request to handle.
+   *   The request to execute.
    */
-  public abstract void handlePing(PingRequest request);
+  public abstract void ping(PingRequest request);
 
   /**
-   * Handles a sync request.
+   * Executes a sync request.
    *
    * @param request
-   *   The sync request to handle.
+   *   The request to execute.
    */
-  public abstract void handleSync(SyncRequest request);
+  public abstract void sync(SyncRequest request);
 
   /**
-   * Handles a poll request.
+   * Executes a poll request.
    *
    * @param request
-   *   The poll request to handle.
+   *   The request to execute.
    */
-  public abstract void handlePoll(PollRequest request);
+  public abstract void poll(PollRequest request);
 
   /**
-   * Handles a submit request.
+   * Executes a submit command request.
    *
    * @param request
-   *   The submit request to handle.
+   *   The request to execute.
    */
-  public abstract void handleSubmit(SubmitRequest request);
+  public abstract void submit(SubmitRequest request);
 
   /**
    * Tears down the state.

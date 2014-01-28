@@ -16,6 +16,7 @@
 package net.kuujo.raft.state;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -45,6 +46,7 @@ public class StateContext {
   private StateType stateType;
   private State state;
   private List<Set<String>> configs = new ArrayList<>();
+  private List<Handler<String>> transitionHandlers = new ArrayList<>();
   private long electionTimeout = 2500;
   private long syncInterval = 1000;
   private String currentLeader;
@@ -61,6 +63,30 @@ public class StateContext {
     transition(StateType.START);
   }
 
+  /**
+   * Transitions to a new state.
+   *
+   * @param type
+   *   The new state type.
+   * @param doneHandler
+   *   A handler to be called once the state transition is complete and a new
+   *   leader has been elected.
+   * @return
+   *   The state context.
+   */
+  public StateContext transition(StateType type, Handler<String> doneHandler) {
+    transitionHandlers.add(doneHandler);
+    return transition(type);
+  }
+
+  /**
+   * Transitions to a new state.
+   *
+   * @param type
+   *   The new state type.
+   * @return
+   *   The state context.
+   */
   public StateContext transition(StateType type) {
     if (type.equals(stateType)) return this;
     System.out.println(address() + " transitioning to " + type.getName());
@@ -104,10 +130,10 @@ public class StateContext {
     if (oldState != null) {
       oldState.shutDown(new Handler<Void>() {
         @Override
-        public void handle(Void _) {
+        public void handle(Void result) {
           state.startUp(new Handler<Void>() {
             @Override
-            public void handle(Void _) {
+            public void handle(Void result) {
               state.configure(members());
             }
           });
@@ -117,7 +143,7 @@ public class StateContext {
     else {
       state.startUp(new Handler<Void>() {
         @Override
-        public void handle(Void _) {
+        public void handle(Void result) {
           state.configure(members());
         }
       });
@@ -130,25 +156,25 @@ public class StateContext {
     endpoint.pingHandler(new Handler<PingRequest>() {
       @Override
       public void handle(PingRequest request) {
-        state.handlePing(request);
+        state.ping(request);
       }
     });
     endpoint.syncHandler(new Handler<SyncRequest>() {
       @Override
       public void handle(SyncRequest request) {
-        state.handleSync(request);
+        state.sync(request);
       }
     });
     endpoint.pollHandler(new Handler<PollRequest>() {
       @Override
       public void handle(PollRequest request) {
-        state.handlePoll(request);
+        state.poll(request);
       }
     });
     endpoint.submitHandler(new Handler<SubmitRequest>() {
       @Override
       public void handle(SubmitRequest request) {
-        state.handleSubmit(request);
+        state.submit(request);
       }
     });
   }
@@ -201,8 +227,12 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setCurrentLeader(String address) {
+  public StateContext currentLeader(String address) {
     currentLeader = address;
+    for (Handler<String> handler : transitionHandlers) {
+      handler.handle(address);
+    }
+    transitionHandlers.clear();
     return this;
   }
 
@@ -224,7 +254,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setCurrentTerm(long term) {
+  public StateContext currentTerm(long term) {
     currentTerm = term;
     return this;
   }
@@ -247,7 +277,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setVotedFor(String address) {
+  public StateContext votedFor(String address) {
     votedFor = address;
     return this;
   }
@@ -270,7 +300,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setCommitIndex(long index) {
+  public StateContext commitIndex(long index) {
     commitIndex = index;
     return this;
   }
@@ -293,7 +323,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setLastApplied(long index) {
+  public StateContext lastApplied(long index) {
     lastApplied = index;
     return this;
   }
@@ -316,7 +346,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setElectionTimeout(long timeout) {
+  public StateContext electionTimeout(long timeout) {
     electionTimeout = timeout;
     return this;
   }
@@ -339,7 +369,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setSyncInterval(long interval) {
+  public StateContext syncInterval(long interval) {
     syncInterval = interval;
     return this;
   }
@@ -389,6 +419,31 @@ public class StateContext {
       appendConfig(members);
       state.configure(members);
     }
+    return this;
+  }
+
+  /**
+   * Sets cluster members.
+   *
+   * @param addresses
+   *   A list of cluster addresses.
+   * @return
+   *   The state context.
+   */
+  public StateContext setMembers(String... addresses) {
+    return setMembers(new HashSet<String>(Arrays.asList(addresses)));
+  }
+
+  /**
+   * Sets cluster members.
+   *
+   * @param addresses
+   *   A set of cluster addresses.
+   * @return
+   *   The state context.
+   */
+  public StateContext setMembers(Set<String> addresses) {
+    appendConfig(addresses);
     return this;
   }
 

@@ -105,6 +105,16 @@ public class SyncRequest extends Request {
   }
 
   /**
+   * Returns a boolean indicating whether the request has an entry.
+   *
+   * @return
+   *   Indicates whether the request has an entry.
+   */
+  public boolean hasEntry() {
+    return entry != null;
+  }
+
+  /**
    * Returns the log entry to append.
    *
    * @return

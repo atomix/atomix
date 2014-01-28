@@ -113,10 +113,10 @@ public interface ReplicationServiceEndpoint {
   ReplicationServiceEndpoint sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler);
 
   /**
-   * Registers a sync request handler.
+   * Registers async request handler.
    *
    * @param handler
-   *   A sync request handler.
+   *   An append entries request handler.
    * @return
    *   The service endpoint.
    */
