@@ -282,7 +282,7 @@ public class Candidate extends State {
                 new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
               }
               else {
-                recursiveApply(context.lastApplied(), Math.min(context.commitIndex(), lastIndex), request, doneHandler);
+                recursiveApply(context.lastApplied()+1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
               }
             }
           });
