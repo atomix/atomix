@@ -31,6 +31,7 @@ import net.kuujo.raft.log.CommandEntry;
 import net.kuujo.raft.log.Entry;
 import net.kuujo.raft.log.Log;
 import net.kuujo.raft.log.Entry.Type;
+import net.kuujo.raft.log.LogVisitor;
 
 /**
  * A default log implementation.
@@ -44,7 +45,7 @@ public class MemoryLog implements Log {
   private long floor;
 
   @Override
-  public void init(Handler<AsyncResult<Void>> doneHandler) {
+  public void init(LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
     result(null, doneHandler);
   }
 

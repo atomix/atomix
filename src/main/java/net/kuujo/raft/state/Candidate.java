@@ -17,10 +17,7 @@ package net.kuujo.raft.state;
 
 import java.util.Set;
 
-import net.kuujo.raft.log.CommandEntry;
-import net.kuujo.raft.log.ConfigurationEntry;
 import net.kuujo.raft.log.Entry;
-import net.kuujo.raft.log.Entry.Type;
 import net.kuujo.raft.protocol.PingRequest;
 import net.kuujo.raft.protocol.PollRequest;
 import net.kuujo.raft.protocol.PollResponse;
@@ -29,6 +26,7 @@ import net.kuujo.raft.protocol.SyncRequest;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 
 /**
  * A candidate state.
@@ -36,6 +34,7 @@ import org.vertx.java.core.Handler;
  * @author Jordan Halterman
  */
 public class Candidate extends State {
+  private final StateLock lock = new StateLock();
   private Majority majority;
   private long electionTimer;
 
@@ -130,51 +129,65 @@ public class Candidate extends State {
 
   @Override
   public void sync(final SyncRequest request) {
-    syncRequest(request);
+    lock.acquire(new Handler<Void>() {
+      @Override
+      public void handle(Void _) {
+        syncRequest(request, new Handler<AsyncResult<Boolean>>() {
+          @Override
+          public void handle(AsyncResult<Boolean> result) {
+            if (result.failed()) {
+              request.error(result.cause());
+            }
+            else {
+              request.reply(context.currentTerm(), result.result());
+            }
+            lock.release();
+          }
+        });
+      }
+    });
   }
 
-  private void syncRequest(final SyncRequest request) {
+  private void syncRequest(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     if (request.term() < context.currentTerm()) {
-      request.reply(context.currentTerm(), false);
+      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
     }
     else {
-      checkTerm(request);
+      checkTerm(request, doneHandler);
     }
   }
 
-  private void checkTerm(final SyncRequest request) {
+  private void checkTerm(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     if (request.prevLogIndex() >= 0 && request.prevLogTerm() >= 0) {
-      checkPreviousLogEntry(request);
+      checkPreviousLogEntry(request, doneHandler);
     }
     else {
-      checkEntry(request);
+      checkEntry(request, doneHandler);
     }
   }
 
-  private void checkPreviousLogEntry(final SyncRequest request) {
+  private void checkPreviousLogEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     log.containsEntry(request.prevLogIndex(), new Handler<AsyncResult<Boolean>>() {
       @Override
       public void handle(AsyncResult<Boolean> result) {
         if (result.failed()) {
-          request.error(result.cause());
+          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
         }
         else if (!result.result()) {
-          request.reply(context.currentTerm(), false);
+          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
         }
         else {
           log.entry(request.prevLogIndex(), new Handler<AsyncResult<Entry>>() {
             @Override
             public void handle(AsyncResult<Entry> result) {
               if (result.failed()) {
-                request.error(result.cause());
+                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+              }
+              else if (result.result().term() != request.prevLogTerm()) {
+                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
               }
               else {
-                if (result.result().term() != request.prevLogTerm()) {
-                  request.reply(context.currentTerm(), false);
-                }
-                else {
-                  checkEntry(request);
-                }
+                checkEntry(request, doneHandler);
               }
             }
           });
@@ -183,81 +196,81 @@ public class Candidate extends State {
     });
   }
 
-  private void checkEntry(final SyncRequest request) {
+  private void checkEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     if (request.hasEntry()) {
       log.containsEntry(request.prevLogIndex() + 1, new Handler<AsyncResult<Boolean>>() {
         @Override
         public void handle(AsyncResult<Boolean> result) {
           if (result.failed()) {
-            request.error(result.cause());
+            new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
           }
           else if (result.result()) {
             log.entry(request.prevLogIndex() + 1, new Handler<AsyncResult<Entry>>() {
               @Override
               public void handle(AsyncResult<Entry> result) {
                 if (result.failed()) {
-                  request.error(result.cause());
+                  new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
                 }
                 else if (result.result().term() != request.entry().term()) {
                   log.removeAfter(request.prevLogIndex(), new Handler<AsyncResult<Void>>() {
                     @Override
                     public void handle(AsyncResult<Void> result) {
                       if (result.failed()) {
-                        request.error(result.cause());
+                        new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
                       }
                       else {
-                        appendEntry(request);
+                        appendEntry(request, doneHandler);
                       }
                     }
                   });
                 }
                 else {
-                  appendEntry(request);
+                  updateCommits(request, doneHandler);
                 }
               }
             });
           }
           else {
-            appendEntry(request);
+            appendEntry(request, doneHandler);
           }
         }
       });
     }
     else {
-      checkCommits(request);
+      checkCommits(request, doneHandler);
     }
   }
 
-  private void appendEntry(final SyncRequest request) {
+  private void appendEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     log.appendEntry(request.entry(), new Handler<AsyncResult<Long>>() {
       @Override
       public void handle(AsyncResult<Long> result) {
         if (result.failed()) {
-          request.error(result.cause());
+          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
         }
         else {
-          updateCommits(request);
+          updateCommits(request, doneHandler);
         }
       }      
     });
   }
 
-  private void checkCommits(final SyncRequest request) {
+  private void checkCommits(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     if (request.commit() > context.commitIndex()) {
-      updateCommits(request);
+      updateCommits(request, doneHandler);
     }
     else {
-      request.reply(context.currentTerm(), true);
+      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
       updateTerm(request);
     }
   }
 
-  private void updateCommits(final SyncRequest request) {
+  private void updateCommits(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     log.lastIndex(new Handler<AsyncResult<Long>>() {
       @Override
       public void handle(AsyncResult<Long> result) {
         if (result.failed()) {
-          request.error(result.cause());
+          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
         }
         else {
           final long lastIndex = result.result();
@@ -266,10 +279,10 @@ public class Candidate extends State {
             @Override
             public void handle(AsyncResult<Void> result) {
               if (result.failed()) {
-                request.error(result.cause());
+                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
               }
               else {
-                recursiveApply(context.lastApplied(), Math.min(context.commitIndex(), lastIndex), request);
+                recursiveApply(context.lastApplied(), Math.min(context.commitIndex(), lastIndex), request, doneHandler);
               }
             }
           });
@@ -278,55 +291,36 @@ public class Candidate extends State {
     });
   }
 
-  private void recursiveApply(final long index, final long ceiling, final SyncRequest request) {
+  private void recursiveApply(final long index, final long ceiling, final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     log.entry(index, new Handler<AsyncResult<Entry>>() {
       @Override
       public void handle(AsyncResult<Entry> result) {
         if (result.failed()) {
-          request.reply(context.currentTerm(), true);
+          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
           updateTerm(request);
         }
         else {
-          doApply(index, ceiling, request, result.result());
+          doApply(index, ceiling, request, result.result(), doneHandler);
         }
       }
     });
   }
 
-  private void doApply(final long index, final long ceiling, final SyncRequest request, final Entry entry) {
-    // Since the log may be working asynchronously, make sure this is the next
-    // entry to be applied to the state machine. If it isn't then recursively
-    // attempt to apply the command to the state machine.
-    if (context.lastApplied() == index-1) {
-      if (entry.type().equals(Type.COMMAND)) {
-        stateMachine.applyCommand(((CommandEntry) entry).command());
-      }
-      else if (entry.type().equals(Type.CONFIGURATION)) {
-        context.configs().get(0).addAll(((ConfigurationEntry) entry).members());
-        context.removeConfig();
-      }
-      context.lastApplied(index);
-      log.floor(Math.min(context.commitIndex(), index), new Handler<AsyncResult<Void>>() {
-        @Override
-        public void handle(AsyncResult<Void> result) {
-          if (result.failed() || index == ceiling) {
-            request.reply(context.currentTerm(), true);
-            updateTerm(request);
-          }
-          else  {
-            recursiveApply(index+1, ceiling, request);
-          }
+  private void doApply(final long index, final long ceiling, final SyncRequest request, final Entry entry, final Handler<AsyncResult<Boolean>> doneHandler) {
+    context.applyEntry(entry);
+    context.lastApplied(index);
+    log.floor(Math.min(context.commitIndex(), index), new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed() || index == ceiling) {
+          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
+          updateTerm(request);
         }
-      });
-    }
-    else {
-      vertx.runOnContext(new Handler<Void>() {
-        @Override
-        public void handle(Void _) {
-          doApply(index, ceiling, request, entry);
+        else  {
+          recursiveApply(index+1, ceiling, request, doneHandler);
         }
-      });
-    }
+      }
+    });
   }
 
   private void updateTerm(final SyncRequest request) {

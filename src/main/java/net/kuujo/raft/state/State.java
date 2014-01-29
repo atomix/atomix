@@ -70,7 +70,7 @@ public abstract class State {
    * Sets the state machine.
    *
    * @param stateMachine
-   *   A state machine.
+   *   The state machine.
    * @return
    *   The state instance.
    */

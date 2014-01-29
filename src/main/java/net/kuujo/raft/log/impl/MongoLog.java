@@ -16,6 +16,7 @@ import org.vertx.java.core.json.JsonObject;
 import net.kuujo.raft.Command;
 import net.kuujo.raft.log.Entry;
 import net.kuujo.raft.log.Log;
+import net.kuujo.raft.log.LogVisitor;
 import net.kuujo.raft.serializer.Serializer;
 
 /**
@@ -37,12 +38,12 @@ public class MongoLog implements Log {
   }
 
   @Override
-  public void init(Handler<AsyncResult<Void>> doneHandler) {
+  public void init(final LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
     final JsonObject query = new JsonObject()
       .putString("action", "count")
       .putString("collection", collection)
-      .putObject("matcher", new JsonObject().putString("type", "command"));
+      .putObject("matcher", new JsonObject());
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -55,6 +56,31 @@ public class MongoLog implements Log {
         }
         else {
           future.setFailure(new VertxException(result.result().body().getString("message")));
+        }
+      }
+    });
+
+    final JsonObject query2 = new JsonObject()
+      .putString("action", "count")
+      .putString("collection", collection)
+      .putObject("matcher", new JsonObject());
+    vertx.eventBus().sendWithTimeout(address, query2, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
+      @Override
+      public void handle(AsyncResult<Message<JsonObject>> result) {
+        if (result.failed()) {
+          future.setFailure(result.cause());
+        }
+        else if (result.result().body().getString("status").equals("error")) {
+          future.setFailure(new VertxException(result.result().body().getString("message")));
+        }
+        else {
+          JsonArray jsonEntries = result.result().body().getArray("result");
+          for (Object jsonEntry : jsonEntries) {
+            visitor.applyEntry(serializer.deserialize(((JsonObject) jsonEntry).getObject("entry"), Entry.class));
+          }
+          if (!result.result().body().getString("status").equals("more-exist")) {
+            future.setResult((Void) null);
+          }
         }
       }
     });

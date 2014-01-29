@@ -32,10 +32,12 @@ public interface Log {
   /**
    * Initializes the log.
    *
+   * @param visitor
+   *   A log visitor.
    * @param doneHandler
    *   A handler to be called once the log is initialized.
    */
-  void init(Handler<AsyncResult<Void>> doneHandler);
+  void init(LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Appends an entry to the log.

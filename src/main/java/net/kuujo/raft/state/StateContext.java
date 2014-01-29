@@ -23,12 +23,18 @@ import java.util.Set;
 
 import net.kuujo.raft.ReplicationServiceEndpoint;
 import net.kuujo.raft.StateMachine;
+import net.kuujo.raft.log.CommandEntry;
+import net.kuujo.raft.log.ConfigurationEntry;
+import net.kuujo.raft.log.Entry;
 import net.kuujo.raft.log.Log;
+import net.kuujo.raft.log.Entry.Type;
+import net.kuujo.raft.log.LogVisitor;
 import net.kuujo.raft.protocol.PingRequest;
 import net.kuujo.raft.protocol.PollRequest;
 import net.kuujo.raft.protocol.SubmitRequest;
 import net.kuujo.raft.protocol.SyncRequest;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 
@@ -90,7 +96,8 @@ public class StateContext {
   public StateContext transition(StateType type) {
     if (type.equals(stateType)) return this;
     System.out.println(address() + " transitioning to " + type.getName());
-    State oldState = state;
+    final StateType oldStateType = stateType;
+    final State oldState = state;
     stateType = type;
     switch (type) {
       case START:
@@ -128,27 +135,59 @@ public class StateContext {
     }
 
     if (oldState != null) {
-      oldState.shutDown(new Handler<Void>() {
-        @Override
-        public void handle(Void result) {
-          state.startUp(new Handler<Void>() {
-            @Override
-            public void handle(Void result) {
-              state.configure(members());
-            }
-          });
-        }
-      });
+      if (oldStateType.equals(StateType.START)) {
+        oldState.shutDown(new Handler<Void>() {
+          @Override
+          public void handle(Void _) {
+            log.init(new LogVisitor() {
+              @Override
+              public void applyEntry(Entry entry) {
+                applyEntry(entry);
+              }
+            }, new Handler<AsyncResult<Void>>() {
+              @Override
+              public void handle(AsyncResult<Void> result) {
+                if (result.succeeded()) {
+                  state.startUp(new Handler<Void>() {
+                    @Override
+                    public void handle(Void _) {
+                      registerHandlers(state);
+                      state.configure(members());
+                    }
+                  });
+                }
+                else {
+                  transition(oldStateType);
+                }
+              }
+            });
+          }
+        });
+      }
+      else {
+        oldState.shutDown(new Handler<Void>() {
+          @Override
+          public void handle(Void result) {
+            state.startUp(new Handler<Void>() {
+              @Override
+              public void handle(Void result) {
+                registerHandlers(state);
+                state.configure(members());
+              }
+            });
+          }
+        });
+      }
     }
     else {
       state.startUp(new Handler<Void>() {
         @Override
         public void handle(Void result) {
+          registerHandlers(state);
           state.configure(members());
         }
       });
     }
-    registerHandlers(state);
     return this;
   }
 
@@ -177,6 +216,22 @@ public class StateContext {
         state.submit(request);
       }
     });
+  }
+
+  /**
+   * Applies an entry to the state machine.
+   *
+   * @param entry
+   *   The entry to apply.
+   */
+  public void applyEntry(Entry entry) {
+    if (entry.type().equals(Type.COMMAND)) {
+      stateMachine.applyCommand(((CommandEntry) entry).command());
+    }
+    else if (entry.type().equals(Type.CONFIGURATION)) {
+      configs().get(0).addAll(((ConfigurationEntry) entry).members());
+      removeConfig();
+    }
   }
 
   /**
