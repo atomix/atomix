@@ -95,17 +95,15 @@ public interface ClusterController {
 
   /**
    * Enables static membership for the cluster.
-   *
-   * @return
-   *   The cluster controller.
+   * 
+   * @return The cluster controller.
    */
   ClusterController enableStaticMembership();
 
   /**
    * Enables dynamic membership for the cluster.
-   *
-   * @return
-   *   The cluster controller.
+   * 
+   * @return The cluster controller.
    */
   ClusterController enableDynamicMembership();
 

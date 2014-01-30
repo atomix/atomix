@@ -32,11 +32,9 @@ public class ClusterConfig extends Observable {
 
   /**
    * Sets cluster members.
-   *
-   * @param members
-   *   A list of cluster members.
-   * @return
-   *   The cluster configuration.
+   * 
+   * @param members A list of cluster members.
+   * @return The cluster configuration.
    */
   public ClusterConfig setMembers(String... members) {
     this.members = new HashSet<String>(Arrays.asList(members));
@@ -48,11 +46,9 @@ public class ClusterConfig extends Observable {
 
   /**
    * Sets cluster members.
-   *
-   * @param members
-   *   A set of cluster members.
-   * @return
-   *   The cluster configuration.
+   * 
+   * @param members A set of cluster members.
+   * @return The cluster configuration.
    */
   public ClusterConfig setMembers(Set<String> members) {
     this.members = members;
@@ -64,11 +60,9 @@ public class ClusterConfig extends Observable {
 
   /**
    * Adds a member to the cluster.
-   *
-   * @param address
-   *   The member address.
-   * @return
-   *  The cluster configuration.
+   * 
+   * @param address The member address.
+   * @return The cluster configuration.
    */
   public ClusterConfig addMember(String address) {
     members.add(address);
@@ -80,11 +74,9 @@ public class ClusterConfig extends Observable {
 
   /**
    * Returns a boolean indicating whether an address is a member of the cluster.
-   *
-   * @param address
-   *   A member address to check.
-   * @return
-   *   Indicates whether the address is a member of the cluster.
+   * 
+   * @param address A member address to check.
+   * @return Indicates whether the address is a member of the cluster.
    */
   public boolean containsMember(String address) {
     return members.contains(address);
@@ -92,11 +84,9 @@ public class ClusterConfig extends Observable {
 
   /**
    * Removes a member from the cluster.
-   *
-   * @param address
-   *   The address of the member to remove.
-   * @return
-   *  The cluster configuration.
+   * 
+   * @param address The address of the member to remove.
+   * @return The cluster configuration.
    */
   public ClusterConfig removeMember(String address) {
     members.remove(address);
@@ -108,9 +98,8 @@ public class ClusterConfig extends Observable {
 
   /**
    * Returns a set of cluster members.
-   *
-   * @return
-   *   A set of members in the cluster.
+   * 
+   * @return A set of members in the cluster.
    */
   public Set<String> getMembers() {
     return new HashSet<>(members);

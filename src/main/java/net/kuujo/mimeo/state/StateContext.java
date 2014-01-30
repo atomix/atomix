@@ -140,7 +140,8 @@ public class StateContext {
             log.init(new LogVisitor() {
               @Override
               public void applyEntry(Entry entry) {
-                // If the entry type is a command, apply the entry to the state machine.
+                // If the entry type is a command, apply the entry to the state
+                // machine.
                 if (entry.type().equals(Type.COMMAND)) {
                   stateMachine.applyCommand(((CommandEntry) entry).command());
                 }
