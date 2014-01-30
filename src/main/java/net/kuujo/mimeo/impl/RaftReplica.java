@@ -52,7 +52,10 @@ public class RaftReplica implements Replica {
             message.reply(new JsonObject().putString("status", "error").putString("message", result.cause().getMessage()));
           }
           else {
-            message.reply(new JsonObject().putString("status", "ok").putObject("result", result.result()));
+            if (!result.result().getFieldNames().contains("status")) {
+              result.result().putString("status", "ok");
+            }
+            message.reply(result.result());
           }
         }
       });
