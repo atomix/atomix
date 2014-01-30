@@ -20,10 +20,12 @@ import java.util.List;
 
 import net.kuujo.mimeo.ReplicationServiceEndpoint;
 import net.kuujo.mimeo.StateMachine;
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
+import net.kuujo.mimeo.cluster.ClusterConfig;
+import net.kuujo.mimeo.log.CommandEntry;
 import net.kuujo.mimeo.log.Entry;
 import net.kuujo.mimeo.log.Log;
 import net.kuujo.mimeo.log.LogVisitor;
+import net.kuujo.mimeo.log.Entry.Type;
 import net.kuujo.mimeo.protocol.PingRequest;
 import net.kuujo.mimeo.protocol.PollRequest;
 import net.kuujo.mimeo.protocol.SubmitRequest;
@@ -138,7 +140,10 @@ public class StateContext {
             log.init(new LogVisitor() {
               @Override
               public void applyEntry(Entry entry) {
-                applyEntry(entry);
+                // If the entry type is a command, apply the entry to the state machine.
+                if (entry.type().equals(Type.COMMAND)) {
+                  stateMachine.applyCommand(((CommandEntry) entry).command());
+                }
               }
             }, new Handler<AsyncResult<Void>>() {
               @Override

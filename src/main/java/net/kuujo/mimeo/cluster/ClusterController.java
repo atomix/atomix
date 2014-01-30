@@ -17,8 +17,6 @@ package net.kuujo.mimeo.cluster;
 
 import java.util.Set;
 
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
@@ -94,6 +92,22 @@ public interface ClusterController {
    * @return The cluster membership type.
    */
   MembershipType getMembershipType();
+
+  /**
+   * Enables static membership for the cluster.
+   *
+   * @return
+   *   The cluster controller.
+   */
+  ClusterController enableStaticMembership();
+
+  /**
+   * Enables dynamic membership for the cluster.
+   *
+   * @return
+   *   The cluster controller.
+   */
+  ClusterController enableDynamicMembership();
 
   /**
    * Adds a member to the cluster.

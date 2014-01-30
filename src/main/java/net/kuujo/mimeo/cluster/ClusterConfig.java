@@ -13,70 +13,107 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.mimeo.cluster.config.impl;
+package net.kuujo.mimeo.cluster;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Observable;
 import java.util.Set;
 
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
+import net.kuujo.mimeo.cluster.ClusterConfig;
 
 /**
- * A static cluster configuration.
+ * A dynamic cluster configuration.
  * 
  * @author Jordan Halterman
  */
-public class StaticClusterConfig extends ClusterConfig {
+public class ClusterConfig extends Observable {
   private Set<String> members = new HashSet<>();
-  private boolean locked;
 
-  @Override
+  /**
+   * Sets cluster members.
+   *
+   * @param members
+   *   A list of cluster members.
+   * @return
+   *   The cluster configuration.
+   */
   public ClusterConfig setMembers(String... members) {
-    checkLock();
     this.members = new HashSet<String>(Arrays.asList(members));
+    setChanged();
+    notifyObservers();
+    clearChanged();
     return this;
   }
 
-  @Override
+  /**
+   * Sets cluster members.
+   *
+   * @param members
+   *   A set of cluster members.
+   * @return
+   *   The cluster configuration.
+   */
   public ClusterConfig setMembers(Set<String> members) {
-    checkLock();
     this.members = members;
+    setChanged();
+    notifyObservers();
+    clearChanged();
     return this;
   }
 
-  @Override
+  /**
+   * Adds a member to the cluster.
+   *
+   * @param address
+   *   The member address.
+   * @return
+   *  The cluster configuration.
+   */
   public ClusterConfig addMember(String address) {
-    checkLock();
     members.add(address);
+    setChanged();
+    notifyObservers();
+    clearChanged();
     return this;
   }
 
-  @Override
+  /**
+   * Returns a boolean indicating whether an address is a member of the cluster.
+   *
+   * @param address
+   *   A member address to check.
+   * @return
+   *   Indicates whether the address is a member of the cluster.
+   */
   public boolean containsMember(String address) {
     return members.contains(address);
   }
 
-  @Override
+  /**
+   * Removes a member from the cluster.
+   *
+   * @param address
+   *   The address of the member to remove.
+   * @return
+   *  The cluster configuration.
+   */
   public ClusterConfig removeMember(String address) {
-    checkLock();
     members.remove(address);
+    setChanged();
+    notifyObservers();
+    clearChanged();
     return this;
   }
 
-  @Override
+  /**
+   * Returns a set of cluster members.
+   *
+   * @return
+   *   A set of members in the cluster.
+   */
   public Set<String> getMembers() {
     return new HashSet<>(members);
-  }
-
-  private void checkLock() {
-    if (locked) {
-      throw new IllegalStateException("Cannot modify static cluster configuration.");
-    }
-  }
-
-  @Override
-  public void lock() {
-    locked = true;
   }
 
 }

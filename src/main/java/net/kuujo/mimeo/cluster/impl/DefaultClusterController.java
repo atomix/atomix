@@ -20,10 +20,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.cluster.ClusterController;
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
-import net.kuujo.mimeo.cluster.config.impl.DynamicClusterConfig;
-import net.kuujo.mimeo.cluster.config.impl.StaticClusterConfig;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -43,8 +41,8 @@ public class DefaultClusterController implements ClusterController {
   private String cluster;
   private String address;
   private final String internalAddress = UUID.randomUUID().toString();
-  private MembershipType type = MembershipType.STATIC;
-  private ClusterConfig config = new StaticClusterConfig();
+  private MembershipType membership = MembershipType.STATIC;
+  private ClusterConfig config = new ClusterConfig();
   private final Vertx vertx;
   private Map<String, Long> nodes = new HashMap<>();
   private Map<String, Long> timers = new HashMap<>();
@@ -141,23 +139,23 @@ public class DefaultClusterController implements ClusterController {
 
   @Override
   public ClusterController setMembershipType(MembershipType type) {
-    this.type = type;
-    ClusterConfig oldConfig = config;
-    switch (type) {
-      case STATIC:
-        config = new StaticClusterConfig();
-        break;
-      case DYNAMIC:
-        config = new DynamicClusterConfig();
-        break;
-    }
-    config.setMembers(oldConfig.getMembers());
+    this.membership = type;
     return this;
   }
 
   @Override
   public MembershipType getMembershipType() {
-    return type;
+    return membership;
+  }
+
+  @Override
+  public ClusterController enableStaticMembership() {
+    return setMembershipType(MembershipType.STATIC);
+  }
+
+  @Override
+  public ClusterController enableDynamicMembership() {
+    return setMembershipType(MembershipType.DYNAMIC);
   }
 
   @Override
@@ -190,36 +188,40 @@ public class DefaultClusterController implements ClusterController {
 
   @Override
   public ClusterController start(Handler<AsyncResult<ClusterConfig>> doneHandler) {
-    config.lock();
     final Future<ClusterConfig> future = new DefaultFutureResult<ClusterConfig>().setHandler(doneHandler);
-    vertx.eventBus().registerHandler(cluster, wrappedMessageHandler, new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else {
-          vertx.eventBus().registerHandler(internalAddress, internalMessageHandler, new Handler<AsyncResult<Void>>() {
-            @Override
-            public void handle(AsyncResult<Void> result) {
-              if (result.failed()) {
-                vertx.eventBus().unregisterHandler(cluster, wrappedMessageHandler);
-                future.setFailure(result.cause());
+    if (cluster != null) {
+      vertx.eventBus().registerHandler(cluster, wrappedMessageHandler, new Handler<AsyncResult<Void>>() {
+        @Override
+        public void handle(AsyncResult<Void> result) {
+          if (result.failed()) {
+            future.setFailure(result.cause());
+          }
+          else {
+            vertx.eventBus().registerHandler(internalAddress, internalMessageHandler, new Handler<AsyncResult<Void>>() {
+              @Override
+              public void handle(AsyncResult<Void> result) {
+                if (result.failed()) {
+                  vertx.eventBus().unregisterHandler(cluster, wrappedMessageHandler);
+                  future.setFailure(result.cause());
+                }
+                else {
+                  timerID = vertx.setPeriodic(2500, new Handler<Long>() {
+                    @Override
+                    public void handle(Long timerID) {
+                      doBroadcast();
+                    }
+                  });
+                  future.setResult(config);
+                }
               }
-              else {
-                timerID = vertx.setPeriodic(2500, new Handler<Long>() {
-                  @Override
-                  public void handle(Long timerID) {
-                    doBroadcast();
-                  }
-                });
-                future.setResult(config);
-              }
-            }
-          });
+            });
+          }
         }
-      }
-    });
+      });
+    }
+    else {
+      future.setResult(config);
+    }
     return this;
   }
 
@@ -242,7 +244,7 @@ public class DefaultClusterController implements ClusterController {
               public void handle(Long timerID) {
                 nodes.remove(address);
                 timers.remove(address);
-                if (config.containsMember(address)) {
+                if (membership.equals(MembershipType.DYNAMIC) && config.containsMember(address)) {
                   try {
                     config.removeMember(address);
                   }
@@ -282,7 +284,7 @@ public class DefaultClusterController implements ClusterController {
       }
       else {
         nodes.put(address, System.currentTimeMillis() - lastBroadcastTime);
-        if (!config.containsMember(address)) {
+        if (membership.equals(MembershipType.DYNAMIC) && !config.containsMember(address)) {
           try {
             config.addMember(address);
           }

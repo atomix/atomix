@@ -17,8 +17,8 @@ package net.kuujo.mimeo.impl;
 
 import net.kuujo.mimeo.Replica;
 import net.kuujo.mimeo.ReplicationService;
+import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.cluster.ClusterController;
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
 import net.kuujo.mimeo.cluster.impl.DefaultClusterController;
 import net.kuujo.mimeo.log.Log;
 import net.kuujo.mimeo.log.MemoryLog;

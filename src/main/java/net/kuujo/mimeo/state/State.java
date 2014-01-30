@@ -17,7 +17,7 @@ package net.kuujo.mimeo.state;
 
 import net.kuujo.mimeo.ReplicationServiceEndpoint;
 import net.kuujo.mimeo.StateMachine;
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
+import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.log.Log;
 import net.kuujo.mimeo.protocol.PingRequest;
 import net.kuujo.mimeo.protocol.PollRequest;

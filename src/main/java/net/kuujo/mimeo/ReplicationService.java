@@ -15,7 +15,7 @@
  */
 package net.kuujo.mimeo;
 
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
+import net.kuujo.mimeo.cluster.ClusterConfig;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;

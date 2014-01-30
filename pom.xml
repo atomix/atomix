@@ -8,12 +8,12 @@
   </parent>
 
   <groupId>net.kuujo</groupId>
-  <artifactId>vertx-raft</artifactId>
+  <artifactId>mimeo</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Raft Consensus for Vert.x</name>
-  <description>An implementation of the Raft consensus algorithm on the Vert.x event bus.</description>
-  <url>http://github.com/kuujo/vertx-raft</url>
+  <name>Mimeo</name>
+  <description>A state replication framework for Vert.x.</description>
+  <url>http://github.com/kuujo/mimeo</url>
   <inceptionYear>2013</inceptionYear>
 
   <properties>
@@ -49,14 +49,14 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git@github.com:kuujo/vertx-raft.git</connection>
-    <developerConnection>scm:git:git@github.com:kuujo/vertx-raft.git</developerConnection>
-    <url>git@github.com:kuujo/vertx-raft.git</url>
+    <connection>scm:git:git@github.com:kuujo/mimeo.git</connection>
+    <developerConnection>scm:git:git@github.com:kuujo/mimeo.git</developerConnection>
+    <url>git@github.com:kuujo/mimeo.git</url>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>http://github.com/kuujo/vertx-raft/issues</url>
+    <url>http://github.com/kuujo/mimeo/issues</url>
   </issueManagement>
 
   <dependencies>

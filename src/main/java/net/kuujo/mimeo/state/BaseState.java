@@ -20,7 +20,7 @@ import java.util.Set;
 
 import net.kuujo.mimeo.ReplicationServiceEndpoint;
 import net.kuujo.mimeo.StateMachine;
-import net.kuujo.mimeo.cluster.config.ClusterConfig;
+import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.log.CommandEntry;
 import net.kuujo.mimeo.log.ConfigurationEntry;
 import net.kuujo.mimeo.log.Entry;
