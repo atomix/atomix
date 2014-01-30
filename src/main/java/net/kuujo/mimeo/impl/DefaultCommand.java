@@ -25,10 +25,9 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import net.kuujo.mimeo.Command;
 import net.kuujo.mimeo.log.Log;
 
-
 /**
  * A default command implementation.
- *
+ * 
  * @author Jordan Halterman
  */
 public class DefaultCommand implements Command {
@@ -75,9 +74,8 @@ public class DefaultCommand implements Command {
 
   /**
    * Returns command data.
-   *
-   * @return
-   *   The command data.
+   * 
+   * @return The command data.
    */
   public Command setLog(Log log) {
     this.log = log;

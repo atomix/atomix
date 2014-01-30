@@ -17,7 +17,7 @@ package net.kuujo.mimeo.log;
 
 /**
  * A no-op log entry.
- *
+ * 
  * @author Jordan Halterman
  */
 public class NoOpEntry extends Entry {

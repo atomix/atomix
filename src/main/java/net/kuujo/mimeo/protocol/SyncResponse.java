@@ -22,7 +22,7 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A sync response.
- *
+ * 
  * @author Jordan Halterman
  */
 public class SyncResponse implements Response {
@@ -52,9 +52,8 @@ public class SyncResponse implements Response {
 
   /**
    * Returns the requesting node's current term.
-   *
-   * @return
-   *   The requesting node's current term.
+   * 
+   * @return The requesting node's current term.
    */
   public long term() {
     return term;
@@ -62,9 +61,8 @@ public class SyncResponse implements Response {
 
   /**
    * Returns a boolean indicating whether the sync was successful.
-   *
-   * @return
-   *   Indicates whether the sync was successful.
+   * 
+   * @return Indicates whether the sync was successful.
    */
   public boolean success() {
     return success;

@@ -22,7 +22,7 @@ import net.kuujo.mimeo.serializer.Serializer;
 
 /**
  * A poll request.
- *
+ * 
  * @author Jordan Halterman
  */
 public class PollRequest extends Request {
@@ -61,9 +61,8 @@ public class PollRequest extends Request {
 
   /**
    * Returns the requesting node's current term.
-   *
-   * @return
-   *   The requesting node's current term.
+   * 
+   * @return The requesting node's current term.
    */
   public long term() {
     return term;
@@ -71,9 +70,8 @@ public class PollRequest extends Request {
 
   /**
    * Returns the candidate's address.
-   *
-   * @return
-   *   The candidate's address.
+   * 
+   * @return The candidate's address.
    */
   public String candidate() {
     return candidate;
@@ -81,9 +79,8 @@ public class PollRequest extends Request {
 
   /**
    * Returns the candidate's last log index.
-   *
-   * @return
-   *   The candidate's last log index.
+   * 
+   * @return The candidate's last log index.
    */
   public long lastLogIndex() {
     return lastLogIndex;
@@ -91,9 +88,8 @@ public class PollRequest extends Request {
 
   /**
    * Returns the candidate's last log term.
-   *
-   * @return
-   *   The candidate's last log term.
+   * 
+   * @return The candidate's last log term.
    */
   public long lastLogTerm() {
     return lastLogTerm;
@@ -101,11 +97,9 @@ public class PollRequest extends Request {
 
   /**
    * Replies to the vote request.
-   *
-   * @param term
-   *   The responding node's term.
-   * @param voteGranted
-   *   Indicates whether the vote was granted.
+   * 
+   * @param term The responding node's term.
+   * @param voteGranted Indicates whether the vote was granted.
    */
   public void reply(long term, boolean voteGranted) {
     reply(new JsonObject().putNumber("term", term).putBoolean("voteGranted", voteGranted));

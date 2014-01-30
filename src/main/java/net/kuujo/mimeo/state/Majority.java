@@ -21,7 +21,7 @@ import org.vertx.java.core.Handler;
 
 /**
  * A quorum helper.
- *
+ * 
  * @author Jordan Halterman
  */
 public class Majority {

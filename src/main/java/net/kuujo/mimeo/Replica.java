@@ -22,50 +22,45 @@ import org.vertx.java.core.Handler;
 
 /**
  * A replica.
- *
+ * 
  * @author Jordan Halterman
  */
 public interface Replica {
 
   /**
    * Returns the address of the replica.
-   *
-   * @return
-   *   The unique event bus address of the replica.
+   * 
+   * @return The unique event bus address of the replica.
    */
   String address();
 
   /**
    * Returns the cluster handler for the replica.
-   *
-   * @return
-   *   The replica's cluster handler.
+   * 
+   * @return The replica's cluster handler.
    */
   ClusterController cluster();
 
   /**
    * Returns the replication service.
-   *
-   * @return
-   *   The replication service.
+   * 
+   * @return The replication service.
    */
   ReplicationService service();
 
   /**
    * Starts the replica.
-   *
-   * @return
-   *   The replica instance.
+   * 
+   * @return The replica instance.
    */
   Replica start();
 
   /**
    * Starts the replica.
-   *
-   * @param doneHandler
-   *   An asynchronous handler to be called once the replica is started.
-   * @return
-   *   The replica instance.
+   * 
+   * @param doneHandler An asynchronous handler to be called once the replica is
+   *          started.
+   * @return The replica instance.
    */
   Replica start(Handler<AsyncResult<Void>> doneHandler);
 
@@ -76,9 +71,9 @@ public interface Replica {
 
   /**
    * Stops the replica.
-   *
-   * @param doneHandler
-   *   An asynchronous handler to be called once the replica is stopped.
+   * 
+   * @param doneHandler An asynchronous handler to be called once the replica is
+   *          stopped.
    */
   void stop(Handler<AsyncResult<Void>> doneHandler);
 

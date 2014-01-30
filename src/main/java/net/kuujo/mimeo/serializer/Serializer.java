@@ -20,11 +20,12 @@ import org.vertx.java.core.json.JsonObject;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Json serializer.<p>
- *
- * Via serializers serialize objects to Vert.x {@link JsonObject} instances
- * for easy passage over the Vert.x event bus.
- *
+ * Json serializer.
+ * <p>
+ * 
+ * Via serializers serialize objects to Vert.x {@link JsonObject} instances for
+ * easy passage over the Vert.x event bus.
+ * 
  * @author Jordan Halterman
  */
 public class Serializer {
@@ -32,9 +33,8 @@ public class Serializer {
 
   /**
    * Gets a singleton serializer instance.
-   *
-   * @return
-   *   A singleton serializer instance.
+   * 
+   * @return A singleton serializer instance.
    */
   public static Serializer getInstance() {
     if (instance == null) {
@@ -48,13 +48,10 @@ public class Serializer {
   /**
    * Serializes an object to Json. If an error occurs during serialization, a
    * {@link SerializationException} will be thrown.
-   *
-   * @param object
-   *   The object to serialize.
-   * @return
-   *   A Json representation of the serializable object.
-   * @throws SerializationException
-   *   If an error occurs during serialization.
+   * 
+   * @param object The object to serialize.
+   * @return A Json representation of the serializable object.
+   * @throws SerializationException If an error occurs during serialization.
    */
   public <T> JsonObject serialize(T object) {
     try {
@@ -66,17 +63,13 @@ public class Serializer {
   }
 
   /**
-   * Deserializes an object from Json. If an error occurs during deserialization, a
-   * {@link DeserializationException} will be thrown.
-   *
-   * @param json
-   *   A Json representation of the serializable object.
-   * @param type
-   *   The type to which to deserialize the object.
-   * @return
-   *   The deserialized object.
-   * @throws DeserializationException
-   *   If an error occurs during deserialization.
+   * Deserializes an object from Json. If an error occurs during
+   * deserialization, a {@link DeserializationException} will be thrown.
+   * 
+   * @param json A Json representation of the serializable object.
+   * @param type The type to which to deserialize the object.
+   * @return The deserialized object.
+   * @throws DeserializationException If an error occurs during deserialization.
    */
   public <T> T deserialize(JsonObject json, Class<T> type) {
     try {

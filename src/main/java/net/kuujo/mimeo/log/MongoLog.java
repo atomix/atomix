@@ -33,7 +33,7 @@ import net.kuujo.mimeo.serializer.Serializer;
 
 /**
  * A mongo database persistent log.
- *
+ * 
  * @author Jordan Halterman
  */
 public class MongoLog implements Log {
@@ -52,10 +52,8 @@ public class MongoLog implements Log {
   @Override
   public void init(final LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-    final JsonObject query = new JsonObject()
-      .putString("action", "count")
-      .putString("collection", collection)
-      .putObject("matcher", new JsonObject());
+    final JsonObject query = new JsonObject().putString("action", "count").putString("collection", collection)
+        .putObject("matcher", new JsonObject());
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -72,10 +70,8 @@ public class MongoLog implements Log {
       }
     });
 
-    final JsonObject query2 = new JsonObject()
-      .putString("action", "count")
-      .putString("collection", collection)
-      .putObject("matcher", new JsonObject());
+    final JsonObject query2 = new JsonObject().putString("action", "count").putString("collection", collection)
+        .putObject("matcher", new JsonObject());
     vertx.eventBus().sendWithTimeout(address, query2, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -103,13 +99,12 @@ public class MongoLog implements Log {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(doneHandler);
     final long index = currentIndex++;
     final JsonObject query = new JsonObject()
-      .putString("action", "save")
-      .putString("collection", collection)
-      .putObject("document", new JsonObject()
-        .putString("type", "command")
-        .putNumber("index", index)
-        .putNumber("term", entry.term())
-        .putObject("entry", serializer.serialize(entry)));
+        .putString("action", "save")
+        .putString("collection", collection)
+        .putObject(
+            "document",
+            new JsonObject().putString("type", "command").putNumber("index", index).putNumber("term", entry.term())
+                .putObject("entry", serializer.serialize(entry)));
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -130,23 +125,21 @@ public class MongoLog implements Log {
   @Override
   public Log containsEntry(long index, Handler<AsyncResult<Boolean>> containsHandler) {
     final Future<Boolean> future = new DefaultFutureResult<Boolean>().setHandler(containsHandler);
-    final JsonObject query = new JsonObject()
-      .putString("action", "count")
-      .putString("collection", collection)
-      .putObject("matcher", new JsonObject().putString("type", "command").putNumber("index", index));
+    final JsonObject query = new JsonObject().putString("action", "count").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command").putNumber("index", index));
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-          @Override
-          public void handle(AsyncResult<Message<JsonObject>> result) {
-            if (result.failed()) {
-              future.setFailure(result.cause());
-            }
-            else if (result.result().body().getString("status").equals("ok")) {
-              future.setResult(result.result().body().getInteger("count") > 0);
-            }
-            else {
-              future.setFailure(new MimeoException(result.result().body().getString("message")));
-            }
-          }
+      @Override
+      public void handle(AsyncResult<Message<JsonObject>> result) {
+        if (result.failed()) {
+          future.setFailure(result.cause());
+        }
+        else if (result.result().body().getString("status").equals("ok")) {
+          future.setResult(result.result().body().getInteger("count") > 0);
+        }
+        else {
+          future.setFailure(new MimeoException(result.result().body().getString("message")));
+        }
+      }
     });
     return this;
   }
@@ -154,9 +147,7 @@ public class MongoLog implements Log {
   @Override
   public Log entry(long index, Handler<AsyncResult<Entry>> entryHandler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(entryHandler);
-    final JsonObject query = new JsonObject()
-        .putString("action", "findone")
-        .putString("collection", collection)
+    final JsonObject query = new JsonObject().putString("action", "findone").putString("collection", collection)
         .putObject("matcher", new JsonObject().putString("type", "command").putNumber("index", index));
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -178,11 +169,8 @@ public class MongoLog implements Log {
   @Override
   public Log firstIndex(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    final JsonObject query = new JsonObject()
-        .putString("action", "find")
-        .putString("collection", collection)
-        .putObject("matcher", new JsonObject().putString("type", "command"))
-        .putObject("sort", new JsonObject().putNumber("index", 1))
+    final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", 1))
         .putNumber("limit", 1);
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -204,11 +192,8 @@ public class MongoLog implements Log {
   @Override
   public Log firstTerm(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    final JsonObject query = new JsonObject()
-        .putString("action", "find")
-        .putString("collection", collection)
-        .putObject("matcher", new JsonObject().putString("type", "command"))
-        .putObject("sort", new JsonObject().putNumber("index", 1))
+    final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", 1))
         .putNumber("limit", 1);
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -230,11 +215,8 @@ public class MongoLog implements Log {
   @Override
   public Log firstEntry(Handler<AsyncResult<Entry>> handler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(handler);
-    final JsonObject query = new JsonObject()
-        .putString("action", "find")
-        .putString("collection", collection)
-        .putObject("matcher", new JsonObject().putString("type", "command"))
-        .putObject("sort", new JsonObject().putNumber("index", 1))
+    final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", 1))
         .putNumber("limit", 1);
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -243,7 +225,8 @@ public class MongoLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("ok")) {
-          future.setResult(serializer.deserialize(((JsonObject) result.result().body().getArray("result").get(0)).getObject("entry"), Entry.class));
+          future.setResult(serializer.deserialize(((JsonObject) result.result().body().getArray("result").get(0)).getObject("entry"),
+              Entry.class));
         }
         else {
           future.setFailure(new MimeoException(result.result().body().getString("message")));
@@ -256,11 +239,8 @@ public class MongoLog implements Log {
   @Override
   public Log lastIndex(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    final JsonObject query = new JsonObject()
-        .putString("action", "find")
-        .putString("collection", collection)
-        .putObject("matcher", new JsonObject().putString("type", "command"))
-        .putObject("sort", new JsonObject().putNumber("index", -1))
+    final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", -1))
         .putNumber("limit", 1);
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -282,11 +262,8 @@ public class MongoLog implements Log {
   @Override
   public Log lastTerm(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    final JsonObject query = new JsonObject()
-        .putString("action", "find")
-        .putString("collection", collection)
-        .putObject("matcher", new JsonObject().putString("type", "command"))
-        .putObject("sort", new JsonObject().putNumber("index", -1))
+    final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", -1))
         .putNumber("limit", 1);
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -308,11 +285,8 @@ public class MongoLog implements Log {
   @Override
   public Log lastEntry(Handler<AsyncResult<Entry>> handler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(handler);
-    final JsonObject query = new JsonObject()
-        .putString("action", "find")
-        .putString("collection", collection)
-        .putObject("matcher", new JsonObject().putString("type", "command"))
-        .putObject("sort", new JsonObject().putNumber("index", -1))
+    final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", -1))
         .putNumber("limit", 1);
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -321,7 +295,8 @@ public class MongoLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("ok")) {
-          future.setResult(serializer.deserialize(((JsonObject) result.result().body().getArray("result").get(0)).getObject("entry"), Entry.class));
+          future.setResult(serializer.deserialize(((JsonObject) result.result().body().getArray("result").get(0)).getObject("entry"),
+              Entry.class));
         }
         else {
           future.setFailure(new MimeoException(result.result().body().getString("message")));
@@ -338,9 +313,10 @@ public class MongoLog implements Log {
     final JsonObject query = new JsonObject()
         .putString("action", "find")
         .putString("collection", collection)
-        .putObject("matcher", new JsonObject().putString("type", "command")
-            .putObject("index", new JsonObject().putNumber("$ge", start))
-            .putObject("index", new JsonObject().putNumber("$le", end)));
+        .putObject(
+            "matcher",
+            new JsonObject().putString("type", "command").putObject("index", new JsonObject().putNumber("$ge", start))
+                .putObject("index", new JsonObject().putNumber("$le", end)));
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -375,10 +351,8 @@ public class MongoLog implements Log {
         }
         else {
           final Entry entry = result.result();
-          final JsonObject query = new JsonObject()
-            .putString("action", "delete")
-            .putString("collection", collection)
-            .putObject("matcher", new JsonObject().putString("type", "command").putNumber("index", index));
+          final JsonObject query = new JsonObject().putString("action", "delete").putString("collection", collection)
+              .putObject("matcher", new JsonObject().putString("type", "command").putNumber("index", index));
           vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
             @Override
             public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -401,11 +375,8 @@ public class MongoLog implements Log {
   @Override
   public Log removeBefore(long index, Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-    final JsonObject query = new JsonObject()
-      .putString("action", "delete")
-      .putString("collection", collection)
-      .putObject("matcher", new JsonObject().putString("type", "command")
-          .putObject("index", new JsonObject().putNumber("$lt", index)));
+    final JsonObject query = new JsonObject().putString("action", "delete").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command").putObject("index", new JsonObject().putNumber("$lt", index)));
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -426,11 +397,8 @@ public class MongoLog implements Log {
   @Override
   public Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-    final JsonObject query = new JsonObject()
-      .putString("action", "delete")
-      .putString("collection", collection)
-      .putObject("matcher", new JsonObject().putString("type", "command")
-          .putObject("index", new JsonObject().putNumber("$gt", index)));
+    final JsonObject query = new JsonObject().putString("action", "delete").putString("collection", collection)
+        .putObject("matcher", new JsonObject().putString("type", "command").putObject("index", new JsonObject().putNumber("$gt", index)));
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {

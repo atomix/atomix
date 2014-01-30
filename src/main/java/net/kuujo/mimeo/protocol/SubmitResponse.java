@@ -24,7 +24,7 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A submit response.
- *
+ * 
  * @author Jordan Halterman
  */
 public class SubmitResponse implements Response {

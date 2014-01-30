@@ -29,7 +29,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * A candidate state.
- *
+ * 
  * @author Jordan Halterman
  */
 public class Candidate extends BaseState {
@@ -52,21 +52,23 @@ public class Candidate extends BaseState {
    * Resets the election timer.
    */
   private void resetTimer() {
-    electionTimer = vertx.setTimer(context.electionTimeout() - (context.electionTimeout() / 4) + (Math.round(Math.random() * (context.electionTimeout() / 2))), new Handler<Long>() {
-      @Override
-      public void handle(Long timerID) {
-        // When the election times out, clear the previous majority vote
-        // check and restart the election.
-        logger.info("Election timed out.");
-        if (majority != null) {
-          majority.cancel();
-          majority = null;
-        }
-        resetTimer();
-        pollMembers();
-        logger.info("Restarted election.");
-      }
-    });
+    electionTimer = vertx.setTimer(
+        context.electionTimeout() - (context.electionTimeout() / 4) + (Math.round(Math.random() * (context.electionTimeout() / 2))),
+        new Handler<Long>() {
+          @Override
+          public void handle(Long timerID) {
+            // When the election times out, clear the previous majority vote
+            // check and restart the election.
+            logger.info("Election timed out.");
+            if (majority != null) {
+              majority.cancel();
+              majority = null;
+            }
+            resetTimer();
+            pollMembers();
+            logger.info("Restarted election.");
+          }
+        });
   }
 
   private void pollMembers() {
@@ -82,29 +84,33 @@ public class Candidate extends BaseState {
             @Override
             public void handle(AsyncResult<Long> result) {
               if (result.succeeded()) {
-                // Load the last log entry to get its term. We do this rather than
-                // calling lastTerm() because the last entry could have changed already.
+                // Load the last log entry to get its term. We do this rather
+                // than
+                // calling lastTerm() because the last entry could have changed
+                // already.
                 final long lastIndex = result.result();
                 log.entry(lastIndex, new Handler<AsyncResult<Entry>>() {
                   @Override
                   public void handle(AsyncResult<Entry> result) {
                     if (result.succeeded() && result.result() != null) {
                       final long lastTerm = result.result().term();
-                      endpoint.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm), new Handler<AsyncResult<PollResponse>>() {
-                        @Override
-                        public void handle(AsyncResult<PollResponse> result) {
-                          // If the election is null then that means it was already finished,
-                          // e.g. a majority of nodes responded.
-                          if (majority != null) {
-                            if (result.failed() || !result.result().voteGranted()) {
-                              majority.fail(address);
+                      endpoint.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm),
+                          new Handler<AsyncResult<PollResponse>>() {
+                            @Override
+                            public void handle(AsyncResult<PollResponse> result) {
+                              // If the election is null then that means it was
+                              // already finished,
+                              // e.g. a majority of nodes responded.
+                              if (majority != null) {
+                                if (result.failed() || !result.result().voteGranted()) {
+                                  majority.fail(address);
+                                }
+                                else {
+                                  majority.succeed(address);
+                                }
+                              }
                             }
-                            else {
-                              majority.succeed(address);
-                            }
-                          }
-                        }
-                      });
+                          });
                     }
                   }
                 });

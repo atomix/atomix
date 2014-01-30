@@ -21,17 +21,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A request response.
- *
+ * 
  * @author Jordan Halterman
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(
-  creatorVisibility=JsonAutoDetect.Visibility.NONE,
-  fieldVisibility=JsonAutoDetect.Visibility.ANY,
-  getterVisibility=JsonAutoDetect.Visibility.NONE,
-  isGetterVisibility=JsonAutoDetect.Visibility.NONE,
-  setterVisibility=JsonAutoDetect.Visibility.NONE
-)
+@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
 public interface Response {
 }

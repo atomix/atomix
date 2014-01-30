@@ -25,27 +25,20 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A base request.
- *
+ * 
  * @author Jordan Halterman
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(
-  creatorVisibility=JsonAutoDetect.Visibility.NONE,
-  fieldVisibility=JsonAutoDetect.Visibility.ANY,
-  getterVisibility=JsonAutoDetect.Visibility.NONE,
-  isGetterVisibility=JsonAutoDetect.Visibility.NONE,
-  setterVisibility=JsonAutoDetect.Visibility.NONE
-)
+@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
 public abstract class Request {
   @JsonIgnore
   protected Message<JsonObject> message;
 
   /**
    * Replies to the request with a generic object.
-   *
-   * @param result
-   *   The request result.
+   * 
+   * @param result The request result.
    */
   public void reply(JsonObject result) {
     message.reply(new JsonObject().putString("status", "ok").putObject("result", result));
@@ -53,9 +46,8 @@ public abstract class Request {
 
   /**
    * Replies to the request with an error.
-   *
-   * @param message
-   *   The error message.
+   * 
+   * @param message The error message.
    */
   public void error(String message) {
     this.message.reply(new JsonObject().putString("status", "error").putString("message", message));
@@ -63,9 +55,8 @@ public abstract class Request {
 
   /**
    * Replies to the request with an error.
-   *
-   * @param error
-   *   The error that occurred.
+   * 
+   * @param error The error that occurred.
    */
   public void error(Throwable error) {
     this.error(error.getMessage());

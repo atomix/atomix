@@ -19,18 +19,16 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A replication service state machine.
- *
+ * 
  * @author Jordan Halterman
  */
 public interface StateMachine {
 
   /**
    * Applies a command to the state machine.
-   *
-   * @param command
-   *   The command to apply.
-   * @return
-   *   The command output.
+   * 
+   * @param command The command to apply.
+   * @return The command output.
    */
   JsonObject applyCommand(Command command);
 

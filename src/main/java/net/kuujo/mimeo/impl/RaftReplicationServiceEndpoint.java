@@ -36,7 +36,7 @@ import net.kuujo.mimeo.protocol.SyncResponse;
 
 /**
  * A default service.
- *
+ * 
  * @author Jordan Halterman
  */
 public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoint {
@@ -106,23 +106,25 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   @Override
   public ReplicationServiceEndpoint ping(String address, PingRequest request, long timeout, Handler<AsyncResult<PingResponse>> resultHandler) {
     final Future<PingResponse> future = new DefaultFutureResult<PingResponse>().setHandler(resultHandler);
-    vertx.eventBus().sendWithTimeout(address, new JsonObject().putString("action", "ping").putObject("request", PingRequest.toJson(request)), timeout, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else {
-          String status = result.result().body().getString("status");
-          if (status.equals("ok")) {
-            future.setResult(PingResponse.fromJson(result.result().body().getObject("result")));
+    vertx.eventBus().sendWithTimeout(address,
+        new JsonObject().putString("action", "ping").putObject("request", PingRequest.toJson(request)), timeout,
+        new Handler<AsyncResult<Message<JsonObject>>>() {
+          @Override
+          public void handle(AsyncResult<Message<JsonObject>> result) {
+            if (result.failed()) {
+              future.setFailure(result.cause());
+            }
+            else {
+              String status = result.result().body().getString("status");
+              if (status.equals("ok")) {
+                future.setResult(PingResponse.fromJson(result.result().body().getObject("result")));
+              }
+              else {
+                future.setFailure(new VertxException(result.result().body().getString("message", "")));
+              }
+            }
           }
-          else {
-            future.setFailure(new VertxException(result.result().body().getString("message", "")));
-          }
-        }
-      }
-    });
+        });
     return this;
   }
 
@@ -140,23 +142,25 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   @Override
   public ReplicationServiceEndpoint sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler) {
     final Future<SyncResponse> future = new DefaultFutureResult<SyncResponse>().setHandler(resultHandler);
-    vertx.eventBus().sendWithTimeout(address, new JsonObject().putString("action", "sync").putObject("request", SyncRequest.toJson(request)), timeout, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else {
-          String status = result.result().body().getString("status");
-          if (status.equals("ok")) {
-            future.setResult(SyncResponse.fromJson(result.result().body().getObject("result")));
+    vertx.eventBus().sendWithTimeout(address,
+        new JsonObject().putString("action", "sync").putObject("request", SyncRequest.toJson(request)), timeout,
+        new Handler<AsyncResult<Message<JsonObject>>>() {
+          @Override
+          public void handle(AsyncResult<Message<JsonObject>> result) {
+            if (result.failed()) {
+              future.setFailure(result.cause());
+            }
+            else {
+              String status = result.result().body().getString("status");
+              if (status.equals("ok")) {
+                future.setResult(SyncResponse.fromJson(result.result().body().getObject("result")));
+              }
+              else {
+                future.setFailure(new VertxException(result.result().body().getString("message", "")));
+              }
+            }
           }
-          else {
-            future.setFailure(new VertxException(result.result().body().getString("message", "")));
-          }
-        }
-      }
-    });
+        });
     return this;
   }
 
@@ -174,23 +178,25 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   @Override
   public ReplicationServiceEndpoint poll(String address, PollRequest request, long timeout, Handler<AsyncResult<PollResponse>> resultHandler) {
     final Future<PollResponse> future = new DefaultFutureResult<PollResponse>().setHandler(resultHandler);
-    vertx.eventBus().sendWithTimeout(address, new JsonObject().putString("action", "poll").putObject("request", PollRequest.toJson(request)), timeout, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else {
-          String status = result.result().body().getString("status");
-          if (status.equals("ok")) {
-            future.setResult(PollResponse.fromJson(result.result().body().getObject("result")));
+    vertx.eventBus().sendWithTimeout(address,
+        new JsonObject().putString("action", "poll").putObject("request", PollRequest.toJson(request)), timeout,
+        new Handler<AsyncResult<Message<JsonObject>>>() {
+          @Override
+          public void handle(AsyncResult<Message<JsonObject>> result) {
+            if (result.failed()) {
+              future.setFailure(result.cause());
+            }
+            else {
+              String status = result.result().body().getString("status");
+              if (status.equals("ok")) {
+                future.setResult(PollResponse.fromJson(result.result().body().getObject("result")));
+              }
+              else {
+                future.setFailure(new VertxException(result.result().body().getString("message", "")));
+              }
+            }
           }
-          else {
-            future.setFailure(new VertxException(result.result().body().getString("message", "")));
-          }
-        }
-      }
-    });
+        });
     return this;
   }
 
@@ -206,25 +212,28 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   }
 
   @Override
-  public ReplicationServiceEndpoint submit(String address, SubmitRequest request, long timeout, Handler<AsyncResult<SubmitResponse>> resultHandler) {
+  public ReplicationServiceEndpoint submit(String address, SubmitRequest request, long timeout,
+      Handler<AsyncResult<SubmitResponse>> resultHandler) {
     final Future<SubmitResponse> future = new DefaultFutureResult<SubmitResponse>().setHandler(resultHandler);
-    vertx.eventBus().sendWithTimeout(address, new JsonObject().putString("action", "submit").putObject("request", SubmitRequest.toJson(request)), timeout, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else {
-          String status = result.result().body().getString("status");
-          if (status.equals("ok")) {
-            future.setResult(SubmitResponse.fromJson(result.result().body().getObject("result")));
+    vertx.eventBus().sendWithTimeout(address,
+        new JsonObject().putString("action", "submit").putObject("request", SubmitRequest.toJson(request)), timeout,
+        new Handler<AsyncResult<Message<JsonObject>>>() {
+          @Override
+          public void handle(AsyncResult<Message<JsonObject>> result) {
+            if (result.failed()) {
+              future.setFailure(result.cause());
+            }
+            else {
+              String status = result.result().body().getString("status");
+              if (status.equals("ok")) {
+                future.setResult(SubmitResponse.fromJson(result.result().body().getObject("result")));
+              }
+              else {
+                future.setFailure(new VertxException(result.result().body().getString("message", "")));
+              }
+            }
           }
-          else {
-            future.setFailure(new VertxException(result.result().body().getString("message", "")));
-          }
-        }
-      }
-    });
+        });
     return this;
   }
 
@@ -233,7 +242,6 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
     submitHandler = handler;
     return this;
   }
-
 
   @Override
   public ReplicationServiceEndpoint start() {

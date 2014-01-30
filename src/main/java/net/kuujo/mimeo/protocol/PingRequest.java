@@ -22,7 +22,7 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A ping request.
- *
+ * 
  * @author Jordan Halterman
  */
 public class PingRequest extends Request {
@@ -57,9 +57,8 @@ public class PingRequest extends Request {
 
   /**
    * Returns the requesting node's current term.
-   *
-   * @return
-   *   The requesting node's current term.
+   * 
+   * @return The requesting node's current term.
    */
   public long term() {
     return term;

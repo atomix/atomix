@@ -17,16 +17,15 @@ package net.kuujo.mimeo.state;
 
 /**
  * A state factory.
- *
+ * 
  * @author Jordan Halterman
  */
 public class StateFactory {
 
   /**
    * Creates a new start state.
-   *
-   * @return
-   *   A new start state.
+   * 
+   * @return A new start state.
    */
   public Start createStart() {
     return new Start();
@@ -34,9 +33,8 @@ public class StateFactory {
 
   /**
    * Creates a new follower state.
-   *
-   * @return
-   *   A new follower state.
+   * 
+   * @return A new follower state.
    */
   public Follower createFollower() {
     return new Follower();
@@ -44,18 +42,17 @@ public class StateFactory {
 
   /**
    * Creates a new candidate state.
-   *
-   * @return
-   *   A new candidate state.
+   * 
+   * @return A new candidate state.
    */
   public Candidate createCandidate() {
     return new Candidate();
   }
+
   /**
    * Creates a new leader state.
-   *
-   * @return
-   *   A new leader state.
+   * 
+   * @return A new leader state.
    */
   public Leader createLeader() {
     return new Leader();

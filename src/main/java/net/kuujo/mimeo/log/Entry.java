@@ -32,8 +32,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 @JsonInclude(JsonInclude.Include.ALWAYS)
 @JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes({
-    @JsonSubTypes.Type(value = NoOpEntry.class, name = "no-op"),
+@JsonSubTypes({ @JsonSubTypes.Type(value = NoOpEntry.class, name = "no-op"),
     @JsonSubTypes.Type(value = ConfigurationEntry.class, name = "configuration"),
     @JsonSubTypes.Type(value = CommandEntry.class, name = "command") })
 public abstract class Entry {
@@ -73,7 +72,7 @@ public abstract class Entry {
 
     /**
      * Parses an entry type name to an entry type.
-     *
+     * 
      * @param name a string representation of the entry type.
      * @return an entry type.
      * @throws IllegalArgumentException if the entry type name is invalid.
@@ -103,7 +102,7 @@ public abstract class Entry {
 
   /**
    * Constructor.
-   *
+   * 
    * @param type The entry type.
    */
   protected Entry(Type type) {
@@ -112,7 +111,7 @@ public abstract class Entry {
 
   /**
    * Constructor.
-   *
+   * 
    * @param type The entry type.
    * @param term The entry term.
    */

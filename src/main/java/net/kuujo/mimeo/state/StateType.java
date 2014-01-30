@@ -17,14 +17,11 @@ package net.kuujo.mimeo.state;
 
 /**
  * A Raft state type.
- *
+ * 
  * @author Jordan Halterman
  */
 public enum StateType {
-  START("start"),
-  FOLLOWER("follower"),
-  CANDIDATE("candidate"),
-  LEADER("leader");
+  START("start"), FOLLOWER("follower"), CANDIDATE("candidate"), LEADER("leader");
 
   private final String name;
 

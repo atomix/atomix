@@ -27,7 +27,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * A follower state.
- *
+ * 
  * @author Jordan Halterman
  */
 public class Follower extends BaseState {
@@ -48,7 +48,8 @@ public class Follower extends BaseState {
         context.transition(StateType.CANDIDATE);
         timeoutTimer = 0;
       }
-      // Otherwise, if the node voted for a candidate then reset the election timer.
+      // Otherwise, if the node voted for a candidate then reset the election
+      // timer.
       else {
         resetTimer();
       }
@@ -69,8 +70,11 @@ public class Follower extends BaseState {
       vertx.cancelTimer(timeoutTimer);
     }
     // Set the election timeout in a semi-random fashion with the random range
-    // being somewhere between .75 * election timeout and 1.25 * election timeout.
-    timeoutTimer = vertx.setTimer(context.electionTimeout() - (context.electionTimeout() / 4) + (Math.round(Math.random() * (context.electionTimeout() / 2))), timeoutHandler);
+    // being somewhere between .75 * election timeout and 1.25 * election
+    // timeout.
+    timeoutTimer = vertx.setTimer(
+        context.electionTimeout() - (context.electionTimeout() / 4) + (Math.round(Math.random() * (context.electionTimeout() / 2))),
+        timeoutHandler);
   }
 
   @Override
@@ -96,7 +100,8 @@ public class Follower extends BaseState {
         doSync(request, new Handler<AsyncResult<Boolean>>() {
           @Override
           public void handle(AsyncResult<Boolean> result) {
-            // If the request term is greater than the current term then update the
+            // If the request term is greater than the current term then update
+            // the
             // current leader and term.
             if (request.term() > context.currentTerm()) {
               context.currentLeader(request.leader());

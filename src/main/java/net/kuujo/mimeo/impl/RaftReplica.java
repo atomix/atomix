@@ -33,7 +33,7 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A raft based replica.
- *
+ * 
  * @author Jordan Halterman
  */
 public class RaftReplica implements Replica {
@@ -120,7 +120,7 @@ public class RaftReplica implements Replica {
               else {
                 future.setResult((Void) null);
               }
-            }            
+            }
           });
         }
       }

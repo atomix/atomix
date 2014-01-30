@@ -17,16 +17,15 @@ package net.kuujo.mimeo.log;
 
 /**
  * A log visitor.
- *
+ * 
  * @author Jordan Halterman
  */
 public interface LogVisitor {
 
   /**
    * Appends an entry to the visitor.
-   *
-   * @param entry
-   *   The entry to append.
+   * 
+   * @param entry The entry to append.
    */
   void applyEntry(Entry entry);
 

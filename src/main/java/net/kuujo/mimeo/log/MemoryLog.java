@@ -31,7 +31,7 @@ import net.kuujo.mimeo.impl.DefaultCommand;
 
 /**
  * A default log implementation.
- *
+ * 
  * @author Jordan Halterman
  */
 public class MemoryLog implements Log {

@@ -35,7 +35,7 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A default cluster implementation.
- *
+ * 
  * @author Jordan Halterman
  */
 public class DefaultClusterController implements ClusterController {
@@ -224,32 +224,34 @@ public class DefaultClusterController implements ClusterController {
   }
 
   /**
-   * Broadcasts a message to the cluster. Nodes should respond to the message
-   * to indicate participation in the cluster.
+   * Broadcasts a message to the cluster. Nodes should respond to the message to
+   * indicate participation in the cluster.
    */
   private void doBroadcast() {
     lastBroadcastTime = System.currentTimeMillis();
     lastBroadcastId = UUID.randomUUID().toString();
-    vertx.eventBus().publish(cluster, new JsonObject().putString("action", "broadcast").putString("address", internalAddress).putString("id", lastBroadcastId));
+    vertx.eventBus().publish(cluster,
+        new JsonObject().putString("action", "broadcast").putString("address", internalAddress).putString("id", lastBroadcastId));
     for (Map.Entry<String, Long> entry : nodes.entrySet()) {
       final String address = entry.getKey();
       if (!timers.containsKey(address)) {
         final long lastResponseTime = entry.getValue();
-        timers.put(address, vertx.setTimer(lastResponseTime < MINIMUM_RESPONSE_TIME ? MINIMUM_RESPONSE_TIME : lastResponseTime * 4, new Handler<Long>() {
-          @Override
-          public void handle(Long timerID) {
-            nodes.remove(address);
-            timers.remove(address);
-            if (config.containsMember(address)) {
-              try {
-                config.removeMember(address);
+        timers.put(address,
+            vertx.setTimer(lastResponseTime < MINIMUM_RESPONSE_TIME ? MINIMUM_RESPONSE_TIME : lastResponseTime * 4, new Handler<Long>() {
+              @Override
+              public void handle(Long timerID) {
+                nodes.remove(address);
+                timers.remove(address);
+                if (config.containsMember(address)) {
+                  try {
+                    config.removeMember(address);
+                  }
+                  catch (IllegalStateException e) {
+                    // Fail silently.
+                  }
+                }
               }
-              catch (IllegalStateException e) {
-                // Fail silently.
-              }
-            }
-          }
-        }));
+            }));
       }
     }
   }
@@ -260,7 +262,8 @@ public class DefaultClusterController implements ClusterController {
   private void doBroadcast(final Message<JsonObject> message) {
     final String address = message.body().getString("address");
     if (address != null) {
-      vertx.eventBus().send(address, new JsonObject().putString("action", "join").putString("address", this.address).putString("id", message.body().getString("id")));
+      vertx.eventBus().send(address,
+          new JsonObject().putString("action", "join").putString("address", this.address).putString("id", message.body().getString("id")));
     }
   }
 
@@ -268,7 +271,8 @@ public class DefaultClusterController implements ClusterController {
    * Handles receipt of a join message.
    */
   private void doJoin(final Message<JsonObject> message) {
-    // Check that this is a join from our most recent broadcast in order to prevent
+    // Check that this is a join from our most recent broadcast in order to
+    // prevent
     // mistaking extremely delayed messages for joins of the current broadcast.
     final String id = message.body().getString("id");
     if (id == lastBroadcastId) {

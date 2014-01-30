@@ -19,7 +19,7 @@ import org.vertx.java.core.VertxException;
 
 /**
  * A base Mimeo exception.
- *
+ * 
  * @author Jordan Halterman
  */
 @SuppressWarnings("serial")

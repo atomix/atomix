@@ -22,7 +22,7 @@ import net.kuujo.mimeo.serializer.Serializer;
 
 /**
  * A poll response.
- *
+ * 
  * @author Jordan Halterman
  */
 public class PollResponse implements Response {
@@ -52,9 +52,8 @@ public class PollResponse implements Response {
 
   /**
    * Returns the responding node's current term.
-   *
-   * @return
-   *   The responding node's current term.
+   * 
+   * @return The responding node's current term.
    */
   public long term() {
     return term;
@@ -62,9 +61,8 @@ public class PollResponse implements Response {
 
   /**
    * Returns a boolean indicating whether the vote was granted.
-   *
-   * @return
-   *   Indicates whether the vote was granted.
+   * 
+   * @return Indicates whether the vote was granted.
    */
   public boolean voteGranted() {
     return voteGranted;

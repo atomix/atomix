@@ -23,7 +23,7 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A sync request.
- *
+ * 
  * @author Jordan Halterman
  */
 public class SyncRequest extends Request {
@@ -66,9 +66,8 @@ public class SyncRequest extends Request {
 
   /**
    * Returns the requesting node's current term.
-   *
-   * @return
-   *   The requesting node's current term.
+   * 
+   * @return The requesting node's current term.
    */
   public long term() {
     return term;
@@ -76,9 +75,8 @@ public class SyncRequest extends Request {
 
   /**
    * Returns the requesting leader address.
-   *
-   * @return
-   *   The leader's address.
+   * 
+   * @return The leader's address.
    */
   public String leader() {
     return leader;
@@ -86,9 +84,8 @@ public class SyncRequest extends Request {
 
   /**
    * Returns the index of the log entry preceding the new entry.
-   *
-   * @return
-   *   The index of the log entry preceding the new entry.
+   * 
+   * @return The index of the log entry preceding the new entry.
    */
   public long prevLogIndex() {
     return prevLogIndex;
@@ -96,9 +93,8 @@ public class SyncRequest extends Request {
 
   /**
    * Returns the term of the log entry preceding the new entry.
-   *
-   * @return
-   *   The index of the term preceding the new entry.
+   * 
+   * @return The index of the term preceding the new entry.
    */
   public long prevLogTerm() {
     return prevLogTerm;
@@ -106,9 +102,8 @@ public class SyncRequest extends Request {
 
   /**
    * Returns the log entry to append.
-   *
-   * @return
-   *   A log entry.
+   * 
+   * @return A log entry.
    */
   public Entry entry() {
     return entry;
@@ -116,9 +111,8 @@ public class SyncRequest extends Request {
 
   /**
    * Returns the leader's commit index.
-   *
-   * @return
-   *   The leader commit index.
+   * 
+   * @return The leader commit index.
    */
   public long commit() {
     return commit;
@@ -126,11 +120,9 @@ public class SyncRequest extends Request {
 
   /**
    * Replies to the request.
-   *
-   * @param term
-   *   The responding node's current term.
-   * @param success
-   *   Indicates whether the sync was successful.
+   * 
+   * @param term The responding node's current term.
+   * @param success Indicates whether the sync was successful.
    */
   public void reply(long term, boolean success) {
     reply(new JsonObject().putNumber("term", term).putBoolean("success", success));

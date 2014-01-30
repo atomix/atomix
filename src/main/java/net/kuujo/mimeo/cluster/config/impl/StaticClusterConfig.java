@@ -23,7 +23,7 @@ import net.kuujo.mimeo.cluster.config.ClusterConfig;
 
 /**
  * A static cluster configuration.
- *
+ * 
  * @author Jordan Halterman
  */
 public class StaticClusterConfig extends ClusterConfig {

@@ -35,7 +35,7 @@ import org.vertx.java.core.Vertx;
 
 /**
  * A node state context.
- *
+ * 
  * @author Jordan Halterman
  */
 public class StateContext {
@@ -72,11 +72,9 @@ public class StateContext {
 
   /**
    * Configures the state context.
-   *
-   * @param config
-   *   A cluster configuration.
-   * @return
-   *   The state context.
+   * 
+   * @param config A cluster configuration.
+   * @return The state context.
    */
   public StateContext configure(ClusterConfig config) {
     this.cluster = config;
@@ -88,14 +86,11 @@ public class StateContext {
 
   /**
    * Transitions to a new state.
-   *
-   * @param type
-   *   The new state type.
-   * @param doneHandler
-   *   A handler to be called once the state transition is complete and a new
-   *   leader has been elected.
-   * @return
-   *   The state context.
+   * 
+   * @param type The new state type.
+   * @param doneHandler A handler to be called once the state transition is
+   *          complete and a new leader has been elected.
+   * @return The state context.
    */
   public StateContext transition(StateType type, Handler<String> doneHandler) {
     transitionHandlers.add(doneHandler);
@@ -104,54 +99,33 @@ public class StateContext {
 
   /**
    * Transitions to a new state.
-   *
-   * @param type
-   *   The new state type.
-   * @return
-   *   The state context.
+   * 
+   * @param type The new state type.
+   * @return The state context.
    */
   public StateContext transition(StateType type) {
-    if (type.equals(stateType)) return this;
+    if (type.equals(stateType))
+      return this;
     System.out.println(address() + " transitioning to " + type.getName());
     final StateType oldStateType = stateType;
     final State oldState = state;
     stateType = type;
     switch (type) {
       case START:
-        state = stateFactory.createStart()
-            .setVertx(vertx)
-            .setEndpoint(endpoint)
-            .setStateMachine(stateMachine)
-            .setLog(log)
-            .setConfig(cluster)
-            .setContext(this);
+        state = stateFactory.createStart().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
+            .setConfig(cluster).setContext(this);
         break;
       case FOLLOWER:
-        state = stateFactory.createFollower()
-            .setVertx(vertx)
-            .setEndpoint(endpoint)
-            .setStateMachine(stateMachine)
-            .setLog(log)
-            .setConfig(cluster)
-            .setContext(this);
+        state = stateFactory.createFollower().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
+            .setConfig(cluster).setContext(this);
         break;
       case CANDIDATE:
-        state = stateFactory.createCandidate()
-            .setVertx(vertx)
-            .setEndpoint(endpoint)
-            .setStateMachine(stateMachine)
-            .setLog(log)
-            .setConfig(cluster)
-            .setContext(this);
+        state = stateFactory.createCandidate().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
+            .setConfig(cluster).setContext(this);
         break;
       case LEADER:
-        state = stateFactory.createLeader()
-            .setVertx(vertx)
-            .setEndpoint(endpoint)
-            .setStateMachine(stateMachine)
-            .setLog(log)
-            .setConfig(cluster)
-            .setContext(this);
+        state = stateFactory.createLeader().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
+            .setConfig(cluster).setContext(this);
         break;
     }
 
@@ -247,9 +221,8 @@ public class StateContext {
 
   /**
    * Returns the endpoint address.
-   *
-   * @return
-   *   The current endpoint address.
+   * 
+   * @return The current endpoint address.
    */
   public String address() {
     return address;
@@ -257,9 +230,8 @@ public class StateContext {
 
   /**
    * Returns the endpoint to which the state belongs.
-   *
-   * @return
-   *   The parent endpoint.
+   * 
+   * @return The parent endpoint.
    */
   public ReplicationServiceEndpoint endpoint() {
     return endpoint;
@@ -267,9 +239,8 @@ public class StateContext {
 
   /**
    * Returns the state log.
-   *
-   * @return
-   *   The state log.
+   * 
+   * @return The state log.
    */
   public Log log() {
     return log;
@@ -277,9 +248,8 @@ public class StateContext {
 
   /**
    * Returns the replica election timeout.
-   *
-   * @return
-   *   The replica election timeout.
+   * 
+   * @return The replica election timeout.
    */
   public long electionTimeout() {
     return electionTimeout;
@@ -287,11 +257,9 @@ public class StateContext {
 
   /**
    * Sets the leader election timeout.
-   *
-   * @param timeout
-   *   The leader election timeout.
-   * @return
-   *   The state context.
+   * 
+   * @param timeout The leader election timeout.
+   * @return The state context.
    */
   public StateContext electionTimeout(long timeout) {
     electionTimeout = timeout;
@@ -300,9 +268,8 @@ public class StateContext {
 
   /**
    * Returns the replica heartbeat interval.
-   *
-   * @return
-   *   The replica heartbeat interval.
+   * 
+   * @return The replica heartbeat interval.
    */
   public long heartbeatInterval() {
     return heartbeatInterval;
@@ -310,11 +277,9 @@ public class StateContext {
 
   /**
    * Sets the replica heartbeat interval.
-   *
-   * @param interval
-   *   The replica heartbeat interval.
-   * @return
-   *   The state context.
+   * 
+   * @param interval The replica heartbeat interval.
+   * @return The state context.
    */
   public StateContext heartbeatInterval(long interval) {
     heartbeatInterval = interval;
@@ -323,9 +288,8 @@ public class StateContext {
 
   /**
    * Returns a boolean indicating whether adaptive timeouts are enabled.
-   *
-   * @return
-   *   Indicates whether adaptive timeouts are enabled.
+   * 
+   * @return Indicates whether adaptive timeouts are enabled.
    */
   public boolean useAdaptiveTimeouts() {
     return useAdaptiveTimeouts;
@@ -333,11 +297,9 @@ public class StateContext {
 
   /**
    * Indicates whether the replica should use adaptive timeouts.
-   *
-   * @param useAdaptive
-   *   Indicates whether to use adaptive timeouts.
-   * @return
-   *   The state context.
+   * 
+   * @param useAdaptive Indicates whether to use adaptive timeouts.
+   * @return The state context.
    */
   public StateContext useAdaptiveTimeouts(boolean useAdaptive) {
     useAdaptiveTimeouts = useAdaptive;
@@ -346,9 +308,8 @@ public class StateContext {
 
   /**
    * Returns the adaptive timeout threshold.
-   *
-   * @return
-   *   The adaptive timeout threshold.
+   * 
+   * @return The adaptive timeout threshold.
    */
   public double adaptiveTimeoutThreshold() {
     return adaptiveTimeoutThreshold;
@@ -356,11 +317,9 @@ public class StateContext {
 
   /**
    * Sets the adaptive timeout threshold.
-   *
-   * @param threshold
-   *   The adaptive timeout threshold.
-   * @return
-   *   The state context.
+   * 
+   * @param threshold The adaptive timeout threshold.
+   * @return The state context.
    */
   public StateContext adaptiveTimeoutThreshold(double threshold) {
     adaptiveTimeoutThreshold = threshold;
@@ -368,11 +327,11 @@ public class StateContext {
   }
 
   /**
-   * Returns a boolean indicating whether majority replication is required
-   * for write operations.
-   *
-   * @return
-   *   Indicates whether majority replication is required for write operations.
+   * Returns a boolean indicating whether majority replication is required for
+   * write operations.
+   * 
+   * @return Indicates whether majority replication is required for write
+   *         operations.
    */
   public boolean requireWriteMajority() {
     return requireWriteMajority;
@@ -380,11 +339,10 @@ public class StateContext {
 
   /**
    * Sets whether majority replication is required for write operations.
-   *
-   * @param require
-   *   Indicates whether majority replication should be required for writes.
-   * @return
-   *   The state context.
+   * 
+   * @param require Indicates whether majority replication should be required
+   *          for writes.
+   * @return The state context.
    */
   public StateContext requireWriteMajority(boolean require) {
     requireWriteMajority = require;
@@ -394,9 +352,9 @@ public class StateContext {
   /**
    * Returns a boolean indicating whether majority synchronization is required
    * for read operations.
-   *
-   * @return
-   *   Indicates whether majority synchronization is required for read operations.
+   * 
+   * @return Indicates whether majority synchronization is required for read
+   *         operations.
    */
   public boolean requireReadMajority() {
     return requireReadMajority;
@@ -404,11 +362,10 @@ public class StateContext {
 
   /**
    * Sets whether majority synchronization is required for read operations.
-   *
-   * @param require
-   *   Indicates whether majority synchronization should be required for read operations.
-   * @return
-   *   The state context.
+   * 
+   * @param require Indicates whether majority synchronization should be
+   *          required for read operations.
+   * @return The state context.
    */
   public StateContext requireReadMajority(boolean require) {
     requireReadMajority = require;
@@ -417,9 +374,8 @@ public class StateContext {
 
   /**
    * Returns the current leader.
-   *
-   * @return
-   *   The current leader.
+   * 
+   * @return The current leader.
    */
   public String currentLeader() {
     return currentLeader;
@@ -427,11 +383,9 @@ public class StateContext {
 
   /**
    * Sets the current leader.
-   *
-   * @param address
-   *   The current leader.
-   * @return
-   *   The state context.
+   * 
+   * @param address The current leader.
+   * @return The state context.
    */
   public StateContext currentLeader(String address) {
     currentLeader = address;
@@ -444,9 +398,8 @@ public class StateContext {
 
   /**
    * Returns the current term.
-   *
-   * @return
-   *   The current term.
+   * 
+   * @return The current term.
    */
   public long currentTerm() {
     return currentTerm;
@@ -454,11 +407,9 @@ public class StateContext {
 
   /**
    * Sets the current term.
-   *
-   * @param term
-   *   The current term.
-   * @return
-   *   The state context.
+   * 
+   * @param term The current term.
+   * @return The state context.
    */
   public StateContext currentTerm(long term) {
     currentTerm = term;
@@ -468,9 +419,8 @@ public class StateContext {
 
   /**
    * Returns the address of the member last voted for.
-   *
-   * @return
-   *   The address of the member last voted for.
+   * 
+   * @return The address of the member last voted for.
    */
   public String votedFor() {
     return votedFor;
@@ -478,11 +428,9 @@ public class StateContext {
 
   /**
    * Sets the address of the member last voted for.
-   *
-   * @param address
-   *   The address of the member last voted for.
-   * @return
-   *   The state context.
+   * 
+   * @param address The address of the member last voted for.
+   * @return The state context.
    */
   public StateContext votedFor(String address) {
     votedFor = address;
@@ -491,9 +439,8 @@ public class StateContext {
 
   /**
    * Returns the current commit index.
-   *
-   * @return
-   *   The current commit index.
+   * 
+   * @return The current commit index.
    */
   public long commitIndex() {
     return commitIndex;
@@ -501,11 +448,9 @@ public class StateContext {
 
   /**
    * Sets the current commit index.
-   *
-   * @param index
-   *   The current commit index.
-   * @return
-   *   The state context.
+   * 
+   * @param index The current commit index.
+   * @return The state context.
    */
   public StateContext commitIndex(long index) {
     commitIndex = index;
@@ -514,9 +459,8 @@ public class StateContext {
 
   /**
    * Returns the last index applied to the state machine.
-   *
-   * @return
-   *   The last index applied to the state machine.
+   * 
+   * @return The last index applied to the state machine.
    */
   public long lastApplied() {
     return lastApplied;
@@ -524,11 +468,9 @@ public class StateContext {
 
   /**
    * Sets the last index applied to the state machine.
-   *
-   * @param index
-   *   The last index applied to the state machine.
-   * @return
-   *   The state context.
+   * 
+   * @param index The last index applied to the state machine.
+   * @return The state context.
    */
   public StateContext lastApplied(long index) {
     lastApplied = index;

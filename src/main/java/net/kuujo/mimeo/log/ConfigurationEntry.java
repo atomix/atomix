@@ -19,7 +19,7 @@ import java.util.Set;
 
 /**
  * A special configuration log entry.
- *
+ * 
  * @author Jordan Halterman
  */
 public class ConfigurationEntry extends Entry {
@@ -36,9 +36,8 @@ public class ConfigurationEntry extends Entry {
 
   /**
    * Returns a set of updated cluster members.
-   *
-   * @return
-   *   A set of cluster member addresses.
+   * 
+   * @return A set of cluster member addresses.
    */
   public Set<String> members() {
     return members;

@@ -42,7 +42,7 @@ import net.kuujo.mimeo.state.StateType;
 
 /**
  * A default replication service implementation.
- *
+ * 
  * @author Jordan Halterman
  */
 public class RaftReplicationService implements ReplicationService {
@@ -57,6 +57,7 @@ public class RaftReplicationService implements ReplicationService {
   private static class CommandInfo {
     private final Command.Type type;
     private final Function<Command, JsonObject> function;
+
     private CommandInfo(Command.Type type, Function<Command, JsonObject> function) {
       this.type = type;
       this.function = function;
@@ -229,17 +230,18 @@ public class RaftReplicationService implements ReplicationService {
   public ReplicationService submitCommand(String command, JsonObject data, Handler<AsyncResult<JsonObject>> doneHandler) {
     final Future<JsonObject> future = new DefaultFutureResult<JsonObject>().setHandler(doneHandler);
     if (commands.containsKey(command)) {
-      endpoint.submit(context.currentLeader(), new SubmitRequest(new DefaultCommand(command, commands.get(command).type, data)), new Handler<AsyncResult<SubmitResponse>>() {
-        @Override
-        public void handle(AsyncResult<SubmitResponse> result) {
-          if (result.failed()) {
-            future.setFailure(result.cause());
-          }
-          else {
-            future.setResult(result.result().result());
-          }
-        }
-      });
+      endpoint.submit(context.currentLeader(), new SubmitRequest(new DefaultCommand(command, commands.get(command).type, data)),
+          new Handler<AsyncResult<SubmitResponse>>() {
+            @Override
+            public void handle(AsyncResult<SubmitResponse> result) {
+              if (result.failed()) {
+                future.setFailure(result.cause());
+              }
+              else {
+                future.setResult(result.result().result());
+              }
+            }
+          });
     }
     else {
       future.setFailure(new MimeoException("Invalid command."));

@@ -33,7 +33,7 @@ import net.kuujo.mimeo.serializer.Serializer;
 
 /**
  * A redis log.
- *
+ * 
  * @author Jordan Halterman
  */
 public class RedisLog implements Log {
@@ -50,15 +50,14 @@ public class RedisLog implements Log {
 
   @Override
   public void init(LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
-    
+
   }
 
   @Override
   public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(doneHandler);
-    final JsonObject message = new JsonObject()
-      .putString("command", "rpush")
-      .putArray("args", new JsonArray().add(key).add(serializer.serialize(entry)));
+    final JsonObject message = new JsonObject().putString("command", "rpush").putArray("args",
+        new JsonArray().add(key).add(serializer.serialize(entry)));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -80,9 +79,7 @@ public class RedisLog implements Log {
   @Override
   public Log containsEntry(final long index, Handler<AsyncResult<Boolean>> containsHandler) {
     final Future<Boolean> future = new DefaultFutureResult<Boolean>().setHandler(containsHandler);
-    final JsonObject message = new JsonObject()
-      .putString("command", "llen")
-      .putArray("args", new JsonArray().add(key));
+    final JsonObject message = new JsonObject().putString("command", "llen").putArray("args", new JsonArray().add(key));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -103,9 +100,7 @@ public class RedisLog implements Log {
   @Override
   public Log entry(long index, Handler<AsyncResult<Entry>> entryHandler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(entryHandler);
-    final JsonObject message = new JsonObject()
-      .putString("command", "lindex")
-      .putArray("args", new JsonArray().add(key).add(index));
+    final JsonObject message = new JsonObject().putString("command", "lindex").putArray("args", new JsonArray().add(key).add(index));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -192,9 +187,7 @@ public class RedisLog implements Log {
   @Override
   public Log lastIndex(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    final JsonObject message = new JsonObject()
-      .putString("command", "llen")
-      .putArray("args", new JsonArray().add(key));
+    final JsonObject message = new JsonObject().putString("command", "llen").putArray("args", new JsonArray().add(key));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -258,9 +251,8 @@ public class RedisLog implements Log {
   @Override
   public Log entries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
     final Future<List<Entry>> future = new DefaultFutureResult<List<Entry>>().setHandler(doneHandler);
-    final JsonObject message = new JsonObject()
-      .putString("command", "lrange")
-      .putArray("args", new JsonArray().add(key).add(start).add(end));
+    final JsonObject message = new JsonObject().putString("command", "lrange").putArray("args",
+        new JsonArray().add(key).add(start).add(end));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -291,9 +283,7 @@ public class RedisLog implements Log {
   @Override
   public Log removeEntry(final long index, Handler<AsyncResult<Entry>> doneHandler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(doneHandler);
-    JsonObject message = new JsonObject()
-      .putString("command", "lindex")
-      .putArray("args", new JsonArray().add(key).add(index));
+    JsonObject message = new JsonObject().putString("command", "lindex").putArray("args", new JsonArray().add(key).add(index));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -302,9 +292,7 @@ public class RedisLog implements Log {
         }
         else if (result.result().body().getString("status").equals("ok")) {
           final JsonObject value = result.result().body().getObject("value");
-          JsonObject message = new JsonObject()
-            .putString("command", "lset")
-            .putArray("args", new JsonArray().add(key).add(index).add(""));
+          JsonObject message = new JsonObject().putString("command", "lset").putArray("args", new JsonArray().add(key).add(index).add(""));
           vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
             @Override
             public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -336,9 +324,8 @@ public class RedisLog implements Log {
 
   private void setEmpty(final long index, final long total, final Future<Void> future) {
     if (index <= total) {
-      final JsonObject message = new JsonObject()
-        .putString("command", "lset")
-        .putArray("args", new JsonArray().add(key).add(index).add(""));
+      final JsonObject message = new JsonObject().putString("command", "lset")
+          .putArray("args", new JsonArray().add(key).add(index).add(""));
       vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
         @Override
         public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -346,7 +333,7 @@ public class RedisLog implements Log {
             future.setFailure(result.cause());
           }
           else if (result.result().body().getString("status").equals("ok")) {
-            setEmpty(index+1, total, future);
+            setEmpty(index + 1, total, future);
           }
           else {
             future.setFailure(new MimeoException(result.result().body().getString("message")));
@@ -362,9 +349,7 @@ public class RedisLog implements Log {
   @Override
   public Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-    final JsonObject message = new JsonObject()
-      .putString("command", "ltrim")
-      .putArray("args", new JsonArray().add(key).add(0).add(index));
+    final JsonObject message = new JsonObject().putString("command", "ltrim").putArray("args", new JsonArray().add(key).add(0).add(index));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {

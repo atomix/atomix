@@ -22,7 +22,7 @@ import org.vertx.java.core.Handler;
 
 /**
  * A state lock.
- *
+ * 
  * @author Jordan Halterman
  */
 public class StateLock {
@@ -31,9 +31,8 @@ public class StateLock {
 
   /**
    * Acquires the lock.
-   *
-   * @param handler
-   *   A handler to be called once the lock is acquired.
+   * 
+   * @param handler A handler to be called once the lock is acquired.
    */
   public void acquire(Handler<Void> handler) {
     if (!locked) {

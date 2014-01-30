@@ -130,15 +130,17 @@ public class Leader extends BaseState implements Observer {
    */
   private void clusterChanged(ClusterConfig config) {
     // Append the new configuration to a list of cluster configurations. The
-    // cluster configurations list makes up a combined list of nodes in the cluster
-    // during configuration changes. Once the new configuration has been committed
+    // cluster configurations list makes up a combined list of nodes in the
+    // cluster
+    // during configuration changes. Once the new configuration has been
+    // committed
     // the old configuration will be removed from the list.
     configs.add(config.getMembers());
 
     // With the list of cluster configurations, we can create a comprehensive
     // set of cluster members.
     Set<String> combinedMembers = new HashSet<>();
-    for (Set<String> membersSet : configs) { 
+    for (Set<String> membersSet : configs) {
       combinedMembers.addAll(membersSet);
     }
 
@@ -161,18 +163,19 @@ public class Leader extends BaseState implements Observer {
       }
     }
 
-    // Append a new configuration entry to the log. Each time a cluster configuration
-    // changes the *combined* configuration is appended to the log and replicated
+    // Append a new configuration entry to the log. Each time a cluster
+    // configuration
+    // changes the *combined* configuration is appended to the log and
+    // replicated
     // to other nodes. Once each configuration is replicated and committed, the
     // old configuration will be removed and a new combined configuration will
     // be created.
-    log.appendEntry(new ConfigurationEntry(context.currentTerm(), combinedMembers),
-        new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            context.lastApplied(result.result());
-          }
-        });
+    log.appendEntry(new ConfigurationEntry(context.currentTerm(), combinedMembers), new Handler<AsyncResult<Long>>() {
+      @Override
+      public void handle(AsyncResult<Long> result) {
+        context.lastApplied(result.result());
+      }
+    });
   }
 
   /**
@@ -284,35 +287,33 @@ public class Leader extends BaseState implements Observer {
     // majority of the cluster prior to responding to the request.
     else {
       // Append a new command entry to the log.
-      log.appendEntry(
-          new CommandEntry(context.currentTerm(), request.command()),
-          new Handler<AsyncResult<Long>>() {
-            @Override
-            public void handle(AsyncResult<Long> result) {
-              if (result.failed()) {
-                request.error(result.cause());
-              }
-              else {
-                // Replicate the log entry to a majority of the cluster.
-                final long index = result.result();
-                if (context.requireWriteMajority()) {
-                  writeMajority(index, new Handler<Void>() {
-                    @Override
-                    public void handle(Void arg0) {
-                      JsonObject result = stateMachine.applyCommand(request.command());
-                      context.lastApplied(index);
-                      request.reply(result);
-                    }
-                  });
-                }
-                else {
-                  JsonObject jsonResult = stateMachine.applyCommand(request.command());
+      log.appendEntry(new CommandEntry(context.currentTerm(), request.command()), new Handler<AsyncResult<Long>>() {
+        @Override
+        public void handle(AsyncResult<Long> result) {
+          if (result.failed()) {
+            request.error(result.cause());
+          }
+          else {
+            // Replicate the log entry to a majority of the cluster.
+            final long index = result.result();
+            if (context.requireWriteMajority()) {
+              writeMajority(index, new Handler<Void>() {
+                @Override
+                public void handle(Void arg0) {
+                  JsonObject result = stateMachine.applyCommand(request.command());
                   context.lastApplied(index);
-                  request.reply(jsonResult);
+                  request.reply(result);
                 }
-              }
+              });
             }
-          });
+            else {
+              JsonObject jsonResult = stateMachine.applyCommand(request.command());
+              context.lastApplied(index);
+              request.reply(jsonResult);
+            }
+          }
+        }
+      });
     }
   }
 
@@ -424,66 +425,63 @@ public class Leader extends BaseState implements Observer {
     // If there are new entries to be committed then process the entries.
     if (context.commitIndex() < commitIndex) {
       long prevCommitIndex = context.commitIndex();
-      log.entries(prevCommitIndex + 1, commitIndex,
-          new Handler<AsyncResult<List<Entry>>>() {
-            @Override
-            public void handle(AsyncResult<List<Entry>> result) {
-              if (result.succeeded()) {
-                // Iterate through entries to be committed. If any of the
-                // entries are
-                // configuration entries then remove the configuration which
-                // they replaced
-                // from the cluster configuration and update cluster membership.
-                for (Entry entry : result.result()) {
-                  if (entry.type().equals(Type.CONFIGURATION)) {
-                    // Remove the configuration from the list of configurations.
-                    if (!configs.isEmpty()) {
-                      configs.remove(0);
-                    }
+      log.entries(prevCommitIndex + 1, commitIndex, new Handler<AsyncResult<List<Entry>>>() {
+        @Override
+        public void handle(AsyncResult<List<Entry>> result) {
+          if (result.succeeded()) {
+            // Iterate through entries to be committed. If any of the
+            // entries are
+            // configuration entries then remove the configuration which
+            // they replaced
+            // from the cluster configuration and update cluster membership.
+            for (Entry entry : result.result()) {
+              if (entry.type().equals(Type.CONFIGURATION)) {
+                // Remove the configuration from the list of configurations.
+                if (!configs.isEmpty()) {
+                  configs.remove(0);
+                }
 
-                    // Create a new combined set of cluster members.
-                    Set<String> combinedMembers = new HashSet<>();
-                    for (Set<String> membersSet : configs) {
-                      combinedMembers.addAll(membersSet);
-                    }
+                // Create a new combined set of cluster members.
+                Set<String> combinedMembers = new HashSet<>();
+                for (Set<String> membersSet : configs) {
+                  combinedMembers.addAll(membersSet);
+                }
 
-                    // Recreate the members set.
-                    members = new HashSet<>();
-                    for (String address : combinedMembers) {
-                      if (!address.equals(context.address())) {
-                        members.add(address);
-                      }
-                    }
-
-                    // Iterate through replicas and remove any replicas that
-                    // were removed from the cluster.
-                    Iterator<Replica> iterator = replicas.iterator();
-                    while (iterator.hasNext()) {
-                      Replica replica = iterator.next();
-                      if (!members.contains(replica.address)) {
-                        replica.syncing = false;
-                        iterator.remove();
-                        replicaMap.remove(replica.address);
-                      }
-                    }
+                // Recreate the members set.
+                members = new HashSet<>();
+                for (String address : combinedMembers) {
+                  if (!address.equals(context.address())) {
+                    members.add(address);
                   }
                 }
 
-                // Finally, set the new commit index. This will be sent to
-                // replicas to
-                // instruct them to apply the entries to their state machines.
-                context.commitIndex(commitIndex);
-                log.floor(
-                    Math.min(context.commitIndex(), context.lastApplied()),
-                    new Handler<AsyncResult<Void>>() {
-                      @Override
-                      public void handle(AsyncResult<Void> result) {
-
-                      }
-                    });
+                // Iterate through replicas and remove any replicas that
+                // were removed from the cluster.
+                Iterator<Replica> iterator = replicas.iterator();
+                while (iterator.hasNext()) {
+                  Replica replica = iterator.next();
+                  if (!members.contains(replica.address)) {
+                    replica.syncing = false;
+                    iterator.remove();
+                    replicaMap.remove(replica.address);
+                  }
+                }
               }
             }
-          });
+
+            // Finally, set the new commit index. This will be sent to
+            // replicas to
+            // instruct them to apply the entries to their state machines.
+            context.commitIndex(commitIndex);
+            log.floor(Math.min(context.commitIndex(), context.lastApplied()), new Handler<AsyncResult<Void>>() {
+              @Override
+              public void handle(AsyncResult<Void> result) {
+
+              }
+            });
+          }
+        }
+      });
     }
   }
 
@@ -547,11 +545,11 @@ public class Leader extends BaseState implements Observer {
      */
     private void ping() {
       final long startTime = System.currentTimeMillis();
-      endpoint.ping(address,
+      endpoint.ping(
+          address,
           new PingRequest(context.currentTerm(), context.address()),
-          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold())
-              : context.electionTimeout() / 2 : context.electionTimeout() / 2,
-          new Handler<AsyncResult<PingResponse>>() {
+          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold()) : context
+              .electionTimeout() / 2 : context.electionTimeout() / 2, new Handler<AsyncResult<PingResponse>>() {
             @Override
             public void handle(AsyncResult<PingResponse> result) {
               // If the replica returned a newer term then step down.
@@ -572,11 +570,11 @@ public class Leader extends BaseState implements Observer {
      */
     private void ping(final Handler<Void> doneHandler) {
       final long startTime = System.currentTimeMillis();
-      endpoint.ping(address,
+      endpoint.ping(
+          address,
           new PingRequest(context.currentTerm(), context.address()),
-          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold())
-              : context.electionTimeout() / 2 : context.electionTimeout() / 2,
-          new Handler<AsyncResult<PingResponse>>() {
+          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold()) : context
+              .electionTimeout() / 2 : context.electionTimeout() / 2, new Handler<AsyncResult<PingResponse>>() {
             @Override
             public void handle(AsyncResult<PingResponse> result) {
               // If the replica returned a newer term then step down.
@@ -635,32 +633,28 @@ public class Leader extends BaseState implements Observer {
                   if (result.succeeded()) {
                     final Entry entry = result.result();
                     if (logger.isDebugEnabled()) {
-                      logger.debug(Leader.this.context.address()
-                          + " replicating " + result.result().type().getName()
-                          + " entry " + nextIndex + " to " + address);
+                      logger.debug(Leader.this.context.address() + " replicating " + result.result().type().getName() + " entry "
+                          + nextIndex + " to " + address);
                     }
 
                     // If a previous log index exists then load the previous
                     // entry and
                     // extract its metadata.
                     if (nextIndex - 1 >= 0) {
-                      log.entry(nextIndex - 1,
-                          new Handler<AsyncResult<Entry>>() {
-                            @Override
-                            public void handle(AsyncResult<Entry> result) {
-                              if (result.succeeded()) {
-                                final long lastLogTerm = result.result().term();
-                                doSync(index, entry, nextIndex - 1,
-                                    lastLogTerm, context.commitIndex());
-                              }
-                            }
-                          });
+                      log.entry(nextIndex - 1, new Handler<AsyncResult<Entry>>() {
+                        @Override
+                        public void handle(AsyncResult<Entry> result) {
+                          if (result.succeeded()) {
+                            final long lastLogTerm = result.result().term();
+                            doSync(index, entry, nextIndex - 1, lastLogTerm, context.commitIndex());
+                          }
+                        }
+                      });
                     }
                     // If no previous log entry exists then previous log entry
                     // and term are -1.
                     else {
-                      doSync(index, entry, nextIndex - 1, -1,
-                          context.commitIndex());
+                      doSync(index, entry, nextIndex - 1, -1, context.commitIndex());
                     }
                   }
                 }
@@ -674,15 +668,13 @@ public class Leader extends BaseState implements Observer {
     /**
      * Synchronizes a single entry to the replica.
      */
-    private void doSync(final long index, Entry entry, long prevLogIndex,
-        long prevLogTerm, long commitIndex) {
+    private void doSync(final long index, Entry entry, long prevLogIndex, long prevLogTerm, long commitIndex) {
       final long startTime = System.currentTimeMillis();
-      endpoint.sync(address,
-          new SyncRequest(context.currentTerm(), context.address(),
-              prevLogIndex, prevLogTerm, entry, commitIndex),
-              context.useAdaptiveTimeouts() ? lastSyncTime > 0 ? Math.round(lastSyncTime * context.adaptiveTimeoutThreshold())
-                  : context.electionTimeout() / 2 : context.electionTimeout() / 2,
-          new Handler<AsyncResult<SyncResponse>>() {
+      endpoint.sync(
+          address,
+          new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entry, commitIndex),
+          context.useAdaptiveTimeouts() ? lastSyncTime > 0 ? Math.round(lastSyncTime * context.adaptiveTimeoutThreshold()) : context
+              .electionTimeout() / 2 : context.electionTimeout() / 2, new Handler<AsyncResult<SyncResponse>>() {
             @Override
             public void handle(AsyncResult<SyncResponse> result) {
               // If the request failed then wait to retry.
@@ -737,8 +729,7 @@ public class Leader extends BaseState implements Observer {
 
     @Override
     public boolean equals(Object other) {
-      return other instanceof Replica
-          && ((Replica) other).address.equals(address);
+      return other instanceof Replica && ((Replica) other).address.equals(address);
     }
 
     @Override

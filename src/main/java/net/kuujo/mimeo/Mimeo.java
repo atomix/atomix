@@ -23,7 +23,7 @@ import org.vertx.java.platform.Verticle;
 
 /**
  * Core Mimeo API.
- *
+ * 
  * @author Jordan Halterman
  */
 public class Mimeo {
@@ -35,11 +35,9 @@ public class Mimeo {
 
   /**
    * Creates a mimeo replica.
-   *
-   * @param address
-   *   The replica address.
-   * @return
-   *   A new replica instance.
+   * 
+   * @param address The replica address.
+   * @return A new replica instance.
    */
   public Replica createReplica(String address) {
     return new RaftReplica(address, vertx);
@@ -47,13 +45,10 @@ public class Mimeo {
 
   /**
    * Creates a mimeo replica.
-   *
-   * @param address
-   *   The replica address.
-   * @param log
-   *   A replica log.
-   * @return
-   *   A new replica instance.
+   * 
+   * @param address The replica address.
+   * @param log A replica log.
+   * @return A new replica instance.
    */
   public Replica createReplica(String address, Log log) {
     return new RaftReplica(address, vertx, log);
@@ -61,11 +56,9 @@ public class Mimeo {
 
   /**
    * Creates a mimeo replica.
-   *
-   * @param address
-   *   The replica address.
-   * @return
-   *   A new replica instance.
+   * 
+   * @param address The replica address.
+   * @return A new replica instance.
    */
   public Replica createReplica(String address, String cluster) {
     return new RaftReplica(address, cluster, vertx);
@@ -73,13 +66,10 @@ public class Mimeo {
 
   /**
    * Creates a mimeo replica.
-   *
-   * @param address
-   *   The replica address.
-   * @param log
-   *   A replica log.
-   * @return
-   *   A new replica instance.
+   * 
+   * @param address The replica address.
+   * @param log A replica log.
+   * @return A new replica instance.
    */
   public Replica createReplica(String address, String cluster, Log log) {
     return new RaftReplica(address, cluster, vertx, log);

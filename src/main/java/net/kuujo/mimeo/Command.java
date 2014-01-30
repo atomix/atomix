@@ -26,30 +26,22 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * A state machine command.
- *
+ * 
  * @author Jordan Halterman
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(
-  creatorVisibility=JsonAutoDetect.Visibility.NONE,
-  fieldVisibility=JsonAutoDetect.Visibility.ANY,
-  getterVisibility=JsonAutoDetect.Visibility.NONE,
-  isGetterVisibility=JsonAutoDetect.Visibility.NONE,
-  setterVisibility=JsonAutoDetect.Visibility.NONE
-)
-@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, property="class", defaultImpl=DefaultCommand.class)
+@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
+@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class", defaultImpl = DefaultCommand.class)
 public interface Command {
 
   /**
    * A command type.
-   *
+   * 
    * @author Jordan Halterman
    */
   public static enum Type {
-    READ("read", true, false),
-    WRITE("write", false, true),
-    READ_WRITE("read-write", true, true);
+    READ("read", true, false), WRITE("write", false, true), READ_WRITE("read-write", true, true);
 
     private final String name;
     private final boolean read;
@@ -63,7 +55,7 @@ public interface Command {
 
     /**
      * Returns a string representation of the command type for serialization.
-     *
+     * 
      * @return a string representation of the command type.
      */
     public String getName() {
@@ -72,9 +64,8 @@ public interface Command {
 
     /**
      * Returns a boolean indicating whether the command type is read-only.
-     *
-     * @return
-     *   Indicates whether the command type is read-only.
+     * 
+     * @return Indicates whether the command type is read-only.
      */
     public boolean isReadOnly() {
       return read && !write;
@@ -82,9 +73,8 @@ public interface Command {
 
     /**
      * Returns a boolean indicating whether the command type is write-only.
-     *
-     * @return
-     *   Indicates whether the command type is write-only.
+     * 
+     * @return Indicates whether the command type is write-only.
      */
     public boolean isWriteOnly() {
       return write && !read;
@@ -98,33 +88,29 @@ public interface Command {
 
   /**
    * Returns the command ID.
-   *
-   * @return
-   *   The command ID.
+   * 
+   * @return The command ID.
    */
   public String id();
 
   /**
    * Returns the command type.
-   *
-   * @return
-   *   The command type.
+   * 
+   * @return The command type.
    */
   public Command.Type type();
 
   /**
    * Returns the command name.
-   *
-   * @return
-   *   The command name.
+   * 
+   * @return The command name.
    */
   public String command();
 
   /**
    * Returns the command data.
-   *
-   * @return
-   *   The command data.
+   * 
+   * @return The command data.
    */
   public JsonObject data();
 

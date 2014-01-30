@@ -17,10 +17,9 @@ package net.kuujo.mimeo.log;
 
 import net.kuujo.mimeo.Command;
 
-
 /**
  * A state machine command entry.
- *
+ * 
  * @author Jordan Halterman
  */
 public class CommandEntry extends Entry {
@@ -37,9 +36,8 @@ public class CommandEntry extends Entry {
 
   /**
    * Returns the state machine command.
-   *
-   * @return
-   *   The state machine command.
+   * 
+   * @return The state machine command.
    */
   public Command command() {
     return command;

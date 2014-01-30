@@ -24,7 +24,7 @@ import org.vertx.java.core.Handler;
 
 /**
  * A start state.
- *
+ * 
  * @author Jordan Halterman
  */
 public class Start extends BaseState {

@@ -23,7 +23,7 @@ import net.kuujo.mimeo.cluster.config.ClusterConfig;
 
 /**
  * A dynamic cluster configuration.
- *
+ * 
  * @author Jordan Halterman
  */
 public class DynamicClusterConfig extends ClusterConfig {

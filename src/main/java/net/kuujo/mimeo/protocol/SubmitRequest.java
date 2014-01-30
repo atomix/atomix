@@ -23,7 +23,7 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A submit request.
- *
+ * 
  * @author Jordan Halterman
  */
 public class SubmitRequest extends Request {

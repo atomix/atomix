@@ -68,11 +68,9 @@ public interface State {
 
   /**
    * Sets the cluster configuration.
-   *
-   * @param cluster
-   *   The cluster configuration.
-   * @return
-   *   The state instance.
+   * 
+   * @param cluster The cluster configuration.
+   * @return The state instance.
    */
   State setConfig(ClusterConfig cluster);
 

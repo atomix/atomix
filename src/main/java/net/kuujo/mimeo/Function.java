@@ -17,9 +17,9 @@ package net.kuujo.mimeo;
 
 /**
  * A state machine function.
- *
+ * 
  * @author Jordan Halterman
- *
+ * 
  * @param <T> The input argument type.
  * @param <U> The output argument type.
  */
@@ -27,11 +27,9 @@ public interface Function<T, U> {
 
   /**
    * Calls the function.
-   *
-   * @param arg
-   *   The function argument.
-   * @return
-   *   The function return value.
+   * 
+   * @param arg The function argument.
+   * @return The function return value.
    */
   U call(T arg);
 
