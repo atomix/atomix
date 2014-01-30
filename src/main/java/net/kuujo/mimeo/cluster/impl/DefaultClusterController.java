@@ -39,6 +39,7 @@ import org.vertx.java.core.json.JsonObject;
  * @author Jordan Halterman
  */
 public class DefaultClusterController implements ClusterController {
+  private static final long MINIMUM_RESPONSE_TIME = 100;
   private String cluster;
   private String address;
   private final String internalAddress = UUID.randomUUID().toString();
@@ -107,13 +108,18 @@ public class DefaultClusterController implements ClusterController {
 
   public DefaultClusterController(String address, String cluster, Vertx vertx) {
     this.address = address;
+    config.addMember(address);
     this.cluster = cluster;
     this.vertx = vertx;
   }
 
   @Override
   public ClusterController setLocalAddress(String address) {
+    if (this.address != null) {
+      config.removeMember(this.address);
+    }
     this.address = address;
+    config.addMember(address);
     return this;
   }
 
@@ -156,13 +162,17 @@ public class DefaultClusterController implements ClusterController {
 
   @Override
   public ClusterController addMember(String address) {
-    config.addMember(address);
+    if (!config.containsMember(address)) {
+      config.addMember(address);
+    }
     return this;
   }
 
   @Override
   public ClusterController removeMember(String address) {
-    config.removeMember(address);
+    if (config.containsMember(address)) {
+      config.removeMember(address);
+    }
     return this;
   }
 
@@ -224,12 +234,20 @@ public class DefaultClusterController implements ClusterController {
     for (Map.Entry<String, Long> entry : nodes.entrySet()) {
       final String address = entry.getKey();
       if (!timers.containsKey(address)) {
-        timers.put(address, vertx.setTimer(entry.getValue() * 4, new Handler<Long>() {
+        final long lastResponseTime = entry.getValue();
+        timers.put(address, vertx.setTimer(lastResponseTime < MINIMUM_RESPONSE_TIME ? MINIMUM_RESPONSE_TIME : lastResponseTime * 4, new Handler<Long>() {
           @Override
           public void handle(Long timerID) {
             nodes.remove(address);
             timers.remove(address);
-            config.removeMember(address);
+            if (config.containsMember(address)) {
+              try {
+                config.removeMember(address);
+              }
+              catch (IllegalStateException e) {
+                // Fail silently.
+              }
+            }
           }
         }));
       }
@@ -260,7 +278,14 @@ public class DefaultClusterController implements ClusterController {
       }
       else {
         nodes.put(address, System.currentTimeMillis() - lastBroadcastTime);
-        config.addMember(address);
+        if (!config.containsMember(address)) {
+          try {
+            config.addMember(address);
+          }
+          catch (IllegalStateException e) {
+            // Fail silently.
+          }
+        }
       }
     }
   }

@@ -57,7 +57,7 @@ public class DynamicClusterConfig extends ClusterConfig {
   }
 
   @Override
-  public boolean hasMember(String address) {
+  public boolean containsMember(String address) {
     return members.contains(address);
   }
 

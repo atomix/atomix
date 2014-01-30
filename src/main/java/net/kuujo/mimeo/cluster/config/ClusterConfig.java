@@ -63,7 +63,7 @@ public abstract class ClusterConfig extends Observable {
    * @return
    *   Indicates whether the cluster has a member.
    */
-  public abstract boolean hasMember(String address);
+  public abstract boolean containsMember(String address);
 
   /**
    * Removes a member from the cluster.

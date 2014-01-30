@@ -15,6 +15,7 @@
  */
 package net.kuujo.mimeo.state;
 
+import net.kuujo.mimeo.log.Entry;
 import net.kuujo.mimeo.protocol.PingRequest;
 import net.kuujo.mimeo.protocol.PollRequest;
 import net.kuujo.mimeo.protocol.PollResponse;
@@ -51,7 +52,7 @@ public class Candidate extends BaseState {
    * Resets the election timer.
    */
   private void resetTimer() {
-    electionTimer = vertx.setTimer(context.electionTimeout(), new Handler<Long>() {
+    electionTimer = vertx.setTimer(context.electionTimeout() - (context.electionTimeout() / 4) + (Math.round(Math.random() * (context.electionTimeout() / 2))), new Handler<Long>() {
       @Override
       public void handle(Long timerID) {
         // When the election times out, clear the previous majority vote
@@ -76,16 +77,19 @@ public class Candidate extends BaseState {
       majority.start(new Handler<String>() {
         @Override
         public void handle(final String address) {
+          // Load the last log index.
           log.lastIndex(new Handler<AsyncResult<Long>>() {
             @Override
             public void handle(AsyncResult<Long> result) {
               if (result.succeeded()) {
+                // Load the last log entry to get its term. We do this rather than
+                // calling lastTerm() because the last entry could have changed already.
                 final long lastIndex = result.result();
-                log.lastTerm(new Handler<AsyncResult<Long>>() {
+                log.entry(lastIndex, new Handler<AsyncResult<Entry>>() {
                   @Override
-                  public void handle(AsyncResult<Long> result) {
-                    if (result.succeeded()) {
-                      final long lastTerm = result.result();
+                  public void handle(AsyncResult<Entry> result) {
+                    if (result.succeeded() && result.result() != null) {
+                      final long lastTerm = result.result().term();
                       endpoint.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm), new Handler<AsyncResult<PollResponse>>() {
                         @Override
                         public void handle(AsyncResult<PollResponse> result) {

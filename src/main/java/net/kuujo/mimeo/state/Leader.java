@@ -268,16 +268,20 @@ public class Leader extends BaseState implements Observer {
     // the
     // state machine and return the result without replicating the log.
     if (request.command().type().isReadOnly()) {
-      readMajority(new Handler<Void>() {
-        @Override
-        public void handle(Void _) {
-          request.reply(stateMachine.applyCommand(request.command()));
-        }
-      });
+      if (context.requireReadMajority()) {
+        readMajority(new Handler<Void>() {
+          @Override
+          public void handle(Void _) {
+            request.reply(stateMachine.applyCommand(request.command()));
+          }
+        });
+      }
+      else {
+        request.reply(stateMachine.applyCommand(request.command()));
+      }
     }
     // Otherwise, for write commands the entry must be replicated on a
-    // majority
-    // of the cluster prior to responding to the request.
+    // majority of the cluster prior to responding to the request.
     else {
       // Append a new command entry to the log.
       log.appendEntry(
@@ -291,19 +295,79 @@ public class Leader extends BaseState implements Observer {
               else {
                 // Replicate the log entry to a majority of the cluster.
                 final long index = result.result();
-                writeMajority(index, new Handler<Void>() {
-                  @Override
-                  public void handle(Void arg0) {
-                    JsonObject result = stateMachine.applyCommand(request
-                        .command());
-                    context.lastApplied(index);
-                    request.reply(result);
-                  }
-                });
+                if (context.requireWriteMajority()) {
+                  writeMajority(index, new Handler<Void>() {
+                    @Override
+                    public void handle(Void arg0) {
+                      JsonObject result = stateMachine.applyCommand(request.command());
+                      context.lastApplied(index);
+                      request.reply(result);
+                    }
+                  });
+                }
+                else {
+                  JsonObject jsonResult = stateMachine.applyCommand(request.command());
+                  context.lastApplied(index);
+                  request.reply(jsonResult);
+                }
               }
             }
           });
     }
+  }
+
+  /**
+   * Replicates the index to a majority of the cluster.
+   */
+  private void writeMajority(final long index, final Handler<Void> doneHandler) {
+    final Majority majority = new Majority(members);
+    majorities.add(majority);
+    majority.start(new Handler<String>() {
+      @Override
+      public void handle(final String address) {
+        if (replicaMap.containsKey(address)) {
+          replicaMap.get(address).sync(index, new Handler<Void>() {
+            @Override
+            public void handle(Void _) {
+              majority.succeed(address);
+            }
+          });
+        }
+      }
+    }, new Handler<Boolean>() {
+      @Override
+      public void handle(Boolean succeeded) {
+        majorities.remove(majority);
+        doneHandler.handle((Void) null);
+      }
+    });
+  }
+
+  /**
+   * Pings a majority of the cluster.
+   */
+  private void readMajority(final Handler<Void> doneHandler) {
+    final Majority majority = new Majority(members);
+    majorities.add(majority);
+    majority.start(new Handler<String>() {
+      @Override
+      public void handle(final String address) {
+        if (replicaMap.containsKey(address)) {
+          replicaMap.get(address).ping(new Handler<Void>() {
+            @Override
+            public void handle(Void _) {
+              majority.succeed(address);
+            }
+          });
+        }
+      }
+    }, new Handler<Boolean>() {
+      @Override
+      public void handle(Boolean succeeded) {
+        majorities.remove(majority);
+        doneHandler.handle((Void) null);
+      }
+    });
   }
 
   @Override
@@ -424,60 +488,6 @@ public class Leader extends BaseState implements Observer {
   }
 
   /**
-   * Replicates the index to a majority of the cluster.
-   */
-  private void writeMajority(final long index, final Handler<Void> doneHandler) {
-    final Majority majority = new Majority(members);
-    majorities.add(majority);
-    majority.start(new Handler<String>() {
-      @Override
-      public void handle(final String address) {
-        if (replicaMap.containsKey(address)) {
-          replicaMap.get(address).sync(index, new Handler<Void>() {
-            @Override
-            public void handle(Void _) {
-              majority.succeed(address);
-            }
-          });
-        }
-      }
-    }, new Handler<Boolean>() {
-      @Override
-      public void handle(Boolean succeeded) {
-        majorities.remove(majority);
-        doneHandler.handle((Void) null);
-      }
-    });
-  }
-
-  /**
-   * Pings a majority of the cluster.
-   */
-  private void readMajority(final Handler<Void> doneHandler) {
-    final Majority majority = new Majority(members);
-    majorities.add(majority);
-    majority.start(new Handler<String>() {
-      @Override
-      public void handle(final String address) {
-        if (replicaMap.containsKey(address)) {
-          replicaMap.get(address).ping(new Handler<Void>() {
-            @Override
-            public void handle(Void _) {
-              majority.succeed(address);
-            }
-          });
-        }
-      }
-    }, new Handler<Boolean>() {
-      @Override
-      public void handle(Boolean succeeded) {
-        majorities.remove(majority);
-        doneHandler.handle((Void) null);
-      }
-    });
-  }
-
-  /**
    * A replica reference.
    */
   private class Replica {
@@ -539,7 +549,8 @@ public class Leader extends BaseState implements Observer {
       final long startTime = System.currentTimeMillis();
       endpoint.ping(address,
           new PingRequest(context.currentTerm(), context.address()),
-          lastPingTime > 0 ? lastPingTime * 4 : context.electionTimeout() / 2,
+          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold())
+              : context.electionTimeout() / 2 : context.electionTimeout() / 2,
           new Handler<AsyncResult<PingResponse>>() {
             @Override
             public void handle(AsyncResult<PingResponse> result) {
@@ -563,7 +574,8 @@ public class Leader extends BaseState implements Observer {
       final long startTime = System.currentTimeMillis();
       endpoint.ping(address,
           new PingRequest(context.currentTerm(), context.address()),
-          lastPingTime > 0 ? lastPingTime * 4 : context.electionTimeout() / 2,
+          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold())
+              : context.electionTimeout() / 2 : context.electionTimeout() / 2,
           new Handler<AsyncResult<PingResponse>>() {
             @Override
             public void handle(AsyncResult<PingResponse> result) {
@@ -668,7 +680,8 @@ public class Leader extends BaseState implements Observer {
       endpoint.sync(address,
           new SyncRequest(context.currentTerm(), context.address(),
               prevLogIndex, prevLogTerm, entry, commitIndex),
-          lastSyncTime > 0 ? lastSyncTime * 4 : context.electionTimeout() / 2,
+              context.useAdaptiveTimeouts() ? lastSyncTime > 0 ? Math.round(lastSyncTime * context.adaptiveTimeoutThreshold())
+                  : context.electionTimeout() / 2 : context.electionTimeout() / 2,
           new Handler<AsyncResult<SyncResponse>>() {
             @Override
             public void handle(AsyncResult<SyncResponse> result) {
