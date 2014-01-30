@@ -67,14 +67,14 @@ replica.service().registerCommand("get", Command.Type.READ, new Function<Command
 Note that when registering a state machine command we have to pass a `Command.Type` to
 the `registerCommand` method. The command type helps tell Vimeo how to handle the command.
 `READ` commands are not persisted in the log since they have no impact on the state
-of the state machine. On the other hand, `WRITE` and `READ_WRITE` commands **are** persisted
+of the state machine. On the other hand, `WRITE` and `READ_WRITE` commands *are* persisted
 in the log since they alter the state of the state machine. Thus, it is very important
 that command types be accurate.
 
 Let's register a `put` command for setting data in the key-value store.
 
-```
-replica.service().registerCommand("put", Command.Type.READ, new Function<Command, JsonObject>() {
+```java
+replica.service().registerCommand("put", Command.Type.WRITE, new Function<Command, JsonObject>() {
   public JsonObject call(Command command) {
     String key = command.data().getString("key");
     Object value = command.data().getValue("value");
@@ -86,8 +86,8 @@ replica.service().registerCommand("put", Command.Type.READ, new Function<Command
 
 And we can register a `del` command for good measure.
 
-```
-replica.service().registerCommand("del", Command.Type.READ, new Function<Command, JsonObject>() {
+```java
+replica.service().registerCommand("del", Command.Type.WRITE, new Function<Command, JsonObject>() {
   public JsonObject call(Command command) {
     String key = command.data().getString("key");
     if (store.containsKey(key)) {
@@ -200,10 +200,13 @@ public class MyVerticle extends Verticle {
     final Replica replica1 = createReplica("test.1", "test");
     replica1.start(new Handler<AsyncResult<Void>>() {
       public void handle(AsyncResult<Void> result) {
+
         if (result.succeeded()) {
-        final Replica replica2 = createReplica("test.2", "test");
+          final Replica replica2 = createReplica("test.2", "test");
+
           replica2.start(new Handler<AsyncResult<Void>>() {
-            public void handle(AsyncResult<Void> result) {
+            public void handle(AsyncResult<Void> result) {\
+
               if (result.succeeded()) {
                 final Replica replica3 = createReplica("test.3", "test");
                 replica3.start(new Handler<AsyncResult<Void>>() {
@@ -214,9 +217,11 @@ public class MyVerticle extends Verticle {
                   }
                 });
               }
+
             }
           });
         }
+
       }
     });
   }
@@ -270,7 +275,7 @@ public class MyVerticle extends Verticle {
     });
 
     // Register a put command.
-    replica.service().registerCommand("put", Command.Type.READ, new Function<Command, JsonObject>() {
+    replica.service().registerCommand("put", Command.Type.WRITE, new Function<Command, JsonObject>() {
       public JsonObject call(Command command) {
         String key = command.data().getString("key");
         Object value = command.data().getValue("value");
@@ -280,7 +285,7 @@ public class MyVerticle extends Verticle {
     });
 
     // Register a delete command.
-    replica.service().registerCommand("del", Command.Type.READ, new Function<Command, JsonObject>() {
+    replica.service().registerCommand("del", Command.Type.WRITE, new Function<Command, JsonObject>() {
       public JsonObject call(Command command) {
         String key = command.data().getString("key");
         if (store.containsKey(key)) {
