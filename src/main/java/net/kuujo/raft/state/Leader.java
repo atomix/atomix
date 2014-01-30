@@ -40,17 +40,20 @@ import net.kuujo.raft.protocol.SyncResponse;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * A leader state.
- *
+ * 
  * @author Jordan Halterman
  */
-public class Leader extends State {
+public class Leader extends BaseState {
+  private static final Logger logger = LoggerFactory.getLogger(Leader.class);
   private final StateLock lock = new StateLock();
   private long pingTimer;
+  private final Set<Long> periodicTimers = new HashSet<>();
   private Set<String> members;
   private List<Replica> replicas;
   private Map<String, Replica> replicaMap = new HashMap<>();
@@ -83,32 +86,65 @@ public class Leader extends State {
       }
     });
 
-    // Commit a NOOP entry to the log.
-    lock.acquire(new Handler<Void>() {
+    // Immediately commit a NOOP entry to the log. If the commit fails
+    // then we periodically retry appending the entry until successful.
+    // The leader cannot start until this no-op entry has been
+    // successfully appended.
+    periodicRetry(100, new Handler<Handler<Boolean>>() {
       @Override
-      public void handle(Void _) {
-        log.appendEntry(new NoOpEntry(context.currentTerm()), new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            if (result.succeeded()) {
-              context.lastApplied(result.result());
-              lock.release();
+      public void handle(final Handler<Boolean> doneHandler) {
+        log.appendEntry(new NoOpEntry(context.currentTerm()),
+            new Handler<AsyncResult<Long>>() {
+              @Override
+              public void handle(AsyncResult<Long> result) {
+                if (result.succeeded()) {
+                  context.lastApplied(result.result());
 
-              // Immediately update all nodes.
-              for (Replica replica : replicas) {
-                replica.update();
+                  // Once the no-op entry has been appended, immediately update
+                  // all nodes.
+                  for (Replica replica : replicas) {
+                    replica.update();
+                  }
+                  doneHandler.handle(true);
+                }
+                else {
+                  doneHandler.handle(false);
+                }
               }
-              doneHandler.handle((Void) null);
-            }
-          }
-        });
+            });
       }
     });
   }
 
+  /**
+   * Periodically retries a handler.
+   */
+  private void periodicRetry(final long delay,
+      final Handler<Handler<Boolean>> handler) {
+    periodicTimers.add(vertx.setPeriodic(delay, new Handler<Long>() {
+      @Override
+      public void handle(final Long timerID) {
+        handler.handle(new Handler<Boolean>() {
+          @Override
+          public void handle(Boolean succeeded) {
+            if (succeeded) {
+              vertx.cancelTimer(timerID);
+              periodicTimers.remove(timerID);
+            }
+          }
+        });
+      }
+    }));
+  }
+
   @Override
   public void configure(final Set<String> members) {
-    // Store the new configuration and add any members to the current replica sets.
+    // Store the new configuration and add any members to the current replica
+    // sets.
+    // Note that we only *add* members and don't *remove* any members because
+    // removal of cluster members should *only* take place once the new
+    // configuration
+    // has been replicated and committed.
     for (String address : members) {
       if (!address.equals(context.address())) {
         this.members.add(address);
@@ -120,17 +156,15 @@ public class Leader extends State {
       }
     }
 
-    lock.acquire(new Handler<Void>() {
-      @Override
-      public void handle(Void _) {
-        log.appendEntry(new ConfigurationEntry(context.currentTerm(), members), new Handler<AsyncResult<Long>>() {
+    // Append a new configuration entry to the log. Once this configuration
+    // is replicated and committed, the old configuration will be removed.
+    log.appendEntry(new ConfigurationEntry(context.currentTerm(), members),
+        new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
             context.lastApplied(result.result());
           }
         });
-      }
-    });
   }
 
   @Override
@@ -144,259 +178,75 @@ public class Leader extends State {
 
   @Override
   public void sync(final SyncRequest request) {
-    lock.acquire(new Handler<Void>() {
-      @Override
-      public void handle(Void _) {
-        syncRequest(request, new Handler<AsyncResult<Boolean>>() {
-          @Override
-          public void handle(AsyncResult<Boolean> result) {
-            if (result.failed()) {
-              request.error(result.cause());
-            }
-            else {
-              request.reply(context.currentTerm(), result.result());
-            }
-            lock.release();
-          }
-        });
-      }
-    });
-  }
-
-  private void syncRequest(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.term() < context.currentTerm()) {
-      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
-    }
-    else {
-      checkTerm(request, doneHandler);
-    }
-  }
-
-  private void checkTerm(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.prevLogIndex() >= 0 && request.prevLogTerm() >= 0) {
-      checkPreviousLogEntry(request, doneHandler);
-    }
-    else {
-      checkEntry(request, doneHandler);
-    }
-  }
-
-  private void checkPreviousLogEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.containsEntry(request.prevLogIndex(), new Handler<AsyncResult<Boolean>>() {
-      @Override
-      public void handle(AsyncResult<Boolean> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        else if (!result.result()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
-        }
-        else {
-          log.entry(request.prevLogIndex(), new Handler<AsyncResult<Entry>>() {
+    // If a newer term was provided by the request then sync as normal
+    // and then step down as leader.
+    if (request.term() > context.currentTerm()) {
+      // Acquire a lock that prevents the local log from being modified
+      // during the sync.
+      lock.acquire(new Handler<Void>() {
+        @Override
+        public void handle(Void _) {
+          doSync(request, new Handler<AsyncResult<Boolean>>() {
             @Override
-            public void handle(AsyncResult<Entry> result) {
+            public void handle(AsyncResult<Boolean> result) {
+              // Once the new entries have been synchronized, step down.
+              context.currentLeader(request.leader());
+              context.currentTerm(request.term());
+              context.transition(StateType.FOLLOWER);
+
+              // Reply to the request.
               if (result.failed()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-              }
-              else if (result.result().term() != request.prevLogTerm()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
+                request.error(result.cause());
               }
               else {
-                checkEntry(request, doneHandler);
+                request.reply(context.currentTerm(), result.result());
               }
+
+              // Release the log lock.
+              lock.release();
             }
           });
-        }
-      }
-    });
-  }
-
-  private void checkEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.hasEntry()) {
-      log.containsEntry(request.prevLogIndex() + 1, new Handler<AsyncResult<Boolean>>() {
-        @Override
-        public void handle(AsyncResult<Boolean> result) {
-          if (result.failed()) {
-            new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-          }
-          else if (result.result()) {
-            log.entry(request.prevLogIndex() + 1, new Handler<AsyncResult<Entry>>() {
-              @Override
-              public void handle(AsyncResult<Entry> result) {
-                if (result.failed()) {
-                  new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-                }
-                else if (result.result().term() != request.entry().term()) {
-                  log.removeAfter(request.prevLogIndex(), new Handler<AsyncResult<Void>>() {
-                    @Override
-                    public void handle(AsyncResult<Void> result) {
-                      if (result.failed()) {
-                        new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-                      }
-                      else {
-                        appendEntry(request, doneHandler);
-                      }
-                    }
-                  });
-                }
-                else {
-                  updateCommits(request, doneHandler);
-                }
-              }
-            });
-          }
-          else {
-            appendEntry(request, doneHandler);
-          }
         }
       });
     }
+    // Otherwise, we must have received some sync request from a node
+    // that *thinks* it's the leader, but boy does it have another thing coming!
     else {
-      checkCommits(request, doneHandler);
-    }
-  }
-
-  private void appendEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.appendEntry(request.entry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        else {
-          updateCommits(request, doneHandler);
-        }
-      }      
-    });
-  }
-
-  private void checkCommits(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.commit() > context.commitIndex()) {
-      updateCommits(request, doneHandler);
-    }
-    else {
-      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
-      updateTerm(request);
-    }
-  }
-
-  private void updateCommits(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.lastIndex(new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        else {
-          final long lastIndex = result.result();
-          context.commitIndex(Math.min(request.commit(), lastIndex));
-          log.floor(Math.min(context.commitIndex(), context.lastApplied()), new Handler<AsyncResult<Void>>() {
-            @Override
-            public void handle(AsyncResult<Void> result) {
-              if (result.failed()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-              }
-              else {
-                recursiveApply(context.lastApplied()+1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
-              }
-            }
-          });
-        }
-      }
-    });
-  }
-
-  private void recursiveApply(final long index, final long ceiling, final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.entry(index, new Handler<AsyncResult<Entry>>() {
-      @Override
-      public void handle(AsyncResult<Entry> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
-          updateTerm(request);
-        }
-        else {
-          doApply(index, ceiling, request, result.result(), doneHandler);
-        }
-      }
-    });
-  }
-
-  private void doApply(final long index, final long ceiling, final SyncRequest request, final Entry entry, final Handler<AsyncResult<Boolean>> doneHandler) {
-    context.applyEntry(entry);
-    context.lastApplied(index);
-    log.floor(Math.min(context.commitIndex(), index), new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed() || index == ceiling) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
-          updateTerm(request);
-        }
-        else  {
-          recursiveApply(index+1, ceiling, request, doneHandler);
-        }
-      }
-    });
-  }
-
-  private void updateTerm(final SyncRequest request) {
-    if (request.term() > context.currentTerm()) {
-      context.currentLeader(request.leader());
-      context.currentTerm(request.term());
-      context.transition(StateType.FOLLOWER);
+      request.reply(context.currentTerm(), false);
     }
   }
 
   @Override
   public void poll(final PollRequest request) {
-    if (request.term() < context.currentTerm()) {
-      request.reply(context.currentTerm(), false);
-    }
-    else if (context.votedFor() == null || context.votedFor().equals(request.candidate())) {
-      log.lastIndex(new Handler<AsyncResult<Long>>() {
-        @Override
-        public void handle(AsyncResult<Long> result) {
-          if (result.failed()) {
-            request.error(result.cause());
-          }
-          else {
-            final long lastIndex = result.result();
-            log.lastTerm(new Handler<AsyncResult<Long>>() {
-              @Override
-              public void handle(AsyncResult<Long> result) {
-                if (result.failed()) {
-                  request.error(result.cause());
-                }
-                else {
-                  final long lastTerm = result.result();
-                  if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-                    request.reply(context.currentTerm(), true);
-                  }
-                  else {
-                    request.reply(context.currentTerm(), false);
-                  }
-                }
-              }
-            });
-          }
+    doPoll(request, new Handler<AsyncResult<Boolean>>() {
+      @Override
+      public void handle(AsyncResult<Boolean> result) {
+        if (result.failed()) {
+          request.error(result.cause());
         }
-      });
-    }
-    else {
-      request.reply(context.currentTerm(), false);
-    }
+        else {
+          request.reply(context.currentTerm(), result.result());
+        }
+      }
+    });
   }
 
   @Override
   public void submit(final SubmitRequest request) {
-    // If the state machine supports this command, apply the command to the state
+    // If the state machine supports this command, apply the command to the
+    // state
     // machine based on the command type.
     if (stateMachine.hasCommand(request.command().command())) {
-      Command.Type commandType = stateMachine.getCommandType(request.command().command());
-      // If this is a read command then we need to contact a majority of the cluster
+      Command.Type commandType = stateMachine.getCommandType(request.command()
+          .command());
+
+      // If this is a read command then we need to contact a majority of the
+      // cluster
       // to ensure that the information is not stale. Once we've determined that
-      // this node is the most up-to-date, we can simply apply the command to the
+      // this node is the most up-to-date, we can simply apply the command to
+      // the
       // state machine and return the result without replicating the log.
-      if (commandType.equals(Command.Type.READ)) {
+      if (commandType.isReadOnly()) {
         readMajority(new Handler<Void>() {
           @Override
           public void handle(Void _) {
@@ -404,29 +254,38 @@ public class Leader extends State {
           }
         });
       }
+      // Otherwise, for write commands the entry must be replicated on a
+      // majority
+      // of the cluster prior to responding to the request.
       else {
-        log.appendEntry(new CommandEntry(context.currentTerm(), request.command()), new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            if (result.failed()) {
-              request.error(result.cause());
-            }
-            else {
-              final long index = result.result();
-              writeMajority(index, new Handler<Void>() {
-                @Override
-                public void handle(Void arg0) {
-                  JsonObject result = stateMachine.applyCommand(request.command());
-                  context.lastApplied(index);
-                  request.reply(result);
+        // Append a new command entry to the log.
+        log.appendEntry(
+            new CommandEntry(context.currentTerm(), request.command()),
+            new Handler<AsyncResult<Long>>() {
+              @Override
+              public void handle(AsyncResult<Long> result) {
+                if (result.failed()) {
+                  request.error(result.cause());
                 }
-              });
-            }
-          }
-        });
+                else {
+                  // Replicate the log entry to a majority of the cluster.
+                  final long index = result.result();
+                  writeMajority(index, new Handler<Void>() {
+                    @Override
+                    public void handle(Void arg0) {
+                      JsonObject result = stateMachine.applyCommand(request
+                          .command());
+                      context.lastApplied(index);
+                      request.reply(result);
+                    }
+                  });
+                }
+              }
+            });
       }
     }
-    // If the state machine doesn't support the command then simply return an error.
+    // If the state machine doesn't support the command then simply return an
+    // error.
     else {
       request.error("Command unsupported.");
     }
@@ -434,64 +293,24 @@ public class Leader extends State {
 
   @Override
   public void shutDown(Handler<Void> doneHandler) {
+    // Cancel the ping timer.
     if (pingTimer > 0) {
       vertx.cancelTimer(pingTimer);
       pingTimer = 0;
     }
-    // Cancel all majority vote attempts.
+
+    // Cancel any periodic retry timers.
+    Iterator<Long> iterator = periodicTimers.iterator();
+    while (iterator.hasNext()) {
+      vertx.cancelTimer(iterator.next());
+      iterator.remove();
+    }
+
+    // Cancel all majority input attempts.
     for (Majority majority : majorities) {
       majority.cancel();
     }
     doneHandler.handle((Void) null);
-  }
-
-  private void updateCommitIndex(final long commitIndex) {
-    // If any configuration entries are being committed, update the cluster members.
-    if (context.commitIndex() < commitIndex) {
-      long prevCommitIndex = context.commitIndex();
-      log.entries(prevCommitIndex+1, commitIndex, new Handler<AsyncResult<List<Entry>>>() {
-        @Override
-        public void handle(AsyncResult<List<Entry>> result) {
-          if (result.succeeded()) {
-            for (Entry entry : result.result()) {
-              if (entry.type().equals(Type.CONFIGURATION)) {
-                // Remove the configuration from the list of configurations.
-                context.removeConfig();
-        
-                // Recreate the members set.
-                members = new HashSet<>();
-                for (String address : context.members()) {
-                  if (!address.equals(context.address())) {
-                    members.add(address);
-                  }
-                }
-        
-                // Iterate through replicas and remove any replicas that were removed from the cluster.
-                Iterator<Replica> iterator = replicas.iterator();
-                while (iterator.hasNext()) {
-                  Replica replica = iterator.next();
-                  if (!members.contains(replica.address)) {
-                    replica.updating = false;
-                    iterator.remove();
-                    replicaMap.remove(replica.address);
-                  }
-                }
-              }
-            }
-            
-            // Finally, set the new commit index. This will be sent to replicas to
-            // instruct them to apply the entries to their state machines.
-            context.commitIndex(commitIndex);
-            log.floor(Math.min(context.commitIndex(), context.lastApplied()), new Handler<AsyncResult<Void>>() {
-              @Override
-              public void handle(AsyncResult<Void> result) {
-                
-              }
-            });
-          }
-        }
-      });
-    }
   }
 
   /**
@@ -507,6 +326,75 @@ public class Leader extends State {
 
     int middle = (int) Math.ceil(replicas.size() / 2);
     updateCommitIndex(replicas.get(middle).matchIndex);
+  }
+
+  /**
+   * Updates the commit index and processes new commits.
+   * 
+   * When log entries are replicated on enough (a majority of) nodes to be
+   * committed, we need to check for configuration entries that have been
+   * committed. Configuration changes work using a two-phase approach where a
+   * combination of the old and new configurations are first entered into the
+   * log and replicated and, once committed, the previous configuration is
+   * removed.
+   */
+  private void updateCommitIndex(final long commitIndex) {
+    // If there are new entries to be committed then process the entries.
+    if (context.commitIndex() < commitIndex) {
+      long prevCommitIndex = context.commitIndex();
+      log.entries(prevCommitIndex + 1, commitIndex,
+          new Handler<AsyncResult<List<Entry>>>() {
+            @Override
+            public void handle(AsyncResult<List<Entry>> result) {
+              if (result.succeeded()) {
+                // Iterate through entries to be committed. If any of the
+                // entries are
+                // configuration entries then remove the configuration which
+                // they replaced
+                // from the cluster configuration and update cluster membership.
+                for (Entry entry : result.result()) {
+                  if (entry.type().equals(Type.CONFIGURATION)) {
+                    // Remove the configuration from the list of configurations.
+                    context.removeConfig();
+
+                    // Recreate the members set.
+                    members = new HashSet<>();
+                    for (String address : context.members()) {
+                      if (!address.equals(context.address())) {
+                        members.add(address);
+                      }
+                    }
+
+                    // Iterate through replicas and remove any replicas that
+                    // were removed from the cluster.
+                    Iterator<Replica> iterator = replicas.iterator();
+                    while (iterator.hasNext()) {
+                      Replica replica = iterator.next();
+                      if (!members.contains(replica.address)) {
+                        replica.syncing = false;
+                        iterator.remove();
+                        replicaMap.remove(replica.address);
+                      }
+                    }
+                  }
+                }
+
+                // Finally, set the new commit index. This will be sent to
+                // replicas to
+                // instruct them to apply the entries to their state machines.
+                context.commitIndex(commitIndex);
+                log.floor(
+                    Math.min(context.commitIndex(), context.lastApplied()),
+                    new Handler<AsyncResult<Void>>() {
+                      @Override
+                      public void handle(AsyncResult<Void> result) {
+
+                      }
+                    });
+              }
+            }
+          });
+    }
   }
 
   /**
@@ -563,229 +451,244 @@ public class Leader extends State {
     });
   }
 
+  /**
+   * A replica reference.
+   */
   private class Replica {
     private final String address;
     private Long nextIndex;
     private long matchIndex;
-    private boolean updating;
+    private boolean syncing;
     private Map<Long, Handler<Void>> updateHandlers = new HashMap<>();
+    private long lastPingTime;
+    private long lastSyncTime;
 
     private Replica(String address) {
       this.address = address;
     }
 
+    /**
+     * Sends an update to the replica.
+     */
     private void update() {
-      if (updating) {
-        return;
+      // Don't send an update if the replica is already being updated.
+      // Instead, simply ping the replica to prevent an election timeout.
+      // This helps ensure that we only attempt to sync any given replica
+      // once at a time.
+      if (syncing) {
+        ping();
       }
-      updating = true;
+      else {
+        syncing = true;
 
+        // Load the last log index.
+        log.lastIndex(new Handler<AsyncResult<Long>>() {
+          @Override
+          public void handle(AsyncResult<Long> result) {
+            if (result.succeeded()) {
+              // If the next index has not yet been set then initialize it
+              // to the last log index plus one.
+              if (nextIndex == null) {
+                nextIndex = result.result() + 1;
+              }
+              // If there are log entries to be replicated then sync the
+              // replica.
+              if (nextIndex <= result.result()) {
+                sync();
+              }
+              // Otherwise, ping the replica to prevent an election timeout.
+              else {
+                ping();
+              }
+            }
+          }
+        });
+      }
+    }
+
+    /**
+     * Pings the replica.
+     */
+    private void ping() {
+      final long startTime = System.currentTimeMillis();
+      endpoint.ping(address,
+          new PingRequest(context.currentTerm(), context.address()),
+          lastPingTime > 0 ? lastPingTime * 4 : context.electionTimeout() / 2,
+          new Handler<AsyncResult<PingResponse>>() {
+            @Override
+            public void handle(AsyncResult<PingResponse> result) {
+              // If the replica returned a newer term then step down.
+              if (result.succeeded()) {
+                if (result.result().term() > context.currentTerm()) {
+                  context.transition(StateType.FOLLOWER);
+                }
+                else {
+                  lastPingTime = System.currentTimeMillis() - startTime;
+                }
+              }
+            }
+          });
+    }
+
+    /**
+     * Pings the replica, calling a handler once the ping is complete.
+     */
+    private void ping(final Handler<Void> doneHandler) {
+      final long startTime = System.currentTimeMillis();
+      endpoint.ping(address,
+          new PingRequest(context.currentTerm(), context.address()),
+          lastPingTime > 0 ? lastPingTime * 4 : context.electionTimeout() / 2,
+          new Handler<AsyncResult<PingResponse>>() {
+            @Override
+            public void handle(AsyncResult<PingResponse> result) {
+              // If the replica returned a newer term then step down.
+              if (result.succeeded()) {
+                if (result.result().term() > context.currentTerm()) {
+                  context.transition(StateType.FOLLOWER);
+                }
+                else {
+                  lastPingTime = System.currentTimeMillis() - startTime;
+                  doneHandler.handle((Void) null);
+                }
+              }
+            }
+          });
+    }
+
+    /**
+     * Synchronizes all entries up to the given index.
+     */
+    private void sync(final long index, final Handler<Void> doneHandler) {
       log.lastIndex(new Handler<AsyncResult<Long>>() {
         @Override
         public void handle(AsyncResult<Long> result) {
           if (result.succeeded()) {
-            if (nextIndex == null) {
-              nextIndex =  result.result() + 1;
-            }
             if (nextIndex <= result.result()) {
+              updateHandlers.put(index, doneHandler);
               sync();
             }
             else {
-              ping();
+              doneHandler.handle((Void) null);
             }
           }
         }
       });
     }
 
-    private void ping() {
-      endpoint.ping(address, new PingRequest(context.currentTerm(), context.address()),
-      context.electionTimeout() / 2, new Handler<AsyncResult<PingResponse>>() {
-        @Override
-        public void handle(AsyncResult<PingResponse> result) {
-          // If the replica returned a newer term then step down.
-          if (result.succeeded() && result.result().term() > context.currentTerm()) {
-            context.transition(StateType.FOLLOWER);
-          }
-          updating = false;
-        }
-      });
-    }
-
-    private void ping(final Handler<Void> doneHandler) {
-      endpoint.ping(address, new PingRequest(context.currentTerm(), context.address()),
-      context.electionTimeout() / 2, new Handler<AsyncResult<PingResponse>>() {
-        @Override
-        public void handle(AsyncResult<PingResponse> result) {
-          // If the replica returned a newer term then step down.
-          if (result.succeeded() && result.result().term() > context.currentTerm()) {
-            context.transition(StateType.FOLLOWER);
-          }
-          doneHandler.handle((Void) null);
-        }
-      });
-    }
-
-    private void sync(final long index, final Handler<Void> doneHandler) {
-      lock.acquire(new Handler<Void>() {
-        @Override
-        public void handle(Void _) {
-          log.lastIndex(new Handler<AsyncResult<Long>>() {
-            @Override
-            public void handle(AsyncResult<Long> result) {
-              lock.release();
-              if (result.failed()) {
-                vertx.runOnContext(new Handler<Void>() {
-                  @Override
-                  public void handle(Void _) {
-                    sync(index, doneHandler);
-                  }
-                });
-              }
-              else if (nextIndex <= result.result()) {
-                updateHandlers.put(index, doneHandler);
-                sync();
-              }
-              else {
-                doneHandler.handle((Void) null);
-              }
-            }
-          });
-        }
-      });
-    }
-
+    /**
+     * Synchronizes all entries.
+     */
     private void sync() {
-      if (updating) {
-        lock.acquire(new Handler<Void>() {
+      // If the replica is already being synced then don't sync again in order
+      // to prevent creating log conflicts.
+      if (syncing) {
+        final long index = nextIndex;
+
+        // Get the last log entry index.
+        log.lastIndex(new Handler<AsyncResult<Long>>() {
           @Override
-          public void handle(Void _) {
-            final long index = nextIndex;
-            log.entry(nextIndex, new Handler<AsyncResult<Entry>>() {
-              @Override
-              public void handle(AsyncResult<Entry> result) {
-                if (result.succeeded()) {
-                  log.entry(nextIndex, new Handler<AsyncResult<Entry>>() {
-                    @Override
-                    public void handle(AsyncResult<Entry> result) {
-                      if (result.succeeded()) {
-                        System.out.println(Leader.this.context.address() + " replicating " + result.result().type().getName() + " entry " + nextIndex + " to " + address);
-                        final Entry entry = result.result();
-                        if (nextIndex-1 >= 0) {
-                          log.entry(nextIndex-1, new Handler<AsyncResult<Entry>>() {
+          public void handle(AsyncResult<Long> result) {
+            // The next index must be less than or equals to the last log index.
+            if (result.succeeded() && index <= result.result()) {
+              // Load the log entry.
+              log.entry(nextIndex, new Handler<AsyncResult<Entry>>() {
+                @Override
+                public void handle(AsyncResult<Entry> result) {
+                  if (result.succeeded()) {
+                    final Entry entry = result.result();
+                    if (logger.isDebugEnabled()) {
+                      logger.debug(Leader.this.context.address()
+                          + " replicating " + result.result().type().getName()
+                          + " entry " + nextIndex + " to " + address);
+                    }
+
+                    // If a previous log index exists then load the previous
+                    // entry and
+                    // extract its metadata.
+                    if (nextIndex - 1 >= 0) {
+                      log.entry(nextIndex - 1,
+                          new Handler<AsyncResult<Entry>>() {
                             @Override
                             public void handle(AsyncResult<Entry> result) {
-                              lock.release();
                               if (result.succeeded()) {
                                 final long lastLogTerm = result.result().term();
-                                endpoint.sync(address, new SyncRequest(context.currentTerm(), context.address(), nextIndex-1, (nextIndex - 1) >= 0 ? lastLogTerm : -1, entry, context.commitIndex()),
-                                    context.electionTimeout() / 2, new Handler<AsyncResult<SyncResponse>>() {
-                                  @Override
-                                  public void handle(AsyncResult<SyncResponse> result) {
-                                    // If the request failed then wait to retry.
-                                    if (result.failed()) {
-                                      updating = false;
-                                    }
-                                    // If the follower returned a higher term then step down.
-                                    else if (result.result().term() > context.currentTerm()) {
-                                      context.currentTerm(result.result().term());
-                                      context.transition(StateType.FOLLOWER);
-                                    }
-                                    // If the log entry failed, decrement next index and retry.
-                                    else if (!result.result().success()) {
-                                      if (nextIndex - 1 == -1) {
-                                        updating = false;System.out.println("YES");
-                                        context.transition(StateType.FOLLOWER);
-                                      }
-                                      else {
-                                        nextIndex--;
-                                        sync();
-                                      }
-                                    }
-                                    // If the log entry succeeded, continue to the next entry.
-                                    else {
-                                      nextIndex++;
-                                      matchIndex++;
-                                      if (updateHandlers.containsKey(index)) {
-                                        updateHandlers.remove(index).handle((Void) null);
-                                      }
-                                      checkCommits();
-                                      log.lastIndex(new Handler<AsyncResult<Long>>() {
-                                        @Override
-                                        public void handle(AsyncResult<Long> result) {
-                                          if (result.succeeded() && nextIndex <= result.result()) {
-                                            sync();
-                                          }
-                                          else {
-                                            updating = false;
-                                          }
-                                        }
-                                      });
-                                    }
-                                  }
-                                });
+                                doSync(index, entry, nextIndex - 1,
+                                    lastLogTerm, context.commitIndex());
                               }
                             }
                           });
-                        }
-                        else {
-                          lock.release();
-                          endpoint.sync(address, new SyncRequest(context.currentTerm(), context.address(), nextIndex-1, -1, entry, context.commitIndex()),
-                              context.electionTimeout() / 2, new Handler<AsyncResult<SyncResponse>>() {
-                            @Override
-                            public void handle(AsyncResult<SyncResponse> result) {
-                              // If the request failed then wait to retry.
-                              if (result.failed()) {
-                                updating = false;
-                              }
-                              // If the follower returned a higher term then step down.
-                              else if (result.result().term() > context.currentTerm()) {
-                                context.currentTerm(result.result().term());
-                                context.transition(StateType.FOLLOWER);
-                              }
-                              // If the log entry failed, decrement next index and retry.
-                              else if (!result.result().success()) {
-                                if (nextIndex - 1 == -1) {
-                                  updating = false;
-                                  context.transition(StateType.FOLLOWER);
-                                }
-                                else {
-                                  nextIndex--;
-                                  sync();
-                                }
-                              }
-                              // If the log entry succeeded, continue to the next entry.
-                              else {
-                                nextIndex++;
-                                matchIndex++;
-                                if (updateHandlers.containsKey(index)) {
-                                  updateHandlers.remove(index).handle((Void) null);
-                                }
-                                checkCommits();
-                                log.lastIndex(new Handler<AsyncResult<Long>>() {
-                                  @Override
-                                  public void handle(AsyncResult<Long> result) {
-                                    if (result.succeeded() && nextIndex <= result.result()) {
-                                      sync();
-                                    }
-                                    else {
-                                      updating = false;
-                                    }
-                                  }
-                                });
-                              }
-                            }
-                          });
-                        }
-                      }
                     }
-                  });
+                    // If no previous log entry exists then previous log entry
+                    // and term are -1.
+                    else {
+                      doSync(index, entry, nextIndex - 1, -1,
+                          context.commitIndex());
+                    }
+                  }
                 }
-              }
-            });
+              });
+            }
           }
         });
       }
+    }
+
+    /**
+     * Synchronizes a single entry to the replica.
+     */
+    private void doSync(final long index, Entry entry, long prevLogIndex,
+        long prevLogTerm, long commitIndex) {
+      final long startTime = System.currentTimeMillis();
+      endpoint.sync(address,
+          new SyncRequest(context.currentTerm(), context.address(),
+              prevLogIndex, prevLogTerm, entry, commitIndex),
+          lastSyncTime > 0 ? lastSyncTime * 4 : context.electionTimeout() / 2,
+          new Handler<AsyncResult<SyncResponse>>() {
+            @Override
+            public void handle(AsyncResult<SyncResponse> result) {
+              // If the request failed then wait to retry.
+              if (result.failed()) {
+                syncing = false;
+              }
+              // If the follower returned a higher term then step down.
+              else if (result.result().term() > context.currentTerm()) {
+                context.currentTerm(result.result().term());
+                context.transition(StateType.FOLLOWER);
+              }
+              // If the log entry failed, decrement next index and retry.
+              else if (!result.result().success()) {
+                if (nextIndex - 1 == -1) {
+                  syncing = false;
+                  context.transition(StateType.FOLLOWER);
+                }
+                else {
+                  nextIndex--;
+                  sync();
+                }
+              }
+              // If the log entry succeeded, continue to the next entry.
+              else {
+                nextIndex++;
+                matchIndex++;
+                if (updateHandlers.containsKey(index)) {
+                  updateHandlers.remove(index).handle((Void) null);
+                }
+                checkCommits();
+                log.lastIndex(new Handler<AsyncResult<Long>>() {
+                  @Override
+                  public void handle(AsyncResult<Long> result) {
+                    if (result.succeeded() && nextIndex <= result.result()) {
+                      sync();
+                    }
+                    else {
+                      syncing = false;
+                    }
+                  }
+                });
+              }
+              lastSyncTime = System.currentTimeMillis() - startTime;
+            }
+          });
     }
 
     @Override
@@ -795,7 +698,8 @@ public class Leader extends State {
 
     @Override
     public boolean equals(Object other) {
-      return other instanceof Replica && ((Replica) other).address.equals(address);
+      return other instanceof Replica
+          && ((Replica) other).address.equals(address);
     }
 
     @Override

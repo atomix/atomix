@@ -25,37 +25,43 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * A log entry.
- *
+ * 
  * @author Jordan Halterman
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
+@JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(
-  creatorVisibility=JsonAutoDetect.Visibility.NONE,
-  fieldVisibility=JsonAutoDetect.Visibility.ANY,
-  getterVisibility=JsonAutoDetect.Visibility.NONE,
-  isGetterVisibility=JsonAutoDetect.Visibility.NONE,
-  setterVisibility=JsonAutoDetect.Visibility.NONE
-)
-@JsonTypeInfo(use=JsonTypeInfo.Id.NAME, include=JsonTypeInfo.As.PROPERTY, property="type")
+@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
+@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
 @JsonSubTypes({
-  @JsonSubTypes.Type(value=NoOpEntry.class, name="no-op"),
-  @JsonSubTypes.Type(value=ConfigurationEntry.class, name="configuration"),
-  @JsonSubTypes.Type(value=CommandEntry.class, name="command")
-})
+    @JsonSubTypes.Type(value = NoOpEntry.class, name = "no-op"),
+    @JsonSubTypes.Type(value = ConfigurationEntry.class, name = "configuration"),
+    @JsonSubTypes.Type(value = CommandEntry.class, name = "command") })
 public abstract class Entry {
 
+  /**
+   * A log entry type.
+   * 
+   * @author Jordan Halterman
+   */
   public static enum Type {
-    NOOP("no-op"),
-    CONFIGURATION("configuration"),
-    COMMAND("command");
+    NOOP("no-op"), CONFIGURATION("configuration"), COMMAND("command");
 
     private final String name;
 
+    /**
+     * Constructor.
+     * 
+     * @param name The string name of the entry type.
+     */
     private Type(String name) {
       this.name = name;
     }
 
+    /**
+     * Returns the entry type name.
+     * 
+     * @return A string representation of the entry type.
+     */
     public String getName() {
       return name;
     }
@@ -65,6 +71,13 @@ public abstract class Entry {
       return getName();
     }
 
+    /**
+     * Parses an entry type name to an entry type.
+     *
+     * @param name a string representation of the entry type.
+     * @return an entry type.
+     * @throws IllegalArgumentException if the entry type name is invalid.
+     */
     public static Type parse(String name) {
       switch (name) {
         case "no-op":
@@ -82,13 +95,27 @@ public abstract class Entry {
   private Type type;
   private long term;
 
+  /**
+   * Constructor.
+   */
   protected Entry() {
   }
 
+  /**
+   * Constructor.
+   *
+   * @param type The entry type.
+   */
   protected Entry(Type type) {
     this.type = type;
   }
 
+  /**
+   * Constructor.
+   *
+   * @param type The entry type.
+   * @param term The entry term.
+   */
   protected Entry(Type type, long term) {
     this.type = type;
     this.term = term;
@@ -96,9 +123,8 @@ public abstract class Entry {
 
   /**
    * Returns the entry type.
-   *
-   * @return
-   *   The entry type.
+   * 
+   * @return The entry type.
    */
   public Type type() {
     return type;
@@ -116,9 +142,8 @@ public abstract class Entry {
 
   /**
    * Returns the log entry term.
-   *
-   * @return
-   *   The log entry term.
+   * 
+   * @return The log entry term.
    */
   public long term() {
     return term;

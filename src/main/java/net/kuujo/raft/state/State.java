@@ -30,135 +30,98 @@ import org.vertx.java.core.Vertx;
 
 /**
  * A node state.
- *
+ * 
  * @author Jordan Halterman
  */
-public abstract class State {
-  protected Vertx vertx;
-  protected ReplicationServiceEndpoint endpoint;
-  protected StateMachine stateMachine;
-  protected Log log;
-  protected StateContext context;
+public interface State {
 
   /**
    * Sets the vertx instance.
-   *
-   * @param vertx
-   *   A vertx instance.
-   * @return
-   *   The state instance.
+   * 
+   * @param vertx A vertx instance.
+   * @return The state instance.
    */
-  public State setVertx(Vertx vertx) {
-    this.vertx = vertx;
-    return this;
-  }
+  State setVertx(Vertx vertx);
 
   /**
    * Sets the endpoint.
-   *
-   * @param endpoint
-   *   An endpoint instance.
-   * @return
-   *   The state instance.
+   * 
+   * @param endpoint An endpoint instance.
+   * @return The state instance.
    */
-  public State setEndpoint(ReplicationServiceEndpoint endpoint) {
-    this.endpoint = endpoint;
-    return this;
-  }
+  State setEndpoint(ReplicationServiceEndpoint endpoint);
 
   /**
    * Sets the state machine.
-   *
-   * @param stateMachine
-   *   The state machine.
-   * @return
-   *   The state instance.
+   * 
+   * @param stateMachine The state machine.
+   * @return The state instance.
    */
-  public State setStateMachine(StateMachine stateMachine) {
-    this.stateMachine = stateMachine;
-    return this;
-  }
+  State setStateMachine(StateMachine stateMachine);
 
   /**
    * Sets the log.
-   *
-   * @param log
-   *   A log instance.
-   * @return
-   *   The state instance.
+   * 
+   * @param log A log instance.
+   * @return The state instance.
    */
-  public State setLog(Log log) {
-    this.log = log;
-    return this;
-  }
+  State setLog(Log log);
 
   /**
    * Sets the state context.
-   *
-   * @param context
-   *   A state context.
-   * @return
-   *   The state instance.
+   * 
+   * @param context A state context.
+   * @return The state instance.
    */
-  public State setContext(StateContext context) {
-    this.context = context;
-    return this;
-  }
+  State setContext(StateContext context);
 
   /**
    * Starts up the state.
-   *
-   * @param doneHandler
-   *   A handler to be called once the state is started up.
+   * 
+   * @param doneHandler A handler to be called once the state is started up.
    */
-  public abstract void startUp(Handler<Void> doneHandler);
+  void startUp(Handler<Void> doneHandler);
 
   /**
    * Updates the state configuration.
-   *
-   * @param members
-   *   A set of members in the cluster.
+   * 
+   * @param members A set of members in the cluster.
    */
-  public abstract void configure(Set<String> members);
+  void configure(Set<String> members);
 
   /**
    * Executes a ping request.
-   *
-   * @param request
-   *   The request to execute.
+   * 
+   * @param request The request to execute.
    */
-  public abstract void ping(PingRequest request);
+  void ping(PingRequest request);
 
   /**
    * Executes a sync request.
-   *
-   * @param request
-   *   The request to execute.
+   * 
+   * @param request The request to execute.
    */
-  public abstract void sync(SyncRequest request);
+  void sync(SyncRequest request);
 
   /**
    * Executes a poll request.
-   *
-   * @param request
-   *   The request to execute.
+   * 
+   * @param request The request to execute.
    */
-  public abstract void poll(PollRequest request);
+  void poll(PollRequest request);
 
   /**
    * Executes a submit command request.
-   *
-   * @param request
-   *   The request to execute.
+   * 
+   * @param request The request to execute.
    */
-  public abstract void submit(SubmitRequest request);
+  void submit(SubmitRequest request);
 
   /**
    * Tears down the state.
-   *
-   * @param doneHandler
-   *   A handler to be called once the state is shut down.
+   * 
+   * @param doneHandler A handler to be called once the state is shut down.
    */
-  public abstract void shutDown(Handler<Void> doneHandler);
+  void shutDown(Handler<Void> doneHandler);
 
 }

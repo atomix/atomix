@@ -17,7 +17,6 @@ package net.kuujo.raft.state;
 
 import java.util.Set;
 
-import net.kuujo.raft.log.Entry;
 import net.kuujo.raft.protocol.PingRequest;
 import net.kuujo.raft.protocol.PollRequest;
 import net.kuujo.raft.protocol.PollResponse;
@@ -26,14 +25,16 @@ import net.kuujo.raft.protocol.SyncRequest;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.logging.Logger;
+import org.vertx.java.core.logging.impl.LoggerFactory;
 
 /**
  * A candidate state.
  *
  * @author Jordan Halterman
  */
-public class Candidate extends State {
+public class Candidate extends BaseState {
+  private static final Logger logger = LoggerFactory.getLogger(Candidate.class);
   private final StateLock lock = new StateLock();
   private Majority majority;
   private long electionTimer;
@@ -42,24 +43,36 @@ public class Candidate extends State {
   public void startUp(Handler<Void> doneHandler) {
     // When the candidate is created, increment the current term.
     context.currentTerm(context.currentTerm() + 1);
+    logger.info("Starting election.");
+    resetTimer();
     pollMembers();
-    electionTimer = vertx.setTimer(context.electionTimeout(), new Handler<Long>() {
-      @Override
-      public void handle(Long timerID) {
-        if (majority != null) {
-          majority.cancel();
-          majority = null;
-          context.transition(StateType.FOLLOWER);
-        }
-        electionTimer = 0;
-      }
-    });
     doneHandler.handle((Void) null);
   }
 
   @Override
   public void configure(Set<String> members) {
     // Do nothing.
+  }
+
+  /**
+   * Resets the election timer.
+   */
+  private void resetTimer() {
+    electionTimer = vertx.setTimer(context.electionTimeout(), new Handler<Long>() {
+      @Override
+      public void handle(Long timerID) {
+        // When the election times out, clear the previous majority vote
+        // check and restart the election.
+        logger.info("Election timed out.");
+        if (majority != null) {
+          majority.cancel();
+          majority = null;
+        }
+        resetTimer();
+        pollMembers();
+        logger.info("Restarted election.");
+      }
+    });
   }
 
   private void pollMembers() {
@@ -129,206 +142,37 @@ public class Candidate extends State {
 
   @Override
   public void sync(final SyncRequest request) {
+    // Acquire a lock that prevents the local log from being modified
+    // during the sync.
     lock.acquire(new Handler<Void>() {
       @Override
       public void handle(Void _) {
-        syncRequest(request, new Handler<AsyncResult<Boolean>>() {
+        doSync(request, new Handler<AsyncResult<Boolean>>() {
           @Override
           public void handle(AsyncResult<Boolean> result) {
+            // If the request term is greater than the current term then this
+            // indicates that another leader was already elected. Update the
+            // current leader and term and transition back to a follower.
+            if (request.term() > context.currentTerm()) {
+              context.currentLeader(request.leader());
+              context.currentTerm(request.term());
+              context.transition(StateType.FOLLOWER);
+            }
+
+            // Reply to the request.
             if (result.failed()) {
               request.error(result.cause());
             }
             else {
               request.reply(context.currentTerm(), result.result());
             }
+
+            // Release the log lock.
             lock.release();
           }
         });
       }
     });
-  }
-
-  private void syncRequest(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.term() < context.currentTerm()) {
-      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
-    }
-    else {
-      checkTerm(request, doneHandler);
-    }
-  }
-
-  private void checkTerm(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.prevLogIndex() >= 0 && request.prevLogTerm() >= 0) {
-      checkPreviousLogEntry(request, doneHandler);
-    }
-    else {
-      checkEntry(request, doneHandler);
-    }
-  }
-
-  private void checkPreviousLogEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.containsEntry(request.prevLogIndex(), new Handler<AsyncResult<Boolean>>() {
-      @Override
-      public void handle(AsyncResult<Boolean> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        else if (!result.result()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
-        }
-        else {
-          log.entry(request.prevLogIndex(), new Handler<AsyncResult<Entry>>() {
-            @Override
-            public void handle(AsyncResult<Entry> result) {
-              if (result.failed()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-              }
-              else if (result.result().term() != request.prevLogTerm()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
-              }
-              else {
-                checkEntry(request, doneHandler);
-              }
-            }
-          });
-        }
-      }
-    });
-  }
-
-  private void checkEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.hasEntry()) {
-      log.containsEntry(request.prevLogIndex() + 1, new Handler<AsyncResult<Boolean>>() {
-        @Override
-        public void handle(AsyncResult<Boolean> result) {
-          if (result.failed()) {
-            new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-          }
-          else if (result.result()) {
-            log.entry(request.prevLogIndex() + 1, new Handler<AsyncResult<Entry>>() {
-              @Override
-              public void handle(AsyncResult<Entry> result) {
-                if (result.failed()) {
-                  new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-                }
-                else if (result.result().term() != request.entry().term()) {
-                  log.removeAfter(request.prevLogIndex(), new Handler<AsyncResult<Void>>() {
-                    @Override
-                    public void handle(AsyncResult<Void> result) {
-                      if (result.failed()) {
-                        new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-                      }
-                      else {
-                        appendEntry(request, doneHandler);
-                      }
-                    }
-                  });
-                }
-                else {
-                  updateCommits(request, doneHandler);
-                }
-              }
-            });
-          }
-          else {
-            appendEntry(request, doneHandler);
-          }
-        }
-      });
-    }
-    else {
-      checkCommits(request, doneHandler);
-    }
-  }
-
-  private void appendEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.appendEntry(request.entry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        else {
-          updateCommits(request, doneHandler);
-        }
-      }      
-    });
-  }
-
-  private void checkCommits(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    if (request.commit() > context.commitIndex()) {
-      updateCommits(request, doneHandler);
-    }
-    else {
-      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
-      updateTerm(request);
-    }
-  }
-
-  private void updateCommits(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.lastIndex(new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        else {
-          final long lastIndex = result.result();
-          context.commitIndex(Math.min(request.commit(), lastIndex));
-          log.floor(Math.min(context.commitIndex(), context.lastApplied()), new Handler<AsyncResult<Void>>() {
-            @Override
-            public void handle(AsyncResult<Void> result) {
-              if (result.failed()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-              }
-              else {
-                recursiveApply(context.lastApplied()+1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
-              }
-            }
-          });
-        }
-      }
-    });
-  }
-
-  private void recursiveApply(final long index, final long ceiling, final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    log.entry(index, new Handler<AsyncResult<Entry>>() {
-      @Override
-      public void handle(AsyncResult<Entry> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
-          updateTerm(request);
-        }
-        else {
-          doApply(index, ceiling, request, result.result(), doneHandler);
-        }
-      }
-    });
-  }
-
-  private void doApply(final long index, final long ceiling, final SyncRequest request, final Entry entry, final Handler<AsyncResult<Boolean>> doneHandler) {
-    context.applyEntry(entry);
-    context.lastApplied(index);
-    log.floor(Math.min(context.commitIndex(), index), new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed() || index == ceiling) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
-          updateTerm(request);
-        }
-        else  {
-          recursiveApply(index+1, ceiling, request, doneHandler);
-        }
-      }
-    });
-  }
-
-  private void updateTerm(final SyncRequest request) {
-    if (request.term() > context.currentTerm()) {
-      context.currentLeader(request.leader());
-      context.currentTerm(request.term());
-      context.transition(StateType.FOLLOWER);
-    }
   }
 
   @Override

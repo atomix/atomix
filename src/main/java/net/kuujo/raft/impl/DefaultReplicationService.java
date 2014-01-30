@@ -163,7 +163,7 @@ public class DefaultReplicationService implements ReplicationService {
   @Override
   public ReplicationService submitCommand(String command, JsonObject data, Handler<AsyncResult<JsonObject>> doneHandler) {
     final Future<JsonObject> future = new DefaultFutureResult<JsonObject>().setHandler(doneHandler);
-    endpoint.submit(context.currentLeader(), new SubmitRequest(new Command(command, data)), new Handler<AsyncResult<SubmitResponse>>() {
+    endpoint.submit(context.currentLeader(), new SubmitRequest(new DefaultCommand(command, data)), new Handler<AsyncResult<SubmitResponse>>() {
       @Override
       public void handle(AsyncResult<SubmitResponse> result) {
         if (result.failed()) {

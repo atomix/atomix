@@ -15,17 +15,14 @@
  */
 package net.kuujo.raft;
 
-import java.util.Map;
-import java.util.UUID;
-
-import net.kuujo.raft.log.Log;
+import net.kuujo.raft.impl.DefaultCommand;
 
 import org.vertx.java.core.json.JsonObject;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * A state machine command.
@@ -41,7 +38,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
   isGetterVisibility=JsonAutoDetect.Visibility.NONE,
   setterVisibility=JsonAutoDetect.Visibility.NONE
 )
-public class Command {
+@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, property="class", defaultImpl=DefaultCommand.class)
+public interface Command {
 
   /**
    * A command type.
@@ -49,18 +47,47 @@ public class Command {
    * @author Jordan Halterman
    */
   public static enum Type {
-    READ("read"),
-    WRITE("write"),
-    READ_WRITE("read-write");
+    READ("read", true, false),
+    WRITE("write", false, true),
+    READ_WRITE("read-write", true, true);
 
     private final String name;
+    private final boolean read;
+    private final boolean write;
 
-    private Type(String name) {
+    private Type(String name, boolean read, boolean write) {
       this.name = name;
+      this.read = read;
+      this.write = write;
     }
 
+    /**
+     * Returns a string representation of the command type for serialization.
+     *
+     * @return a string representation of the command type.
+     */
     public String getName() {
       return name;
+    }
+
+    /**
+     * Returns a boolean indicating whether the command type is read-only.
+     *
+     * @return
+     *   Indicates whether the command type is read-only.
+     */
+    public boolean isReadOnly() {
+      return read && !write;
+    }
+
+    /**
+     * Returns a boolean indicating whether the command type is write-only.
+     *
+     * @return
+     *   Indicates whether the command type is write-only.
+     */
+    public boolean isWriteOnly() {
+      return write && !read;
     }
 
     @Override
@@ -69,34 +96,13 @@ public class Command {
     }
   }
 
-  private String id;
-  private String command;
-  private Map<String, Object> data;
-  @JsonIgnore
-  private Log log;
-
-  public Command() {
-  }
-
-  public Command(String command, JsonObject data) {
-    this(UUID.randomUUID().toString(), command, data);
-  }
-
-  public Command(String id, String command, JsonObject data) {
-    this.id = id;
-    this.command = command;
-    this.data = data.toMap();
-  }
-
   /**
    * Returns the command ID.
    *
    * @return
    *   The command ID.
    */
-  public String id() {
-    return id;
-  }
+  public String id();
 
   /**
    * Returns the command name.
@@ -104,9 +110,7 @@ public class Command {
    * @return
    *   The command name.
    */
-  public String command() {
-    return command;
-  }
+  public String command();
 
   /**
    * Returns the command data.
@@ -114,28 +118,11 @@ public class Command {
    * @return
    *   The command data.
    */
-  public JsonObject data() {
-    return new JsonObject(data);
-  }
-
-  /**
-   * Returns command data.
-   *
-   * @return
-   *   The command data.
-   */
-  public Command setLog(Log log) {
-    this.log = log;
-    return this;
-  }
+  public JsonObject data();
 
   /**
    * Frees the command from the log.
    */
-  public void free() {
-    if (log != null) {
-      log.free(id);
-    }
-  }
+  public void free();
 
 }

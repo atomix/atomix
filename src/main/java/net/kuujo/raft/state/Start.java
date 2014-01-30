@@ -29,7 +29,7 @@ import org.vertx.java.core.Handler;
  *
  * @author Jordan Halterman
  */
-public class Start extends State {
+public class Start extends BaseState {
 
   @Override
   public void startUp(Handler<Void> doneHandler) {

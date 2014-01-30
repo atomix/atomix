@@ -139,6 +139,7 @@ public class StateContext {
         oldState.shutDown(new Handler<Void>() {
           @Override
           public void handle(Void _) {
+            unregisterHandlers();
             log.init(new LogVisitor() {
               @Override
               public void applyEntry(Entry entry) {
@@ -168,6 +169,7 @@ public class StateContext {
         oldState.shutDown(new Handler<Void>() {
           @Override
           public void handle(Void result) {
+            unregisterHandlers();
             state.startUp(new Handler<Void>() {
               @Override
               public void handle(Void result) {
@@ -216,6 +218,13 @@ public class StateContext {
         state.submit(request);
       }
     });
+  }
+
+  private void unregisterHandlers() {
+    endpoint.pingHandler(null);
+    endpoint.syncHandler(null);
+    endpoint.pollHandler(null);
+    endpoint.submitHandler(null);
   }
 
   /**
@@ -311,6 +320,7 @@ public class StateContext {
    */
   public StateContext currentTerm(long term) {
     currentTerm = term;
+    votedFor = null;
     return this;
   }
 

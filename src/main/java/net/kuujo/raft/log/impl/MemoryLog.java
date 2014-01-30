@@ -27,6 +27,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultFutureResult;
 
 import net.kuujo.raft.Command;
+import net.kuujo.raft.impl.DefaultCommand;
 import net.kuujo.raft.log.CommandEntry;
 import net.kuujo.raft.log.Entry;
 import net.kuujo.raft.log.Log;
@@ -55,7 +56,7 @@ public class MemoryLog implements Log {
     log.put(index, entry);
     if (entry.type().equals(Type.COMMAND)) {
       Command command = ((CommandEntry) entry).command();
-      commands.put(command.setLog(this).id(), index);
+      commands.put(((DefaultCommand) command).setLog(this).id(), index);
     }
     return result(index, doneHandler);
   }
