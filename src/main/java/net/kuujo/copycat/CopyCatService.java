@@ -23,7 +23,7 @@ import org.vertx.java.core.Handler;
  *
  * @author Jordan Halterman
  */
-public interface Service {
+public interface CopyCatService {
 
   /**
    * Sets the local node address.
@@ -33,7 +33,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service setLocalAddress(String address);
+  CopyCatService setLocalAddress(String address);
 
   /**
    * Returns the local node address.
@@ -51,7 +51,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service setServiceAddress(String address);
+  CopyCatService setServiceAddress(String address);
 
   /**
    * Returns the service API address.
@@ -69,7 +69,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service setBroadcastAddress(String address);
+  CopyCatService setBroadcastAddress(String address);
 
   /**
    * Returns the cluster broadcast address.
@@ -87,7 +87,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service setElectionTimeout(long timeout);
+  CopyCatService setElectionTimeout(long timeout);
 
   /**
    * Returns the service election timeout.
@@ -105,7 +105,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service setHeartbeatInterval(long interval);
+  CopyCatService setHeartbeatInterval(long interval);
 
   /**
    * Returns the service heartbeat interval.
@@ -128,7 +128,7 @@ public interface Service {
    * @param useAdaptive Indicates whether to use adaptive timeouts.
    * @return The service.
    */
-  public Service useAdaptiveTimeouts(boolean useAdaptive);
+  public CopyCatService useAdaptiveTimeouts(boolean useAdaptive);
 
   /**
    * Returns the adaptive timeout threshold.
@@ -143,7 +143,7 @@ public interface Service {
    * @param threshold The adaptive timeout threshold.
    * @return The service.
    */
-  public Service setAdaptiveTimeoutThreshold(double threshold);
+  public CopyCatService setAdaptiveTimeoutThreshold(double threshold);
 
   /**
    * Returns a boolean indicating whether majority replication is required for
@@ -161,7 +161,7 @@ public interface Service {
    *          for writes.
    * @return The service.
    */
-  public Service setRequireWriteMajority(boolean require);
+  public CopyCatService setRequireWriteMajority(boolean require);
 
   /**
    * Returns a boolean indicating whether majority synchronization is required
@@ -179,7 +179,7 @@ public interface Service {
    *          required for read operations.
    * @return The service.
    */
-  public Service setRequireReadMajority(boolean require);
+  public CopyCatService setRequireReadMajority(boolean require);
 
   /**
    * Registers a state machine command.
@@ -191,7 +191,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  <I, O> Service registerCommand(String commandName, Function<Command<I>, O> function);
+  <I, O> CopyCatService registerCommand(String commandName, Function<Command<I>, O> function);
 
   /**
    * Registers a typed state machine command.
@@ -205,7 +205,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  <I, O> Service registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
+  <I, O> CopyCatService registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
 
   /**
    * Unregisters a state machine command.
@@ -215,7 +215,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service unregisterCommand(String commandName);
+  CopyCatService unregisterCommand(String commandName);
 
   /**
    * Starts the service.
@@ -223,7 +223,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service start();
+  CopyCatService start();
 
   /**
    * Starts the service.
@@ -233,7 +233,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service start(Handler<AsyncResult<Void>> doneHandler);
+  CopyCatService start(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Stops the service.

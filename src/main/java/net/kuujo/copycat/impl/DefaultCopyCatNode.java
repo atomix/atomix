@@ -25,7 +25,7 @@ import org.vertx.java.core.Vertx;
 
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Function;
-import net.kuujo.copycat.Node;
+import net.kuujo.copycat.CopyCatNode;
 import net.kuujo.copycat.Command.Type;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
@@ -38,7 +38,7 @@ import net.kuujo.copycat.state.StateMachine;
  * 
  * @author Jordan Halterman
  */
-public class DefaultNode implements Node {
+public class DefaultCopyCatNode implements CopyCatNode {
   private final Replica replica;
   private Map<String, CommandInfo<?, ?>> commands = new HashMap<>();
 
@@ -63,15 +63,15 @@ public class DefaultNode implements Node {
     }
   }
 
-  public DefaultNode(Vertx vertx) {
+  public DefaultCopyCatNode(Vertx vertx) {
     replica = new RaftReplica(UUID.randomUUID().toString(), vertx, stateMachine);
   }
 
-  public DefaultNode(String address, Vertx vertx) {
+  public DefaultCopyCatNode(String address, Vertx vertx) {
     replica = new RaftReplica(address, vertx, stateMachine);
   }
 
-  public DefaultNode(String address, Vertx vertx, Log log) {
+  public DefaultCopyCatNode(String address, Vertx vertx, Log log) {
     replica = new RaftReplica(address, vertx, stateMachine, log);
   }
 
@@ -81,13 +81,13 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node setAddress(String address) {
+  public CopyCatNode setAddress(String address) {
     replica.setAddress(address);
     return this;
   }
 
   @Override
-  public Node setClusterConfig(ClusterConfig config) {
+  public CopyCatNode setClusterConfig(ClusterConfig config) {
     replica.setClusterConfig(config);
     return this;
   }
@@ -103,7 +103,7 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node setElectionTimeout(long timeout) {
+  public CopyCatNode setElectionTimeout(long timeout) {
     replica.setElectionTimeout(timeout);
     return this;
   }
@@ -114,7 +114,7 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node setHeartbeatInterval(long interval) {
+  public CopyCatNode setHeartbeatInterval(long interval) {
     replica.setHeartbeatInterval(interval);
     return this;
   }
@@ -125,7 +125,7 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node useAdaptiveTimeouts(boolean useAdaptive) {
+  public CopyCatNode useAdaptiveTimeouts(boolean useAdaptive) {
     replica.useAdaptiveTimeouts(useAdaptive);
     return this;
   }
@@ -136,7 +136,7 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node setAdaptiveTimeoutThreshold(double threshold) {
+  public CopyCatNode setAdaptiveTimeoutThreshold(double threshold) {
     replica.setAdaptiveTimeoutThreshold(threshold);
     return this;
   }
@@ -147,7 +147,7 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node setRequireWriteMajority(boolean require) {
+  public CopyCatNode setRequireWriteMajority(boolean require) {
     replica.setRequireWriteMajority(require);
     return this;
   }
@@ -158,13 +158,13 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node setRequireReadMajority(boolean require) {
+  public CopyCatNode setRequireReadMajority(boolean require) {
     replica.setRequireReadMajority(require);
     return this;
   }
 
   @Override
-  public Node setLog(Log log) {
+  public CopyCatNode setLog(Log log) {
     replica.setLog(log);
     return this;
   }
@@ -175,37 +175,37 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node start() {
+  public CopyCatNode start() {
     replica.start();
     return this;
   }
 
   @Override
-  public Node start(Handler<AsyncResult<Void>> doneHandler) {
+  public CopyCatNode start(Handler<AsyncResult<Void>> doneHandler) {
     replica.start(doneHandler);
     return this;
   }
 
   @Override
-  public <I, O> Node registerCommand(String commandName, Function<Command<I>, O> function) {
+  public <I, O> CopyCatNode registerCommand(String commandName, Function<Command<I>, O> function) {
     commands.put(commandName, new CommandInfo<I, O>(null, function));
     return this;
   }
 
   @Override
-  public <I, O> Node registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
+  public <I, O> CopyCatNode registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
     commands.put(commandName, new CommandInfo<I, O>(type, function));
     return this;
   }
 
   @Override
-  public Node unregisterCommand(String commandName) {
+  public CopyCatNode unregisterCommand(String commandName) {
     commands.remove(commandName);
     return this;
   }
 
   @Override
-  public <I, O> Node submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler) {
+  public <I, O> CopyCatNode submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler) {
     replica.submitCommand(new DefaultCommand<I>(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
     return this;
   }

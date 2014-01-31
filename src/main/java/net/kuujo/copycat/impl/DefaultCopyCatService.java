@@ -25,9 +25,9 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Function;
-import net.kuujo.copycat.Node;
-import net.kuujo.copycat.Service;
-import net.kuujo.copycat.ServiceEndpoint;
+import net.kuujo.copycat.CopyCatNode;
+import net.kuujo.copycat.CopyCatService;
+import net.kuujo.copycat.CopyCatServiceEndpoint;
 import net.kuujo.copycat.Command.Type;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterController;
@@ -39,43 +39,43 @@ import net.kuujo.copycat.log.Log;
  *
  * @author Jordan Halterman
  */
-public class DefaultService implements Service {
-  private final Node node;
-  private final ServiceEndpoint endpoint;
+public class DefaultCopyCatService implements CopyCatService {
+  private final CopyCatNode copyCatNode;
+  private final CopyCatServiceEndpoint endpoint;
   private final ClusterController cluster;
 
-  public DefaultService(Vertx vertx) {
-    node = new DefaultNode(UUID.randomUUID().toString(), vertx);
-    endpoint = new DefaultServiceEndpoint(node, vertx);
+  public DefaultCopyCatService(Vertx vertx) {
+    copyCatNode = new DefaultCopyCatNode(UUID.randomUUID().toString(), vertx);
+    endpoint = new DefaultCopyCatServiceEndpoint(copyCatNode, vertx);
     cluster = new DefaultClusterController(vertx);
   }
 
-  public DefaultService(String address, Vertx vertx) {
-    node = new DefaultNode(UUID.randomUUID().toString(), vertx);
-    endpoint = new DefaultServiceEndpoint(address, node, vertx);
-    cluster = new DefaultClusterController(node.getAddress(), String.format("%s.cluster", address), vertx);
+  public DefaultCopyCatService(String address, Vertx vertx) {
+    copyCatNode = new DefaultCopyCatNode(UUID.randomUUID().toString(), vertx);
+    endpoint = new DefaultCopyCatServiceEndpoint(address, copyCatNode, vertx);
+    cluster = new DefaultClusterController(copyCatNode.getAddress(), String.format("%s.cluster", address), vertx);
   }
 
-  public DefaultService(String address, Vertx vertx, Log log) {
-    node = new DefaultNode(UUID.randomUUID().toString(), vertx, log);
-    endpoint = new DefaultServiceEndpoint(address, node, vertx);
-    cluster = new DefaultClusterController(node.getAddress(), String.format("%s.cluster", address), vertx);
+  public DefaultCopyCatService(String address, Vertx vertx, Log log) {
+    copyCatNode = new DefaultCopyCatNode(UUID.randomUUID().toString(), vertx, log);
+    endpoint = new DefaultCopyCatServiceEndpoint(address, copyCatNode, vertx);
+    cluster = new DefaultClusterController(copyCatNode.getAddress(), String.format("%s.cluster", address), vertx);
   }
 
   @Override
-  public Service setLocalAddress(String address) {
-    node.setAddress(address);
+  public CopyCatService setLocalAddress(String address) {
+    copyCatNode.setAddress(address);
     cluster.setLocalAddress(address);
     return this;
   }
 
   @Override
   public String getLocalAddress() {
-    return node.getAddress();
+    return copyCatNode.getAddress();
   }
 
   @Override
-  public Service setServiceAddress(String address) {
+  public CopyCatService setServiceAddress(String address) {
     endpoint.setAddress(address);
     return this;
   }
@@ -86,7 +86,7 @@ public class DefaultService implements Service {
   }
 
   @Override
-  public Service setBroadcastAddress(String address) {
+  public CopyCatService setBroadcastAddress(String address) {
     cluster.setBroadcastAddress(address);
     return this;
   }
@@ -97,19 +97,19 @@ public class DefaultService implements Service {
   }
 
   @Override
-  public Service setElectionTimeout(long timeout) {
-    node.setElectionTimeout(timeout);
+  public CopyCatService setElectionTimeout(long timeout) {
+    copyCatNode.setElectionTimeout(timeout);
     return this;
   }
 
   @Override
   public long getElectionTimeout() {
-    return node.getElectionTimeout();
+    return copyCatNode.getElectionTimeout();
   }
 
   @Override
-  public Service setHeartbeatInterval(long interval) {
-    node.setHeartbeatInterval(interval);
+  public CopyCatService setHeartbeatInterval(long interval) {
+    copyCatNode.setHeartbeatInterval(interval);
     cluster.setBroadcastInterval(interval);
     cluster.setBroadcastTimeout(interval / 2);
     return this;
@@ -117,78 +117,78 @@ public class DefaultService implements Service {
 
   @Override
   public long getHeartbeatInterval() {
-    return node.getHeartbeatInterval();
+    return copyCatNode.getHeartbeatInterval();
   }
 
   @Override
   public boolean isUseAdaptiveTimeouts() {
-    return node.isUseAdaptiveTimeouts();
+    return copyCatNode.isUseAdaptiveTimeouts();
   }
 
   @Override
-  public Service useAdaptiveTimeouts(boolean useAdaptive) {
-    node.useAdaptiveTimeouts(useAdaptive);
+  public CopyCatService useAdaptiveTimeouts(boolean useAdaptive) {
+    copyCatNode.useAdaptiveTimeouts(useAdaptive);
     return this;
   }
 
   @Override
   public double getAdaptiveTimeoutThreshold() {
-    return node.getAdaptiveTimeoutThreshold();
+    return copyCatNode.getAdaptiveTimeoutThreshold();
   }
 
   @Override
-  public Service setAdaptiveTimeoutThreshold(double threshold) {
-    node.setAdaptiveTimeoutThreshold(threshold);
+  public CopyCatService setAdaptiveTimeoutThreshold(double threshold) {
+    copyCatNode.setAdaptiveTimeoutThreshold(threshold);
     return this;
   }
 
   @Override
   public boolean isRequireWriteMajority() {
-    return node.isRequireWriteMajority();
+    return copyCatNode.isRequireWriteMajority();
   }
 
   @Override
-  public Service setRequireWriteMajority(boolean require) {
-    node.setRequireWriteMajority(require);
+  public CopyCatService setRequireWriteMajority(boolean require) {
+    copyCatNode.setRequireWriteMajority(require);
     return this;
   }
 
   @Override
   public boolean isRequireReadMajority() {
-    return node.isRequireReadMajority();
+    return copyCatNode.isRequireReadMajority();
   }
 
   @Override
-  public Service setRequireReadMajority(boolean require) {
-    node.setRequireReadMajority(require);
+  public CopyCatService setRequireReadMajority(boolean require) {
+    copyCatNode.setRequireReadMajority(require);
     return this;
   }
 
   @Override
-  public <I, O> Service registerCommand(String commandName, Function<Command<I>, O> function) {
-    node.registerCommand(commandName, function);
+  public <I, O> CopyCatService registerCommand(String commandName, Function<Command<I>, O> function) {
+    copyCatNode.registerCommand(commandName, function);
     return this;
   }
 
   @Override
-  public <I, O> Service registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
-    node.registerCommand(commandName, type, function);
+  public <I, O> CopyCatService registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
+    copyCatNode.registerCommand(commandName, type, function);
     return this;
   }
 
   @Override
-  public Service unregisterCommand(String commandName) {
-    node.unregisterCommand(commandName);
+  public CopyCatService unregisterCommand(String commandName) {
+    copyCatNode.unregisterCommand(commandName);
     return this;
   }
 
   @Override
-  public Service start() {
+  public CopyCatService start() {
     return start(null);
   }
 
   @Override
-  public Service start(Handler<AsyncResult<Void>> doneHandler) {
+  public CopyCatService start(Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
     cluster.start(new Handler<AsyncResult<ClusterConfig>>() {
       @Override
@@ -197,8 +197,8 @@ public class DefaultService implements Service {
           future.setFailure(result.cause());
         }
         else {
-          node.setClusterConfig(result.result());
-          node.start(new Handler<AsyncResult<Void>>() {
+          copyCatNode.setClusterConfig(result.result());
+          copyCatNode.start(new Handler<AsyncResult<Void>>() {
             @Override
             public void handle(AsyncResult<Void> result) {
               if (result.failed()) {
@@ -245,7 +245,7 @@ public class DefaultService implements Service {
   }
 
   private void stopReplica(final Throwable t, final Future<Void> future) {
-    node.stop(new Handler<AsyncResult<Void>>() {
+    copyCatNode.stop(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         stopCluster(t != null ? t : (result.failed() ? result.cause() : null), future);

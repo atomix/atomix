@@ -50,7 +50,7 @@ public class KeyValueStore extends Verticle {
 
     // Create a CopyCat Service instance.
     final CopyCat copycat = new CopyCat(this);
-    final Service service = copycat.createService(address);
+    final CopyCatService service = copycat.createService(address);
 
     // Register service commands.
 
@@ -165,7 +165,7 @@ vertx.eventBus().send("key-value", command, new Handler<Message<JsonObject>>() {
 ```
 
 ### Creating a CopyCat cluster
-CopyCat clusters are made up of any number of `Node` instances running
+CopyCat clusters are made up of any number of `CopyCatNode` instances running
 on disparate Vert.x instances in different physical locations. CopyCat
 provides a simple API for creating nodes as well as a number of other
 tools which will be covered later.
@@ -185,7 +185,7 @@ public class MyVerticle extends Verticle {
 From there, we can create a node by simply calling `createNode`
 
 ```java
-Node node = copycat.createNode("test.1");
+CopyCatNode node = copycat.createNode("test.1");
 ```
 
 We pass a unique address for the node as the only argument. This is the
@@ -220,7 +220,7 @@ nodes and thus will remain after failures as well.
 #### Registering state machine commands
 CopyCat state machines are represented as a series of commands that are
 serviced by the cluster. Commands are registered by calling the
-`registerCommand` method on a `Node` instance.
+`registerCommand` method on a `CopyCatNode` instance.
 
 ```java
 node.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
@@ -287,13 +287,13 @@ without replication.
 #### Submitting commands over the event bus
 What we've seen so far is a method for submitting commands to the cluster
 via the `submitCommand` method. But this is Vert.x, and in Vert.x we expose
-APIs over the event bus. CopyCat provides a `ServiceEndpoint` class for
+APIs over the event bus. CopyCat provides a `CopyCatServiceEndpoint` class for
 exposing clusters over the event bus. To create an endpoint call the
 `createEndpoint` method on a `CopyCat` instance, passing the cluster
 address as the only argument.
 
 ```java
-ServiceEndpoint endpoint = copycat.createEndpoint("test");
+CopyCatServiceEndpoint endpoint = copycat.createEndpoint("test");
 endpoint.start();
 ```
 
@@ -352,22 +352,22 @@ the rest of the cluster state will be replicated to the re-joining node.
 So far, we've demonstrated a number of separate tools CopyCat provides for
 cluster detenction, replication, and communication. It's obvious to me
 that it would be awesome if this were all put into a single simple API,
-so I did that by combining all the functionality into a CopyCat `Service`.
+so I did that by combining all the functionality into a CopyCat `CopyCatService`.
 
-To create a new `Service` simply call the `createService` method on a
+To create a new `CopyCatService` simply call the `createService` method on a
 `CopyCat` instance.
 
 ```java
-Service service = copycat.createService("test");
+CopyCatService service = copycat.createService("test");
 ```
 
 Here we pass the service address as the only argument. This is the address
-that will be exposed by the `ServiceEndpoint` on the Vert.x event bus.
+that will be exposed by the `CopyCatServiceEndpoint` on the Vert.x event bus.
 Services operate much like nodes. Indeed, they expose the same API as
 nodes aside from the `setBroadcastAddress(String address)` method, which
 in most cases should not even be used since CopyCat will create a consistent
 cluster broadcast address internally. So, to start the service we simply
-register our commands and call the `start` method as with the `Node`.
+register our commands and call the `start` method as with the `CopyCatNode`.
 
 ```java
 service.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {

@@ -26,7 +26,7 @@ import net.kuujo.copycat.log.Log;
  *
  * @author Jordan Halterman
  */
-public interface Node {
+public interface CopyCatNode {
 
   /**
    * Sets the node address.
@@ -36,7 +36,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node setAddress(String address);
+  CopyCatNode setAddress(String address);
 
   /**
    * Returns the node address.
@@ -54,7 +54,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node setClusterConfig(ClusterConfig config);
+  CopyCatNode setClusterConfig(ClusterConfig config);
 
   /**
    * Returns the cluster configuration.
@@ -72,7 +72,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node setElectionTimeout(long timeout);
+  CopyCatNode setElectionTimeout(long timeout);
 
   /**
    * Returns the node election timeout.
@@ -90,7 +90,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node setHeartbeatInterval(long interval);
+  CopyCatNode setHeartbeatInterval(long interval);
 
   /**
    * Returns the node heartbeat interval.
@@ -113,7 +113,7 @@ public interface Node {
    * @param useAdaptive Indicates whether to use adaptive timeouts.
    * @return The replica.
    */
-  public Node useAdaptiveTimeouts(boolean useAdaptive);
+  public CopyCatNode useAdaptiveTimeouts(boolean useAdaptive);
 
   /**
    * Returns the adaptive timeout threshold.
@@ -128,7 +128,7 @@ public interface Node {
    * @param threshold The adaptive timeout threshold.
    * @return The replica.
    */
-  public Node setAdaptiveTimeoutThreshold(double threshold);
+  public CopyCatNode setAdaptiveTimeoutThreshold(double threshold);
 
   /**
    * Returns a boolean indicating whether majority replication is required for
@@ -146,7 +146,7 @@ public interface Node {
    *          for writes.
    * @return The replica.
    */
-  public Node setRequireWriteMajority(boolean require);
+  public CopyCatNode setRequireWriteMajority(boolean require);
 
   /**
    * Returns a boolean indicating whether majority synchronization is required
@@ -164,7 +164,7 @@ public interface Node {
    *          required for read operations.
    * @return The replica.
    */
-  public Node setRequireReadMajority(boolean require);
+  public CopyCatNode setRequireReadMajority(boolean require);
 
   /**
    * Sets the replicated log.
@@ -174,7 +174,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node setLog(Log log);
+  CopyCatNode setLog(Log log);
 
   /**
    * Returns the replicated log.
@@ -194,7 +194,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  <I, O> Node registerCommand(String commandName, Function<Command<I>, O> function);
+  <I, O> CopyCatNode registerCommand(String commandName, Function<Command<I>, O> function);
 
   /**
    * Registers a typed state machine command.
@@ -208,7 +208,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  <I, O> Node registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
+  <I, O> CopyCatNode registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
 
   /**
    * Unregisters a state machine command.
@@ -218,7 +218,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node unregisterCommand(String commandName);
+  CopyCatNode unregisterCommand(String commandName);
 
   /**
    * Submits a command to the replication service.
@@ -229,7 +229,7 @@ public interface Node {
    *          result.
    * @return The replica.
    */
-  <I, O> Node submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler);
+  <I, O> CopyCatNode submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler);
 
   /**
    * Starts the node.
@@ -237,7 +237,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node start();
+  CopyCatNode start();
 
   /**
    * Starts the node.
@@ -247,7 +247,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node start(Handler<AsyncResult<Void>> doneHandler);
+  CopyCatNode start(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Stops the node.

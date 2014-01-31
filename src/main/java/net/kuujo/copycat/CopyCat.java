@@ -18,9 +18,9 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterController;
 import net.kuujo.copycat.cluster.impl.DefaultClusterController;
-import net.kuujo.copycat.impl.DefaultNode;
-import net.kuujo.copycat.impl.DefaultService;
-import net.kuujo.copycat.impl.DefaultServiceEndpoint;
+import net.kuujo.copycat.impl.DefaultCopyCatNode;
+import net.kuujo.copycat.impl.DefaultCopyCatService;
+import net.kuujo.copycat.impl.DefaultCopyCatServiceEndpoint;
 import net.kuujo.copycat.log.Log;
 
 import org.vertx.java.core.Vertx;
@@ -48,8 +48,8 @@ public class CopyCat {
    * @return
    *   A new node instance.
    */
-  public Node createNode() {
-    return new DefaultNode(vertx);
+  public CopyCatNode createNode() {
+    return new DefaultCopyCatNode(vertx);
   }
 
   /**
@@ -60,8 +60,8 @@ public class CopyCat {
    * @return
    *   A new node instance.
    */
-  public Node createNode(String address) {
-    return new DefaultNode(address, vertx);
+  public CopyCatNode createNode(String address) {
+    return new DefaultCopyCatNode(address, vertx);
   }
 
   /**
@@ -74,8 +74,8 @@ public class CopyCat {
    * @return
    *   A new node instance.
    */
-  public Node createNode(String address, ClusterConfig config) {
-    return new DefaultNode(address, vertx).setClusterConfig(config);
+  public CopyCatNode createNode(String address, ClusterConfig config) {
+    return new DefaultCopyCatNode(address, vertx).setClusterConfig(config);
   }
 
   /**
@@ -108,8 +108,8 @@ public class CopyCat {
    * @return
    *   A new service instance.
    */
-  public Service createService() {
-    return new DefaultService(vertx);
+  public CopyCatService createService() {
+    return new DefaultCopyCatService(vertx);
   }
 
   /**
@@ -120,8 +120,8 @@ public class CopyCat {
    * @return
    *   A new service instance.
    */
-  public Service createService(String address) {
-    return new DefaultService(address, vertx);
+  public CopyCatService createService(String address) {
+    return new DefaultCopyCatService(address, vertx);
   }
 
   /**
@@ -134,8 +134,8 @@ public class CopyCat {
    * @return
    *   A new service instance.
    */
-  public Service createService(String address, Log log) {
-    return new DefaultService(address, vertx, log);
+  public CopyCatService createService(String address, Log log) {
+    return new DefaultCopyCatService(address, vertx, log);
   }
 
   /**
@@ -143,13 +143,13 @@ public class CopyCat {
    *
    * @param address
    *   The endpoint address.
-   * @param node
+   * @param copyCatNode
    *   The service node.
    * @return
    *   A new service endpoint instance.
    */
-  public ServiceEndpoint createServiceEndpoint(String address, Node node) {
-    return new DefaultServiceEndpoint(address, node, vertx);
+  public CopyCatServiceEndpoint createServiceEndpoint(String address, CopyCatNode copyCatNode) {
+    return new DefaultCopyCatServiceEndpoint(address, copyCatNode, vertx);
   }
 
 }

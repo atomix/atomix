@@ -21,17 +21,17 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.Node;
-import net.kuujo.copycat.ServiceEndpoint;
+import net.kuujo.copycat.CopyCatNode;
+import net.kuujo.copycat.CopyCatServiceEndpoint;
 
 /**
  * A default service endpoint implementation.
  *
  * @author Jordan Halterman
  */
-public class DefaultServiceEndpoint implements ServiceEndpoint {
+public class DefaultCopyCatServiceEndpoint implements CopyCatServiceEndpoint {
   private String address;
-  private final Node node;
+  private final CopyCatNode copyCatNode;
   private final Vertx vertx;
   private boolean running;
 
@@ -40,7 +40,7 @@ public class DefaultServiceEndpoint implements ServiceEndpoint {
     public void handle(final Message<JsonObject> message) {
       final String command = message.body().getString("command");
       if (command != null) {
-        node.submitCommand(command, message.body(), new Handler<AsyncResult<JsonObject>>() {
+        copyCatNode.submitCommand(command, message.body(), new Handler<AsyncResult<JsonObject>>() {
           @Override
           public void handle(AsyncResult<JsonObject> result) {
             if (result.failed()) {
@@ -58,19 +58,19 @@ public class DefaultServiceEndpoint implements ServiceEndpoint {
     }
   };
 
-  public DefaultServiceEndpoint(Node node, Vertx vertx) {
-    this.node = node;
+  public DefaultCopyCatServiceEndpoint(CopyCatNode copyCatNode, Vertx vertx) {
+    this.copyCatNode = copyCatNode;
     this.vertx = vertx;
   }
 
-  public DefaultServiceEndpoint(String address, Node node, Vertx vertx) {
+  public DefaultCopyCatServiceEndpoint(String address, CopyCatNode copyCatNode, Vertx vertx) {
     this.address = address;
-    this.node = node;
+    this.copyCatNode = copyCatNode;
     this.vertx = vertx;
   }
 
   @Override
-  public ServiceEndpoint setAddress(String address) {
+  public CopyCatServiceEndpoint setAddress(String address) {
     if (running) throw new IllegalStateException("Cannot modify endpoint address during operation.");
     this.address = address;
     return this;
@@ -82,14 +82,14 @@ public class DefaultServiceEndpoint implements ServiceEndpoint {
   }
 
   @Override
-  public ServiceEndpoint start() {
+  public CopyCatServiceEndpoint start() {
     running = true;
     vertx.eventBus().registerHandler(address, messageHandler);
     return this;
   }
 
   @Override
-  public ServiceEndpoint start(Handler<AsyncResult<Void>> doneHandler) {
+  public CopyCatServiceEndpoint start(Handler<AsyncResult<Void>> doneHandler) {
     running = true;
     vertx.eventBus().registerHandler(address, messageHandler, doneHandler);
     return this;
