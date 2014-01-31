@@ -16,6 +16,7 @@
 package net.kuujo.mimeo.log;
 
 import net.kuujo.mimeo.Command;
+import net.kuujo.mimeo.impl.DefaultCommand;
 
 /**
  * A state machine command entry.
@@ -31,7 +32,7 @@ public class CommandEntry extends Entry {
 
   public CommandEntry(long term, Command<?> command) {
     super(Type.COMMAND);
-    this.command = command;
+    this.command = command instanceof DefaultCommand ? ((DefaultCommand<?>) command).setEntry(this) : command;
   }
 
   /**
@@ -41,6 +42,13 @@ public class CommandEntry extends Entry {
    */
   public Command<?> command() {
     return command;
+  }
+
+  @Override
+  public void free() {
+    if (log != null) {
+      log.free(this);
+    }
   }
 
 }

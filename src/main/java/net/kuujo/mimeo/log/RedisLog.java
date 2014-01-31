@@ -27,7 +27,6 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.mimeo.Command;
 import net.kuujo.mimeo.MimeoException;
 import net.kuujo.mimeo.serializer.Serializer;
 
@@ -395,25 +394,13 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public void free(String command) {
+  public void free(Entry entry) {
     // Not yet implemented.
   }
 
   @Override
-  public void free(String command, Handler<AsyncResult<Void>> doneHandler) {
+  public void free(Entry entry, Handler<AsyncResult<Void>> doneHandler) {
     // Not yet implemented.
-  }
-
-  @Override
-  @SuppressWarnings("rawtypes")
-  public void free(Command command) {
-    free(command.id());
-  }
-
-  @Override
-  @SuppressWarnings("rawtypes")
-  public void free(Command command, Handler<AsyncResult<Void>> doneHandler) {
-    free(command.id(), doneHandler);
   }
 
 }

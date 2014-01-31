@@ -24,7 +24,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonValue;
 
 import net.kuujo.mimeo.Command;
-import net.kuujo.mimeo.log.Log;
+import net.kuujo.mimeo.log.Entry;
 
 /**
  * A default command implementation.
@@ -35,9 +35,10 @@ public class DefaultCommand<T> implements Command<T> {
   @JsonIgnore
   private JsonObject command;
   @JsonIgnore
-  private Log log;
+  private Entry entry;
 
   public DefaultCommand() {
+    command = new JsonObject();
   }
 
   @JsonCreator
@@ -55,11 +56,6 @@ public class DefaultCommand<T> implements Command<T> {
   }
 
   @Override
-  public String id() {
-    return command.getString("id");
-  }
-
-  @Override
   public Command.Type type() {
     return command.getFieldNames().contains("type") ? Command.Type.parse(command.getString("type")) : null;
   }
@@ -74,20 +70,15 @@ public class DefaultCommand<T> implements Command<T> {
     return command.getValue("data");
   }
 
-  /**
-   * Returns command data.
-   * 
-   * @return The command data.
-   */
-  public Command<T> setLog(Log log) {
-    this.log = log;
+  public DefaultCommand<T> setEntry(Entry entry) {
+    this.entry = entry;
     return this;
   }
 
   @Override
   public void free() {
-    if (log != null) {
-      log.free(id());
+    if (entry != null) {
+      entry.free();
     }
   }
 

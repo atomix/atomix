@@ -112,13 +112,6 @@ public interface Command<T> {
   }
 
   /**
-   * Returns the command ID.
-   * 
-   * @return The command ID.
-   */
-  public String id();
-
-  /**
    * Returns the command type.
    * 
    * @return The command type.

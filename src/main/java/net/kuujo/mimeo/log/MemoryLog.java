@@ -26,9 +26,6 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.impl.DefaultFutureResult;
 
-import net.kuujo.mimeo.Command;
-import net.kuujo.mimeo.impl.DefaultCommand;
-
 /**
  * A default log implementation.
  * 
@@ -36,7 +33,7 @@ import net.kuujo.mimeo.impl.DefaultCommand;
  */
 public class MemoryLog implements Log {
   private final TreeMap<Long, Entry> log = new TreeMap<>();
-  private final Map<String, Long> commands = new HashMap<>();
+  private final Map<String, Long> entries = new HashMap<>();
   private final List<Long> freed = new ArrayList<>();
   private long floor;
 
@@ -46,13 +43,11 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
   public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
     long index = (!log.isEmpty() ? log.lastKey() : -1) + 1;
     log.put(index, entry);
     if (entry.type().equals(Entry.Type.COMMAND)) {
-      Command command = ((CommandEntry) entry).command();
-      commands.put(((DefaultCommand) command).setLog(this).id(), index);
+      entries.put(entry.setLog(this).id(), index);
     }
     return result(index, doneHandler);
   }
@@ -139,7 +134,7 @@ public class MemoryLog implements Log {
     boolean removed = false;
     for (long item : freed) {
       if (item < floor) {
-        commands.remove(((CommandEntry) log.remove(item)).command().id());
+        entries.remove(log.remove(item).id());
         removed = true;
       }
     }
@@ -153,17 +148,17 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public void free(String command) {
-    free(command, null);
+  public void free(Entry entry) {
+    free(entry, null);
   }
 
   @Override
-  public void free(String command, Handler<AsyncResult<Void>> doneHandler) {
-    if (commands.containsKey(command)) {
-      long index = commands.get(command);
+  public void free(Entry entry, Handler<AsyncResult<Void>> doneHandler) {
+    if (entries.containsKey(entry.id())) {
+      long index = entries.get(entry.id());
       if (index < floor) {
         log.remove(index);
-        commands.remove(command);
+        entries.remove(entry.id());
         rewrite();
       }
       else {
@@ -171,18 +166,6 @@ public class MemoryLog implements Log {
       }
     }
     result(null, doneHandler);
-  }
-
-  @Override
-  @SuppressWarnings("rawtypes")
-  public void free(Command command) {
-    free(command.id());
-  }
-
-  @Override
-  @SuppressWarnings("rawtypes")
-  public void free(Command command, Handler<AsyncResult<Void>> doneHandler) {
-    free(command.id(), doneHandler);
   }
 
   /**

@@ -17,8 +17,6 @@ package net.kuujo.mimeo.log;
 
 import java.util.List;
 
-import net.kuujo.mimeo.Command;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
@@ -156,35 +154,18 @@ public interface Log {
   Log floor(long index, Handler<AsyncResult<Void>> doneHandler);
 
   /**
-   * Frees a command from the log.
+   * Frees an entry from the log.
    * 
-   * @param command The command ID.
+   * @param entry The entry to free.
    */
-  void free(String command);
+  void free(Entry entry);
 
   /**
-   * Frees a command from the log.
+   * Frees an entry from the log.
    * 
-   * @param command The command ID.
-   * @param doneHandler A handler to be called once the command is freed.
+   * @param entry The entry to free.
+   * @param doneHandler A handler to be called once the entry is freed.
    */
-  void free(String command, Handler<AsyncResult<Void>> doneHandler);
-
-  /**
-   * Frees a command from the log.
-   * 
-   * @param command The command ID.
-   */
-  @SuppressWarnings("rawtypes")
-  void free(Command command);
-
-  /**
-   * Frees a command from the log.
-   * 
-   * @param command The command to free.
-   * @param doneHandler A handler to be called once the command is freed.
-   */
-  @SuppressWarnings("rawtypes")
-  void free(Command command, Handler<AsyncResult<Void>> doneHandler);
+  void free(Entry entry, Handler<AsyncResult<Void>> doneHandler);
 
 }
