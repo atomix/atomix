@@ -1,7 +1,7 @@
-Mimeo
-=====
+CopyCat
+=======
 
-Mimeo is a replication framework for Vert.x. It provides for state machine replication
+CopyCat is a replication framework for Vert.x. It provides for state machine replication
 using the Raft consensus algorithm as described in
 [this paper](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
 

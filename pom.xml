@@ -8,18 +8,18 @@
   </parent>
 
   <groupId>net.kuujo</groupId>
-  <artifactId>mimeo</artifactId>
+  <artifactId>copycat</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>Mimeo</name>
+  <name>CopyCat</name>
   <description>A state replication framework for Vert.x.</description>
-  <url>http://github.com/kuujo/mimeo</url>
+  <url>http://github.com/kuujo/copycat</url>
   <inceptionYear>2013</inceptionYear>
 
   <properties>
     <module.name>${project.groupId}~${project.artifactId}~${project.version}</module.name>
 
-    <vertx.version>2.1M2</vertx.version>
+    <vertx.version>2.1M3</vertx.version>
     <testtools.version>2.0.2-final</testtools.version>
     <junit.version>4.8.2</junit.version>
 
@@ -49,14 +49,14 @@
   </developers>
 
   <scm>
-    <connection>scm:git:git@github.com:kuujo/mimeo.git</connection>
-    <developerConnection>scm:git:git@github.com:kuujo/mimeo.git</developerConnection>
-    <url>git@github.com:kuujo/mimeo.git</url>
+    <connection>scm:git:git@github.com:kuujo/copycat.git</connection>
+    <developerConnection>scm:git:git@github.com:kuujo/copycat.git</developerConnection>
+    <url>git@github.com:kuujo/copycat.git</url>
   </scm>
 
   <issueManagement>
     <system>GitHub</system>
-    <url>http://github.com/kuujo/mimeo/issues</url>
+    <url>http://github.com/kuujo/copycat/issues</url>
   </issueManagement>
 
   <dependencies>
