@@ -17,7 +17,6 @@ package net.kuujo.mimeo;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.log.Log;
@@ -195,7 +194,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node registerCommand(String commandName, Function<Command, JsonObject> function);
+  <I, O> Node registerCommand(String commandName, Function<Command<I>, O> function);
 
   /**
    * Registers a typed state machine command.
@@ -209,7 +208,7 @@ public interface Node {
    * @return
    *   The node instance.
    */
-  Node registerCommand(String commandName, Command.Type type, Function<Command, JsonObject> function);
+  <I, O> Node registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
 
   /**
    * Unregisters a state machine command.
@@ -230,7 +229,7 @@ public interface Node {
    *          result.
    * @return The replica.
    */
-  Node submitCommand(String command, JsonObject data, Handler<AsyncResult<JsonObject>> resultHandler);
+  <I, O> Node submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler);
 
   /**
    * Starts the node.

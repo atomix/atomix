@@ -17,7 +17,6 @@ package net.kuujo.mimeo.replica;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.mimeo.Command;
 import net.kuujo.mimeo.cluster.ClusterConfig;
@@ -233,7 +232,7 @@ public interface Replica {
    * @return
    *   The replica instance.
    */
-  Replica submitCommand(Command command, Handler<AsyncResult<JsonObject>> doneHandler);
+  <I, O> Replica submitCommand(Command<I> command, Handler<AsyncResult<O>> doneHandler);
 
   /**
    * Stops the replica.

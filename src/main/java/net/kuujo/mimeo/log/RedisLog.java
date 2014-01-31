@@ -390,11 +390,13 @@ public class RedisLog implements Log {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void free(Command command) {
     // Not yet implemented.
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void free(Command command, Handler<AsyncResult<Void>> doneHandler) {
     // Not yet implemented.
   }

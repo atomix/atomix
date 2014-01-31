@@ -17,11 +17,11 @@ package net.kuujo.mimeo.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.mimeo.Command;
 import net.kuujo.mimeo.Command.Type;
@@ -40,12 +40,12 @@ import net.kuujo.mimeo.state.StateMachine;
  */
 public class DefaultNode implements Node {
   private final Replica replica;
-  private ClusterConfig config;
-  private Map<String, CommandInfo> commands = new HashMap<>();
+  private Map<String, CommandInfo<?, ?>> commands = new HashMap<>();
 
   private final StateMachine stateMachine = new StateMachine() {
     @Override
-    public JsonObject applyCommand(Command command) {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public Object applyCommand(Command command) {
       if (commands.containsKey(command.command())) {
         return commands.get(command.command()).function.call(command);
       }
@@ -53,14 +53,18 @@ public class DefaultNode implements Node {
     }
   };
 
-  private static class CommandInfo {
+  private static class CommandInfo<I, O> {
     private final Command.Type type;
-    private final Function<Command, JsonObject> function;
+    private final Function<Command<I>, O> function;
 
-    private CommandInfo(Command.Type type, Function<Command, JsonObject> function) {
+    private CommandInfo(Command.Type type, Function<Command<I>, O> function) {
       this.type = type;
       this.function = function;
     }
+  }
+
+  public DefaultNode(Vertx vertx) {
+    replica = new RaftReplica(UUID.randomUUID().toString(), vertx, stateMachine);
   }
 
   public DefaultNode(String address, Vertx vertx) {
@@ -84,13 +88,13 @@ public class DefaultNode implements Node {
 
   @Override
   public Node setClusterConfig(ClusterConfig config) {
-    this.config = config;
+    replica.setClusterConfig(config);
     return this;
   }
 
   @Override
   public ClusterConfig getClusterConfig() {
-    return config;
+    return replica.getClusterConfig();
   }
 
   @Override
@@ -183,14 +187,14 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node registerCommand(String commandName, Function<Command, JsonObject> function) {
-    commands.put(commandName, new CommandInfo(null, function));
+  public <I, O> Node registerCommand(String commandName, Function<Command<I>, O> function) {
+    commands.put(commandName, new CommandInfo<I, O>(null, function));
     return this;
   }
 
   @Override
-  public Node registerCommand(String commandName, Type type, Function<Command, JsonObject> function) {
-    commands.put(commandName, new CommandInfo(type, function));
+  public <I, O> Node registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
+    commands.put(commandName, new CommandInfo<I, O>(type, function));
     return this;
   }
 
@@ -201,8 +205,8 @@ public class DefaultNode implements Node {
   }
 
   @Override
-  public Node submitCommand(String command, JsonObject data, Handler<AsyncResult<JsonObject>> resultHandler) {
-    replica.submitCommand(new DefaultCommand(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
+  public <I, O> Node submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler) {
+    replica.submitCommand(new DefaultCommand<I>(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
     return this;
   }
 

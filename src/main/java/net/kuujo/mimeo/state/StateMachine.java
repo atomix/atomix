@@ -17,8 +17,6 @@ package net.kuujo.mimeo.state;
 
 import net.kuujo.mimeo.Command;
 
-import org.vertx.java.core.json.JsonObject;
-
 /**
  * A replication service state machine.
  * 
@@ -32,6 +30,6 @@ public interface StateMachine {
    * @param command The command to apply.
    * @return The command output.
    */
-  JsonObject applyCommand(Command command);
+  Object applyCommand(Command<?> command);
 
 }

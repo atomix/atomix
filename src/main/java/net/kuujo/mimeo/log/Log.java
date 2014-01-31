@@ -175,6 +175,7 @@ public interface Log {
    * 
    * @param command The command ID.
    */
+  @SuppressWarnings("rawtypes")
   void free(Command command);
 
   /**
@@ -183,6 +184,7 @@ public interface Log {
    * @param command The command to free.
    * @param doneHandler A handler to be called once the command is freed.
    */
+  @SuppressWarnings("rawtypes")
   void free(Command command, Handler<AsyncResult<Void>> doneHandler);
 
 }

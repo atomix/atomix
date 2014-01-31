@@ -17,8 +17,6 @@ package net.kuujo.mimeo;
 
 import net.kuujo.mimeo.impl.DefaultCommand;
 
-import org.vertx.java.core.json.JsonObject;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -29,11 +27,17 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * 
  * @author Jordan Halterman
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, property = "class", defaultImpl = DefaultCommand.class)
-public interface Command {
+@JsonAutoDetect(
+    creatorVisibility=JsonAutoDetect.Visibility.NONE,
+    fieldVisibility=JsonAutoDetect.Visibility.ANY,
+    getterVisibility=JsonAutoDetect.Visibility.NONE,
+    isGetterVisibility=JsonAutoDetect.Visibility.NONE,
+    setterVisibility=JsonAutoDetect.Visibility.NONE
+)
+@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, property="class", defaultImpl=DefaultCommand.class)
+public interface Command<T> {
 
   /**
    * A command type.
@@ -41,7 +45,9 @@ public interface Command {
    * @author Jordan Halterman
    */
   public static enum Type {
-    READ("read", true, false), WRITE("write", false, true), READ_WRITE("read-write", true, true);
+    READ("read", true, false),
+    WRITE("write", false, true),
+    READ_WRITE("read-write", true, true);
 
     private final String name;
     private final boolean read;
@@ -84,6 +90,25 @@ public interface Command {
     public String toString() {
       return getName();
     }
+
+    /**
+     * Parses a command type from string.
+     *
+     * @param name The command type name.
+     * @return A command type.
+     */
+    public static Type parse(String name) {
+      switch (name) {
+        case "read":
+          return READ;
+        case "write":
+          return WRITE;
+        case "read-write":
+          return READ_WRITE;
+        default:
+          throw new IllegalArgumentException("Invalid command type name " + name);
+      }
+    }
   }
 
   /**
@@ -112,7 +137,7 @@ public interface Command {
    * 
    * @return The command data.
    */
-  public JsonObject data();
+  public T data();
 
   /**
    * Frees the command from the log.

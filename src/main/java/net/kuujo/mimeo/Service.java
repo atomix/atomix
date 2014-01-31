@@ -17,7 +17,6 @@ package net.kuujo.mimeo;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
 
 /**
  * A Mimeo service.
@@ -192,7 +191,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service registerCommand(String commandName, Function<Command, JsonObject> function);
+  <I, O> Service registerCommand(String commandName, Function<Command<I>, O> function);
 
   /**
    * Registers a typed state machine command.
@@ -206,7 +205,7 @@ public interface Service {
    * @return
    *   The service instance.
    */
-  Service registerCommand(String commandName, Command.Type type, Function<Command, JsonObject> function);
+  <I, O> Service registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
 
   /**
    * Unregisters a state machine command.

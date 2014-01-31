@@ -15,7 +15,11 @@
  */
 package net.kuujo.mimeo;
 
+import net.kuujo.mimeo.cluster.ClusterController;
+import net.kuujo.mimeo.cluster.impl.DefaultClusterController;
+import net.kuujo.mimeo.impl.DefaultNode;
 import net.kuujo.mimeo.impl.DefaultService;
+import net.kuujo.mimeo.impl.DefaultServiceEndpoint;
 import net.kuujo.mimeo.log.Log;
 
 import org.vertx.java.core.Vertx;
@@ -30,7 +34,67 @@ public class Mimeo {
   private final Vertx vertx;
 
   public Mimeo(Verticle verticle) {
-    this.vertx = verticle.getVertx();
+    this(verticle.getVertx());
+  }
+
+  public Mimeo(Vertx vertx) {
+    this.vertx = vertx;
+  }
+
+  /**
+   * Creates a new node.
+   *
+   * @return
+   *   A new node instance.
+   */
+  public Node createNode() {
+    return new DefaultNode(vertx);
+  }
+
+  /**
+   * Creates a new node.
+   *
+   * @param address
+   *   The node address.
+   * @return
+   *   A new node instance.
+   */
+  public Node createNode(String address) {
+    return new DefaultNode(address, vertx);
+  }
+
+  /**
+   * Creates a new cluster controller.
+   *
+   * @return
+   *   A new cluster controller.
+   */
+  public ClusterController createCluster() {
+    return new DefaultClusterController(vertx);
+  }
+
+  /**
+   * Creates a new cluster controller.
+   *
+   * @param localAddress
+   *   The local address.
+   * @param broadcastAddress
+   *   The cluster broadcast address.
+   * @return
+   *   A new cluster controller.
+   */
+  public ClusterController createCluster(String localAddress, String broadcastAddress) {
+    return new DefaultClusterController(localAddress, broadcastAddress, vertx);
+  }
+
+  /**
+   * Creates a new service instance.
+   *
+   * @return
+   *   A new service instance.
+   */
+  public Service createService() {
+    return new DefaultService(vertx);
   }
 
   /**
@@ -57,6 +121,20 @@ public class Mimeo {
    */
   public Service createService(String address, Log log) {
     return new DefaultService(address, vertx, log);
+  }
+
+  /**
+   * Creates a service endpoint.
+   *
+   * @param address
+   *   The endpoint address.
+   * @param node
+   *   The service node.
+   * @return
+   *   A new service endpoint instance.
+   */
+  public ServiceEndpoint createServiceEndpoint(String address, Node node) {
+    return new DefaultServiceEndpoint(address, node, vertx);
   }
 
 }

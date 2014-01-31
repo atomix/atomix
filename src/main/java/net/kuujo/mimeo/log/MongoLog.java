@@ -439,11 +439,13 @@ public class MongoLog implements Log {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void free(Command command) {
     // Not supported.
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void free(Command command, Handler<AsyncResult<Void>> doneHandler) {
     // Not supported.
   }

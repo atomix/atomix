@@ -20,7 +20,6 @@ import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.mimeo.Command;
 import net.kuujo.mimeo.cluster.ClusterConfig;
@@ -42,7 +41,7 @@ import net.kuujo.mimeo.state.StateType;
 public class RaftReplica implements Replica {
   private final ReplicaEndpoint endpoint;
   private final StateContext context;
-  private ClusterConfig config;
+  private ClusterConfig config = new ClusterConfig();
 
   public RaftReplica(String address, Vertx vertx, StateMachine stateMachine) {
     endpoint = new RaftReplicaEndpoint(address, vertx);
@@ -204,16 +203,17 @@ public class RaftReplica implements Replica {
   }
 
   @Override
-  public Replica submitCommand(Command command, Handler<AsyncResult<JsonObject>> doneHandler) {
-    final Future<JsonObject> future = new DefaultFutureResult<JsonObject>().setHandler(doneHandler);
+  public <I, O> Replica submitCommand(Command<I> command, Handler<AsyncResult<O>> doneHandler) {
+    final Future<O> future = new DefaultFutureResult<O>().setHandler(doneHandler);
     endpoint.submit(context.currentLeader(), new SubmitRequest(command), new Handler<AsyncResult<SubmitResponse>>() {
       @Override
+      @SuppressWarnings("unchecked")
       public void handle(AsyncResult<SubmitResponse> result) {
         if (result.failed()) {
           future.setFailure(result.cause());
         }
         else {
-          future.setResult(result.result().result());
+          future.setResult((O) result.result().result());
         }
       }
     });

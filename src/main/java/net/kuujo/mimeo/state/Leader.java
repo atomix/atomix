@@ -42,7 +42,6 @@ import net.kuujo.mimeo.protocol.SyncResponse;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -275,12 +274,22 @@ public class Leader extends BaseState implements Observer {
         readMajority(new Handler<Void>() {
           @Override
           public void handle(Void _) {
-            request.reply(stateMachine.applyCommand(request.command()));
+            try {
+              request.reply(stateMachine.applyCommand(request.command()));
+            }
+            catch (Exception e) {
+              request.error(e.getMessage());
+            }
           }
         });
       }
       else {
-        request.reply(stateMachine.applyCommand(request.command()));
+        try {
+          request.reply(stateMachine.applyCommand(request.command()));
+        }
+        catch (Exception e) {
+          request.error(e.getMessage());
+        }
       }
     }
     // Otherwise, for write commands or for commands for which a type was not
@@ -301,16 +310,26 @@ public class Leader extends BaseState implements Observer {
               writeMajority(index, new Handler<Void>() {
                 @Override
                 public void handle(Void arg0) {
-                  JsonObject result = stateMachine.applyCommand(request.command());
-                  context.lastApplied(index);
-                  request.reply(result);
+                  try {
+                    Object output = stateMachine.applyCommand(request.command());
+                    context.lastApplied(index);
+                    request.reply(output);
+                  }
+                  catch (Exception e) {
+                    request.error(e.getMessage());
+                  }
                 }
               });
             }
             else {
-              JsonObject jsonResult = stateMachine.applyCommand(request.command());
-              context.lastApplied(index);
-              request.reply(jsonResult);
+              try {
+                Object output = stateMachine.applyCommand(request.command());
+                context.lastApplied(index);
+                request.reply(output);
+              }
+              catch (Exception e) {
+                request.error(e.getMessage());
+              }
             }
           }
         }

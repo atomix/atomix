@@ -28,12 +28,12 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class SubmitRequest extends Request {
   private static final Serializer serializer = Serializer.getInstance();
-  private Command command;
+  private Command<?> command;
 
   public SubmitRequest() {
   }
 
-  public SubmitRequest(Command command) {
+  public SubmitRequest(Command<?> command) {
     this.command = command;
   }
 
@@ -54,12 +54,12 @@ public class SubmitRequest extends Request {
     return this;
   }
 
-  public Command command() {
+  public Command<?> command() {
     return command;
   }
 
-  public void reply(JsonObject result) {
-    super.reply(new JsonObject().putObject("result", result));
+  public void reply(Object result) {
+    message.reply(new JsonObject().putString("status", "ok").putValue("result", result));
   }
 
 }

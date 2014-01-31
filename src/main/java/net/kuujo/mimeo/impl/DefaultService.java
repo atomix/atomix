@@ -22,7 +22,6 @@ import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.mimeo.Command;
 import net.kuujo.mimeo.Command.Type;
@@ -166,13 +165,13 @@ public class DefaultService implements Service {
   }
 
   @Override
-  public Service registerCommand(String commandName, Function<Command, JsonObject> function) {
+  public <I, O> Service registerCommand(String commandName, Function<Command<I>, O> function) {
     node.registerCommand(commandName, function);
     return this;
   }
 
   @Override
-  public Service registerCommand(String commandName, Type type, Function<Command, JsonObject> function) {
+  public <I, O> Service registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
     node.registerCommand(commandName, type, function);
     return this;
   }

@@ -15,12 +15,13 @@
  */
 package net.kuujo.mimeo.impl;
 
-import java.util.Map;
 import java.util.UUID;
 
 import org.vertx.java.core.json.JsonObject;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 import net.kuujo.mimeo.Command;
 import net.kuujo.mimeo.log.Log;
@@ -30,46 +31,47 @@ import net.kuujo.mimeo.log.Log;
  * 
  * @author Jordan Halterman
  */
-public class DefaultCommand implements Command {
-  private String id;
-  private Command.Type type;
-  private String command;
-  private Map<String, Object> data;
+public class DefaultCommand<T> implements Command<T> {
+  @JsonIgnore
+  private JsonObject command;
   @JsonIgnore
   private Log log;
 
   public DefaultCommand() {
   }
 
-  public DefaultCommand(String command, Command.Type type, JsonObject data) {
+  @JsonCreator
+  private DefaultCommand(String json) {
+    command = new JsonObject(json);
+  }
+
+  public DefaultCommand(String command, Command.Type type, T data) {
     this(UUID.randomUUID().toString(), command, type, data);
   }
 
-  public DefaultCommand(String id, String command, Command.Type type, JsonObject data) {
-    this.id = id;
-    this.type = type;
-    this.command = command;
-    this.data = data.toMap();
+  public DefaultCommand(String id, String command, Command.Type type, T data) {
+    this.command = new JsonObject().putString("id", id).putString("command", command)
+        .putString("type", type.getName()).putValue("data", data);
   }
 
   @Override
   public String id() {
-    return id;
+    return command.getString("id");
   }
 
   @Override
   public Command.Type type() {
-    return type;
+    return command.getFieldNames().contains("type") ? Command.Type.parse(command.getString("type")) : null;
   }
 
   @Override
   public String command() {
-    return command;
+    return command.getString("command");
   }
 
   @Override
-  public JsonObject data() {
-    return new JsonObject(data);
+  public T data() {
+    return command.getValue("data");
   }
 
   /**
@@ -77,7 +79,7 @@ public class DefaultCommand implements Command {
    * 
    * @return The command data.
    */
-  public Command setLog(Log log) {
+  public Command<T> setLog(Log log) {
     this.log = log;
     return this;
   }
@@ -85,8 +87,13 @@ public class DefaultCommand implements Command {
   @Override
   public void free() {
     if (log != null) {
-      log.free(id);
+      log.free(id());
     }
+  }
+
+  @JsonValue
+  private String getJsonValue() {
+    return command.encode();
   }
 
 }

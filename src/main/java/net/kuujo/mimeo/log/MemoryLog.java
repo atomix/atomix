@@ -46,6 +46,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
     long index = (!log.isEmpty() ? log.lastKey() : -1) + 1;
     log.put(index, entry);
@@ -173,11 +174,13 @@ public class MemoryLog implements Log {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void free(Command command) {
     free(command.id());
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void free(Command command, Handler<AsyncResult<Void>> doneHandler) {
     free(command.id(), doneHandler);
   }
