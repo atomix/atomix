@@ -41,6 +41,7 @@ public class RedisLog implements Log {
   private final String address;
   private final String key;
   private final Vertx vertx;
+  private long currentIndex;
 
   public RedisLog(String address, String key, Vertx vertx) {
     this.address = address;
@@ -49,15 +50,59 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public void init(LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
+  public void init(final LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
+    final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
+    JsonObject message = new JsonObject()
+      .putString("command", "get")
+      .putArray("args", new JsonArray().add(key));
+    vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
+      @Override
+      public void handle(AsyncResult<Message<JsonObject>> result) {
+        if (result.failed()) {
+          future.setFailure(result.cause());
+        }
+        else if (result.result().body().getString("status").equals("error")) {
+          future.setFailure(new MimeoException(result.result().body().getString("message")));
+        }
+        else {
+          Object index = result.result().body().getValue("value");
+          if (index != null) {
+            currentIndex = (long) index + 1;
+          }
+          applyNextEntry(0, currentIndex-1, visitor, future);
+        }
+      }
+    });
+  }
 
+  private void applyNextEntry(final long index, final long ceiling, final LogVisitor visitor, final Future<Void> future) {
+    JsonObject message = new JsonObject()
+      .putString("command", "get")
+      .putArray("args", new JsonArray().add(String.format("%s:%d", key, index)));
+    vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
+      @Override
+      public void handle(AsyncResult<Message<JsonObject>> result) {
+        if (result.failed()) {
+          future.setFailure(result.cause());
+        }
+        else if (result.result().body().getString("status").equals("error")) {
+          future.setFailure(new MimeoException(result.result().body().getString("message")));
+        }
+        else {
+          visitor.applyEntry(serializer.deserialize(new JsonObject(result.result().body().getString("value")), Entry.class));
+          applyNextEntry(0, currentIndex-1, visitor, future);
+        }
+      }
+    });
   }
 
   @Override
   public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(doneHandler);
-    final JsonObject message = new JsonObject().putString("command", "rpush").putArray("args",
-        new JsonArray().add(key).add(serializer.serialize(entry)));
+    final long index = currentIndex++;
+    final JsonObject message = new JsonObject()
+        .putString("command", "set").putArray("args", new JsonArray()
+        .add(String.format("%s:%d", key, index)).add(serializer.serialize(entry).encode()));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -65,7 +110,6 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("ok")) {
-          long index = result.result().body().getLong("value") - 1;
           future.setResult(index);
         }
         else {
@@ -79,7 +123,9 @@ public class RedisLog implements Log {
   @Override
   public Log containsEntry(final long index, Handler<AsyncResult<Boolean>> containsHandler) {
     final Future<Boolean> future = new DefaultFutureResult<Boolean>().setHandler(containsHandler);
-    final JsonObject message = new JsonObject().putString("command", "llen").putArray("args", new JsonArray().add(key));
+    final JsonObject message = new JsonObject()
+        .putString("command", "exists")
+        .putArray("args", new JsonArray().add(String.format("%s:%d", key, index)));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -87,7 +133,7 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("ok")) {
-          future.setResult(result.result().body().getLong("value") - 1 >= index);
+          future.setResult(result.result().body().getBoolean("value"));
         }
         else {
           future.setFailure(new MimeoException(result.result().body().getString("message")));
@@ -100,7 +146,7 @@ public class RedisLog implements Log {
   @Override
   public Log entry(long index, Handler<AsyncResult<Entry>> entryHandler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(entryHandler);
-    final JsonObject message = new JsonObject().putString("command", "lindex").putArray("args", new JsonArray().add(key).add(index));
+    final JsonObject message = new JsonObject().putString("command", "get").putArray("args", new JsonArray().add(key).add(index));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -108,9 +154,9 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("ok")) {
-          JsonObject value = result.result().body().getObject("value");
+          String value = result.result().body().getString("value");
           if (value != null) {
-            future.setResult(serializer.deserialize(value, Entry.class));
+            future.setResult(serializer.deserialize(new JsonObject(value), Entry.class));
           }
           else {
             future.setFailure(new MimeoException("Invalid index."));
@@ -186,73 +232,74 @@ public class RedisLog implements Log {
 
   @Override
   public Log lastIndex(Handler<AsyncResult<Long>> handler) {
-    final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    final JsonObject message = new JsonObject().putString("command", "llen").putArray("args", new JsonArray().add(key));
-    vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else if (result.result().body().getString("status").equals("ok")) {
-          future.setResult(result.result().body().getLong("value") - 1);
-        }
-        else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
-        }
-      }
-    });
+    new DefaultFutureResult<Long>().setHandler(handler).setResult(currentIndex-1);
     return this;
   }
 
   @Override
   public Log lastTerm(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    lastIndex(new Handler<AsyncResult<Long>>() {
+    return entry(currentIndex-1, new Handler<AsyncResult<Entry>>() {
       @Override
-      public void handle(AsyncResult<Long> result) {
+      public void handle(AsyncResult<Entry> result) {
         if (result.failed()) {
           future.setFailure(result.cause());
         }
         else {
-          entry(result.result(), new Handler<AsyncResult<Entry>>() {
-            @Override
-            public void handle(AsyncResult<Entry> result) {
-              if (result.failed()) {
-                future.setFailure(result.cause());
-              }
-              else {
-                future.setResult(result.result().term());
-              }
-            }
-          });
+          future.setResult(result.result().term());
         }
       }
     });
-    return this;
   }
 
   @Override
   public Log lastEntry(final Handler<AsyncResult<Entry>> handler) {
-    lastIndex(new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Entry>().setHandler(handler).setFailure(result.cause());
-        }
-        else {
-          entry(result.result(), handler);
-        }
-      }
-    });
-    return this;
+    return entry(currentIndex-1, handler);
   }
 
   @Override
   public Log entries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
-    final Future<List<Entry>> future = new DefaultFutureResult<List<Entry>>().setHandler(doneHandler);
-    final JsonObject message = new JsonObject().putString("command", "lrange").putArray("args",
-        new JsonArray().add(key).add(start).add(end));
+    loadEntries(start, end, new ArrayList<Entry>(), new DefaultFutureResult<List<Entry>>().setHandler(doneHandler));
+    return this;
+  }
+
+  private void loadEntries(final long index, final long end, final List<Entry> entries, final Future<List<Entry>> future) {
+    if (index <= end) {
+      final JsonObject message = new JsonObject()
+          .putString("command", "get")
+          .putArray("args", new JsonArray().add(String.format("%s:%d", key, index)));
+      vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
+        @Override
+        public void handle(AsyncResult<Message<JsonObject>> result) {
+          if (result.failed()) {
+            future.setFailure(result.cause());
+          }
+          else if (result.result().body().getString("status").equals("ok")) {
+            String value = result.result().body().getString("value");
+            if (value != null) {
+              entries.add(serializer.deserialize(new JsonObject(value), Entry.class));
+              loadEntries(index+1, end, entries, future);
+            }
+            else {
+              future.setFailure(new MimeoException("Invalid index."));
+            }
+          }
+          else {
+            future.setFailure(new MimeoException(result.result().body().getString("message")));
+          }
+        }
+      });
+    }
+    else {
+      future.setResult(entries);
+    }
+  }
+
+  @Override
+  public Log removeEntry(final long index, Handler<AsyncResult<Entry>> doneHandler) {
+    final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(doneHandler);
+    JsonObject message = new JsonObject().putString("command", "get")
+        .putArray("args", new JsonArray().add(String.format("%s:%d", key, index)));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -260,13 +307,25 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("ok")) {
-          JsonArray value = result.result().body().getArray("value");
+          String value = result.result().body().getString("value");
           if (value != null) {
-            List<Entry> entries = new ArrayList<>();
-            for (Object item : value) {
-              entries.add(serializer.deserialize((JsonObject) item, Entry.class));
-            }
-            future.setResult(entries);
+            final Entry entry = serializer.deserialize(new JsonObject(value), Entry.class);
+            JsonObject message = new JsonObject().putString("command", "del")
+                .putArray("args", new JsonArray().add(String.format("%s:%d", key, index)));
+            vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
+              @Override
+              public void handle(AsyncResult<Message<JsonObject>> result) {
+                if (result.failed()) {
+                  future.setFailure(result.cause());
+                }
+                else if (result.result().body().getString("status").equals("ok")) {
+                  future.setResult(entry);
+                }
+                else {
+                  future.setFailure(new MimeoException(result.result().body().getString("message")));
+                }
+              }
+            });
           }
           else {
             future.setFailure(new MimeoException("Invalid index."));
@@ -281,51 +340,22 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public Log removeEntry(final long index, Handler<AsyncResult<Entry>> doneHandler) {
-    final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(doneHandler);
-    JsonObject message = new JsonObject().putString("command", "lindex").putArray("args", new JsonArray().add(key).add(index));
-    vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else if (result.result().body().getString("status").equals("ok")) {
-          final JsonObject value = result.result().body().getObject("value");
-          JsonObject message = new JsonObject().putString("command", "lset").putArray("args", new JsonArray().add(key).add(index).add(""));
-          vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-            @Override
-            public void handle(AsyncResult<Message<JsonObject>> result) {
-              if (result.failed()) {
-                future.setFailure(result.cause());
-              }
-              else if (result.result().body().getString("status").equals("ok")) {
-                future.setResult(serializer.deserialize(value, Entry.class));
-              }
-              else {
-                future.setFailure(new MimeoException(result.result().body().getString("message")));
-              }
-            }
-          });
-        }
-        else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
-        }
-      }
-    });
+  public Log removeBefore(long index, Handler<AsyncResult<Void>> doneHandler) {
+    removeEntries(0, index, new DefaultFutureResult<Void>().setHandler(doneHandler));
     return this;
   }
 
   @Override
-  public Log removeBefore(long index, Handler<AsyncResult<Void>> doneHandler) {
-    setEmpty(0, index, new DefaultFutureResult<Void>().setHandler(doneHandler));
+  public Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler) {
+    removeEntries(index, currentIndex-1, new DefaultFutureResult<Void>().setHandler(doneHandler));
     return this;
   }
 
-  private void setEmpty(final long index, final long total, final Future<Void> future) {
-    if (index <= total) {
-      final JsonObject message = new JsonObject().putString("command", "lset")
-          .putArray("args", new JsonArray().add(key).add(index).add(""));
+  private void removeEntries(final long index, final long end, final Future<Void> future) {
+    if (index <= end) {
+      final JsonObject message = new JsonObject()
+          .putString("command", "del")
+          .putArray("args", new JsonArray().add(String.format("%s:%d", key, index)));
       vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
         @Override
         public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -333,7 +363,13 @@ public class RedisLog implements Log {
             future.setFailure(result.cause());
           }
           else if (result.result().body().getString("status").equals("ok")) {
-            setEmpty(index + 1, total, future);
+            String value = result.result().body().getString("value");
+            if (value != null) {
+              removeEntries(index-1, end, future);
+            }
+            else {
+              future.setFailure(new MimeoException("Invalid index."));
+            }
           }
           else {
             future.setFailure(new MimeoException(result.result().body().getString("message")));
@@ -344,27 +380,6 @@ public class RedisLog implements Log {
     else {
       future.setResult((Void) null);
     }
-  }
-
-  @Override
-  public Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler) {
-    final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-    final JsonObject message = new JsonObject().putString("command", "ltrim").putArray("args", new JsonArray().add(key).add(0).add(index));
-    vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else if (result.result().body().getString("status").equals("ok")) {
-          future.setResult((Void) null);
-        }
-        else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
-        }
-      }
-    });
-    return this;
   }
 
   @Override
@@ -392,13 +407,13 @@ public class RedisLog implements Log {
   @Override
   @SuppressWarnings("rawtypes")
   public void free(Command command) {
-    // Not yet implemented.
+    free(command.id());
   }
 
   @Override
   @SuppressWarnings("rawtypes")
   public void free(Command command, Handler<AsyncResult<Void>> doneHandler) {
-    // Not yet implemented.
+    free(command.id(), doneHandler);
   }
 
 }
