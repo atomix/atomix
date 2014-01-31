@@ -20,7 +20,7 @@ import net.kuujo.copycat.cluster.ClusterController;
 import net.kuujo.copycat.cluster.impl.DefaultClusterController;
 import net.kuujo.copycat.impl.DefaultCopyCatNode;
 import net.kuujo.copycat.impl.DefaultCopyCatService;
-import net.kuujo.copycat.impl.DefaultCopyCatServiceEndpoint;
+import net.kuujo.copycat.impl.DefaultCopyCatEndpoint;
 import net.kuujo.copycat.log.Log;
 
 import org.vertx.java.core.Vertx;
@@ -148,8 +148,8 @@ public class CopyCat {
    * @return
    *   A new service endpoint instance.
    */
-  public CopyCatServiceEndpoint createServiceEndpoint(String address, CopyCatNode copyCatNode) {
-    return new DefaultCopyCatServiceEndpoint(address, copyCatNode, vertx);
+  public CopyCatEndpoint createServiceEndpoint(String address, CopyCatNode copyCatNode) {
+    return new DefaultCopyCatEndpoint(address, copyCatNode, vertx);
   }
 
 }

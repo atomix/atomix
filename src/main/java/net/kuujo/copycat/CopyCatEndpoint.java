@@ -23,7 +23,7 @@ import org.vertx.java.core.Handler;
  *
  * @author Jordan Halterman
  */
-public interface CopyCatServiceEndpoint {
+public interface CopyCatEndpoint {
 
   /**
    * Sets the endpoint address.
@@ -33,7 +33,7 @@ public interface CopyCatServiceEndpoint {
    * @return
    *   The service endpoint.
    */
-  CopyCatServiceEndpoint setAddress(String address);
+  CopyCatEndpoint setAddress(String address);
 
   /**
    * Returns the endpoint address.
@@ -49,7 +49,7 @@ public interface CopyCatServiceEndpoint {
    * @return
    *   The service endpoint.
    */
-  CopyCatServiceEndpoint start();
+  CopyCatEndpoint start();
 
   /**
    * Starts the endpoint.
@@ -59,7 +59,7 @@ public interface CopyCatServiceEndpoint {
    * @return
    *   The service endpoint.
    */
-  CopyCatServiceEndpoint start(Handler<AsyncResult<Void>> doneHandler);
+  CopyCatEndpoint start(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Stops the endpoint.

@@ -287,13 +287,13 @@ without replication.
 #### Submitting commands over the event bus
 What we've seen so far is a method for submitting commands to the cluster
 via the `submitCommand` method. But this is Vert.x, and in Vert.x we expose
-APIs over the event bus. CopyCat provides a `CopyCatServiceEndpoint` class for
+APIs over the event bus. CopyCat provides a `CopyCatEndpoint` class for
 exposing clusters over the event bus. To create an endpoint call the
 `createEndpoint` method on a `CopyCat` instance, passing the cluster
 address as the only argument.
 
 ```java
-CopyCatServiceEndpoint endpoint = copycat.createEndpoint("test");
+CopyCatEndpoint endpoint = copycat.createEndpoint("test");
 endpoint.start();
 ```
 
@@ -362,7 +362,7 @@ CopyCatService service = copycat.createService("test");
 ```
 
 Here we pass the service address as the only argument. This is the address
-that will be exposed by the `CopyCatServiceEndpoint` on the Vert.x event bus.
+that will be exposed by the `CopyCatEndpoint` on the Vert.x event bus.
 Services operate much like nodes. Indeed, they expose the same API as
 nodes aside from the `setBroadcastAddress(String address)` method, which
 in most cases should not even be used since CopyCat will create a consistent

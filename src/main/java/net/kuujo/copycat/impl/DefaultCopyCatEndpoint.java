@@ -22,14 +22,14 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.CopyCatNode;
-import net.kuujo.copycat.CopyCatServiceEndpoint;
+import net.kuujo.copycat.CopyCatEndpoint;
 
 /**
  * A default service endpoint implementation.
  *
  * @author Jordan Halterman
  */
-public class DefaultCopyCatServiceEndpoint implements CopyCatServiceEndpoint {
+public class DefaultCopyCatEndpoint implements CopyCatEndpoint {
   private String address;
   private final CopyCatNode copyCatNode;
   private final Vertx vertx;
@@ -58,19 +58,19 @@ public class DefaultCopyCatServiceEndpoint implements CopyCatServiceEndpoint {
     }
   };
 
-  public DefaultCopyCatServiceEndpoint(CopyCatNode copyCatNode, Vertx vertx) {
+  public DefaultCopyCatEndpoint(CopyCatNode copyCatNode, Vertx vertx) {
     this.copyCatNode = copyCatNode;
     this.vertx = vertx;
   }
 
-  public DefaultCopyCatServiceEndpoint(String address, CopyCatNode copyCatNode, Vertx vertx) {
+  public DefaultCopyCatEndpoint(String address, CopyCatNode copyCatNode, Vertx vertx) {
     this.address = address;
     this.copyCatNode = copyCatNode;
     this.vertx = vertx;
   }
 
   @Override
-  public CopyCatServiceEndpoint setAddress(String address) {
+  public CopyCatEndpoint setAddress(String address) {
     if (running) throw new IllegalStateException("Cannot modify endpoint address during operation.");
     this.address = address;
     return this;
@@ -82,14 +82,14 @@ public class DefaultCopyCatServiceEndpoint implements CopyCatServiceEndpoint {
   }
 
   @Override
-  public CopyCatServiceEndpoint start() {
+  public CopyCatEndpoint start() {
     running = true;
     vertx.eventBus().registerHandler(address, messageHandler);
     return this;
   }
 
   @Override
-  public CopyCatServiceEndpoint start(Handler<AsyncResult<Void>> doneHandler) {
+  public CopyCatEndpoint start(Handler<AsyncResult<Void>> doneHandler) {
     running = true;
     vertx.eventBus().registerHandler(address, messageHandler, doneHandler);
     return this;

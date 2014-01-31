@@ -27,7 +27,7 @@ import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Function;
 import net.kuujo.copycat.CopyCatNode;
 import net.kuujo.copycat.CopyCatService;
-import net.kuujo.copycat.CopyCatServiceEndpoint;
+import net.kuujo.copycat.CopyCatEndpoint;
 import net.kuujo.copycat.Command.Type;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterController;
@@ -41,24 +41,24 @@ import net.kuujo.copycat.log.Log;
  */
 public class DefaultCopyCatService implements CopyCatService {
   private final CopyCatNode copyCatNode;
-  private final CopyCatServiceEndpoint endpoint;
+  private final CopyCatEndpoint endpoint;
   private final ClusterController cluster;
 
   public DefaultCopyCatService(Vertx vertx) {
     copyCatNode = new DefaultCopyCatNode(UUID.randomUUID().toString(), vertx);
-    endpoint = new DefaultCopyCatServiceEndpoint(copyCatNode, vertx);
+    endpoint = new DefaultCopyCatEndpoint(copyCatNode, vertx);
     cluster = new DefaultClusterController(vertx);
   }
 
   public DefaultCopyCatService(String address, Vertx vertx) {
     copyCatNode = new DefaultCopyCatNode(UUID.randomUUID().toString(), vertx);
-    endpoint = new DefaultCopyCatServiceEndpoint(address, copyCatNode, vertx);
+    endpoint = new DefaultCopyCatEndpoint(address, copyCatNode, vertx);
     cluster = new DefaultClusterController(copyCatNode.getAddress(), String.format("%s.cluster", address), vertx);
   }
 
   public DefaultCopyCatService(String address, Vertx vertx, Log log) {
     copyCatNode = new DefaultCopyCatNode(UUID.randomUUID().toString(), vertx, log);
-    endpoint = new DefaultCopyCatServiceEndpoint(address, copyCatNode, vertx);
+    endpoint = new DefaultCopyCatEndpoint(address, copyCatNode, vertx);
     cluster = new DefaultClusterController(copyCatNode.getAddress(), String.format("%s.cluster", address), vertx);
   }
 
