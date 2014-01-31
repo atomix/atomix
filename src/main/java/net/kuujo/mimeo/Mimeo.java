@@ -15,7 +15,7 @@
  */
 package net.kuujo.mimeo;
 
-import net.kuujo.mimeo.impl.RaftReplica;
+import net.kuujo.mimeo.impl.DefaultService;
 import net.kuujo.mimeo.log.Log;
 
 import org.vertx.java.core.Vertx;
@@ -34,45 +34,29 @@ public class Mimeo {
   }
 
   /**
-   * Creates a mimeo replica.
-   * 
-   * @param address The replica address.
-   * @return A new replica instance.
+   * Creates a new service instance.
+   *
+   * @param address
+   *   The service address.
+   * @return
+   *   A new service instance.
    */
-  public Replica createReplica(String address) {
-    return new RaftReplica(address, vertx);
+  public Service createService(String address) {
+    return new DefaultService(address, vertx);
   }
 
   /**
-   * Creates a mimeo replica.
-   * 
-   * @param address The replica address.
-   * @param log A replica log.
-   * @return A new replica instance.
+   * Creates a new service instance.
+   *
+   * @param address
+   *   The service address.
+   * @param log
+   *   The replicated log.
+   * @return
+   *   A new service instance.
    */
-  public Replica createReplica(String address, Log log) {
-    return new RaftReplica(address, vertx, log);
-  }
-
-  /**
-   * Creates a mimeo replica.
-   * 
-   * @param address The replica address.
-   * @return A new replica instance.
-   */
-  public Replica createReplica(String address, String cluster) {
-    return new RaftReplica(address, cluster, vertx);
-  }
-
-  /**
-   * Creates a mimeo replica.
-   * 
-   * @param address The replica address.
-   * @param log A replica log.
-   * @return A new replica instance.
-   */
-  public Replica createReplica(String address, String cluster, Log log) {
-    return new RaftReplica(address, cluster, vertx, log);
+  public Service createService(String address, Log log) {
+    return new DefaultService(address, vertx, log);
   }
 
 }

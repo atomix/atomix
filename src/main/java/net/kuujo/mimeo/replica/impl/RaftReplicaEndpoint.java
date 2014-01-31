@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.mimeo.impl;
+package net.kuujo.mimeo.replica.impl;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -24,7 +24,6 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.eventbus.Message;
 
-import net.kuujo.mimeo.ReplicationServiceEndpoint;
 import net.kuujo.mimeo.protocol.PingRequest;
 import net.kuujo.mimeo.protocol.PingResponse;
 import net.kuujo.mimeo.protocol.PollRequest;
@@ -33,20 +32,22 @@ import net.kuujo.mimeo.protocol.SubmitRequest;
 import net.kuujo.mimeo.protocol.SubmitResponse;
 import net.kuujo.mimeo.protocol.SyncRequest;
 import net.kuujo.mimeo.protocol.SyncResponse;
+import net.kuujo.mimeo.replica.ReplicaEndpoint;
 
 /**
  * A default service.
  * 
  * @author Jordan Halterman
  */
-public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoint {
+public class RaftReplicaEndpoint implements ReplicaEndpoint {
   private static final long DEFAULT_REPLY_TIMEOUT = 5000;
-  private final String address;
   private final Vertx vertx;
+  private String address;
   private Handler<PingRequest> pingHandler;
   private Handler<SyncRequest> syncHandler;
   private Handler<PollRequest> pollHandler;
   private Handler<SubmitRequest> submitHandler;
+  private boolean running;
 
   private final Handler<Message<JsonObject>> messageHandler = new Handler<Message<JsonObject>>() {
     @Override
@@ -88,23 +89,30 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
     }
   };
 
-  public RaftReplicationServiceEndpoint(String address, Vertx vertx) {
+  public RaftReplicaEndpoint(String address, Vertx vertx) {
     this.address = address;
     this.vertx = vertx;
   }
 
   @Override
-  public String address() {
+  public ReplicaEndpoint setAddress(String address) {
+    if (running) throw new IllegalStateException("Cannot set endpoint address during operation.");
+    this.address = address;
+    return this;
+  }
+
+  @Override
+  public String getAddress() {
     return address;
   }
 
   @Override
-  public ReplicationServiceEndpoint ping(String address, PingRequest request, Handler<AsyncResult<PingResponse>> resultHandler) {
+  public ReplicaEndpoint ping(String address, PingRequest request, Handler<AsyncResult<PingResponse>> resultHandler) {
     return ping(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
   @Override
-  public ReplicationServiceEndpoint ping(String address, PingRequest request, long timeout, Handler<AsyncResult<PingResponse>> resultHandler) {
+  public ReplicaEndpoint ping(String address, PingRequest request, long timeout, Handler<AsyncResult<PingResponse>> resultHandler) {
     final Future<PingResponse> future = new DefaultFutureResult<PingResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "ping").putObject("request", PingRequest.toJson(request)), timeout,
@@ -129,18 +137,18 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   }
 
   @Override
-  public ReplicationServiceEndpoint pingHandler(Handler<PingRequest> handler) {
+  public ReplicaEndpoint pingHandler(Handler<PingRequest> handler) {
     pingHandler = handler;
     return this;
   }
 
   @Override
-  public ReplicationServiceEndpoint sync(String address, SyncRequest request, Handler<AsyncResult<SyncResponse>> resultHandler) {
+  public ReplicaEndpoint sync(String address, SyncRequest request, Handler<AsyncResult<SyncResponse>> resultHandler) {
     return sync(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
   @Override
-  public ReplicationServiceEndpoint sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler) {
+  public ReplicaEndpoint sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler) {
     final Future<SyncResponse> future = new DefaultFutureResult<SyncResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "sync").putObject("request", SyncRequest.toJson(request)), timeout,
@@ -165,18 +173,18 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   }
 
   @Override
-  public ReplicationServiceEndpoint syncHandler(Handler<SyncRequest> handler) {
+  public ReplicaEndpoint syncHandler(Handler<SyncRequest> handler) {
     syncHandler = handler;
     return this;
   }
 
   @Override
-  public ReplicationServiceEndpoint poll(String address, PollRequest request, Handler<AsyncResult<PollResponse>> resultHandler) {
+  public ReplicaEndpoint poll(String address, PollRequest request, Handler<AsyncResult<PollResponse>> resultHandler) {
     return poll(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
   @Override
-  public ReplicationServiceEndpoint poll(String address, PollRequest request, long timeout, Handler<AsyncResult<PollResponse>> resultHandler) {
+  public ReplicaEndpoint poll(String address, PollRequest request, long timeout, Handler<AsyncResult<PollResponse>> resultHandler) {
     final Future<PollResponse> future = new DefaultFutureResult<PollResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "poll").putObject("request", PollRequest.toJson(request)), timeout,
@@ -201,18 +209,18 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   }
 
   @Override
-  public ReplicationServiceEndpoint pollHandler(Handler<PollRequest> handler) {
+  public ReplicaEndpoint pollHandler(Handler<PollRequest> handler) {
     pollHandler = handler;
     return this;
   }
 
   @Override
-  public ReplicationServiceEndpoint submit(String address, SubmitRequest request, Handler<AsyncResult<SubmitResponse>> resultHandler) {
+  public ReplicaEndpoint submit(String address, SubmitRequest request, Handler<AsyncResult<SubmitResponse>> resultHandler) {
     return submit(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
   @Override
-  public ReplicationServiceEndpoint submit(String address, SubmitRequest request, long timeout,
+  public ReplicaEndpoint submit(String address, SubmitRequest request, long timeout,
       Handler<AsyncResult<SubmitResponse>> resultHandler) {
     final Future<SubmitResponse> future = new DefaultFutureResult<SubmitResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
@@ -238,19 +246,20 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   }
 
   @Override
-  public ReplicationServiceEndpoint submitHandler(Handler<SubmitRequest> handler) {
+  public ReplicaEndpoint submitHandler(Handler<SubmitRequest> handler) {
     submitHandler = handler;
     return this;
   }
 
   @Override
-  public ReplicationServiceEndpoint start() {
+  public ReplicaEndpoint start() {
     start(null);
     return this;
   }
 
   @Override
-  public ReplicationServiceEndpoint start(Handler<AsyncResult<Void>> doneHandler) {
+  public ReplicaEndpoint start(Handler<AsyncResult<Void>> doneHandler) {
+    running = true;
     vertx.eventBus().registerHandler(address, messageHandler, doneHandler);
     return this;
   }
@@ -263,6 +272,7 @@ public class RaftReplicationServiceEndpoint implements ReplicationServiceEndpoin
   @Override
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
     vertx.eventBus().unregisterHandler(address, messageHandler, doneHandler);
+    running = false;
   }
 
 }

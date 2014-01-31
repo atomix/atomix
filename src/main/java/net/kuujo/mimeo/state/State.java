@@ -15,14 +15,13 @@
  */
 package net.kuujo.mimeo.state;
 
-import net.kuujo.mimeo.ReplicationServiceEndpoint;
-import net.kuujo.mimeo.StateMachine;
 import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.log.Log;
 import net.kuujo.mimeo.protocol.PingRequest;
 import net.kuujo.mimeo.protocol.PollRequest;
 import net.kuujo.mimeo.protocol.SubmitRequest;
 import net.kuujo.mimeo.protocol.SyncRequest;
+import net.kuujo.mimeo.replica.ReplicaEndpoint;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -48,7 +47,7 @@ public interface State {
    * @param endpoint An endpoint instance.
    * @return The state instance.
    */
-  State setEndpoint(ReplicationServiceEndpoint endpoint);
+  State setEndpoint(ReplicaEndpoint endpoint);
 
   /**
    * Sets the state machine.

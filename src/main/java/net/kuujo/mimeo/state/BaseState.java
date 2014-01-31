@@ -18,8 +18,6 @@ package net.kuujo.mimeo.state;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.kuujo.mimeo.ReplicationServiceEndpoint;
-import net.kuujo.mimeo.StateMachine;
 import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.log.CommandEntry;
 import net.kuujo.mimeo.log.ConfigurationEntry;
@@ -28,6 +26,7 @@ import net.kuujo.mimeo.log.Log;
 import net.kuujo.mimeo.log.Entry.Type;
 import net.kuujo.mimeo.protocol.PollRequest;
 import net.kuujo.mimeo.protocol.SyncRequest;
+import net.kuujo.mimeo.replica.ReplicaEndpoint;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -42,7 +41,7 @@ import org.vertx.java.core.impl.DefaultFutureResult;
  */
 public abstract class BaseState implements State {
   protected Vertx vertx;
-  protected ReplicationServiceEndpoint endpoint;
+  protected ReplicaEndpoint endpoint;
   protected StateMachine stateMachine;
   protected Log log;
   protected ClusterConfig config;
@@ -56,7 +55,7 @@ public abstract class BaseState implements State {
   }
 
   @Override
-  public State setEndpoint(ReplicationServiceEndpoint endpoint) {
+  public State setEndpoint(ReplicaEndpoint endpoint) {
     this.endpoint = endpoint;
     return this;
   }

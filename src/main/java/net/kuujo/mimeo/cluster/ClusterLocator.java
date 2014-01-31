@@ -19,11 +19,11 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
 /**
- * A cluster controller.
+ * A cluster locator.
  *
  * @author Jordan Halterman
  */
-public interface ClusterController {
+public interface ClusterLocator {
 
   /**
    * Returns the cluster configuration.
@@ -34,32 +34,14 @@ public interface ClusterController {
   ClusterConfig config();
 
   /**
-   * Sets the local endpoint address.
-   *
-   * @param address
-   *   The local endpoint address.
-   * @return
-   *   The cluster controller.
-   */
-  ClusterController setLocalAddress(String address);
-
-  /**
-   * Returns the local endpoint address.
-   *
-   * @return
-   *   The local endpoint address.
-   */
-  String getLocalAddress();
-
-  /**
    * Sets the cluster broadcast address.
    *
    * @param address
    *   A cluster-wide event bus address.
    * @return
-   *   The cluster controller.
+   *   The cluster locator.
    */
-  ClusterController setBroadcastAddress(String address);
+  ClusterLocator setBroadcastAddress(String address);
 
   /**
    * Returns the cluster broadcast address.
@@ -75,9 +57,9 @@ public interface ClusterController {
    * @param interval
    *   The interval at which the locator will broadcast to nodes in the cluster.
    * @return
-   *   The cluster controller.
+   *   The cluster locator.
    */
-  ClusterController setBroadcastInterval(long interval);
+  ClusterLocator setBroadcastInterval(long interval);
 
   /**
    * Returns the cluster broadcast interval.
@@ -93,9 +75,9 @@ public interface ClusterController {
    * @param timeout
    *   A timeout in millisecond within which nodes must respond to the locator.
    * @return
-   *   The cluster controller.
+   *   The cluster locator.
    */
-  ClusterController setBroadcastTimeout(long timeout);
+  ClusterLocator setBroadcastTimeout(long timeout);
 
   /**
    * Returns the cluster broadcast timeout.
@@ -106,34 +88,34 @@ public interface ClusterController {
   long getBroadcastTimeout();
 
   /**
-   * Starts the cluster controller.
+   * Starts the cluster locator.
    *
    * @return
-   *   The cluster controller.
+   *   The cluster locator.
    */
-  ClusterController start();
+  ClusterLocator start();
 
   /**
-   * Starts the cluster controller.
+   * Starts the cluster locator.
    *
    * @param doneHandler
-   *   An asynchronous handler to be called once the controller is started. The handler
+   *   An asynchronous handler to be called once the locator is started. The handler
    *   will be passed the full detected cluster configuration.
    * @return
-   *   The cluster controller.
+   *   The cluster locator.
    */
-  ClusterController start(Handler<AsyncResult<ClusterConfig>> doneHandler);
+  ClusterLocator start(Handler<AsyncResult<ClusterConfig>> doneHandler);
 
   /**
-   * Stops the cluster controller.
+   * Stops the cluster locator.
    */
   void stop();
 
   /**
-   * Stops the cluster controller.
+   * Stops the cluster locator.
    *
    * @param doneHandler
-   *   An asynchronous handler to be called once the controller is stopped.
+   *   An asynchronous handler to be called once the locator is stopped.
    */
   void stop(Handler<AsyncResult<Void>> doneHandler);
 

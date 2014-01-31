@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.mimeo;
+package net.kuujo.mimeo.state;
+
+import net.kuujo.mimeo.Command;
 
 import org.vertx.java.core.json.JsonObject;
 

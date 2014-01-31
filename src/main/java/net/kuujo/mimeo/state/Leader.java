@@ -270,7 +270,7 @@ public class Leader extends BaseState implements Observer {
     // this node is the most up-to-date, we can simply apply the command to
     // the
     // state machine and return the result without replicating the log.
-    if (request.command().type().isReadOnly()) {
+    if (request.command().type() != null && request.command().type().isReadOnly()) {
       if (context.requireReadMajority()) {
         readMajority(new Handler<Void>() {
           @Override
@@ -283,7 +283,8 @@ public class Leader extends BaseState implements Observer {
         request.reply(stateMachine.applyCommand(request.command()));
       }
     }
-    // Otherwise, for write commands the entry must be replicated on a
+    // Otherwise, for write commands or for commands for which a type was not
+    // explicitly provided the entry must be replicated on a
     // majority of the cluster prior to responding to the request.
     else {
       // Append a new command entry to the log.

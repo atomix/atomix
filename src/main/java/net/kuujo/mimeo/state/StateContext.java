@@ -18,8 +18,6 @@ package net.kuujo.mimeo.state;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.kuujo.mimeo.ReplicationServiceEndpoint;
-import net.kuujo.mimeo.StateMachine;
 import net.kuujo.mimeo.cluster.ClusterConfig;
 import net.kuujo.mimeo.log.CommandEntry;
 import net.kuujo.mimeo.log.Entry;
@@ -30,6 +28,7 @@ import net.kuujo.mimeo.protocol.PingRequest;
 import net.kuujo.mimeo.protocol.PollRequest;
 import net.kuujo.mimeo.protocol.SubmitRequest;
 import net.kuujo.mimeo.protocol.SyncRequest;
+import net.kuujo.mimeo.replica.ReplicaEndpoint;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -41,11 +40,10 @@ import org.vertx.java.core.Vertx;
  * @author Jordan Halterman
  */
 public class StateContext {
-  private final String address;
   private final Vertx vertx;
-  private final ReplicationServiceEndpoint endpoint;
-  private final Log log;
-  private final StateMachine stateMachine;
+  private final ReplicaEndpoint endpoint;
+  private Log log;
+  private StateMachine stateMachine;
   private ClusterConfig cluster;
   private final StateFactory stateFactory = new StateFactory();
   private StateType stateType;
@@ -63,8 +61,7 @@ public class StateContext {
   private long commitIndex;
   private long lastApplied;
 
-  public StateContext(String address, Vertx vertx, ReplicationServiceEndpoint endpoint, Log log, StateMachine stateMachine) {
-    this.address = address;
+  public StateContext(Vertx vertx, ReplicaEndpoint endpoint, StateMachine stateMachine, Log log) {
     this.vertx = vertx;
     this.endpoint = endpoint;
     this.log = log;
@@ -231,7 +228,7 @@ public class StateContext {
    * @return The current endpoint address.
    */
   public String address() {
-    return address;
+    return endpoint.getAddress();
   }
 
   /**
@@ -239,8 +236,34 @@ public class StateContext {
    * 
    * @return The parent endpoint.
    */
-  public ReplicationServiceEndpoint endpoint() {
+  public ReplicaEndpoint endpoint() {
     return endpoint;
+  }
+
+  /**
+   * Returns the state machine.
+   *
+   * @return
+   *   The state machine.
+   */
+  public StateMachine stateMachine() {
+    return stateMachine;
+  }
+
+  /**
+   * Sets the state machine.
+   *
+   * @param stateMachine
+   *   The state machine to set.
+   * @return
+   *   The state context.
+   */
+  public StateContext stateMachine(StateMachine stateMachine) {
+    this.stateMachine = stateMachine;
+    if (state != null) {
+      state.setStateMachine(stateMachine);
+    }
+    return this;
   }
 
   /**
@@ -250,6 +273,22 @@ public class StateContext {
    */
   public Log log() {
     return log;
+  }
+
+  /**
+   * Sets the state log.
+   *
+   * @param log
+   *   The log.
+   * @return
+   *   The state context.
+   */
+  public StateContext log(Log log) {
+    this.log = log;
+    if (state != null) {
+      state.setLog(log);
+    }
+    return this;
   }
 
   /**

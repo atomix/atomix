@@ -15,300 +15,128 @@
  */
 package net.kuujo.mimeo.cluster.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import net.kuujo.mimeo.cluster.ClusterConfig;
-import net.kuujo.mimeo.cluster.ClusterController;
-
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.DefaultFutureResult;
-import org.vertx.java.core.json.JsonObject;
+
+import net.kuujo.mimeo.cluster.ClusterController;
+import net.kuujo.mimeo.cluster.ClusterEndpoint;
+import net.kuujo.mimeo.cluster.ClusterConfig;
+import net.kuujo.mimeo.cluster.ClusterLocator;
 
 /**
- * A default cluster implementation.
- * 
+ * A default cluster controller implementation.
+ *
  * @author Jordan Halterman
  */
 public class DefaultClusterController implements ClusterController {
-  private static final long MINIMUM_RESPONSE_TIME = 100;
-  private String cluster;
-  private String address;
-  private final String internalAddress = UUID.randomUUID().toString();
-  private MembershipType membership = MembershipType.STATIC;
-  private ClusterConfig config = new ClusterConfig();
-  private final Vertx vertx;
-  private Map<String, Long> nodes = new HashMap<>();
-  private Map<String, Long> timers = new HashMap<>();
-  private long timerID;
-  private long lastBroadcastTime;
-  private String lastBroadcastId;
-  private Handler<Message<JsonObject>> messageHandler;
-  private final Handler<Message<JsonObject>> wrappedMessageHandler = new Handler<Message<JsonObject>>() {
-    @Override
-    public void handle(Message<JsonObject> message) {
-      final String action = message.body().getString("action");
-      if (action != null) {
-        switch (action) {
-          case "command":
-            if (messageHandler != null) {
-              messageHandler.handle(message);
-            }
-            else {
-              message.reply(new JsonObject().putString("status", "error").putString("message", "Invalid action."));
-            }
-            break;
-          case "broadcast":
-            doBroadcast(message);
-            break;
-          default:
-            message.reply(new JsonObject().putString("status", "error").putString("message", "Invalid action."));
-            break;
-        }
-      }
-      else if (messageHandler != null) {
-        messageHandler.handle(message);
-      }
-    }
-  };
-
-  private final Handler<Message<JsonObject>> internalMessageHandler = new Handler<Message<JsonObject>>() {
-    @Override
-    public void handle(Message<JsonObject> message) {
-      final String action = message.body().getString("action");
-      if (action != null) {
-        switch (action) {
-          case "join":
-            doJoin(message);
-            break;
-          default:
-            message.reply(new JsonObject().putString("status", "error").putString("message", "Invalid action."));
-            break;
-        }
-      }
-    }
-  };
+  private final ClusterLocator locator;
+  private final ClusterEndpoint broadcaster;
 
   public DefaultClusterController(Vertx vertx) {
-    this.vertx = vertx;
+    locator = new DefaultClusterLocator(vertx);
+    broadcaster = new DefaultClusterEndpoint(vertx);
   }
 
-  public DefaultClusterController(String cluster, Vertx vertx) {
-    this.cluster = cluster;
-    this.vertx = vertx;
+  public DefaultClusterController(String local, String broadcast, Vertx vertx) {
+    this(vertx);
+    locator.setBroadcastAddress(broadcast);
+    broadcaster.setLocalAddress(local);
+    broadcaster.setBroadcastAddress(broadcast);
   }
 
-  public DefaultClusterController(String address, String cluster, Vertx vertx) {
-    this.address = address;
-    config.addMember(address);
-    this.cluster = cluster;
-    this.vertx = vertx;
+  @Override
+  public ClusterConfig config() {
+    return locator.config();
   }
 
   @Override
   public ClusterController setLocalAddress(String address) {
-    if (this.address != null) {
-      config.removeMember(this.address);
-    }
-    this.address = address;
-    config.addMember(address);
+    broadcaster.setLocalAddress(address);
     return this;
   }
 
   @Override
   public String getLocalAddress() {
-    return address;
+    return broadcaster.getLocalAddress();
   }
 
   @Override
-  public ClusterController setClusterAddress(String address) {
-    this.cluster = address;
+  public ClusterController setBroadcastAddress(String address) {
+    broadcaster.setBroadcastAddress(address);
+    locator.setBroadcastAddress(address);
     return this;
   }
 
   @Override
-  public String getClusterAddress() {
-    return cluster;
+  public String getBroadcastAddress() {
+    return locator.getBroadcastAddress();
   }
 
   @Override
-  public ClusterController setMembershipType(MembershipType type) {
-    this.membership = type;
+  public ClusterController setBroadcastInterval(long interval) {
+    locator.setBroadcastInterval(interval);
     return this;
   }
 
   @Override
-  public MembershipType getMembershipType() {
-    return membership;
+  public long getBroadcastInterval() {
+    return locator.getBroadcastInterval();
   }
 
   @Override
-  public ClusterController enableStaticMembership() {
-    return setMembershipType(MembershipType.STATIC);
-  }
-
-  @Override
-  public ClusterController enableDynamicMembership() {
-    return setMembershipType(MembershipType.DYNAMIC);
-  }
-
-  @Override
-  public ClusterController addMember(String address) {
-    if (!config.containsMember(address)) {
-      config.addMember(address);
-    }
+  public ClusterController setBroadcastTimeout(long timeout) {
+    locator.setBroadcastTimeout(timeout);
     return this;
   }
 
   @Override
-  public ClusterController removeMember(String address) {
-    if (config.containsMember(address)) {
-      config.removeMember(address);
-    }
+  public long getBroadcastTimeout() {
+    return locator.getBroadcastTimeout();
+  }
+
+  @Override
+  public ClusterController start() {
+    start(null);
     return this;
   }
 
   @Override
-  public ClusterController setMembers(String... members) {
-    config.setMembers(members);
-    return this;
-  }
-
-  @Override
-  public ClusterController setMembers(Set<String> members) {
-    config.setMembers(members);
-    return this;
-  }
-
-  @Override
-  public ClusterController start(Handler<AsyncResult<ClusterConfig>> doneHandler) {
-    final Future<ClusterConfig> future = new DefaultFutureResult<ClusterConfig>().setHandler(doneHandler);
-    if (cluster != null) {
-      vertx.eventBus().registerHandler(cluster, wrappedMessageHandler, new Handler<AsyncResult<Void>>() {
-        @Override
-        public void handle(AsyncResult<Void> result) {
-          if (result.failed()) {
-            future.setFailure(result.cause());
-          }
-          else {
-            vertx.eventBus().registerHandler(internalAddress, internalMessageHandler, new Handler<AsyncResult<Void>>() {
-              @Override
-              public void handle(AsyncResult<Void> result) {
-                if (result.failed()) {
-                  vertx.eventBus().unregisterHandler(cluster, wrappedMessageHandler);
-                  future.setFailure(result.cause());
-                }
-                else {
-                  timerID = vertx.setPeriodic(2500, new Handler<Long>() {
-                    @Override
-                    public void handle(Long timerID) {
-                      doBroadcast();
-                    }
-                  });
-                  future.setResult(config);
-                }
-              }
-            });
-          }
+  public ClusterController start(final Handler<AsyncResult<ClusterConfig>> doneHandler) {
+    broadcaster.start(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          new DefaultFutureResult<ClusterConfig>().setHandler(doneHandler).setFailure(result.cause());
         }
-      });
-    }
-    else {
-      future.setResult(config);
-    }
-    return this;
-  }
-
-  /**
-   * Broadcasts a message to the cluster. Nodes should respond to the message to
-   * indicate participation in the cluster.
-   */
-  private void doBroadcast() {
-    lastBroadcastTime = System.currentTimeMillis();
-    lastBroadcastId = UUID.randomUUID().toString();
-    vertx.eventBus().publish(cluster,
-        new JsonObject().putString("action", "broadcast").putString("address", internalAddress).putString("id", lastBroadcastId));
-    for (Map.Entry<String, Long> entry : nodes.entrySet()) {
-      final String address = entry.getKey();
-      if (!timers.containsKey(address)) {
-        final long lastResponseTime = entry.getValue();
-        timers.put(address,
-            vertx.setTimer(lastResponseTime < MINIMUM_RESPONSE_TIME ? MINIMUM_RESPONSE_TIME : lastResponseTime * 4, new Handler<Long>() {
-              @Override
-              public void handle(Long timerID) {
-                nodes.remove(address);
-                timers.remove(address);
-                if (membership.equals(MembershipType.DYNAMIC) && config.containsMember(address)) {
-                  try {
-                    config.removeMember(address);
-                  }
-                  catch (IllegalStateException e) {
-                    // Fail silently.
-                  }
-                }
-              }
-            }));
-      }
-    }
-  }
-
-  /**
-   * Handles receipt of a broadcast message.
-   */
-  private void doBroadcast(final Message<JsonObject> message) {
-    final String address = message.body().getString("address");
-    if (address != null) {
-      vertx.eventBus().send(address,
-          new JsonObject().putString("action", "join").putString("address", this.address).putString("id", message.body().getString("id")));
-    }
-  }
-
-  /**
-   * Handles receipt of a join message.
-   */
-  private void doJoin(final Message<JsonObject> message) {
-    // Check that this is a join from our most recent broadcast in order to
-    // prevent
-    // mistaking extremely delayed messages for joins of the current broadcast.
-    final String id = message.body().getString("id");
-    if (id == lastBroadcastId) {
-      final String address = message.body().getString("address");
-      if (timers.containsKey(address)) {
-        vertx.cancelTimer(timers.remove(address));
-      }
-      else {
-        nodes.put(address, System.currentTimeMillis() - lastBroadcastTime);
-        if (membership.equals(MembershipType.DYNAMIC) && !config.containsMember(address)) {
-          try {
-            config.addMember(address);
-          }
-          catch (IllegalStateException e) {
-            // Fail silently.
-          }
+        else {
+          locator.start(doneHandler);
         }
       }
-    }
-  }
-
-  @Override
-  public ClusterController messageHandler(Handler<Message<JsonObject>> handler) {
-    messageHandler = handler;
+    });
     return this;
   }
 
   @Override
-  public void stop(Handler<AsyncResult<Void>> doneHandler) {
-    vertx.eventBus().registerHandler(cluster, wrappedMessageHandler, doneHandler);
-    if (timerID > 0) {
-      vertx.cancelTimer(timerID);
-      timerID = 0;
-    }
+  public void stop() {
+    stop(null);
+  }
+
+  @Override
+  public void stop(final Handler<AsyncResult<Void>> doneHandler) {
+    locator.stop(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          broadcaster.stop();
+          new DefaultFutureResult<Void>().setHandler(doneHandler).setFailure(result.cause());
+        }
+        else {
+          broadcaster.stop(doneHandler);
+        }
+      }
+    });
   }
 
 }
