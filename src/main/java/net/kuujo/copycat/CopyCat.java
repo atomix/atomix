@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterController;
 import net.kuujo.copycat.cluster.impl.DefaultClusterController;
 import net.kuujo.copycat.impl.DefaultNode;
@@ -61,6 +62,20 @@ public class CopyCat {
    */
   public Node createNode(String address) {
     return new DefaultNode(address, vertx);
+  }
+
+  /**
+   * Creates a new node.
+   *
+   * @param address
+   *   The node address.
+   * @param config
+   *   The cluster configuration.
+   * @return
+   *   A new node instance.
+   */
+  public Node createNode(String address, ClusterConfig config) {
+    return new DefaultNode(address, vertx).setClusterConfig(config);
   }
 
   /**

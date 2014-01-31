@@ -27,7 +27,7 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.MimeoException;
+import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.serializer.Serializer;
 
 /**
@@ -64,7 +64,7 @@ public class MongoLog implements Log {
           future.setResult((Void) null);
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -78,7 +78,7 @@ public class MongoLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
         else {
           JsonArray jsonEntries = result.result().body().getArray("result");
@@ -114,7 +114,7 @@ public class MongoLog implements Log {
           future.setResult(index);
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -136,7 +136,7 @@ public class MongoLog implements Log {
           future.setResult(result.result().body().getInteger("count") > 0);
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -158,7 +158,7 @@ public class MongoLog implements Log {
           future.setResult(serializer.deserialize(result.result().body().getObject("result").getObject("entry"), Entry.class));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -181,7 +181,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("index"));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -204,7 +204,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("term"));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -228,7 +228,7 @@ public class MongoLog implements Log {
               Entry.class));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -251,7 +251,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("index"));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -274,7 +274,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("term"));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -298,7 +298,7 @@ public class MongoLog implements Log {
               Entry.class));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -323,7 +323,7 @@ public class MongoLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
         else {
           JsonArray jsonEntries = result.result().body().getArray("result");
@@ -362,7 +362,7 @@ public class MongoLog implements Log {
                 future.setResult(entry);
               }
               else {
-                future.setFailure(new MimeoException(result.result().body().getString("message")));
+                future.setFailure(new CopyCatException(result.result().body().getString("message")));
               }
             }
           });
@@ -386,7 +386,7 @@ public class MongoLog implements Log {
           future.setResult((Void) null);
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -408,7 +408,7 @@ public class MongoLog implements Log {
           future.setResult((Void) null);
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });

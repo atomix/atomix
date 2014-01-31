@@ -23,17 +23,17 @@ import org.vertx.java.core.VertxException;
  * @author Jordan Halterman
  */
 @SuppressWarnings("serial")
-public class MimeoException extends VertxException {
+public class CopyCatException extends VertxException {
 
-  public MimeoException(String message) {
+  public CopyCatException(String message) {
     super(message);
   }
 
-  public MimeoException(String message, Throwable cause) {
+  public CopyCatException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public MimeoException(Throwable cause) {
+  public CopyCatException(Throwable cause) {
     super(cause);
   }
 

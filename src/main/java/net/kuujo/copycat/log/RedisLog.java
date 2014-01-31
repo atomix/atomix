@@ -27,7 +27,7 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.MimeoException;
+import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.serializer.Serializer;
 
 /**
@@ -61,7 +61,7 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
         else {
           Object index = result.result().body().getValue("value");
@@ -85,7 +85,7 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
         else {
           visitor.applyEntry(serializer.deserialize(new JsonObject(result.result().body().getString("value")), Entry.class));
@@ -112,7 +112,7 @@ public class RedisLog implements Log {
           future.setResult(index);
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -135,7 +135,7 @@ public class RedisLog implements Log {
           future.setResult(result.result().body().getBoolean("value"));
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -158,11 +158,11 @@ public class RedisLog implements Log {
             future.setResult(serializer.deserialize(new JsonObject(value), Entry.class));
           }
           else {
-            future.setFailure(new MimeoException("Invalid index."));
+            future.setFailure(new CopyCatException("Invalid index."));
           }
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -280,11 +280,11 @@ public class RedisLog implements Log {
               loadEntries(index+1, end, entries, future);
             }
             else {
-              future.setFailure(new MimeoException("Invalid index."));
+              future.setFailure(new CopyCatException("Invalid index."));
             }
           }
           else {
-            future.setFailure(new MimeoException(result.result().body().getString("message")));
+            future.setFailure(new CopyCatException(result.result().body().getString("message")));
           }
         }
       });
@@ -321,17 +321,17 @@ public class RedisLog implements Log {
                   future.setResult(entry);
                 }
                 else {
-                  future.setFailure(new MimeoException(result.result().body().getString("message")));
+                  future.setFailure(new CopyCatException(result.result().body().getString("message")));
                 }
               }
             });
           }
           else {
-            future.setFailure(new MimeoException("Invalid index."));
+            future.setFailure(new CopyCatException("Invalid index."));
           }
         }
         else {
-          future.setFailure(new MimeoException(result.result().body().getString("message")));
+          future.setFailure(new CopyCatException(result.result().body().getString("message")));
         }
       }
     });
@@ -367,11 +367,11 @@ public class RedisLog implements Log {
               removeEntries(index-1, end, future);
             }
             else {
-              future.setFailure(new MimeoException("Invalid index."));
+              future.setFailure(new CopyCatException("Invalid index."));
             }
           }
           else {
-            future.setFailure(new MimeoException(result.result().body().getString("message")));
+            future.setFailure(new CopyCatException(result.result().body().getString("message")));
           }
         }
       });
