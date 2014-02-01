@@ -123,7 +123,7 @@ public class DefaultClusterLocator implements ClusterLocator {
   @Override
   public ClusterLocator start(Handler<AsyncResult<ClusterConfig>> doneHandler) {
     final Future<ClusterConfig> future = new DefaultFutureResult<ClusterConfig>().setHandler(doneHandler);
-    vertx.eventBus().registerHandler(cluster, messageHandler, new Handler<AsyncResult<Void>>() {
+    vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
@@ -168,8 +168,10 @@ public class DefaultClusterLocator implements ClusterLocator {
   private void doBroadcast() {
     final String id = UUID.randomUUID().toString();
     respondents.put(id, new HashSet<String>());
-    vertx.eventBus().publish(cluster, new JsonObject().putString("action", "broadcast")
-        .putString("address", address).putString("id", id));
+    vertx.eventBus().publish(cluster, new JsonObject()
+        .putString("action", "broadcast")
+        .putString("address", address)
+        .putString("id", id));
     final Set<String> currentMembers = config.getMembers();
     vertx.setTimer(timeout, new Handler<Long>() {
       @Override

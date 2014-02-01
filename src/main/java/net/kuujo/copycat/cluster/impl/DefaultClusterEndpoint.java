@@ -89,12 +89,12 @@ public class DefaultClusterEndpoint implements ClusterEndpoint {
 
   @Override
   public void stop() {
-    vertx.eventBus().unregisterHandler(address, messageHandler);
+    vertx.eventBus().unregisterHandler(cluster, messageHandler);
   }
 
   @Override
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
-    vertx.eventBus().unregisterHandler(address, messageHandler, doneHandler);
+    vertx.eventBus().unregisterHandler(cluster, messageHandler, doneHandler);
   }
 
   private void doBroadcast(final Message<JsonObject> message) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 the original author or authors.
+ * Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@ public class ReplicationTest extends TestVerticle {
   };
 
   @Test
-  public void testReplication() {
+  public void testCommandReplication() {
     final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
 
     final Replica test1 = new RaftReplica("test.1", vertx, stateMachine).setClusterConfig(config);
