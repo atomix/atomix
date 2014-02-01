@@ -15,11 +15,13 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.util.List;
 import java.util.Map;
 
 import net.kuujo.copycat.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -27,9 +29,9 @@ import org.vertx.java.core.json.JsonObject;
  * 
  * @author Jordan Halterman
  */
-public class SubmitResponse implements Response {
+public class SubmitResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
-  private Map<String, Object> result;
+  private Object result;
 
   public SubmitResponse() {
   }
@@ -50,8 +52,15 @@ public class SubmitResponse implements Response {
     return serializer.serialize(response);
   }
 
-  public JsonObject result() {
-    return new JsonObject(result);
+  @SuppressWarnings("unchecked")
+  public Object result() {
+    if (result instanceof Map) {
+      return new JsonObject((Map<String, Object>) result);
+    }
+    else if (result instanceof List) {
+      return new JsonArray((List<Object>) result);
+    }
+    return result;
   }
 
 }

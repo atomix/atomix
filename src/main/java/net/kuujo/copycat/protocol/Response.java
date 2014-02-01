@@ -24,8 +24,16 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * 
  * @author Jordan Halterman
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
-public interface Response {
+@JsonAutoDetect(
+    creatorVisibility=JsonAutoDetect.Visibility.NONE,
+    fieldVisibility=JsonAutoDetect.Visibility.ANY,
+    getterVisibility=JsonAutoDetect.Visibility.NONE,
+    isGetterVisibility=JsonAutoDetect.Visibility.NONE,
+    setterVisibility=JsonAutoDetect.Visibility.NONE
+)
+public abstract class Response {
+  public static final String STATUS_OK = "ok";
+  public static final String STATUS_ERROR = "error";
 }

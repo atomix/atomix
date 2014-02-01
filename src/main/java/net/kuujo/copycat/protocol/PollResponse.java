@@ -25,7 +25,7 @@ import net.kuujo.copycat.serializer.Serializer;
  * 
  * @author Jordan Halterman
  */
-public class PollResponse implements Response {
+public class PollResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
   private long term;
   private boolean voteGranted;

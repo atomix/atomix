@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.impl;
 
-import java.util.UUID;
+import java.util.List;
+import java.util.Map;
 
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonValue;
 
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.log.Entry;
@@ -32,42 +32,53 @@ import net.kuujo.copycat.log.Entry;
  * @author Jordan Halterman
  */
 public class DefaultCommand<T> implements Command<T> {
-  @JsonIgnore
-  private JsonObject command;
+  private String command;
+  private Type type;
+  private Object data;
   @JsonIgnore
   private Entry entry;
 
   public DefaultCommand() {
-    command = new JsonObject();
   }
 
-  @JsonCreator
-  private DefaultCommand(String json) {
-    command = new JsonObject(json);
+  public DefaultCommand(String command, T data) {
+    this(command, null, data);
   }
 
   public DefaultCommand(String command, Command.Type type, T data) {
-    this(UUID.randomUUID().toString(), command, type, data);
-  }
-
-  public DefaultCommand(String id, String command, Command.Type type, T data) {
-    this.command = new JsonObject().putString("id", id).putString("command", command)
-        .putString("type", type.getName()).putValue("data", data);
+    this.command = command;
+    this.type = type;
+    if (data instanceof JsonObject) {
+      this.data = ((JsonObject) data).toMap();
+    }
+    else if (data instanceof JsonArray) {
+      this.data = ((JsonArray) data).toArray();
+    }
+    else {
+      this.data = (T) data;
+    }
   }
 
   @Override
   public Command.Type type() {
-    return command.getFieldNames().contains("type") ? Command.Type.parse(command.getString("type")) : null;
+    return type;
   }
 
   @Override
   public String command() {
-    return command.getString("command");
+    return command;
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public T data() {
-    return command.getValue("data");
+    if (data instanceof Map) {
+      return (T) new JsonObject((Map<String, Object>) data);
+    }
+    else if (data instanceof List) {
+      return (T) new JsonArray((List<Object>) data);
+    }
+    return (T) data;
   }
 
   public DefaultCommand<T> setEntry(Entry entry) {
@@ -80,11 +91,6 @@ public class DefaultCommand<T> implements Command<T> {
     if (entry != null) {
       entry.free();
     }
-  }
-
-  @JsonValue
-  private String getJsonValue() {
-    return command.encode();
   }
 
 }

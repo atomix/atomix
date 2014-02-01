@@ -25,7 +25,7 @@ import org.vertx.java.core.json.JsonObject;
  * 
  * @author Jordan Halterman
  */
-public class PingResponse implements Response {
+public class PingResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
   private long term;
 

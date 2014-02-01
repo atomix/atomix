@@ -59,7 +59,12 @@ public class SubmitRequest extends Request {
   }
 
   public void reply(Object result) {
-    message.reply(new JsonObject().putString("status", "ok").putValue("result", result));
+    if (result != null) {
+      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putValue("result", result)));
+    }
+    else {
+      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putString("result", null)));
+    }
   }
 
 }

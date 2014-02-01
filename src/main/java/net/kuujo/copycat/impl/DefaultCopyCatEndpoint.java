@@ -31,7 +31,7 @@ import net.kuujo.copycat.CopyCatEndpoint;
  */
 public class DefaultCopyCatEndpoint implements CopyCatEndpoint {
   private String address;
-  private final CopyCatNode copyCatNode;
+  private final CopyCatNode node;
   private final Vertx vertx;
   private boolean running;
 
@@ -40,14 +40,14 @@ public class DefaultCopyCatEndpoint implements CopyCatEndpoint {
     public void handle(final Message<JsonObject> message) {
       final String command = message.body().getString("command");
       if (command != null) {
-        copyCatNode.submitCommand(command, message.body(), new Handler<AsyncResult<JsonObject>>() {
+        node.submitCommand(command, message.body(), new Handler<AsyncResult<Object>>() {
           @Override
-          public void handle(AsyncResult<JsonObject> result) {
+          public void handle(AsyncResult<Object> result) {
             if (result.failed()) {
               message.reply(new JsonObject().putString("status", "error").putString("message", result.cause().getMessage()));
             }
             else {
-              message.reply(new JsonObject().putString("status", "ok").putObject("result", result.result()));
+              message.reply(new JsonObject().putString("status", "ok").putValue("result", result.result()));
             }
           }
         });
@@ -59,13 +59,13 @@ public class DefaultCopyCatEndpoint implements CopyCatEndpoint {
   };
 
   public DefaultCopyCatEndpoint(CopyCatNode copyCatNode, Vertx vertx) {
-    this.copyCatNode = copyCatNode;
+    this.node = copyCatNode;
     this.vertx = vertx;
   }
 
   public DefaultCopyCatEndpoint(String address, CopyCatNode copyCatNode, Vertx vertx) {
     this.address = address;
-    this.copyCatNode = copyCatNode;
+    this.node = copyCatNode;
     this.vertx = vertx;
   }
 

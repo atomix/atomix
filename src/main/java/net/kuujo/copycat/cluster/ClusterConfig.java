@@ -30,6 +30,17 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 public class ClusterConfig extends Observable {
   private Set<String> members = new HashSet<>();
 
+  public ClusterConfig() {
+  }
+
+  public ClusterConfig(String... members) {
+    setMembers(members);
+  }
+
+  public ClusterConfig(Set<String> members) {
+    setMembers(members);
+  }
+
   /**
    * Sets cluster members.
    * 
