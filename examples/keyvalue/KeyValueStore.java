@@ -24,7 +24,6 @@ import net.kuujo.copycat.Function;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
 /**
@@ -36,21 +35,21 @@ public class KeyValueStore extends Verticle {
   private CopyCat copycat;
   private CopyCatService service;
   private final Map<String, Object> data = new HashMap<>();
-  private final Map<String, Command<?>> commands = new HashMap<>();
+  private final Map<String, Command> commands = new HashMap<>();
 
-  private final Function<Command<JsonObject>, Object> get = new Function<Command<JsonObject>, Object>() {
+  private final Function<Command, Object> get = new Function<Command, Object>() {
     @Override
-    public Object call(Command<JsonObject> command) {
-      String key = command.data().getString("key");
+    public Object call(Command command) {
+      String key = command.args().getString("key");
       return data.containsKey(key) ? data.get(key) : null;
     }
   };
 
-  private final Function<Command<JsonObject>, Boolean> set = new Function<Command<JsonObject>, Boolean>() {
+  private final Function<Command, Boolean> set = new Function<Command, Boolean>() {
     @Override
-    public Boolean call(Command<JsonObject> command) {
-      String key = command.data().getString("key");
-      Object value = command.data().getValue("value");
+    public Boolean call(Command command) {
+      String key = command.args().getString("key");
+      Object value = command.args().getValue("value");
       data.put(key, value);
       if (commands.containsKey(key)) {
         commands.remove(key).free();
@@ -60,10 +59,10 @@ public class KeyValueStore extends Verticle {
     }
   };
 
-  private final Function<Command<JsonObject>, Boolean> del = new Function<Command<JsonObject>, Boolean>() {
+  private final Function<Command, Boolean> del = new Function<Command, Boolean>() {
     @Override
-    public Boolean call(Command<JsonObject> command) {
-      String key = command.data().getString("key");
+    public Boolean call(Command command) {
+      String key = command.args().getString("key");
       if (commands.containsKey(key)) {
         commands.remove(key).free();
       }

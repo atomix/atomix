@@ -27,6 +27,7 @@ import net.kuujo.copycat.log.NoOpEntry;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonObject;
 
 import static org.junit.Assert.assertTrue;
 
@@ -102,7 +103,7 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 1);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand<Object>()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
@@ -126,21 +127,21 @@ public class MemoryLogTest {
   @Test
   public void testFreeEntry() {
     final Log log = new MemoryLog();
-    final CommandEntry entry1 = new CommandEntry(1, new DefaultCommand<Integer>("foo", Command.Type.WRITE, 1));
+    final CommandEntry entry1 = new CommandEntry(1, new DefaultCommand("foo", Command.Type.WRITE, new JsonObject()));
     log.appendEntry(entry1, new Handler<AsyncResult<Long>>() {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
         assertTrue(result.result() == 0);
 
-        final CommandEntry entry2 = new CommandEntry(1, new DefaultCommand<Integer>("bar", Command.Type.WRITE, 2));
+        final CommandEntry entry2 = new CommandEntry(1, new DefaultCommand("bar", Command.Type.WRITE, new JsonObject()));
         log.appendEntry(entry2, new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 1);
 
-            final CommandEntry entry3 = new CommandEntry(1, new DefaultCommand<Integer>("baz", Command.Type.WRITE, 3));
+            final CommandEntry entry3 = new CommandEntry(1, new DefaultCommand("baz", Command.Type.WRITE, new JsonObject()));
             log.appendEntry(entry3, new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
@@ -193,7 +194,7 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 1);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand<Object>()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
@@ -229,7 +230,7 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 1);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand<Object>()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
@@ -265,7 +266,7 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 1);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand<Object>()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());

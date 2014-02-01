@@ -15,10 +15,8 @@
  */
 package net.kuujo.copycat.impl;
 
-import java.util.List;
 import java.util.Map;
 
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -31,32 +29,24 @@ import net.kuujo.copycat.log.Entry;
  * 
  * @author Jordan Halterman
  */
-public class DefaultCommand<T> implements Command<T> {
+public class DefaultCommand implements Command {
   private String command;
   private Type type;
-  private Object data;
+  private Map<String, Object> args;
   @JsonIgnore
   private Entry entry;
 
   public DefaultCommand() {
   }
 
-  public DefaultCommand(String command, T data) {
-    this(command, null, data);
+  public DefaultCommand(String command, JsonObject args) {
+    this(command, null, args);
   }
 
-  public DefaultCommand(String command, Command.Type type, T data) {
+  public DefaultCommand(String command, Command.Type type, JsonObject args) {
     this.command = command;
     this.type = type;
-    if (data instanceof JsonObject) {
-      this.data = ((JsonObject) data).toMap();
-    }
-    else if (data instanceof JsonArray) {
-      this.data = ((JsonArray) data).toArray();
-    }
-    else {
-      this.data = (T) data;
-    }
+    this.args = args.toMap();
   }
 
   @Override
@@ -70,18 +60,11 @@ public class DefaultCommand<T> implements Command<T> {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public T data() {
-    if (data instanceof Map) {
-      return (T) new JsonObject((Map<String, Object>) data);
-    }
-    else if (data instanceof List) {
-      return (T) new JsonArray((List<Object>) data);
-    }
-    return (T) data;
+  public JsonObject args() {
+    return new JsonObject(args);
   }
 
-  public DefaultCommand<T> setEntry(Entry entry) {
+  public DefaultCommand setEntry(Entry entry) {
     this.entry = entry;
     return this;
   }

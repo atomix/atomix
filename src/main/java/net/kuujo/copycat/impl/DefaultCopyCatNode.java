@@ -22,6 +22,7 @@ import java.util.UUID;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Function;
@@ -40,11 +41,10 @@ import net.kuujo.copycat.state.StateMachine;
  */
 public class DefaultCopyCatNode implements CopyCatNode {
   private final Replica replica;
-  private Map<String, CommandInfo<?, ?>> commands = new HashMap<>();
+  private Map<String, CommandInfo<?>> commands = new HashMap<>();
 
   private final StateMachine stateMachine = new StateMachine() {
     @Override
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public Object applyCommand(Command command) {
       if (commands.containsKey(command.command())) {
         return commands.get(command.command()).function.call(command);
@@ -53,11 +53,11 @@ public class DefaultCopyCatNode implements CopyCatNode {
     }
   };
 
-  private static class CommandInfo<I, O> {
+  private static class CommandInfo<R> {
     private final Command.Type type;
-    private final Function<Command<I>, O> function;
+    private final Function<Command, R> function;
 
-    private CommandInfo(Command.Type type, Function<Command<I>, O> function) {
+    private CommandInfo(Command.Type type, Function<Command, R> function) {
       this.type = type;
       this.function = function;
     }
@@ -187,14 +187,14 @@ public class DefaultCopyCatNode implements CopyCatNode {
   }
 
   @Override
-  public <I, O> CopyCatNode registerCommand(String commandName, Function<Command<I>, O> function) {
-    commands.put(commandName, new CommandInfo<I, O>(null, function));
+  public <R> CopyCatNode registerCommand(String commandName, Function<Command, R> function) {
+    commands.put(commandName, new CommandInfo<R>(null, function));
     return this;
   }
 
   @Override
-  public <I, O> CopyCatNode registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
-    commands.put(commandName, new CommandInfo<I, O>(type, function));
+  public <R> CopyCatNode registerCommand(String commandName, Type type, Function<Command, R> function) {
+    commands.put(commandName, new CommandInfo<R>(type, function));
     return this;
   }
 
@@ -205,8 +205,8 @@ public class DefaultCopyCatNode implements CopyCatNode {
   }
 
   @Override
-  public <I, O> CopyCatNode submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler) {
-    replica.submitCommand(new DefaultCommand<I>(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
+  public <R> CopyCatNode submitCommand(String command, JsonObject data, Handler<AsyncResult<R>> resultHandler) {
+    replica.submitCommand(new DefaultCommand(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
     return this;
   }
 

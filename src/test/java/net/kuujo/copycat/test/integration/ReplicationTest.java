@@ -27,6 +27,7 @@ import net.kuujo.copycat.state.StateMachine;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonObject;
 
 import static org.vertx.testtools.VertxAssert.assertTrue;
 import static org.vertx.testtools.VertxAssert.assertEquals;
@@ -43,7 +44,7 @@ public class ReplicationTest extends TestVerticle {
 
   private final StateMachine stateMachine = new StateMachine() {
     @Override
-    public Object applyCommand(Command<?> command) {
+    public Object applyCommand(Command command) {
       return null;
     }
   };
@@ -69,7 +70,7 @@ public class ReplicationTest extends TestVerticle {
               @Override
               public void handle(AsyncResult<Void> result) {
                 assertTrue(result.succeeded());
-                test3.submitCommand(new DefaultCommand<String>("test", "Hello world!"), new Handler<AsyncResult<Void>>() {
+                test3.submitCommand(new DefaultCommand("test", new JsonObject().putString("data", "Hello world!")), new Handler<AsyncResult<Void>>() {
                   @Override
                   public void handle(AsyncResult<Void> result) {
                     assertTrue(result.succeeded());
@@ -79,7 +80,7 @@ public class ReplicationTest extends TestVerticle {
                         assertTrue(result.succeeded());
                         assertEquals(Entry.Type.COMMAND, result.result().type());
                         assertEquals("test", ((CommandEntry) result.result()).command().command());
-                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().data());
+                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
                       }
                     });
                     test2.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
@@ -88,7 +89,7 @@ public class ReplicationTest extends TestVerticle {
                         assertTrue(result.succeeded());
                         assertEquals(Entry.Type.COMMAND, result.result().type());
                         assertEquals("test", ((CommandEntry) result.result()).command().command());
-                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().data());
+                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
                       }
                     });
                     test3.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
@@ -97,7 +98,7 @@ public class ReplicationTest extends TestVerticle {
                         assertTrue(result.succeeded());
                         assertEquals(Entry.Type.COMMAND, result.result().type());
                         assertEquals("test", ((CommandEntry) result.result()).command().command());
-                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().data());
+                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
                         testComplete();
                       }
                     });

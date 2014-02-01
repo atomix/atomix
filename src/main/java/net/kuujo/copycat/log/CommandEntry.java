@@ -24,15 +24,15 @@ import net.kuujo.copycat.impl.DefaultCommand;
  * @author Jordan Halterman
  */
 public class CommandEntry extends Entry {
-  private Command<?> command;
+  private Command command;
 
   public CommandEntry() {
     super(Type.COMMAND);
   }
 
-  public CommandEntry(long term, Command<?> command) {
+  public CommandEntry(long term, Command command) {
     super(Type.COMMAND);
-    this.command = command instanceof DefaultCommand ? ((DefaultCommand<?>) command).setEntry(this) : command;
+    this.command = command instanceof DefaultCommand ? ((DefaultCommand) command).setEntry(this) : command;
   }
 
   /**
@@ -40,7 +40,7 @@ public class CommandEntry extends Entry {
    * 
    * @return The state machine command.
    */
-  public Command<?> command() {
+  public Command command() {
     return command;
   }
 

@@ -232,7 +232,7 @@ public interface Replica {
    * @return
    *   The replica instance.
    */
-  <I, O> Replica submitCommand(Command<I> command, Handler<AsyncResult<O>> doneHandler);
+  <R> Replica submitCommand(Command command, Handler<AsyncResult<R>> doneHandler);
 
   /**
    * Stops the replica.

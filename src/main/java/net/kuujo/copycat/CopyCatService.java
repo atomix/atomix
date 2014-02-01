@@ -191,7 +191,7 @@ public interface CopyCatService {
    * @return
    *   The service instance.
    */
-  <I, O> CopyCatService registerCommand(String commandName, Function<Command<I>, O> function);
+  <R> CopyCatService registerCommand(String commandName, Function<Command, R> function);
 
   /**
    * Registers a typed state machine command.
@@ -205,7 +205,7 @@ public interface CopyCatService {
    * @return
    *   The service instance.
    */
-  <I, O> CopyCatService registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
+  <R> CopyCatService registerCommand(String commandName, Command.Type type, Function<Command, R> function);
 
   /**
    * Unregisters a state machine command.

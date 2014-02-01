@@ -18,13 +18,6 @@ package net.kuujo.copycat.test.integration;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.CopyCat;
 import net.kuujo.copycat.Function;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.impl.DefaultCommand;
-import net.kuujo.copycat.log.CommandEntry;
-import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.replica.Replica;
-import net.kuujo.copycat.replica.impl.RaftReplica;
-import net.kuujo.copycat.state.StateMachine;
 
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
@@ -50,16 +43,16 @@ public class ServiceTest extends TestVerticle {
   public void testService() {
     final CopyCat copycat = new CopyCat(this);
     copycat.createService("test")
-      .registerCommand("set", Command.Type.WRITE, new Function<Command<Object>, Boolean>() {
+      .registerCommand("set", Command.Type.WRITE, new Function<Command, Boolean>() {
         @Override
-        public Boolean call(Command<Object> command) {
-          value = command.data();
+        public Boolean call(Command command) {
+          value = command.args();
           return true;
         }
       })
-      .registerCommand("get", Command.Type.READ, new Function<Command<Void>, Object>() {
+      .registerCommand("get", Command.Type.READ, new Function<Command, Object>() {
         @Override
-        public Object call(Command<Void> command) {
+        public Object call(Command command) {
           return value;
         }
       })

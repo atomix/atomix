@@ -30,6 +30,6 @@ public interface StateMachine {
    * @param command The command to apply.
    * @return The command output.
    */
-  Object applyCommand(Command<?> command);
+  Object applyCommand(Command command);
 
 }

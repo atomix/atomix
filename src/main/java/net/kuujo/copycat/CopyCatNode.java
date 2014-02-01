@@ -17,6 +17,7 @@ package net.kuujo.copycat;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
@@ -194,7 +195,7 @@ public interface CopyCatNode {
    * @return
    *   The node instance.
    */
-  <I, O> CopyCatNode registerCommand(String commandName, Function<Command<I>, O> function);
+  <R> CopyCatNode registerCommand(String commandName, Function<Command, R> function);
 
   /**
    * Registers a typed state machine command.
@@ -208,7 +209,7 @@ public interface CopyCatNode {
    * @return
    *   The node instance.
    */
-  <I, O> CopyCatNode registerCommand(String commandName, Command.Type type, Function<Command<I>, O> function);
+  <R> CopyCatNode registerCommand(String commandName, Command.Type type, Function<Command, R> function);
 
   /**
    * Unregisters a state machine command.
@@ -224,12 +225,12 @@ public interface CopyCatNode {
    * Submits a command to the replication service.
    * 
    * @param command The command to submit.
-   * @param data The command data.
+   * @param args The command arguments.
    * @param resultHandler An asynchronous handler to be called with the command
    *          result.
    * @return The replica.
    */
-  <I, O> CopyCatNode submitCommand(String command, I data, Handler<AsyncResult<O>> resultHandler);
+  <R> CopyCatNode submitCommand(String command, JsonObject args, Handler<AsyncResult<R>> resultHandler);
 
   /**
    * Starts the node.

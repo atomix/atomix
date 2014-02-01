@@ -165,13 +165,13 @@ public class DefaultCopyCatService implements CopyCatService {
   }
 
   @Override
-  public <I, O> CopyCatService registerCommand(String commandName, Function<Command<I>, O> function) {
+  public <R> CopyCatService registerCommand(String commandName, Function<Command, R> function) {
     copyCatNode.registerCommand(commandName, function);
     return this;
   }
 
   @Override
-  public <I, O> CopyCatService registerCommand(String commandName, Type type, Function<Command<I>, O> function) {
+  public <R> CopyCatService registerCommand(String commandName, Type type, Function<Command, R> function) {
     copyCatNode.registerCommand(commandName, type, function);
     return this;
   }

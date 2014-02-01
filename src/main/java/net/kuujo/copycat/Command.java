@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat;
 
+import org.vertx.java.core.json.JsonObject;
+
 import net.kuujo.copycat.impl.DefaultCommand;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -37,7 +39,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
     setterVisibility=JsonAutoDetect.Visibility.NONE
 )
 @JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, property="class", defaultImpl=DefaultCommand.class)
-public interface Command<T> {
+public interface Command {
 
   /**
    * A command type.
@@ -126,11 +128,11 @@ public interface Command<T> {
   public String command();
 
   /**
-   * Returns the command data.
+   * Returns the command arguments.
    * 
-   * @return The command data.
+   * @return The command arguments.
    */
-  public T data();
+  public JsonObject args();
 
   /**
    * Frees the command from the log.

@@ -203,8 +203,8 @@ public class RaftReplica implements Replica {
   }
 
   @Override
-  public <I, O> Replica submitCommand(Command<I> command, Handler<AsyncResult<O>> doneHandler) {
-    final Future<O> future = new DefaultFutureResult<O>().setHandler(doneHandler);
+  public <R> Replica submitCommand(Command command, Handler<AsyncResult<R>> doneHandler) {
+    final Future<R> future = new DefaultFutureResult<R>().setHandler(doneHandler);
     endpoint.submit(context.currentLeader(), new SubmitRequest(command), new Handler<AsyncResult<SubmitResponse>>() {
       @Override
       @SuppressWarnings("unchecked")
@@ -213,7 +213,7 @@ public class RaftReplica implements Replica {
           future.setFailure(result.cause());
         }
         else {
-          future.setResult((O) result.result().result());
+          future.setResult((R) result.result().result());
         }
       }
     });
