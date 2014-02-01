@@ -148,7 +148,7 @@ public class CopyCat {
    * @return
    *   A new service endpoint instance.
    */
-  public CopyCatEndpoint createServiceEndpoint(String address, CopyCatNode copyCatNode) {
+  public CopyCatEndpoint createEndpoint(String address, CopyCatNode copyCatNode) {
     return new DefaultCopyCatEndpoint(address, copyCatNode, vertx);
   }
 

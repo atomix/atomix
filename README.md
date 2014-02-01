@@ -7,7 +7,29 @@ for state machine replication using the Raft consensus algorithm as described in
 
 **This project is still very much under development and is recommended for testing only**
 
-#### Features
+## Table of contents
+1. [Features](#features)
+1. [How it works](#how-it-works)
+1. [The CopyCat API](#the-copycat-api)
+1. [Working with nodes](#working-with-nodes)
+   * [Registering commands](#registering-state-machine-commands)
+   * [Submitting commands to the node](#submitting-commands-to-the-node)
+   * [Submitting commands over the event bus](#submitting-commands-over-the-event-bus)
+1. [Working with clusters](#working-with-clusters)
+   * [Static cluster membership](#static-cluster-membership)
+   * [Dynamic cluster membership detection](#dynamic-cluster-membership-detection)
+1. [Working with logs](#working-with-logs)
+   * [Log types](#log-types)
+      * [MemoryLog](#memorylog)
+      * [MongoLog](#mongolog)
+      * [RedisLog](#redislog)
+   * [Log compaction](#log-compaction)
+      * [Log cleaning](#log-cleaning)
+      * [Log snapshotting](#log-snapshotting)
+1. [Putting it all together with services](#copycat-services)
+1. [Key-value store in 50 lines of code](#a-simple-key-value-store)
+
+### Features
 * Automatically replicates state across multiple Vert.x instances in a consistent and reliable manner
 * Supports runtime cluster membership changes
 * Supports replicated log persistence in MongoDB, Redis, or in memory
@@ -16,7 +38,7 @@ for state machine replication using the Raft consensus algorithm as described in
 * Exposes an event bus API for executing state machine commands remotely
 * Uses adaptive failure detection for fast leader re-election
 
-### How it works
+## How it works
 CopyCat provides tools for creating fault-tolerant Vert.x services by
 replicating state across multiple Vert.x instances and coordinating requests
 to the service. When multiple CopyCat nodes are started within a Vert.x
@@ -30,7 +52,361 @@ simply coordinate to share state, and once the dead node re-joins the
 cluster, any commands missed while the node was down will be replicated
 to the node.
 
-### A Simple Key-Value Store
+## The CopyCat API
+CopyCat provides a primary factory API for creating various types. This
+class functions similarly to the `Vertx` class.
+
+Create a new `CopyCat` API instance within any `Verticle`
+
+```java
+public class MyVerticle extends Verticle {
+
+  public void start() {
+    CopyCat copycat = new CopyCat(this);
+  }
+
+}
+```
+
+Or you can pass a `Vertx` instance to the constructor
+
+```java
+CopyCat copycat = new CopyCat(vertx);
+```
+
+The `CopyCat` type exposes the following methods:
+* `createNode()` - Creates a [node](#working-with-nodes)
+* `createNode(String address)` - Creates a [node](#working-with-nodes)
+* `createNode(String address, ClusterConfig config)` - Creates a [node](#working-with-nodes)
+* `createCluster()` - Creates a [cluster](#working-with-clusters)
+* `createCluster(String localAddress, String broadcastAddress)` - Creates a [cluster](#working-with-clusters)
+* `createService()` - Creates a [service](#copycat-services)
+* `createService(String address)` - Creates a [service](#copycat-services)
+* `createService(String address, Log log)` - Creates a [service](#copycat-services)
+* `createEndpoint(String address)` - Creates a [service endpoint](#submitting-commands-over-the-event-bus)
+
+## Working with nodes
+CopyCat clusters are made up of any number of `CopyCatNode` instances running
+on disparate Vert.x instances in different physical locations. CopyCat
+provides a simple API for creating nodes as well as a number of other
+tools which will be covered later.
+
+For simple access to CopyCat APIs, create a `CopyCat` instance.
+
+```java
+public class MyVerticle extends Verticle {
+
+  public void start() {
+    CopyCat copycat = new CopyCat(this);
+  }
+
+}
+```
+
+From there, we can create a node by simply calling `createNode`
+
+```java
+CopyCatNode node = copycat.createNode("test.1");
+```
+
+We pass a unique address for the node as the only argument. This is the
+address of the node being deployed. To start the node, simply call the
+`start` method:
+* `start()`
+* `start(Handler<AsyncResult<Void>> doneHandler)`
+
+### Registering commands
+CopyCat state machines are represented as a series of commands that are
+serviced by the cluster. Commands are registered by calling the
+`registerCommand` method on a `CopyCatNode` instance.
+
+```java
+node.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
+  public Boolean call(Command<JsonObject> command) {
+    String key = command.data().getString("key");
+    Object value = command.data().getValue("value");
+    map.put(key, value);
+    return true;
+  }
+});
+```
+
+Commands are simply functions that receive a command object containing
+a specific argument type and return output. Commands don't necessarily
+have to alter the state of the node. For instance, a `put` and `delete`
+would alter the node's state, but `get` wouldn't because it is a *read-only*
+action. This allows CopyCat to make some performance improvements by ignoring
+read-only commands for replication purposes.
+
+To mark a command as *read-only*, pass a `Command.Type` as the second
+argument to `registerCommand`
+
+```java
+node.registerCommand("get", Command.Type.READ, new Function<Command<String>, Object>() {
+  ...
+});
+```
+
+### Submitting commands to the node
+With commands registered on the node, we can start the node and begin
+to submit commands.
+
+```java
+JsonObject command = new JsonObject()
+    .putString("key", "foo")
+    .putString("value", "Hello world!");
+node.submitCommand("set", command, new Handler<AsyncResult<Boolean>>() {
+  public void handle(AsyncResult<Boolean> result) {
+    if (result.succeeded() && result.result()) {
+      // Successfully set "foo" to "Hello world!"
+    }
+  }
+});
+```
+
+Now, we can read the store key value back from the node.
+
+```java
+JsonObject command = new JsonObject()
+    .putString("key", "foo");
+node.submitCommand("get", command, new Handler<AsyncResult<String>>() {
+  public void handle(AsyncResult<String> result) {
+    if (result.succeeded()) {
+      System.out.println(result.result()); // Hello world!
+    }
+  }
+});
+```
+
+As mentioned, in this scenario the `set` command is logged and replicated,
+while the `get` command - a *read-only* command - is simply executed
+without replication.
+
+### Submitting commands over the event bus
+What we've seen so far is a method for submitting commands to the cluster
+via the `submitCommand` method. But this is Vert.x, and in Vert.x we expose
+APIs over the event bus. CopyCat provides a `CopyCatEndpoint` class for
+exposing clusters over the event bus. To create an endpoint call the
+`createEndpoint` method on a `CopyCat` instance, passing the cluster
+address as the only argument.
+
+```java
+CopyCatEndpoint endpoint = copycat.createEndpoint("test");
+endpoint.start();
+```
+
+In the case of endpoints, all nodes should expose an endpoint *at the
+same event bus address*. Vert.x event bus behavior will distribute requests
+between each endpoint instance across the cluster.
+
+To submit a command over the event bus, send a `JsonObject` message to
+the endpoint address with a `command` and `data`.
+
+```java
+JsonObject command = new JsonObject()
+    .putString("command", "get")
+    .putObject("data", new JsonObject().putString("key", "foo"));
+vertx.eventBus().send("test", command, new Handler<Message<JsonObject>>() {
+  public void handle(Message<JsonObject> message) {
+    if (message.body().getString("status").equals("ok")) {
+      String result = message.body().getString("result");
+    }
+  }
+});
+```
+
+The reply message will contain the following fields:
+* `status` - either `ok` or `error`. If the `status` is `ok` then an
+additional `result` field will contain the command result. If the status
+is `error` then an additional `message` field will contain an error message.
+
+## Working with clusters
+We've seen how to create nodes, register state machine commands, and
+execute those commands. But replication doesn't do any good without clusters.
+In order to replicate state, CopyCat nodes need to have information about
+other members within their cluster (other members with whom they should
+communicate and replicate). CopyCat provides a couple of methods for
+configuring clusters.
+
+### Static cluster membership
+The most obvious method of telling a node about its fellow replicas is
+by updating the node's `ClusterConfig`, the object that represents a
+registry of all nodes in the cluster.
+
+```java
+node.getClusterConfig().addMember("test.2");
+node.getClusterConfig().addMember("test.3");
+```
+
+This will tell the node to participate in leader elections and state
+replications with `test.2` and `test.3`. Similarly, when the `test.2`
+and `test.3` nodes are deployed, their configurations will need to contain
+`test.1`. Note that *even after the node is deployed you can update the
+cluster configuration*. When the cluster configuration is updated while
+the node is running, the new configuration will be logged and replicated
+to all the other *known* nodes in the cluster. This means that updating
+the configuration on one node will result in the configuration being
+updated on all nodes. The updated configuration will be persisted on all
+nodes and thus will remain after failures as well.
+
+### Dynamic cluster membership detection
+This type of manual cluster configuration may not seem very efficient,
+and I agree, so CopyCat also provides tools for automating the detection
+of cluster members via the Vert.x event bus. Using a `ClusterController`,
+CopyCat will automatically locate members across the cluster.
+
+```java
+copycat.createCluster()
+  .setLocalAddress("test.1")
+  .setBroadcastAddress("test")
+  .start(new Handler<AsyncResult<ClusterConfig>>() {
+    public void handle(AsyncResult<ClusterConfig> result) {
+      if (result.succeeded()) {
+        ClusterConfig config = result.result();
+        Node node = copycat.createNode("test.1", config);
+      }
+    }
+  });
+```
+
+Any time the cluster membership changes (a node dies), the local node
+will be informed of the membership change and the new configuration will
+be replicated across the cluster. Then, once the dead node comes back online,
+the cluster configuration will again be updated and replicated, and
+the rest of the cluster state will be replicated to the re-joining node.
+
+## Working with logs
+Behind the scenes, CopyCat uses replicated logs to replica and persist
+commands across a cluster. Logs make up the basis for consistent replication
+and provide the tools necessary to resolve conflicts between different
+cluster members.
+
+### Log types
+CopyCat provides several different log implementations, each of which use
+existing Vert.x APIs for persistence
+
+#### MemoryLog
+The memory log is a completely in-memory log implemented using a `TreeMap`.
+This is a very fast log implementation, but its primary drawback is that
+logs are not persisted, so each time a node starts up it must receive
+the replicated log over the event bus from another node in the cluster.
+Additionally, memory limits mean the `MemoryLog` is only suitable for
+smaller states. Periodic log cleaning can help ensure that the log size
+remains small.
+
+#### MongoLog
+The Mongo log is a log implementation using Mongo and the
+[mod-mongo-persistor](https://github.com/vert-x/mod-mongo-persistor) module.
+Given a MongoDB collection, the Mongo log will store log entries as indivual
+documents and uses Mongo's flexible operations to sort and remove log
+entries as necessary.
+
+#### RedisLog
+The Redis log is a log implementation using Redis and the
+[mod-redis](https://github.com/vert-x/mod-redis) module. Given a Redis
+database, the Redis log stores each log entry as a separate key, using
+the base key as a counter (using `INCR`). Often times indiviual requests
+must be made for each entry when removing large portions of the log (which
+should be a rare operation) so event bus usage may be slightly increased
+over the Mongo log implementation.
+
+### Log compaction
+Over the long term, replicated logs can grow indefinitely. Obviously
+indefinite log growth is not ideal, so users need a way to minimize the
+size of logs wherever possible.
+
+#### Log cleaning
+One feature we can not about command logs is that often times the logs
+will contain commands that no longer contribute to the current state of
+the application. For example, a `set` command might override a previous
+`set` command, or a `del` command negates the state that was previously
+created by a `set` command. In this case, each of the commands can be
+safely removed from the log without effecting the system's ability to
+recover to its previous state. This is referred to as log cleaning.
+
+Log cleaning is a incremental process that can be performed periodically
+or even each time a command is applied to the state machine. When entries
+are removed from the log, remaining entries are compacted to the head
+of the log.
+
+CopyCat provides a simple API for log cleaning. Command entries can be
+freed from the log by simply calling `free()` on any `Command` instance.
+
+```java
+// Create a map of keys to commands.
+final Map<String, Command> commands = new HashMap<>();
+
+node.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
+  public Boolean call(Command<JsonObject> command) {
+    String key = command.data().getString("key");
+    Object value = command.data().getValue("value");
+    store.put(key, value);
+
+    // Update the command for this key. If a previous command exists
+    // for this key, the previous command no longer has an effect on
+    // the system state, so we can free the command from the log.
+    // This helps keep the size of the log minimal.
+    if (commands.containsKey(key)) {
+      commands.remove(key).free();
+    }
+
+    // Add the new command, which is the command that resulted in the current state.
+    commands.put(key, command);
+
+    return true;
+  }
+}); 
+```
+
+#### Log snapshotting
+While log cleaning is a fast and incremental process that is ideal for
+many situations, it can often require complex logic to determine whether
+any given command contributes to the state of the state machine. A much
+simpler method of compacting the log is to periodically take snapshots
+of the current system state and then wipe the log completely. If the
+node fails and then restarts, it will first be initialized with the
+persisted state snapshot before applying proceeding log entries.
+
+## CopyCat Services
+So far, we've demonstrated a number of separate tools CopyCat provides for
+cluster detenction, replication, and communication. It's obvious to me
+that it would be awesome if this were all put into a single simple API,
+so I did that by combining all the functionality into a CopyCat `CopyCatService`.
+
+To create a new `CopyCatService` simply call the `createService` method on a
+`CopyCat` instance.
+
+```java
+CopyCatService service = copycat.createService("test");
+```
+
+Here we pass the service address as the only argument. This is the address
+that will be exposed by the `CopyCatEndpoint` on the Vert.x event bus.
+Services operate much like nodes. Indeed, they expose the same API as
+nodes aside from the `setBroadcastAddress(String address)` method, which
+in most cases should not even be used since CopyCat will create a consistent
+cluster broadcast address internally. So, to start the service we simply
+register our commands and call the `start` method as with the `CopyCatNode`.
+
+```java
+service.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
+  ...
+});
+service.registerCommand("get", Command.Type.READ, new Function<Command<JsonObject>, Object>() {
+  ...
+});
+service.registerCommand("del", new Function<Command<JsonObject>, Boolean>() {
+  ...
+});
+service.start();
+```
+
+CopyCat will handle cluster membership detection and configuration internally,
+as well as expose the service address - in this case `test` - and all the
+service commands over the Vert.x event bus. When multiple instances of the
+service are started they form a fault-tolerant service.
+
+## A Simple Key-Value Store
 To demonstrate the tools that CopyCat provides, this is a simply example
 of a Redis-style fault-tolerant in-memory key-value store exposed over
 the Vert.x event bus.
@@ -163,226 +539,3 @@ vertx.eventBus().send("key-value", command, new Handler<Message<JsonObject>>() {
   }
 });
 ```
-
-### Creating a CopyCat cluster
-CopyCat clusters are made up of any number of `CopyCatNode` instances running
-on disparate Vert.x instances in different physical locations. CopyCat
-provides a simple API for creating nodes as well as a number of other
-tools which will be covered later.
-
-For simple access to CopyCat APIs, create a `CopyCat` instance.
-
-```java
-public class MyVerticle extends Verticle {
-
-  public void start() {
-    CopyCat copycat = new CopyCat(this);
-  }
-
-}
-```
-
-From there, we can create a node by simply calling `createNode`
-
-```java
-CopyCatNode node = copycat.createNode("test.1");
-```
-
-We pass a unique address for the node as the only argument. This is the
-address of the node being deployed. To start the node, simply call the
-`start` method:
-* `start()`
-* `start(Handler<AsyncResult<Void>> doneHandler)`
-
-But the node doesn't do much right now. Let's see how to register state
-machine commands on the node.
-
-#### Setting up cluster membership
-In order for our node to know which other nodes exist in the cluster, we
-have to tell it by updating its `ClusterConfig`
-
-```java
-node.getClusterConfig().addMember("test.2");
-node.getClusterConfig().addMember("test.3");
-```
-
-This will tell the node to participate in leader elections and state
-replications with `test.2` and `test.3`. Similarly, when the `test.2`
-and `test.3` nodes are deployed, their configurations will need to contain
-`test.1`. Note that *even after the node is deployed you can update the
-cluster configuration*. When the cluster configuration is updated while
-the node is running, the new configuration will be logged and replicated
-to all the other *known* nodes in the cluster. This means that updating
-the configuration on one node will result in the configuration being
-updated on all nodes. The updated configuration will be persisted on all
-nodes and thus will remain after failures as well.
-
-#### Registering state machine commands
-CopyCat state machines are represented as a series of commands that are
-serviced by the cluster. Commands are registered by calling the
-`registerCommand` method on a `CopyCatNode` instance.
-
-```java
-node.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
-  public Boolean call(Command<JsonObject> command) {
-    String key = command.data().getString("key");
-    Object value = command.data().getValue("value");
-    map.put(key, value);
-    return true;
-  }
-});
-```
-
-Commands are simply functions that receive a command object containing
-a specific argument type and return output. Commands don't necessarily
-have to alter the state of the node. For instance, a `put` and `delete`
-would alter the node's state, but `get` wouldn't because it is a *read-only*
-action. This allows CopyCat to make some performance improvements by ignoring
-read-only commands for replication purposes.
-
-To mark a command as *read-only*, pass a `Command.Type` as the second
-argument to `registerCommand`
-
-```java
-node.registerCommand("get", Command.Type.READ, new Function<Command<String>, Object>() {
-  ...
-});
-```
-
-### Submitting commands to the cluster
-With commands registered on the node, we can start the node and begin
-to submit commands.
-
-```java
-JsonObject command = new JsonObject()
-    .putString("key", "foo")
-    .putString("value", "Hello world!");
-node.submitCommand("set", command, new Handler<AsyncResult<Boolean>>() {
-  public void handle(AsyncResult<Boolean> result) {
-    if (result.succeeded() && result.result()) {
-      // Successfully set "foo" to "Hello world!"
-    }
-  }
-});
-```
-
-Now, we can read the store key value back from the node.
-
-```java
-JsonObject command = new JsonObject()
-    .putString("key", "foo");
-node.submitCommand("get", command, new Handler<AsyncResult<String>>() {
-  public void handle(AsyncResult<String> result) {
-    if (result.succeeded()) {
-      System.out.println(result.result()); // Hello world!
-    }
-  }
-});
-```
-
-As mentioned, in this scenario the `set` command is logged and replicated,
-while the `get` command - a *read-only* command - is simply executed
-without replication.
-
-#### Submitting commands over the event bus
-What we've seen so far is a method for submitting commands to the cluster
-via the `submitCommand` method. But this is Vert.x, and in Vert.x we expose
-APIs over the event bus. CopyCat provides a `CopyCatEndpoint` class for
-exposing clusters over the event bus. To create an endpoint call the
-`createEndpoint` method on a `CopyCat` instance, passing the cluster
-address as the only argument.
-
-```java
-CopyCatEndpoint endpoint = copycat.createEndpoint("test");
-endpoint.start();
-```
-
-In the case of endpoints, all nodes should expose an endpoint *at the
-same event bus address*. Vert.x event bus behavior will distribute requests
-between each endpoint instance across the cluster.
-
-To submit a command over the event bus, send a `JsonObject` message to
-the endpoint address with a `command` and `data`.
-
-```java
-JsonObject command = new JsonObject()
-    .putString("command", "get")
-    .putObject("data", new JsonObject().putString("key", "foo"));
-vertx.eventBus().send("test", command, new Handler<Message<JsonObject>>() {
-  public void handle(Message<JsonObject> message) {
-    if (message.body().getString("status").equals("ok")) {
-      String result = message.body().getString("result");
-    }
-  }
-});
-```
-
-The reply message will contain the following fields:
-* `status` - either `ok` or `error`. If the `status` is `ok` then an
-additional `result` field will contain the command result. If the status
-is `error` then an additional `message` field will contain an error message.
-
-#### Automatic cluster detection
-This type of manual cluster configuration may not seem very efficient,
-and I agree, so CopyCat also provides tools for automating the detection
-of cluster members via the Vert.x event bus. Using a `ClusterController`,
-CopyCat will automatically locate members across the cluster.
-
-```java
-copycat.createCluster()
-  .setLocalAddress("test.1")
-  .setBroadcastAddress("test")
-  .start(new Handler<AsyncResult<ClusterConfig>>() {
-    public void handle(AsyncResult<ClusterConfig> result) {
-      if (result.succeeded()) {
-        ClusterConfig config = result.result();
-        Node node = copycat.createNode("test.1", config);
-      }
-    }
-  });
-```
-
-Any time the cluster membership changes (a node dies), the local node
-will be informed of the membership change and the new configuration will
-be replicated across the cluster. Then, once the dead node comes back online,
-the cluster configuration will again be updated and replicated, and
-the rest of the cluster state will be replicated to the re-joining node.
-
-### CopyCat Services
-So far, we've demonstrated a number of separate tools CopyCat provides for
-cluster detenction, replication, and communication. It's obvious to me
-that it would be awesome if this were all put into a single simple API,
-so I did that by combining all the functionality into a CopyCat `CopyCatService`.
-
-To create a new `CopyCatService` simply call the `createService` method on a
-`CopyCat` instance.
-
-```java
-CopyCatService service = copycat.createService("test");
-```
-
-Here we pass the service address as the only argument. This is the address
-that will be exposed by the `CopyCatEndpoint` on the Vert.x event bus.
-Services operate much like nodes. Indeed, they expose the same API as
-nodes aside from the `setBroadcastAddress(String address)` method, which
-in most cases should not even be used since CopyCat will create a consistent
-cluster broadcast address internally. So, to start the service we simply
-register our commands and call the `start` method as with the `CopyCatNode`.
-
-```java
-service.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
-  ...
-});
-service.registerCommand("get", Command.Type.READ, new Function<Command<JsonObject>, Object>() {
-  ...
-});
-service.registerCommand("del", new Function<Command<JsonObject>, Boolean>() {
-  ...
-});
-service.start();
-```
-
-CopyCat will handle cluster membership detection and configuration internally,
-as well as expose the service address - in this case `test` - and all the
-service commands over the Vert.x event bus. When multiple instances of the
-service are started they form a fault-tolerant service.
