@@ -193,64 +193,74 @@ public abstract class BaseState implements State {
    * cleans the local log of invalid entries.
    */
   private void checkEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    // Check if the log contains an entry at the synced entry index.
-    log.containsEntry(request.prevLogIndex() + 1, new Handler<AsyncResult<Boolean>>() {
-      @Override
-      public void handle(AsyncResult<Boolean> result) {
-        // If we failed to check the log for the entry then fail the request.
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        // If the log contains an entry at the given index then check
-        // that the entry is consistent with the synced entry.
-        else if (result.result()) {
-          // Load the entry from the local log.
-          log.entry(request.prevLogIndex() + 1, new Handler<AsyncResult<Entry>>() {
-            @Override
-            public void handle(AsyncResult<Entry> result) {
-              // If we failed to load the entry then fail the request. It should
-              // be retried.
-              if (result.failed()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-              }
-              // If the local log's equivalent entry's term does not match the
-              // synced entry's term then that indicates that it came from a
-              // different leader. The log must be purged of this entry and all
-              // entries following it.
-              else if (result.result().term() != request.entry().term()) {
-                // Remove all entries after the previous log index.
-                log.removeAfter(request.prevLogIndex(), new Handler<AsyncResult<Void>>() {
-                  @Override
-                  public void handle(AsyncResult<Void> result) {
-                    if (result.failed()) {
-                      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+    // It's possible that the sync that was sent does not contain an entry.
+    // This happens when all entries have been synchronized to the log, but they
+    // haven't necessarily been committed. Check if this request contains an
+    // entry to be appended. If not, continue on to commit any logged entries
+    // that need to be applied to the state machine.
+    if (request.hasEntry()) {
+      // Check if the log contains an entry at the synced entry index.
+      log.containsEntry(request.prevLogIndex() + 1, new Handler<AsyncResult<Boolean>>() {
+        @Override
+        public void handle(AsyncResult<Boolean> result) {
+          // If we failed to check the log for the entry then fail the request.
+          if (result.failed()) {
+            new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+          }
+          // If the log contains an entry at the given index then check
+          // that the entry is consistent with the synced entry.
+          else if (result.result()) {
+            // Load the entry from the local log.
+            log.entry(request.prevLogIndex() + 1, new Handler<AsyncResult<Entry>>() {
+              @Override
+              public void handle(AsyncResult<Entry> result) {
+                // If we failed to load the entry then fail the request. It should
+                // be retried.
+                if (result.failed()) {
+                  new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                }
+                // If the local log's equivalent entry's term does not match the
+                // synced entry's term then that indicates that it came from a
+                // different leader. The log must be purged of this entry and all
+                // entries following it.
+                else if (result.result().term() != request.entry().term()) {
+                  // Remove all entries after the previous log index.
+                  log.removeAfter(request.prevLogIndex(), new Handler<AsyncResult<Void>>() {
+                    @Override
+                    public void handle(AsyncResult<Void> result) {
+                      if (result.failed()) {
+                        new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                      }
+                      // Finally, append the entry to the local log.
+                      else {
+                        appendEntry(request, doneHandler);
+                      }
                     }
-                    // Finally, append the entry to the local log.
-                    else {
-                      appendEntry(request, doneHandler);
-                    }
-                  }
-                });
+                  });
+                }
+                // If the local log's equivalent entry's term matched the synced
+                // entry's term then we know that the data also matched, so we
+                // don't
+                // need to do any cleaning of the logs. Simply continue on to
+                // check
+                // whether commits need to be applied to the state machine.
+                else {
+                  checkApplyCommits(request, doneHandler);
+                }
               }
-              // If the local log's equivalent entry's term matched the synced
-              // entry's term then we know that the data also matched, so we
-              // don't
-              // need to do any cleaning of the logs. Simply continue on to
-              // check
-              // whether commits need to be applied to the state machine.
-              else {
-                checkApplyCommits(request, doneHandler);
-              }
-            }
-          });
+            });
+          }
+          // If the local log did not contain any entry at the synced index then
+          // simply continue on to append the new entry to the log.
+          else {
+            appendEntry(request, doneHandler);
+          }
         }
-        // If the local log did not contain any entry at the synced index then
-        // simply continue on to append the new entry to the log.
-        else {
-          appendEntry(request, doneHandler);
-        }
-      }
-    });
+      });
+    }
+    else {
+      checkApplyCommits(request, doneHandler);
+    }
   }
 
   /**

@@ -72,9 +72,8 @@ public class Follower extends BaseState {
     // Set the election timeout in a semi-random fashion with the random range
     // being somewhere between .75 * election timeout and 1.25 * election
     // timeout.
-    timeoutTimer = vertx.setTimer(
-        context.electionTimeout() - (context.electionTimeout() / 4) + (Math.round(Math.random() * (context.electionTimeout() / 2))),
-        timeoutHandler);
+    timeoutTimer = vertx.setTimer(context.electionTimeout() - (context.electionTimeout() / 4)
+        + (Math.round(Math.random() * (context.electionTimeout() / 2))), timeoutHandler);
   }
 
   @Override

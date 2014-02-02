@@ -553,6 +553,8 @@ public class Leader extends BaseState implements Observer {
     private void doSync(final long toIndex, final Handler<Void> doneHandler) {
       if (shutdown) return;
       if (nextIndex > toIndex) {
+        lock.release();
+        ping();
         doneHandler.handle((Void) null);
       }
       else {
@@ -622,6 +624,7 @@ public class Leader extends BaseState implements Observer {
               matchIndex = commitIndex;
               checkCommits();
               if (toIndex < nextIndex) {
+                lock.release();
                 doneHandler.handle((Void) null);
               }
               else {
@@ -638,6 +641,7 @@ public class Leader extends BaseState implements Observer {
                 nextIndex--;
                 checkCommits();
                 if (toIndex < nextIndex) {
+                  lock.release();
                   doneHandler.handle((Void) null);
                 }
                 else {
@@ -671,7 +675,7 @@ public class Leader extends BaseState implements Observer {
               if (result.result().term() > context.currentTerm()) {
                 context.transition(StateType.FOLLOWER);
               }
-              else {
+              else if (doneHandler != null) {
                 doneHandler.handle((Void) null);
               }
             }
