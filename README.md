@@ -77,7 +77,7 @@ The `CopyCat` type exposes the following factory methods:
 * `createService()` - Creates a [service](#copycat-services)
 * `createService(String address)` - Creates a [service](#copycat-services)
 * `createService(String address, Log log)` - Creates a [service](#copycat-services)
-* `createEndpoint(String address)` - Creates a [service endpoint](#submitting-commands-over-the-event-bus)
+* `createEndpoint(String address, Replica replica)` - Creates a [service endpoint](#submitting-commands-over-the-event-bus)
 
 ## Working with replicas
 CopyCat clusters are made up of any number of `Replica` instances running
@@ -182,10 +182,10 @@ via the `submitCommand` method. But this is Vert.x, and in Vert.x we expose
 APIs over the event bus. CopyCat provides a `ReplicaEndpoint` class for
 exposing clusters over the event bus. To create an endpoint call the
 `createEndpoint` method on a `CopyCat` instance, passing the cluster
-address as the only argument.
+address and a `Replica` instance as arguments.
 
 ```java
-ReplicaEndpoint endpoint = copycat.createEndpoint("test");
+ReplicaEndpoint endpoint = copycat.createEndpoint("test", replica);
 endpoint.start();
 ```
 
@@ -253,14 +253,6 @@ and replicate that entry. This process helps ensure that two majorities
 cannot be created while different parts of the cluster have varying
 configurations. Once both phases of the configuration change have been
 committed the update is complete.
-
-Note that *even after the replica is deployed you can update the
-cluster configuration*. When the cluster configuration is updated while
-the replica is running, the new configuration will be logged and replicated
-to all the other *known* replicas in the cluster. This means that updating
-the configuration on one replica will result in the configuration being
-updated on all replicas. The updated configuration will be persisted on all
-replicas and thus will remain after failures as well.
 
 CopyCat's support for run-time configuration changes allow it to provide
 additional features for detecting clusters in a dynamic framework like
