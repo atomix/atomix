@@ -11,9 +11,9 @@ for state machine replication using the Raft consensus algorithm as described in
 1. [Features](#features)
 1. [How it works](#how-it-works)
 1. [The CopyCat API](#the-copycat-api)
-1. [Working with replica](#working-with-nodes)
+1. [Working with replicas](#working-with-replicas)
    * [Registering commands](#registering-state-machine-commands)
-   * [Submitting commands to the node](#submitting-commands-to-the-replica)
+   * [Submitting commands to the replica](#submitting-commands-to-the-replica)
    * [Submitting commands over the event bus](#submitting-commands-over-the-event-bus)
 1. [Working with clusters](#working-with-clusters)
    * [Static cluster membership](#static-cluster-membership)
@@ -43,14 +43,14 @@ CopyCat provides tools for creating fault-tolerant Vert.x services by
 replicating state across multiple Vert.x instances and coordinating requests
 to the service. When multiple CopyCat replicas are started within a Vert.x
 cluster, the replicas communicate with each other to elect a leader which
-coordinates the cluster and replicates commands to all the replicas in the
+coordinates the cluster and replicates commands to all the nodes in the
 cluster. CopyCat's leader election and replication is performed using
 a modified implementation of the [Raft](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf)
 consensus algorithm. The replication of CopyCat cluster states means that
 if any member of the cluster dies, the state is not lost. The cluster will
 simply coordinate to share state, and once the dead replica re-joins the
-cluster, any commands missed while the replica was down will be replicated
-to the replica.
+cluster, any commands missed while the node was down will be replicated
+to the node.
 
 ## The CopyCat API
 CopyCat provides a primary factory API for creating various types. To create
@@ -115,8 +115,8 @@ serviced by the cluster. Commands are registered by calling the
 `registerCommand` method on a `Replica` instance.
 
 ```java
-replica.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
-  public Boolean call(Command<JsonObject> command) {
+replica.registerCommand("set", new Function<Command, Boolean>() {
+  public Boolean call(Command command) {
     String key = command.args().getString("key");
     Object value = command.args().getValue("value");
     map.put(key, value);
@@ -136,7 +136,7 @@ To mark a command as *read-only*, pass a `Command.Type` as the second
 argument to `registerCommand`
 
 ```java
-replica.registerCommand("get", Command.Type.READ, new Function<Command<String>, Object>() {
+replica.registerCommand("get", Command.Type.READ, new Function<Command, Object>() {
   ...
 });
 ```
@@ -353,8 +353,8 @@ freed from the log by simply calling `free()` on any `Command` instance.
 // Create a map of keys to commands.
 final Map<String, Command> commands = new HashMap<>();
 
-replica.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
-  public Boolean call(Command<JsonObject> command) {
+replica.registerCommand("set", new Function<Command, Boolean>() {
+  public Boolean call(Command command) {
     String key = command.args().getString("key");
     Object value = command.args().getValue("value");
     store.put(key, value);
@@ -406,13 +406,13 @@ cluster broadcast address internally. So, to start the service we simply
 register our commands and call the `start` method as with the `Replica`.
 
 ```java
-service.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
+service.registerCommand("set", new Function<Command, Boolean>() {
   ...
 });
-service.registerCommand("get", Command.Type.READ, new Function<Command<JsonObject>, Object>() {
+service.registerCommand("get", Command.Type.READ, new Function<Command, Object>() {
   ...
 });
-service.registerCommand("del", new Function<Command<JsonObject>, Boolean>() {
+service.registerCommand("del", new Function<Command, Boolean>() {
   ...
 });
 service.start();
@@ -434,7 +434,7 @@ public class KeyValueStore extends Verticle {
   private final Map<String, Object> store = new HashMap<>();
 
   // A map of keys and the commands which effect their state.
-  private final Map<String, Command<?>> commands = new HashMap<>();
+  private final Map<String, Command> commands = new HashMap<>();
 
   @Override
   public void start(final Future<Void> startedResult) {
@@ -448,8 +448,8 @@ public class KeyValueStore extends Verticle {
     // Register service commands.
 
     // Register a "set" command.
-    service.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
-      public Boolean call(Command<JsonObject> command) {
+    service.registerCommand("set", new Function<Command, Boolean>() {
+      public Boolean call(Command command) {
         String key = command.args().getString("key");
         Object value = command.args().getValue("value");
         store.put(key, value);
@@ -470,16 +470,16 @@ public class KeyValueStore extends Verticle {
     });
 
     // Register a "get" command.
-    service.registerCommand("get", Command.Type.READ, new Function<Command<JsonObject>, Object>() {
-      public Object call(Command<JsonObject> command) {
+    service.registerCommand("get", Command.Type.READ, new Function<Command, Object>() {
+      public Object call(Command command) {
         String key = command.args().getString("key");
         return store.get(key);
       }
     });
 
     // Register a "del" command.
-    service.registerCommand("del", new Function<Command<JsonObject>, Boolean>() {
-      public Boolean call(Command<JsonObject> command) {
+    service.registerCommand("del", new Function<Command, Boolean>() {
+      public Boolean call(Command command) {
         String key = command.args().getString("key");
         if (store.containsKey(key)) {
           store.remove(key);
