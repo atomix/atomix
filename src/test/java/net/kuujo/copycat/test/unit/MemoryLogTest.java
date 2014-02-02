@@ -45,7 +45,7 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
+        assertTrue(result.result() == 1);
       }
     });
   }
@@ -57,8 +57,8 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
-        log.containsEntry(0, new Handler<AsyncResult<Boolean>>() {
+        assertTrue(result.result() == 1);
+        log.containsEntry(1, new Handler<AsyncResult<Boolean>>() {
           @Override
           public void handle(AsyncResult<Boolean> result) {
             assertTrue(result.succeeded());
@@ -76,8 +76,8 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
-        log.entry(0, new Handler<AsyncResult<Entry>>() {
+        assertTrue(result.result() == 1);
+        log.entry(1, new Handler<AsyncResult<Entry>>() {
           @Override
           public void handle(AsyncResult<Entry> result) {
             assertTrue(result.succeeded());
@@ -95,27 +95,21 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
+        assertTrue(result.result() == 1);
 
         log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
             assertTrue(result.succeeded());
-            assertTrue(result.result() == 1);
+            assertTrue(result.result() == 2);
 
             log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
-                assertTrue(result.result() == 2);
-
-                log.firstIndex(new Handler<AsyncResult<Long>>() {
-                  @Override
-                  public void handle(AsyncResult<Long> result) {
-                    assertTrue(result.succeeded());
-                    assertTrue(result.result() == 0);
-                  }
-                });
+                assertTrue(result.result() == 3);
+                assertTrue(log.firstIndex() == 1);
+                assertTrue(log.lastIndex() == 3);
               }
             });
           }
@@ -132,45 +126,26 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
+        assertTrue(result.result() == 1);
 
         final CommandEntry entry2 = new CommandEntry(1, new DefaultCommand("bar", Command.Type.WRITE, new JsonObject()));
         log.appendEntry(entry2, new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
             assertTrue(result.succeeded());
-            assertTrue(result.result() == 1);
+            assertTrue(result.result() == 2);
 
             final CommandEntry entry3 = new CommandEntry(1, new DefaultCommand("baz", Command.Type.WRITE, new JsonObject()));
             log.appendEntry(entry3, new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
-                assertTrue(result.result() == 2);
+                assertTrue(result.result() == 3);
 
-                log.floor(2, new Handler<AsyncResult<Void>>() {
-                  @Override
-                  public void handle(AsyncResult<Void> result) {
-                    assertTrue(result.succeeded());
-                    log.free(entry2);
-
-                    log.firstIndex(new Handler<AsyncResult<Long>>() {
-                      @Override
-                      public void handle(AsyncResult<Long> result) {
-                        assertTrue(result.succeeded());
-                        assertTrue(result.result() == 1);
-                      }
-                    });
-
-                    log.lastIndex(new Handler<AsyncResult<Long>>() {
-                      @Override
-                      public void handle(AsyncResult<Long> result) {
-                        assertTrue(result.succeeded());
-                        assertTrue(result.result() == 2);
-                      }
-                    });
-                  }
-                });
+                log.floor(3);
+                log.free(entry2);
+                assertTrue(log.firstIndex() == 2);
+                assertTrue(log.lastIndex() == 3);
               }
             });
           }
@@ -186,19 +161,19 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
+        assertTrue(result.result() == 1);
 
         log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
             assertTrue(result.succeeded());
-            assertTrue(result.result() == 1);
+            assertTrue(result.result() == 2);
 
             log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
-                assertTrue(result.result() == 2);
+                assertTrue(result.result() == 3);
 
                 log.firstEntry(new Handler<AsyncResult<Entry>>() {
                   @Override
@@ -222,27 +197,20 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
+        assertTrue(result.result() == 1);
 
         log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
             assertTrue(result.succeeded());
-            assertTrue(result.result() == 1);
+            assertTrue(result.result() == 2);
 
             log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
-                assertTrue(result.result() == 2);
-
-                log.lastIndex(new Handler<AsyncResult<Long>>() {
-                  @Override
-                  public void handle(AsyncResult<Long> result) {
-                    assertTrue(result.succeeded());
-                    assertTrue(result.result() == 2);
-                  }
-                });
+                assertTrue(result.result() == 3);
+                assertTrue(log.lastIndex() == 3);
               }
             });
           }
@@ -258,19 +226,19 @@ public class MemoryLogTest {
       @Override
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
-        assertTrue(result.result() == 0);
+        assertTrue(result.result() == 1);
 
         log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
             assertTrue(result.succeeded());
-            assertTrue(result.result() == 1);
+            assertTrue(result.result() == 2);
 
             log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
-                assertTrue(result.result() == 2);
+                assertTrue(result.result() == 3);
 
                 log.lastEntry(new Handler<AsyncResult<Entry>>() {
                   @Override
