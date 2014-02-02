@@ -7,6 +7,13 @@ for state machine replication using the Raft consensus algorithm as described in
 
 **This project is still very much under development and is recommended for testing only**
 
+This project is being developed as the potential basis of future development of
+[Vertigo](http://github.com/kuujo/vertigo) - improved cluster and state management.
+This project is also a long way from stability, but I'm making it public in the hopes
+of it gaining interest, contributions, and particularly reviews from those who are
+knowledgable about the Raft consensus algorithm. Please feel free to poke, prod,
+and submit changes as necessary.
+
 ## Table of contents
 1. [Features](#features)
 1. [How it works](#how-it-works)
@@ -325,12 +332,11 @@ indefinite log growth is not ideal, so users need a way to minimize the
 size of logs wherever possible.
 
 #### Log cleaning
-One feature we can not about command logs is that often times the logs
-will contain commands that no longer contribute to the current state of
-the application. For example, a `set` command might override a previous
-`set` command, or a `del` command negates the state that was previously
-created by a `set` command. In this case, each of the commands can be
-safely removed from the log without effecting the system's ability to
+Often times the logs will contain commands that no longer contribute to the
+current state of the application. For example, a `set` command might override
+a previous `set` command, or a `del` command negates the state that was
+previously created by a `set` command. In this case, each of the commands can
+be safely removed from the log without effecting the system's ability to
 recover to its previous state. This is referred to as log cleaning.
 
 Log cleaning is a incremental process that can be performed periodically
