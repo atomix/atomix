@@ -19,11 +19,27 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
 /**
- * A Mimeo service.
+ * Services combine several CopyCat features into a single interface, performing
+ * cluster detection, servicing requests, and handling state machine replication
+ * under the hoods. To create a service use the {@link CopyCat} factory methods.
  *
  * @author Jordan Halterman
  */
 public interface CopyCatService {
+
+  /**
+   * Returns the replica underlying the service.
+   *
+   * @return The service replica.
+   */
+  Replica replica();
+
+  /**
+   * Returns the endpoint underlying the service.
+   *
+   * @return The service endpoint.
+   */
+  ReplicaEndpoint endpoint();
 
   /**
    * Sets the local node address.

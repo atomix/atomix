@@ -13,63 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
 /**
- * A cluster endpoint.
+ * A service endpoint.
  * 
  * @author Jordan Halterman
  */
-public interface ClusterEndpoint {
+public interface ReplicaEndpoint {
 
   /**
-   * Sets the local endpoint address.
+   * Sets the endpoint address.
    * 
-   * @param address The local endpoint address.
-   * @return The cluster endpoint.
+   * @param address The service endpoint address.
+   * @return The service endpoint.
    */
-  ClusterEndpoint setLocalAddress(String address);
+  ReplicaEndpoint setAddress(String address);
 
   /**
-   * Returns the local endpoint address.
+   * Returns the endpoint address.
    * 
-   * @return The local endpoint address.
+   * @return The service endpoint address.
    */
-  String getLocalAddress();
-
-  /**
-   * Sets the cluster broadcast address.
-   * 
-   * @param address The cluster broadcast address.
-   * @return The cluster endpoint.
-   */
-  ClusterEndpoint setBroadcastAddress(String address);
-
-  /**
-   * Returns the cluster broadcast address.
-   * 
-   * @return The cluster broadcast address.
-   */
-  String getBroadcastAddress();
+  String getAddress();
 
   /**
    * Starts the endpoint.
    * 
-   * @return The endpoint instance.
+   * @return The service endpoint.
    */
-  ClusterEndpoint start();
+  ReplicaEndpoint start();
 
   /**
    * Starts the endpoint.
    * 
    * @param doneHandler An asynchronous handler to be called once the endpoint has
    *          started.
-   * @return The endpoint instance.
+   * @return The service endpoint.
    */
-  ClusterEndpoint start(Handler<AsyncResult<Void>> doneHandler);
+  ReplicaEndpoint start(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Stops the endpoint.

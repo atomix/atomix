@@ -13,28 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.replication;
 
-import org.vertx.java.core.VertxException;
+import net.kuujo.copycat.Command;
 
 /**
- * A base CopyCat exception.
+ * A replication service state machine.
  * 
  * @author Jordan Halterman
  */
-@SuppressWarnings("serial")
-public class CopyCatException extends VertxException {
+public interface StateMachine {
 
-  public CopyCatException(String message) {
-    super(message);
-  }
-
-  public CopyCatException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public CopyCatException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * Applies a command to the state machine.
+   * 
+   * @param command The command to apply.
+   * @return The command output.
+   */
+  Object applyCommand(Command command);
 
 }

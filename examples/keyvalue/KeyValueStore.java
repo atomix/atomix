@@ -33,7 +33,7 @@ import org.vertx.java.platform.Verticle;
  */
 public class KeyValueStore extends Verticle {
   private CopyCat copycat;
-  private CopyCatService service;
+  private CopyCatService copyCatService;
   private final Map<String, Object> data = new HashMap<>();
   private final Map<String, Command> commands = new HashMap<>();
 
@@ -78,13 +78,13 @@ public class KeyValueStore extends Verticle {
   public void start(final Future<Void> startResult) {
     String address = container.config().getString("address", "copyredis");
     copycat = new CopyCat(this);
-    service = copycat.createService(address);
+    copyCatService = copycat.createService(address);
 
-    service.registerCommand("get", Command.Type.READ, get);
-    service.registerCommand("set", Command.Type.WRITE, set);
-    service.registerCommand("del", Command.Type.WRITE, del);
+    copyCatService.registerCommand("get", Command.Type.READ, get);
+    copyCatService.registerCommand("set", Command.Type.WRITE, set);
+    copyCatService.registerCommand("del", Command.Type.WRITE, del);
 
-    service.start(new Handler<AsyncResult<Void>>() {
+    copyCatService.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {

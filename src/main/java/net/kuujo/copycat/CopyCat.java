@@ -18,9 +18,9 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterController;
 import net.kuujo.copycat.cluster.impl.DefaultClusterController;
-import net.kuujo.copycat.impl.DefaultCopyCatNode;
+import net.kuujo.copycat.impl.DefaultReplica;
 import net.kuujo.copycat.impl.DefaultCopyCatService;
-import net.kuujo.copycat.impl.DefaultCopyCatEndpoint;
+import net.kuujo.copycat.impl.DefaultReplicaEndpoint;
 import net.kuujo.copycat.log.Log;
 
 import org.vertx.java.core.Vertx;
@@ -43,46 +43,39 @@ public class CopyCat {
   }
 
   /**
-   * Creates a new node.
+   * Creates a new copy cat (replica).
    *
-   * @return
-   *   A new node instance.
+   * @return A new copy cat (replica) instance.
    */
-  public CopyCatNode createNode() {
-    return new DefaultCopyCatNode(vertx);
+  public Replica createReplica() {
+    return new DefaultReplica(vertx);
   }
 
   /**
-   * Creates a new node.
+   * Creates a new copy cat (replica).
    *
-   * @param address
-   *   The node address.
-   * @return
-   *   A new node instance.
+   * @param address The node address.
+   * @return A new copy cat (replica) instance.
    */
-  public CopyCatNode createNode(String address) {
-    return new DefaultCopyCatNode(address, vertx);
+  public Replica createReplica(String address) {
+    return new DefaultReplica(address, vertx);
   }
 
   /**
-   * Creates a new node.
+   * Creates a new copy cat (replica).
    *
-   * @param address
-   *   The node address.
-   * @param config
-   *   The cluster configuration.
-   * @return
-   *   A new node instance.
+   * @param address The node address.
+   * @param config The cluster configuration.
+   * @return A copy cat (replica) node instance.
    */
-  public CopyCatNode createNode(String address, ClusterConfig config) {
-    return new DefaultCopyCatNode(address, vertx).setClusterConfig(config);
+  public Replica createReplica(String address, ClusterConfig config) {
+    return new DefaultReplica(address, vertx).setClusterConfig(config);
   }
 
   /**
    * Creates a new cluster controller.
    *
-   * @return
-   *   A new cluster controller.
+   * @return A new cluster controller.
    */
   public ClusterController createCluster() {
     return new DefaultClusterController(vertx);
@@ -91,12 +84,9 @@ public class CopyCat {
   /**
    * Creates a new cluster controller.
    *
-   * @param localAddress
-   *   The local address.
-   * @param broadcastAddress
-   *   The cluster broadcast address.
-   * @return
-   *   A new cluster controller.
+   * @param localAddress The local address.
+   * @param broadcastAddress The cluster broadcast address.
+   * @return A new cluster controller.
    */
   public ClusterController createCluster(String localAddress, String broadcastAddress) {
     return new DefaultClusterController(localAddress, broadcastAddress, vertx);
@@ -105,8 +95,7 @@ public class CopyCat {
   /**
    * Creates a new service instance.
    *
-   * @return
-   *   A new service instance.
+   * @return A new service instance.
    */
   public CopyCatService createService() {
     return new DefaultCopyCatService(vertx);
@@ -115,10 +104,8 @@ public class CopyCat {
   /**
    * Creates a new service instance.
    *
-   * @param address
-   *   The service address.
-   * @return
-   *   A new service instance.
+   * @param address The service address.
+   * @return A new service instance.
    */
   public CopyCatService createService(String address) {
     return new DefaultCopyCatService(address, vertx);
@@ -127,29 +114,46 @@ public class CopyCat {
   /**
    * Creates a new service instance.
    *
-   * @param address
-   *   The service address.
-   * @param log
-   *   The replicated log.
-   * @return
-   *   A new service instance.
+   * @param address The service address.
+   * @param log The replicated log.
+   * @return A new service instance.
    */
   public CopyCatService createService(String address, Log log) {
     return new DefaultCopyCatService(address, vertx, log);
   }
 
   /**
+   * Creates a new service instance.
+   *
+   * @param address The service address.
+   * @param replica The service replica.
+   * @return A new service instance.
+   */
+  public CopyCatService createService(String address, Replica replica) {
+    return new DefaultCopyCatService(address, vertx, replica);
+  }
+
+  /**
+   * Creates a new service instance.
+   *
+   * @param address The service address.
+   * @param replica The service replica.
+   * @param cluster The service's cluster controller.
+   * @return A new service instance.
+   */
+  public CopyCatService createService(String address, Replica replica, ClusterController cluster) {
+    return new DefaultCopyCatService(address, vertx, replica, cluster);
+  }
+
+  /**
    * Creates a service endpoint.
    *
-   * @param address
-   *   The endpoint address.
-   * @param copyCatNode
-   *   The service node.
-   * @return
-   *   A new service endpoint instance.
+   * @param address The endpoint address.
+   * @param replica The service node.
+   * @return A new service endpoint instance.
    */
-  public CopyCatEndpoint createEndpoint(String address, CopyCatNode copyCatNode) {
-    return new DefaultCopyCatEndpoint(address, copyCatNode, vertx);
+  public ReplicaEndpoint createEndpoint(String address, Replica replica) {
+    return new DefaultReplicaEndpoint(address, replica, vertx);
   }
 
 }

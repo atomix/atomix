@@ -21,9 +21,9 @@ import net.kuujo.copycat.impl.DefaultCommand;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.replica.Replica;
-import net.kuujo.copycat.replica.impl.RaftReplica;
-import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.replication.StateMachine;
+import net.kuujo.copycat.replication.node.RaftNode;
+import net.kuujo.copycat.replication.node.impl.DefaultRaftNode;
 
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
@@ -55,19 +55,19 @@ public class ReplicationTest extends TestVerticle {
   public void testNoOpReplication() {
     final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
 
-    final Replica test1 = new RaftReplica("test.1", vertx, stateMachine).setClusterConfig(config);
+    final RaftNode test1 = new DefaultRaftNode("test.1", vertx, stateMachine).setClusterConfig(config);
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final Replica test2 = new RaftReplica("test.2", vertx, stateMachine).setClusterConfig(config);
+        final RaftNode test2 = new DefaultRaftNode("test.2", vertx, stateMachine).setClusterConfig(config);
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final Replica test3 = new RaftReplica("test.3", vertx, stateMachine).setClusterConfig(config);
+            final RaftNode test3 = new DefaultRaftNode("test.3", vertx, stateMachine).setClusterConfig(config);
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
@@ -112,19 +112,19 @@ public class ReplicationTest extends TestVerticle {
   public void testCommandReplication() {
     final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
 
-    final Replica test1 = new RaftReplica("test.1", vertx, stateMachine).setClusterConfig(config);
+    final RaftNode test1 = new DefaultRaftNode("test.1", vertx, stateMachine).setClusterConfig(config);
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final Replica test2 = new RaftReplica("test.2", vertx, stateMachine).setClusterConfig(config);
+        final RaftNode test2 = new DefaultRaftNode("test.2", vertx, stateMachine).setClusterConfig(config);
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final Replica test3 = new RaftReplica("test.3", vertx, stateMachine).setClusterConfig(config);
+            final RaftNode test3 = new DefaultRaftNode("test.3", vertx, stateMachine).setClusterConfig(config);
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
@@ -175,21 +175,21 @@ public class ReplicationTest extends TestVerticle {
   public void testConfigReplication() {
     final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
 
-    final Replica test1 = new RaftReplica("test.1", vertx, stateMachine)
+    final RaftNode test1 = new DefaultRaftNode("test.1", vertx, stateMachine)
       .setClusterConfig(config).setHeartbeatInterval(100);
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final Replica test2 = new RaftReplica("test.2", vertx, stateMachine)
+        final RaftNode test2 = new DefaultRaftNode("test.2", vertx, stateMachine)
           .setClusterConfig(config).setHeartbeatInterval(100);
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final Replica test3 = new RaftReplica("test.3", vertx, stateMachine)
+            final RaftNode test3 = new DefaultRaftNode("test.3", vertx, stateMachine)
               .setClusterConfig(config).setHeartbeatInterval(100);
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
