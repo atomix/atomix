@@ -87,6 +87,11 @@ public class DefaultCopyCatNode implements CopyCatNode {
   }
 
   @Override
+  public ClusterConfig cluster() {
+    return replica.getClusterConfig();
+  }
+
+  @Override
   public CopyCatNode setClusterConfig(ClusterConfig config) {
     replica.setClusterConfig(config);
     return this;

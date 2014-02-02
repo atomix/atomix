@@ -371,10 +371,23 @@ public abstract class BaseState implements State {
   protected void doPoll(final PollRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     final Future<Boolean> future = new DefaultFutureResult<Boolean>().setHandler(doneHandler);
 
+    // If the requesting candidate is the current node then vote for self.
+    if (request.candidate().equals(context.address())) {
+      request.reply(context.currentTerm(), true);
+    }
+
+    // If the requesting candidate is not a known member of the cluster (to
+    // this replica) then reject the vote. This helps ensure that new cluster
+    // members cannot become leader until at least a majority of the cluster
+    // has been notified of their membership.
+    else if (!members.contains(request.candidate())) {
+      request.reply(context.currentTerm(), false);
+    }
+
     // If the request term is greater than the current term then update
     // the local current term. This will also cause the candidate voted
     // for to be reset for the new term.
-    if (request.term() > context.currentTerm()) {
+    else if (request.term() > context.currentTerm()) {
       context.currentTerm(request.term());
     }
 

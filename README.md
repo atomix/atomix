@@ -234,20 +234,42 @@ by updating the node's `ClusterConfig`, the object that represents a
 registry of all nodes in the cluster.
 
 ```java
-node.getClusterConfig().addMember("test.2");
-node.getClusterConfig().addMember("test.3");
+node.cluster().addMember("test.2");
+node.cluster().addMember("test.3");
 ```
 
 This will tell the node to participate in leader elections and state
 replications with `test.2` and `test.3`. Similarly, when the `test.2`
 and `test.3` nodes are deployed, their configurations will need to contain
-`test.1`. Note that *even after the node is deployed you can update the
+`test.1`.
+
+CopyCat supports updating the cluster configuration even while nodes
+are running. If a cluster configuration changes during normal operation,
+the leader of the cluster will begin a two-step process that helps ensure
+safety during the transition.
+
+First, the leader will append a `CONFIGURATION` entry to its log. This
+first entry will contained a *combined* membership for the cluster. So,
+it will contain a list of all the nodes in *both the old and the new*
+configuration. Once this combined configuration is replicated to the
+rest of the cluster, the leader will append a second `CONFIGURATION`
+entry to its log - this one containing only the new configuration -
+and replicate that entry. This process helps ensure that two majorities
+cannot be created while different parts of the cluster have varying
+configurations. Once both phases of the configuration change have been
+committed the update is complete.
+
+Note that *even after the node is deployed you can update the
 cluster configuration*. When the cluster configuration is updated while
 the node is running, the new configuration will be logged and replicated
 to all the other *known* nodes in the cluster. This means that updating
 the configuration on one node will result in the configuration being
 updated on all nodes. The updated configuration will be persisted on all
 nodes and thus will remain after failures as well.
+
+CopyCat's support for run-time configuration changes allow it to provide
+additional features for detecting clusters in a dynamic framework like
+Vert.x.
 
 ### Dynamic cluster membership detection
 This type of manual cluster configuration may not seem very efficient,

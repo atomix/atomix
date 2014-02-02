@@ -48,6 +48,14 @@ public interface CopyCatNode {
   String getAddress();
 
   /**
+   * Returns the cluster configuration.
+   *
+   * @return
+   *   The node's cluster configuration.
+   */
+  ClusterConfig cluster();
+
+  /**
    * Sets the cluster configuration.
    *
    * @param config
