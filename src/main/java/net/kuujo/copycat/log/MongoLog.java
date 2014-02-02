@@ -40,7 +40,9 @@ public class MongoLog implements Log {
   private final String address;
   private final String collection;
   private final Vertx vertx;
-  private long currentIndex;
+  private long firstIndex = 0;
+  private long lastIndex = 0;
+  private long currentIndex = 1;
 
   public MongoLog(String address, String collection, Vertx vertx) {
     this.address = address;
@@ -51,43 +53,48 @@ public class MongoLog implements Log {
   @Override
   public void init(final LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-    final JsonObject query = new JsonObject().putString("action", "count").putString("collection", collection)
-        .putObject("matcher", new JsonObject());
-    vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
+    firstIndex(new Handler<AsyncResult<Long>>() {
       @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
+      public void handle(AsyncResult<Long> result) {
         if (result.failed()) {
           future.setFailure(result.cause());
         }
-        else if (result.result().body().getString("status").equals("ok")) {
-          currentIndex = result.result().body().getLong("count");
-          future.setResult((Void) null);
-        }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
-        }
-      }
-    });
-
-    final JsonObject query2 = new JsonObject().putString("action", "count").putString("collection", collection)
-        .putObject("matcher", new JsonObject());
-    vertx.eventBus().sendWithTimeout(address, query2, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
-        }
-        else {
-          JsonArray jsonEntries = result.result().body().getArray("result");
-          for (Object jsonEntry : jsonEntries) {
-            visitor.applyEntry(serializer.deserialize(((JsonObject) jsonEntry).getObject("entry"), Entry.class));
-          }
-          if (!result.result().body().getString("status").equals("more-exist")) {
-            future.setResult((Void) null);
-          }
+          firstIndex = result.result();
+          lastIndex(new Handler<AsyncResult<Long>>() {
+            @Override
+            public void handle(AsyncResult<Long> result) {
+              if (result.failed()) {
+                future.setFailure(result.cause());
+              }
+              else {
+                lastIndex = result.result();
+                currentIndex = lastIndex + 1;
+                final JsonObject query = new JsonObject().putString("action", "count").putString("collection", collection)
+                    .putObject("matcher", new JsonObject());
+                vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
+                  @Override
+                  public void handle(AsyncResult<Message<JsonObject>> result) {
+                    if (result.failed()) {
+                      future.setFailure(result.cause());
+                    }
+                    else if (result.result().body().getString("status").equals("error")) {
+                      future.setFailure(new CopyCatException(result.result().body().getString("message")));
+                    }
+                    else {
+                      JsonArray jsonEntries = result.result().body().getArray("result");
+                      for (Object jsonEntry : jsonEntries) {
+                        visitor.applyEntry(serializer.deserialize(((JsonObject) jsonEntry).getObject("entry"), Entry.class));
+                      }
+                      if (!result.result().body().getString("status").equals("more-exist")) {
+                        future.setResult((Void) null);
+                      }
+                    }
+                  }
+                });
+              }
+            }
+          });
         }
       }
     });
@@ -166,7 +173,11 @@ public class MongoLog implements Log {
   }
 
   @Override
-  public Log firstIndex(Handler<AsyncResult<Long>> handler) {
+  public long firstIndex() {
+    return firstIndex;
+  }
+
+  public void firstIndex(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
     final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
         .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", 1))
@@ -185,7 +196,6 @@ public class MongoLog implements Log {
         }
       }
     });
-    return this;
   }
 
   @Override
@@ -236,7 +246,11 @@ public class MongoLog implements Log {
   }
 
   @Override
-  public Log lastIndex(Handler<AsyncResult<Long>> handler) {
+  public long lastIndex() {
+    return lastIndex;
+  }
+
+  public void lastIndex(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
     final JsonObject query = new JsonObject().putString("action", "find").putString("collection", collection)
         .putObject("matcher", new JsonObject().putString("type", "command")).putObject("sort", new JsonObject().putNumber("index", -1))
@@ -255,7 +269,6 @@ public class MongoLog implements Log {
         }
       }
     });
-    return this;
   }
 
   @Override
@@ -422,8 +435,8 @@ public class MongoLog implements Log {
   }
 
   @Override
-  public Log floor(long index, Handler<AsyncResult<Void>> doneHandler) {
-    // Not supported.
+  public Log floor(long index) {
+    // Not implemented.
     return this;
   }
 

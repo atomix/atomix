@@ -56,4 +56,11 @@ public class StateLock {
     }
   }
 
+  /**
+   * Returns a boolean indicating whether the lock is currently locked.
+   */
+  public boolean locked() {
+    return locked;
+  }
+
 }

@@ -15,7 +15,9 @@
  */
 package net.kuujo.copycat.state;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
@@ -47,6 +49,8 @@ public abstract class BaseState implements State {
   protected ClusterConfig config;
   protected StateContext context;
   protected Set<String> members = new HashSet<>();
+  protected Set<String> remoteMembers = new HashSet<>();
+  private Map<Long, Handler<Void>> applyHandlers = new HashMap<>();
 
   @Override
   public State setVertx(Vertx vertx) {
@@ -85,6 +89,26 @@ public abstract class BaseState implements State {
   }
 
   /**
+   * Updates the context's last applied. This method ensures that state machine
+   * commands are applied in order of index regardless of the often inconsistent
+   * nature of application order. Prior to applying a command to the state machine,
+   * this method should be called to determine the appropriate point at which
+   * to apply the command.
+   */
+  protected void apply(final long index, final Handler<Void> doneHandler) {
+    if (context.lastApplied() == index - 1) {
+      context.lastApplied(index);
+      doneHandler.handle((Void) null);
+      if (applyHandlers.containsKey(context.lastApplied() + 1)) {
+        apply(context.lastApplied() + 1, applyHandlers.remove(context.lastApplied() + 1));
+      }
+    }
+    else {
+      applyHandlers.put(index, doneHandler);
+    }
+  }
+
+  /**
    * Handles a sync request.
    */
   protected void doSync(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
@@ -106,7 +130,7 @@ public abstract class BaseState implements State {
   private void checkConsistency(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
     // If a previous log index and term were provided then check to ensure
     // that they match this node's previous log index and term.
-    if (request.prevLogIndex() >= 0 && request.prevLogTerm() >= 0) {
+    if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
       checkPreviousEntry(request, doneHandler);
     }
     // Otherwise, continue on to check the entry being appended.
@@ -265,51 +289,19 @@ public abstract class BaseState implements State {
     // commands have not yet been applied then we want to re-attempt to apply
     // them.
     if (request.commit() > context.commitIndex() || context.commitIndex() > context.lastApplied()) {
-      // Get the last log index.
-      log.lastIndex(new Handler<AsyncResult<Long>>() {
-        @Override
-        public void handle(AsyncResult<Long> result) {
-          // If for some reason we failed to load the last log index, simply
-          // fail
-          // gracefully by replying true to the sync request. Next time the
-          // leader
-          // syncs with this node, the commit application will be re-attempted.
-          if (result.failed()) {
-            new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
-          }
-          else {
-            // Update the local commit index with min(request commit, last log
-            // index)
-            final long lastIndex = result.result();
-            context.commitIndex(Math.min(request.commit(), lastIndex));
+      // Update the local commit index with min(request commit, last log // index)
+      final long lastIndex = log.lastIndex();
+      context.commitIndex(Math.min(request.commit(), lastIndex));
 
-            // If the updated commit index indicates that commits remain to be
-            // applied to the state machine, iterate entries and apply them.
-            if (context.commitIndex() > context.lastApplied()) {
-              // Set the log floor. This indicates the minimum log entry that is
-              // required to remain persisted. Log entries that have not yet
-              // been
-              // applied to the state machine cannot be removed from the log.
-              log.floor(Math.min(context.commitIndex(), context.lastApplied()), new Handler<AsyncResult<Void>>() {
-                @Override
-                public void handle(AsyncResult<Void> result) {
-                  // If setting the log floor failed for some reason, ignore the
-                  // failure. Since the log floor always increases, we simply
-                  // allow
-                  // more log entries to remain by not setting the log floor.
-                  // iterate over committed log entries and apply them to the
-                  // state machine.
-                  // We apply entries up to min(local commit index, last log
-                  // index)
-                  if (result.succeeded()) {
-                    recursiveApplyCommits(context.lastApplied() + 1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
-                  }
-                }
-              });
-            }
-          }
-        }
-      });
+      // If the updated commit index indicates that commits remain to be
+      // applied to the state machine, iterate entries and apply them.
+      if (context.commitIndex() > context.lastApplied()) {
+        // Set the log floor. This indicates the minimum log entry that is
+        // required to remain persisted. Log entries that have not yet been
+        // applied to the state machine cannot be removed from the log.
+        log.floor(Math.min(context.commitIndex(), context.lastApplied()));
+        recursiveApplyCommits(context.lastApplied() + 1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
+      }
     }
     // Otherwise, check whether the current term needs to be updated and reply
     // true to the sync request.
@@ -348,38 +340,27 @@ public abstract class BaseState implements State {
    */
   private void doApply(final long index, final long ceiling, final SyncRequest request, final Entry entry,
       final Handler<AsyncResult<Boolean>> doneHandler) {
-    // If the entry type is a command, apply the entry to the state machine.
-    if (entry.type().equals(Type.COMMAND)) {
-      stateMachine.applyCommand(((CommandEntry) entry).command());
-    }
-    // If this is a configuration entry, update cluster membership. Since the
-    // configuration was replicated to this node, it contains the *combined*
-    // cluster membership during two-phase cluster configuration changes, so
-    // it's
-    // safe to simply override the current cluster configuration.
-    else if (entry.type().equals(Type.CONFIGURATION)) {
-      members = ((ConfigurationEntry) entry).members();
-      members.remove(context.address());
-    }
-
-    // Update the last applied index to the current index.
-    context.lastApplied(index);
-
-    // Update the log floor to the last committed index (this index).
-    log.floor(index, new Handler<AsyncResult<Void>>() {
+    apply(index, new Handler<Void>() {
       @Override
-      public void handle(AsyncResult<Void> result) {
-        // If we've finished applying all the commits, finish the sync
-        // successfully.
-        if (index == ceiling) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
+      public void handle(Void _) {
+        // If the entry type is a command, apply the entry to the state machine.
+        if (entry.type().equals(Type.COMMAND)) {
+          stateMachine.applyCommand(((CommandEntry) entry).command());
         }
-        // Otherwise, continue on to apply the next commit. Again, we ignore
-        // whether the floor application failed because it should have no
-        // negative impact on the consistency of the log.
-        else {
-          recursiveApplyCommits(index + 1, ceiling, request, doneHandler);
+
+        // If this is a configuration entry, update cluster membership. Since the
+        // configuration was replicated to this node, it contains the *combined*
+        // cluster membership during two-phase cluster configuration changes, so it's
+        // safe to simply override the current cluster configuration.
+        else if (entry.type().equals(Type.CONFIGURATION)) {
+          members = ((ConfigurationEntry) entry).members();
         }
+
+        // Update the log floor to the last committed index (this index).
+        log.floor(index);
+
+        // Continue on to apply the next commit.
+        recursiveApplyCommits(index + 1, ceiling, request, doneHandler);
       }
     });
   }
@@ -405,60 +386,48 @@ public abstract class BaseState implements State {
     // If we haven't yet voted or already voted for this candidate then check
     // that the candidate's log is at least as up-to-date as the local log.
     else if (context.votedFor() == null || context.votedFor().equals(request.candidate())) {
-      // Get the last log entry index.
-      log.lastIndex(new Handler<AsyncResult<Long>>() {
-        @Override
-        public void handle(AsyncResult<Long> result) {
-          if (result.failed()) {
-            future.setFailure(result.cause());
-          }
-          else {
-            final long lastIndex = result.result();
-            // It's possible that the last log index could be -1, indicating
-            // that
-            // the log does not contain any entries. If that is the cases then
-            // the log must *always* be at least as up-to-date as all other
-            // logs.
-            if (lastIndex < 0) {
-              future.setResult(true);
-              context.votedFor(request.candidate());
+      // It's possible that the last log index could be 0, indicating that
+      // the log does not contain any entries. If that is the cases then
+      // the log must *always* be at least as up-to-date as all other
+      // logs.
+      if (log.lastIndex() == 0) {
+        future.setResult(true);
+        context.votedFor(request.candidate());
+      }
+      else {
+        // Load the log entry to get the term. We load the log entry
+        // rather
+        // than the log term to ensure that we're receiving the term from
+        // the same entry as the loaded last log index.
+        final long lastIndex = log.lastIndex();
+        log.entry(lastIndex, new Handler<AsyncResult<Entry>>() {
+          @Override
+          public void handle(AsyncResult<Entry> result) {
+            // If the entry loading failed then don't vote for the
+            // candidate.
+            // If the log entry was null then don't vote for the
+            // candidate.
+            // This may simply result in no clear winner in the election,
+            // but
+            // it's better than an imperfect leader being elected due to a
+            // brief failure of the event bus.
+            if (result.failed() || result.result() == null) {
+              future.setResult(false);
             }
             else {
-              // Load the log entry to get the term. We load the log entry
-              // rather
-              // than the log term to ensure that we're receiving the term from
-              // the same entry as the loaded last log index.
-              log.entry(lastIndex, new Handler<AsyncResult<Entry>>() {
-                @Override
-                public void handle(AsyncResult<Entry> result) {
-                  // If the entry loading failed then don't vote for the
-                  // candidate.
-                  // If the log entry was null then don't vote for the
-                  // candidate.
-                  // This may simply result in no clear winner in the election,
-                  // but
-                  // it's better than an imperfect leader being elected due to a
-                  // brief failure of the event bus.
-                  if (result.failed() || result.result() == null) {
-                    future.setResult(false);
-                  }
-                  else {
-                    final long lastTerm = result.result().term();
-                    if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-                      future.setResult(true);
-                      context.votedFor(request.candidate());
-                    }
-                    else {
-                      future.setResult(false);
-                      context.votedFor(null); // Reset voted for.
-                    }
-                  }
-                }
-              });
+              final long lastTerm = result.result().term();
+              if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
+                future.setResult(true);
+                context.votedFor(request.candidate());
+              }
+              else {
+                future.setResult(false);
+                context.votedFor(null); // Reset voted for.
+              }
             }
           }
-        }
-      });
+        });
+      }
     }
     // If we've already voted for someone else then don't vote for the
     // candidate.

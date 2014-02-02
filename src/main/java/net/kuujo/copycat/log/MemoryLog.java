@@ -44,7 +44,7 @@ public class MemoryLog implements Log {
 
   @Override
   public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
-    long index = (!log.isEmpty() ? log.lastKey() : -1) + 1;
+    long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
     log.put(index, entry);
     if (entry.type().equals(Entry.Type.COMMAND)) {
       entries.put(entry.setLog(this).id(), index);
@@ -63,13 +63,13 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Log firstIndex(Handler<AsyncResult<Long>> handler) {
-    return result(!log.isEmpty() ? log.firstKey() : -1, handler);
+  public long firstIndex() {
+    return !log.isEmpty() ? log.firstKey() : 0;
   }
 
   @Override
   public Log firstTerm(Handler<AsyncResult<Long>> handler) {
-    return result(!log.isEmpty() ? log.firstEntry().getValue().term() : -1, handler);
+    return result(!log.isEmpty() ? log.firstEntry().getValue().term() : 0, handler);
   }
 
   @Override
@@ -78,13 +78,13 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Log lastIndex(Handler<AsyncResult<Long>> handler) {
-    return result(!log.isEmpty() ? log.lastKey() : -1, handler);
+  public long lastIndex() {
+    return !log.isEmpty() ? log.lastKey() : 0;
   }
 
   @Override
   public Log lastTerm(Handler<AsyncResult<Long>> handler) {
-    return result(!log.isEmpty() ? log.lastEntry().getValue().term() : -1, handler);
+    return result(!log.isEmpty() ? log.lastEntry().getValue().term() : 0, handler);
   }
 
   @Override
@@ -124,7 +124,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Log floor(long index, Handler<AsyncResult<Void>> doneHandler) {
+  public Log floor(long index) {
     floor = index;
 
     // Sort the freed list.
@@ -144,7 +144,7 @@ public class MemoryLog implements Log {
     if (removed) {
       rewrite();
     }
-    return result(null, doneHandler);
+    return this;
   }
 
   @Override

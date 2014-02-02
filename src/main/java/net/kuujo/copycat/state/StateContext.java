@@ -61,8 +61,9 @@ public class StateContext {
   private String currentLeader;
   private long currentTerm;
   private String votedFor;
-  private long commitIndex;
-  private long lastApplied;
+  private long commitIndex = 0;
+  private long lastApplied = 0;
+  private boolean started;
 
   public StateContext(Vertx vertx, ReplicaEndpoint endpoint, StateMachine stateMachine, Log log) {
     this.vertx = vertx;
@@ -109,6 +110,8 @@ public class StateContext {
     if (type.equals(stateType))
       return this;
     logger.info(address() + " transitioning to " + type.getName());
+    started = false;
+    currentLeader = null;
     final StateType oldStateType = stateType;
     final State oldState = state;
     stateType = type;
@@ -154,6 +157,13 @@ public class StateContext {
                     @Override
                     public void handle(Void _) {
                       registerHandlers(state);
+                      started = true;
+                      if (currentLeader != null) {
+                        for (Handler<String> handler : transitionHandlers) {
+                          handler.handle(currentLeader);
+                        }
+                        transitionHandlers.clear();
+                      }
                     }
                   });
                 }
@@ -174,6 +184,13 @@ public class StateContext {
               @Override
               public void handle(Void result) {
                 registerHandlers(state);
+                started = true;
+                if (currentLeader != null) {
+                  for (Handler<String> handler : transitionHandlers) {
+                    handler.handle(currentLeader);
+                  }
+                  transitionHandlers.clear();
+                }
               }
             });
           }
@@ -185,6 +202,13 @@ public class StateContext {
         @Override
         public void handle(Void result) {
           registerHandlers(state);
+          started = true;
+          if (currentLeader != null) {
+            for (Handler<String> handler : transitionHandlers) {
+              handler.handle(currentLeader);
+            }
+            transitionHandlers.clear();
+          }
         }
       });
     }
@@ -437,10 +461,12 @@ public class StateContext {
    */
   public StateContext currentLeader(String address) {
     currentLeader = address;
-    for (Handler<String> handler : transitionHandlers) {
-      handler.handle(address);
+    if (started) {
+      for (Handler<String> handler : transitionHandlers) {
+        handler.handle(address);
+      }
+      transitionHandlers.clear();
     }
-    transitionHandlers.clear();
     return this;
   }
 
@@ -460,8 +486,10 @@ public class StateContext {
    * @return The state context.
    */
   public StateContext currentTerm(long term) {
-    currentTerm = term;
-    votedFor = null;
+    if (term > currentTerm) {
+      currentTerm = term;
+      votedFor = null;
+    }
     return this;
   }
 

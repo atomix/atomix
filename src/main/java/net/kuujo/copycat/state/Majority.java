@@ -26,7 +26,7 @@ import org.vertx.java.core.Handler;
  */
 public class Majority {
   private final Set<String> members;
-  private final int total;
+  private int total;
   private int succeeded;
   private int failed;
   private Handler<Boolean> doneHandler;
@@ -46,6 +46,12 @@ public class Majority {
     else {
       doneHandler.handle(true);
     }
+    return this;
+  }
+
+  public Majority countSelf() {
+    total++;
+    succeeded++;
     return this;
   }
 

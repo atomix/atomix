@@ -59,51 +59,57 @@ public interface Log {
    * 
    * @param index The index from which to get the entry.
    * @param entryHandler A handler to be called with the entry.
-   * @return The entry at the given index.
+   * @return The log instance.
    */
   Log entry(long index, Handler<AsyncResult<Entry>> entryHandler);
 
   /**
-   * Returns the first index in the log.
-   * 
-   * @return The first index in the log.
+   * Returns the first log index.
+   *
+   * @return
+   *   The first log index.
    */
-  Log firstIndex(Handler<AsyncResult<Long>> handler);
+  long firstIndex();
 
   /**
-   * Returns the term of the first entry in the log.
-   * 
-   * @return The term of the first entry in the log.
+   * Returns the first log entry term.
+   *
+   * @param doneHandler A handler to be called with the term.
+   * @return The log instance.
    */
-  Log firstTerm(Handler<AsyncResult<Long>> handler);
+  Log firstTerm(Handler<AsyncResult<Long>> doneHandler);
 
   /**
-   * Returns the first entry in the log.
-   * 
-   * @return The first log entry.
+   * Returns the first log entry.
+   *
+   * @param doneHandler A handler to be called with the entry.
+   * @return The log instance.
    */
-  Log firstEntry(Handler<AsyncResult<Entry>> handler);
+  Log firstEntry(Handler<AsyncResult<Entry>> doneHandler);
 
   /**
-   * Returns the last index in the log.
-   * 
-   * @return The last index in the log.
+   * Returns the last log index.
+   *
+   * @return
+   *   The last log index.
    */
-  Log lastIndex(Handler<AsyncResult<Long>> handler);
+  long lastIndex();
 
   /**
-   * Returns the term of the last index in the log.
-   * 
-   * @return The term of the last index in the log.
+   * Returns the last log entry term.
+   *
+   * @param doneHandler A handler to be called with the term.
+   * @return The log instance.
    */
-  Log lastTerm(Handler<AsyncResult<Long>> handler);
+  Log lastTerm(Handler<AsyncResult<Long>> doneHandler);
 
   /**
-   * Returns the last entry in the log.
-   * 
-   * @return The last log entry.
+   * Returns the last log entry.
+   *
+   * @param doneHandler A handler to be called with the entry.
+   * @return The log instance.
    */
-  Log lastEntry(Handler<AsyncResult<Entry>> handler);
+  Log lastEntry(Handler<AsyncResult<Entry>> doneHandler);
 
   /**
    * Returns a list of log entries between two given indexes.
@@ -147,11 +153,11 @@ public interface Log {
 
   /**
    * Sets the log floor.
-   * 
+   *
    * @param index The lowest required index in the log.
    * @return The log instance.
    */
-  Log floor(long index, Handler<AsyncResult<Void>> doneHandler);
+  Log floor(long index);
 
   /**
    * Frees an entry from the log.

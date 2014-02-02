@@ -40,6 +40,8 @@ public class RedisLog implements Log {
   private final String address;
   private final String key;
   private final Vertx vertx;
+  private long firstIndex;
+  private long lastIndex;
   private long currentIndex;
 
   public RedisLog(String address, String key, Vertx vertx) {
@@ -66,7 +68,9 @@ public class RedisLog implements Log {
         else {
           Object index = result.result().body().getValue("value");
           if (index != null) {
-            currentIndex = (long) index + 1;
+            firstIndex = 1;
+            lastIndex = (long) index;
+            currentIndex = lastIndex + 1;
           }
           applyNextEntry(0, currentIndex-1, visitor, future);
         }
@@ -170,7 +174,11 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public Log firstIndex(Handler<AsyncResult<Long>> handler) {
+  public long firstIndex() {
+    return firstIndex;
+  }
+
+  public void firstIndex(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
     containsEntry(0, new Handler<AsyncResult<Boolean>>() {
       @Override
@@ -183,7 +191,6 @@ public class RedisLog implements Log {
         }
       }
     });
-    return this;
   }
 
   @Override
@@ -230,9 +237,8 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public Log lastIndex(Handler<AsyncResult<Long>> handler) {
-    new DefaultFutureResult<Long>().setHandler(handler).setResult(currentIndex-1);
-    return this;
+  public long lastIndex() {
+    return lastIndex;
   }
 
   @Override
@@ -388,8 +394,8 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public Log floor(long index, Handler<AsyncResult<Void>> doneHandler) {
-    // Not yet implemented.
+  public Log floor(long index) {
+    // Not implemented.
     return this;
   }
 

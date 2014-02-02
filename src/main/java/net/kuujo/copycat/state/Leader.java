@@ -32,7 +32,6 @@ import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.NoOpEntry;
-import net.kuujo.copycat.log.Entry.Type;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
@@ -53,29 +52,25 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
 public class Leader extends BaseState implements Observer {
   private static final Logger logger = LoggerFactory.getLogger(Leader.class);
   private final StateLock lock = new StateLock();
+  private final StateLock configLock = new StateLock();
   private long pingTimer;
   private final Set<Long> periodicTimers = new HashSet<>();
   private List<Replica> replicas;
   private Map<String, Replica> replicaMap = new HashMap<>();
   private final Set<Majority> majorities = new HashSet<>();
-  private final List<Set<String>> configs = new ArrayList<>();
 
   @Override
-  public void startUp(final Handler<Void> doneHandler) {
+  public void startUp(final Handler<Void> startHandler) {
     // Create a set of replica references in the cluster.
-    members = new HashSet<>();
+    members = config.getMembers();
+    remoteMembers = new HashSet<>(members);
+    remoteMembers.remove(context.address());
     replicas = new ArrayList<>();
-    for (String address : config.getMembers()) {
-      if (!address.equals(context.address())) {
-        members.add(address);
-        Replica replica = new Replica(address);
-        replicaMap.put(address, replica);
-        replicas.add(replica);
-      }
+    for (String address : remoteMembers) {
+      Replica replica = new Replica(address);
+      replicaMap.put(address, replica);
+      replicas.add(replica);
     }
-
-    // Set self as the current leader.
-    context.currentLeader(context.address());
 
     // Set up a timer for pinging cluster members.
     pingTimer = vertx.setPeriodic(context.heartbeatInterval(), new Handler<Long>() {
@@ -98,16 +93,21 @@ public class Leader extends BaseState implements Observer {
           @Override
           public void handle(AsyncResult<Long> result) {
             if (result.succeeded()) {
-              context.lastApplied(result.result());
+              apply(result.result(), new Handler<Void>() {
+                @Override
+                public void handle(Void _) {
+                  // Once the no-op entry has been appended, immediately update
+                  // all nodes.
+                  for (Replica replica : replicas) {
+                    replica.update();
+                  }
 
-              // Once the no-op entry has been appended, immediately update
-              // all nodes.
-              for (Replica replica : replicas) {
-                replica.update();
-              }
-
-              // Observe the cluster configuration for changes.
-              config.addObserver(Leader.this);
+                  // Observe the cluster configuration for changes.
+                  config.addObserver(Leader.this);
+                  context.currentLeader(context.address());
+                  startHandler.handle((Void) null);
+                }
+              });
               doneHandler.handle(true);
             }
             else {
@@ -127,52 +127,109 @@ public class Leader extends BaseState implements Observer {
   /**
    * Called when the cluster configuration has changed.
    */
-  private void clusterChanged(ClusterConfig config) {
-    // Append the new configuration to a list of cluster configurations. The
-    // cluster configurations list makes up a combined list of nodes in the
-    // cluster
-    // during configuration changes. Once the new configuration has been
-    // committed
-    // the old configuration will be removed from the list.
-    configs.add(config.getMembers());
+  private void clusterChanged(final ClusterConfig config) {
+    updateClusterConfig(config.getMembers());
+  }
 
-    // With the list of cluster configurations, we can create a comprehensive
-    // set of cluster members.
-    Set<String> combinedMembers = new HashSet<>();
-    for (Set<String> membersSet : configs) {
-      combinedMembers.addAll(membersSet);
-    }
-
-    // Now, add any new members to the local members set. This set makes up
-    // the total combined current cluster membership.
-    // Note that we only *add* members and don't *remove* any members because
-    // removal of cluster members should *only* take place once the new
-    // configuration
-    // has been replicated and committed.
-    for (String address : combinedMembers) {
-      // We're creating a set of *remote* members, so skip the member if it
-      // is referencing the current replica.
-      if (!address.equals(context.address())) {
-        this.members.add(address);
-        if (!replicaMap.containsKey(address)) {
-          Replica replica = new Replica(address);
-          replicaMap.put(address, replica);
-          replicas.add(replica);
-        }
-      }
-    }
-
-    // Append a new configuration entry to the log. Each time a cluster
-    // configuration
-    // changes the *combined* configuration is appended to the log and
-    // replicated
-    // to other nodes. Once each configuration is replicated and committed, the
-    // old configuration will be removed and a new combined configuration will
-    // be created.
-    log.appendEntry(new ConfigurationEntry(context.currentTerm(), combinedMembers), new Handler<AsyncResult<Long>>() {
+  /**
+   * Updates cluster membership in a two-phase process.
+   */
+  private void updateClusterConfig(final Set<String> members) {
+    // Use a lock to ensure that only one configuration change may take place
+    // at any given time. This lock is separate from the global state lock.
+    configLock.acquire(new Handler<Void>() {
       @Override
-      public void handle(AsyncResult<Long> result) {
-        context.lastApplied(result.result());
+      public void handle(Void _) {
+
+        // Create a set of combined cluster membership between the old configuration
+        // and the new/updated configuration.
+        final Set<String> combinedMembers = new HashSet<>(Leader.this.members);
+        combinedMembers.addAll(members);
+
+        // Append a new configuration entry to the log containing the combined
+        // cluster membership.
+        log.appendEntry(new ConfigurationEntry(context.currentTerm(), combinedMembers), new Handler<AsyncResult<Long>>() {
+          @Override
+          public void handle(AsyncResult<Long> result) {
+            if (result.succeeded()) {
+              final long index = result.result();
+
+              // Replicate the combined configuration to a majority of the cluster.
+              writeMajority(index, new Handler<Void>() {
+                @Override
+                public void handle(Void _) {
+
+                  // Apply the combined configuration to the state.
+                  apply(index, new Handler<Void>() {
+                    @Override
+                    public void handle(Void _) {
+                      // Once the combined configuration has been replicated, apply the
+                      // configuration to the current state (internal state machine).
+                      Leader.this.members = combinedMembers;
+                      Leader.this.remoteMembers = new HashSet<>(combinedMembers);
+                      Leader.this.remoteMembers.remove(context.address());
+
+                      // Update replica references to reflect the configuration changes.
+                      for (String address : Leader.this.remoteMembers) {
+                        if (!replicaMap.containsKey(address)) {
+                          Replica replica = new Replica(address);
+                          replicaMap.put(address, replica);
+                          replicas.add(replica);
+                        }
+                      }
+
+                      // Now that the combined configuration has been committed, create
+                      // and replicate a final configuration containing only the new membership.
+                      log.appendEntry(new ConfigurationEntry(context.currentTerm(), members), new Handler<AsyncResult<Long>>() {
+                        @Override
+                        public void handle(AsyncResult<Long> result) {
+                          if (result.succeeded()) {
+                            final long index = result.result();
+
+                            // Replicate the final configuration to a majority of the cluster.
+                            writeMajority(index, new Handler<Void>() {
+                              @Override
+                              public void handle(Void _) {
+
+                                // Apply the final configuration to the state.
+                                apply(index, new Handler<Void>() {
+                                  @Override
+                                  public void handle(Void _) {
+                                    // Once the new configuration has been replicated, apply
+                                    // the configuration to the current state and update the
+                                    // last applied index.
+                                    Leader.this.members = members;
+                                    Leader.this.remoteMembers = new HashSet<>(members);
+                                    Leader.this.remoteMembers.remove(context.address());
+
+                                    // Iterate through replicas and remove any replicas that
+                                    // were removed from the cluster.
+                                    Iterator<Replica> iterator = replicas.iterator();
+                                    while (iterator.hasNext()) {
+                                      Replica replica = iterator.next();
+                                      if (!remoteMembers.contains(replica.address)) {
+                                        replica.shutdown();
+                                        iterator.remove();
+                                        replicaMap.remove(replica.address);
+                                      }
+                                    }
+
+                                    // Release the configuration lock.
+                                    configLock.release();
+                                  }
+                                });
+                              }
+                            });
+                          }
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+            }
+          }
+        });
       }
     });
   }
@@ -309,7 +366,26 @@ public class Leader extends BaseState implements Observer {
             if (context.requireWriteMajority()) {
               writeMajority(index, new Handler<Void>() {
                 @Override
-                public void handle(Void arg0) {
+                public void handle(Void _) {
+                  apply(index, new Handler<Void>() {
+                    @Override
+                    public void handle(Void _) {
+                      try {
+                        Object output = stateMachine.applyCommand(request.command());
+                        request.reply(output);
+                      }
+                      catch (Exception e) {
+                        request.error(e.getMessage());
+                      }
+                    }
+                  });
+                }
+              });
+            }
+            else {
+              apply(index, new Handler<Void>() {
+                @Override
+                public void handle(Void _) {
                   try {
                     Object output = stateMachine.applyCommand(request.command());
                     context.lastApplied(index);
@@ -321,16 +397,6 @@ public class Leader extends BaseState implements Observer {
                 }
               });
             }
-            else {
-              try {
-                Object output = stateMachine.applyCommand(request.command());
-                context.lastApplied(index);
-                request.reply(output);
-              }
-              catch (Exception e) {
-                request.error(e.getMessage());
-              }
-            }
           }
         }
       });
@@ -341,7 +407,7 @@ public class Leader extends BaseState implements Observer {
    * Replicates the index to a majority of the cluster.
    */
   private void writeMajority(final long index, final Handler<Void> doneHandler) {
-    final Majority majority = new Majority(members);
+    final Majority majority = new Majority(remoteMembers).countSelf();
     majorities.add(majority);
     majority.start(new Handler<String>() {
       @Override
@@ -368,7 +434,7 @@ public class Leader extends BaseState implements Observer {
    * Pings a majority of the cluster.
    */
   private void readMajority(final Handler<Void> doneHandler) {
-    final Majority majority = new Majority(members);
+    final Majority majority = new Majority(remoteMembers).countSelf();
     majorities.add(majority);
     majority.start(new Handler<String>() {
       @Override
@@ -428,81 +494,8 @@ public class Leader extends BaseState implements Observer {
     });
 
     int middle = (int) Math.ceil(replicas.size() / 2);
-    updateCommitIndex(replicas.get(middle).matchIndex);
-  }
-
-  /**
-   * Updates the commit index and processes new commits.
-   * 
-   * When log entries are replicated on enough (a majority of) nodes to be
-   * committed, we need to check for configuration entries that have been
-   * committed. Configuration changes work using a two-phase approach where a
-   * combination of the old and new configurations are first entered into the
-   * log and replicated and, once committed, the previous configuration is
-   * removed.
-   */
-  private void updateCommitIndex(final long commitIndex) {
-    // If there are new entries to be committed then process the entries.
-    if (context.commitIndex() < commitIndex) {
-      long prevCommitIndex = context.commitIndex();
-      log.entries(prevCommitIndex + 1, commitIndex, new Handler<AsyncResult<List<Entry>>>() {
-        @Override
-        public void handle(AsyncResult<List<Entry>> result) {
-          if (result.succeeded()) {
-            // Iterate through entries to be committed. If any of the
-            // entries are
-            // configuration entries then remove the configuration which
-            // they replaced
-            // from the cluster configuration and update cluster membership.
-            for (Entry entry : result.result()) {
-              if (entry.type().equals(Type.CONFIGURATION)) {
-                // Remove the configuration from the list of configurations.
-                if (!configs.isEmpty()) {
-                  configs.remove(0);
-                }
-
-                // Create a new combined set of cluster members.
-                Set<String> combinedMembers = new HashSet<>();
-                for (Set<String> membersSet : configs) {
-                  combinedMembers.addAll(membersSet);
-                }
-
-                // Recreate the members set.
-                members = new HashSet<>();
-                for (String address : combinedMembers) {
-                  if (!address.equals(context.address())) {
-                    members.add(address);
-                  }
-                }
-
-                // Iterate through replicas and remove any replicas that
-                // were removed from the cluster.
-                Iterator<Replica> iterator = replicas.iterator();
-                while (iterator.hasNext()) {
-                  Replica replica = iterator.next();
-                  if (!members.contains(replica.address)) {
-                    replica.syncing = false;
-                    iterator.remove();
-                    replicaMap.remove(replica.address);
-                  }
-                }
-              }
-            }
-
-            // Finally, set the new commit index. This will be sent to
-            // replicas to
-            // instruct them to apply the entries to their state machines.
-            context.commitIndex(commitIndex);
-            log.floor(Math.min(context.commitIndex(), context.lastApplied()), new Handler<AsyncResult<Void>>() {
-              @Override
-              public void handle(AsyncResult<Void> result) {
-
-              }
-            });
-          }
-        }
-      });
-    }
+    context.commitIndex(replicas.get(middle).matchIndex);
+    log.floor(Math.min(context.commitIndex(), context.lastApplied()));
   }
 
   /**
@@ -510,251 +503,185 @@ public class Leader extends BaseState implements Observer {
    */
   private class Replica {
     private final String address;
-    private Long nextIndex;
+    private long nextIndex;
     private long matchIndex;
-    private boolean syncing;
-    private Map<Long, Handler<Void>> updateHandlers = new HashMap<>();
-    private long lastPingTime;
-    private long lastSyncTime;
+    private final StateLock lock = new StateLock();
+    private boolean shutdown;
 
     private Replica(String address) {
       this.address = address;
+      this.matchIndex = 0;
+      this.nextIndex = log.lastIndex() + 1;
     }
 
-    /**
-     * Sends an update to the replica.
-     */
     private void update() {
-      // Don't send an update if the replica is already being updated.
-      // Instead, simply ping the replica to prevent an election timeout.
-      // This helps ensure that we only attempt to sync any given replica
-      // once at a time.
-      if (syncing) {
-        ping();
+      if (!lock.locked() && !shutdown) {
+        if (nextIndex <= log.lastIndex() || matchIndex <= nextIndex-1) {
+          sync();
+        }
+        else {
+          ping();
+        }
       }
-      else {
-        syncing = true;
+    }
+ 
+    private void sync() {
+      if (nextIndex <= log.lastIndex() || matchIndex <= nextIndex-1) {
+        sync(log.lastIndex(), null);
+      }
+    }
 
-        // Load the last log index.
-        log.lastIndex(new Handler<AsyncResult<Long>>() {
+    private void sync(final long toIndex, final Handler<Void> doneHandler) {
+      if (!shutdown) {
+        lock.acquire(new Handler<Void>() {
           @Override
-          public void handle(AsyncResult<Long> result) {
-            if (result.succeeded()) {
-              // If the next index has not yet been set then initialize it
-              // to the last log index plus one.
-              if (nextIndex == null) {
-                nextIndex = result.result() + 1;
+          public void handle(Void _) {
+            doSync(toIndex, new Handler<Void>() {
+              @Override
+              public void handle(Void _) {
+                lock.release();
+                if (doneHandler != null) {
+                  doneHandler.handle((Void) null);
+                }
               }
-              // If there are log entries to be replicated then sync the
-              // replica.
-              if (nextIndex <= result.result()) {
-                sync();
-              }
-              // Otherwise, ping the replica to prevent an election timeout.
-              else {
-                ping();
-              }
-            }
+            });
           }
         });
       }
     }
 
-    /**
-     * Pings the replica.
-     */
-    private void ping() {
-      final long startTime = System.currentTimeMillis();
-      endpoint.ping(
-          address,
-          new PingRequest(context.currentTerm(), context.address()),
-          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold()) : context
-              .electionTimeout() / 2 : context.electionTimeout() / 2, new Handler<AsyncResult<PingResponse>>() {
-            @Override
-            public void handle(AsyncResult<PingResponse> result) {
-              // If the replica returned a newer term then step down.
-              if (result.succeeded()) {
-                if (result.result().term() > context.currentTerm()) {
-                  context.transition(StateType.FOLLOWER);
+    private void doSync(final long toIndex, final Handler<Void> doneHandler) {
+      if (shutdown) return;
+      if (nextIndex > toIndex) {
+        doneHandler.handle((Void) null);
+      }
+      else {
+        if (toIndex <= log.lastIndex()) {
+          if (nextIndex - 1 > 0) {
+            final long prevLogIndex = nextIndex - 1;
+            log.entry(nextIndex-1, new Handler<AsyncResult<Entry>>() {
+              @Override
+              public void handle(AsyncResult<Entry> result) {
+                if (result.failed()) {
+                  doSync(toIndex, doneHandler);
+                }
+                else if (result.result() == null) {
+                  nextIndex--;
+                  doSync(toIndex, doneHandler);
                 }
                 else {
-                  lastPingTime = System.currentTimeMillis() - startTime;
+                  doSync(toIndex, prevLogIndex, result.result().term(), doneHandler);
                 }
               }
-            }
-          });
+            });
+          }
+          else {
+            doSync(toIndex, 0, 0, doneHandler);
+          }
+        }
+      }
     }
 
-    /**
-     * Pings the replica, calling a handler once the ping is complete.
-     */
-    private void ping(final Handler<Void> doneHandler) {
-      final long startTime = System.currentTimeMillis();
-      endpoint.ping(
-          address,
-          new PingRequest(context.currentTerm(), context.address()),
-          context.useAdaptiveTimeouts() ? lastPingTime > 0 ? Math.round(lastPingTime * context.adaptiveTimeoutThreshold()) : context
-              .electionTimeout() / 2 : context.electionTimeout() / 2, new Handler<AsyncResult<PingResponse>>() {
-            @Override
-            public void handle(AsyncResult<PingResponse> result) {
-              // If the replica returned a newer term then step down.
-              if (result.succeeded()) {
-                if (result.result().term() > context.currentTerm()) {
-                  context.transition(StateType.FOLLOWER);
-                }
-                else {
-                  lastPingTime = System.currentTimeMillis() - startTime;
-                  doneHandler.handle((Void) null);
-                }
-              }
-            }
-          });
-    }
-
-    /**
-     * Synchronizes all entries up to the given index.
-     */
-    private void sync(final long index, final Handler<Void> doneHandler) {
-      log.lastIndex(new Handler<AsyncResult<Long>>() {
-        @Override
-        public void handle(AsyncResult<Long> result) {
-          if (result.succeeded()) {
-            if (nextIndex <= result.result()) {
-              updateHandlers.put(index, doneHandler);
-              sync();
+    private void doSync(final long toIndex, final long prevLogIndex, final long prevLogTerm, final Handler<Void> doneHandler) {
+      if (shutdown) return;
+      if (prevLogIndex+1 <= log.lastIndex()) {
+        log.entry(prevLogIndex+1, new Handler<AsyncResult<Entry>>() {
+          @Override
+          public void handle(AsyncResult<Entry> result) {
+            if (result.failed()) {
+              doSync(toIndex, doneHandler);
             }
             else {
-              doneHandler.handle((Void) null);
+              doSync(toIndex, prevLogIndex, prevLogTerm, result.result(), context.commitIndex(), doneHandler);
             }
+          }
+        });
+      }
+      else {
+        doSync(toIndex, prevLogIndex, prevLogTerm, null, context.commitIndex(), doneHandler);
+      }
+    }
+
+    private void doSync(final long toIndex, final long prevLogIndex, final long prevLogTerm, final Entry entry, final long commitIndex, final Handler<Void> doneHandler) {
+      if (shutdown) return;
+      if (logger.isInfoEnabled()) {
+        if (entry != null) {
+          logger.info(String.format("%s replicating entry %d to %s", context.address(), prevLogIndex+1, address));
+        }
+        else {
+          logger.info(String.format("%s committing entry %d to %s", context.address(), commitIndex, address));
+        }
+      }
+      endpoint.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entry, commitIndex), new Handler<AsyncResult<SyncResponse>>() {
+        @Override
+        public void handle(AsyncResult<SyncResponse> result) {
+          if (result.succeeded()) {
+            if (result.result().success()) {
+              logger.info(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
+              nextIndex++;
+              matchIndex = commitIndex;
+              checkCommits();
+              if (toIndex < nextIndex) {
+                doneHandler.handle((Void) null);
+              }
+              else {
+                doSync(toIndex, doneHandler);
+              }
+            }
+            else {
+              logger.info(String.format("%s failed to replicate entry %d to %s", context.address(), prevLogIndex+1, address));
+              if (nextIndex-1 == 0) {
+                lock.release();
+                context.transition(StateType.FOLLOWER);
+              }
+              else {
+                nextIndex--;
+                checkCommits();
+                if (toIndex < nextIndex) {
+                  doneHandler.handle((Void) null);
+                }
+                else {
+                  doSync(toIndex, doneHandler);
+                }
+              }
+            }
+          }
+          else {
+            vertx.setTimer(100, new Handler<Long>() {
+              @Override
+              public void handle(Long timerID) {
+                doSync(toIndex, doneHandler);
+              }
+            });
           }
         }
       });
     }
 
-    /**
-     * Synchronizes all entries.
-     */
-    private void sync() {
-      // If the replica is already being synced then don't sync again in order
-      // to prevent creating log conflicts.
-      if (syncing) {
-        final long index = nextIndex;
+    private void ping() {
+      ping(null);
+    }
 
-        // Get the last log entry index.
-        log.lastIndex(new Handler<AsyncResult<Long>>() {
+    private void ping(final Handler<Void> doneHandler) {
+      if (!lock.locked() && !shutdown) {
+        endpoint.ping(address, new PingRequest(context.currentTerm(), context.address()), context.heartbeatInterval(), new Handler<AsyncResult<PingResponse>>() {
           @Override
-          public void handle(AsyncResult<Long> result) {
-            // The next index must be less than or equals to the last log index.
-            if (result.succeeded() && index <= result.result()) {
-              // Load the log entry.
-              log.entry(nextIndex, new Handler<AsyncResult<Entry>>() {
-                @Override
-                public void handle(AsyncResult<Entry> result) {
-                  if (result.succeeded()) {
-                    final Entry entry = result.result();
-                    if (logger.isDebugEnabled()) {
-                      logger.debug(Leader.this.context.address() + " replicating " + result.result().type().getName() + " entry "
-                          + nextIndex + " to " + address);
-                    }
-
-                    // If a previous log index exists then load the previous
-                    // entry and
-                    // extract its metadata.
-                    if (nextIndex - 1 >= 0) {
-                      log.entry(nextIndex - 1, new Handler<AsyncResult<Entry>>() {
-                        @Override
-                        public void handle(AsyncResult<Entry> result) {
-                          if (result.succeeded()) {
-                            final long lastLogTerm = result.result().term();
-                            doSync(index, entry, nextIndex - 1, lastLogTerm, context.commitIndex());
-                          }
-                        }
-                      });
-                    }
-                    // If no previous log entry exists then previous log entry
-                    // and term are -1.
-                    else {
-                      doSync(index, entry, nextIndex - 1, -1, context.commitIndex());
-                    }
-                  }
-                }
-              });
+          public void handle(AsyncResult<PingResponse> result) {
+            if (result.succeeded()) {
+              if (result.result().term() > context.currentTerm()) {
+                context.transition(StateType.FOLLOWER);
+              }
+              else {
+                doneHandler.handle((Void) null);
+              }
             }
           }
         });
       }
     }
 
-    /**
-     * Synchronizes a single entry to the replica.
-     */
-    private void doSync(final long index, Entry entry, long prevLogIndex, long prevLogTerm, long commitIndex) {
-      final long startTime = System.currentTimeMillis();
-      endpoint.sync(
-          address,
-          new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entry, commitIndex),
-          context.useAdaptiveTimeouts() ? lastSyncTime > 0 ? Math.round(lastSyncTime * context.adaptiveTimeoutThreshold()) : context
-              .electionTimeout() / 2 : context.electionTimeout() / 2, new Handler<AsyncResult<SyncResponse>>() {
-            @Override
-            public void handle(AsyncResult<SyncResponse> result) {
-              // If the request failed then wait to retry.
-              if (result.failed()) {
-                syncing = false;
-              }
-              // If the follower returned a higher term then step down.
-              else if (result.result().term() > context.currentTerm()) {
-                context.currentTerm(result.result().term());
-                context.transition(StateType.FOLLOWER);
-              }
-              // If the log entry failed, decrement next index and retry.
-              else if (!result.result().success()) {
-                if (nextIndex - 1 == -1) {
-                  syncing = false;
-                  context.transition(StateType.FOLLOWER);
-                }
-                else {
-                  nextIndex--;
-                  sync();
-                }
-              }
-              // If the log entry succeeded, continue to the next entry.
-              else {
-                nextIndex++;
-                matchIndex++;
-                if (updateHandlers.containsKey(index)) {
-                  updateHandlers.remove(index).handle((Void) null);
-                }
-                checkCommits();
-                log.lastIndex(new Handler<AsyncResult<Long>>() {
-                  @Override
-                  public void handle(AsyncResult<Long> result) {
-                    if (result.succeeded() && nextIndex <= result.result()) {
-                      sync();
-                    }
-                    else {
-                      syncing = false;
-                    }
-                  }
-                });
-              }
-              lastSyncTime = System.currentTimeMillis() - startTime;
-            }
-          });
-    }
-
-    @Override
-    public String toString() {
-      return address;
-    }
-
-    @Override
-    public boolean equals(Object other) {
-      return other instanceof Replica && ((Replica) other).address.equals(address);
-    }
-
-    @Override
-    public int hashCode() {
-      return address.hashCode();
+    private void shutdown() {
+      shutdown = true;
     }
   }
 
