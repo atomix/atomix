@@ -123,8 +123,8 @@ serviced by the cluster. Commands are registered by calling the
 ```java
 node.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
   public Boolean call(Command<JsonObject> command) {
-    String key = command.data().getString("key");
-    Object value = command.data().getValue("value");
+    String key = command.args().getString("key");
+    Object value = command.args().getValue("value");
     map.put(key, value);
     return true;
   }
@@ -200,12 +200,13 @@ same event bus address*. Vert.x event bus behavior will distribute requests
 between each endpoint instance across the cluster.
 
 To submit a command over the event bus, send a `JsonObject` message to
-the endpoint address with a `command` and `data`.
+the endpoint address with a `command` and any additional arguments to
+the command implementation.
 
 ```java
 JsonObject command = new JsonObject()
     .putString("command", "get")
-    .putObject("data", new JsonObject().putString("key", "foo"));
+    .putString("key", "foo");
 vertx.eventBus().send("test", command, new Handler<Message<JsonObject>>() {
   public void handle(Message<JsonObject> message) {
     if (message.body().getString("status").equals("ok")) {
@@ -360,8 +361,8 @@ final Map<String, Command> commands = new HashMap<>();
 
 node.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
   public Boolean call(Command<JsonObject> command) {
-    String key = command.data().getString("key");
-    Object value = command.data().getValue("value");
+    String key = command.args().getString("key");
+    Object value = command.args().getValue("value");
     store.put(key, value);
 
     // Update the command for this key. If a previous command exists
@@ -455,8 +456,8 @@ public class KeyValueStore extends Verticle {
     // Register a "set" command.
     service.registerCommand("set", new Function<Command<JsonObject>, Boolean>() {
       public Boolean call(Command<JsonObject> command) {
-        String key = command.data().getString("key");
-        Object value = command.data().getValue("value");
+        String key = command.args().getString("key");
+        Object value = command.args().getValue("value");
         store.put(key, value);
 
         // Update the command for this key. If a previous command exists
@@ -477,7 +478,7 @@ public class KeyValueStore extends Verticle {
     // Register a "get" command.
     service.registerCommand("get", Command.Type.READ, new Function<Command<JsonObject>, Object>() {
       public Object call(Command<JsonObject> command) {
-        String key = command.data().getString("key");
+        String key = command.args().getString("key");
         return store.get(key);
       }
     });
@@ -485,7 +486,7 @@ public class KeyValueStore extends Verticle {
     // Register a "del" command.
     service.registerCommand("del", new Function<Command<JsonObject>, Boolean>() {
       public Boolean call(Command<JsonObject> command) {
-        String key = command.data().getString("key");
+        String key = command.args().getString("key");
         if (store.containsKey(key)) {
           store.remove(key);
 
@@ -534,9 +535,8 @@ bus.
 // Create a set command
 JsonObject command = new JsonObject()
   .putString("command", "set")
-  .putObject("data", new JsonObject()
-    .putString("key", "foo")
-    .putString("value", "Hello world!"));
+  .putString("key", "foo")
+  .putString("value", "Hello world!");
 
 // Set "foo" to "Hello world!"
 vertx.eventBus().send("key-value", command, new Handler<Message<JsonObject>>() {
@@ -546,7 +546,7 @@ vertx.eventBus().send("key-value", command, new Handler<Message<JsonObject>>() {
       // Create a get command
       JsonObject command = new JsonObject()
         .putString("command", "get")
-        .putObject("data", new JsonObject().putString("key", "foo"));
+        .putString("key", "foo");
 
       // Get the "foo" key
       vertx.eventBus().send("key-value", command, new Handler<Message<JsonObject>>() {
