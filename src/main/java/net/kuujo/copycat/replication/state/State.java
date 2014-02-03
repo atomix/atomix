@@ -16,6 +16,7 @@
 package net.kuujo.copycat.replication.state;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
@@ -186,7 +187,7 @@ abstract class State {
     }
     // Otherwise, continue on to check the entry being appended.
     else {
-      checkEntry(request, doneHandler);
+      appendEntries(request, doneHandler);
     }
   }
 
@@ -230,7 +231,7 @@ abstract class State {
               // Finally, if the log appears to be consistent then continue on
               // to remove invalid entries from the log.
               else {
-                checkEntry(request, doneHandler);
+                appendEntries(request, doneHandler);
               }
             }
           });
@@ -240,71 +241,88 @@ abstract class State {
   }
 
   /**
-   * Checks that a synced entry is consistent with the local log and, if not,
-   * cleans the local log of invalid entries.
+   * Appends request entries to the log.
    */
-  private void checkEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    // It's possible that the sync that was sent does not contain an entry.
-    // This happens when all entries have been synchronized to the log, but they
-    // haven't necessarily been committed. Check if this request contains an
-    // entry to be appended. If not, continue on to commit any logged entries
-    // that need to be applied to the state machine.
-    if (request.hasEntry()) {
-      // Check if the log contains an entry at the synced entry index.
-      log.containsEntry(request.prevLogIndex() + 1, new Handler<AsyncResult<Boolean>>() {
+  private void appendEntries(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
+    appendEntries(request.prevLogIndex(), request.entries().iterator(), request, doneHandler);
+  }
+
+  /**
+   * Appends request entries to the log.
+   */
+  private void appendEntries(final long prevIndex, final Iterator<Entry> iterator, final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
+    if (iterator.hasNext()) {
+      final long index = prevIndex+1;
+      final Entry entry = iterator.next();
+      // Load the entry from the local log.
+      log.entry(index, new Handler<AsyncResult<Entry>>() {
         @Override
-        public void handle(AsyncResult<Boolean> result) {
-          // If we failed to check the log for the entry then fail the request.
+        public void handle(AsyncResult<Entry> result) {
+          // If we failed to load the entry then fail the request. It should
+          // be retried.
           if (result.failed()) {
             new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
           }
-          // If the log contains an entry at the given index then check
-          // that the entry is consistent with the synced entry.
-          else if (result.result()) {
-            // Load the entry from the local log.
-            log.entry(request.prevLogIndex() + 1, new Handler<AsyncResult<Entry>>() {
+          // If the log does not contain an entry at this index then this
+          // indicates no conflict, append the new entry.
+          else if (result.result() == null) {
+            log.appendEntry(entry, new Handler<AsyncResult<Long>>() {
               @Override
-              public void handle(AsyncResult<Entry> result) {
-                // If we failed to load the entry then fail the request. It should
-                // be retried.
+              public void handle(AsyncResult<Long> result) {
+                // If we failed to append the new entry to the log then fail the
+                // request.
+                // Once the entry has been appended no more failures occur.
                 if (result.failed()) {
                   new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
                 }
-                // If the local log's equivalent entry's term does not match the
-                // synced entry's term then that indicates that it came from a
-                // different leader. The log must be purged of this entry and all
-                // entries following it.
-                else if (result.result().term() != request.entry().term()) {
-                  // Remove all entries after the previous log index.
-                  log.removeAfter(request.prevLogIndex(), new Handler<AsyncResult<Void>>() {
-                    @Override
-                    public void handle(AsyncResult<Void> result) {
-                      if (result.failed()) {
-                        new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-                      }
-                      // Finally, append the entry to the local log.
-                      else {
-                        appendEntry(request, doneHandler);
-                      }
-                    }
-                  });
-                }
-                // If the local log's equivalent entry's term matched the synced
-                // entry's term then we know that the data also matched, so we
-                // don't
-                // need to do any cleaning of the logs. Simply continue on to
-                // check
-                // whether commits need to be applied to the state machine.
+                // Once the new entry has been appended, continue on to
+                // append the next entry.
                 else {
-                  checkApplyCommits(request, doneHandler);
+                  appendEntries(index, iterator, request, doneHandler);
                 }
               }
             });
           }
-          // If the local log did not contain any entry at the synced index then
-          // simply continue on to append the new entry to the log.
+          // If the local log's equivalent entry's term does not match the
+          // synced entry's term then that indicates that it came from a
+          // different leader. The log must be purged of this entry and all
+          // entries following it.
+          else if (result.result().term() != entry.term()) {
+            // Remove all entries after the previous log index.
+            log.removeAfter(index-1, new Handler<AsyncResult<Void>>() {
+              @Override
+              public void handle(AsyncResult<Void> result) {
+                if (result.failed()) {
+                  new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                }
+                // Finally, append the entry to the local log.
+                else {
+                  log.appendEntry(entry, new Handler<AsyncResult<Long>>() {
+                    @Override
+                    public void handle(AsyncResult<Long> result) {
+                      // If we failed to append the new entry to the log then fail the
+                      // request.
+                      // Once the entry has been appended no more failures occur.
+                      if (result.failed()) {
+                        new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                      }
+                      // Once the new entry has been appended, continue on to
+                      // append the next entry.
+                      else {
+                        appendEntries(index, iterator, request, doneHandler);
+                      }
+                    }
+                  });
+                }
+              }
+            });
+          }
+          // If the local log's equivalent entry's term matched the synced
+          // entry's term then we know that the data also matched, so we don't
+          // need to do any cleaning of the logs. Simply continue on to check
+          // the next entry.
           else {
-            appendEntry(request, doneHandler);
+            appendEntries(index, iterator, request, doneHandler);
           }
         }
       });
@@ -312,29 +330,6 @@ abstract class State {
     else {
       checkApplyCommits(request, doneHandler);
     }
-  }
-
-  /**
-   * Appends an entry to the local log.
-   */
-  private void appendEntry(final SyncRequest request, final Handler<AsyncResult<Boolean>> doneHandler) {
-    // Append the synced entry to the log.
-    log.appendEntry(request.entry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        // If we failed to append the new entry to the log then fail the
-        // request.
-        // Once the entry has been appended no more failures occur.
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
-        }
-        // Once the new entry has been appended, apply commands to the state
-        // machine as necessary.
-        else {
-          checkApplyCommits(request, doneHandler);
-        }
-      }
-    });
   }
 
   /**

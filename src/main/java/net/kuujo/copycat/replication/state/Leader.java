@@ -52,6 +52,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  * @author Jordan Halterman
  */
 class Leader extends State implements Observer {
+  private static final int BATCH_SIZE = 10;
   private static final Logger logger = LoggerFactory.getLogger(Leader.class);
   private final StateLock lock = new StateLock();
   private final StateLock configLock = new StateLock();
@@ -502,6 +503,11 @@ class Leader extends State implements Observer {
       majority.cancel();
     }
 
+    // Shut down all replicas.
+    for (Replica replica : replicas) {
+      replica.shutdown();
+    }
+
     // Stop observing the cluster configuration.
     config.deleteObserver(this);
     doneHandler.handle((Void) null);
@@ -540,9 +546,12 @@ class Leader extends State implements Observer {
       this.nextIndex = log.lastIndex() + 1;
     }
 
+    /**
+     * Updates the replica, either synchronizing
+     */
     private void update() {
-      if (!lock.locked() && !shutdown) {
-        if (nextIndex <= log.lastIndex() || matchIndex <= nextIndex-1) {
+      if (!shutdown) {
+        if (nextIndex <= log.lastIndex() || matchIndex < context.commitIndex()) {
           sync();
         }
         else {
@@ -551,10 +560,16 @@ class Leader extends State implements Observer {
       }
     }
 
+    /**
+     * Synchronizes the replica to a specific index.
+     */
     private void sync(final long index, final Handler<AsyncResult<Void>> doneHandler) {
       futures.put(index, new DefaultFutureResult<Void>().setHandler(doneHandler));
     }
 
+    /**
+     * Synchronizes the replica.
+     */
     private void sync() {
       if (!running && !shutdown) {
         running = true;
@@ -570,7 +585,7 @@ class Leader extends State implements Observer {
       if (nextIndex <= log.lastIndex() || matchIndex < context.commitIndex()) {
         if (nextIndex-1 > 0) {
           final long prevLogIndex = nextIndex - 1;
-          log.entry(nextIndex-1, new Handler<AsyncResult<Entry>>() {
+          log.entry(prevLogIndex, new Handler<AsyncResult<Entry>>() {
             @Override
             public void handle(AsyncResult<Entry> result) {
               if (result.failed()) {
@@ -600,10 +615,11 @@ class Leader extends State implements Observer {
         running = false;
         return;
       }
+      // If there are entries to be synced then load the entries.
       if (prevLogIndex+1 <= log.lastIndex()) {
-        log.entry(prevLogIndex+1, new Handler<AsyncResult<Entry>>() {
+        log.entries(prevLogIndex+1, (prevLogIndex+1) + BATCH_SIZE > log.lastIndex() ? log.lastIndex() : (prevLogIndex+1) + BATCH_SIZE, new Handler<AsyncResult<List<Entry>>>() {
           @Override
-          public void handle(AsyncResult<Entry> result) {
+          public void handle(AsyncResult<List<Entry>> result) {
             if (result.failed()) {
               running = false;
             }
@@ -613,35 +629,38 @@ class Leader extends State implements Observer {
           }
         });
       }
+      // Otherwise, sync the commit index only.
       else {
-        doSync(prevLogIndex, prevLogTerm, null, context.commitIndex());
+        doSync(prevLogIndex, prevLogTerm, new ArrayList<Entry>(), context.commitIndex());
       }
     }
 
-    private void doSync(final long prevLogIndex, final long prevLogTerm, final Entry entry, final long commitIndex) {
+    private void doSync(final long prevLogIndex, final long prevLogTerm, final List<Entry> entries, final long commitIndex) {
       if (shutdown) {
         running = false;
         return;
       }
+
       if (logger.isInfoEnabled()) {
-        if (entry != null) {
-          logger.info(String.format("%s replicating entry %d to %s", context.address(), prevLogIndex+1, address));
+        if (!entries.isEmpty()) {
+          logger.info(String.format("%s replicating entry %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex + entries.size(), address));
         }
         else {
           logger.info(String.format("%s committing entry %d to %s", context.address(), commitIndex, address));
         }
       }
-      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entry, commitIndex), new Handler<AsyncResult<SyncResponse>>() {
+
+      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex), new Handler<AsyncResult<SyncResponse>>() {
         @Override
         public void handle(AsyncResult<SyncResponse> result) {
           if (result.succeeded()) {
             if (result.result().success()) {
               logger.info(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
-              if (entry != null) {
-                if (futures.containsKey(nextIndex)) {
-                  futures.remove(nextIndex).setResult((Void) null);
+              nextIndex += entries.size();
+              for (long i = prevLogIndex+1; i < (prevLogIndex+1) + entries.size(); i++) {
+                if (futures.containsKey(i)) {
+                  futures.remove(i).setResult((Void) null);
                 }
-                nextIndex++;
               }
               matchIndex = commitIndex;
               checkCommits();
@@ -653,7 +672,7 @@ class Leader extends State implements Observer {
                 context.transition(StateType.FOLLOWER);
               }
               else {
-                if (entry != null) {
+                if (!entries.isEmpty()) {
                   nextIndex--;
                 }
                 checkCommits();
@@ -671,10 +690,16 @@ class Leader extends State implements Observer {
       });
     }
 
+    /**
+     * Pings the replica.
+     */
     private void ping() {
       ping(null);
     }
 
+    /**
+     * Pings the replica, calling a handler once complete.
+     */
     private void ping(final Handler<AsyncResult<Void>> doneHandler) {
       if (!!shutdown) {
         final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
@@ -697,6 +722,9 @@ class Leader extends State implements Observer {
       }
     }
 
+    /**
+     * Shuts down the replica.
+     */
     private void shutdown() {
       shutdown = true;
     }

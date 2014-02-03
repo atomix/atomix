@@ -95,7 +95,7 @@ public class MemoryLog implements Log {
   @Override
   public Log entries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
     List<Entry> entries = new ArrayList<>();
-    for (Map.Entry<Long, Entry> entry : log.subMap(start, end).entrySet()) {
+    for (Map.Entry<Long, Entry> entry : log.subMap(start, end+1).entrySet()) {
       entries.add(entry.getValue());
     }
     return result(entries, doneHandler);

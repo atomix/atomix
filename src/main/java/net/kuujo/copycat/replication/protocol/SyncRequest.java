@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.replication.protocol;
 
+import java.util.List;
+
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.serializer.Serializer;
 
@@ -32,18 +34,18 @@ public class SyncRequest extends Request {
   private String leader;
   private long prevLogIndex;
   private long prevLogTerm;
-  private Entry entry;
+  private List<Entry> entries;
   private long commit;
 
   public SyncRequest() {
   }
 
-  public SyncRequest(long term, String leader, long prevLogIndex, long prevLogTerm, Entry entry, long commitIndex) {
+  public SyncRequest(long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex) {
     this.term = term;
     this.leader = leader;
     this.prevLogIndex = prevLogIndex;
     this.prevLogTerm = prevLogTerm;
-    this.entry = entry;
+    this.entries = entries;
     this.commit = commitIndex;
   }
 
@@ -101,21 +103,12 @@ public class SyncRequest extends Request {
   }
 
   /**
-   * Returns a boolean indicating whether the request has an entry to append.
-   *
-   * @return Indicates whether the request has an entry to append.
-   */
-  public boolean hasEntry() {
-    return entry != null;
-  }
-
-  /**
    * Returns the log entry to append.
    * 
    * @return A log entry.
    */
-  public Entry entry() {
-    return entry;
+  public List<Entry> entries() {
+    return entries;
   }
 
   /**
