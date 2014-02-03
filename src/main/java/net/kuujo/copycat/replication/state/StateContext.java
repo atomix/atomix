@@ -18,6 +18,7 @@ package net.kuujo.copycat.replication.state;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.kuujo.copycat.Command;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.Entry;
@@ -25,15 +26,17 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogVisitor;
 import net.kuujo.copycat.log.Entry.Type;
 import net.kuujo.copycat.replication.StateMachine;
-import net.kuujo.copycat.replication.node.RaftClient;
 import net.kuujo.copycat.replication.protocol.PingRequest;
 import net.kuujo.copycat.replication.protocol.PollRequest;
 import net.kuujo.copycat.replication.protocol.SubmitRequest;
+import net.kuujo.copycat.replication.protocol.SubmitResponse;
 import net.kuujo.copycat.replication.protocol.SyncRequest;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -44,11 +47,12 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  */
 public class StateContext {
   private static final Logger logger = LoggerFactory.getLogger(StateContext.class);
+  private final String address;
   private final Vertx vertx;
-  private final RaftClient endpoint;
+  private final Client client;
   private Log log;
   private StateMachine stateMachine;
-  private ClusterConfig cluster;
+  private ClusterConfig cluster = new ClusterConfig();
   private final StateFactory stateFactory = new StateFactory();
   private StateType stateType;
   private State state;
@@ -66,12 +70,26 @@ public class StateContext {
   private long lastApplied = 0;
   private boolean started;
 
-  public StateContext(Vertx vertx, RaftClient endpoint, StateMachine stateMachine, Log log) {
+  public StateContext(String address, Vertx vertx, StateMachine stateMachine, Log log) {
+    this.address = address;
     this.vertx = vertx;
-    this.endpoint = endpoint;
+    this.client = new Client(address, vertx);
     this.log = log;
     this.stateMachine = stateMachine;
     transition(StateType.START);
+  }
+
+  /**
+   * Sets the state address.
+   *
+   * @param address
+   *   The state address.
+   * @return
+   *   The state context.
+   */
+  public StateContext setAddress(String address) {
+    client.setAddress(address);
+    return this;
   }
 
   /**
@@ -86,6 +104,16 @@ public class StateContext {
       state.setConfig(config);
     }
     return this;
+  }
+
+  /**
+   * Returns the cluster configuration.
+   *
+   * @return
+   *   The cluster configuration.
+   */
+  public ClusterConfig config() {
+    return cluster;
   }
 
   /**
@@ -118,20 +146,40 @@ public class StateContext {
     stateType = type;
     switch (type) {
       case START:
-        state = stateFactory.createStart().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
-            .setConfig(cluster).setContext(this);
+        state = stateFactory.createStart()
+            .setVertx(vertx)
+            .setClient(client)
+            .setStateMachine(stateMachine)
+            .setLog(log)
+            .setConfig(cluster)
+            .setContext(this);
         break;
       case FOLLOWER:
-        state = stateFactory.createFollower().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
-            .setConfig(cluster).setContext(this);
+        state = stateFactory.createFollower()
+            .setVertx(vertx)
+            .setClient(client)
+            .setStateMachine(stateMachine)
+            .setLog(log)
+            .setConfig(cluster)
+            .setContext(this);
         break;
       case CANDIDATE:
-        state = stateFactory.createCandidate().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
-            .setConfig(cluster).setContext(this);
+        state = stateFactory.createCandidate()
+            .setVertx(vertx)
+            .setClient(client)
+            .setStateMachine(stateMachine)
+            .setLog(log)
+            .setConfig(cluster)
+            .setContext(this);
         break;
       case LEADER:
-        state = stateFactory.createLeader().setVertx(vertx).setEndpoint(endpoint).setStateMachine(stateMachine).setLog(log)
-            .setConfig(cluster).setContext(this);
+        state = stateFactory.createLeader()
+            .setVertx(vertx)
+            .setClient(client)
+            .setStateMachine(stateMachine)
+            .setLog(log)
+            .setConfig(cluster)
+            .setContext(this);
         break;
     }
 
@@ -217,25 +265,25 @@ public class StateContext {
   }
 
   private void registerHandlers(final State state) {
-    endpoint.pingHandler(new Handler<PingRequest>() {
+    client.pingHandler(new Handler<PingRequest>() {
       @Override
       public void handle(PingRequest request) {
         state.ping(request);
       }
     });
-    endpoint.syncHandler(new Handler<SyncRequest>() {
+    client.syncHandler(new Handler<SyncRequest>() {
       @Override
       public void handle(SyncRequest request) {
         state.sync(request);
       }
     });
-    endpoint.pollHandler(new Handler<PollRequest>() {
+    client.pollHandler(new Handler<PollRequest>() {
       @Override
       public void handle(PollRequest request) {
         state.poll(request);
       }
     });
-    endpoint.submitHandler(new Handler<SubmitRequest>() {
+    client.submitHandler(new Handler<SubmitRequest>() {
       @Override
       public void handle(SubmitRequest request) {
         state.submit(request);
@@ -244,10 +292,10 @@ public class StateContext {
   }
 
   private void unregisterHandlers() {
-    endpoint.pingHandler(null);
-    endpoint.syncHandler(null);
-    endpoint.pollHandler(null);
-    endpoint.submitHandler(null);
+    client.pingHandler(null);
+    client.syncHandler(null);
+    client.pollHandler(null);
+    client.submitHandler(null);
   }
 
   /**
@@ -256,7 +304,7 @@ public class StateContext {
    * @return The current endpoint address.
    */
   public String address() {
-    return endpoint.getAddress();
+    return address;
   }
 
   /**
@@ -264,8 +312,8 @@ public class StateContext {
    * 
    * @return The parent endpoint.
    */
-  public RaftClient endpoint() {
-    return endpoint;
+  Client client() {
+    return client;
   }
 
   /**
@@ -290,6 +338,22 @@ public class StateContext {
     this.stateMachine = stateMachine;
     if (state != null) {
       state.setStateMachine(stateMachine);
+    }
+    return this;
+  }
+
+  /**
+   * Sets the state log.
+   *
+   * @param log
+   *   The state log.
+   * @return
+   *   The state context.
+   */
+  public StateContext setLog(Log log) {
+    this.log = log;
+    if (state != null) {
+      state.setLog(log);
     }
     return this;
   }
@@ -552,6 +616,102 @@ public class StateContext {
   public StateContext lastApplied(long index) {
     lastApplied = index;
     return this;
+  }
+
+  /**
+   * Starts the context.
+   *
+   * @return
+   *   The state context.
+   */
+  public StateContext start() {
+    transition(StateType.START);
+    client.start(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.succeeded()) {
+          transition(StateType.FOLLOWER);
+        }
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Starts the context.
+   *
+   * @param doneHandler
+   *   An asynchronous handler to be called once the context is started.
+   * @return
+   *   The state context.
+   */
+  public StateContext start(Handler<AsyncResult<Void>> doneHandler) {
+    final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
+    transition(StateType.START);
+    client.start(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          future.setFailure(result.cause());
+        }
+        else {
+          transition(StateType.FOLLOWER, new Handler<String>() {
+            @Override
+            public void handle(String leaderAddress) {
+              future.setResult((Void) null);
+            }
+          });
+        }
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Submits a command to the context.
+   *
+   * @param command
+   *   The command to submit.
+   * @param doneHandler
+   *   An asynchronous handler to be called with the command result.
+   * @return
+   *   The state context.
+   */
+  public <R> StateContext submitCommand(Command command, Handler<AsyncResult<R>> doneHandler) {
+    final Future<R> future = new DefaultFutureResult<R>().setHandler(doneHandler);
+    client.submit(currentLeader(), new SubmitRequest(command), new Handler<AsyncResult<SubmitResponse>>() {
+      @Override
+      @SuppressWarnings("unchecked")
+      public void handle(AsyncResult<SubmitResponse> result) {
+        if (result.failed()) {
+          future.setFailure(result.cause());
+        }
+        else {
+          future.setResult((R) result.result().result());
+        }
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Stops the context.
+   */
+  public void stop() {
+    client.stop();
+    transition(StateType.START);
+  }
+
+  /**
+   * Stops the context.
+   *
+   * @param doneHandler
+   *   An asynchronous handler to be called once the context is stopped.
+   */
+  public void stop(Handler<AsyncResult<Void>> doneHandler) {
+    client.stop(doneHandler);
+    transition(StateType.START);
+    new DefaultFutureResult<Void>().setHandler(doneHandler).setResult((Void) null);
   }
 
 }

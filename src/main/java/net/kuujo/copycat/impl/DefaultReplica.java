@@ -30,9 +30,9 @@ import net.kuujo.copycat.Replica;
 import net.kuujo.copycat.Command.Type;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.MemoryLog;
 import net.kuujo.copycat.replication.StateMachine;
-import net.kuujo.copycat.replication.node.RaftNode;
-import net.kuujo.copycat.replication.node.impl.DefaultRaftNode;
+import net.kuujo.copycat.replication.state.StateContext;
 
 /**
  * A default replica implementation.
@@ -40,7 +40,7 @@ import net.kuujo.copycat.replication.node.impl.DefaultRaftNode;
  * @author Jordan Halterman
  */
 public class DefaultReplica implements Replica {
-  private final RaftNode node;
+  private final StateContext state;
   private Map<String, CommandInfo<?>> commands = new HashMap<>();
 
   private final StateMachine stateMachine = new StateMachine() {
@@ -64,130 +64,130 @@ public class DefaultReplica implements Replica {
   }
 
   public DefaultReplica(Vertx vertx) {
-    node = new DefaultRaftNode(UUID.randomUUID().toString(), vertx, stateMachine);
+    state = new StateContext(UUID.randomUUID().toString(), vertx, stateMachine, new MemoryLog());
   }
 
   public DefaultReplica(String address, Vertx vertx) {
-    node = new DefaultRaftNode(address, vertx, stateMachine);
+    state = new StateContext(address, vertx, stateMachine, new MemoryLog());
   }
 
   public DefaultReplica(String address, Vertx vertx, Log log) {
-    node = new DefaultRaftNode(address, vertx, stateMachine, log);
+    state = new StateContext(address, vertx, stateMachine, log);
   }
 
   @Override
   public String getAddress() {
-    return node.getAddress();
+    return state.address();
   }
 
   @Override
   public Replica setAddress(String address) {
-    node.setAddress(address);
+    state.setAddress(address);
     return this;
   }
 
   @Override
   public ClusterConfig cluster() {
-    return node.getClusterConfig();
+    return state.config();
   }
 
   @Override
   public Replica setClusterConfig(ClusterConfig config) {
-    node.setClusterConfig(config);
+    state.configure(config);
     return this;
   }
 
   @Override
   public ClusterConfig getClusterConfig() {
-    return node.getClusterConfig();
+    return state.config();
   }
 
   @Override
   public long getElectionTimeout() {
-    return node.getElectionTimeout();
+    return state.electionTimeout();
   }
 
   @Override
   public Replica setElectionTimeout(long timeout) {
-    node.setElectionTimeout(timeout);
+    state.electionTimeout(timeout);
     return this;
   }
 
   @Override
   public long getHeartbeatInterval() {
-    return node.getHeartbeatInterval();
+    return state.heartbeatInterval();
   }
 
   @Override
   public Replica setHeartbeatInterval(long interval) {
-    node.setHeartbeatInterval(interval);
+    state.heartbeatInterval(interval);
     return this;
   }
 
   @Override
   public boolean isUseAdaptiveTimeouts() {
-    return node.isUseAdaptiveTimeouts();
+    return state.useAdaptiveTimeouts();
   }
 
   @Override
   public Replica useAdaptiveTimeouts(boolean useAdaptive) {
-    node.useAdaptiveTimeouts(useAdaptive);
+    state.useAdaptiveTimeouts(useAdaptive);
     return this;
   }
 
   @Override
   public double getAdaptiveTimeoutThreshold() {
-    return node.getAdaptiveTimeoutThreshold();
+    return state.adaptiveTimeoutThreshold();
   }
 
   @Override
   public Replica setAdaptiveTimeoutThreshold(double threshold) {
-    node.setAdaptiveTimeoutThreshold(threshold);
+    state.adaptiveTimeoutThreshold(threshold);
     return this;
   }
 
   @Override
   public boolean isRequireWriteMajority() {
-    return node.isRequireWriteMajority();
+    return state.requireWriteMajority();
   }
 
   @Override
   public Replica setRequireWriteMajority(boolean require) {
-    node.setRequireWriteMajority(require);
+    state.requireWriteMajority(require);
     return this;
   }
 
   @Override
   public boolean isRequireReadMajority() {
-    return node.isRequireReadMajority();
+    return state.requireReadMajority();
   }
 
   @Override
   public Replica setRequireReadMajority(boolean require) {
-    node.setRequireReadMajority(require);
+    state.requireReadMajority(require);
     return this;
   }
 
   @Override
   public Replica setLog(Log log) {
-    node.setLog(log);
+    state.setLog(log);
     return this;
   }
 
   @Override
   public Log getLog() {
-    return node.getLog();
+    return state.log();
   }
 
   @Override
   public Replica start() {
-    node.start();
+    state.start();
     return this;
   }
 
   @Override
   public Replica start(Handler<AsyncResult<Void>> doneHandler) {
-    node.start(doneHandler);
+    state.start(doneHandler);
     return this;
   }
 
@@ -211,18 +211,18 @@ public class DefaultReplica implements Replica {
 
   @Override
   public <R> Replica submitCommand(String command, JsonObject data, Handler<AsyncResult<R>> resultHandler) {
-    node.submitCommand(new DefaultCommand(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
+    state.submitCommand(new DefaultCommand(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
     return this;
   }
 
   @Override
   public void stop() {
-    node.stop();
+    state.stop();
   }
 
   @Override
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
-    node.stop(doneHandler);
+    state.stop(doneHandler);
   }
 
 }

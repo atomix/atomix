@@ -15,15 +15,12 @@
  */
 package net.kuujo.copycat.test.integration;
 
-import net.kuujo.copycat.Command;
+import net.kuujo.copycat.Replica;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.impl.DefaultCommand;
+import net.kuujo.copycat.impl.DefaultReplica;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.replication.StateMachine;
-import net.kuujo.copycat.replication.node.RaftNode;
-import net.kuujo.copycat.replication.node.impl.DefaultRaftNode;
 
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
@@ -44,53 +41,46 @@ import org.vertx.testtools.TestVerticle;
  */
 public class ReplicationTest extends TestVerticle {
 
-  private final StateMachine stateMachine = new StateMachine() {
-    @Override
-    public Object applyCommand(Command command) {
-      return null;
-    }
-  };
-
   @Test
   public void testNoOpReplication() {
     final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
 
-    final RaftNode test1 = new DefaultRaftNode("test.1", vertx, stateMachine).setClusterConfig(config);
+    final Replica test1 = new DefaultReplica("test.1", vertx).setClusterConfig(config);
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final RaftNode test2 = new DefaultRaftNode("test.2", vertx, stateMachine).setClusterConfig(config);
+        final Replica test2 = new DefaultReplica("test.2", vertx).setClusterConfig(config);
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final RaftNode test3 = new DefaultRaftNode("test.3", vertx, stateMachine).setClusterConfig(config);
+            final Replica test3 = new DefaultReplica("test.3", vertx).setClusterConfig(config);
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
                 assertTrue(result.succeeded());
-                test3.submitCommand(new DefaultCommand("test", new JsonObject().putString("data", "Hello world!")), new Handler<AsyncResult<Void>>() {
+                test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Void>>() {
                   @Override
                   public void handle(AsyncResult<Void> result) {
                     assertTrue(result.succeeded());
-                    test1.getLog().entry(0, new Handler<AsyncResult<Entry>>() {
+                    test1.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
                         assertEquals(Entry.Type.NOOP, result.result().type());
                       }
                     });
-                    test2.getLog().entry(0, new Handler<AsyncResult<Entry>>() {
+                    test2.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
                         assertEquals(Entry.Type.NOOP, result.result().type());
                       }
                     });
-                    test3.getLog().entry(0, new Handler<AsyncResult<Entry>>() {
+                    test3.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -112,53 +102,62 @@ public class ReplicationTest extends TestVerticle {
   public void testCommandReplication() {
     final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
 
-    final RaftNode test1 = new DefaultRaftNode("test.1", vertx, stateMachine).setClusterConfig(config);
+    final Replica test1 = new DefaultReplica("test.1", vertx).setClusterConfig(config);
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final RaftNode test2 = new DefaultRaftNode("test.2", vertx, stateMachine).setClusterConfig(config);
+        final Replica test2 = new DefaultReplica("test.2", vertx).setClusterConfig(config);
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final RaftNode test3 = new DefaultRaftNode("test.3", vertx, stateMachine).setClusterConfig(config);
+            final Replica test3 = new DefaultReplica("test.3", vertx).setClusterConfig(config);
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
                 assertTrue(result.succeeded());
-                test3.submitCommand(new DefaultCommand("test", new JsonObject().putString("data", "Hello world!")), new Handler<AsyncResult<Void>>() {
+                test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Void>>() {
                   @Override
                   public void handle(AsyncResult<Void> result) {
                     assertTrue(result.succeeded());
-                    test1.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
+                    // We have to set a timer after submitting the command because
+                    // the command may not necessarily be replicated to all of the
+                    // nodes. It is only required that the command entry be immediately
+                    // replicated to a majority of the nodes.
+                    vertx.setTimer(1000, new Handler<Long>() {
                       @Override
-                      public void handle(AsyncResult<Entry> result) {
-                        assertTrue(result.succeeded());
-                        assertEquals(Entry.Type.COMMAND, result.result().type());
-                        assertEquals("test", ((CommandEntry) result.result()).command().command());
-                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
-                      }
-                    });
-                    test2.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
-                      @Override
-                      public void handle(AsyncResult<Entry> result) {
-                        assertTrue(result.succeeded());
-                        assertEquals(Entry.Type.COMMAND, result.result().type());
-                        assertEquals("test", ((CommandEntry) result.result()).command().command());
-                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
-                      }
-                    });
-                    test3.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
-                      @Override
-                      public void handle(AsyncResult<Entry> result) {
-                        assertTrue(result.succeeded());
-                        assertEquals(Entry.Type.COMMAND, result.result().type());
-                        assertEquals("test", ((CommandEntry) result.result()).command().command());
-                        assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
-                        testComplete();
+                      public void handle(Long timerID) {
+                        test1.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                          @Override
+                          public void handle(AsyncResult<Entry> result) {
+                            assertTrue(result.succeeded());
+                            assertEquals(Entry.Type.COMMAND, result.result().type());
+                            assertEquals("test", ((CommandEntry) result.result()).command().command());
+                            assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
+                          }
+                        });
+                        test2.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                          @Override
+                          public void handle(AsyncResult<Entry> result) {
+                            assertTrue(result.succeeded());
+                            assertEquals(Entry.Type.COMMAND, result.result().type());
+                            assertEquals("test", ((CommandEntry) result.result()).command().command());
+                            assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
+                          }
+                        });
+                        test3.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                          @Override
+                          public void handle(AsyncResult<Entry> result) {
+                            assertTrue(result.succeeded());
+                            assertEquals(Entry.Type.COMMAND, result.result().type());
+                            assertEquals("test", ((CommandEntry) result.result()).command().command());
+                            assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
+                            testComplete();
+                          }
+                        });
                       }
                     });
                   }
@@ -175,28 +174,25 @@ public class ReplicationTest extends TestVerticle {
   public void testConfigReplication() {
     final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
 
-    final RaftNode test1 = new DefaultRaftNode("test.1", vertx, stateMachine)
-      .setClusterConfig(config).setHeartbeatInterval(100);
+    final Replica test1 = new DefaultReplica("test.1", vertx).setClusterConfig(config).setHeartbeatInterval(100);
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final RaftNode test2 = new DefaultRaftNode("test.2", vertx, stateMachine)
-          .setClusterConfig(config).setHeartbeatInterval(100);
+        final Replica test2 = new DefaultReplica("test.2", vertx).setClusterConfig(config).setHeartbeatInterval(100);
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final RaftNode test3 = new DefaultRaftNode("test.3", vertx, stateMachine)
-              .setClusterConfig(config).setHeartbeatInterval(100);
+            final Replica test3 = new DefaultReplica("test.3", vertx).setClusterConfig(config).setHeartbeatInterval(100);
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
                 assertTrue(result.succeeded());
                 config.addMember("test.4");
-                test3.submitCommand(new DefaultCommand("test", new JsonObject().putString("data", "Hello world!")), new Handler<AsyncResult<Void>>() {
+                test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Void>>() {
                   @Override
                   public void handle(AsyncResult<Void> result) {
                     vertx.setTimer(500, new Handler<Long>() {

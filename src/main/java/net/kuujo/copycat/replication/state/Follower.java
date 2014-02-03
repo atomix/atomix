@@ -30,7 +30,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  * 
  * @author Jordan Halterman
  */
-public class Follower extends BaseState {
+class Follower extends State {
   private static final Logger logger = LoggerFactory.getLogger(Follower.class);
   private long timeoutTimer;
   private final StateLock lock = new StateLock();

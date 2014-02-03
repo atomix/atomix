@@ -24,7 +24,7 @@ import org.vertx.java.core.Handler;
  * 
  * @author Jordan Halterman
  */
-public class Majority {
+class Majority {
   private final Set<String> members;
   private int total;
   private int succeeded;

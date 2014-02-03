@@ -40,7 +40,9 @@ import net.kuujo.copycat.replication.protocol.SyncRequest;
 import net.kuujo.copycat.replication.protocol.SyncResponse;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -49,7 +51,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  * 
  * @author Jordan Halterman
  */
-public class Leader extends BaseState implements Observer {
+class Leader extends State implements Observer {
   private static final Logger logger = LoggerFactory.getLogger(Leader.class);
   private final StateLock lock = new StateLock();
   private final StateLock configLock = new StateLock();
@@ -93,22 +95,17 @@ public class Leader extends BaseState implements Observer {
           @Override
           public void handle(AsyncResult<Long> result) {
             if (result.succeeded()) {
-              apply(result.result(), new Handler<Void>() {
-                @Override
-                public void handle(Void _) {
-                  // Once the no-op entry has been appended, immediately update
-                  // all nodes.
-                  for (Replica replica : replicas) {
-                    replica.update();
-                  }
+              // Once the no-op entry has been appended, immediately update
+              // all nodes.
+              for (Replica replica : replicas) {
+                replica.update();
+              }
 
-                  // Observe the cluster configuration for changes.
-                  config.addObserver(Leader.this);
-                  context.currentLeader(context.address());
-                  startHandler.handle((Void) null);
-                }
-              });
+              // Observe the cluster configuration for changes.
+              config.addObserver(Leader.this);
+              context.currentLeader(context.address());
               doneHandler.handle(true);
+              startHandler.handle((Void) null);
             }
             else {
               doneHandler.handle(false);
@@ -155,76 +152,82 @@ public class Leader extends BaseState implements Observer {
               final long index = result.result();
 
               // Replicate the combined configuration to a majority of the cluster.
-              writeMajority(index, new Handler<Void>() {
+              writeMajority(index, new Handler<Boolean>() {
                 @Override
-                public void handle(Void _) {
+                public void handle(Boolean succeeded) {
+                  if (succeeded) {
+                    // Once the combined configuration has been replicated, apply the
+                    // configuration to the current state (internal state machine).
+                    Leader.this.members = combinedMembers;
+                    Leader.this.remoteMembers = new HashSet<>(combinedMembers);
+                    Leader.this.remoteMembers.remove(context.address());
 
-                  // Apply the combined configuration to the state.
-                  apply(index, new Handler<Void>() {
-                    @Override
-                    public void handle(Void _) {
-                      // Once the combined configuration has been replicated, apply the
-                      // configuration to the current state (internal state machine).
-                      Leader.this.members = combinedMembers;
-                      Leader.this.remoteMembers = new HashSet<>(combinedMembers);
-                      Leader.this.remoteMembers.remove(context.address());
-
-                      // Update replica references to reflect the configuration changes.
-                      for (String address : Leader.this.remoteMembers) {
-                        if (!replicaMap.containsKey(address)) {
-                          Replica replica = new Replica(address);
-                          replicaMap.put(address, replica);
-                          replicas.add(replica);
-                        }
+                    // Update replica references to reflect the configuration changes.
+                    for (String address : Leader.this.remoteMembers) {
+                      if (!replicaMap.containsKey(address)) {
+                        Replica replica = new Replica(address);
+                        replicaMap.put(address, replica);
+                        replicas.add(replica);
                       }
+                    }
 
-                      // Now that the combined configuration has been committed, create
-                      // and replicate a final configuration containing only the new membership.
-                      log.appendEntry(new ConfigurationEntry(context.currentTerm(), members), new Handler<AsyncResult<Long>>() {
-                        @Override
-                        public void handle(AsyncResult<Long> result) {
-                          if (result.succeeded()) {
-                            final long index = result.result();
+                    // Now that the combined configuration has been committed, create
+                    // and replicate a final configuration containing only the new membership.
+                    log.appendEntry(new ConfigurationEntry(context.currentTerm(), members), new Handler<AsyncResult<Long>>() {
+                      @Override
+                      public void handle(AsyncResult<Long> result) {
+                        if (result.succeeded()) {
+                          final long index = result.result();
 
-                            // Replicate the final configuration to a majority of the cluster.
-                            writeMajority(index, new Handler<Void>() {
-                              @Override
-                              public void handle(Void _) {
+                          // Replicate the final configuration to a majority of the cluster.
+                          writeMajority(index, new Handler<Boolean>() {
+                            @Override
+                            public void handle(Boolean succeeded) {
+                              if (succeeded) {
+                                // Once the new configuration has been replicated, apply
+                                // the configuration to the current state and update the
+                                // last applied index.
+                                Leader.this.members = members;
+                                Leader.this.remoteMembers = new HashSet<>(members);
+                                Leader.this.remoteMembers.remove(context.address());
 
-                                // Apply the final configuration to the state.
-                                apply(index, new Handler<Void>() {
+                                // Iterate through replicas and remove any replicas that
+                                // were removed from the cluster.
+                                Iterator<Replica> iterator = replicas.iterator();
+                                while (iterator.hasNext()) {
+                                  Replica replica = iterator.next();
+                                  if (!remoteMembers.contains(replica.address)) {
+                                    replica.shutdown();
+                                    iterator.remove();
+                                    replicaMap.remove(replica.address);
+                                  }
+                                }
+
+                                // Release the configuration lock.
+                                configLock.release();
+                              }
+                              else {
+                                vertx.setTimer(1000, new Handler<Long>() {
                                   @Override
-                                  public void handle(Void _) {
-                                    // Once the new configuration has been replicated, apply
-                                    // the configuration to the current state and update the
-                                    // last applied index.
-                                    Leader.this.members = members;
-                                    Leader.this.remoteMembers = new HashSet<>(members);
-                                    Leader.this.remoteMembers.remove(context.address());
-
-                                    // Iterate through replicas and remove any replicas that
-                                    // were removed from the cluster.
-                                    Iterator<Replica> iterator = replicas.iterator();
-                                    while (iterator.hasNext()) {
-                                      Replica replica = iterator.next();
-                                      if (!remoteMembers.contains(replica.address)) {
-                                        replica.shutdown();
-                                        iterator.remove();
-                                        replicaMap.remove(replica.address);
-                                      }
-                                    }
-
-                                    // Release the configuration lock.
-                                    configLock.release();
+                                  public void handle(Long timerID) {
+                                    updateClusterConfig(members);
                                   }
                                 });
                               }
-                            });
-                          }
+                            }
+                          });
                         }
-                      });
-                    }
-                  });
+                      }
+                    });
+                  }
+                  else {
+                    vertx.setTimer(1000, new Handler<Long>() {
+                      @Override
+                      public void handle(Long timerID) {
+                        updateClusterConfig(members);
+                      }
+                    });
+                  }
                 }
               });
             }
@@ -320,26 +323,37 @@ public class Leader extends BaseState implements Observer {
 
   @Override
   public void submit(final SubmitRequest request) {
-    // If this is a read command then we need to contact a majority of the
-    // cluster
+    // If this is a read command then we need to contact a majority of the cluster
     // to ensure that the information is not stale. Once we've determined that
-    // this node is the most up-to-date, we can simply apply the command to
-    // the
+    // this node is the most up-to-date, we can simply apply the command to the
     // state machine and return the result without replicating the log.
     if (request.command().type() != null && request.command().type().isReadOnly()) {
+
+      // Users have the option of whether to require read majorities. If read
+      // majorities are disabled then it is simply assumed that there are no
+      // log conflicts since the last ping. This is safe in most cases since
+      // log conflicts are unlikely in most cases. Nevertheless, read majorities
+      // are required by default.
       if (context.requireReadMajority()) {
-        readMajority(new Handler<Void>() {
+        readMajority(new Handler<Boolean>() {
           @Override
-          public void handle(Void _) {
-            try {
-              request.reply(stateMachine.applyCommand(request.command()));
+          public void handle(Boolean succeeded) {
+            if (succeeded) {
+              try {
+                request.reply(stateMachine.applyCommand(request.command()));
+              }
+              catch (Exception e) {
+                request.error(e.getMessage());
+              }
             }
-            catch (Exception e) {
-              request.error(e.getMessage());
+            else {
+              request.error("Failed to acquire majority replication.");
             }
           }
         });
       }
+      // If read majorities are disabled then simply apply the command to the
+      // state machine and return the result.
       else {
         try {
           request.reply(stateMachine.applyCommand(request.command()));
@@ -363,39 +377,40 @@ public class Leader extends BaseState implements Observer {
           else {
             // Replicate the log entry to a majority of the cluster.
             final long index = result.result();
+
+            // Required write majorities are optional. Users may allow the log
+            // to simply be replicated after the command is applied to the state
+            // machine and the response is sent.
             if (context.requireWriteMajority()) {
-              writeMajority(index, new Handler<Void>() {
+              writeMajority(index, new Handler<Boolean>() {
                 @Override
-                public void handle(Void _) {
-                  apply(index, new Handler<Void>() {
-                    @Override
-                    public void handle(Void _) {
-                      try {
-                        Object output = stateMachine.applyCommand(request.command());
-                        request.reply(output);
-                      }
-                      catch (Exception e) {
-                        request.error(e.getMessage());
-                      }
+                public void handle(Boolean succeeded) {
+                  if (succeeded) {
+                    try {
+                      Object output = stateMachine.applyCommand(request.command());
+                      request.reply(output);
                     }
-                  });
+                    catch (Exception e) {
+                      request.error(e.getMessage());
+                    }
+                  }
+                  else {
+                    request.error("Failed to acquire write majority.");
+                  }
                 }
               });
             }
+            // If write majorities are disabled then simply apply the command
+            // to the state machine and return the result.
             else {
-              apply(index, new Handler<Void>() {
-                @Override
-                public void handle(Void _) {
-                  try {
-                    Object output = stateMachine.applyCommand(request.command());
-                    context.lastApplied(index);
-                    request.reply(output);
-                  }
-                  catch (Exception e) {
-                    request.error(e.getMessage());
-                  }
-                }
-              });
+              try {
+                Object output = stateMachine.applyCommand(request.command());
+                context.lastApplied(index);
+                request.reply(output);
+              }
+              catch (Exception e) {
+                request.error(e.getMessage());
+              }
             }
           }
         }
@@ -406,17 +421,22 @@ public class Leader extends BaseState implements Observer {
   /**
    * Replicates the index to a majority of the cluster.
    */
-  private void writeMajority(final long index, final Handler<Void> doneHandler) {
+  private void writeMajority(final long index, final Handler<Boolean> doneHandler) {
     final Majority majority = new Majority(remoteMembers).countSelf();
     majorities.add(majority);
     majority.start(new Handler<String>() {
       @Override
       public void handle(final String address) {
         if (replicaMap.containsKey(address)) {
-          replicaMap.get(address).sync(index, new Handler<Void>() {
+          replicaMap.get(address).sync(index, new Handler<AsyncResult<Void>>() {
             @Override
-            public void handle(Void _) {
-              majority.succeed(address);
+            public void handle(AsyncResult<Void> result) {
+              if (result.failed()) {
+                majority.fail(address);
+              }
+              else {
+                majority.succeed(address);
+              }
             }
           });
         }
@@ -425,7 +445,7 @@ public class Leader extends BaseState implements Observer {
       @Override
       public void handle(Boolean succeeded) {
         majorities.remove(majority);
-        doneHandler.handle((Void) null);
+        doneHandler.handle(succeeded);
       }
     });
   }
@@ -433,17 +453,22 @@ public class Leader extends BaseState implements Observer {
   /**
    * Pings a majority of the cluster.
    */
-  private void readMajority(final Handler<Void> doneHandler) {
+  private void readMajority(final Handler<Boolean> doneHandler) {
     final Majority majority = new Majority(remoteMembers).countSelf();
     majorities.add(majority);
     majority.start(new Handler<String>() {
       @Override
       public void handle(final String address) {
         if (replicaMap.containsKey(address)) {
-          replicaMap.get(address).ping(new Handler<Void>() {
+          replicaMap.get(address).ping(new Handler<AsyncResult<Void>>() {
             @Override
-            public void handle(Void _) {
-              majority.succeed(address);
+            public void handle(AsyncResult<Void> result) {
+              if (result.failed()) {
+                majority.fail(address);
+              }
+              else {
+                majority.succeed(address);
+              }
             }
           });
         }
@@ -452,7 +477,7 @@ public class Leader extends BaseState implements Observer {
       @Override
       public void handle(Boolean succeeded) {
         majorities.remove(majority);
-        doneHandler.handle((Void) null);
+        doneHandler.handle(succeeded);
       }
     });
   }
@@ -505,8 +530,9 @@ public class Leader extends BaseState implements Observer {
     private final String address;
     private long nextIndex;
     private long matchIndex;
-    private final StateLock lock = new StateLock();
+    private boolean running;
     private boolean shutdown;
+    private final Map<Long, Future<Void>> futures = new HashMap<>();
 
     private Replica(String address) {
       this.address = address;
@@ -524,88 +550,79 @@ public class Leader extends BaseState implements Observer {
         }
       }
     }
- 
+
+    private void sync(final long index, final Handler<AsyncResult<Void>> doneHandler) {
+      futures.put(index, new DefaultFutureResult<Void>().setHandler(doneHandler));
+    }
+
     private void sync() {
-      if (nextIndex <= log.lastIndex() || matchIndex <= nextIndex-1) {
-        sync(log.lastIndex(), null);
+      if (!running && !shutdown) {
+        running = true;
+        doSync();
       }
     }
 
-    private void sync(final long toIndex, final Handler<Void> doneHandler) {
-      if (!shutdown) {
-        lock.acquire(new Handler<Void>() {
-          @Override
-          public void handle(Void _) {
-            doSync(toIndex, new Handler<Void>() {
-              @Override
-              public void handle(Void _) {
-                lock.release();
-                if (doneHandler != null) {
-                  doneHandler.handle((Void) null);
-                }
-              }
-            });
-          }
-        });
+    private void doSync() {
+      if (shutdown) {
+        running = false;
+        return;
       }
-    }
-
-    private void doSync(final long toIndex, final Handler<Void> doneHandler) {
-      if (shutdown) return;
-      if (nextIndex > toIndex) {
-        lock.release();
-        ping();
-        doneHandler.handle((Void) null);
-      }
-      else {
-        if (toIndex <= log.lastIndex()) {
-          if (nextIndex - 1 > 0) {
-            final long prevLogIndex = nextIndex - 1;
-            log.entry(nextIndex-1, new Handler<AsyncResult<Entry>>() {
-              @Override
-              public void handle(AsyncResult<Entry> result) {
-                if (result.failed()) {
-                  doSync(toIndex, doneHandler);
-                }
-                else if (result.result() == null) {
-                  nextIndex--;
-                  doSync(toIndex, doneHandler);
-                }
-                else {
-                  doSync(toIndex, prevLogIndex, result.result().term(), doneHandler);
-                }
+      if (nextIndex <= log.lastIndex() || matchIndex < context.commitIndex()) {
+        if (nextIndex-1 > 0) {
+          final long prevLogIndex = nextIndex - 1;
+          log.entry(nextIndex-1, new Handler<AsyncResult<Entry>>() {
+            @Override
+            public void handle(AsyncResult<Entry> result) {
+              if (result.failed()) {
+                running = false;
               }
-            });
-          }
-          else {
-            doSync(toIndex, 0, 0, doneHandler);
-          }
+              else if (result.result() == null) {
+                nextIndex--;
+                doSync();
+              }
+              else {
+                doSync(prevLogIndex, result.result().term());
+              }
+            }
+          });
+        }
+        else {
+          doSync(0, 0);
         }
       }
+      else {
+        running = false;
+      }
     }
 
-    private void doSync(final long toIndex, final long prevLogIndex, final long prevLogTerm, final Handler<Void> doneHandler) {
-      if (shutdown) return;
+    private void doSync(final long prevLogIndex, final long prevLogTerm) {
+      if (shutdown) {
+        running = false;
+        return;
+      }
       if (prevLogIndex+1 <= log.lastIndex()) {
         log.entry(prevLogIndex+1, new Handler<AsyncResult<Entry>>() {
           @Override
           public void handle(AsyncResult<Entry> result) {
             if (result.failed()) {
-              doSync(toIndex, doneHandler);
+              running = false;
             }
             else {
-              doSync(toIndex, prevLogIndex, prevLogTerm, result.result(), context.commitIndex(), doneHandler);
+              doSync(prevLogIndex, prevLogTerm, result.result(), context.commitIndex());
             }
           }
         });
       }
       else {
-        doSync(toIndex, prevLogIndex, prevLogTerm, null, context.commitIndex(), doneHandler);
+        doSync(prevLogIndex, prevLogTerm, null, context.commitIndex());
       }
     }
 
-    private void doSync(final long toIndex, final long prevLogIndex, final long prevLogTerm, final Entry entry, final long commitIndex, final Handler<Void> doneHandler) {
-      if (shutdown) return;
+    private void doSync(final long prevLogIndex, final long prevLogTerm, final Entry entry, final long commitIndex) {
+      if (shutdown) {
+        running = false;
+        return;
+      }
       if (logger.isInfoEnabled()) {
         if (entry != null) {
           logger.info(String.format("%s replicating entry %d to %s", context.address(), prevLogIndex+1, address));
@@ -614,49 +631,41 @@ public class Leader extends BaseState implements Observer {
           logger.info(String.format("%s committing entry %d to %s", context.address(), commitIndex, address));
         }
       }
-      endpoint.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entry, commitIndex), new Handler<AsyncResult<SyncResponse>>() {
+      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entry, commitIndex), new Handler<AsyncResult<SyncResponse>>() {
         @Override
         public void handle(AsyncResult<SyncResponse> result) {
           if (result.succeeded()) {
             if (result.result().success()) {
               logger.info(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
-              nextIndex++;
+              if (entry != null) {
+                if (futures.containsKey(nextIndex)) {
+                  futures.remove(nextIndex).setResult((Void) null);
+                }
+                nextIndex++;
+              }
               matchIndex = commitIndex;
               checkCommits();
-              if (toIndex < nextIndex) {
-                lock.release();
-                doneHandler.handle((Void) null);
-              }
-              else {
-                doSync(toIndex, doneHandler);
-              }
+              doSync();
             }
             else {
               logger.info(String.format("%s failed to replicate entry %d to %s", context.address(), prevLogIndex+1, address));
               if (nextIndex-1 == 0) {
-                lock.release();
                 context.transition(StateType.FOLLOWER);
               }
               else {
-                nextIndex--;
+                if (entry != null) {
+                  nextIndex--;
+                }
                 checkCommits();
-                if (toIndex < nextIndex) {
-                  lock.release();
-                  doneHandler.handle((Void) null);
-                }
-                else {
-                  doSync(toIndex, doneHandler);
-                }
+                doSync();
               }
             }
           }
           else {
-            vertx.setTimer(100, new Handler<Long>() {
-              @Override
-              public void handle(Long timerID) {
-                doSync(toIndex, doneHandler);
-              }
-            });
+            running = false;
+            if (futures.containsKey(nextIndex)) {
+              futures.remove(nextIndex).setFailure(result.cause());
+            }
           }
         }
       });
@@ -666,18 +675,22 @@ public class Leader extends BaseState implements Observer {
       ping(null);
     }
 
-    private void ping(final Handler<Void> doneHandler) {
-      if (!lock.locked() && !shutdown) {
-        endpoint.ping(address, new PingRequest(context.currentTerm(), context.address()), context.heartbeatInterval(), new Handler<AsyncResult<PingResponse>>() {
+    private void ping(final Handler<AsyncResult<Void>> doneHandler) {
+      if (!!shutdown) {
+        final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
+        client.ping(address, new PingRequest(context.currentTerm(), context.address()), context.heartbeatInterval(), new Handler<AsyncResult<PingResponse>>() {
           @Override
           public void handle(AsyncResult<PingResponse> result) {
             if (result.succeeded()) {
               if (result.result().term() > context.currentTerm()) {
                 context.transition(StateType.FOLLOWER);
               }
-              else if (doneHandler != null) {
-                doneHandler.handle((Void) null);
+              else {
+                future.setResult((Void) null);
               }
+            }
+            else {
+              future.setFailure(result.cause());
             }
           }
         });

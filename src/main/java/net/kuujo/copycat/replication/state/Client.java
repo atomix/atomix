@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.node.impl;
+package net.kuujo.copycat.replication.state;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -24,7 +24,6 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.eventbus.Message;
 
-import net.kuujo.copycat.replication.node.RaftClient;
 import net.kuujo.copycat.replication.protocol.PingRequest;
 import net.kuujo.copycat.replication.protocol.PingResponse;
 import net.kuujo.copycat.replication.protocol.PollRequest;
@@ -39,7 +38,7 @@ import net.kuujo.copycat.replication.protocol.SyncResponse;
  * 
  * @author Jordan Halterman
  */
-public class DefaultRaftClient implements RaftClient {
+class Client {
   private static final long DEFAULT_REPLY_TIMEOUT = 5000;
   private final Vertx vertx;
   private String address;
@@ -89,30 +88,58 @@ public class DefaultRaftClient implements RaftClient {
     }
   };
 
-  public DefaultRaftClient(String address, Vertx vertx) {
+  public Client(Vertx vertx) {
+    this(null, vertx);
+  }
+
+  public Client(String address, Vertx vertx) {
     this.address = address;
     this.vertx = vertx;
   }
 
-  @Override
-  public RaftClient setAddress(String address) {
-    if (running) throw new IllegalStateException("Cannot set endpoint address during operation.");
+  /**
+   * Sets the client address.
+   *
+   * @param address The client address.
+   * @return The client instance.
+   */
+  public Client setAddress(String address) {
+    if (running) throw new IllegalStateException("Cannot set client address while running.");
     this.address = address;
     return this;
   }
 
-  @Override
+  /**
+   * Returns the client address.
+   * 
+   * @return The client address.
+   */
   public String getAddress() {
     return address;
   }
 
-  @Override
-  public RaftClient ping(String address, PingRequest request, Handler<AsyncResult<PingResponse>> resultHandler) {
+  /**
+   * Sends a ping request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param resultHandler An asynchronous handler to be called with the ping response.
+   * @return The client.
+   */
+  public Client ping(String address, PingRequest request, Handler<AsyncResult<PingResponse>> resultHandler) {
     return ping(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
-  @Override
-  public RaftClient ping(String address, PingRequest request, long timeout, Handler<AsyncResult<PingResponse>> resultHandler) {
+  /**
+   * Sends a ping request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param timeout The request/response timeout.
+   * @param resultHandler An asynchronous handler to be called with the ping response.
+   * @return The client.
+   */
+  public Client ping(String address, PingRequest request, long timeout, Handler<AsyncResult<PingResponse>> resultHandler) {
     final Future<PingResponse> future = new DefaultFutureResult<PingResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "ping").putObject("request", PingRequest.toJson(request)), timeout,
@@ -136,19 +163,39 @@ public class DefaultRaftClient implements RaftClient {
     return this;
   }
 
-  @Override
-  public RaftClient pingHandler(Handler<PingRequest> handler) {
+  /**
+   * Registers a ping request handler.
+   * 
+   * @param handler A ping request handler.
+   * @return The client.
+   */
+  public Client pingHandler(Handler<PingRequest> handler) {
     pingHandler = handler;
     return this;
   }
 
-  @Override
-  public RaftClient sync(String address, SyncRequest request, Handler<AsyncResult<SyncResponse>> resultHandler) {
+  /**
+   * Sends a sync request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param resultHandler An asynchronous handler to be called with the sync response.
+   * @return The client.
+   */
+  public Client sync(String address, SyncRequest request, Handler<AsyncResult<SyncResponse>> resultHandler) {
     return sync(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
-  @Override
-  public RaftClient sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler) {
+  /**
+   * Sends a sync request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param timeout The request/response timeout.
+   * @param resultHandler An asynchronous handler to be called with the sync response.
+   * @return The client.
+   */
+  public Client sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler) {
     final Future<SyncResponse> future = new DefaultFutureResult<SyncResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "sync").putObject("request", SyncRequest.toJson(request)), timeout,
@@ -172,19 +219,39 @@ public class DefaultRaftClient implements RaftClient {
     return this;
   }
 
-  @Override
-  public RaftClient syncHandler(Handler<SyncRequest> handler) {
+  /**
+   * Registers async request handler.
+   * 
+   * @param handler An append entries request handler.
+   * @return The client.
+   */
+  public Client syncHandler(Handler<SyncRequest> handler) {
     syncHandler = handler;
     return this;
   }
 
-  @Override
-  public RaftClient poll(String address, PollRequest request, Handler<AsyncResult<PollResponse>> resultHandler) {
+  /**
+   * Sends a poll request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param resultHandler An asynchronous handler to be called with the poll response.
+   * @return The client.
+   */
+  public Client poll(String address, PollRequest request, Handler<AsyncResult<PollResponse>> resultHandler) {
     return poll(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
-  @Override
-  public RaftClient poll(String address, PollRequest request, long timeout, Handler<AsyncResult<PollResponse>> resultHandler) {
+  /**
+   * Sends a poll request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param timeout The request/response timeout.
+   * @param resultHandler An asynchronous handler to be called with the poll response.
+   * @return The client.
+   */
+  public Client poll(String address, PollRequest request, long timeout, Handler<AsyncResult<PollResponse>> resultHandler) {
     final Future<PollResponse> future = new DefaultFutureResult<PollResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "poll").putObject("request", PollRequest.toJson(request)), timeout,
@@ -208,19 +275,39 @@ public class DefaultRaftClient implements RaftClient {
     return this;
   }
 
-  @Override
-  public RaftClient pollHandler(Handler<PollRequest> handler) {
+  /**
+   * Registers a poll request handler.
+   * 
+   * @param handler A poll request handler.
+   * @return The client.
+   */
+  public Client pollHandler(Handler<PollRequest> handler) {
     pollHandler = handler;
     return this;
   }
 
-  @Override
-  public RaftClient submit(String address, SubmitRequest request, Handler<AsyncResult<SubmitResponse>> resultHandler) {
+  /**
+   * Sends a submit request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param resultHandler An asynchronous handler to be called with the submit response.
+   * @return The client.
+   */
+  public Client submit(String address, SubmitRequest request, Handler<AsyncResult<SubmitResponse>> resultHandler) {
     return submit(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
-  @Override
-  public RaftClient submit(String address, SubmitRequest request, long timeout,
+  /**
+   * Sends a submit request to a service.
+   * 
+   * @param address The address to which to send the request.
+   * @param request The request to send.
+   * @param timeout The request/response timeout.
+   * @param resultHandler An asynchronous handler to be called with the submit response.
+   * @return The client.
+   */
+  public Client submit(String address, SubmitRequest request, long timeout,
       Handler<AsyncResult<SubmitResponse>> resultHandler) {
     final Future<SubmitResponse> future = new DefaultFutureResult<SubmitResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
@@ -245,31 +332,51 @@ public class DefaultRaftClient implements RaftClient {
     return this;
   }
 
-  @Override
-  public RaftClient submitHandler(Handler<SubmitRequest> handler) {
+  /**
+   * Registers a submit request handler.
+   * 
+   * @param handler A submit request handler.
+   * @return The client.
+   */
+  public Client submitHandler(Handler<SubmitRequest> handler) {
     submitHandler = handler;
     return this;
   }
 
-  @Override
-  public RaftClient start() {
+  /**
+   * Starts the client.
+   * 
+   * @return The client.
+   */
+  public Client start() {
     start(null);
     return this;
   }
 
-  @Override
-  public RaftClient start(Handler<AsyncResult<Void>> doneHandler) {
-    running = true;
+  /**
+   * Starts the client.
+   * 
+   * @param doneHandler An asynchronous handler to be called once the client is started.
+   * @return The replica client.
+   */
+  public Client start(Handler<AsyncResult<Void>> doneHandler) {
     vertx.eventBus().registerHandler(address, messageHandler, doneHandler);
+    running = true;
     return this;
   }
 
-  @Override
+  /**
+   * Stops the client.
+   */
   public void stop() {
     stop(null);
   }
 
-  @Override
+  /**
+   * Stops the client.
+   * 
+   * @param doneHandler An asynchronous handler to be called once the client is stopped.
+   */
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
     vertx.eventBus().unregisterHandler(address, messageHandler, doneHandler);
     running = false;

@@ -25,7 +25,7 @@ import org.vertx.java.core.Handler;
  * 
  * @author Jordan Halterman
  */
-public class StateLock {
+class StateLock {
   private final Queue<Handler<Void>> handlers = new ArrayDeque<>();
   private boolean locked;
 

@@ -32,7 +32,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  * 
  * @author Jordan Halterman
  */
-public class Candidate extends BaseState {
+class Candidate extends State {
   private static final Logger logger = LoggerFactory.getLogger(Candidate.class);
   private final StateLock lock = new StateLock();
   private Majority majority;
@@ -89,7 +89,7 @@ public class Candidate extends BaseState {
             public void handle(AsyncResult<Entry> result) {
               if (result.succeeded() && result.result() != null) {
                 final long lastTerm = result.result().term();
-                endpoint.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm),
+                client.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm),
                     new Handler<AsyncResult<PollResponse>>() {
                       @Override
                       public void handle(AsyncResult<PollResponse> result) {

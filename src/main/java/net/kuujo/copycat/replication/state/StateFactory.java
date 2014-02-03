@@ -20,7 +20,7 @@ package net.kuujo.copycat.replication.state;
  * 
  * @author Jordan Halterman
  */
-public class StateFactory {
+class StateFactory {
 
   /**
    * Creates a new start state.
