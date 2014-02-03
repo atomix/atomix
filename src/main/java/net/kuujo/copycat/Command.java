@@ -135,7 +135,7 @@ public interface Command {
   public JsonObject args();
 
   /**
-   * Frees the command from the log.
+   * Frees the command from the log to which it belongs.
    */
   public void free();
 

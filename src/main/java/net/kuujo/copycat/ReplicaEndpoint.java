@@ -19,7 +19,11 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
 /**
- * A service endpoint.
+ * The replica endpoint serves as an event bus interface for replicas. You can
+ * use endpoints to bind multiple replicas to the same event bus address in
+ * order to make the cluster behave like a singular system. To execute commands
+ * via a replica endpoint, simply send the <code>command</code> name and any
+ * additional command arguments to the endpoint address.
  * 
  * @author Jordan Halterman
  */
@@ -29,21 +33,21 @@ public interface ReplicaEndpoint {
    * Sets the endpoint address.
    * 
    * @param address The service endpoint address.
-   * @return The service endpoint.
+   * @return The replica endpoint.
    */
   ReplicaEndpoint setAddress(String address);
 
   /**
    * Returns the endpoint address.
    * 
-   * @return The service endpoint address.
+   * @return The replica endpoint address.
    */
   String getAddress();
 
   /**
    * Starts the endpoint.
    * 
-   * @return The service endpoint.
+   * @return The replica endpoint.
    */
   ReplicaEndpoint start();
 
@@ -52,7 +56,7 @@ public interface ReplicaEndpoint {
    * 
    * @param doneHandler An asynchronous handler to be called once the endpoint has
    *          started.
-   * @return The service endpoint.
+   * @return The replica endpoint.
    */
   ReplicaEndpoint start(Handler<AsyncResult<Void>> doneHandler);
 

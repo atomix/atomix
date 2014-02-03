@@ -52,6 +52,11 @@ public class SubmitResponse extends Response {
     return serializer.serialize(response);
   }
 
+  /**
+   * Returns the command result.
+   *
+   * @return The command execution result.
+   */
   @SuppressWarnings("unchecked")
   public Object result() {
     if (result instanceof Map) {

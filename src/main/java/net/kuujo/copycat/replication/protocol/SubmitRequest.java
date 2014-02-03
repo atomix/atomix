@@ -54,10 +54,20 @@ public class SubmitRequest extends Request {
     return this;
   }
 
+  /**
+   * Returns the request command.
+   *
+   * @return The command being submitted.
+   */
   public Command command() {
     return command;
   }
 
+  /**
+   * Responds to the request.
+   *
+   * @param result The command execution result.
+   */
   public void reply(Object result) {
     if (result != null) {
       message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putValue("result", result)));

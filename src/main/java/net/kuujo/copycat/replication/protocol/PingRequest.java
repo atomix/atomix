@@ -64,10 +64,20 @@ public class PingRequest extends Request {
     return term;
   }
 
+  /**
+   * Returns the requesting node's current leader.
+   *
+   * @return The requesting node's current known leader.
+   */
   public String leader() {
     return leader;
   }
 
+  /**
+   * Replies to the request.
+   *
+   * @param term The responding node's current term.
+   */
   public void reply(long term) {
     reply(new JsonObject().putNumber("term", term));
   }

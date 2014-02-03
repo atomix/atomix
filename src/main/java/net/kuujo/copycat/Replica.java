@@ -69,32 +69,32 @@ public interface Replica {
   ClusterConfig getClusterConfig();
 
   /**
-   * Sets the node election timeout.
+   * Sets the replica election timeout.
    * 
    * @param timeout The election timeout.
-   * @return The node instance.
+   * @return The replica instance.
    */
   Replica setElectionTimeout(long timeout);
 
   /**
-   * Returns the node election timeout.
+   * Returns the replica election timeout.
    * 
    * @return The election timeout.
    */
   long getElectionTimeout();
 
   /**
-   * Sets the node heartbeat interval.
+   * Sets the replica heartbeat interval.
    * 
    * @param interval The interval at which the node should send heartbeat messages.
-   * @return The node instance.
+   * @return The replica instance.
    */
   Replica setHeartbeatInterval(long interval);
 
   /**
-   * Returns the node heartbeat interval.
+   * Returns the replica heartbeat interval.
    * 
-   * @return The node heartbeat interval.
+   * @return The replica heartbeat interval.
    */
   long getHeartbeatInterval();
 
@@ -165,7 +165,7 @@ public interface Replica {
    * Sets the replicated log.
    * 
    * @param log The node's replicated log.
-   * @return The node instance.
+   * @return The replica instance.
    */
   Replica setLog(Log log);
 
@@ -181,7 +181,7 @@ public interface Replica {
    * 
    * @param commandName The command name.
    * @param function The command function.
-   * @return The node instance.
+   * @return The replica instance.
    */
   <R> Replica registerCommand(String commandName, Function<Command, R> function);
 
@@ -191,7 +191,7 @@ public interface Replica {
    * @param commandName The command name.
    * @param type The command type.
    * @param function The command function.
-   * @return The node instance.
+   * @return The replica instance.
    */
   <R> Replica registerCommand(String commandName, Command.Type type, Function<Command, R> function);
 
@@ -199,15 +199,15 @@ public interface Replica {
    * Unregisters a state machine command.
    * 
    * @param commandName The command name.
-   * @return The node instance.
+   * @return The replica instance.
    */
   Replica unregisterCommand(String commandName);
 
   /**
    * Submits a command to the replication service.
    * 
-   * @param command The command to submit.
-   * @param args The command arguments.
+   * @param command The name of the command to submit.
+   * @param args An object of arguments required by the command implementation.
    * @param resultHandler An asynchronous handler to be called with the command result.
    * @return The replica.
    */
@@ -216,28 +216,28 @@ public interface Replica {
   /**
    * Starts the node.
    * 
-   * @return The node instance.
+   * @return The replica instance.
    */
   Replica start();
 
   /**
    * Starts the node.
    * 
-   * @param doneHandler An asynchronous handler to be called once the node has been
+   * @param doneHandler An asynchronous handler to be called once the replica has been
    *          started.
-   * @return The node instance.
+   * @return The replica instance.
    */
   Replica start(Handler<AsyncResult<Void>> doneHandler);
 
   /**
-   * Stops the node.
+   * Stops the replica.
    */
   void stop();
 
   /**
-   * Stops the node.
+   * Stops the replica.
    * 
-   * @param doneHandler An asynchronous handler to be called once the node has been
+   * @param doneHandler An asynchronous handler to be called once the replica has been
    *          stopped.
    */
   void stop(Handler<AsyncResult<Void>> doneHandler);

@@ -103,9 +103,9 @@ public class SyncRequest extends Request {
   }
 
   /**
-   * Returns the log entry to append.
+   * Returns the log entries to append.
    * 
-   * @return A log entry.
+   * @return A list of log entries.
    */
   public List<Entry> entries() {
     return entries;
