@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.state;
+package net.kuujo.copycat.state;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import net.kuujo.copycat.Command;
+import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogVisitor;
 import net.kuujo.copycat.log.Entry.Type;
-import net.kuujo.copycat.replication.StateMachine;
-import net.kuujo.copycat.replication.protocol.PingRequest;
-import net.kuujo.copycat.replication.protocol.PollRequest;
-import net.kuujo.copycat.replication.protocol.SubmitRequest;
-import net.kuujo.copycat.replication.protocol.SubmitResponse;
-import net.kuujo.copycat.replication.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -56,8 +56,8 @@ public class StateContext {
   private final StateFactory stateFactory = new StateFactory();
   private StateType stateType;
   private State state;
-  private Handler<Void> electionHandler;
-  private List<Handler<String>> transitionHandlers = new ArrayList<>();
+  private Handler<StateType> transitionHandler;
+  private List<Handler<String>> leaderHandlers = new ArrayList<>();
   private long electionTimeout = 2500;
   private long heartbeatInterval = 1000;
   private boolean useAdaptiveTimeouts = true;
@@ -126,7 +126,7 @@ public class StateContext {
    * @return The state context.
    */
   public StateContext transition(StateType type, Handler<String> doneHandler) {
-    transitionHandlers.add(doneHandler);
+    leaderHandlers.add(doneHandler);
     return transition(type);
   }
 
@@ -184,6 +184,8 @@ public class StateContext {
         break;
     }
 
+    final State newState = state;
+
     if (oldState != null) {
       if (oldStateType.equals(StateType.START)) {
         oldState.shutDown(new Handler<Void>() {
@@ -203,20 +205,10 @@ public class StateContext {
               @Override
               public void handle(AsyncResult<Void> result) {
                 if (result.succeeded()) {
-                  state.startUp(new Handler<Void>() {
+                  newState.startUp(new Handler<Void>() {
                     @Override
                     public void handle(Void _) {
-                      registerHandlers(state);
-                      started = true;
-                      if (currentLeader != null) {
-                        for (Handler<String> handler : transitionHandlers) {
-                          handler.handle(currentLeader);
-                        }
-                        transitionHandlers.clear();
-                      }
-                      if (type.equals(StateType.LEADER) && electionHandler != null) {
-                        electionHandler.handle((Void) null);
-                      }
+                      finishTransition(newState, type);
                     }
                   });
                 }
@@ -233,20 +225,10 @@ public class StateContext {
           @Override
           public void handle(Void result) {
             unregisterHandlers();
-            state.startUp(new Handler<Void>() {
+            newState.startUp(new Handler<Void>() {
               @Override
               public void handle(Void result) {
-                registerHandlers(state);
-                started = true;
-                if (currentLeader != null) {
-                  for (Handler<String> handler : transitionHandlers) {
-                    handler.handle(currentLeader);
-                  }
-                  transitionHandlers.clear();
-                }
-                if (type.equals(StateType.LEADER) && electionHandler != null) {
-                  electionHandler.handle((Void) null);
-                }
+                finishTransition(newState, type);
               }
             });
           }
@@ -257,21 +239,25 @@ public class StateContext {
       state.startUp(new Handler<Void>() {
         @Override
         public void handle(Void result) {
-          registerHandlers(state);
-          started = true;
-          if (currentLeader != null) {
-            for (Handler<String> handler : transitionHandlers) {
-              handler.handle(currentLeader);
-            }
-            transitionHandlers.clear();
-          }
-          if (type.equals(StateType.LEADER) && electionHandler != null) {
-            electionHandler.handle((Void) null);
-          }
+          finishTransition(newState, type);
         }
       });
     }
     return this;
+  }
+
+  private void finishTransition(final State state, final StateType type) {
+    registerHandlers(state);
+    started = true;
+    if (currentLeader != null) {
+      for (Handler<String> handler : leaderHandlers) {
+        handler.handle(currentLeader);
+      }
+      leaderHandlers.clear();
+    }
+    if (transitionHandler != null) {
+      transitionHandler.handle(type);
+    }
   }
 
   private void registerHandlers(final State state) {
@@ -306,6 +292,15 @@ public class StateContext {
     client.syncHandler(null);
     client.pollHandler(null);
     client.submitHandler(null);
+  }
+
+  /**
+   * Returns the current state type.
+   *
+   * @return The current state type.
+   */
+  public StateType currentState() {
+    return stateType;
   }
 
   /**
@@ -378,13 +373,13 @@ public class StateContext {
   }
 
   /**
-   * Registers an election handler.
+   * Registers a state transition handler.
    *
-   * @param handler A handler to be called when the state transitions to leader.
+   * @param handler A handler to be called when the state transitions.
    * @return The state context.
    */
-  public StateContext electionHandler(Handler<Void> handler) {
-    electionHandler = handler;
+  public StateContext transitionHandler(Handler<StateType> handler) {
+    transitionHandler = handler;
     return this;
   }
 
@@ -532,10 +527,10 @@ public class StateContext {
   public StateContext currentLeader(String address) {
     currentLeader = address;
     if (started) {
-      for (Handler<String> handler : transitionHandlers) {
+      for (Handler<String> handler : leaderHandlers) {
         handler.handle(address);
       }
-      transitionHandlers.clear();
+      leaderHandlers.clear();
     }
     return this;
   }

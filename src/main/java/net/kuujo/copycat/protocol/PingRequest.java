@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.protocol;
+package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.serializer.Serializer;
 
@@ -21,31 +21,38 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 /**
- * A ping response.
+ * A ping request.
  * 
  * @author Jordan Halterman
  */
-public class PingResponse extends Response {
+public class PingRequest extends Request {
   private static final Serializer serializer = Serializer.getInstance();
   private long term;
+  private String leader;
 
-  public PingResponse() {
+  public PingRequest() {
   }
 
-  public PingResponse(long term) {
+  public PingRequest(long term, String leader) {
     this.term = term;
+    this.leader = leader;
   }
 
-  public static PingResponse fromJson(JsonObject json) {
-    return serializer.deserialize(json, PingResponse.class);
+  public static PingRequest fromJson(JsonObject json) {
+    return serializer.deserialize(json, PingRequest.class);
   }
 
-  public static PingResponse fromJson(Message<JsonObject> message) {
-    return serializer.deserialize(message.body(), PingResponse.class);
+  public static PingRequest fromJson(JsonObject json, Message<JsonObject> message) {
+    return serializer.deserialize(json, PingRequest.class).setMessage(message);
   }
 
-  public static JsonObject toJson(PingResponse response) {
-    return serializer.serialize(response);
+  public static JsonObject toJson(PingRequest request) {
+    return serializer.serialize(request);
+  }
+
+  private PingRequest setMessage(Message<JsonObject> message) {
+    this.message = message;
+    return this;
   }
 
   /**
@@ -55,6 +62,24 @@ public class PingResponse extends Response {
    */
   public long term() {
     return term;
+  }
+
+  /**
+   * Returns the requesting node's current leader.
+   *
+   * @return The requesting node's current known leader.
+   */
+  public String leader() {
+    return leader;
+  }
+
+  /**
+   * Replies to the request.
+   *
+   * @param term The responding node's current term.
+   */
+  public void reply(long term) {
+    reply(new JsonObject().putNumber("term", term));
   }
 
 }

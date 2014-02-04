@@ -21,6 +21,7 @@ import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.state.StateType;
 
 /**
  * The replica is the primary interface for creating fault-tolerant services
@@ -177,12 +178,33 @@ public interface Replica {
   Log getLog();
 
   /**
-   * Registers a handler to be called when the replica is elected leader.
+   * Registers a handler to be called when the replica transitions to a new state.
    *
-   * @param handler A handler to be called when the replica is elected leader.
+   * @param handler A handler to be called when the replica transitions to a new state.
    * @return The replica instance.
    */
-  Replica electionHandler(Handler<Void> handler);
+  Replica transitionHandler(Handler<StateType> handler);
+
+  /**
+   * Returns a boolean indicating whether the replica is a follower.
+   *
+   * @return Indicates whether the replica is a follower.
+   */
+  boolean isFollower();
+
+  /**
+   * Returns a boolean indicating whether the replica is a candidate.
+   *
+   * @return Indicates whether the replica is a candidate.
+   */
+  boolean isCandidate();
+
+  /**
+   * Returns a boolean indicating whether the replica is a leader.
+   *
+   * @return Indicates whether the replica is a leader.
+   */
+  boolean isLeader();
 
   /**
    * Registers a state machine command.

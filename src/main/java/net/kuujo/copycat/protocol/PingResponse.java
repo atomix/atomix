@@ -13,59 +13,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.protocol;
+package net.kuujo.copycat.protocol;
+
+import net.kuujo.copycat.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.serializer.Serializer;
-
 /**
- * A poll response.
+ * A ping response.
  * 
  * @author Jordan Halterman
  */
-public class PollResponse extends Response {
+public class PingResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
   private long term;
-  private boolean voteGranted;
 
-  public PollResponse() {
+  public PingResponse() {
   }
 
-  public PollResponse(long term, boolean voteGranted) {
+  public PingResponse(long term) {
     this.term = term;
-    this.voteGranted = voteGranted;
   }
 
-  public static PollResponse fromJson(JsonObject json) {
-    return serializer.deserialize(json, PollResponse.class);
+  public static PingResponse fromJson(JsonObject json) {
+    return serializer.deserialize(json, PingResponse.class);
   }
 
-  public static PollResponse fromJson(Message<JsonObject> message) {
-    return serializer.deserialize(message.body(), PollResponse.class);
+  public static PingResponse fromJson(Message<JsonObject> message) {
+    return serializer.deserialize(message.body(), PingResponse.class);
   }
 
-  public static JsonObject toJson(PollResponse response) {
+  public static JsonObject toJson(PingResponse response) {
     return serializer.serialize(response);
   }
 
   /**
-   * Returns the responding node's current term.
+   * Returns the requesting node's current term.
    * 
-   * @return The responding node's current term.
+   * @return The requesting node's current term.
    */
   public long term() {
     return term;
-  }
-
-  /**
-   * Returns a boolean indicating whether the vote was granted.
-   * 
-   * @return Indicates whether the vote was granted.
-   */
-  public boolean voteGranted() {
-    return voteGranted;
   }
 
 }

@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.state;
+package net.kuujo.copycat.state;
 
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.Entry.Type;
-import net.kuujo.copycat.replication.StateMachine;
-import net.kuujo.copycat.replication.protocol.PingRequest;
-import net.kuujo.copycat.replication.protocol.PollRequest;
-import net.kuujo.copycat.replication.protocol.SubmitRequest;
-import net.kuujo.copycat.replication.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SyncRequest;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;

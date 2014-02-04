@@ -13,59 +13,59 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.protocol;
-
-import net.kuujo.copycat.serializer.Serializer;
+package net.kuujo.copycat.protocol;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
+import net.kuujo.copycat.serializer.Serializer;
+
 /**
- * A sync response.
+ * A poll response.
  * 
  * @author Jordan Halterman
  */
-public class SyncResponse extends Response {
+public class PollResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
   private long term;
-  private boolean success;
+  private boolean voteGranted;
 
-  public SyncResponse() {
+  public PollResponse() {
   }
 
-  public SyncResponse(long term, boolean success) {
+  public PollResponse(long term, boolean voteGranted) {
     this.term = term;
-    this.success = success;
+    this.voteGranted = voteGranted;
   }
 
-  public static SyncResponse fromJson(JsonObject json) {
-    return serializer.deserialize(json, SyncResponse.class);
+  public static PollResponse fromJson(JsonObject json) {
+    return serializer.deserialize(json, PollResponse.class);
   }
 
-  public static SyncResponse fromJson(Message<JsonObject> message) {
-    return serializer.deserialize(message.body(), SyncResponse.class);
+  public static PollResponse fromJson(Message<JsonObject> message) {
+    return serializer.deserialize(message.body(), PollResponse.class);
   }
 
-  public static JsonObject toJson(SyncResponse response) {
+  public static JsonObject toJson(PollResponse response) {
     return serializer.serialize(response);
   }
 
   /**
-   * Returns the requesting node's current term.
+   * Returns the responding node's current term.
    * 
-   * @return The requesting node's current term.
+   * @return The responding node's current term.
    */
   public long term() {
     return term;
   }
 
   /**
-   * Returns a boolean indicating whether the sync was successful.
+   * Returns a boolean indicating whether the vote was granted.
    * 
-   * @return Indicates whether the sync was successful.
+   * @return Indicates whether the vote was granted.
    */
-  public boolean success() {
-    return success;
+  public boolean voteGranted() {
+    return voteGranted;
   }
 
 }

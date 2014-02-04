@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.protocol;
+package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.serializer.Serializer;
 
@@ -21,38 +21,33 @@ import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 /**
- * A ping request.
+ * A sync response.
  * 
  * @author Jordan Halterman
  */
-public class PingRequest extends Request {
+public class SyncResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
   private long term;
-  private String leader;
+  private boolean success;
 
-  public PingRequest() {
+  public SyncResponse() {
   }
 
-  public PingRequest(long term, String leader) {
+  public SyncResponse(long term, boolean success) {
     this.term = term;
-    this.leader = leader;
+    this.success = success;
   }
 
-  public static PingRequest fromJson(JsonObject json) {
-    return serializer.deserialize(json, PingRequest.class);
+  public static SyncResponse fromJson(JsonObject json) {
+    return serializer.deserialize(json, SyncResponse.class);
   }
 
-  public static PingRequest fromJson(JsonObject json, Message<JsonObject> message) {
-    return serializer.deserialize(json, PingRequest.class).setMessage(message);
+  public static SyncResponse fromJson(Message<JsonObject> message) {
+    return serializer.deserialize(message.body(), SyncResponse.class);
   }
 
-  public static JsonObject toJson(PingRequest request) {
-    return serializer.serialize(request);
-  }
-
-  private PingRequest setMessage(Message<JsonObject> message) {
-    this.message = message;
-    return this;
+  public static JsonObject toJson(SyncResponse response) {
+    return serializer.serialize(response);
   }
 
   /**
@@ -65,21 +60,12 @@ public class PingRequest extends Request {
   }
 
   /**
-   * Returns the requesting node's current leader.
-   *
-   * @return The requesting node's current known leader.
+   * Returns a boolean indicating whether the sync was successful.
+   * 
+   * @return Indicates whether the sync was successful.
    */
-  public String leader() {
-    return leader;
-  }
-
-  /**
-   * Replies to the request.
-   *
-   * @param term The responding node's current term.
-   */
-  public void reply(long term) {
-    reply(new JsonObject().putNumber("term", term));
+  public boolean success() {
+    return success;
   }
 
 }

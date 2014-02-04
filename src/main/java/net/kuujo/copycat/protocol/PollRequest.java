@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.protocol;
+package net.kuujo.copycat.protocol;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;

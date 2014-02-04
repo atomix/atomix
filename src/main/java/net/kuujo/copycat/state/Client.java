@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.state;
+package net.kuujo.copycat.state;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -24,14 +24,14 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.eventbus.Message;
 
-import net.kuujo.copycat.replication.protocol.PingRequest;
-import net.kuujo.copycat.replication.protocol.PingResponse;
-import net.kuujo.copycat.replication.protocol.PollRequest;
-import net.kuujo.copycat.replication.protocol.PollResponse;
-import net.kuujo.copycat.replication.protocol.SubmitRequest;
-import net.kuujo.copycat.replication.protocol.SubmitResponse;
-import net.kuujo.copycat.replication.protocol.SyncRequest;
-import net.kuujo.copycat.replication.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 
 /**
  * A default service.

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.replication.protocol;
+package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.serializer.Serializer;

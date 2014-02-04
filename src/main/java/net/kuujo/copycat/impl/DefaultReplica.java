@@ -27,12 +27,13 @@ import org.vertx.java.core.json.JsonObject;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Function;
 import net.kuujo.copycat.Replica;
+import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.Command.Type;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.MemoryLog;
-import net.kuujo.copycat.replication.StateMachine;
-import net.kuujo.copycat.replication.state.StateContext;
+import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.StateType;
 
 /**
  * A default replica implementation.
@@ -180,9 +181,24 @@ public class DefaultReplica implements Replica {
   }
 
   @Override
-  public Replica electionHandler(Handler<Void> handler) {
-    state.electionHandler(handler);
+  public Replica transitionHandler(Handler<StateType> handler) {
+    state.transitionHandler(handler);
     return this;
+  }
+
+  @Override
+  public boolean isFollower() {
+    return state.currentState().equals(StateType.FOLLOWER);
+  }
+
+  @Override
+  public boolean isCandidate() {
+    return state.currentState().equals(StateType.CANDIDATE);
+  }
+
+  @Override
+  public boolean isLeader() {
+    return state.currentState().equals(StateType.LEADER);
   }
 
   @Override
