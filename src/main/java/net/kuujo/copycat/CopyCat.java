@@ -93,6 +93,20 @@ public class CopyCat {
   }
 
   /**
+   * Creates a new cluster controller.
+   *
+   * @param broadcastAddress
+   *   The cluster broadcast address.
+   * @param replica
+   *   The local replica.
+   * @return
+   *   The cluster controller.
+   */
+  public ClusterController createCluster(String broadcastAddress, Replica replica) {
+    return new DefaultClusterController(replica.getAddress(), broadcastAddress, vertx);
+  }
+
+  /**
    * Creates a new service instance.
    *
    * @return A new service instance.
