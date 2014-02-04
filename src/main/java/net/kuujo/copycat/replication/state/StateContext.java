@@ -87,7 +87,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setAddress(String address) {
+  public StateContext address(String address) {
     client.setAddress(address);
     return this;
   }
@@ -350,7 +350,7 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext setLog(Log log) {
+  public StateContext log(Log log) {
     this.log = log;
     if (state != null) {
       state.setLog(log);
@@ -365,22 +365,6 @@ public class StateContext {
    */
   public Log log() {
     return log;
-  }
-
-  /**
-   * Sets the state log.
-   *
-   * @param log
-   *   The log.
-   * @return
-   *   The state context.
-   */
-  public StateContext log(Log log) {
-    this.log = log;
-    if (state != null) {
-      state.setLog(log);
-    }
-    return this;
   }
 
   /**

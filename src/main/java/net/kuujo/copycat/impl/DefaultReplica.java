@@ -82,7 +82,7 @@ public class DefaultReplica implements Replica {
 
   @Override
   public Replica setAddress(String address) {
-    state.setAddress(address);
+    state.address(address);
     return this;
   }
 
@@ -170,7 +170,7 @@ public class DefaultReplica implements Replica {
 
   @Override
   public Replica setLog(Log log) {
-    state.setLog(log);
+    state.log(log);
     return this;
   }
 

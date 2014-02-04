@@ -536,6 +536,8 @@ class Leader extends State implements Observer {
     private final String address;
     private long nextIndex;
     private long matchIndex;
+    private long lastSyncTime;
+    private long lastPingTime;
     private boolean running;
     private boolean shutdown;
     private final Map<Long, Future<Void>> futures = new HashMap<>();
@@ -650,10 +652,14 @@ class Leader extends State implements Observer {
         }
       }
 
-      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex), new Handler<AsyncResult<SyncResponse>>() {
+      final long startTime = System.currentTimeMillis();
+      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex),
+          context.useAdaptiveTimeouts() ? (lastSyncTime > 0 ? (long) (lastSyncTime * context.adaptiveTimeoutThreshold()) : context.heartbeatInterval() / 2) : context.heartbeatInterval() / 2,
+              new Handler<AsyncResult<SyncResponse>>() {
         @Override
         public void handle(AsyncResult<SyncResponse> result) {
           if (result.succeeded()) {
+            lastSyncTime = System.currentTimeMillis() - startTime;
             if (result.result().success()) {
               logger.info(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
               nextIndex += entries.size();
@@ -703,10 +709,14 @@ class Leader extends State implements Observer {
     private void ping(final Handler<AsyncResult<Void>> doneHandler) {
       if (!!shutdown) {
         final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-        client.ping(address, new PingRequest(context.currentTerm(), context.address()), context.heartbeatInterval(), new Handler<AsyncResult<PingResponse>>() {
+        final long startTime = System.currentTimeMillis();
+        client.ping(address, new PingRequest(context.currentTerm(), context.address()),
+            context.useAdaptiveTimeouts() ? (lastPingTime > 0 ? (long) (lastPingTime * context.adaptiveTimeoutThreshold()) : context.heartbeatInterval() / 2) : context.heartbeatInterval() / 2,
+                new Handler<AsyncResult<PingResponse>>() {
           @Override
           public void handle(AsyncResult<PingResponse> result) {
             if (result.succeeded()) {
+              lastPingTime = System.currentTimeMillis() - startTime;
               if (result.result().term() > context.currentTerm()) {
                 context.transition(StateType.FOLLOWER);
               }
