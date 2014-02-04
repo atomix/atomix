@@ -56,6 +56,7 @@ public class StateContext {
   private final StateFactory stateFactory = new StateFactory();
   private StateType stateType;
   private State state;
+  private Handler<Void> electionHandler;
   private List<Handler<String>> transitionHandlers = new ArrayList<>();
   private long electionTimeout = 2500;
   private long heartbeatInterval = 1000;
@@ -135,7 +136,7 @@ public class StateContext {
    * @param type The new state type.
    * @return The state context.
    */
-  public StateContext transition(StateType type) {
+  public StateContext transition(final StateType type) {
     if (type.equals(stateType))
       return this;
     logger.info(address() + " transitioning to " + type.getName());
@@ -213,6 +214,9 @@ public class StateContext {
                         }
                         transitionHandlers.clear();
                       }
+                      if (type.equals(StateType.LEADER) && electionHandler != null) {
+                        electionHandler.handle((Void) null);
+                      }
                     }
                   });
                 }
@@ -240,6 +244,9 @@ public class StateContext {
                   }
                   transitionHandlers.clear();
                 }
+                if (type.equals(StateType.LEADER) && electionHandler != null) {
+                  electionHandler.handle((Void) null);
+                }
               }
             });
           }
@@ -257,6 +264,9 @@ public class StateContext {
               handler.handle(currentLeader);
             }
             transitionHandlers.clear();
+          }
+          if (type.equals(StateType.LEADER) && electionHandler != null) {
+            electionHandler.handle((Void) null);
           }
         }
       });
@@ -365,6 +375,17 @@ public class StateContext {
    */
   public Log log() {
     return log;
+  }
+
+  /**
+   * Registers an election handler.
+   *
+   * @param handler A handler to be called when the state transitions to leader.
+   * @return The state context.
+   */
+  public StateContext electionHandler(Handler<Void> handler) {
+    electionHandler = handler;
+    return this;
   }
 
   /**

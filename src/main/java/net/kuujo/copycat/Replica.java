@@ -177,6 +177,14 @@ public interface Replica {
   Log getLog();
 
   /**
+   * Registers a handler to be called when the replica is elected leader.
+   *
+   * @param handler A handler to be called when the replica is elected leader.
+   * @return The replica instance.
+   */
+  Replica electionHandler(Handler<Void> handler);
+
+  /**
    * Registers a state machine command.
    * 
    * @param commandName The command name.

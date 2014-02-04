@@ -180,6 +180,12 @@ public class DefaultReplica implements Replica {
   }
 
   @Override
+  public Replica electionHandler(Handler<Void> handler) {
+    state.electionHandler(handler);
+    return this;
+  }
+
+  @Override
   public Replica start() {
     state.start();
     return this;
