@@ -202,6 +202,11 @@ public class DefaultReplica implements Replica {
   }
 
   @Override
+  public String getCurrentLeader() {
+    return state.currentLeader();
+  }
+
+  @Override
   public Replica start() {
     state.start();
     return this;

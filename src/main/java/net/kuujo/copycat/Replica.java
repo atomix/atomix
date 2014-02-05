@@ -207,6 +207,13 @@ public interface Replica {
   boolean isLeader();
 
   /**
+   * Returns the current leader address.
+   *
+   * @return The current leader's address/
+   */
+  String getCurrentLeader();
+
+  /**
    * Registers a state machine command.
    * 
    * @param commandName The command name.
