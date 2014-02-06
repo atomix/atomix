@@ -522,12 +522,12 @@ class Leader extends State implements Observer {
     Collections.sort(replicas, new Comparator<Replica>() {
       @Override
       public int compare(Replica o1, Replica o2) {
-        return Long.compare(o1.matchIndex, o2.matchIndex);
+        return Long.compare(o1.nextIndex-1, o2.nextIndex-1);
       }
     });
 
     int middle = (int) Math.ceil(replicas.size() / 2);
-    context.commitIndex(replicas.get(middle).matchIndex);
+    context.commitIndex(replicas.get(middle).nextIndex-1);
     log.floor(Math.min(context.commitIndex(), context.lastApplied()));
   }
 

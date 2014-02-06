@@ -20,8 +20,10 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.Command;
@@ -214,7 +216,18 @@ public class DefaultReplica implements Replica {
 
   @Override
   public Replica start(Handler<AsyncResult<Void>> doneHandler) {
-    state.start(doneHandler);
+    final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
+    state.start(new Handler<AsyncResult<String>>() {
+      @Override
+      public void handle(AsyncResult<String> result) {
+        if (result.failed()) {
+          future.setFailure(result.cause());
+        }
+        else {
+          future.setResult((Void) null);
+        }
+      }
+    });
     return this;
   }
 

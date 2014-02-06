@@ -261,7 +261,7 @@ abstract class State {
           // If we failed to load the entry then fail the request. It should
           // be retried.
           if (result.failed()) {
-            new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+            new DefaultFutureResult<Boolean>(result.cause()).setHandler(doneHandler);
           }
           // If the log does not contain an entry at this index then this
           // indicates no conflict, append the new entry.
@@ -273,7 +273,7 @@ abstract class State {
                 // request.
                 // Once the entry has been appended no more failures occur.
                 if (result.failed()) {
-                  new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                  new DefaultFutureResult<Boolean>(result.cause()).setHandler(doneHandler);
                 }
                 // Once the new entry has been appended, continue on to
                 // append the next entry.
@@ -293,7 +293,7 @@ abstract class State {
               @Override
               public void handle(AsyncResult<Void> result) {
                 if (result.failed()) {
-                  new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                  new DefaultFutureResult<Boolean>(result.cause()).setHandler(doneHandler);
                 }
                 // Finally, append the entry to the local log.
                 else {
@@ -304,7 +304,7 @@ abstract class State {
                       // request.
                       // Once the entry has been appended no more failures occur.
                       if (result.failed()) {
-                        new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                        new DefaultFutureResult<Boolean>(result.cause()).setHandler(doneHandler);
                       }
                       // Once the new entry has been appended, continue on to
                       // append the next entry.
@@ -351,7 +351,7 @@ abstract class State {
 
       // If the updated commit index indicates that commits remain to be
       // applied to the state machine, iterate entries and apply them.
-      if (context.commitIndex() > context.lastApplied()) {
+      if (context.commitIndex() > Math.min(context.lastApplied(), lastIndex)) {
         // Set the log floor. This indicates the minimum log entry that is
         // required to remain persisted. Log entries that have not yet been
         // applied to the state machine cannot be removed from the log.
@@ -362,7 +362,7 @@ abstract class State {
     // Otherwise, check whether the current term needs to be updated and reply
     // true to the sync request.
     else {
-      new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
+      new DefaultFutureResult<Boolean>(true).setHandler(doneHandler);
     }
   }
 
@@ -371,49 +371,52 @@ abstract class State {
    */
   private void recursiveApplyCommits(final long index, final long ceiling, final SyncRequest request,
       final Handler<AsyncResult<Boolean>> doneHandler) {
-    // Load the log entry to be committed to the state machine.
-    log.entry(index, new Handler<AsyncResult<Entry>>() {
-      @Override
-      public void handle(AsyncResult<Entry> result) {
-        // If loading an entry fails, simply return true to the sync request.
-        // We don't want to continue on to apply entries out of order.
-        // The local state will maintain that the entry was never applied to
-        // the state machine, and eventually it will attempt to apply the entry
-        // on the next sync request.
-        if (result.failed()) {
-          new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(true);
+    if (index <= ceiling) {
+      // Load the log entry to be committed to the state machine.
+      log.entry(index, new Handler<AsyncResult<Entry>>() {
+        @Override
+        public void handle(AsyncResult<Entry> result) {
+          // If loading an entry fails, simply return true to the sync request.
+          // We don't want to continue on to apply entries out of order.
+          // The local state will maintain that the entry was never applied to
+          // the state machine, and eventually it will attempt to apply the entry
+          // on the next sync request.
+          if (result.failed()) {
+            new DefaultFutureResult<Boolean>(true).setHandler(doneHandler);
+          }
+          // If the entry was successfully loaded, apply it to the state machine.
+          else {
+            // If the entry type is a command, apply the entry to the state machine.
+            Entry entry = result.result();
+            if (entry == null) {
+              new DefaultFutureResult<Boolean>(true).setHandler(doneHandler);
+            }
+            else {
+              if (entry.type().equals(Type.COMMAND)) {
+                stateMachine.applyCommand(((CommandEntry) entry).command());
+              }
+  
+              // If this is a configuration entry, update cluster membership. Since the
+              // configuration was replicated to this node, it contains the *combined*
+              // cluster membership during two-phase cluster configuration changes, so it's
+              // safe to simply override the current cluster configuration.
+              else if (entry.type().equals(Type.CONFIGURATION)) {
+                members = ((ConfigurationEntry) entry).members();
+              }
+  
+              // Update the log floor to the last committed index (this index).
+              log.floor(index);
+  
+              // Continue on to apply the next commit.
+              recursiveApplyCommits(index + 1, ceiling, request, doneHandler);
+            }
+          }
         }
-        // If the entry was successfully loaded, apply it to the state machine.
-        else {
-          doApply(index, ceiling, request, result.result(), doneHandler);
-        }
-      }
-    });
-  }
-
-  /**
-   * Applies a single commit to the local state machine.
-   */
-  private void doApply(final long index, final long ceiling, final SyncRequest request, final Entry entry,
-      final Handler<AsyncResult<Boolean>> doneHandler) {
-    // If the entry type is a command, apply the entry to the state machine.
-    if (entry.type().equals(Type.COMMAND)) {
-      stateMachine.applyCommand(((CommandEntry) entry).command());
+      });
     }
-
-    // If this is a configuration entry, update cluster membership. Since the
-    // configuration was replicated to this node, it contains the *combined*
-    // cluster membership during two-phase cluster configuration changes, so it's
-    // safe to simply override the current cluster configuration.
-    else if (entry.type().equals(Type.CONFIGURATION)) {
-      members = ((ConfigurationEntry) entry).members();
+    else {
+      new DefaultFutureResult<Boolean>(true).setHandler(doneHandler);
     }
-
-    // Update the log floor to the last committed index (this index).
-    log.floor(index);
-
-    // Continue on to apply the next commit.
-    recursiveApplyCommits(index + 1, ceiling, request, doneHandler);
   }
 
   /**

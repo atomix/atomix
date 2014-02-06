@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat.state;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 import net.kuujo.copycat.Command;
+import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.CommandEntry;
@@ -33,7 +34,6 @@ import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
 
 import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultFutureResult;
@@ -46,6 +46,7 @@ import org.vertx.java.core.logging.impl.LoggerFactory;
  * @author Jordan Halterman
  */
 public class StateContext {
+  private static final int MAX_QUEUE_SIZE = 1000;
   private static final Logger logger = LoggerFactory.getLogger(StateContext.class);
   private final String address;
   private final Vertx vertx;
@@ -57,7 +58,8 @@ public class StateContext {
   private StateType stateType;
   private State state;
   private Handler<StateType> transitionHandler;
-  private List<Handler<String>> leaderHandlers = new ArrayList<>();
+  private Handler<AsyncResult<String>> startHandler;
+  private Queue<WrappedCommand<?>> commands = new ArrayDeque<WrappedCommand<?>>();
   private long electionTimeout = 2500;
   private long heartbeatInterval = 1000;
   private boolean useAdaptiveTimeouts = true;
@@ -69,7 +71,6 @@ public class StateContext {
   private String votedFor;
   private long commitIndex = 0;
   private long lastApplied = 0;
-  private boolean started;
 
   public StateContext(String address, Vertx vertx, StateMachine stateMachine, Log log) {
     this.address = address;
@@ -83,10 +84,8 @@ public class StateContext {
   /**
    * Sets the state address.
    *
-   * @param address
-   *   The state address.
-   * @return
-   *   The state context.
+   * @param address The state address.
+   * @return The state context.
    */
   public StateContext address(String address) {
     client.setAddress(address);
@@ -110,24 +109,10 @@ public class StateContext {
   /**
    * Returns the cluster configuration.
    *
-   * @return
-   *   The cluster configuration.
+   * @return The cluster configuration.
    */
   public ClusterConfig config() {
     return cluster;
-  }
-
-  /**
-   * Transitions to a new state.
-   * 
-   * @param type The new state type.
-   * @param doneHandler A handler to be called once the state transition is
-   *          complete and a new leader has been elected.
-   * @return The state context.
-   */
-  public StateContext transition(StateType type, Handler<String> doneHandler) {
-    leaderHandlers.add(doneHandler);
-    return transition(type);
   }
 
   /**
@@ -145,7 +130,6 @@ public class StateContext {
     stateType = type;
     switch (type) {
       case START:
-        started = false;
         currentLeader = null;
         state = stateFactory.createStart()
             .setVertx(vertx)
@@ -248,15 +232,16 @@ public class StateContext {
 
   private void finishTransition(final State state, final StateType type) {
     registerHandlers(state);
-    started = true;
-    if (currentLeader != null) {
-      for (Handler<String> handler : leaderHandlers) {
-        handler.handle(currentLeader);
-      }
-      leaderHandlers.clear();
-    }
     if (transitionHandler != null) {
       transitionHandler.handle(type);
+    }
+    checkStart();
+  }
+
+  private void checkStart() {
+    if (currentLeader != null && startHandler != null) {
+      new DefaultFutureResult<String>(currentLeader).setHandler(startHandler);
+      startHandler = null;
     }
   }
 
@@ -324,8 +309,7 @@ public class StateContext {
   /**
    * Returns the state machine.
    *
-   * @return
-   *   The state machine.
+   * @return The state machine.
    */
   public StateMachine stateMachine() {
     return stateMachine;
@@ -334,10 +318,8 @@ public class StateContext {
   /**
    * Sets the state machine.
    *
-   * @param stateMachine
-   *   The state machine to set.
-   * @return
-   *   The state context.
+   * @param stateMachine The state machine to set.
+   * @return The state context.
    */
   public StateContext stateMachine(StateMachine stateMachine) {
     this.stateMachine = stateMachine;
@@ -350,10 +332,8 @@ public class StateContext {
   /**
    * Sets the state log.
    *
-   * @param log
-   *   The state log.
-   * @return
-   *   The state context.
+   * @param log The state log.
+   * @return The state context.
    */
   public StateContext log(Log log) {
     this.log = log;
@@ -526,12 +506,8 @@ public class StateContext {
    */
   public StateContext currentLeader(String address) {
     currentLeader = address;
-    if (started) {
-      for (Handler<String> handler : leaderHandlers) {
-        handler.handle(address);
-      }
-      leaderHandlers.clear();
-    }
+    checkStart();
+    checkQueue();
     return this;
   }
 
@@ -645,22 +621,17 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public StateContext start(Handler<AsyncResult<Void>> doneHandler) {
-    final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
+  public StateContext start(final Handler<AsyncResult<String>> doneHandler) {
     transition(StateType.START);
     client.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          future.setFailure(result.cause());
+          new DefaultFutureResult<String>(result.cause()).setHandler(doneHandler);
         }
         else {
-          transition(StateType.FOLLOWER, new Handler<String>() {
-            @Override
-            public void handle(String leaderAddress) {
-              future.setResult((Void) null);
-            }
-          });
+          startHandler = doneHandler;
+          transition(StateType.FOLLOWER);
         }
       }
     });
@@ -677,21 +648,53 @@ public class StateContext {
    * @return
    *   The state context.
    */
-  public <R> StateContext submitCommand(Command command, Handler<AsyncResult<R>> doneHandler) {
-    final Future<R> future = new DefaultFutureResult<R>().setHandler(doneHandler);
+  public <R> StateContext submitCommand(final Command command, final Handler<AsyncResult<R>> doneHandler) {
     client.submit(currentLeader(), new SubmitRequest(command), new Handler<AsyncResult<SubmitResponse>>() {
       @Override
       @SuppressWarnings("unchecked")
       public void handle(AsyncResult<SubmitResponse> result) {
         if (result.failed()) {
-          future.setFailure(result.cause());
+          // If we failed to reach the leader then queue the command and
+          // wait for a new leader to be elected.
+          // We can only queue MAX_QUEUE_SIZE commands, so fail any
+          // additional commands if the queue is full.
+          if (commands.size() > MAX_QUEUE_SIZE) {
+            new DefaultFutureResult<R>(new CopyCatException("Command queue full.")).setHandler(doneHandler);
+          }
+          else {
+            commands.add(new WrappedCommand<R>(command, doneHandler));
+          }
         }
         else {
-          future.setResult((R) result.result().result());
+          new DefaultFutureResult<R>((R) result.result().result()).setHandler(doneHandler);
         }
       }
     });
     return this;
+  }
+
+  /**
+   * Checks the command queue.
+   */
+  private void checkQueue() {
+    Queue<WrappedCommand<?>> queue = new ArrayDeque<WrappedCommand<?>>(commands);
+    commands.clear();
+    for (WrappedCommand<?> command : queue) {
+      submitCommand(command.command, command.doneHandler);
+    }
+    queue.clear();
+  }
+
+  /**
+   * A wrapped state machine command request.
+   */
+  private static class WrappedCommand<R> {
+    private final Command command;
+    private final Handler<AsyncResult<R>> doneHandler;
+    private WrappedCommand(Command command, Handler<AsyncResult<R>> doneHandler) {
+      this.command = command;
+      this.doneHandler = doneHandler;
+    }
   }
 
   /**
