@@ -569,6 +569,7 @@ class Leader extends State implements Observer {
      */
     private void sync(final long index, final Handler<AsyncResult<Void>> doneHandler) {
       futures.put(index, new DefaultFutureResult<Void>().setHandler(doneHandler));
+      sync();
     }
 
     /**
