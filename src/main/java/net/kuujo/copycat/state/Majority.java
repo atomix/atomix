@@ -29,6 +29,7 @@ class Majority {
   private int total;
   private int succeeded;
   private int failed;
+  private boolean complete;
   private Handler<Boolean> doneHandler;
 
   public Majority(Set<String> members) {
@@ -56,11 +57,13 @@ class Majority {
   }
 
   private void checkComplete() {
-    if (doneHandler != null) {
+    if (!complete && doneHandler != null) {
       if (succeeded > total / 2) {
+        complete = true;
         doneHandler.handle(true);
       }
       else if (failed > total / 2) {
+        complete = true;
         doneHandler.handle(false);
       }
     }

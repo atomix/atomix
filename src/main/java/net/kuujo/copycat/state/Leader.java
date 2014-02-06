@@ -104,6 +104,7 @@ class Leader extends State implements Observer {
 
               // Observe the cluster configuration for changes.
               config.addObserver(Leader.this);
+              clusterChanged(config);
               context.currentLeader(context.address());
               doneHandler.handle(true);
               startHandler.handle((Void) null);
