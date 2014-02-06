@@ -3,5 +3,5 @@
   "licenses": ["The Apache Software License Version 2.0"],
   "author": "Jordan Halterman",
   "keywords": ["raft", "consensus", "clustering", "state machine"],
-  "homepage": "https://github.com/kuujo/mimeo"
+  "homepage": "https://github.com/kuujo/copycat"
 }
