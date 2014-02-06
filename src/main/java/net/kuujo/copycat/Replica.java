@@ -25,9 +25,21 @@ import net.kuujo.copycat.state.StateType;
 
 /**
  * The replica is the primary interface for creating fault-tolerant services
- * with CopyCat. Once started, replicas will communicate with a cluster to
- * coordinate replication and execution of logs in a reliable manner.
+ * with CopyCat. CopyCat replicas represent a single node which can be a
+ * member of a cluster of any size. Underlying the replica is a state machine
+ * that is implemented in the form of a command registry. Commands registered
+ * to the replica's state machine can be called remotely. Commands that modify
+ * state will be internally logged and replicated to other members of the
+ * cluster.<p>
  * 
+ * Cluster configurations are also subject to change. The {@link ClusterConfig}
+ * class is an <code>Observable</code> class, so replicas will monitor the
+ * cluster configuration for changes. When a member is added to or removed from
+ * the cluster configuration, if the current replica is the cluster leader then
+ * it will safely log and replicate the configuration change to the rest of the
+ * cluster. This process is done in a manner that ensures safety in the consensus
+ * algorithm during cluster membership changes.
+ *
  * @author Jordan Halterman
  */
 public interface Replica {
