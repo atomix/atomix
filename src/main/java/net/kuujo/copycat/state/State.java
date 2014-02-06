@@ -393,7 +393,11 @@ abstract class State {
             }
             else {
               if (entry.type().equals(Type.COMMAND)) {
-                stateMachine.applyCommand(((CommandEntry) entry).command());
+                try {
+                  stateMachine.applyCommand(((CommandEntry) entry).command());
+                }
+                catch (Exception e) {
+                }
               }
   
               // If this is a configuration entry, update cluster membership. Since the
