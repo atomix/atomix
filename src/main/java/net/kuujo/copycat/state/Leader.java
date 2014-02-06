@@ -167,6 +167,7 @@ class Leader extends State implements Observer {
                     for (String address : Leader.this.remoteMembers) {
                       if (!replicaMap.containsKey(address)) {
                         Replica replica = new Replica(address);
+                        replica.ping();
                         replicaMap.put(address, replica);
                         replicas.add(replica);
                       }
@@ -645,7 +646,12 @@ class Leader extends State implements Observer {
 
       if (logger.isInfoEnabled()) {
         if (!entries.isEmpty()) {
-          logger.info(String.format("%s replicating entry %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex + entries.size(), address));
+          if (entries.size() > 1) {
+            logger.info(String.format("%s replicating entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
+          }
+          else {
+            logger.info(String.format("%s replicating entry %d to %s", context.address(), prevLogIndex+1, address));
+          }
         }
         else {
           logger.info(String.format("%s committing entry %d to %s", context.address(), commitIndex, address));
@@ -661,20 +667,59 @@ class Leader extends State implements Observer {
           if (result.succeeded()) {
             lastSyncTime = System.currentTimeMillis() - startTime;
             if (result.result().success()) {
-              logger.info(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
+              if (logger.isInfoEnabled()) {
+                if (!entries.isEmpty()) {
+                  if (entries.size() > 1) {
+                    logger.info(String.format("%s successfully replicated entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
+                  }
+                  else {
+                    logger.info(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
+                  }
+                }
+                else {
+                  logger.info(String.format("%s successfully committed entry %d to %s", context.address(), commitIndex, address));
+                }
+              }
+
+              // Increment the next index to send by the number of entries that were
+              // successfully replicated to the node.
               nextIndex += entries.size();
+
+              // Trigger any futures related to the replicated entries.
               for (long i = prevLogIndex+1; i < (prevLogIndex+1) + entries.size(); i++) {
                 if (futures.containsKey(i)) {
                   futures.remove(i).setResult((Void) null);
                 }
               }
+
+              // Set the match index to the successfully replicated commit index.
               matchIndex = commitIndex;
+
+              // Update the current commit index and continue the synchronization.
               checkCommits();
               doSync();
             }
             else {
-              logger.info(String.format("%s failed to replicate entry %d to %s", context.address(), prevLogIndex+1, address));
+              if (logger.isInfoEnabled()) {
+                if (!entries.isEmpty()) {
+                  if (entries.size() > 1) {
+                    logger.info(String.format("%s failed to replicate entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
+                  }
+                  else {
+                    logger.info(String.format("%s failed to replicate entry %d to %s", context.address(), prevLogIndex+1, address));
+                  }
+                }
+                else {
+                  logger.info(String.format("%s failed to commit entry %d to %s", context.address(), commitIndex, address));
+                }
+              }
+
+              // If replication failed then decrement the next index and attemt to
+              // retry replication. If decrementing the next index would result in
+              // a next index of 0 then something must have gone wrong. Revert to
+              // a follower.
               if (nextIndex-1 == 0) {
+                running = false;
                 context.transition(StateType.FOLLOWER);
               }
               else {
@@ -707,7 +752,7 @@ class Leader extends State implements Observer {
      * Pings the replica, calling a handler once complete.
      */
     private void ping(final Handler<AsyncResult<Void>> doneHandler) {
-      if (!!shutdown) {
+      if (!shutdown) {
         final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
         final long startTime = System.currentTimeMillis();
         client.ping(address, new PingRequest(context.currentTerm(), context.address()),

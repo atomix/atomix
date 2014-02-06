@@ -65,6 +65,7 @@ class Client {
             if (pingHandler != null) {
               pingHandler.handle(PingRequest.fromJson(request, message));
             }
+            break;
           case "sync":
             if (syncHandler != null) {
               syncHandler.handle(SyncRequest.fromJson(request, message));

@@ -140,13 +140,13 @@ public class StateContext {
     if (type.equals(stateType))
       return this;
     logger.info(address() + " transitioning to " + type.getName());
-    started = false;
-    currentLeader = null;
     final StateType oldStateType = stateType;
     final State oldState = state;
     stateType = type;
     switch (type) {
       case START:
+        started = false;
+        currentLeader = null;
         state = stateFactory.createStart()
             .setVertx(vertx)
             .setClient(client)
