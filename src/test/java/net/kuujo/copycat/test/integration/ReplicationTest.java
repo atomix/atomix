@@ -193,162 +193,101 @@ public class ReplicationTest extends TestVerticle {
               @Override
               public void handle(AsyncResult<Void> result) {
                 assertTrue(result.succeeded());
-
-                // When the replicas are started and a leader is elected, the leader
-                // should commit a configuration entry to the log. This will contain
-                // the initial cluster configuration. Check the logs for that. There
-                // will be two entries representing the "old" configuration and the new.
-                test1.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                vertx.setTimer(500, new Handler<Long>() {
                   @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                  }
-                });
-                test2.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
-                  @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                  }
-                });
-                test3.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
-                  @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                  }
-                });
-                test1.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
-                  @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                  }
-                });
-                test2.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
-                  @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                  }
-                });
-                test3.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
-                  @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                  }
-                });
-
-                // Now, try adding a member to the cluster.
-                config.addMember("test.4");
-
-                // Submit a command to the cluster for good measure.
-                test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Void>>() {
-                  @Override
-                  public void handle(AsyncResult<Void> result) {
-                    // Wait for the logs to be replicated.
-                    vertx.setTimer(1000, new Handler<Long>() {
+                  public void handle(Long timerID) {
+                     // When the replicas are started and a leader is elected, the leader
+                    // should commit a configuration entry to the log. This will contain
+                    // the initial cluster configuration. Check the logs for that. There
+                    // will be two entries representing the "old" configuration and the new.
+                    test1.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
                       @Override
-                      public void handle(Long event) {
-                        // Once the logs have been replicates, the leader should have created
-                        // and replicated two more configuration entries. The first will be
-                        // a combined configuration and the second will be the new configuration.
-                        // In cases where nodes are being added, the entries will essentially
-                        // be the new configuration, but in cases where nodes are removed,
-                        // the entries will essentially be the old configuration and the new
-                        // configuration separately.
-                        // In this case we're adding a node. Check both entries for the new
-                        // cluster membership set.
-                        test1.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
-                          @Override
-                          public void handle(AsyncResult<Entry> result) {
-                            assertTrue(result.succeeded());
-                            assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                          }
-                        });
-                        test1.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
-                          @Override
-                          public void handle(AsyncResult<Entry> result) {
-                            assertTrue(result.succeeded());
-                            assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                          }
-                        });
-                        test2.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
-                          @Override
-                          public void handle(AsyncResult<Entry> result) {
-                            assertTrue(result.succeeded());
-                            assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                          }
-                        });
-                        test2.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
-                          @Override
-                          public void handle(AsyncResult<Entry> result) {
-                            assertTrue(result.succeeded());
-                            assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                          }
-                        });
-                        test3.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
-                          @Override
-                          public void handle(AsyncResult<Entry> result) {
-                            assertTrue(result.succeeded());
-                            assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                            assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                          }
-                        });
+                      public void handle(AsyncResult<Entry> result) {
+                        assertTrue(result.succeeded());
+                        assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                        assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                      }
+                    });
+                    test2.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                      @Override
+                      public void handle(AsyncResult<Entry> result) {
+                        assertTrue(result.succeeded());
+                        assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                        assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                      }
+                    });
+                    test3.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                      @Override
+                      public void handle(AsyncResult<Entry> result) {
+                        assertTrue(result.succeeded());
+                        assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                        assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                      }
+                    });
+                    test1.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
+                      @Override
+                      public void handle(AsyncResult<Entry> result) {
+                        assertTrue(result.succeeded());
+                        assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                        assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                      }
+                    });
+                    test2.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
+                      @Override
+                      public void handle(AsyncResult<Entry> result) {
+                        assertTrue(result.succeeded());
+                        assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                        assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                      }
+                    });
+                    test3.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
+                      @Override
+                      public void handle(AsyncResult<Entry> result) {
+                        assertTrue(result.succeeded());
+                        assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                        assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                        assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                      }
+                    });
 
-                        // Now try removing a member from the cluster. Again, this should create
-                        // two new configuration entries, one with the combined configuration and
-                        // one with the new configuration.
-                        config.removeMember("test.4");
+                    // Now, try adding a member to the cluster.
+                    config.addMember("test.4");
+
+                    // Submit a command to the cluster for good measure.
+                    test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Void>>() {
+                      @Override
+                      public void handle(AsyncResult<Void> result) {
+                        // Wait for the logs to be replicated.
                         vertx.setTimer(1000, new Handler<Long>() {
                           @Override
                           public void handle(Long event) {
-                            test1.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                            // Once the logs have been replicates, the leader should have created
+                            // and replicated two more configuration entries. The first will be
+                            // a combined configuration and the second will be the new configuration.
+                            // In cases where nodes are being added, the entries will essentially
+                            // be the new configuration, but in cases where nodes are removed,
+                            // the entries will essentially be the old configuration and the new
+                            // configuration separately.
+                            // In this case we're adding a node. Check both entries for the new
+                            // cluster membership set.
+                            test1.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -359,7 +298,7 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test2.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                            test1.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -370,7 +309,7 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test3.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                            test2.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -381,7 +320,7 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test1.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                            test2.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -389,10 +328,10 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                                assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test2.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                            test3.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -400,19 +339,84 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                                assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test3.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+
+                            // Now try removing a member from the cluster. Again, this should create
+                            // two new configuration entries, one with the combined configuration and
+                            // one with the new configuration.
+                            config.removeMember("test.4");
+                            vertx.setTimer(1000, new Handler<Long>() {
                               @Override
-                              public void handle(AsyncResult<Entry> result) {
-                                assertTrue(result.succeeded());
-                                assertEquals(Entry.Type.CONFIGURATION, result.result().type());
-                                assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
-                                assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
-                                assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
-                                assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
-                                testComplete();
+                              public void handle(Long event) {
+                                test1.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                                  @Override
+                                  public void handle(AsyncResult<Entry> result) {
+                                    assertTrue(result.succeeded());
+                                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                  }
+                                });
+                                test2.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                                  @Override
+                                  public void handle(AsyncResult<Entry> result) {
+                                    assertTrue(result.succeeded());
+                                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                  }
+                                });
+                                test3.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                                  @Override
+                                  public void handle(AsyncResult<Entry> result) {
+                                    assertTrue(result.succeeded());
+                                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                  }
+                                });
+                                test1.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                                  @Override
+                                  public void handle(AsyncResult<Entry> result) {
+                                    assertTrue(result.succeeded());
+                                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                  }
+                                });
+                                test2.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                                  @Override
+                                  public void handle(AsyncResult<Entry> result) {
+                                    assertTrue(result.succeeded());
+                                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                  }
+                                });
+                                test3.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                                  @Override
+                                  public void handle(AsyncResult<Entry> result) {
+                                    assertTrue(result.succeeded());
+                                    assertEquals(Entry.Type.CONFIGURATION, result.result().type());
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.1"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.2"));
+                                    assertTrue(((ConfigurationEntry) result.result()).members().contains("test.3"));
+                                    assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
+                                    testComplete();
+                                  }
+                                });
                               }
                             });
                           }
