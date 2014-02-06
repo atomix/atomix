@@ -1,7 +1,7 @@
 {
   "description": "A state machine replication framework for Vert.x.",
   "licenses": ["The Apache Software License Version 2.0"],
-  "author": "Jordan Halterman",
+  "author": "Jordan Halterman <jordan.haterman@gmail.com>",
   "keywords": ["raft", "consensus", "clustering", "state machine"],
   "homepage": "https://github.com/kuujo/copycat"
 }
