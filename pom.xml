@@ -297,7 +297,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <show>public</show>
-              <excludePackageNames>*.impl.*</excludePackageNames>
+              <excludePackageNames>net.kuujo.copycat.state:net.kuujo.copycat.protocol:net.kuujo.copycat.serializer:*.impl.*</excludePackageNames>
               <reportOutputDirectory>docs</reportOutputDirectory>
               <destDir>java</destDir>
             </configuration>
