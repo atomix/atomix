@@ -505,6 +505,9 @@ public class StateContext {
    * @return The state context.
    */
   public StateContext currentLeader(String address) {
+    if (currentLeader == null || !currentLeader.equals(address)) {
+      logger.debug(String.format("Current cluster leader changed: %s", address));
+    }
     currentLeader = address;
     checkStart();
     checkQueue();
@@ -529,6 +532,7 @@ public class StateContext {
   public StateContext currentTerm(long term) {
     if (term > currentTerm) {
       currentTerm = term;
+      logger.debug(String.format("Updated current term %d", term));
       votedFor = null;
     }
     return this;
@@ -550,6 +554,9 @@ public class StateContext {
    * @return The state context.
    */
   public StateContext votedFor(String address) {
+    if (votedFor == null || !votedFor.equals(address)) {
+      logger.debug(String.format("Voted for %s", address));
+    }
     votedFor = address;
     return this;
   }

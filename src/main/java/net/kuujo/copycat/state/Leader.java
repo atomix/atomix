@@ -658,17 +658,17 @@ class Leader extends State implements Observer {
         return;
       }
 
-      if (logger.isInfoEnabled()) {
+      if (logger.isDebugEnabled()) {
         if (!entries.isEmpty()) {
           if (entries.size() > 1) {
-            logger.info(String.format("%s replicating entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
+            logger.debug(String.format("%s replicating entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
           }
           else {
-            logger.info(String.format("%s replicating entry %d to %s", context.address(), prevLogIndex+1, address));
+            logger.debug(String.format("%s replicating entry %d to %s", context.address(), prevLogIndex+1, address));
           }
         }
         else {
-          logger.info(String.format("%s committing entry %d to %s", context.address(), commitIndex, address));
+          logger.debug(String.format("%s committing entry %d to %s", context.address(), commitIndex, address));
         }
       }
 
@@ -681,17 +681,17 @@ class Leader extends State implements Observer {
           if (result.succeeded()) {
             lastSyncTime = System.currentTimeMillis() - startTime;
             if (result.result().success()) {
-              if (logger.isInfoEnabled()) {
+              if (logger.isDebugEnabled()) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.info(String.format("%s successfully replicated entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
+                    logger.debug(String.format("%s successfully replicated entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
                   }
                   else {
-                    logger.info(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
+                    logger.debug(String.format("%s successfully replicated entry %d to %s", context.address(), prevLogIndex+1, address));
                   }
                 }
                 else {
-                  logger.info(String.format("%s successfully committed entry %d to %s", context.address(), commitIndex, address));
+                  logger.debug(String.format("%s successfully committed entry %d to %s", context.address(), commitIndex, address));
                 }
               }
 
@@ -711,17 +711,17 @@ class Leader extends State implements Observer {
               doSync();
             }
             else {
-              if (logger.isInfoEnabled()) {
+              if (logger.isDebugEnabled()) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.info(String.format("%s failed to replicate entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
+                    logger.debug(String.format("%s failed to replicate entries %d-%d to %s", context.address(), prevLogIndex+1, prevLogIndex+entries.size(), address));
                   }
                   else {
-                    logger.info(String.format("%s failed to replicate entry %d to %s", context.address(), prevLogIndex+1, address));
+                    logger.debug(String.format("%s failed to replicate entry %d to %s", context.address(), prevLogIndex+1, address));
                   }
                 }
                 else {
-                  logger.info(String.format("%s failed to commit entry %d to %s", context.address(), commitIndex, address));
+                  logger.debug(String.format("%s failed to commit entry %d to %s", context.address(), commitIndex, address));
                 }
               }
 
