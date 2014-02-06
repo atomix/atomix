@@ -519,16 +519,28 @@ class Leader extends State implements Observer {
    * Determines which message have been committed.
    */
   private void checkCommits() {
-    Collections.sort(replicas, new Comparator<Replica>() {
-      @Override
-      public int compare(Replica o1, Replica o2) {
-        return Long.compare(o1.nextIndex-1, o2.nextIndex-1);
-      }
-    });
-
-    int middle = (int) Math.ceil(replicas.size() / 2);
-    context.commitIndex(replicas.get(middle).nextIndex-1);
-    log.floor(Math.min(context.commitIndex(), context.lastApplied()));
+    if (!replicas.isEmpty()) {
+      // Sort the list of replicas, order by the last index that was replicated
+      // to the replcica. This will allow us to determine the median index
+      // for all known replicated entries across all cluster members.
+      Collections.sort(replicas, new Comparator<Replica>() {
+        @Override
+        public int compare(Replica o1, Replica o2) {
+          return Long.compare(o1.matchIndex, o2.matchIndex);
+        }
+      });
+  
+      // Set the current commit index as the median replicated index.
+      // Since replicas is a list with zero based indexes, use the
+      // floor(replicas size / 2) to get the middle most index. This
+      // will ensure we get the replica which contains the log index
+      // for the highest entry that has been replicated to a majority
+      // of the cluster.
+      context.commitIndex(replicas.get((int) Math.floor(replicas.size() / 2)).matchIndex);
+  
+      // Allow log cleaning for all entries that have already been committed.
+      log.floor(replicas.get(0).matchIndex-1);
+    }
   }
 
   /**
@@ -546,8 +558,8 @@ class Leader extends State implements Observer {
 
     private Replica(String address) {
       this.address = address;
-      this.matchIndex = 0;
       this.nextIndex = log.lastIndex() + 1;
+      this.matchIndex = 0;
     }
 
     /**
@@ -555,7 +567,7 @@ class Leader extends State implements Observer {
      */
     private void update() {
       if (!shutdown) {
-        if (nextIndex <= log.lastIndex() || matchIndex < context.commitIndex()) {
+        if (nextIndex <= log.lastIndex()) {
           sync();
         }
         else {
@@ -683,9 +695,9 @@ class Leader extends State implements Observer {
                 }
               }
 
-              // Increment the next index to send by the number of entries that were
-              // successfully replicated to the node.
-              nextIndex += entries.size();
+              // Update the next index to send and the last index known to be replicated.
+              nextIndex = Math.max(nextIndex + 1, prevLogIndex + entries.size() + 1);
+              matchIndex = Math.max(matchIndex, prevLogIndex + entries.size());
 
               // Trigger any futures related to the replicated entries.
               for (long i = prevLogIndex+1; i < (prevLogIndex+1) + entries.size(); i++) {
@@ -693,9 +705,6 @@ class Leader extends State implements Observer {
                   futures.remove(i).setResult((Void) null);
                 }
               }
-
-              // Set the match index to the successfully replicated commit index.
-              matchIndex = commitIndex;
 
               // Update the current commit index and continue the synchronization.
               checkCommits();
