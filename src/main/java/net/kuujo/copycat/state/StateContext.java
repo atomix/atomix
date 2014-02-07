@@ -70,6 +70,7 @@ public class StateContext {
   private long currentTerm;
   private String votedFor;
   private long commitIndex = 0;
+  private long cleanIndex = 0;
   private long lastApplied = 0;
 
   public StateContext(String address, Vertx vertx, StateMachine stateMachine, Log log) {
@@ -578,6 +579,26 @@ public class StateContext {
    */
   public StateContext commitIndex(long index) {
     commitIndex = index;
+    return this;
+  }
+
+  /**
+   * Returns the current clean index.
+   *
+   * @return The current log clean index.
+   */
+  public long cleanIndex() {
+    return cleanIndex;
+  }
+
+  /**
+   * Sets the current clean index.
+   *
+   * @param index The current log clean index.
+   * @return The state context.
+   */
+  public StateContext cleanIndex(long index) {
+    cleanIndex = index;
     return this;
   }
 

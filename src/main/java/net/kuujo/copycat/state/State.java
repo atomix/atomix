@@ -349,13 +349,18 @@ abstract class State {
       final long lastIndex = log.lastIndex();
       context.commitIndex(Math.min(request.commit(), lastIndex));
 
+      // Update the local clean index with min(request clean, commit index)
+      // This will indicate the maximum index in the log that can be removed.
+      context.cleanIndex(Math.min(request.clean(), context.commitIndex()));
+
+      // Set the log floor. This indicates the minimum log entry that is
+      // required to remain persisted. Log entries that have not yet been
+      // applied to the state machine cannot be removed from the log.
+      log.floor(Math.min(context.commitIndex(), context.lastApplied()));
+
       // If the updated commit index indicates that commits remain to be
       // applied to the state machine, iterate entries and apply them.
       if (context.commitIndex() > Math.min(context.lastApplied(), lastIndex)) {
-        // Set the log floor. This indicates the minimum log entry that is
-        // required to remain persisted. Log entries that have not yet been
-        // applied to the state machine cannot be removed from the log.
-        log.floor(Math.min(context.commitIndex(), context.lastApplied()));
         recursiveApplyCommits(context.lastApplied() + 1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
       }
     }
@@ -407,9 +412,6 @@ abstract class State {
               else if (entry.type().equals(Type.CONFIGURATION)) {
                 members = ((ConfigurationEntry) entry).members();
               }
-  
-              // Update the log floor to the last committed index (this index).
-              log.floor(index);
   
               // Continue on to apply the next commit.
               recursiveApplyCommits(index + 1, ceiling, request, doneHandler);
