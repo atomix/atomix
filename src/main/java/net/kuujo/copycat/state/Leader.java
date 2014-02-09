@@ -539,14 +539,6 @@ class Leader extends State implements Observer {
       // for the highest entry that has been replicated to a majority
       // of the cluster.
       context.commitIndex(replicas.get((int) Math.floor(replicas.size() / 2)).matchIndex);
-  
-      // Allow log cleaning for all entries that have been committed
-      // to *all* replicas. If an entry has not been committed to a
-      // replica then we don't want to remove it from the log. However,
-      // this also means that during failures logs may grow until
-      // the failed replica comes back online.
-      context.cleanIndex(replicas.get(0).matchIndex);
-      log.floor(context.cleanIndex());
     }
   }
 
@@ -648,18 +640,18 @@ class Leader extends State implements Observer {
               running = false;
             }
             else {
-              doSync(prevLogIndex, prevLogTerm, result.result(), context.commitIndex(), context.cleanIndex());
+              doSync(prevLogIndex, prevLogTerm, result.result(), context.commitIndex());
             }
           }
         });
       }
       // Otherwise, sync the commit index only.
       else {
-        doSync(prevLogIndex, prevLogTerm, new ArrayList<Entry>(), context.commitIndex(), context.cleanIndex());
+        doSync(prevLogIndex, prevLogTerm, new ArrayList<Entry>(), context.commitIndex());
       }
     }
 
-    private void doSync(final long prevLogIndex, final long prevLogTerm, final List<Entry> entries, final long commitIndex, final long cleanIndex) {
+    private void doSync(final long prevLogIndex, final long prevLogTerm, final List<Entry> entries, final long commitIndex) {
       if (shutdown) {
         running = false;
         return;
@@ -680,7 +672,7 @@ class Leader extends State implements Observer {
       }
 
       final long startTime = System.currentTimeMillis();
-      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex, cleanIndex),
+      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex),
           context.useAdaptiveTimeouts() ? (lastSyncTime > 0 ? (long) (lastSyncTime * context.adaptiveTimeoutThreshold()) : context.heartbeatInterval() / 2) : context.heartbeatInterval() / 2,
               new Handler<AsyncResult<SyncResponse>>() {
         @Override

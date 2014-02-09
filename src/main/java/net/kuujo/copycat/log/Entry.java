@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -106,7 +104,6 @@ public abstract class Entry {
     }
   }
 
-  private String id;
   private Type type;
   private long term;
   @JsonIgnore
@@ -124,7 +121,6 @@ public abstract class Entry {
    * @param type The entry type.
    */
   protected Entry(Type type) {
-    this.id = UUID.randomUUID().toString();
     this.type = type;
   }
 
@@ -135,18 +131,8 @@ public abstract class Entry {
    * @param term The entry term.
    */
   protected Entry(Type type, long term) {
-    this.id = UUID.randomUUID().toString();
     this.type = type;
     this.term = term;
-  }
-
-  /**
-   * Returns the entry identifier.
-   *
-   * @return The unique entry ID.
-   */
-  public String id() {
-    return id;
   }
 
   /**

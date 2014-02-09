@@ -16,8 +16,6 @@
 package net.kuujo.copycat.log;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -33,9 +31,6 @@ import org.vertx.java.core.impl.DefaultFutureResult;
  */
 public class MemoryLog implements Log {
   private final TreeMap<Long, Entry> log = new TreeMap<>();
-  private final Map<String, Long> entries = new HashMap<>();
-  private final List<Long> freed = new ArrayList<>();
-  private long floor;
 
   @Override
   public void init(LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
@@ -46,9 +41,6 @@ public class MemoryLog implements Log {
   public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
     long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
     log.put(index, entry);
-    if (entry.type().equals(Entry.Type.COMMAND)) {
-      entries.put(entry.id(), index);
-    }
     return result(index, doneHandler);
   }
 
@@ -116,74 +108,6 @@ public class MemoryLog implements Log {
   public Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler) {
     log.tailMap(index);
     return result(null, doneHandler);
-  }
-
-  @Override
-  public Log floor(Handler<AsyncResult<Long>> doneHandler) {
-    return result(floor, doneHandler);
-  }
-
-  @Override
-  public Log floor(long index) {
-    floor = index;
-
-    // Sort the freed list.
-    Collections.sort(freed);
-
-    // Iterate over indexes in the freed list.
-    boolean removed = false;
-    for (long item : freed) {
-      if (item < floor) {
-        entries.remove(log.remove(item).id());
-        removed = true;
-      }
-    }
-
-    // If any items were removed from the log then rewrite log entries to the
-    // head of the log.
-    if (removed) {
-      rewrite();
-    }
-    return this;
-  }
-
-  @Override
-  public void free(Entry entry) {
-    free(entry, null);
-  }
-
-  @Override
-  public void free(Entry entry, Handler<AsyncResult<Void>> doneHandler) {
-    if (entries.containsKey(entry.id())) {
-      long index = entries.get(entry.id());
-      if (index < floor) {
-        log.remove(index);
-        entries.remove(entry.id());
-        rewrite();
-      }
-      else {
-        freed.add(index);
-      }
-    }
-    result(null, doneHandler);
-  }
-
-  /**
-   * Rewrites all entries to the head of the log.
-   */
-  private void rewrite() {
-    long lastIndex = log.lastKey();
-    long firstIndex = log.firstKey();
-    List<Long> empty = new ArrayList<>();
-    for (long i = lastIndex; i >= firstIndex; i--) {
-      if (!log.containsKey(i)) {
-        empty.add(i);
-      }
-      else if (empty.size() > 0) {
-        log.put(empty.remove(0), log.remove(i));
-        empty.add(i);
-      }
-    }
   }
 
   /**

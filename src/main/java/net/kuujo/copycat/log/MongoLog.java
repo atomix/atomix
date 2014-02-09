@@ -428,26 +428,4 @@ public class MongoLog implements Log {
     return this;
   }
 
-  @Override
-  public Log floor(Handler<AsyncResult<Long>> doneHandler) {
-    // Not supported.
-    return this;
-  }
-
-  @Override
-  public Log floor(long index) {
-    // Not implemented.
-    return this;
-  }
-
-  @Override
-  public void free(Entry entry) {
-    // Not supported.
-  }
-
-  @Override
-  public void free(Entry entry, Handler<AsyncResult<Void>> doneHandler) {
-    // Not supported.
-  }
-
 }

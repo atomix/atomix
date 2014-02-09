@@ -144,34 +144,4 @@ public interface Log {
    */
   Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler);
 
-  /**
-   * Returns the log floor.
-   * 
-   * @return The log floor.
-   */
-  Log floor(Handler<AsyncResult<Long>> doneHandler);
-
-  /**
-   * Sets the log floor.
-   *
-   * @param index The lowest required index in the log.
-   * @return The log instance.
-   */
-  Log floor(long index);
-
-  /**
-   * Frees an entry from the log.
-   * 
-   * @param entry The entry to free.
-   */
-  void free(Entry entry);
-
-  /**
-   * Frees an entry from the log.
-   * 
-   * @param entry The entry to free.
-   * @param doneHandler A handler to be called once the entry is freed.
-   */
-  void free(Entry entry, Handler<AsyncResult<Void>> doneHandler);
-
 }

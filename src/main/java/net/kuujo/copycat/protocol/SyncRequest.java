@@ -36,19 +36,17 @@ public class SyncRequest extends Request {
   private long prevLogTerm;
   private List<Entry> entries;
   private long commit;
-  private long clean;
 
   public SyncRequest() {
   }
 
-  public SyncRequest(long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex, long cleanIndex) {
+  public SyncRequest(long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex) {
     this.term = term;
     this.leader = leader;
     this.prevLogIndex = prevLogIndex;
     this.prevLogTerm = prevLogTerm;
     this.entries = entries;
     this.commit = commitIndex;
-    this.clean = cleanIndex;
   }
 
   public static SyncRequest fromJson(JsonObject json) {
@@ -120,15 +118,6 @@ public class SyncRequest extends Request {
    */
   public long commit() {
     return commit;
-  }
-
-  /**
-   * Returns the leader's clean index.
-   *
-   * @return The leader clean index.
-   */
-  public long clean() {
-    return clean;
   }
 
   /**
