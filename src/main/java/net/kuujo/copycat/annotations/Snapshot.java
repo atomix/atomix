@@ -13,24 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.annotations;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
 
 /**
- * A state machine function.
- * 
+ * Indicates that a field represents a snapshot of a state machine.
+ *
  * @author Jordan Halterman
- * 
- * @param <T> The input argument type.
- * @param <U> The output argument type.
  */
-public interface Function<T, U> {
-
-  /**
-   * Calls the function.
-   * 
-   * @param arg The function argument.
-   * @return The function return value.
-   */
-  U call(T arg);
-
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Snapshot {
 }

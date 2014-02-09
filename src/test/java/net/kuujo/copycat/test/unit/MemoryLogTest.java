@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.test.unit;
 
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.impl.DefaultCommand;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;

@@ -31,13 +31,25 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
  * 
  * @author Jordan Halterman
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "type")
-@JsonSubTypes({ @JsonSubTypes.Type(value = NoOpEntry.class, name = "no-op"),
-    @JsonSubTypes.Type(value = ConfigurationEntry.class, name = "configuration"),
-    @JsonSubTypes.Type(value = CommandEntry.class, name = "command") })
+@JsonAutoDetect(
+  creatorVisibility=JsonAutoDetect.Visibility.NONE,
+  fieldVisibility=JsonAutoDetect.Visibility.ANY,
+  getterVisibility=JsonAutoDetect.Visibility.NONE,
+  isGetterVisibility=JsonAutoDetect.Visibility.NONE,
+  setterVisibility=JsonAutoDetect.Visibility.NONE
+)
+@JsonTypeInfo(
+  use=JsonTypeInfo.Id.NAME,
+  include=JsonTypeInfo.As.PROPERTY,
+  property="type"
+)
+@JsonSubTypes({
+  @JsonSubTypes.Type(value=NoOpEntry.class, name="no-op"),
+  @JsonSubTypes.Type(value = ConfigurationEntry.class, name = "configuration"),
+  @JsonSubTypes.Type(value = CommandEntry.class, name = "command")
+})
 public abstract class Entry {
 
   /**
@@ -163,18 +175,6 @@ public abstract class Entry {
    */
   public long term() {
     return term;
-  }
-
-  Entry setLog(Log log) {
-    this.log = log;
-    return this;
-  }
-
-  /**
-   * Frees the entry from the log.
-   */
-  public void free() {
-    
   }
 
 }

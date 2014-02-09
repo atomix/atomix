@@ -19,7 +19,6 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.state.StateType;
 
@@ -45,41 +44,40 @@ import net.kuujo.copycat.state.StateType;
 public interface Replica {
 
   /**
-   * Sets the node address.
+   * Returns the replica address.
    * 
-   * @param address The node address.
-   * @return The node instance.
+   * @return The replica address.
    */
-  Replica setAddress(String address);
-
-  /**
-   * Returns the node address.
-   * 
-   * @return The node address.
-   */
-  String getAddress();
+  String address();
 
   /**
    * Returns the cluster configuration.
    * 
-   * @return The node's cluster configuration.
+   * @return The replica's cluster configuration.
    */
-  ClusterConfig cluster();
+  ClusterConfig config();
 
   /**
-   * Sets the cluster configuration.
+   * Returns the replicated log.
    * 
-   * @param config The cluster configuration.
-   * @return The node instance.
+   * @return The replica's log.
    */
-  Replica setClusterConfig(ClusterConfig config);
+  Log log();
 
   /**
-   * Returns the cluster configuration.
-   * 
-   * @return The cluster configuration.
+   * Sets the maximum memory usage of the state machine.
+   *
+   * @param max The maximum allowed memory usage of the state machine.
+   * @return The replica instance.
    */
-  ClusterConfig getClusterConfig();
+  Replica setMaxMemoryUsage(long max);
+
+  /**
+   * Returns the maximum allowed memory usage.
+   *
+   * @return The maximum allowed memory usage for the state machine.
+   */
+  long getMaxMemoryUsage();
 
   /**
    * Sets the replica election timeout.
@@ -175,21 +173,6 @@ public interface Replica {
   public Replica setRequireReadMajority(boolean require);
 
   /**
-   * Sets the replicated log.
-   * 
-   * @param log The node's replicated log.
-   * @return The replica instance.
-   */
-  Replica setLog(Log log);
-
-  /**
-   * Returns the replicated log.
-   * 
-   * @return The node's replicated log.
-   */
-  Log getLog();
-
-  /**
    * Registers a handler to be called when the replica transitions to a new state.
    *
    * @param handler A handler to be called when the replica transitions to a new state.
@@ -224,33 +207,6 @@ public interface Replica {
    * @return The current leader's address/
    */
   String getCurrentLeader();
-
-  /**
-   * Registers a state machine command.
-   * 
-   * @param commandName The command name.
-   * @param function The command function.
-   * @return The replica instance.
-   */
-  <R> Replica registerCommand(String commandName, Function<Command, R> function);
-
-  /**
-   * Registers a typed state machine command.
-   * 
-   * @param commandName The command name.
-   * @param type The command type.
-   * @param function The command function.
-   * @return The replica instance.
-   */
-  <R> Replica registerCommand(String commandName, Command.Type type, Function<Command, R> function);
-
-  /**
-   * Unregisters a state machine command.
-   * 
-   * @param commandName The command name.
-   * @return The replica instance.
-   */
-  Replica unregisterCommand(String commandName);
 
   /**
    * Submits a command to the replication service.

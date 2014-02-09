@@ -19,8 +19,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
@@ -45,7 +44,7 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 abstract class State {
   protected Vertx vertx;
   protected Client client;
-  protected StateMachine stateMachine;
+  protected StateMachineAdapter stateMachine;
   protected Log log;
   protected ClusterConfig config;
   protected StateContext context;
@@ -80,7 +79,7 @@ abstract class State {
    * @param stateMachine The state machine.
    * @return The state instance.
    */
-  public State setStateMachine(StateMachine stateMachine) {
+  public State setStateMachine(StateMachineAdapter stateMachine) {
     this.stateMachine = stateMachine;
     return this;
   }
@@ -398,8 +397,9 @@ abstract class State {
             }
             else {
               if (entry.type().equals(Type.COMMAND)) {
+                CommandEntry command = (CommandEntry) entry;
                 try {
-                  stateMachine.applyCommand(((CommandEntry) entry).command());
+                  stateMachine.applyCommand(command.command(), command.args());
                 }
                 catch (Exception e) {
                 }

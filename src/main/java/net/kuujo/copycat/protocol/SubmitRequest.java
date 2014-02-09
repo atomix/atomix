@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.Command;
+import java.util.Map;
+
 import net.kuujo.copycat.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
@@ -28,13 +29,15 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class SubmitRequest extends Request {
   private static final Serializer serializer = Serializer.getInstance();
-  private Command command;
+  private String command;
+  private Map<String, Object> args;
 
   public SubmitRequest() {
   }
 
-  public SubmitRequest(Command command) {
+  public SubmitRequest(String command, JsonObject args) {
     this.command = command;
+    this.args = args.toMap();
   }
 
   public static SubmitRequest fromJson(JsonObject json) {
@@ -59,8 +62,17 @@ public class SubmitRequest extends Request {
    *
    * @return The command being submitted.
    */
-  public Command command() {
+  public String command() {
     return command;
+  }
+
+  /**
+   * Returns the request arguments.
+   *
+   * @return The arguments to apply to the command being submitted.
+   */
+  public JsonObject args() {
+    return new JsonObject(args);
   }
 
   /**

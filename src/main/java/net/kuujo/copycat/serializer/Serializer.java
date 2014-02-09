@@ -15,7 +15,14 @@
  */
 package net.kuujo.copycat.serializer;
 
+import java.util.List;
+import java.util.Map;
+
+import org.vertx.java.core.json.DecodeException;
+import org.vertx.java.core.json.JsonArray;
+import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.core.json.impl.Json;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -53,12 +60,23 @@ public class Serializer {
    * @return A Json representation of the serializable object.
    * @throws SerializationException If an error occurs during serialization.
    */
-  public <T> JsonObject serialize(T object) {
+  @SuppressWarnings("unchecked")
+  public <T extends JsonElement> T serialize(Object object) {
+    String value;
     try {
-      return new JsonObject(mapper.writeValueAsString(object));
+      value = mapper.writeValueAsString(object);
     }
     catch (Exception e) {
       throw new SerializationException(e.getMessage());
+    }
+
+    try {
+      Map<String, Object> map = Json.decodeValue(value, Map.class);
+      return (T) new JsonObject(map);
+    }
+    catch (DecodeException e) {
+      List<Object> list = Json.decodeValue(value, List.class);
+      return (T) new JsonArray(list);
     }
   }
 
@@ -71,9 +89,14 @@ public class Serializer {
    * @return The deserialized object.
    * @throws DeserializationException If an error occurs during deserialization.
    */
-  public <T> T deserialize(JsonObject json, Class<T> type) {
+  public <T> T deserialize(JsonElement json, Class<T> type) {
     try {
-      return mapper.readValue(json.encode(), type);
+      if (json.isArray()) {
+        return mapper.readValue(json.asArray().encode(), type);
+      }
+      else {
+        return mapper.readValue(json.asObject().encode(), type);
+      }
     }
     catch (Exception e) {
       throw new SerializationException(e.getMessage());

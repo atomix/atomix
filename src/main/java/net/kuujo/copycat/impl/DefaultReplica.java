@@ -15,10 +15,6 @@
  */
 package net.kuujo.copycat.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
@@ -26,12 +22,9 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.Function;
+import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.Replica;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.Command.Type;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.MemoryLog;
 import net.kuujo.copycat.state.StateContext;
@@ -44,65 +37,39 @@ import net.kuujo.copycat.state.StateType;
  */
 public class DefaultReplica implements Replica {
   private final StateContext state;
-  private Map<String, CommandInfo<?>> commands = new HashMap<>();
 
-  private final StateMachine stateMachine = new StateMachine() {
-    @Override
-    public Object applyCommand(Command command) {
-      if (commands.containsKey(command.command())) {
-        return commands.get(command.command()).function.call(command);
-      }
-      return null;
-    }
-  };
-
-  private static class CommandInfo<R> {
-    private final Command.Type type;
-    private final Function<Command, R> function;
-
-    private CommandInfo(Command.Type type, Function<Command, R> function) {
-      this.type = type;
-      this.function = function;
-    }
-  }
-
-  public DefaultReplica(Vertx vertx) {
-    state = new StateContext(UUID.randomUUID().toString(), vertx, stateMachine, new MemoryLog());
-  }
-
-  public DefaultReplica(String address, Vertx vertx) {
+  public DefaultReplica(String address, Vertx vertx, StateMachine stateMachine) {
     state = new StateContext(address, vertx, stateMachine, new MemoryLog());
   }
 
-  public DefaultReplica(String address, Vertx vertx, Log log) {
+  public DefaultReplica(String address, Vertx vertx, StateMachine stateMachine, Log log) {
     state = new StateContext(address, vertx, stateMachine, log);
   }
 
   @Override
-  public String getAddress() {
+  public String address() {
     return state.address();
   }
 
   @Override
-  public Replica setAddress(String address) {
-    state.address(address);
-    return this;
-  }
-
-  @Override
-  public ClusterConfig cluster() {
+  public ClusterConfig config() {
     return state.config();
   }
 
   @Override
-  public Replica setClusterConfig(ClusterConfig config) {
-    state.configure(config);
+  public Log log() {
+    return state.log();
+  }
+
+  @Override
+  public Replica setMaxMemoryUsage(long max) {
+    state.maxMemoryUsage(max);
     return this;
   }
 
   @Override
-  public ClusterConfig getClusterConfig() {
-    return state.config();
+  public long getMaxMemoryUsage() {
+    return state.maxMemoryUsage();
   }
 
   @Override
@@ -172,17 +139,6 @@ public class DefaultReplica implements Replica {
   }
 
   @Override
-  public Replica setLog(Log log) {
-    state.log(log);
-    return this;
-  }
-
-  @Override
-  public Log getLog() {
-    return state.log();
-  }
-
-  @Override
   public Replica transitionHandler(Handler<StateType> handler) {
     state.transitionHandler(handler);
     return this;
@@ -232,26 +188,8 @@ public class DefaultReplica implements Replica {
   }
 
   @Override
-  public <R> Replica registerCommand(String commandName, Function<Command, R> function) {
-    commands.put(commandName, new CommandInfo<R>(null, function));
-    return this;
-  }
-
-  @Override
-  public <R> Replica registerCommand(String commandName, Type type, Function<Command, R> function) {
-    commands.put(commandName, new CommandInfo<R>(type, function));
-    return this;
-  }
-
-  @Override
-  public Replica unregisterCommand(String commandName) {
-    commands.remove(commandName);
-    return this;
-  }
-
-  @Override
-  public <R> Replica submitCommand(String command, JsonObject data, Handler<AsyncResult<R>> resultHandler) {
-    state.submitCommand(new DefaultCommand(command, commands.containsKey(command) ? commands.get(command).type : null, data), resultHandler);
+  public <R> Replica submitCommand(String command, JsonObject args, Handler<AsyncResult<R>> resultHandler) {
+    state.submitCommand(command, args, resultHandler);
     return this;
   }
 

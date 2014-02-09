@@ -110,7 +110,7 @@ public class MongoLog implements Log {
         .putObject(
             "document",
             new JsonObject().putString("type", "command").putNumber("index", index).putNumber("term", entry.term())
-                .putObject("entry", serializer.serialize(entry)));
+                .putObject("entry", serializer.<JsonObject>serialize(entry)));
     vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {

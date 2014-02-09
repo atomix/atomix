@@ -27,7 +27,8 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.ClusterConfig;
+import net.kuujo.copycat.annotations.Command;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
@@ -330,7 +331,8 @@ class Leader extends State implements Observer {
     // to ensure that the information is not stale. Once we've determined that
     // this node is the most up-to-date, we can simply apply the command to the
     // state machine and return the result without replicating the log.
-    if (request.command().type() != null && request.command().type().isReadOnly()) {
+    Command info = stateMachine.getCommand(request.command());
+    if (info != null && info.type().equals(Command.Type.READ)) {
 
       // Users have the option of whether to require read majorities. If read
       // majorities are disabled then it is simply assumed that there are no
@@ -343,7 +345,7 @@ class Leader extends State implements Observer {
           public void handle(Boolean succeeded) {
             if (succeeded) {
               try {
-                request.reply(stateMachine.applyCommand(request.command()));
+                request.reply(stateMachine.applyCommand(request.command(), request.args()));
               }
               catch (Exception e) {
                 request.error(e.getMessage());
@@ -359,7 +361,7 @@ class Leader extends State implements Observer {
       // state machine and return the result.
       else {
         try {
-          request.reply(stateMachine.applyCommand(request.command()));
+          request.reply(stateMachine.applyCommand(request.command(), request.args()));
         }
         catch (Exception e) {
           request.error(e.getMessage());
@@ -371,7 +373,7 @@ class Leader extends State implements Observer {
     // majority of the cluster prior to responding to the request.
     else {
       // Append a new command entry to the log.
-      log.appendEntry(new CommandEntry(context.currentTerm(), request.command()), new Handler<AsyncResult<Long>>() {
+      log.appendEntry(new CommandEntry(context.currentTerm(), request.command(), request.args()), new Handler<AsyncResult<Long>>() {
         @Override
         public void handle(AsyncResult<Long> result) {
           if (result.failed()) {
@@ -390,7 +392,7 @@ class Leader extends State implements Observer {
                 public void handle(Boolean succeeded) {
                   if (succeeded) {
                     try {
-                      Object output = stateMachine.applyCommand(request.command());
+                      Object output = stateMachine.applyCommand(request.command(), request.args());
                       request.reply(output);
                     }
                     catch (Exception e) {
@@ -407,7 +409,7 @@ class Leader extends State implements Observer {
             // to the state machine and return the result.
             else {
               try {
-                Object output = stateMachine.applyCommand(request.command());
+                Object output = stateMachine.applyCommand(request.command(), request.args());
                 context.lastApplied(index);
                 request.reply(output);
               }
@@ -543,7 +545,7 @@ class Leader extends State implements Observer {
       // replica then we don't want to remove it from the log. However,
       // this also means that during failures logs may grow until
       // the failed replica comes back online.
-      context.cleanIndex(replicas.get(0).matchIndex-1);
+      context.cleanIndex(replicas.get(0).matchIndex);
       log.floor(context.cleanIndex());
     }
   }

@@ -18,10 +18,9 @@ package net.kuujo.copycat.state;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import net.kuujo.copycat.Command;
+import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
@@ -37,6 +36,8 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultFutureResult;
+import org.vertx.java.core.json.JsonElement;
+import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -52,14 +53,17 @@ public class StateContext {
   private final Vertx vertx;
   private final Client client;
   private Log log;
-  private StateMachine stateMachine;
+  private StateMachineAdapter stateMachine;
   private ClusterConfig cluster = new ClusterConfig();
   private final StateFactory stateFactory = new StateFactory();
   private StateType stateType;
   private State state;
+  private long logTimer;
+  private SnapshotPersistor persistor;
   private Handler<StateType> transitionHandler;
   private Handler<AsyncResult<String>> startHandler;
   private Queue<WrappedCommand<?>> commands = new ArrayDeque<WrappedCommand<?>>();
+  private long maxMemoryUsage = 1024 * 1024 * 16;
   private long electionTimeout = 2500;
   private long heartbeatInterval = 1000;
   private boolean useAdaptiveTimeouts = true;
@@ -78,7 +82,8 @@ public class StateContext {
     this.vertx = vertx;
     this.client = new Client(address, vertx);
     this.log = log;
-    this.stateMachine = stateMachine;
+    this.stateMachine = new StateMachineAdapter(stateMachine);
+    this.persistor = new SnapshotPersistor(address, vertx.fileSystem());
     transition(StateType.START);
   }
 
@@ -183,7 +188,8 @@ public class StateContext {
                 // If the entry type is a command, apply the entry to the state
                 // machine.
                 if (entry.type().equals(Type.COMMAND)) {
-                  stateMachine.applyCommand(((CommandEntry) entry).command());
+                  CommandEntry command = (CommandEntry) entry;
+                  stateMachine.applyCommand(command.command(), command.args());
                 }
               }
             }, new Handler<AsyncResult<Void>>() {
@@ -308,29 +314,6 @@ public class StateContext {
   }
 
   /**
-   * Returns the state machine.
-   *
-   * @return The state machine.
-   */
-  public StateMachine stateMachine() {
-    return stateMachine;
-  }
-
-  /**
-   * Sets the state machine.
-   *
-   * @param stateMachine The state machine to set.
-   * @return The state context.
-   */
-  public StateContext stateMachine(StateMachine stateMachine) {
-    this.stateMachine = stateMachine;
-    if (state != null) {
-      state.setStateMachine(stateMachine);
-    }
-    return this;
-  }
-
-  /**
    * Sets the state log.
    *
    * @param log The state log.
@@ -361,6 +344,26 @@ public class StateContext {
    */
   public StateContext transitionHandler(Handler<StateType> handler) {
     transitionHandler = handler;
+    return this;
+  }
+
+  /**
+   * Returns the max memory usage.
+   *
+   * @return The max allowed memory usage.
+   */
+  public long maxMemoryUsage() {
+    return maxMemoryUsage;
+  }
+
+  /**
+   * Sets the max memory usage.
+   *
+   * @param max The maximum allow memory usage.
+   * @return The state context.
+   */
+  public StateContext maxMemoryUsage(long max) {
+    maxMemoryUsage = max;
     return this;
   }
 
@@ -634,7 +637,19 @@ public class StateContext {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.succeeded()) {
-          transition(StateType.FOLLOWER);
+          persistor.loadSnapshot(new Handler<AsyncResult<JsonElement>>() {
+            @Override
+            public void handle(AsyncResult<JsonElement> result) {
+              if (result.failed()) {
+                logger.error("Failed to load snapshot.", result.cause());
+              }
+              else {
+                stateMachine.installSnapshot(result.result());
+                startLogTimer();
+                transition(StateType.FOLLOWER);
+              }
+            }
+          });
         }
       }
     });
@@ -659,6 +674,7 @@ public class StateContext {
         }
         else {
           startHandler = doneHandler;
+          startLogTimer();
           transition(StateType.FOLLOWER);
         }
       }
@@ -667,17 +683,64 @@ public class StateContext {
   }
 
   /**
+   * Starts a periodic timer for persisting logs.
+   */
+  private void startLogTimer() {
+    logTimer = vertx.setPeriodic(5000, new Handler<Long>() {
+      @Override
+      public void handle(Long timerID) {
+        if (Runtime.getRuntime().totalMemory() > maxMemoryUsage()) {
+          snapshotLogs();
+        }
+      }
+    });
+  }
+
+  /**
+   * Takes a snapshot of the logs.
+   */
+  private void snapshotLogs() {
+    final long lastApplied = lastApplied();
+    persistor.storeSnapshot(stateMachine.takeSnapshot(), new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          logger.error("Failed to persist snapshot.", result.cause());
+        }
+        else {
+          log.removeBefore(lastApplied+1, new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> result) {
+              if (result.failed()) {
+                logger.error("Failed to clean logs.", result.cause());
+              }
+            }
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * Cancels the log snapshot timer.
+   */
+  private void cancelLogTimer() {
+    if (logTimer > 0) {
+      vertx.cancelTimer(logTimer);
+      logTimer = 0;
+    }
+  }
+
+  /**
    * Submits a command to the context.
    *
-   * @param command
-   *   The command to submit.
-   * @param doneHandler
-   *   An asynchronous handler to be called with the command result.
-   * @return
-   *   The state context.
+   * @param command The command to submit.
+   * @param args The command arguments.
+   * @param doneHandler An asynchronous handler to be called with the command result.
+   * @return The state context.
    */
-  public <R> StateContext submitCommand(final Command command, final Handler<AsyncResult<R>> doneHandler) {
-    client.submit(currentLeader(), new SubmitRequest(command), new Handler<AsyncResult<SubmitResponse>>() {
+  public <R> StateContext submitCommand(final String command, final JsonObject args, final Handler<AsyncResult<R>> doneHandler) {
+    client.submit(currentLeader(), new SubmitRequest(command, args), new Handler<AsyncResult<SubmitResponse>>() {
       @Override
       @SuppressWarnings("unchecked")
       public void handle(AsyncResult<SubmitResponse> result) {
@@ -690,7 +753,7 @@ public class StateContext {
             new DefaultFutureResult<R>(new CopyCatException("Command queue full.")).setHandler(doneHandler);
           }
           else {
-            commands.add(new WrappedCommand<R>(command, doneHandler));
+            commands.add(new WrappedCommand<R>(command, args, doneHandler));
           }
         }
         else {
@@ -708,7 +771,7 @@ public class StateContext {
     Queue<WrappedCommand<?>> queue = new ArrayDeque<WrappedCommand<?>>(commands);
     commands.clear();
     for (WrappedCommand<?> command : queue) {
-      submitCommand(command.command, command.doneHandler);
+      submitCommand(command.command, command.args, command.doneHandler);
     }
     queue.clear();
   }
@@ -717,10 +780,12 @@ public class StateContext {
    * A wrapped state machine command request.
    */
   private static class WrappedCommand<R> {
-    private final Command command;
+    private final String command;
+    private final JsonObject args;
     private final Handler<AsyncResult<R>> doneHandler;
-    private WrappedCommand(Command command, Handler<AsyncResult<R>> doneHandler) {
+    private WrappedCommand(String command, JsonObject args, Handler<AsyncResult<R>> doneHandler) {
       this.command = command;
+      this.args = args;
       this.doneHandler = doneHandler;
     }
   }
@@ -730,6 +795,7 @@ public class StateContext {
    */
   public void stop() {
     client.stop();
+    cancelLogTimer();
     transition(StateType.START);
   }
 
@@ -741,6 +807,7 @@ public class StateContext {
    */
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
     client.stop(doneHandler);
+    cancelLogTimer();
     transition(StateType.START);
     new DefaultFutureResult<Void>().setHandler(doneHandler).setResult((Void) null);
   }

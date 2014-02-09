@@ -47,7 +47,7 @@ public class MemoryLog implements Log {
     long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
     log.put(index, entry);
     if (entry.type().equals(Entry.Type.COMMAND)) {
-      entries.put(entry.setLog(this).id(), index);
+      entries.put(entry.id(), index);
     }
     return result(index, doneHandler);
   }

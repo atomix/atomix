@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.test.integration;
 
+import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.Replica;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.impl.DefaultReplica;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;

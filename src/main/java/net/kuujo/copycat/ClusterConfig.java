@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Observable;
 import java.util.Set;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.ClusterConfig;
 
 /**
  * A dynamic cluster configuration.

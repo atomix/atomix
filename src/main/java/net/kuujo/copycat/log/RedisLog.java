@@ -105,7 +105,7 @@ public class RedisLog implements Log {
     final long index = currentIndex++;
     final JsonObject message = new JsonObject()
         .putString("command", "set").putArray("args", new JsonArray()
-        .add(String.format("%s:%d", key, index)).add(serializer.serialize(entry).encode()));
+        .add(String.format("%s:%d", key, index)).add(serializer.<JsonObject>serialize(entry).encode()));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {

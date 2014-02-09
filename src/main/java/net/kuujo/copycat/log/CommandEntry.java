@@ -15,8 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.impl.DefaultCommand;
+import java.util.Map;
+
+import org.vertx.java.core.json.JsonObject;
 
 /**
  * A state machine command entry.
@@ -24,15 +25,17 @@ import net.kuujo.copycat.impl.DefaultCommand;
  * @author Jordan Halterman
  */
 public class CommandEntry extends Entry {
-  private Command command;
+  private String command;
+  private Map<String, Object> args;
 
   public CommandEntry() {
     super(Type.COMMAND);
   }
 
-  public CommandEntry(long term, Command command) {
+  public CommandEntry(long term, String command, JsonObject args) {
     super(Type.COMMAND);
-    this.command = command instanceof DefaultCommand ? ((DefaultCommand) command).setEntry(this) : command;
+    this.command = command;
+    this.args = args.toMap();
   }
 
   /**
@@ -40,15 +43,17 @@ public class CommandEntry extends Entry {
    * 
    * @return The state machine command.
    */
-  public Command command() {
+  public String command() {
     return command;
   }
 
-  @Override
-  public void free() {
-    if (log != null) {
-      log.free(this);
-    }
+  /**
+   * Returns command arguments.
+   *
+   * @return The command arguments.
+   */
+  public JsonObject args() {
+    return new JsonObject(args);
   }
 
 }

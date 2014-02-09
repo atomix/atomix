@@ -13,12 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.annotations;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * A state machine.
+ * Indicates a method to run before a state machine command is applied.
  *
  * @author Jordan Halterman
  */
-public interface StateMachine {
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface BeforeCommand {
+
+  /**
+   * An array of commands before which to run the method.
+   */
+  String[] value();
+
 }

@@ -18,7 +18,7 @@ package net.kuujo.copycat.test.integration;
 import java.util.Observable;
 import java.util.Observer;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterController;
 import net.kuujo.copycat.cluster.impl.DefaultClusterController;
 
