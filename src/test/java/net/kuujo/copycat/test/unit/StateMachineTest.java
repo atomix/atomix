@@ -110,21 +110,6 @@ public class StateMachineTest {
   }
 
   @Test
-  public void testDefaultArgCommandFail() {
-    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
-    Command command = adapter.getCommand("two");
-    assertNotNull(command);
-    assertEquals("two", command.name());
-    assertEquals(Command.Type.READ_WRITE, command.type());
-    try {
-      adapter.applyCommand("two", null);
-      fail("Failed to prevent application.");
-    }
-    catch (IllegalArgumentException e) {
-    }
-  }
-
-  @Test
   public void testAutoNamedArgsCommand() {
     DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("three");

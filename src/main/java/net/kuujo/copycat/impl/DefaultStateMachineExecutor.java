@@ -108,7 +108,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     CommandWrapper command = commands.get(name);
     if (command != null) {
       try {
-        result = command.call(stateMachine, args);
+        result = command.call(stateMachine, args.toMap());
       }
       catch (IllegalAccessException | InvocationTargetException e) {
         throw new IllegalArgumentException(e);
@@ -270,7 +270,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               // annotation then create a placeholder annotation which will
               // indicate that the entire command arguments object should be
               // passed to the method.
-              if (params.length == 1 && JsonObject.class.isAssignableFrom(method.getParameterTypes()[0])) {
+              if (params.length == 1) {
                 boolean hasAnnotation = false;
                 for (Annotation annotation : params[0]) {
                   if (Command.Argument.class.isAssignableFrom(annotation.getClass())) {
@@ -279,8 +279,14 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
                   }
                 }
                 if (!hasAnnotation) {
-                  commands.put(info.name(), new CommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
-                  continue;
+                  if (JsonObject.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                    commands.put(info.name(), new ObjectCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
+                    continue;
+                  }
+                  else if (Map.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                    commands.put(info.name(), new MapCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
+                    continue;
+                  }
                 }
               }
 
@@ -371,10 +377,10 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
   /**
    * Command wrapper.
    */
-  private static class CommandWrapper implements Function<JsonObject, Object> {
-    private final Command info;
-    private final Command.Argument[] args;
-    private final Method method;
+  private static class CommandWrapper implements Function<Map<String, Object>, Object> {
+    protected final Command info;
+    protected final Command.Argument[] args;
+    protected final Method method;
 
     private CommandWrapper(Command info, Command.Argument[] args, Method method) {
       this.info = info;
@@ -383,7 +389,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     }
 
     @Override
-    public Object call(Object obj, JsonObject arg) throws IllegalAccessException, InvocationTargetException {
+    public Object call(Object obj, Map<String, Object> arg) throws IllegalAccessException, InvocationTargetException {
       Object[] args = new Object[this.args.length];
       for (int i = 0; i < this.args.length; i++) {
         Command.Argument argument = this.args[i];
@@ -395,9 +401,9 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
           args[i] = arg;
         }
         // If the field exists in the JsonObject then extract it.
-        else if (arg.containsField(name)) {
+        else if (arg.containsKey(name)) {
           try {
-            args[i] = arg.getValue(name);
+            args[i] = arg.get(name);
           }
           catch (RuntimeException e) {
             // If the argument value is invalid then we may pass a null value in
@@ -422,6 +428,32 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
         }
       }
       return method.invoke(obj, args);
+    }
+  }
+
+  /**
+   * Object command wrapper.
+   */
+  private static class ObjectCommandWrapper extends CommandWrapper {
+    private ObjectCommandWrapper(Command info, Command.Argument[] args, Method method) {
+      super(info, args, method);
+    }
+    @Override
+    public Object call(Object object, Map<String, Object> arg) throws IllegalAccessException, InvocationTargetException {
+      return method.invoke(object, new JsonObject(arg));
+    }
+  }
+
+  /**
+   * Map command wrapper.
+   */
+  private static class MapCommandWrapper extends CommandWrapper {
+    private MapCommandWrapper(Command info, Command.Argument[] args, Method method) {
+      super(info, args, method);
+    }
+    @Override
+    public Object call(Object object, Map<String, Object> arg) throws IllegalAccessException, InvocationTargetException {
+      return method.invoke(object, arg);
     }
   }
 
