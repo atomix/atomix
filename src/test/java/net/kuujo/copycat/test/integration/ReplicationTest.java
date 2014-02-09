@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+09 * Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,9 @@
  */
 package net.kuujo.copycat.test.integration;
 
-import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.Replica;
+import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.annotations.Command;
 import net.kuujo.copycat.impl.DefaultReplica;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
@@ -41,46 +42,58 @@ import org.vertx.testtools.TestVerticle;
  */
 public class ReplicationTest extends TestVerticle {
 
+  public static class TestStateMachine implements StateMachine {
+    @SuppressWarnings("unused")
+    private String data;
+
+    @Command(name="test", type=Command.Type.WRITE)
+    public boolean test(@Command.Argument("data") String data) {
+      this.data = data;
+      return true;
+    }
+  }
+
   @Test
   public void testNoOpReplication() {
-    final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
-
-    final Replica test1 = new DefaultReplica("test.1", vertx).setClusterConfig(config);
+    final Replica test1 = new DefaultReplica("test.1", vertx, new TestStateMachine());
+    test1.config().setMembers("test.1", "test.2", "test.3");
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final Replica test2 = new DefaultReplica("test.2", vertx).setClusterConfig(config);
+        final Replica test2 = new DefaultReplica("test.2", vertx, new TestStateMachine());
+        test2.config().setMembers("test.1", "test.2", "test.3");
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final Replica test3 = new DefaultReplica("test.3", vertx).setClusterConfig(config);
+            final Replica test3 = new DefaultReplica("test.3", vertx, new TestStateMachine());
+            test3.config().setMembers("test.1", "test.2", "test.3");
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
                 assertTrue(result.succeeded());
-                test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Void>>() {
+                test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Boolean>>() {
                   @Override
-                  public void handle(AsyncResult<Void> result) {
+                  public void handle(AsyncResult<Boolean> result) {
                     assertTrue(result.succeeded());
-                    test1.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
+                    test1.log().entry(1, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
                         assertEquals(Entry.Type.NOOP, result.result().type());
                       }
                     });
-                    test2.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
+                    test2.log().entry(1, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
                         assertEquals(Entry.Type.NOOP, result.result().type());
                       }
                     });
-                    test3.getLog().entry(1, new Handler<AsyncResult<Entry>>() {
+                    test3.log().entry(1, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -100,21 +113,22 @@ public class ReplicationTest extends TestVerticle {
 
   @Test
   public void testCommandReplication() {
-    final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
-
-    final Replica test1 = new DefaultReplica("test.1", vertx).setClusterConfig(config);
+    final Replica test1 = new DefaultReplica("test.1", vertx, new TestStateMachine());
+    test1.config().setMembers("test.1", "test.2", "test.3");
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final Replica test2 = new DefaultReplica("test.2", vertx).setClusterConfig(config);
+        final Replica test2 = new DefaultReplica("test.2", vertx, new TestStateMachine());
+        test2.config().setMembers("test.1", "test.2", "test.3");
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final Replica test3 = new DefaultReplica("test.3", vertx).setClusterConfig(config);
+            final Replica test3 = new DefaultReplica("test.3", vertx, new TestStateMachine());
+            test3.config().setMembers("test.1", "test.2", "test.3");
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
@@ -130,31 +144,31 @@ public class ReplicationTest extends TestVerticle {
                     vertx.setTimer(1000, new Handler<Long>() {
                       @Override
                       public void handle(Long timerID) {
-                        test1.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
+                        test1.log().entry(4, new Handler<AsyncResult<Entry>>() {
                           @Override
                           public void handle(AsyncResult<Entry> result) {
                             assertTrue(result.succeeded());
                             assertEquals(Entry.Type.COMMAND, result.result().type());
-                            assertEquals("test", ((CommandEntry) result.result()).command().command());
-                            assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
+                            assertEquals("test", ((CommandEntry) result.result()).command());
+                            assertEquals("Hello world!", ((CommandEntry) result.result()).args().getString("data"));
                           }
                         });
-                        test2.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
+                        test2.log().entry(4, new Handler<AsyncResult<Entry>>() {
                           @Override
                           public void handle(AsyncResult<Entry> result) {
                             assertTrue(result.succeeded());
                             assertEquals(Entry.Type.COMMAND, result.result().type());
-                            assertEquals("test", ((CommandEntry) result.result()).command().command());
-                            assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
+                            assertEquals("test", ((CommandEntry) result.result()).command());
+                            assertEquals("Hello world!", ((CommandEntry) result.result()).args().getString("data"));
                           }
                         });
-                        test3.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
+                        test3.log().entry(4, new Handler<AsyncResult<Entry>>() {
                           @Override
                           public void handle(AsyncResult<Entry> result) {
                             assertTrue(result.succeeded());
                             assertEquals(Entry.Type.COMMAND, result.result().type());
-                            assertEquals("test", ((CommandEntry) result.result()).command().command());
-                            assertEquals("Hello world!", ((CommandEntry) result.result()).command().args().getString("data"));
+                            assertEquals("test", ((CommandEntry) result.result()).command());
+                            assertEquals("Hello world!", ((CommandEntry) result.result()).args().getString("data"));
                             testComplete();
                           }
                         });
@@ -172,23 +186,23 @@ public class ReplicationTest extends TestVerticle {
 
   @Test
   public void testConfigReplication() {
-    // Crete a cluster configuration containing three replicas.
-    final ClusterConfig config = new ClusterConfig("test.1", "test.2", "test.3");
-
     // Start the three replicas indicated by the configuration.
-    final Replica test1 = new DefaultReplica("test.1", vertx).setClusterConfig(config).setHeartbeatInterval(100);
+    final Replica test1 = new DefaultReplica("test.1", vertx, new TestStateMachine()).setHeartbeatInterval(100);
+    test1.config().setMembers("test.1", "test.2", "test.3");
     test1.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         assertTrue(result.succeeded());
 
-        final Replica test2 = new DefaultReplica("test.2", vertx).setClusterConfig(config).setHeartbeatInterval(100);
+        final Replica test2 = new DefaultReplica("test.2", vertx, new TestStateMachine()).setHeartbeatInterval(100);
+        test2.config().setMembers("test.1", "test.2", "test.3");
         test2.start(new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
             assertTrue(result.succeeded());
 
-            final Replica test3 = new DefaultReplica("test.3", vertx).setClusterConfig(config).setHeartbeatInterval(100);
+            final Replica test3 = new DefaultReplica("test.3", vertx, new TestStateMachine()).setHeartbeatInterval(100);
+            test3.config().setMembers("test.1", "test.2", "test.3");
             test3.start(new Handler<AsyncResult<Void>>() {
               @Override
               public void handle(AsyncResult<Void> result) {
@@ -200,7 +214,7 @@ public class ReplicationTest extends TestVerticle {
                     // should commit a configuration entry to the log. This will contain
                     // the initial cluster configuration. Check the logs for that. There
                     // will be two entries representing the "old" configuration and the new.
-                    test1.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                    test1.log().entry(2, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -211,7 +225,7 @@ public class ReplicationTest extends TestVerticle {
                         assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
                       }
                     });
-                    test2.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                    test2.log().entry(2, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -222,7 +236,7 @@ public class ReplicationTest extends TestVerticle {
                         assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
                       }
                     });
-                    test3.getLog().entry(2, new Handler<AsyncResult<Entry>>() {
+                    test3.log().entry(2, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -233,7 +247,7 @@ public class ReplicationTest extends TestVerticle {
                         assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
                       }
                     });
-                    test1.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
+                    test1.log().entry(3, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -244,7 +258,7 @@ public class ReplicationTest extends TestVerticle {
                         assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
                       }
                     });
-                    test2.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
+                    test2.log().entry(3, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -255,7 +269,7 @@ public class ReplicationTest extends TestVerticle {
                         assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
                       }
                     });
-                    test3.getLog().entry(3, new Handler<AsyncResult<Entry>>() {
+                    test3.log().entry(3, new Handler<AsyncResult<Entry>>() {
                       @Override
                       public void handle(AsyncResult<Entry> result) {
                         assertTrue(result.succeeded());
@@ -268,7 +282,9 @@ public class ReplicationTest extends TestVerticle {
                     });
 
                     // Now, try adding a member to the cluster.
-                    config.addMember("test.4");
+                    test1.config().addMember("test.4");
+                    test2.config().addMember("test.4");
+                    test3.config().addMember("test.4");
 
                     // Submit a command to the cluster for good measure.
                     test3.submitCommand("test", new JsonObject().putString("data", "Hello world!"), new Handler<AsyncResult<Void>>() {
@@ -287,7 +303,7 @@ public class ReplicationTest extends TestVerticle {
                             // configuration separately.
                             // In this case we're adding a node. Check both entries for the new
                             // cluster membership set.
-                            test1.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
+                            test1.log().entry(4, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -298,7 +314,7 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test1.getLog().entry(4, new Handler<AsyncResult<Entry>>() {
+                            test1.log().entry(4, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -309,7 +325,7 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test2.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
+                            test2.log().entry(6, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -320,7 +336,7 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test2.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
+                            test2.log().entry(6, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -331,7 +347,7 @@ public class ReplicationTest extends TestVerticle {
                                 assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                               }
                             });
-                            test3.getLog().entry(6, new Handler<AsyncResult<Entry>>() {
+                            test3.log().entry(6, new Handler<AsyncResult<Entry>>() {
                               @Override
                               public void handle(AsyncResult<Entry> result) {
                                 assertTrue(result.succeeded());
@@ -346,11 +362,14 @@ public class ReplicationTest extends TestVerticle {
                             // Now try removing a member from the cluster. Again, this should create
                             // two new configuration entries, one with the combined configuration and
                             // one with the new configuration.
-                            config.removeMember("test.4");
+                            test1.config().removeMember("test.4");
+                            test2.config().removeMember("test.4");
+                            test3.config().removeMember("test.4");
+
                             vertx.setTimer(1000, new Handler<Long>() {
                               @Override
                               public void handle(Long event) {
-                                test1.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                                test1.log().entry(7, new Handler<AsyncResult<Entry>>() {
                                   @Override
                                   public void handle(AsyncResult<Entry> result) {
                                     assertTrue(result.succeeded());
@@ -361,7 +380,7 @@ public class ReplicationTest extends TestVerticle {
                                     assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                                   }
                                 });
-                                test2.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                                test2.log().entry(7, new Handler<AsyncResult<Entry>>() {
                                   @Override
                                   public void handle(AsyncResult<Entry> result) {
                                     assertTrue(result.succeeded());
@@ -372,7 +391,7 @@ public class ReplicationTest extends TestVerticle {
                                     assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                                   }
                                 });
-                                test3.getLog().entry(7, new Handler<AsyncResult<Entry>>() {
+                                test3.log().entry(7, new Handler<AsyncResult<Entry>>() {
                                   @Override
                                   public void handle(AsyncResult<Entry> result) {
                                     assertTrue(result.succeeded());
@@ -383,7 +402,7 @@ public class ReplicationTest extends TestVerticle {
                                     assertTrue(((ConfigurationEntry) result.result()).members().contains("test.4"));
                                   }
                                 });
-                                test1.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                                test1.log().entry(8, new Handler<AsyncResult<Entry>>() {
                                   @Override
                                   public void handle(AsyncResult<Entry> result) {
                                     assertTrue(result.succeeded());
@@ -394,7 +413,7 @@ public class ReplicationTest extends TestVerticle {
                                     assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
                                   }
                                 });
-                                test2.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                                test2.log().entry(8, new Handler<AsyncResult<Entry>>() {
                                   @Override
                                   public void handle(AsyncResult<Entry> result) {
                                     assertTrue(result.succeeded());
@@ -405,7 +424,7 @@ public class ReplicationTest extends TestVerticle {
                                     assertFalse(((ConfigurationEntry) result.result()).members().contains("test.4"));
                                   }
                                 });
-                                test3.getLog().entry(8, new Handler<AsyncResult<Entry>>() {
+                                test3.log().entry(8, new Handler<AsyncResult<Entry>>() {
                                   @Override
                                   public void handle(AsyncResult<Entry> result) {
                                     assertTrue(result.succeeded());
