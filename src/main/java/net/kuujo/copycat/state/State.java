@@ -44,7 +44,7 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 abstract class State {
   protected Vertx vertx;
   protected Client client;
-  protected StateMachineAdapter stateMachine;
+  protected StateMachineExecutor stateMachine;
   protected Log log;
   protected ClusterConfig config;
   protected StateContext context;
@@ -79,7 +79,7 @@ abstract class State {
    * @param stateMachine The state machine.
    * @return The state instance.
    */
-  public State setStateMachine(StateMachineAdapter stateMachine) {
+  public State setStateMachine(StateMachineExecutor stateMachine) {
     this.stateMachine = stateMachine;
     return this;
   }

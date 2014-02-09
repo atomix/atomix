@@ -15,18 +15,26 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.CopyCatException;
+
 /**
- * A log visitor.
+ * A log exception.
  * 
  * @author Jordan Halterman
  */
-public interface LogVisitor {
+@SuppressWarnings("serial")
+public class LogException extends CopyCatException {
 
-  /**
-   * Appends an entry to the visitor.
-   * 
-   * @param entry The entry to append.
-   */
-  void applyEntry(Entry entry);
+  public LogException(String message) {
+    super(message);
+  }
+
+  public LogException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public LogException(Throwable cause) {
+    super(cause);
+  }
 
 }

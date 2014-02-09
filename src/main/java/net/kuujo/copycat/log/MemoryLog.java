@@ -30,11 +30,39 @@ import org.vertx.java.core.impl.DefaultFutureResult;
  * @author Jordan Halterman
  */
 public class MemoryLog implements Log {
+  private static final long DEFAULT_MAX_SIZE = 1000;
   private final TreeMap<Long, Entry> log = new TreeMap<>();
+  private long maxSize = DEFAULT_MAX_SIZE;
+  private Handler<Void> fullHandler;
+  private Handler<Void> drainHandler;
+  private boolean full;
 
   @Override
-  public void init(LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
+  public void init(Handler<AsyncResult<Void>> doneHandler) {
     result(null, doneHandler);
+  }
+
+  @Override
+  public Log setMaxSize(long maxSize) {
+    this.maxSize = maxSize;
+    return this;
+  }
+
+  @Override
+  public long getMaxSize() {
+    return maxSize;
+  }
+
+  @Override
+  public Log fullHandler(Handler<Void> handler) {
+    fullHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Log drainHandler(Handler<Void> handler) {
+    drainHandler = handler;
+    return this;
   }
 
   @Override
@@ -114,6 +142,22 @@ public class MemoryLog implements Log {
    * Creates a triggers a result.
    */
   private <T> Log result(T result, Handler<AsyncResult<T>> handler) {
+    if (!full) {
+      if (log.size() >= maxSize) {
+        full = true;
+        if (fullHandler != null) {
+          fullHandler.handle((Void) null);
+        }
+      }
+    }
+    else {
+      if (log.size() < maxSize) {
+        full = false;
+        if (drainHandler != null) {
+          drainHandler.handle((Void) null);
+        }
+      }
+    }
     new DefaultFutureResult<T>().setHandler(handler).setResult(result);
     return this;
   }

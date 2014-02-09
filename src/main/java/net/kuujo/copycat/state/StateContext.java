@@ -20,12 +20,9 @@ import java.util.Queue;
 
 import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.CopyCatException;
-import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.LogVisitor;
-import net.kuujo.copycat.log.Entry.Type;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
@@ -53,17 +50,14 @@ public class StateContext {
   private final Vertx vertx;
   private final Client client;
   private Log log;
-  private StateMachineAdapter stateMachine;
+  private StateMachineExecutor stateMachine;
   private ClusterConfig cluster = new ClusterConfig();
   private final StateFactory stateFactory = new StateFactory();
   private StateType stateType;
   private State state;
-  private long logTimer;
   private SnapshotPersistor persistor;
-  private Handler<StateType> transitionHandler;
   private Handler<AsyncResult<String>> startHandler;
   private Queue<WrappedCommand<?>> commands = new ArrayDeque<WrappedCommand<?>>();
-  private long maxMemoryUsage = 1024 * 1024 * 16;
   private long electionTimeout = 2500;
   private long heartbeatInterval = 1000;
   private boolean useAdaptiveTimeouts = true;
@@ -76,12 +70,12 @@ public class StateContext {
   private long commitIndex = 0;
   private long lastApplied = 0;
 
-  public StateContext(String address, Vertx vertx, StateMachine stateMachine, Log log) {
+  public StateContext(String address, Vertx vertx, StateMachineExecutor stateMachine, Log log) {
     this.address = address;
     this.vertx = vertx;
     this.client = new Client(address, vertx);
     this.log = log;
-    this.stateMachine = new StateMachineAdapter(stateMachine);
+    this.stateMachine = stateMachine;
     this.persistor = new SnapshotPersistor(address, vertx.fileSystem());
     transition(StateType.START);
   }
@@ -130,7 +124,6 @@ public class StateContext {
     if (type.equals(stateType))
       return this;
     logger.info(address() + " transitioning to " + type.getName());
-    final StateType oldStateType = stateType;
     final State oldState = state;
     stateType = type;
     switch (type) {
@@ -176,81 +169,35 @@ public class StateContext {
     final State newState = state;
 
     if (oldState != null) {
-      if (oldStateType.equals(StateType.START)) {
-        oldState.shutDown(new Handler<Void>() {
-          @Override
-          public void handle(Void _) {
-            unregisterHandlers();
-            log.init(new LogVisitor() {
-              @Override
-              public void applyEntry(Entry entry) {
-                // If the entry type is a command, apply the entry to the state
-                // machine.
-                if (entry.type().equals(Type.COMMAND)) {
-                  CommandEntry command = (CommandEntry) entry;
-                  stateMachine.applyCommand(command.command(), command.args());
-                }
-              }
-            }, new Handler<AsyncResult<Void>>() {
-              @Override
-              public void handle(AsyncResult<Void> result) {
-                if (result.succeeded()) {
-                  newState.startUp(new Handler<Void>() {
-                    @Override
-                    public void handle(Void _) {
-                      finishTransition(newState, type);
-                    }
-                  });
-                }
-                else {
-                  transition(oldStateType);
-                }
-              }
-            });
-          }
-        });
-      }
-      else {
-        oldState.shutDown(new Handler<Void>() {
-          @Override
-          public void handle(Void result) {
-            unregisterHandlers();
-            newState.startUp(new Handler<Void>() {
-              @Override
-              public void handle(Void result) {
-                finishTransition(newState, type);
-              }
-            });
-          }
-        });
-      }
+      oldState.shutDown(new Handler<Void>() {
+        @Override
+        public void handle(Void result) {
+          unregisterHandlers();
+          newState.startUp(new Handler<Void>() {
+            @Override
+            public void handle(Void result) {
+              registerHandlers(newState);
+              checkStart();
+            }
+          });
+        }
+      });
     }
     else {
       state.startUp(new Handler<Void>() {
         @Override
         public void handle(Void result) {
-          finishTransition(newState, type);
+          registerHandlers(newState);
+          checkStart();
         }
       });
     }
     return this;
   }
 
-  private void finishTransition(final State state, final StateType type) {
-    registerHandlers(state);
-    if (transitionHandler != null) {
-      transitionHandler.handle(type);
-    }
-    checkStart();
-  }
-
-  private void checkStart() {
-    if (currentLeader != null && startHandler != null) {
-      new DefaultFutureResult<String>(currentLeader).setHandler(startHandler);
-      startHandler = null;
-    }
-  }
-
+  /**
+   * Registers client handlers.
+   */
   private void registerHandlers(final State state) {
     client.pingHandler(new Handler<PingRequest>() {
       @Override
@@ -278,11 +225,197 @@ public class StateContext {
     });
   }
 
+  /**
+   * Unregisters client handlers.
+   */
   private void unregisterHandlers() {
     client.pingHandler(null);
     client.syncHandler(null);
     client.pollHandler(null);
     client.submitHandler(null);
+  }
+
+  /**
+   * Starts the context.
+   *
+   * @return
+   *   The state context.
+   */
+  public StateContext start() {
+    transition(StateType.START);
+    client.start(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.succeeded()) {
+          initializeLog(new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> result) {
+              if (result.succeeded()) {
+                transition(StateType.FOLLOWER);
+              }
+            }
+          });
+        }
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Starts the context.
+   *
+   * @param doneHandler
+   *   An asynchronous handler to be called once the context is started.
+   * @return
+   *   The state context.
+   */
+  public StateContext start(final Handler<AsyncResult<String>> doneHandler) {
+    transition(StateType.START);
+    client.start(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          new DefaultFutureResult<String>(result.cause()).setHandler(doneHandler);
+        }
+        else {
+          startHandler = doneHandler;
+          initializeLog(new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> result) {
+              if (result.failed()) {
+                new DefaultFutureResult<String>(result.cause()).setHandler(doneHandler);
+              }
+              else {
+                transition(StateType.FOLLOWER);
+              }
+            }
+          });
+        }
+      }
+    });
+    return this;
+  }
+
+  /**
+   * Initializes the log.
+   */
+  private void initializeLog(final Handler<AsyncResult<Void>> doneHandler) {
+    log.init(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+        }
+        else {
+          final long commitIndex = commitIndex();
+          persistor.loadSnapshot(new Handler<AsyncResult<JsonElement>>() {
+            @Override
+            public void handle(AsyncResult<JsonElement> result) {
+              if (result.failed()) {
+                new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+              }
+              else if (result.result() != null) {
+                stateMachine.installSnapshot(result.result());
+                if (log.lastIndex() > 0 && log.lastIndex() >= commitIndex) {
+                  initializeLog(1, commitIndex, doneHandler);
+                }
+              }
+            }
+          });
+        }
+      }
+    });
+  }
+
+  /**
+   * Initializes a single entry in the log.
+   */
+  private void initializeLog(final long currentIndex, final long commitIndex, final Handler<AsyncResult<Void>> doneHandler) {
+    if (currentIndex <= commitIndex) {
+      log.containsEntry(currentIndex, new Handler<AsyncResult<Boolean>>() {
+        @Override
+        public void handle(AsyncResult<Boolean> result) {
+          if (result.failed()) {
+            new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+          }
+          else if (result.result()) {
+            log.entry(currentIndex, new Handler<AsyncResult<Entry>>() {
+              @Override
+              public void handle(AsyncResult<Entry> result) {
+                if (result.failed()) {
+                  new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+                }
+                else if (result.result() instanceof CommandEntry) {
+                  CommandEntry entry = (CommandEntry) result.result();
+                  stateMachine.applyCommand(entry.command(), entry.args());
+                  initializeLog(currentIndex+1, commitIndex, doneHandler);
+                }
+              }
+            });
+          }
+          else {
+            initializeLog(currentIndex+1, commitIndex, doneHandler);
+          }
+        }
+      });
+    }
+    else {
+      log.fullHandler(new Handler<Void>() {
+        @Override
+        public void handle(Void _) {
+          final long lastApplied = lastApplied();
+          persistor.storeSnapshot(stateMachine.takeSnapshot(), new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> result) {
+              if (result.failed()) {
+                logger.error("Failed to store snapshot.", result.cause());
+              }
+              else {
+                log.removeBefore(lastApplied+1, new Handler<AsyncResult<Void>>() {
+                  @Override
+                  public void handle(AsyncResult<Void> result) {
+                    if (result.failed()) {
+                      logger.error("Failed to clean logs.", result.cause());
+                    }
+                  }
+                });
+              }
+            }
+          });
+        }
+      });
+      new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+    }
+  }
+
+  /**
+   * Checks whether the start handler needs to be called.
+   */
+  private void checkStart() {
+    if (currentLeader != null && startHandler != null) {
+      new DefaultFutureResult<String>(currentLeader).setHandler(startHandler);
+      startHandler = null;
+    }
+  }
+
+  /**
+   * Stops the context.
+   */
+  public void stop() {
+    client.stop();
+    transition(StateType.START);
+  }
+
+  /**
+   * Stops the context.
+   *
+   * @param doneHandler
+   *   An asynchronous handler to be called once the context is stopped.
+   */
+  public void stop(Handler<AsyncResult<Void>> doneHandler) {
+    client.stop(doneHandler);
+    transition(StateType.START);
+    new DefaultFutureResult<Void>().setHandler(doneHandler).setResult((Void) null);
   }
 
   /**
@@ -333,37 +466,6 @@ public class StateContext {
    */
   public Log log() {
     return log;
-  }
-
-  /**
-   * Registers a state transition handler.
-   *
-   * @param handler A handler to be called when the state transitions.
-   * @return The state context.
-   */
-  public StateContext transitionHandler(Handler<StateType> handler) {
-    transitionHandler = handler;
-    return this;
-  }
-
-  /**
-   * Returns the max memory usage.
-   *
-   * @return The max allowed memory usage.
-   */
-  public long maxMemoryUsage() {
-    return maxMemoryUsage;
-  }
-
-  /**
-   * Sets the max memory usage.
-   *
-   * @param max The maximum allow memory usage.
-   * @return The state context.
-   */
-  public StateContext maxMemoryUsage(long max) {
-    maxMemoryUsage = max;
-    return this;
   }
 
   /**
@@ -605,112 +707,6 @@ public class StateContext {
   }
 
   /**
-   * Starts the context.
-   *
-   * @return
-   *   The state context.
-   */
-  public StateContext start() {
-    transition(StateType.START);
-    client.start(new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.succeeded()) {
-          persistor.loadSnapshot(new Handler<AsyncResult<JsonElement>>() {
-            @Override
-            public void handle(AsyncResult<JsonElement> result) {
-              if (result.failed()) {
-                logger.error("Failed to load snapshot.", result.cause());
-              }
-              else {
-                stateMachine.installSnapshot(result.result());
-                startLogTimer();
-                transition(StateType.FOLLOWER);
-              }
-            }
-          });
-        }
-      }
-    });
-    return this;
-  }
-
-  /**
-   * Starts the context.
-   *
-   * @param doneHandler
-   *   An asynchronous handler to be called once the context is started.
-   * @return
-   *   The state context.
-   */
-  public StateContext start(final Handler<AsyncResult<String>> doneHandler) {
-    transition(StateType.START);
-    client.start(new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<String>(result.cause()).setHandler(doneHandler);
-        }
-        else {
-          startHandler = doneHandler;
-          startLogTimer();
-          transition(StateType.FOLLOWER);
-        }
-      }
-    });
-    return this;
-  }
-
-  /**
-   * Starts a periodic timer for persisting logs.
-   */
-  private void startLogTimer() {
-    logTimer = vertx.setPeriodic(5000, new Handler<Long>() {
-      @Override
-      public void handle(Long timerID) {
-        if (Runtime.getRuntime().totalMemory() > maxMemoryUsage()) {
-          snapshotLogs();
-        }
-      }
-    });
-  }
-
-  /**
-   * Takes a snapshot of the logs.
-   */
-  private void snapshotLogs() {
-    final long lastApplied = lastApplied();
-    persistor.storeSnapshot(stateMachine.takeSnapshot(), new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          logger.error("Failed to persist snapshot.", result.cause());
-        }
-        else {
-          log.removeBefore(lastApplied+1, new Handler<AsyncResult<Void>>() {
-            @Override
-            public void handle(AsyncResult<Void> result) {
-              if (result.failed()) {
-                logger.error("Failed to clean logs.", result.cause());
-              }
-            }
-          });
-        }
-      }
-    });
-  }
-
-  /**
-   * Cancels the log snapshot timer.
-   */
-  private void cancelLogTimer() {
-    if (logTimer > 0) {
-      vertx.cancelTimer(logTimer);
-      logTimer = 0;
-    }
-  }
-
-  /**
    * Submits a command to the context.
    *
    * @param command The command to submit.
@@ -767,28 +763,6 @@ public class StateContext {
       this.args = args;
       this.doneHandler = doneHandler;
     }
-  }
-
-  /**
-   * Stops the context.
-   */
-  public void stop() {
-    client.stop();
-    cancelLogTimer();
-    transition(StateType.START);
-  }
-
-  /**
-   * Stops the context.
-   *
-   * @param doneHandler
-   *   An asynchronous handler to be called once the context is stopped.
-   */
-  public void stop(Handler<AsyncResult<Void>> doneHandler) {
-    client.stop(doneHandler);
-    cancelLogTimer();
-    transition(StateType.START);
-    new DefaultFutureResult<Void>().setHandler(doneHandler).setResult((Void) null);
   }
 
 }

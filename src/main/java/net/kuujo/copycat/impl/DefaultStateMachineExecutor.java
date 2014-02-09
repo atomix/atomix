@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
+package net.kuujo.copycat.impl;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -39,13 +39,14 @@ import net.kuujo.copycat.annotations.Snapshot;
 import net.kuujo.copycat.annotations.SnapshotInstaller;
 import net.kuujo.copycat.annotations.SnapshotProvider;
 import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.state.StateMachineExecutor;
 
 /**
  * An internal state machine adapter.
  *
  * @author Jordan Halterman
  */
-public class StateMachineAdapter {
+public class DefaultStateMachineExecutor implements StateMachineExecutor {
   private final StateMachine stateMachine;
   private Map<String, CommandWrapper> commands;
   private Collection<BeforeWrapper> before;
@@ -53,7 +54,7 @@ public class StateMachineAdapter {
   private SnapshotProviderWrapper snapshotProvider;
   private SnapshotInstallerWrapper snapshotInstaller;
 
-  public StateMachineAdapter(StateMachine stateMachine) {
+  public DefaultStateMachineExecutor(StateMachine stateMachine) {
     this.stateMachine = stateMachine;
     introspect(stateMachine.getClass());
   }
@@ -73,11 +74,7 @@ public class StateMachineAdapter {
     this.snapshotInstaller = introspector.findSnapshotInstaller(clazz);
   }
 
-  /**
-   * Returns a collection of all commands in the state machine.
-   *
-   * @return A collection of state machine commands.
-   */
+  @Override
   public Collection<Command> getCommands() {
     List<Command> commands = new ArrayList<>();
     for (CommandWrapper command : this.commands.values()) {
@@ -86,33 +83,17 @@ public class StateMachineAdapter {
     return commands;
   }
 
-  /**
-   * Returns a state machine command.
-   *
-   * @param name The command name.
-   * @return The command, or <code>null</code> if the command does not exist.
-   */
+  @Override
   public Command getCommand(String name) {
     return commands.get(name).info;
   }
 
-  /**
-   * Returns a boolean indicating whether a command exists.
-   *
-   * @param name The command name.
-   * @return Indicates whether the given command exists.
-   */
+  @Override
   public boolean hasCommand(String name) {
     return commands.containsKey(name);
   }
 
-  /**
-   * Applies a command to the state machine.
-   *
-   * @param name The command name.
-   * @param args The command arguments.
-   * @return The command output.
-   */
+  @Override
   public Object applyCommand(String name, JsonObject args) {
     for (BeforeWrapper before : this.before) {
       try {
@@ -145,11 +126,7 @@ public class StateMachineAdapter {
     return result;
   }
 
-  /**
-   * Takes a snapshot of the state machine.
-   *
-   * @return A snapshot of the state machine.
-   */
+  @Override
   public JsonElement takeSnapshot() {
     if (snapshotProvider != null) {
       try {
@@ -162,11 +139,7 @@ public class StateMachineAdapter {
     return null;
   }
 
-  /**
-   * Installs a snapshot of the state machine.
-   *
-   * @param snapshot A snapshot of the state machine.
-   */
+  @Override
   public void installSnapshot(JsonElement snapshot) {
     if (snapshotInstaller != null) {
       try {

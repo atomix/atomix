@@ -36,144 +36,128 @@ import net.kuujo.copycat.state.StateType;
  * @author Jordan Halterman
  */
 public class DefaultReplica implements Replica {
-  private final StateContext state;
+  private final StateContext context;
 
   public DefaultReplica(String address, Vertx vertx, StateMachine stateMachine) {
-    state = new StateContext(address, vertx, stateMachine, new MemoryLog());
+    context = new StateContext(address, vertx, new DefaultStateMachineExecutor(stateMachine), new MemoryLog());
   }
 
   public DefaultReplica(String address, Vertx vertx, StateMachine stateMachine, Log log) {
-    state = new StateContext(address, vertx, stateMachine, log);
+    context = new StateContext(address, vertx, new DefaultStateMachineExecutor(stateMachine), log);
   }
 
   @Override
   public String address() {
-    return state.address();
+    return context.address();
   }
 
   @Override
   public ClusterConfig config() {
-    return state.config();
+    return context.config();
   }
 
   @Override
   public Log log() {
-    return state.log();
+    return context.log();
   }
 
   @Override
-  public Replica setMaxMemoryUsage(long max) {
-    state.maxMemoryUsage(max);
+  public Replica setMaxLogSize(long max) {
+    context.log().setMaxSize(max);
     return this;
   }
 
   @Override
-  public long getMaxMemoryUsage() {
-    return state.maxMemoryUsage();
+  public long getMaxLogSize() {
+    return context.log().getMaxSize();
   }
 
   @Override
   public long getElectionTimeout() {
-    return state.electionTimeout();
+    return context.electionTimeout();
   }
 
   @Override
   public Replica setElectionTimeout(long timeout) {
-    state.electionTimeout(timeout);
+    context.electionTimeout(timeout);
     return this;
   }
 
   @Override
   public long getHeartbeatInterval() {
-    return state.heartbeatInterval();
+    return context.heartbeatInterval();
   }
 
   @Override
   public Replica setHeartbeatInterval(long interval) {
-    state.heartbeatInterval(interval);
+    context.heartbeatInterval(interval);
     return this;
   }
 
   @Override
   public boolean isUseAdaptiveTimeouts() {
-    return state.useAdaptiveTimeouts();
+    return context.useAdaptiveTimeouts();
   }
 
   @Override
   public Replica useAdaptiveTimeouts(boolean useAdaptive) {
-    state.useAdaptiveTimeouts(useAdaptive);
+    context.useAdaptiveTimeouts(useAdaptive);
     return this;
   }
 
   @Override
   public double getAdaptiveTimeoutThreshold() {
-    return state.adaptiveTimeoutThreshold();
+    return context.adaptiveTimeoutThreshold();
   }
 
   @Override
   public Replica setAdaptiveTimeoutThreshold(double threshold) {
-    state.adaptiveTimeoutThreshold(threshold);
+    context.adaptiveTimeoutThreshold(threshold);
     return this;
   }
 
   @Override
   public boolean isRequireWriteMajority() {
-    return state.requireWriteMajority();
+    return context.requireWriteMajority();
   }
 
   @Override
   public Replica setRequireWriteMajority(boolean require) {
-    state.requireWriteMajority(require);
+    context.requireWriteMajority(require);
     return this;
   }
 
   @Override
   public boolean isRequireReadMajority() {
-    return state.requireReadMajority();
+    return context.requireReadMajority();
   }
 
   @Override
   public Replica setRequireReadMajority(boolean require) {
-    state.requireReadMajority(require);
+    context.requireReadMajority(require);
     return this;
-  }
-
-  @Override
-  public Replica transitionHandler(Handler<StateType> handler) {
-    state.transitionHandler(handler);
-    return this;
-  }
-
-  @Override
-  public boolean isFollower() {
-    return state.currentState().equals(StateType.FOLLOWER);
-  }
-
-  @Override
-  public boolean isCandidate() {
-    return state.currentState().equals(StateType.CANDIDATE);
   }
 
   @Override
   public boolean isLeader() {
-    return state.currentState().equals(StateType.LEADER);
+    return context.currentState().equals(StateType.LEADER);
   }
 
   @Override
   public String getCurrentLeader() {
-    return state.currentLeader();
+    return context.currentLeader();
   }
 
   @Override
   public Replica start() {
-    state.start();
+    context.start();
     return this;
   }
 
   @Override
   public Replica start(Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
-    state.start(new Handler<AsyncResult<String>>() {
+    context.start(new Handler<AsyncResult<String>>() {
       @Override
       public void handle(AsyncResult<String> result) {
         if (result.failed()) {
@@ -189,18 +173,18 @@ public class DefaultReplica implements Replica {
 
   @Override
   public <R> Replica submitCommand(String command, JsonObject args, Handler<AsyncResult<R>> resultHandler) {
-    state.submitCommand(command, args, resultHandler);
+    context.submitCommand(command, args, resultHandler);
     return this;
   }
 
   @Override
   public void stop() {
-    state.stop();
+    context.stop();
   }
 
   @Override
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
-    state.stop(doneHandler);
+    context.stop(doneHandler);
   }
 
 }

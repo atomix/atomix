@@ -20,7 +20,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.state.StateType;
 
 /**
  * The replica is the primary interface for creating fault-tolerant services
@@ -65,19 +64,19 @@ public interface Replica {
   Log log();
 
   /**
-   * Sets the maximum memory usage of the state machine.
+   * Sets the maximum log size of the state machine.
    *
-   * @param max The maximum allowed memory usage of the state machine.
+   * @param max The log size memory usage of the state machine.
    * @return The replica instance.
    */
-  Replica setMaxMemoryUsage(long max);
+  Replica setMaxLogSize(long max);
 
   /**
-   * Returns the maximum allowed memory usage.
+   * Returns the maximum allowed log size.
    *
-   * @return The maximum allowed memory usage for the state machine.
+   * @return The maximum allowed log size for the state machine.
    */
-  long getMaxMemoryUsage();
+  long getMaxLogSize();
 
   /**
    * Sets the replica election timeout.
@@ -171,28 +170,6 @@ public interface Replica {
    * @return The replica.
    */
   public Replica setRequireReadMajority(boolean require);
-
-  /**
-   * Registers a handler to be called when the replica transitions to a new state.
-   *
-   * @param handler A handler to be called when the replica transitions to a new state.
-   * @return The replica instance.
-   */
-  Replica transitionHandler(Handler<StateType> handler);
-
-  /**
-   * Returns a boolean indicating whether the replica is a follower.
-   *
-   * @return Indicates whether the replica is a follower.
-   */
-  boolean isFollower();
-
-  /**
-   * Returns a boolean indicating whether the replica is a candidate.
-   *
-   * @return Indicates whether the replica is a candidate.
-   */
-  boolean isCandidate();
 
   /**
    * Returns a boolean indicating whether the replica is a leader.

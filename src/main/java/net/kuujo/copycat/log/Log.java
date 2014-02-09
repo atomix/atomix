@@ -33,7 +33,38 @@ public interface Log {
    * @param visitor A log visitor.
    * @param doneHandler A handler to be called once the log is initialized.
    */
-  void init(LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler);
+  void init(Handler<AsyncResult<Void>> doneHandler);
+
+  /**
+   * Sets the maximum log size.
+   *
+   * @param maxSize The maximum log size.
+   * @return The log instance.
+   */
+  Log setMaxSize(long maxSize);
+
+  /**
+   * Returns the maximum log size.
+   *
+   * @return The maximum log size.
+   */
+  long getMaxSize();
+
+  /**
+   * Sets a full handler on the log.
+   *
+   * @param handler A handler to be called when the log is full.
+   * @return The log instance.
+   */
+  Log fullHandler(Handler<Void> handler);
+
+  /**
+   * Sets a drain handler on the log.
+   *
+   * @param handler A handler to be called when the log is drained.
+   * @return The log instance.
+   */
+  Log drainHandler(Handler<Void> handler);
 
   /**
    * Appends an entry to the log.

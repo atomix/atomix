@@ -24,7 +24,7 @@ import net.kuujo.copycat.annotations.Command;
 import net.kuujo.copycat.annotations.Snapshot;
 import net.kuujo.copycat.annotations.SnapshotInstaller;
 import net.kuujo.copycat.annotations.SnapshotProvider;
-import net.kuujo.copycat.state.StateMachineAdapter;
+import net.kuujo.copycat.impl.DefaultStateMachineExecutor;
 
 import org.junit.Test;
 import org.vertx.java.core.json.JsonElement;
@@ -84,14 +84,14 @@ public class StateMachineTest {
 
   @Test
   public void testFindCommands() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Collection<Command> commands = adapter.getCommands();
     assertTrue(commands.size() == 7);
   }
 
   @Test
   public void testNoArgCommand() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("one");
     assertNotNull(command);
     assertEquals("one", command.name());
@@ -101,7 +101,7 @@ public class StateMachineTest {
 
   @Test
   public void testDefaultArgCommand() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("two");
     assertNotNull(command);
     assertEquals("two", command.name());
@@ -111,7 +111,7 @@ public class StateMachineTest {
 
   @Test
   public void testDefaultArgCommandFail() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("two");
     assertNotNull(command);
     assertEquals("two", command.name());
@@ -126,7 +126,7 @@ public class StateMachineTest {
 
   @Test
   public void testAutoNamedArgsCommand() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("three");
     assertNotNull(command);
     assertEquals("three", command.name());
@@ -136,7 +136,7 @@ public class StateMachineTest {
 
   @Test
   public void testAutoNamedArgsCommandFail() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("three");
     assertNotNull(command);
     assertEquals("three", command.name());
@@ -151,7 +151,7 @@ public class StateMachineTest {
 
   @Test
   public void testNamedArgCommand() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("four");
     assertNotNull(command);
     assertEquals("four", command.name());
@@ -161,7 +161,7 @@ public class StateMachineTest {
 
   @Test
   public void testNamedArgCommandFail() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("four");
     assertNotNull(command);
     assertEquals("four", command.name());
@@ -176,7 +176,7 @@ public class StateMachineTest {
 
   @Test
   public void testNamedArgsCommand() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("five");
     assertNotNull(command);
     assertEquals("five", command.name());
@@ -186,7 +186,7 @@ public class StateMachineTest {
 
   @Test
   public void testNamedArgsCommandFail() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("five");
     assertNotNull(command);
     assertEquals("five", command.name());
@@ -201,7 +201,7 @@ public class StateMachineTest {
 
   @Test
   public void testOptionalArgCommand() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("six");
     assertNotNull(command);
     assertEquals("six", command.name());
@@ -212,7 +212,7 @@ public class StateMachineTest {
 
   @Test
   public void testOptionalArgsCommand() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestStateMachine());
     Command command = adapter.getCommand("seven");
     assertNotNull(command);
     assertEquals("seven", command.name());
@@ -233,7 +233,7 @@ public class StateMachineTest {
 
   @Test
   public void testTakeSnapshotFromField() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestSnapshotStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine());
     adapter.applyCommand("write", new JsonObject().putString("key", "foo").putValue("value", "bar"));
     adapter.applyCommand("write", new JsonObject().putString("key", "bar").putValue("value", "baz"));
     adapter.applyCommand("write", new JsonObject().putString("key", "baz").putValue("value", "foo"));
@@ -246,7 +246,7 @@ public class StateMachineTest {
 
   @Test
   public void testInstallSnapshotToField() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestSnapshotStateMachine());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine());
     adapter.installSnapshot(new JsonObject()
         .putString("foo", "bar")
         .putString("bar", "baz")
@@ -279,7 +279,7 @@ public class StateMachineTest {
 
   @Test
   public void testTakeSnapshotFromMethod() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestSnapshotStateMachine2());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine2());
     adapter.applyCommand("write", new JsonObject().putString("key", "foo").putValue("value", "bar"));
     adapter.applyCommand("write", new JsonObject().putString("key", "bar").putValue("value", "baz"));
     adapter.applyCommand("write", new JsonObject().putString("key", "baz").putValue("value", "foo"));
@@ -291,7 +291,7 @@ public class StateMachineTest {
 
   @Test
   public void testInstallSnapshotToMethod() {
-    StateMachineAdapter adapter = new StateMachineAdapter(new TestSnapshotStateMachine2());
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine2());
     adapter.installSnapshot(new JsonObject()
         .putString("foo", "bar")
         .putString("bar", "baz")

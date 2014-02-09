@@ -27,7 +27,6 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.serializer.Serializer;
 
 /**
@@ -40,9 +39,13 @@ public class RedisLog implements Log {
   private final String address;
   private final String key;
   private final Vertx vertx;
+  private long maxSize;
   private long firstIndex;
   private long lastIndex;
   private long currentIndex;
+  private Handler<Void> fullHandler;
+  private Handler<Void> drainHandler;
+  private boolean full;
 
   public RedisLog(String address, String key, Vertx vertx) {
     this.address = address;
@@ -51,7 +54,7 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public void init(final LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
+  public void init(Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
     JsonObject message = new JsonObject()
       .putString("command", "get")
@@ -63,7 +66,7 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
         else {
           Object index = result.result().body().getValue("value");
@@ -72,31 +75,32 @@ public class RedisLog implements Log {
             lastIndex = (long) index;
             currentIndex = lastIndex + 1;
           }
-          applyNextEntry(0, currentIndex-1, visitor, future);
         }
       }
     });
   }
 
-  private void applyNextEntry(final long index, final long ceiling, final LogVisitor visitor, final Future<Void> future) {
-    JsonObject message = new JsonObject()
-      .putString("command", "get")
-      .putArray("args", new JsonArray().add(String.format("%s:%d", key, index)));
-    vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          future.setFailure(result.cause());
-        }
-        else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
-        }
-        else {
-          visitor.applyEntry(serializer.deserialize(new JsonObject(result.result().body().getString("value")), Entry.class));
-          applyNextEntry(0, currentIndex-1, visitor, future);
-        }
-      }
-    });
+  @Override
+  public Log setMaxSize(long maxSize) {
+    this.maxSize = maxSize;
+    return this;
+  }
+
+  @Override
+  public long getMaxSize() {
+    return maxSize;
+  }
+
+  @Override
+  public Log fullHandler(Handler<Void> handler) {
+    fullHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Log drainHandler(Handler<Void> handler) {
+    drainHandler = handler;
+    return this;
   }
 
   @Override
@@ -114,9 +118,10 @@ public class RedisLog implements Log {
         }
         else if (result.result().body().getString("status").equals("ok")) {
           future.setResult(index);
+          checkSize();
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -139,7 +144,7 @@ public class RedisLog implements Log {
           future.setResult(result.result().body().getBoolean("value"));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -162,11 +167,11 @@ public class RedisLog implements Log {
             future.setResult(serializer.deserialize(new JsonObject(value), Entry.class));
           }
           else {
-            future.setFailure(new CopyCatException("Invalid index."));
+            future.setFailure(new LogException("Invalid index."));
           }
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -286,11 +291,11 @@ public class RedisLog implements Log {
               loadEntries(index+1, end, entries, future);
             }
             else {
-              future.setFailure(new CopyCatException("Invalid index."));
+              future.setFailure(new LogException("Invalid index."));
             }
           }
           else {
-            future.setFailure(new CopyCatException(result.result().body().getString("message")));
+            future.setFailure(new LogException(result.result().body().getString("message")));
           }
         }
       });
@@ -325,19 +330,20 @@ public class RedisLog implements Log {
                 }
                 else if (result.result().body().getString("status").equals("ok")) {
                   future.setResult(entry);
+                  checkSize();
                 }
                 else {
-                  future.setFailure(new CopyCatException(result.result().body().getString("message")));
+                  future.setFailure(new LogException(result.result().body().getString("message")));
                 }
               }
             });
           }
           else {
-            future.setFailure(new CopyCatException("Invalid index."));
+            future.setFailure(new LogException("Invalid index."));
           }
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -373,17 +379,40 @@ public class RedisLog implements Log {
               removeEntries(index-1, end, future);
             }
             else {
-              future.setFailure(new CopyCatException("Invalid index."));
+              future.setFailure(new LogException("Invalid index."));
             }
           }
           else {
-            future.setFailure(new CopyCatException(result.result().body().getString("message")));
+            future.setFailure(new LogException(result.result().body().getString("message")));
           }
         }
       });
     }
     else {
       future.setResult((Void) null);
+      checkSize();
+    }
+  }
+
+  /**
+   * Checks the log size.
+   */
+  private void checkSize() {
+    if (!full) {
+      if (lastIndex - firstIndex >= maxSize) {
+        full = true;
+        if (fullHandler != null) {
+          fullHandler.handle((Void) null);
+        }
+      }
+    }
+    else {
+      if (lastIndex - firstIndex < maxSize) {
+        full = false;
+        if (drainHandler != null) {
+          drainHandler.handle((Void) null);
+        }
+      }
     }
   }
 

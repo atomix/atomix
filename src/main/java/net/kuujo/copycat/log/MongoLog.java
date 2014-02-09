@@ -27,7 +27,6 @@ import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.serializer.Serializer;
 
 /**
@@ -36,13 +35,18 @@ import net.kuujo.copycat.serializer.Serializer;
  * @author Jordan Halterman
  */
 public class MongoLog implements Log {
+  private static final long DEFAULT_MAX_SIZE = 10000;
   private static final Serializer serializer = Serializer.getInstance();
   private final String address;
   private final String collection;
   private final Vertx vertx;
+  private long maxSize = DEFAULT_MAX_SIZE;
   private long firstIndex = 0;
   private long lastIndex = 0;
   private long currentIndex = 1;
+  private Handler<Void> fullHandler;
+  private Handler<Void> drainHandler;
+  private boolean full;
 
   public MongoLog(String address, String collection, Vertx vertx) {
     this.address = address;
@@ -51,7 +55,7 @@ public class MongoLog implements Log {
   }
 
   @Override
-  public void init(final LogVisitor visitor, Handler<AsyncResult<Void>> doneHandler) {
+  public void init(Handler<AsyncResult<Void>> doneHandler) {
     final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
     firstIndex(new Handler<AsyncResult<Long>>() {
       @Override
@@ -70,34 +74,35 @@ public class MongoLog implements Log {
               else {
                 lastIndex = result.result();
                 currentIndex = lastIndex + 1;
-                final JsonObject query = new JsonObject().putString("action", "count").putString("collection", collection)
-                    .putObject("matcher", new JsonObject());
-                vertx.eventBus().sendWithTimeout(address, query, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
-                  @Override
-                  public void handle(AsyncResult<Message<JsonObject>> result) {
-                    if (result.failed()) {
-                      future.setFailure(result.cause());
-                    }
-                    else if (result.result().body().getString("status").equals("error")) {
-                      future.setFailure(new CopyCatException(result.result().body().getString("message")));
-                    }
-                    else {
-                      JsonArray jsonEntries = result.result().body().getArray("result");
-                      for (Object jsonEntry : jsonEntries) {
-                        visitor.applyEntry(serializer.deserialize(((JsonObject) jsonEntry).getObject("entry"), Entry.class));
-                      }
-                      if (!result.result().body().getString("status").equals("more-exist")) {
-                        future.setResult((Void) null);
-                      }
-                    }
-                  }
-                });
               }
             }
           });
         }
       }
     });
+  }
+
+  @Override
+  public Log setMaxSize(long maxSize) {
+    this.maxSize = maxSize;
+    return this;
+  }
+
+  @Override
+  public long getMaxSize() {
+    return maxSize;
+  }
+
+  @Override
+  public Log fullHandler(Handler<Void> handler) {
+    fullHandler = handler;
+    return this;
+  }
+
+  @Override
+  public Log drainHandler(Handler<Void> handler) {
+    drainHandler = handler;
+    return this;
   }
 
   @Override
@@ -119,9 +124,10 @@ public class MongoLog implements Log {
         }
         else if (result.result().body().getString("status").equals("ok")) {
           future.setResult(index);
+          checkSize();
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -143,7 +149,7 @@ public class MongoLog implements Log {
           future.setResult(result.result().body().getInteger("count") > 0);
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -165,7 +171,7 @@ public class MongoLog implements Log {
           future.setResult(serializer.deserialize(result.result().body().getObject("result").getObject("entry"), Entry.class));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -192,7 +198,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("index"));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -214,7 +220,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("term"));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -238,7 +244,7 @@ public class MongoLog implements Log {
               Entry.class));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -265,7 +271,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("index"));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -287,7 +293,7 @@ public class MongoLog implements Log {
           future.setResult(((JsonObject) result.result().body().getArray("result").get(0)).getLong("term"));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -311,7 +317,7 @@ public class MongoLog implements Log {
               Entry.class));
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -336,7 +342,7 @@ public class MongoLog implements Log {
           future.setFailure(result.cause());
         }
         else if (result.result().body().getString("status").equals("error")) {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
         else {
           JsonArray jsonEntries = result.result().body().getArray("result");
@@ -373,9 +379,10 @@ public class MongoLog implements Log {
               }
               else if (result.result().body().getString("status").equals("ok")) {
                 future.setResult(entry);
+                checkSize();
               }
               else {
-                future.setFailure(new CopyCatException(result.result().body().getString("message")));
+                future.setFailure(new LogException(result.result().body().getString("message")));
               }
             }
           });
@@ -397,9 +404,10 @@ public class MongoLog implements Log {
         }
         else if (result.result().body().getString("status").equals("ok")) {
           future.setResult((Void) null);
+          checkSize();
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
@@ -419,13 +427,36 @@ public class MongoLog implements Log {
         }
         else if (result.result().body().getString("status").equals("ok")) {
           future.setResult((Void) null);
+          checkSize();
         }
         else {
-          future.setFailure(new CopyCatException(result.result().body().getString("message")));
+          future.setFailure(new LogException(result.result().body().getString("message")));
         }
       }
     });
     return this;
+  }
+
+  /**
+   * Checks the log size.
+   */
+  private void checkSize() {
+    if (!full) {
+      if (lastIndex - firstIndex >= maxSize) {
+        full = true;
+        if (fullHandler != null) {
+          fullHandler.handle((Void) null);
+        }
+      }
+    }
+    else {
+      if (lastIndex - firstIndex < maxSize) {
+        full = false;
+        if (drainHandler != null) {
+          drainHandler.handle((Void) null);
+        }
+      }
+    }
   }
 
 }
