@@ -316,9 +316,12 @@ public class StateContext {
               }
               else if (result.result() != null) {
                 stateMachine.installSnapshot(result.result());
-                if (log.lastIndex() > 0 && log.lastIndex() >= commitIndex) {
-                  initializeLog(1, commitIndex, doneHandler);
-                }
+              }
+              if (log.lastIndex() > 0 && log.lastIndex() >= commitIndex) {
+                initializeLog(1, commitIndex, doneHandler);
+              }
+              else {
+                new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
               }
             }
           });
