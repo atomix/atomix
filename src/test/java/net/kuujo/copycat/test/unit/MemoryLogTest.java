@@ -101,48 +101,12 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 2);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
                 assertTrue(result.result() == 3);
                 assertTrue(log.firstIndex() == 1);
-                assertTrue(log.lastIndex() == 3);
-              }
-            });
-          }
-        });
-      }
-    });
-  }
-
-  @Test
-  public void testFreeEntry() {
-    final Log log = new MemoryLog();
-    final CommandEntry entry1 = new CommandEntry(1, new DefaultCommand("foo", Command.Type.WRITE, new JsonObject()));
-    log.appendEntry(entry1, new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
-
-        final CommandEntry entry2 = new CommandEntry(1, new DefaultCommand("bar", Command.Type.WRITE, new JsonObject()));
-        log.appendEntry(entry2, new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            assertTrue(result.succeeded());
-            assertTrue(result.result() == 2);
-
-            final CommandEntry entry3 = new CommandEntry(1, new DefaultCommand("baz", Command.Type.WRITE, new JsonObject()));
-            log.appendEntry(entry3, new Handler<AsyncResult<Long>>() {
-              @Override
-              public void handle(AsyncResult<Long> result) {
-                assertTrue(result.succeeded());
-                assertTrue(result.result() == 3);
-
-                log.floor(3);
-                log.free(entry2);
-                assertTrue(log.firstIndex() == 2);
                 assertTrue(log.lastIndex() == 3);
               }
             });
@@ -167,7 +131,7 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 2);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
@@ -203,7 +167,7 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 2);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
@@ -232,7 +196,7 @@ public class MemoryLogTest {
             assertTrue(result.succeeded());
             assertTrue(result.result() == 2);
 
-            log.appendEntry(new CommandEntry(1, new DefaultCommand()), new Handler<AsyncResult<Long>>() {
+            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
               @Override
               public void handle(AsyncResult<Long> result) {
                 assertTrue(result.succeeded());
