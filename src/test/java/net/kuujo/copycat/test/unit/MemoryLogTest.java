@@ -75,7 +75,7 @@ public class MemoryLogTest {
       public void handle(AsyncResult<Long> result) {
         assertTrue(result.succeeded());
         assertTrue(result.result() == 1);
-        log.entry(1, new Handler<AsyncResult<Entry>>() {
+        log.getEntry(1, new Handler<AsyncResult<Entry>>() {
           @Override
           public void handle(AsyncResult<Entry> result) {
             assertTrue(result.succeeded());

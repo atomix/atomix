@@ -92,7 +92,7 @@ public interface Log {
    * @param entryHandler A handler to be called with the entry.
    * @return The log instance.
    */
-  Log entry(long index, Handler<AsyncResult<Entry>> entryHandler);
+  Log getEntry(long index, Handler<AsyncResult<Entry>> entryHandler);
 
   /**
    * Returns the first log index.
@@ -149,7 +149,7 @@ public interface Log {
    * @param end The ending index.
    * @return A list of entries between the two given indexes.
    */
-  Log entries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler);
+  Log getEntries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler);
 
   /**
    * Removes the entry at the given index.

@@ -321,6 +321,7 @@ public class StateContext {
                 initializeLog(1, commitIndex, doneHandler);
               }
               else {
+                setLogHandlers();
                 new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
               }
             }
@@ -342,7 +343,7 @@ public class StateContext {
             new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
           }
           else if (result.result()) {
-            log.entry(currentIndex, new Handler<AsyncResult<Entry>>() {
+            log.getEntry(currentIndex, new Handler<AsyncResult<Entry>>() {
               @Override
               public void handle(AsyncResult<Entry> result) {
                 if (result.failed()) {
@@ -363,32 +364,39 @@ public class StateContext {
       });
     }
     else {
-      log.fullHandler(new Handler<Void>() {
-        @Override
-        public void handle(Void _) {
-          final long lastApplied = lastApplied();
-          persistor.storeSnapshot(stateMachine.takeSnapshot(), new Handler<AsyncResult<Void>>() {
-            @Override
-            public void handle(AsyncResult<Void> result) {
-              if (result.failed()) {
-                logger.error("Failed to store snapshot.", result.cause());
-              }
-              else {
-                log.removeBefore(lastApplied+1, new Handler<AsyncResult<Void>>() {
-                  @Override
-                  public void handle(AsyncResult<Void> result) {
-                    if (result.failed()) {
-                      logger.error("Failed to clean logs.", result.cause());
-                    }
-                  }
-                });
-              }
-            }
-          });
-        }
-      });
+      setLogHandlers();
       new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
     }
+  }
+
+  /**
+   * Sets log handlers.
+   */
+  private void setLogHandlers() {
+    log.fullHandler(new Handler<Void>() {
+      @Override
+      public void handle(Void _) {
+        final long lastApplied = lastApplied();
+        persistor.storeSnapshot(stateMachine.takeSnapshot(), new Handler<AsyncResult<Void>>() {
+          @Override
+          public void handle(AsyncResult<Void> result) {
+            if (result.failed()) {
+              logger.error("Failed to store snapshot.", result.cause());
+            }
+            else {
+              log.removeBefore(lastApplied+1, new Handler<AsyncResult<Void>>() {
+                @Override
+                public void handle(AsyncResult<Void> result) {
+                  if (result.failed()) {
+                    logger.error("Failed to clean logs.", result.cause());
+                  }
+                }
+              });
+            }
+          }
+        });
+      }
+    });
   }
 
   /**

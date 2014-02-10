@@ -157,7 +157,7 @@ public class MongoLog implements Log {
   }
 
   @Override
-  public Log entry(long index, Handler<AsyncResult<Entry>> entryHandler) {
+  public Log getEntry(long index, Handler<AsyncResult<Entry>> entryHandler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(entryHandler);
     final JsonObject query = new JsonObject().putString("action", "findone").putString("collection", collection)
         .putObject("matcher", new JsonObject().putString("type", "command").putNumber("index", index));
@@ -325,7 +325,7 @@ public class MongoLog implements Log {
   }
 
   @Override
-  public Log entries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
+  public Log getEntries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
     final Future<List<Entry>> future = new DefaultFutureResult<List<Entry>>().setHandler(doneHandler);
     final List<Entry> entries = new ArrayList<>();
     final JsonObject query = new JsonObject()
@@ -361,7 +361,7 @@ public class MongoLog implements Log {
   @Override
   public Log removeEntry(final long index, final Handler<AsyncResult<Entry>> doneHandler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(doneHandler);
-    return entry(index, new Handler<AsyncResult<Entry>>() {
+    return getEntry(index, new Handler<AsyncResult<Entry>>() {
       @Override
       public void handle(AsyncResult<Entry> result) {
         if (result.failed()) {

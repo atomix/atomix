@@ -213,7 +213,7 @@ abstract class State {
         }
         // If the log entry exists then load the entry.
         else {
-          log.entry(request.prevLogIndex(), new Handler<AsyncResult<Entry>>() {
+          log.getEntry(request.prevLogIndex(), new Handler<AsyncResult<Entry>>() {
             @Override
             public void handle(AsyncResult<Entry> result) {
               if (result.failed()) {
@@ -254,7 +254,7 @@ abstract class State {
       final long index = prevIndex+1;
       final Entry entry = iterator.next();
       // Load the entry from the local log.
-      log.entry(index, new Handler<AsyncResult<Entry>>() {
+      log.getEntry(index, new Handler<AsyncResult<Entry>>() {
         @Override
         public void handle(AsyncResult<Entry> result) {
           // If we failed to load the entry then fail the request. It should
@@ -368,7 +368,7 @@ abstract class State {
       final Handler<AsyncResult<Boolean>> doneHandler) {
     if (index <= ceiling) {
       // Load the log entry to be committed to the state machine.
-      log.entry(index, new Handler<AsyncResult<Entry>>() {
+      log.getEntry(index, new Handler<AsyncResult<Entry>>() {
         @Override
         public void handle(AsyncResult<Entry> result) {
           // If loading an entry fails, simply return true to the sync request.
@@ -464,7 +464,7 @@ abstract class State {
         // than the log term to ensure that we're receiving the term from
         // the same entry as the loaded last log index.
         final long lastIndex = log.lastIndex();
-        log.entry(lastIndex, new Handler<AsyncResult<Entry>>() {
+        log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
           @Override
           public void handle(AsyncResult<Entry> result) {
             // If the entry loading failed then don't vote for the

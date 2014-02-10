@@ -152,7 +152,7 @@ public class RedisLog implements Log {
   }
 
   @Override
-  public Log entry(long index, Handler<AsyncResult<Entry>> entryHandler) {
+  public Log getEntry(long index, Handler<AsyncResult<Entry>> entryHandler) {
     final Future<Entry> future = new DefaultFutureResult<Entry>().setHandler(entryHandler);
     final JsonObject message = new JsonObject().putString("command", "get").putArray("args", new JsonArray().add(key).add(index));
     vertx.eventBus().sendWithTimeout(address, message, 15000, new Handler<AsyncResult<Message<JsonObject>>>() {
@@ -208,7 +208,7 @@ public class RedisLog implements Log {
           future.setFailure(result.cause());
         }
         else {
-          entry(0, new Handler<AsyncResult<Entry>>() {
+          getEntry(0, new Handler<AsyncResult<Entry>>() {
             @Override
             public void handle(AsyncResult<Entry> result) {
               if (result.failed()) {
@@ -234,7 +234,7 @@ public class RedisLog implements Log {
           new DefaultFutureResult<Entry>().setHandler(handler).setFailure(result.cause());
         }
         else {
-          entry(0, handler);
+          getEntry(0, handler);
         }
       }
     });
@@ -249,7 +249,7 @@ public class RedisLog implements Log {
   @Override
   public Log lastTerm(Handler<AsyncResult<Long>> handler) {
     final Future<Long> future = new DefaultFutureResult<Long>().setHandler(handler);
-    return entry(currentIndex-1, new Handler<AsyncResult<Entry>>() {
+    return getEntry(currentIndex-1, new Handler<AsyncResult<Entry>>() {
       @Override
       public void handle(AsyncResult<Entry> result) {
         if (result.failed()) {
@@ -264,11 +264,11 @@ public class RedisLog implements Log {
 
   @Override
   public Log lastEntry(final Handler<AsyncResult<Entry>> handler) {
-    return entry(currentIndex-1, handler);
+    return getEntry(currentIndex-1, handler);
   }
 
   @Override
-  public Log entries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
+  public Log getEntries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
     loadEntries(start, end, new ArrayList<Entry>(), new DefaultFutureResult<List<Entry>>().setHandler(doneHandler));
     return this;
   }

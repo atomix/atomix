@@ -84,7 +84,7 @@ class Candidate extends State {
           // calling lastTerm() because the last entry could have changed
           // already.
           final long lastIndex = log.lastIndex();
-          log.entry(lastIndex, new Handler<AsyncResult<Entry>>() {
+          log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
             @Override
             public void handle(AsyncResult<Entry> result) {
               if (result.succeeded() && result.result() != null) {

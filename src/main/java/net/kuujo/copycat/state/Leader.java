@@ -601,7 +601,7 @@ class Leader extends State implements Observer {
       if (nextIndex <= log.lastIndex() || matchIndex < context.commitIndex()) {
         if (nextIndex-1 > 0) {
           final long prevLogIndex = nextIndex - 1;
-          log.entry(prevLogIndex, new Handler<AsyncResult<Entry>>() {
+          log.getEntry(prevLogIndex, new Handler<AsyncResult<Entry>>() {
             @Override
             public void handle(AsyncResult<Entry> result) {
               if (result.failed()) {
@@ -633,7 +633,7 @@ class Leader extends State implements Observer {
       }
       // If there are entries to be synced then load the entries.
       if (prevLogIndex+1 <= log.lastIndex()) {
-        log.entries(prevLogIndex+1, (prevLogIndex+1) + BATCH_SIZE > log.lastIndex() ? log.lastIndex() : (prevLogIndex+1) + BATCH_SIZE, new Handler<AsyncResult<List<Entry>>>() {
+        log.getEntries(prevLogIndex+1, (prevLogIndex+1) + BATCH_SIZE > log.lastIndex() ? log.lastIndex() : (prevLogIndex+1) + BATCH_SIZE, new Handler<AsyncResult<List<Entry>>>() {
           @Override
           public void handle(AsyncResult<List<Entry>> result) {
             if (result.failed()) {
