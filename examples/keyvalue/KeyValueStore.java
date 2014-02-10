@@ -16,10 +16,10 @@
 import java.util.HashMap;
 import java.util.Map;
 
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.CopyCat;
-import net.kuujo.copycat.CopyCatService;
-import net.kuujo.copycat.Function;
+import net.kuujo.copycat.Replica;
+import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.annotations.Command;
+import net.kuujo.copycat.impl.DefaultReplica;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -31,60 +31,34 @@ import org.vertx.java.platform.Verticle;
  *
  * @author Jordan Halterman
  */
-public class KeyValueStore extends Verticle {
-  private CopyCat copycat;
-  private CopyCatService copyCatService;
+public class KeyValueStore extends Verticle implements StateMachine {
   private final Map<String, Object> data = new HashMap<>();
-  private final Map<String, Command> commands = new HashMap<>();
 
-  private final Function<Command, Object> get = new Function<Command, Object>() {
-    @Override
-    public Object call(Command command) {
-      String key = command.args().getString("key");
-      return data.containsKey(key) ? data.get(key) : null;
-    }
-  };
+  @Command(name="get", type=Command.Type.READ)
+  public Object get(@Command.Argument("key") String key, @Command.Argument(value="default", required=false) Object defaultValue) {
+    return data.containsKey(key) ? data.get(key) : defaultValue;
+  }
 
-  private final Function<Command, Boolean> set = new Function<Command, Boolean>() {
-    @Override
-    public Boolean call(Command command) {
-      String key = command.args().getString("key");
-      Object value = command.args().getValue("value");
-      data.put(key, value);
-      if (commands.containsKey(key)) {
-        commands.remove(key).free();
-      }
-      commands.put(key, command);
+  @Command(name="set", type=Command.Type.WRITE)
+  public boolean set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+    data.put(key, value);
+    return true;
+  }
+
+  @Command(name="del", type=Command.Type.WRITE)
+  public boolean del(@Command.Argument("key") String key) {
+    if (data.containsKey(key)) {
+      data.remove(key);
       return true;
     }
-  };
-
-  private final Function<Command, Boolean> del = new Function<Command, Boolean>() {
-    @Override
-    public Boolean call(Command command) {
-      String key = command.args().getString("key");
-      if (commands.containsKey(key)) {
-        commands.remove(key).free();
-      }
-      if (data.containsKey(key)) {
-        data.remove(key);
-        return true;
-      }
-      return false;
-    }
-  };
+    return false;
+  }
 
   @Override
   public void start(final Future<Void> startResult) {
-    String address = container.config().getString("address", "copyredis");
-    copycat = new CopyCat(this);
-    copyCatService = copycat.createService(address);
-
-    copyCatService.registerCommand("get", Command.Type.READ, get);
-    copyCatService.registerCommand("set", Command.Type.WRITE, set);
-    copyCatService.registerCommand("del", Command.Type.WRITE, del);
-
-    copyCatService.start(new Handler<AsyncResult<Void>>() {
+    String address = container.config().getString("address", "copycat");
+    Replica replica = new DefaultReplica(address, vertx, this);
+    replica.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
