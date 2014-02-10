@@ -32,12 +32,8 @@ import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.annotations.AfterCommand;
-import net.kuujo.copycat.annotations.BeforeCommand;
 import net.kuujo.copycat.annotations.Command;
 import net.kuujo.copycat.annotations.Snapshot;
-import net.kuujo.copycat.annotations.SnapshotInstaller;
-import net.kuujo.copycat.annotations.SnapshotProvider;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.state.StateMachineExecutor;
 
@@ -166,8 +162,8 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
       Class<?> current = clazz;
       while (current != Object.class) {
         for (Method method : current.getDeclaredMethods()) {
-          if (!before.containsKey(method.getName()) && method.isAnnotationPresent(BeforeCommand.class)) {
-            before.put(method.getName(), new BeforeWrapper(method.getAnnotation(BeforeCommand.class), method));
+          if (!before.containsKey(method.getName()) && method.isAnnotationPresent(Command.Before.class)) {
+            before.put(method.getName(), new BeforeWrapper(method.getAnnotation(Command.Before.class), method));
           }
         }
         current = current.getSuperclass();
@@ -183,8 +179,8 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
       Class<?> current = clazz;
       while (current != Object.class) {
         for (Method method : current.getDeclaredMethods()) {
-          if (!after.containsKey(method.getName()) && method.isAnnotationPresent(AfterCommand.class)) {
-            after.put(method.getName(), new AfterWrapper(method.getAnnotation(AfterCommand.class), method));
+          if (!after.containsKey(method.getName()) && method.isAnnotationPresent(Command.After.class)) {
+            after.put(method.getName(), new AfterWrapper(method.getAnnotation(Command.After.class), method));
           }
         }
         current = current.getSuperclass();
@@ -199,7 +195,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
       Class<?> current = clazz;
       while (current != Object.class) {
         for (Method method : current.getDeclaredMethods()) {
-          if (method.isAnnotationPresent(SnapshotProvider.class) && method.getParameterTypes().length == 0
+          if (method.isAnnotationPresent(Snapshot.Provider.class) && method.getParameterTypes().length == 0
               && !method.getReturnType().equals(Void.TYPE)) {
             method.setAccessible(true);
             return new SnapshotProviderWrapper(method);
@@ -224,7 +220,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
       Class<?> current = clazz;
       while (current != Object.class) {
         for (Method method : current.getDeclaredMethods()) {
-          if (method.isAnnotationPresent(SnapshotInstaller.class) && method.getParameterTypes().length == 1) {
+          if (method.isAnnotationPresent(Snapshot.Installer.class) && method.getParameterTypes().length == 1) {
             method.setAccessible(true);
             return new SnapshotInstallerWrapper(method);
           }
@@ -281,10 +277,6 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
                 if (!hasAnnotation) {
                   if (JsonObject.class.isAssignableFrom(method.getParameterTypes()[0])) {
                     commands.put(info.name(), new ObjectCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
-                    continue;
-                  }
-                  else if (Map.class.isAssignableFrom(method.getParameterTypes()[0])) {
-                    commands.put(info.name(), new MapCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
                     continue;
                   }
                 }
@@ -379,10 +371,10 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
    */
   private static class CommandWrapper implements Function<Map<String, Object>, Object> {
     protected final Command info;
-    protected final Command.Argument[] args;
+    protected final Annotation[] args;
     protected final Method method;
 
-    private CommandWrapper(Command info, Command.Argument[] args, Method method) {
+    private CommandWrapper(Command info, Annotation[] args, Method method) {
       this.info = info;
       this.args = args;
       this.method = method;
@@ -392,39 +384,45 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     public Object call(Object obj, Map<String, Object> arg) throws IllegalAccessException, InvocationTargetException {
       Object[] args = new Object[this.args.length];
       for (int i = 0; i < this.args.length; i++) {
-        Command.Argument argument = this.args[i];
-        String name = argument.value();
-
-        // If no argument name was provided then this indicates no actual
-        // annotation present on the argument. We pass the entire JsonObject.
-        if (name == null) {
+        Annotation annotation = this.args[i];
+        if (annotation instanceof Command.Argument) {
+          Command.Argument argument = (Command.Argument) annotation;
+          String name = argument.value();
+  
+          // If no argument name was provided then this indicates no actual
+          // annotation present on the argument. We pass the entire JsonObject.
+          if (name == null) {
+            args[i] = arg;
+          }
+          // If the field exists in the JsonObject then extract it.
+          else if (arg.containsKey(name)) {
+            try {
+              args[i] = arg.get(name);
+            }
+            catch (RuntimeException e) {
+              // If the argument value is invalid then we may pass a null value in
+              // instead if the argument isn't required.
+              if (argument.required()) {
+                throw new IllegalArgumentException("Invalid argument " + name);
+              }
+              else {
+                args[i] = null;
+              }
+            }
+          }
+          // If the argument's missing from the JsonObject but it's not required
+          // then just pass a null value.
+          else if (!argument.required()) {
+            args[i] = null;
+          }
+          // If the argument's missing from the JsonObject but is required then
+          // throw an IllegalArgumentException.
+          else {
+            throw new IllegalArgumentException("Missing required argument " + name);
+          }
+        }
+        else if (annotation instanceof Command.Value) {
           args[i] = arg;
-        }
-        // If the field exists in the JsonObject then extract it.
-        else if (arg.containsKey(name)) {
-          try {
-            args[i] = arg.get(name);
-          }
-          catch (RuntimeException e) {
-            // If the argument value is invalid then we may pass a null value in
-            // instead if the argument isn't required.
-            if (argument.required()) {
-              throw new IllegalArgumentException("Invalid argument " + name);
-            }
-            else {
-              args[i] = null;
-            }
-          }
-        }
-        // If the argument's missing from the JsonObject but it's not required
-        // then just pass a null value.
-        else if (!argument.required()) {
-          args[i] = null;
-        }
-        // If the argument's missing from the JsonObject but is required then
-        // throw an IllegalArgumentException.
-        else {
-          throw new IllegalArgumentException("Missing required argument " + name);
         }
       }
       return method.invoke(obj, args);
@@ -445,26 +443,13 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
   }
 
   /**
-   * Map command wrapper.
-   */
-  private static class MapCommandWrapper extends CommandWrapper {
-    private MapCommandWrapper(Command info, Command.Argument[] args, Method method) {
-      super(info, args, method);
-    }
-    @Override
-    public Object call(Object object, Map<String, Object> arg) throws IllegalAccessException, InvocationTargetException {
-      return method.invoke(object, arg);
-    }
-  }
-
-  /**
    * Before wrapper.
    */
   private static class BeforeWrapper implements Function<String, Void> {
     private final Method method;
     private final Set<String> commands;
 
-    private BeforeWrapper(BeforeCommand info, Method method) {
+    private BeforeWrapper(Command.Before info, Method method) {
       this.method = method;
       commands = new HashSet<>(Arrays.asList(info.value()));
     }
@@ -485,7 +470,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     private final Method method;
     private final Set<String> commands;
 
-    private AfterWrapper(AfterCommand info, Method method) {
+    private AfterWrapper(Command.After info, Method method) {
       this.method = method;
       commands = new HashSet<>(Arrays.asList(info.value()));
     }

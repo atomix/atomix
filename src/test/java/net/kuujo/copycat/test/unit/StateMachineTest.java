@@ -22,8 +22,6 @@ import java.util.Map;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.annotations.Command;
 import net.kuujo.copycat.annotations.Snapshot;
-import net.kuujo.copycat.annotations.SnapshotInstaller;
-import net.kuujo.copycat.annotations.SnapshotProvider;
 import net.kuujo.copycat.impl.DefaultStateMachineExecutor;
 
 import org.junit.Test;
@@ -51,7 +49,7 @@ public class StateMachineTest {
     }
 
     @Command(name="two")
-    public Object two(JsonObject args) {
+    public Object two(@Command.Value JsonObject args) {
       return args.getString("foo");
     }
 
@@ -251,12 +249,12 @@ public class StateMachineTest {
       data.put(key, value);
     }
 
-    @SnapshotProvider
+    @Snapshot.Provider
     public Map<String, Object> takeSnapshot() {
       return data;
     }
 
-    @SnapshotInstaller
+    @Snapshot.Installer
     public void installSnapshot(Map<String, Object> snapshot) {
       this.data = snapshot;
     }

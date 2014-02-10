@@ -74,6 +74,38 @@ public @interface Command {
   }
 
   /**
+   * A before method.
+   *
+   * @author Jordan Halterman
+   */
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Before {
+
+    /**
+     * An array of commands before which to run the method.
+     */
+    String[] value();
+
+  }
+
+  /**
+   * An after method.
+   *
+   * @author Jordan Halterman
+   */
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface After {
+
+    /**
+     * An array of commands after which to run the method.
+     */
+    String[] value();
+
+  }
+
+  /**
    * A command argument.
    *
    * @author Jordan Halterman
@@ -92,6 +124,16 @@ public @interface Command {
      */
     boolean required() default true;
 
+  }
+
+  /**
+   * A command value argument.
+   *
+   * @author Jordan Halterman
+   */
+  @Target(ElementType.PARAMETER)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Value {
   }
 
   /**

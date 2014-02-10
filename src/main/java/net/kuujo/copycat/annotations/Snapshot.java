@@ -28,4 +28,25 @@ import java.lang.annotation.ElementType;
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Snapshot {
+
+  /**
+   * A snapshot provider.
+   *
+   * @author Jordan Halterman
+   */
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Provider {
+  }
+
+  /**
+   * A snapshot installer.
+   *
+   * @author Jordan Halterman
+   */
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Installer {
+  }
+
 }
