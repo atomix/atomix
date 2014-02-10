@@ -48,7 +48,7 @@ public class StateContext {
   private static final Logger logger = LoggerFactory.getLogger(StateContext.class);
   private final String address;
   private final Vertx vertx;
-  private final Client client;
+  private final StateClient stateClient;
   private Log log;
   private StateMachineExecutor stateMachine;
   private ClusterConfig cluster = new ClusterConfig();
@@ -73,7 +73,7 @@ public class StateContext {
   public StateContext(String address, Vertx vertx, StateMachineExecutor stateMachine, Log log) {
     this.address = address;
     this.vertx = vertx;
-    this.client = new Client(address, vertx);
+    this.stateClient = new StateClient(address, vertx);
     this.log = log;
     this.stateMachine = stateMachine;
     this.persistor = new SnapshotPersistor(address, vertx.fileSystem());
@@ -87,7 +87,7 @@ public class StateContext {
    * @return The state context.
    */
   public StateContext address(String address) {
-    client.setAddress(address);
+    stateClient.setAddress(address);
     return this;
   }
 
@@ -131,7 +131,7 @@ public class StateContext {
         currentLeader = null;
         state = stateFactory.createStart()
             .setVertx(vertx)
-            .setClient(client)
+            .setClient(stateClient)
             .setStateMachine(stateMachine)
             .setLog(log)
             .setConfig(cluster)
@@ -140,7 +140,7 @@ public class StateContext {
       case FOLLOWER:
         state = stateFactory.createFollower()
             .setVertx(vertx)
-            .setClient(client)
+            .setClient(stateClient)
             .setStateMachine(stateMachine)
             .setLog(log)
             .setConfig(cluster)
@@ -149,7 +149,7 @@ public class StateContext {
       case CANDIDATE:
         state = stateFactory.createCandidate()
             .setVertx(vertx)
-            .setClient(client)
+            .setClient(stateClient)
             .setStateMachine(stateMachine)
             .setLog(log)
             .setConfig(cluster)
@@ -158,7 +158,7 @@ public class StateContext {
       case LEADER:
         state = stateFactory.createLeader()
             .setVertx(vertx)
-            .setClient(client)
+            .setClient(stateClient)
             .setStateMachine(stateMachine)
             .setLog(log)
             .setConfig(cluster)
@@ -199,25 +199,25 @@ public class StateContext {
    * Registers client handlers.
    */
   private void registerHandlers(final State state) {
-    client.pingHandler(new Handler<PingRequest>() {
+    stateClient.pingHandler(new Handler<PingRequest>() {
       @Override
       public void handle(PingRequest request) {
         state.ping(request);
       }
     });
-    client.syncHandler(new Handler<SyncRequest>() {
+    stateClient.syncHandler(new Handler<SyncRequest>() {
       @Override
       public void handle(SyncRequest request) {
         state.sync(request);
       }
     });
-    client.pollHandler(new Handler<PollRequest>() {
+    stateClient.pollHandler(new Handler<PollRequest>() {
       @Override
       public void handle(PollRequest request) {
         state.poll(request);
       }
     });
-    client.submitHandler(new Handler<SubmitRequest>() {
+    stateClient.submitHandler(new Handler<SubmitRequest>() {
       @Override
       public void handle(SubmitRequest request) {
         state.submit(request);
@@ -229,10 +229,10 @@ public class StateContext {
    * Unregisters client handlers.
    */
   private void unregisterHandlers() {
-    client.pingHandler(null);
-    client.syncHandler(null);
-    client.pollHandler(null);
-    client.submitHandler(null);
+    stateClient.pingHandler(null);
+    stateClient.syncHandler(null);
+    stateClient.pollHandler(null);
+    stateClient.submitHandler(null);
   }
 
   /**
@@ -243,7 +243,7 @@ public class StateContext {
    */
   public StateContext start() {
     transition(StateType.START);
-    client.start(new Handler<AsyncResult<Void>>() {
+    stateClient.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.succeeded()) {
@@ -271,7 +271,7 @@ public class StateContext {
    */
   public StateContext start(final Handler<AsyncResult<String>> doneHandler) {
     transition(StateType.START);
-    client.start(new Handler<AsyncResult<Void>>() {
+    stateClient.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
@@ -405,7 +405,7 @@ public class StateContext {
    * Stops the context.
    */
   public void stop() {
-    client.stop();
+    stateClient.stop();
     transition(StateType.START);
   }
 
@@ -416,7 +416,7 @@ public class StateContext {
    *   An asynchronous handler to be called once the context is stopped.
    */
   public void stop(Handler<AsyncResult<Void>> doneHandler) {
-    client.stop(doneHandler);
+    stateClient.stop(doneHandler);
     transition(StateType.START);
     new DefaultFutureResult<Void>().setHandler(doneHandler).setResult((Void) null);
   }
@@ -444,8 +444,8 @@ public class StateContext {
    * 
    * @return The parent endpoint.
    */
-  Client client() {
-    return client;
+  StateClient stateClient() {
+    return stateClient;
   }
 
   /**
@@ -718,7 +718,7 @@ public class StateContext {
    * @return The state context.
    */
   public <R> StateContext submitCommand(final String command, final JsonObject args, final Handler<AsyncResult<R>> doneHandler) {
-    client.submit(currentLeader(), new SubmitRequest(command, args), new Handler<AsyncResult<SubmitResponse>>() {
+    stateClient.submit(currentLeader(), new SubmitRequest(command, args), new Handler<AsyncResult<SubmitResponse>>() {
       @Override
       @SuppressWarnings("unchecked")
       public void handle(AsyncResult<SubmitResponse> result) {

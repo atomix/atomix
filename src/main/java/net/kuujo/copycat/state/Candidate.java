@@ -89,7 +89,7 @@ class Candidate extends State {
             public void handle(AsyncResult<Entry> result) {
               if (result.succeeded() && result.result() != null) {
                 final long lastTerm = result.result().term();
-                client.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm),
+                stateClient.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm),
                     new Handler<AsyncResult<PollResponse>>() {
                       @Override
                       public void handle(AsyncResult<PollResponse> result) {

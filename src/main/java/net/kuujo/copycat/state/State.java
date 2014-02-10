@@ -43,7 +43,7 @@ import org.vertx.java.core.impl.DefaultFutureResult;
  */
 abstract class State {
   protected Vertx vertx;
-  protected Client client;
+  protected StateClient stateClient;
   protected StateMachineExecutor stateMachine;
   protected Log log;
   protected ClusterConfig config;
@@ -65,11 +65,11 @@ abstract class State {
   /**
    * Sets the client.
    * 
-   * @param client A client instance.
+   * @param stateClient A client instance.
    * @return The state instance.
    */
-  public State setClient(Client client) {
-    this.client = client;
+  public State setClient(StateClient stateClient) {
+    this.stateClient = stateClient;
     return this;
   }
 

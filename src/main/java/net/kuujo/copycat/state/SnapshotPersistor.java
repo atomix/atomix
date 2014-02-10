@@ -30,7 +30,7 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author Jordan Halterman
  */
-class SnapshotPersistor {
+final class SnapshotPersistor {
   private static final String SNAPSHOT_DIRECTORY = "snapshots";
   private static final String FILE_SEPARATOR = System.getProperty("file.separator");
   private final String address;
@@ -48,7 +48,34 @@ class SnapshotPersistor {
    */
   public void storeSnapshot(final JsonElement snapshot, final Handler<AsyncResult<Void>> doneHandler) {
     final String path = String.format("%s%s%s.snapshot", SNAPSHOT_DIRECTORY, FILE_SEPARATOR, address);
-    fileSystem.writeFile(path, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
+    if (!fileSystem.existsSync(SNAPSHOT_DIRECTORY)) {
+      fileSystem.mkdirSync(SNAPSHOT_DIRECTORY);
+    }
+
+    fileSystem.exists(SNAPSHOT_DIRECTORY, new Handler<AsyncResult<Boolean>>() {
+      @Override
+      public void handle(AsyncResult<Boolean> result) {
+        if (result.failed()) {
+          new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+        }
+        else if (!result.result()) {
+          fileSystem.mkdir(SNAPSHOT_DIRECTORY, new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> result) {
+              if (result.failed()) {
+                new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+              }
+              else {
+                fileSystem.writeFile(path, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
+              }
+            }
+          });
+        }
+        else {
+          fileSystem.writeFile(path, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
+        }
+      }
+    });
   }
 
   /**

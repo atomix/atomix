@@ -672,7 +672,7 @@ class Leader extends State implements Observer {
       }
 
       final long startTime = System.currentTimeMillis();
-      client.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex),
+      stateClient.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex),
           context.useAdaptiveTimeouts() ? (lastSyncTime > 0 ? (long) (lastSyncTime * context.adaptiveTimeoutThreshold()) : context.heartbeatInterval() / 2) : context.heartbeatInterval() / 2,
               new Handler<AsyncResult<SyncResponse>>() {
         @Override
@@ -765,7 +765,7 @@ class Leader extends State implements Observer {
       if (!shutdown) {
         final Future<Void> future = new DefaultFutureResult<Void>().setHandler(doneHandler);
         final long startTime = System.currentTimeMillis();
-        client.ping(address, new PingRequest(context.currentTerm(), context.address()),
+        stateClient.ping(address, new PingRequest(context.currentTerm(), context.address()),
             context.useAdaptiveTimeouts() ? (lastPingTime > 0 ? (long) (lastPingTime * context.adaptiveTimeoutThreshold()) : context.heartbeatInterval() / 2) : context.heartbeatInterval() / 2,
                 new Handler<AsyncResult<PingResponse>>() {
           @Override

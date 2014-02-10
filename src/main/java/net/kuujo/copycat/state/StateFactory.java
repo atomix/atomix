@@ -15,12 +15,13 @@
  */
 package net.kuujo.copycat.state;
 
+
 /**
  * A state factory.
  * 
  * @author Jordan Halterman
  */
-class StateFactory {
+final class StateFactory {
 
   /**
    * Creates a new start state.

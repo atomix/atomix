@@ -38,7 +38,7 @@ import net.kuujo.copycat.protocol.SyncResponse;
  * 
  * @author Jordan Halterman
  */
-class Client {
+final class StateClient {
   private static final long DEFAULT_REPLY_TIMEOUT = 5000;
   private final Vertx vertx;
   private String address;
@@ -89,11 +89,11 @@ class Client {
     }
   };
 
-  public Client(Vertx vertx) {
+  public StateClient(Vertx vertx) {
     this(null, vertx);
   }
 
-  public Client(String address, Vertx vertx) {
+  public StateClient(String address, Vertx vertx) {
     this.address = address;
     this.vertx = vertx;
   }
@@ -104,7 +104,7 @@ class Client {
    * @param address The client address.
    * @return The client instance.
    */
-  public Client setAddress(String address) {
+  public StateClient setAddress(String address) {
     if (running) throw new IllegalStateException("Cannot set client address while running.");
     this.address = address;
     return this;
@@ -127,7 +127,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the ping response.
    * @return The client.
    */
-  public Client ping(String address, PingRequest request, Handler<AsyncResult<PingResponse>> resultHandler) {
+  public StateClient ping(String address, PingRequest request, Handler<AsyncResult<PingResponse>> resultHandler) {
     return ping(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
@@ -140,7 +140,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the ping response.
    * @return The client.
    */
-  public Client ping(String address, PingRequest request, long timeout, Handler<AsyncResult<PingResponse>> resultHandler) {
+  public StateClient ping(String address, PingRequest request, long timeout, Handler<AsyncResult<PingResponse>> resultHandler) {
     final Future<PingResponse> future = new DefaultFutureResult<PingResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "ping").putObject("request", PingRequest.toJson(request)), timeout,
@@ -170,7 +170,7 @@ class Client {
    * @param handler A ping request handler.
    * @return The client.
    */
-  public Client pingHandler(Handler<PingRequest> handler) {
+  public StateClient pingHandler(Handler<PingRequest> handler) {
     pingHandler = handler;
     return this;
   }
@@ -183,7 +183,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the sync response.
    * @return The client.
    */
-  public Client sync(String address, SyncRequest request, Handler<AsyncResult<SyncResponse>> resultHandler) {
+  public StateClient sync(String address, SyncRequest request, Handler<AsyncResult<SyncResponse>> resultHandler) {
     return sync(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
@@ -196,7 +196,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the sync response.
    * @return The client.
    */
-  public Client sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler) {
+  public StateClient sync(String address, SyncRequest request, long timeout, Handler<AsyncResult<SyncResponse>> resultHandler) {
     final Future<SyncResponse> future = new DefaultFutureResult<SyncResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "sync").putObject("request", SyncRequest.toJson(request)), timeout,
@@ -226,7 +226,7 @@ class Client {
    * @param handler An append entries request handler.
    * @return The client.
    */
-  public Client syncHandler(Handler<SyncRequest> handler) {
+  public StateClient syncHandler(Handler<SyncRequest> handler) {
     syncHandler = handler;
     return this;
   }
@@ -239,7 +239,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the poll response.
    * @return The client.
    */
-  public Client poll(String address, PollRequest request, Handler<AsyncResult<PollResponse>> resultHandler) {
+  public StateClient poll(String address, PollRequest request, Handler<AsyncResult<PollResponse>> resultHandler) {
     return poll(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
@@ -252,7 +252,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the poll response.
    * @return The client.
    */
-  public Client poll(String address, PollRequest request, long timeout, Handler<AsyncResult<PollResponse>> resultHandler) {
+  public StateClient poll(String address, PollRequest request, long timeout, Handler<AsyncResult<PollResponse>> resultHandler) {
     final Future<PollResponse> future = new DefaultFutureResult<PollResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
         new JsonObject().putString("action", "poll").putObject("request", PollRequest.toJson(request)), timeout,
@@ -282,7 +282,7 @@ class Client {
    * @param handler A poll request handler.
    * @return The client.
    */
-  public Client pollHandler(Handler<PollRequest> handler) {
+  public StateClient pollHandler(Handler<PollRequest> handler) {
     pollHandler = handler;
     return this;
   }
@@ -295,7 +295,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the submit response.
    * @return The client.
    */
-  public Client submit(String address, SubmitRequest request, Handler<AsyncResult<SubmitResponse>> resultHandler) {
+  public StateClient submit(String address, SubmitRequest request, Handler<AsyncResult<SubmitResponse>> resultHandler) {
     return submit(address, request, DEFAULT_REPLY_TIMEOUT, resultHandler);
   }
 
@@ -308,7 +308,7 @@ class Client {
    * @param resultHandler An asynchronous handler to be called with the submit response.
    * @return The client.
    */
-  public Client submit(String address, SubmitRequest request, long timeout,
+  public StateClient submit(String address, SubmitRequest request, long timeout,
       Handler<AsyncResult<SubmitResponse>> resultHandler) {
     final Future<SubmitResponse> future = new DefaultFutureResult<SubmitResponse>().setHandler(resultHandler);
     vertx.eventBus().sendWithTimeout(address,
@@ -339,7 +339,7 @@ class Client {
    * @param handler A submit request handler.
    * @return The client.
    */
-  public Client submitHandler(Handler<SubmitRequest> handler) {
+  public StateClient submitHandler(Handler<SubmitRequest> handler) {
     submitHandler = handler;
     return this;
   }
@@ -349,7 +349,7 @@ class Client {
    * 
    * @return The client.
    */
-  public Client start() {
+  public StateClient start() {
     start(null);
     return this;
   }
@@ -360,7 +360,7 @@ class Client {
    * @param doneHandler An asynchronous handler to be called once the client is started.
    * @return The replica client.
    */
-  public Client start(Handler<AsyncResult<Void>> doneHandler) {
+  public StateClient start(Handler<AsyncResult<Void>> doneHandler) {
     vertx.eventBus().registerHandler(address, messageHandler, doneHandler);
     running = true;
     return this;
