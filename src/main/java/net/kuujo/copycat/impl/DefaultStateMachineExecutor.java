@@ -255,56 +255,61 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
             if (commands.containsKey(info.name())) {
               continue;
             }
+
+            if (method.isAnnotationPresent(Command.Arguments.class)) {
+              commands.put(info.name(), new CommandWrapper(info, method.getAnnotation(Command.Arguments.class).value(), method));
+              continue;
+            }
   
             Annotation[][] params = method.getParameterAnnotations();
             if (params.length == 0) {
               commands.put(info.name(), new CommandWrapper(info, new Command.Argument[0], method));
+              continue;
             }
-            else {
-              // If the method has arguments, check if it only has one JsonObject
-              // argument. If the single JsonObject argument desn't have an
-              // annotation then create a placeholder annotation which will
-              // indicate that the entire command arguments object should be
-              // passed to the method.
-              if (params.length == 1) {
-                boolean hasAnnotation = false;
-                for (Annotation annotation : params[0]) {
-                  if (Command.Argument.class.isAssignableFrom(annotation.getClass())) {
-                    hasAnnotation = true;
-                    break;
-                  }
+
+            // If the method has arguments, check if it only has one JsonObject
+            // argument. If the single JsonObject argument desn't have an
+            // annotation then create a placeholder annotation which will
+            // indicate that the entire command arguments object should be
+            // passed to the method.
+            if (params.length == 1) {
+              boolean hasAnnotation = false;
+              for (Annotation annotation : params[0]) {
+                if (Command.Argument.class.isAssignableFrom(annotation.getClass())) {
+                  hasAnnotation = true;
+                  break;
                 }
-                if (!hasAnnotation) {
-                  if (JsonObject.class.isAssignableFrom(method.getParameterTypes()[0])) {
-                    commands.put(info.name(), new ObjectCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
-                    continue;
-                  }
+              }
+              if (!hasAnnotation) {
+                if (JsonObject.class.isAssignableFrom(method.getParameterTypes()[0])) {
+                  commands.put(info.name(), new ObjectCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
+                  continue;
+                }
+              }
+            }
+
+            // If we've made it this far, then method parameters should be
+            // explicitly annotated.
+            final List<Command.Argument> arguments = new ArrayList<>();
+            for (int i = 0; i < params.length; i++) {
+              // Try to find an Argument annotation on the parameter.
+              boolean hasAnnotation = false;
+              for (Annotation annotation : params[i]) {
+                if (Command.Argument.class.isAssignableFrom(annotation.getClass())) {
+                  arguments.add((Command.Argument) annotation);
+                  hasAnnotation = true;
+                  break;
                 }
               }
 
-              // If we've made it this far, then method parameters should be
-              // explicitly annotated.
-              final List<Command.Argument> arguments = new ArrayList<>();
-              for (int i = 0; i < params.length; i++) {
-                // Try to find an Argument annotation on the parameter.
-                boolean hasAnnotation = false;
-                for (Annotation annotation : params[i]) {
-                  if (Command.Argument.class.isAssignableFrom(annotation.getClass())) {
-                    arguments.add((Command.Argument) annotation);
-                    hasAnnotation = true;
-                    break;
-                  }
-                }
-
-                // If the parameter didn't have an Argument annotation then
-                // create an Argument annotation based on the argument position.
-                if (!hasAnnotation) {
-                  arguments.add(new NamedArgument(String.format("arg%d", i)));
-                }
+              // If the parameter didn't have an Argument annotation then
+              // create an Argument annotation based on the argument position.
+              if (!hasAnnotation) {
+                arguments.add(new NamedArgument(String.format("arg%d", i)));
               }
-  
-              commands.put(info.name(), new CommandWrapper(info, arguments.toArray(new Command.Argument[arguments.size()]), method));
             }
+
+            commands.put(info.name(), new CommandWrapper(info, arguments.toArray(new Command.Argument[arguments.size()]), method));
           }
         }
         current = current.getSuperclass();

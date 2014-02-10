@@ -106,6 +106,22 @@ public @interface Command {
   }
 
   /**
+   * A list of command arguments.
+   *
+   * @author Jordan Halterman
+   */
+  @Target(ElementType.METHOD)
+  @Retention(RetentionPolicy.RUNTIME)
+  public static @interface Arguments {
+
+    /**
+     * An array of command arguments.
+     */
+    Argument[] value();
+
+  }
+
+  /**
    * A command argument.
    *
    * @author Jordan Halterman
