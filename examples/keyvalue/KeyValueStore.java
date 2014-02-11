@@ -19,6 +19,8 @@ import java.util.Map;
 import net.kuujo.copycat.Replica;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.annotations.Command;
+import net.kuujo.copycat.annotations.Command.Argument;
+import net.kuujo.copycat.annotations.StateValue;
 import net.kuujo.copycat.impl.DefaultReplica;
 
 import org.vertx.java.core.AsyncResult;
@@ -32,21 +34,23 @@ import org.vertx.java.platform.Verticle;
  * @author Jordan Halterman
  */
 public class KeyValueStore extends Verticle implements StateMachine {
+
+  @StateValue
   private final Map<String, Object> data = new HashMap<>();
 
   @Command(name="get", type=Command.Type.READ)
-  public Object get(@Command.Argument("key") String key, @Command.Argument(value="default", required=false) Object defaultValue) {
+  public Object get(@Argument("key") String key, @Argument(value="default", required=false) Object defaultValue) {
     return data.containsKey(key) ? data.get(key) : defaultValue;
   }
 
   @Command(name="set", type=Command.Type.WRITE)
-  public boolean set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+  public boolean set(@Argument("key") String key, @Argument("value") Object value) {
     data.put(key, value);
     return true;
   }
 
   @Command(name="del", type=Command.Type.WRITE)
-  public boolean del(@Command.Argument("key") String key) {
+  public boolean del(@Argument("key") String key) {
     if (data.containsKey(key)) {
       data.remove(key);
       return true;
@@ -57,7 +61,7 @@ public class KeyValueStore extends Verticle implements StateMachine {
   @Override
   public void start(final Future<Void> startResult) {
     String address = container.config().getString("address", "copycat");
-    Replica replica = new DefaultReplica(address, vertx, this);
+    Replica replica = new DefaultReplica(address, vertx, container, this);
     replica.start(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
