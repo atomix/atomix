@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
+package net.kuujo.copycat.state.impl;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -30,7 +30,7 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author Jordan Halterman
  */
-final class SnapshotPersistor {
+public final class SnapshotPersistor {
   private static final String SNAPSHOT_DIRECTORY = "snapshots";
   private static final String FILE_SEPARATOR = System.getProperty("file.separator");
   private final String address;

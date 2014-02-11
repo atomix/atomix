@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
+package net.kuujo.copycat.state.impl;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -25,7 +25,7 @@ import org.vertx.java.core.Handler;
  * 
  * @author Jordan Halterman
  */
-final class StateLock {
+public final class StateLock {
   private final Queue<Handler<Void>> handlers = new ArrayDeque<>();
   private boolean locked;
 

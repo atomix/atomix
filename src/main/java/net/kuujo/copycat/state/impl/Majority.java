@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
+package net.kuujo.copycat.state.impl;
 
 import java.util.Set;
 
@@ -24,7 +24,7 @@ import org.vertx.java.core.Handler;
  * 
  * @author Jordan Halterman
  */
-class Majority {
+public final class Majority {
   private final Set<String> members;
   private int total;
   private int succeeded;

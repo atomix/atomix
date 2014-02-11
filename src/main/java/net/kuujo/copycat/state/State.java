@@ -24,11 +24,12 @@ import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Entry.Type;
-import net.kuujo.copycat.log.LogProxy;
+import net.kuujo.copycat.log.impl.LogProxy;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.state.impl.StateClient;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;

@@ -19,8 +19,8 @@ import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.MemoryLog;
 import net.kuujo.copycat.log.NoOpEntry;
+import net.kuujo.copycat.log.impl.MemoryLog;
 
 import org.junit.Test;
 import org.vertx.java.core.json.JsonObject;

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
+package net.kuujo.copycat.state.impl;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -38,8 +38,8 @@ import net.kuujo.copycat.protocol.SyncResponse;
  * 
  * @author Jordan Halterman
  */
-final class StateClient {
-  private static final long DEFAULT_REPLY_TIMEOUT = 5000;
+public final class StateClient {
+  private static final long DEFAULT_REPLY_TIMEOUT = 15000;
   private final Vertx vertx;
   private String address;
   private Handler<PingRequest> pingHandler;

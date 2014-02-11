@@ -47,6 +47,11 @@ public class DefaultReplica implements Replica {
     context = new StateContext(address, vertx, container, new DefaultStateMachineExecutor(stateMachine));
   }
 
+  public DefaultReplica(String address, Verticle verticle, StateMachine stateMachine, ClusterConfig config) {
+    this(address, verticle, stateMachine);
+    context.configure(config);
+  }
+
   @Override
   public String address() {
     return context.address();

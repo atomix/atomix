@@ -19,9 +19,9 @@ import static org.junit.Assert.assertTrue;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.NoOpEntry;
+import net.kuujo.copycat.log.impl.FileLog;
 import net.kuujo.copycat.serializer.Serializer;
 
 import org.junit.Test;

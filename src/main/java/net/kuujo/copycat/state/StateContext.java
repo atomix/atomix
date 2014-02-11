@@ -22,12 +22,14 @@ import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.LogProxy;
+import net.kuujo.copycat.log.impl.LogProxy;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.state.impl.SnapshotPersistor;
+import net.kuujo.copycat.state.impl.StateClient;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;

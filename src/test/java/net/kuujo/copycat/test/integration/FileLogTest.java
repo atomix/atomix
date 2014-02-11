@@ -19,8 +19,8 @@ import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.LogProxy;
 import net.kuujo.copycat.log.NoOpEntry;
+import net.kuujo.copycat.log.impl.LogProxy;
 
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;

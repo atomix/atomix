@@ -39,6 +39,8 @@ import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.state.impl.Majority;
+import net.kuujo.copycat.state.impl.StateLock;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;

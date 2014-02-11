@@ -13,12 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.log.impl;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogException;
 import net.kuujo.copycat.serializer.Serializer;
 
 import org.vertx.java.core.AsyncResult;

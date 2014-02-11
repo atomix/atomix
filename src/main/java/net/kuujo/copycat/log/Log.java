@@ -17,6 +17,9 @@ package net.kuujo.copycat.log;
 
 import java.util.List;
 
+import net.kuujo.copycat.log.impl.FileLog;
+import net.kuujo.copycat.log.impl.MemoryLog;
+
 import org.vertx.java.core.Handler;
 
 /**

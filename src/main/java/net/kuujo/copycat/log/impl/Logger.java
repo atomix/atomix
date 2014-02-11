@@ -1,4 +1,7 @@
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.log.impl;
+
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogException;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;

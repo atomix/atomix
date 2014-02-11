@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.log.impl;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
+
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogException;
 
 import org.vertx.java.core.Handler;
 
