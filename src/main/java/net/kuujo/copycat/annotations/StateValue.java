@@ -15,38 +15,17 @@
  */
 package net.kuujo.copycat.annotations;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
- * Indicates that a field represents a snapshot of a state machine.
+ * Indicates a field that represents the state machine state.
  *
  * @author Jordan Halterman
  */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Snapshot {
-
-  /**
-   * A snapshot provider.
-   *
-   * @author Jordan Halterman
-   */
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface Provider {
-  }
-
-  /**
-   * A snapshot installer.
-   *
-   * @author Jordan Halterman
-   */
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface Installer {
-  }
-
+public @interface StateValue {
 }

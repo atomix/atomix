@@ -21,7 +21,9 @@ import java.util.Map;
 
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.annotations.Command;
-import net.kuujo.copycat.annotations.Snapshot;
+import net.kuujo.copycat.annotations.StateGetter;
+import net.kuujo.copycat.annotations.StateSetter;
+import net.kuujo.copycat.annotations.StateValue;
 import net.kuujo.copycat.impl.DefaultStateMachineExecutor;
 
 import org.junit.Test;
@@ -205,7 +207,7 @@ public class StateMachineTest {
   }
 
   public static class TestSnapshotStateMachine implements StateMachine {
-    @Snapshot
+    @StateValue
     private final Map<String, Object> data = new HashMap<>();
 
     @Command(name="write", type=Command.Type.WRITE)
@@ -249,12 +251,12 @@ public class StateMachineTest {
       data.put(key, value);
     }
 
-    @Snapshot.Provider
+    @StateGetter
     public Map<String, Object> takeSnapshot() {
       return data;
     }
 
-    @Snapshot.Installer
+    @StateSetter
     public void installSnapshot(Map<String, Object> snapshot) {
       this.data = snapshot;
     }

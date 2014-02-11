@@ -33,7 +33,12 @@ import org.vertx.java.core.json.JsonObject;
 
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.annotations.Command;
-import net.kuujo.copycat.annotations.Snapshot;
+import net.kuujo.copycat.annotations.StateField;
+import net.kuujo.copycat.annotations.StateFieldGetter;
+import net.kuujo.copycat.annotations.StateFieldSetter;
+import net.kuujo.copycat.annotations.StateGetter;
+import net.kuujo.copycat.annotations.StateSetter;
+import net.kuujo.copycat.annotations.StateValue;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.state.StateMachineExecutor;
 
@@ -47,8 +52,8 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
   private Map<String, CommandWrapper> commands;
   private Collection<BeforeWrapper> before;
   private Collection<AfterWrapper> after;
-  private SnapshotProviderWrapper snapshotProvider;
-  private SnapshotInstallerWrapper snapshotInstaller;
+  private SnapshotTaker snapshotTaker;
+  private SnapshotInstaller snapshotInstaller;
 
   public DefaultStateMachineExecutor(StateMachine stateMachine) {
     this.stateMachine = stateMachine;
@@ -66,7 +71,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     }
     this.before = introspector.findBefore(clazz);
     this.after = introspector.findAfter(clazz);
-    this.snapshotProvider = introspector.findSnapshotProvider(clazz);
+    this.snapshotTaker = introspector.findSnapshotTaker(clazz);
     this.snapshotInstaller = introspector.findSnapshotInstaller(clazz);
   }
 
@@ -124,9 +129,9 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public JsonElement takeSnapshot() {
-    if (snapshotProvider != null) {
+    if (snapshotTaker != null) {
       try {
-        return snapshotProvider.call(stateMachine, null);
+        return snapshotTaker.call(stateMachine, null);
       }
       catch (IllegalAccessException | InvocationTargetException e) {
         return null;
@@ -189,52 +194,113 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     }
 
     /**
-     * Finds a snapshot provider.
+     * Finds a snapshot taker.
      */
-    private SnapshotProviderWrapper findSnapshotProvider(Class<?> clazz) {
+    private SnapshotTaker findSnapshotTaker(Class<?> clazz) {
       Class<?> current = clazz;
+      Map<String, NamedStateSnapshotTaker> takers = null;
       while (current != Object.class) {
-        for (Method method : current.getDeclaredMethods()) {
-          if (method.isAnnotationPresent(Snapshot.Provider.class) && method.getParameterTypes().length == 0
-              && !method.getReturnType().equals(Void.TYPE)) {
-            method.setAccessible(true);
-            return new SnapshotProviderWrapper(method);
+        if (takers == null) {
+          // First search for a state getter method.
+          for (Method method : current.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(StateGetter.class) && method.getParameterTypes().length == 0
+                && !method.getReturnType().equals(Void.TYPE)) {
+              return new StateGetterSnapshotTaker(method);
+            }
+          }
+
+          // Next search for a state field.
+          for (Field field : current.getDeclaredFields()) {
+            if (field.isAnnotationPresent(StateValue.class)) {
+              return new StateFieldSnapshotTaker(field);
+            }
           }
         }
 
-        for (Field field : current.getDeclaredFields()) {
-          if (field.isAnnotationPresent(Snapshot.class)) {
-            field.setAccessible(true);
-            return new FieldSnapshotProviderWrapper(field);
+        // Now search for getter methods and field-level fields.
+        for (Method method : current.getDeclaredMethods()) {
+          if (method.isAnnotationPresent(StateFieldGetter.class) && method.getParameterTypes().length == 0
+              && !method.getReturnType().equals(Void.TYPE)) {
+            StateFieldGetter getter = method.getAnnotation(StateFieldGetter.class);
+            if (takers == null) {
+              takers = new HashMap<>();
+            }
+            if (!takers.containsKey(getter.value())) {
+              takers.put(getter.value(), new NamedGetterSnapshotTaker(getter.value(), method));
+            }
           }
         }
+
+        // Search for field-level fields.
+        for (Field field : current.getDeclaredFields()) {
+          if (field.isAnnotationPresent(StateField.class)) {
+            StateField stateField = field.getAnnotation(StateField.class);
+            if (takers == null) {
+              takers = new HashMap<>();
+            }
+            if (!takers.containsKey(stateField.value())) {
+              takers.put(stateField.value(), new NamedFieldSnapshotTaker(stateField.value(), field));
+            }
+          }
+        }
+
         current = current.getSuperclass();
       }
-      return null;
+      return takers != null ? new StateFieldsSnapshotTaker(takers.values()) : null;
     }
 
     /**
      * Finds a snapshot installer.
      */
-    private SnapshotInstallerWrapper findSnapshotInstaller(Class<?> clazz) {
+    private SnapshotInstaller findSnapshotInstaller(Class<?> clazz) {
       Class<?> current = clazz;
+      Map<String, NamedStateSnapshotInstaller> installers = null;
       while (current != Object.class) {
-        for (Method method : current.getDeclaredMethods()) {
-          if (method.isAnnotationPresent(Snapshot.Installer.class) && method.getParameterTypes().length == 1) {
-            method.setAccessible(true);
-            return new SnapshotInstallerWrapper(method);
+        if (installers == null) {
+          // First search for a state setter method.
+          for (Method method : current.getDeclaredMethods()) {
+            if (method.isAnnotationPresent(StateSetter.class) && method.getParameterTypes().length == 1) {
+              return new StateSetterSnapshotInstaller(method);
+            }
+          }
+
+          // Next search for a state field.
+          for (Field field : current.getDeclaredFields()) {
+            if (field.isAnnotationPresent(StateValue.class)) {
+              return new StateFieldSnapshotInstaller(field);
+            }
           }
         }
 
-        for (Field field : current.getDeclaredFields()) {
-          if (field.isAnnotationPresent(Snapshot.class)) {
-            field.setAccessible(true);
-            return new FieldSnapshotInstallerWrapper(field);
+        // Now search for setter methods and field-level fields.
+        for (Method method : current.getDeclaredMethods()) {
+          if (method.isAnnotationPresent(StateFieldSetter.class) && method.getParameterTypes().length == 1) {
+            StateFieldSetter setter = method.getAnnotation(StateFieldSetter.class);
+            if (installers == null) {
+              installers = new HashMap<>();
+            }
+            if (!installers.containsKey(setter.value())) {
+              installers.put(setter.value(), new NamedSetterSnapshotInstaller(setter.value(), method));
+            }
           }
         }
+
+        // Search for field-level fields.
+        for (Field field : current.getDeclaredFields()) {
+          if (field.isAnnotationPresent(StateField.class)) {
+            StateField stateField = field.getAnnotation(StateField.class);
+            if (installers == null) {
+              installers = new HashMap<>();
+            }
+            if (!installers.containsKey(stateField.value())) {
+              installers.put(stateField.value(), new NamedFieldSnapshotInstaller(stateField.value(), field));
+            }
+          }
+        }
+
         current = current.getSuperclass();
       }
-      return null;
+      return installers != null ? new StateFieldsSnapshotInstaller(installers.values()) : null;
     }
 
     /**
@@ -490,20 +556,21 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
   }
 
   /**
-   * Snapshot provider wrapper.
+   * Base class for snapshot functions.
    */
-  private static class SnapshotProviderWrapper implements Function<Void, JsonElement> {
+  private static abstract class SnapshotTaker implements Function<Void, JsonElement> {
+  }
+
+  /**
+   * A snapshot function that gets the snapshot from a full state getter.
+   */
+  private static class StateGetterSnapshotTaker extends SnapshotTaker {
+    Serializer serializer = Serializer.getInstance();
     private final Method method;
-    private final Serializer serializer = Serializer.getInstance();
-
-    private SnapshotProviderWrapper() {
-      method = null;
-    }
-
-    private SnapshotProviderWrapper(Method method) {
+    private StateGetterSnapshotTaker(Method method) {
       this.method = method;
+      method.setAccessible(true);
     }
-
     @Override
     public JsonElement call(Object obj, Void arg) throws IllegalAccessException, InvocationTargetException {
       return serializer.writeObject(method.invoke(obj));
@@ -511,16 +578,15 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
   }
 
   /**
-   * A field-based snapshot provider.
+   * A snapshot function that gets the snapshot from a full state field.
    */
-  private static class FieldSnapshotProviderWrapper extends SnapshotProviderWrapper {
+  private static class StateFieldSnapshotTaker extends SnapshotTaker {
+    Serializer serializer = Serializer.getInstance();
     private final Field field;
-    private final Serializer serializer = Serializer.getInstance();
-
-    private FieldSnapshotProviderWrapper(Field field) {
+    private StateFieldSnapshotTaker(Field field) {
       this.field = field;
+      field.setAccessible(true);
     }
-
     @Override
     public JsonElement call(Object obj, Void arg) throws IllegalAccessException, InvocationTargetException {
       return serializer.writeObject(field.get(obj));
@@ -528,47 +594,166 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
   }
 
   /**
-   * Snapshot installer wrapper.
+   * A snapshot function that combines the snapshot from a set of fields.
    */
-  private static class SnapshotInstallerWrapper implements Function<JsonElement, Void> {
-    private final Method method;
-    private final Class<?> type;
-    private final Serializer serializer = Serializer.getInstance();
-
-    private SnapshotInstallerWrapper() {
-      method = null;
-      type = null;
+  private static class StateFieldsSnapshotTaker extends SnapshotTaker {
+    Serializer serializer = Serializer.getInstance();
+    private Collection<NamedStateSnapshotTaker> snapshots;
+    private StateFieldsSnapshotTaker(Collection<NamedStateSnapshotTaker> snapshots) {
+      this.snapshots = snapshots;
     }
-
-    private SnapshotInstallerWrapper(Method method) {
-      this.method = method;
-      type = method.getParameterTypes()[0];
-    }
-
     @Override
-    public Void call(Object obj, JsonElement arg) throws IllegalAccessException, InvocationTargetException {
-      method.invoke(obj, serializer.readObject(arg, type));
-      return (Void) null;
+    public JsonElement call(Object obj, Void arg) throws IllegalAccessException, InvocationTargetException {
+      Map<String, Object> data = new HashMap<>();
+      for (NamedStateSnapshotTaker snapshot : snapshots) {
+        data.put(snapshot.name, snapshot.call(obj, arg));
+      }
+      return serializer.writeObject(data);
     }
   }
 
   /**
-   * A field-based snapshot installer.
+   * Base class for field-based snapshot takers.
    */
-  private static class FieldSnapshotInstallerWrapper extends SnapshotInstallerWrapper {
-    private final Field field;
-    private final Class<?> type;
-    private final Serializer serializer = Serializer.getInstance();
-
-    private FieldSnapshotInstallerWrapper(Field field) {
-      this.field = field;
-      type = field.getType();
+  private static abstract class NamedStateSnapshotTaker implements Function<Void, Object> {
+    private final String name;
+    protected NamedStateSnapshotTaker(String name) {
+      this.name = name;
     }
+  }
 
+  /**
+   * A snapshot function that gets the snapshot field from a field value.
+   */
+  private static class NamedFieldSnapshotTaker extends NamedStateSnapshotTaker {
+    private final Field field;
+    protected NamedFieldSnapshotTaker(String name, Field field) {
+      super(name);
+      this.field = field;
+    }
+    @Override
+    public Object call(Object obj, Void arg) throws IllegalAccessException, InvocationTargetException {
+      return field.get(obj);
+    }
+  }
+
+  /**
+   * A snapshot function that gets the snapshot field from a getter.
+   */
+  private static class NamedGetterSnapshotTaker extends NamedStateSnapshotTaker {
+    private final Method method;
+    protected NamedGetterSnapshotTaker(String name, Method method) {
+      super(name);
+      this.method = method;
+    }
+    @Override
+    public Object call(Object obj, Void arg) throws IllegalAccessException, InvocationTargetException {
+      return method.invoke(obj);
+    }
+  }
+
+  /**
+   * Base class for snapshot installer functions.
+   */
+  private static abstract class SnapshotInstaller implements Function<JsonElement, Void> {
+  }
+
+  /**
+   * A snapshot function that sets the snapshot from a full state setter.
+   */
+  private static class StateSetterSnapshotInstaller extends SnapshotInstaller {
+    Serializer serializer = Serializer.getInstance();
+    private final Method method;
+    private final Class<?> type;
+    private StateSetterSnapshotInstaller(Method method) {
+      this.method = method;
+      type = method.getParameterTypes()[0];
+      method.setAccessible(true);
+    }
     @Override
     public Void call(Object obj, JsonElement arg) throws IllegalAccessException, InvocationTargetException {
-      field.set(obj, serializer.readObject(arg, type));
-      return (Void) null;
+      method.invoke(obj, serializer.readObject(arg, type));
+      return null;
+    }
+  }
+
+  /**
+   * A snapshot function that Sets the snapshot on a full state field.
+   */
+  private static class StateFieldSnapshotInstaller extends SnapshotInstaller {
+    Serializer serializer = Serializer.getInstance();
+    private final Field field;
+    private StateFieldSnapshotInstaller(Field field) {
+      this.field = field;
+      field.setAccessible(true);
+    }
+    @Override
+    public Void call(Object obj, JsonElement arg) throws IllegalAccessException, InvocationTargetException {
+      field.set(obj, serializer.readObject(arg, field.getType()));
+      return null;
+    }
+  }
+
+  /**
+   * A snapshot function that sets the snapshot on a group of fields and methods.
+   */
+  private static class StateFieldsSnapshotInstaller extends SnapshotInstaller {
+    private Collection<NamedStateSnapshotInstaller> snapshots;
+    private StateFieldsSnapshotInstaller(Collection<NamedStateSnapshotInstaller> snapshots) {
+      this.snapshots = snapshots;
+    }
+    @Override
+    public Void call(Object obj, JsonElement arg) throws IllegalAccessException, InvocationTargetException {
+      JsonObject json = arg.asObject();
+      for (NamedStateSnapshotInstaller snapshot : snapshots) {
+        snapshot.call(obj, json.getValue(snapshot.name));
+      }
+      return null;
+    }
+  }
+
+  /**
+   * Base class for named field setters and getters.
+   */
+  private static abstract class NamedStateSnapshotInstaller implements Function<Object, Void> {
+    private final String name;
+    protected NamedStateSnapshotInstaller(String name) {
+      this.name = name;
+    }
+  }
+
+  /**
+   * A snapshot function that sets a snapshot field on a field.
+   */
+  private static class NamedFieldSnapshotInstaller extends NamedStateSnapshotInstaller {
+    private final Field field;
+    protected NamedFieldSnapshotInstaller(String name, Field field) {
+      super(name);
+      this.field = field;
+      field.setAccessible(true);
+    }
+    @Override
+    public Void call(Object obj, Object arg) throws IllegalAccessException, InvocationTargetException {
+      field.set(obj, arg);
+      return null;
+    }
+    
+  }
+
+  /**
+   * A snapshot function that sets a snapshot field with a setter.
+   */
+  private static class NamedSetterSnapshotInstaller extends NamedStateSnapshotInstaller {
+    private final Method method;
+    protected NamedSetterSnapshotInstaller(String name, Method method) {
+      super(name);
+      this.method = method;
+      method.setAccessible(true);
+    }
+    @Override
+    public Void call(Object obj, Object arg) throws IllegalAccessException, InvocationTargetException {
+      method.invoke(obj, arg);
+      return null;
     }
   }
 
