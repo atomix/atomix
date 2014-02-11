@@ -17,6 +17,21 @@ and submit changes as necessary.
 ## Table of contents
 1. [Features](#features)
 1. [How it works](#how-it-works)
+1. [Working with replicas](#working-with-replicas)
+   * [Creating nodes](#creating-nodes)
+   * [Submitting commands](#submitting-commands)
+1. [Working with state machines](#working-with-state-machines)
+   * [Creating state machines](#creating-state-machines)
+   * [Creating state machine commands](#creating-state-machine-commands)
+   * [Defining command arguments](#defining-command-arguments)
+1. [Working with snapshots](#working-with-snapshots)
+   * [Taking snapshots of the machine state](#taking-snapshots-of-the-state-machine)
+   * [Taking snapshots with getters](#taking-snapshots-with-getters)
+   * [Installing snapshots with setters](#installing-snapshots-with-setters)
+   * [Taking snapshots of state machine fields](#taking-snapshots-of-state-machine-fields)
+   * [Taking snapshots of fields with getters](#taking-snapshots-of-fields-with-getters)
+   * [Installing snapshots of fields with setters](#installing-snapshots-of-fields-with-setters)
+1. [Building a fault-tolerant in-memory key-value store](#a-simple-fault-tolerant-key-value-store)
 
 ### Features
 * Automatically replicates state across multiple Vert.x instances in a consistent and reliable manner
@@ -141,7 +156,7 @@ There are three types of `Command.Type`:
 * `Command.Type.WRITE` - indicates a write-only command (state altering)
 * `Command.Type.READ_WRITE` - indicates a read/write command. This is the default
 
-### Extracting command arguments
+### Defining command arguments
 Most of the time, commands require arguments to be passed when the user submits
 a command to the cluster. Command arguments are submitted in the form of a
 `JsonObject` instance, but CopyCat annotations can be used to parse and validate
@@ -172,14 +187,14 @@ public String put(String key, Object value) {
 }
 ```
 
-## Creating snapshots
+## Working with snapshots
 CopyCat provides a dynamic API for persisting the system state. When logs
 begin to grow too large, CopyCat will automatically take a snapshot of the
 state machine state, write it to disk, and flush the logs. If the node
 fails, once the node is restarted CopyCat will load the perisisted state,
 apply it to the state machine, and continue normal operation.
 
-### Snapshotting the state machine state
+### Taking snapshots of the machine state
 The simplest method of supporting snapshotting in CopyCat is to apply the
 `@StateValue` to any field within the state machine.
 
@@ -236,7 +251,7 @@ public class MyStateMachine implements StateMachine {
 }
 ```
 
-### Snapshotting state machine fields
+### Taking snapshots of state machine fields
 CopyCat provides annotations for building snapshots from multiple fields
 and methods. When field-level snapshots are constructed, each field becomes
 a property of a json object which combines fields into a complete state.
@@ -308,8 +323,8 @@ public class MyStateMachine implements StateMachine {
 }
 ```
 
-## A Simple Key-Value Store
-To demonstrate the tools that CopyCat provides, this is a simply example
+## A Simple Fault-Tolerant Key-Value Store
+To demonstrate the tools that CopyCat provides, this is a simple example
 of a Redis-style fault-tolerant in-memory key-value store exposed over
 the Vert.x event bus.
 
