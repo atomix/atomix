@@ -22,6 +22,7 @@ import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Container;
+import org.vertx.java.platform.Verticle;
 
 import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.Replica;
@@ -37,6 +38,10 @@ import net.kuujo.copycat.state.StateType;
  */
 public class DefaultReplica implements Replica {
   private final StateContext context;
+
+  public DefaultReplica(String address, Verticle verticle, StateMachine stateMachine) {
+    this(address, verticle.getVertx(), verticle.getContainer(), stateMachine);
+  }
 
   public DefaultReplica(String address, Vertx vertx, Container container, StateMachine stateMachine) {
     context = new StateContext(address, vertx, container, new DefaultStateMachineExecutor(stateMachine));

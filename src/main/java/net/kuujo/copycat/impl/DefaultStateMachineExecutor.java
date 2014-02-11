@@ -239,7 +239,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               takers = new HashMap<>();
             }
             if (!takers.containsKey(stateField.value())) {
-              takers.put(stateField.value(), new NamedFieldSnapshotTaker(stateField.value(), field));
+              takers.put(stateField.value().equals("") ? field.getName() : stateField.value(), new NamedFieldSnapshotTaker(stateField.value(), field));
             }
           }
         }
@@ -293,7 +293,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               installers = new HashMap<>();
             }
             if (!installers.containsKey(stateField.value())) {
-              installers.put(stateField.value(), new NamedFieldSnapshotInstaller(stateField.value(), field));
+              installers.put(stateField.value().equals("") ? field.getName() : stateField.value(), new NamedFieldSnapshotInstaller(stateField.value(), field));
             }
           }
         }

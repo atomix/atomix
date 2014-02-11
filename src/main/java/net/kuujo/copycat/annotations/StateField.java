@@ -32,6 +32,6 @@ public @interface StateField {
   /**
    * The state property name.
    */
-  String value();
+  String value() default "";
 
 }
