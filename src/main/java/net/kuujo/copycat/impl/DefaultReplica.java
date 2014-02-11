@@ -52,6 +52,11 @@ public class DefaultReplica implements Replica {
     context.configure(config);
   }
 
+  public DefaultReplica(String address, Vertx vertx, Container container, StateMachine stateMachine, ClusterConfig config) {
+    this(address, vertx, container, stateMachine);
+    context.configure(config);
+  }
+
   @Override
   public String address() {
     return context.address();
