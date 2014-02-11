@@ -19,6 +19,7 @@ and submit changes as necessary.
 1. [How it works](#how-it-works)
 1. [Working with replicas](#working-with-replicas)
    * [Creating nodes](#creating-nodes)
+   * [Configuring the cluster](#configuring-the-cluster)
    * [Submitting commands](#submitting-commands)
 1. [Working with state machines](#working-with-state-machines)
    * [Creating state machines](#creating-state-machines)
@@ -75,6 +76,39 @@ public class MyVerticle extends Verticle {
 
 }
 ```
+
+### Configuring the cluster
+In order for replicas to be able to coordinate command submissions with other
+nodes in the cluster, they need to be notified of the cluster membership.
+Cluster membership is configured using a `ClusterConfig` object which can
+be accessed by the `Replica.config()` method. The `ClusterConfig` class
+exposes the following methods:
+* `addMember(String address)`
+* `removeMember(String address)`
+* `setMembers(String... addresses)`
+* `setMembers(Set<String> addresses)`
+* `getMembers()`
+
+The cluster configuration should list the addresses of all the nodes in the
+cluster. CopyCat also supports runtime cluster configuration changes. When
+the cluster configuration is changed while the replica is running, the
+updated configuration will be sent to the cluster leader just like a regular
+command. The cluster leader will then log the configuration change and
+replicate it to the rest of the cluster.
+
+```java
+Replica replica = new Replica("test", this, stateMachine);
+replica.config().addMember("foo");
+replica.config().addMember("bar");
+replica.config().addMember("baz");
+```
+
+The configuration change process is actually a two-phase process that ensures
+that consistency remains intact during the transition. When the leader receives
+a configuration change, it actually replicates two separate log entries - one
+with the combined old and new configuration, and - once that configuration
+has been replicated and committed - the final updated configuration. This
+ensures that split majorities cannot occur during the transition.
 
 ### Submitting commands
 To submit a command to the cluster, use the `Replica.submitCommand` method.
