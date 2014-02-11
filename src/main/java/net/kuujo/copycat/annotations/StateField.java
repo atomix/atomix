@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
  *
  * @author Jordan Halterman
  */
-@Target(ElementType.METHOD)
+@Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface StateField {
 
