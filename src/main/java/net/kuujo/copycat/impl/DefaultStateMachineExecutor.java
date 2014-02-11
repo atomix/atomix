@@ -506,7 +506,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
 
     @Override
     public JsonElement call(Object obj, Void arg) throws IllegalAccessException, InvocationTargetException {
-      return serializer.serialize(method.invoke(obj));
+      return serializer.writeObject(method.invoke(obj));
     }
   }
 
@@ -523,7 +523,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
 
     @Override
     public JsonElement call(Object obj, Void arg) throws IllegalAccessException, InvocationTargetException {
-      return serializer.serialize(field.get(obj));
+      return serializer.writeObject(field.get(obj));
     }
   }
 
@@ -547,7 +547,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
 
     @Override
     public Void call(Object obj, JsonElement arg) throws IllegalAccessException, InvocationTargetException {
-      method.invoke(obj, serializer.deserialize(arg, type));
+      method.invoke(obj, serializer.readObject(arg, type));
       return (Void) null;
     }
   }
@@ -567,7 +567,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
 
     @Override
     public Void call(Object obj, JsonElement arg) throws IllegalAccessException, InvocationTargetException {
-      field.set(obj, serializer.deserialize(arg, type));
+      field.set(obj, serializer.readObject(arg, type));
       return (Void) null;
     }
   }

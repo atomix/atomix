@@ -41,15 +41,15 @@ public class SubmitRequest extends Request {
   }
 
   public static SubmitRequest fromJson(JsonObject json) {
-    return serializer.deserialize(json, SubmitRequest.class);
+    return serializer.readObject(json, SubmitRequest.class);
   }
 
   public static SubmitRequest fromJson(JsonObject json, Message<JsonObject> message) {
-    return serializer.deserialize(json, SubmitRequest.class).setMessage(message);
+    return serializer.readObject(json, SubmitRequest.class).setMessage(message);
   }
 
   public static JsonObject toJson(SubmitRequest request) {
-    return serializer.serialize(request);
+    return serializer.writeObject(request);
   }
 
   private SubmitRequest setMessage(Message<JsonObject> message) {

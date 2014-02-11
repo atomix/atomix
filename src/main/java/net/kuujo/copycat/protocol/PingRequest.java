@@ -39,15 +39,15 @@ public class PingRequest extends Request {
   }
 
   public static PingRequest fromJson(JsonObject json) {
-    return serializer.deserialize(json, PingRequest.class);
+    return serializer.readObject(json, PingRequest.class);
   }
 
   public static PingRequest fromJson(JsonObject json, Message<JsonObject> message) {
-    return serializer.deserialize(json, PingRequest.class).setMessage(message);
+    return serializer.readObject(json, PingRequest.class).setMessage(message);
   }
 
   public static JsonObject toJson(PingRequest request) {
-    return serializer.serialize(request);
+    return serializer.writeObject(request);
   }
 
   private PingRequest setMessage(Message<JsonObject> message) {

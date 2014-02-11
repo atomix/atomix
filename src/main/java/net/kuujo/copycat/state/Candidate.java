@@ -83,29 +83,36 @@ class Candidate extends State {
           // than
           // calling lastTerm() because the last entry could have changed
           // already.
-          final long lastIndex = log.lastIndex();
-          log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
+          log.lastIndex(new Handler<AsyncResult<Long>>() {
             @Override
-            public void handle(AsyncResult<Entry> result) {
-              if (result.succeeded() && result.result() != null) {
-                final long lastTerm = result.result().term();
-                stateClient.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm),
-                    new Handler<AsyncResult<PollResponse>>() {
-                      @Override
-                      public void handle(AsyncResult<PollResponse> result) {
-                        // If the election is null then that means it was
-                        // already finished,
-                        // e.g. a majority of nodes responded.
-                        if (majority != null) {
-                          if (result.failed() || !result.result().voteGranted()) {
-                            majority.fail(address);
-                          }
-                          else {
-                            majority.succeed(address);
-                          }
-                        }
-                      }
-                    });
+            public void handle(AsyncResult<Long> result) {
+              if (result.succeeded()) {
+                final long lastIndex = result.result();
+                log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
+                  @Override
+                  public void handle(AsyncResult<Entry> result) {
+                    if (result.succeeded() && result.result() != null) {
+                      final long lastTerm = result.result().term();
+                      stateClient.poll(address, new PollRequest(context.currentTerm(), context.address(), lastIndex, lastTerm),
+                          new Handler<AsyncResult<PollResponse>>() {
+                            @Override
+                            public void handle(AsyncResult<PollResponse> result) {
+                              // If the election is null then that means it was
+                              // already finished,
+                              // e.g. a majority of nodes responded.
+                              if (majority != null) {
+                                if (result.failed() || !result.result().voteGranted()) {
+                                  majority.fail(address);
+                                }
+                                else {
+                                  majority.succeed(address);
+                                }
+                              }
+                            }
+                          });
+                    }
+                  }
+                });
               }
             }
           });

@@ -547,7 +547,7 @@ class Leader extends State implements Observer {
    */
   private class Replica {
     private final String address;
-    private long nextIndex;
+    private Long nextIndex;
     private long matchIndex;
     private long lastSyncTime;
     private long lastPingTime;
@@ -557,7 +557,6 @@ class Leader extends State implements Observer {
 
     private Replica(String address) {
       this.address = address;
-      this.nextIndex = log.lastIndex() + 1;
       this.matchIndex = 0;
     }
 
@@ -566,12 +565,19 @@ class Leader extends State implements Observer {
      */
     private void update() {
       if (!shutdown) {
-        if (nextIndex <= log.lastIndex()) {
-          sync();
-        }
-        else {
-          ping();
-        }
+        log.lastIndex(new Handler<AsyncResult<Long>>() {
+          @Override
+          public void handle(AsyncResult<Long> result) {
+            if (result.succeeded()) {
+              if (nextIndex <= result.result()) {
+                sync();
+              }
+              else {
+                ping();
+              }
+            }
+          }
+        });
       }
     }
 
@@ -598,42 +604,54 @@ class Leader extends State implements Observer {
         running = false;
         return;
       }
-      if (nextIndex <= log.lastIndex() || matchIndex < context.commitIndex()) {
-        if (nextIndex-1 > 0) {
-          final long prevLogIndex = nextIndex - 1;
-          log.getEntry(prevLogIndex, new Handler<AsyncResult<Entry>>() {
-            @Override
-            public void handle(AsyncResult<Entry> result) {
-              if (result.failed()) {
-                running = false;
-              }
-              else if (result.result() == null) {
-                nextIndex--;
-                doSync();
+
+      log.lastIndex(new Handler<AsyncResult<Long>>() {
+        @Override
+        public void handle(AsyncResult<Long> result) {
+          if (result.succeeded()) {
+            final long lastIndex = result.result();
+            if (nextIndex == null) {
+              nextIndex = lastIndex + 1;
+            }
+            if (nextIndex <= lastIndex || matchIndex < context.commitIndex()) {
+              if (nextIndex-1 > 0) {
+                final long prevLogIndex = nextIndex - 1;
+                log.getEntry(prevLogIndex, new Handler<AsyncResult<Entry>>() {
+                  @Override
+                  public void handle(AsyncResult<Entry> result) {
+                    if (result.failed()) {
+                      running = false;
+                    }
+                    else if (result.result() == null) {
+                      nextIndex--;
+                      doSync();
+                    }
+                    else {
+                      doSync(prevLogIndex, result.result().term(), lastIndex);
+                    }
+                  }
+                });
               }
               else {
-                doSync(prevLogIndex, result.result().term());
+                doSync(0, 0, lastIndex);
               }
             }
-          });
+            else {
+              running = false;
+            }
+          }
         }
-        else {
-          doSync(0, 0);
-        }
-      }
-      else {
-        running = false;
-      }
+      });
     }
 
-    private void doSync(final long prevLogIndex, final long prevLogTerm) {
+    private void doSync(final long prevLogIndex, final long prevLogTerm, final long lastIndex) {
       if (shutdown) {
         running = false;
         return;
       }
       // If there are entries to be synced then load the entries.
-      if (prevLogIndex+1 <= log.lastIndex()) {
-        log.getEntries(prevLogIndex+1, (prevLogIndex+1) + BATCH_SIZE > log.lastIndex() ? log.lastIndex() : (prevLogIndex+1) + BATCH_SIZE, new Handler<AsyncResult<List<Entry>>>() {
+      if (prevLogIndex+1 <= lastIndex) {
+        log.getEntries(prevLogIndex+1, (prevLogIndex+1) + BATCH_SIZE > lastIndex ? lastIndex : (prevLogIndex+1) + BATCH_SIZE, new Handler<AsyncResult<List<Entry>>>() {
           @Override
           public void handle(AsyncResult<List<Entry>> result) {
             if (result.failed()) {

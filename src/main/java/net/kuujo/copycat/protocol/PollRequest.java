@@ -43,15 +43,15 @@ public class PollRequest extends Request {
   }
 
   public static PollRequest fromJson(JsonObject json) {
-    return serializer.deserialize(json, PollRequest.class);
+    return serializer.readObject(json, PollRequest.class);
   }
 
   public static PollRequest fromJson(JsonObject json, Message<JsonObject> message) {
-    return serializer.deserialize(json, PollRequest.class).setMessage(message);
+    return serializer.readObject(json, PollRequest.class).setMessage(message);
   }
 
   public static JsonObject toJson(PollRequest request) {
-    return serializer.serialize(request);
+    return serializer.writeObject(request);
   }
 
   private PollRequest setMessage(Message<JsonObject> message) {

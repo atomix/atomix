@@ -50,15 +50,15 @@ public class SyncRequest extends Request {
   }
 
   public static SyncRequest fromJson(JsonObject json) {
-    return serializer.deserialize(json, SyncRequest.class);
+    return serializer.readObject(json, SyncRequest.class);
   }
 
   public static SyncRequest fromJson(JsonObject json, Message<JsonObject> message) {
-    return serializer.deserialize(json, SyncRequest.class).setMessage(message);
+    return serializer.readObject(json, SyncRequest.class).setMessage(message);
   }
 
   public static JsonObject toJson(SyncRequest request) {
-    return serializer.serialize(request);
+    return serializer.writeObject(request);
   }
 
   private SyncRequest setMessage(Message<JsonObject> message) {

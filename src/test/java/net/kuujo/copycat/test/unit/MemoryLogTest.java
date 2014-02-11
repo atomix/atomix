@@ -23,8 +23,6 @@ import net.kuujo.copycat.log.MemoryLog;
 import net.kuujo.copycat.log.NoOpEntry;
 
 import org.junit.Test;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
 
 import static org.junit.Assert.assertTrue;
@@ -39,182 +37,134 @@ public class MemoryLogTest {
   @Test
   public void testAppendEntry() {
     Log log = new MemoryLog();
-    log.appendEntry(new NoOpEntry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
-      }
-    });
+    log.open("test");
+    long index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
   }
 
   @Test
   public void testContainsEntry() {
-    final Log log = new MemoryLog();
-    log.appendEntry(new NoOpEntry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
-        log.containsEntry(1, new Handler<AsyncResult<Boolean>>() {
-          @Override
-          public void handle(AsyncResult<Boolean> result) {
-            assertTrue(result.succeeded());
-            assertTrue(result.result());
-          }
-        });
-      }
-    });
+    Log log = new MemoryLog();
+    log.open("test");
+    long index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
+    assertTrue(log.containsEntry(1));
   }
 
   @Test
   public void testLoadEntry() {
-    final Log log = new MemoryLog();
-    log.appendEntry(new NoOpEntry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
-        log.getEntry(1, new Handler<AsyncResult<Entry>>() {
-          @Override
-          public void handle(AsyncResult<Entry> result) {
-            assertTrue(result.succeeded());
-            assertTrue(result.result() instanceof NoOpEntry);
-          }
-        });
-      }
-    });
+    Log log = new MemoryLog();
+    log.open("test");
+    long index = log.appendEntry(new NoOpEntry());
+    Entry entry = log.getEntry(index);
+    assertTrue(entry instanceof NoOpEntry);
   }
 
   @Test
   public void testFirstIndex() {
-    final Log log = new MemoryLog();
-    log.appendEntry(new NoOpEntry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
-
-        log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            assertTrue(result.succeeded());
-            assertTrue(result.result() == 2);
-
-            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
-              @Override
-              public void handle(AsyncResult<Long> result) {
-                assertTrue(result.succeeded());
-                assertTrue(result.result() == 3);
-                assertTrue(log.firstIndex() == 1);
-                assertTrue(log.lastIndex() == 3);
-              }
-            });
-          }
-        });
-      }
-    });
+    Log log = new MemoryLog();
+    log.open("test");
+    long index;
+    index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
+    index = log.appendEntry(new ConfigurationEntry());
+    assertTrue(index == 2);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 3);
+    assertTrue(log.firstIndex() == 1);
+    assertTrue(log.lastIndex() == 3);
   }
 
   @Test
   public void testFirstEntry() {
-    final Log log = new MemoryLog();
-    log.appendEntry(new NoOpEntry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
-
-        log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            assertTrue(result.succeeded());
-            assertTrue(result.result() == 2);
-
-            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
-              @Override
-              public void handle(AsyncResult<Long> result) {
-                assertTrue(result.succeeded());
-                assertTrue(result.result() == 3);
-
-                log.firstEntry(new Handler<AsyncResult<Entry>>() {
-                  @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertTrue(result.result() instanceof NoOpEntry);
-                  }
-                });
-              }
-            });
-          }
-        });
-      }
-    });
+    Log log = new MemoryLog();
+    log.open("test");
+    long index;
+    index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
+    index = log.appendEntry(new ConfigurationEntry());
+    assertTrue(index == 2);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 3);
+    Entry entry = log.firstEntry();
+    assertTrue(entry instanceof NoOpEntry);
   }
 
   @Test
   public void testLastIndex() {
-    final Log log = new MemoryLog();
-    log.appendEntry(new NoOpEntry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
-
-        log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            assertTrue(result.succeeded());
-            assertTrue(result.result() == 2);
-
-            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
-              @Override
-              public void handle(AsyncResult<Long> result) {
-                assertTrue(result.succeeded());
-                assertTrue(result.result() == 3);
-                assertTrue(log.lastIndex() == 3);
-              }
-            });
-          }
-        });
-      }
-    });
+    Log log = new MemoryLog();
+    log.open("test");
+    long index;
+    index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
+    index = log.appendEntry(new ConfigurationEntry());
+    assertTrue(index == 2);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 3);
+    assertTrue(log.lastIndex() == 3);
   }
 
   @Test
   public void testLastEntry() {
-    final Log log = new MemoryLog();
-    log.appendEntry(new NoOpEntry(), new Handler<AsyncResult<Long>>() {
-      @Override
-      public void handle(AsyncResult<Long> result) {
-        assertTrue(result.succeeded());
-        assertTrue(result.result() == 1);
+    Log log = new MemoryLog();
+    log.open("test");
+    long index;
+    index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
+    index = log.appendEntry(new ConfigurationEntry());
+    assertTrue(index == 2);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 3);
+    Entry entry = log.lastEntry();
+    assertTrue(entry instanceof CommandEntry);
+  }
 
-        log.appendEntry(new ConfigurationEntry(), new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            assertTrue(result.succeeded());
-            assertTrue(result.result() == 2);
+  @Test
+  public void testRemoveBefore() {
+    Log log = new MemoryLog();
+    log.open("test");
+    long index;
+    index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
+    index = log.appendEntry(new ConfigurationEntry());
+    assertTrue(index == 2);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 3);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 4);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 5);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 6);
 
-            log.appendEntry(new CommandEntry(1, "foo", new JsonObject()), new Handler<AsyncResult<Long>>() {
-              @Override
-              public void handle(AsyncResult<Long> result) {
-                assertTrue(result.succeeded());
-                assertTrue(result.result() == 3);
+    log.removeBefore(3);
+    assertTrue(log.firstIndex() == 3);
+    assertTrue(log.firstEntry() instanceof CommandEntry);
+  }
 
-                log.lastEntry(new Handler<AsyncResult<Entry>>() {
-                  @Override
-                  public void handle(AsyncResult<Entry> result) {
-                    assertTrue(result.succeeded());
-                    assertTrue(result.result() instanceof CommandEntry);
-                  }
-                });
-              }
-            });
-          }
-        });
-      }
-    });
+  @Test
+  public void testRemoveAfter() {
+    Log log = new MemoryLog();
+    log.open("test");
+    long index;
+    index = log.appendEntry(new NoOpEntry());
+    assertTrue(index == 1);
+    index = log.appendEntry(new ConfigurationEntry());
+    assertTrue(index == 2);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 3);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 4);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 5);
+    index = log.appendEntry(new CommandEntry(1, "foo", new JsonObject()));
+    assertTrue(index == 6);
+
+    log.removeAfter(2);
+    assertTrue(log.firstIndex() == 1);
+    assertTrue(log.lastIndex() == 2);
+    assertTrue(log.firstEntry() instanceof NoOpEntry);
+    assertTrue(log.lastEntry() instanceof ConfigurationEntry);
   }
 
 }

@@ -53,6 +53,37 @@ public class Serializer {
   private final ObjectMapper mapper = new ObjectMapper();
 
   /**
+   * Serializes a value to a string.
+   *
+   * @param object The object to serialize.
+   * @return The serialized object.
+   */
+  public String writeString(Object object) {
+    try {
+      return mapper.writeValueAsString(object);
+    }
+    catch (Exception e) {
+      throw new SerializationException(e.getMessage());
+    }
+  }
+
+  /**
+   * Deserializes an object from a string.
+   *
+   * @param json The serialized object.
+   * @param type The serialized type.
+   * @return The deserialized object.
+   */
+  public <T> T readString(String json, Class<T> type) {
+    try {
+      return (T) mapper.readValue(json, type);
+    }
+    catch (Exception e) {
+      throw new SerializationException(e.getMessage());
+    }
+  }
+
+  /**
    * Serializes an object to Json. If an error occurs during serialization, a
    * {@link SerializationException} will be thrown.
    * 
@@ -61,7 +92,7 @@ public class Serializer {
    * @throws SerializationException If an error occurs during serialization.
    */
   @SuppressWarnings("unchecked")
-  public <T extends JsonElement> T serialize(Object object) {
+  public <T extends JsonElement> T writeObject(Object object) {
     String value;
     try {
       value = mapper.writeValueAsString(object);
@@ -89,7 +120,7 @@ public class Serializer {
    * @return The deserialized object.
    * @throws DeserializationException If an error occurs during deserialization.
    */
-  public <T> T deserialize(JsonElement json, Class<T> type) {
+  public <T> T readObject(JsonElement json, Class<T> type) {
     try {
       if (json.isArray()) {
         return mapper.readValue(json.asArray().encode(), type);

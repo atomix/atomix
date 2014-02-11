@@ -22,7 +22,7 @@ import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogProxy;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
@@ -37,6 +37,7 @@ import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
+import org.vertx.java.platform.Container;
 
 /**
  * A node state context.
@@ -49,7 +50,7 @@ public class StateContext {
   private final String address;
   private final Vertx vertx;
   private final StateClient stateClient;
-  private Log log;
+  private LogProxy log;
   private StateMachineExecutor stateMachine;
   private ClusterConfig cluster = new ClusterConfig();
   private final StateFactory stateFactory = new StateFactory();
@@ -70,11 +71,11 @@ public class StateContext {
   private long commitIndex = 0;
   private long lastApplied = 0;
 
-  public StateContext(String address, Vertx vertx, StateMachineExecutor stateMachine, Log log) {
+  public StateContext(String address, Vertx vertx, Container container, StateMachineExecutor stateMachine) {
     this.address = address;
     this.vertx = vertx;
     this.stateClient = new StateClient(address, vertx);
-    this.log = log;
+    this.log = new LogProxy(address, vertx, container);
     this.stateMachine = stateMachine;
     this.persistor = new SnapshotPersistor(address, vertx.fileSystem());
     transition(StateType.START);
@@ -300,7 +301,7 @@ public class StateContext {
    * Initializes the log.
    */
   private void initializeLog(final Handler<AsyncResult<Void>> doneHandler) {
-    log.init(new Handler<AsyncResult<Void>>() {
+    log.open(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
@@ -317,13 +318,25 @@ public class StateContext {
               else if (result.result() != null) {
                 stateMachine.installSnapshot(result.result());
               }
-              if (log.lastIndex() > 0 && log.lastIndex() >= commitIndex) {
-                initializeLog(1, commitIndex, doneHandler);
-              }
-              else {
-                setLogHandlers();
-                new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
-              }
+
+              log.lastIndex(new Handler<AsyncResult<Long>>() {
+                @Override
+                public void handle(AsyncResult<Long> result) {
+                  if (result.failed()) {
+                    new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+                  }
+                  else {
+                    final long lastIndex = result.result();
+                    if (lastIndex > 0 && lastIndex >= commitIndex) {
+                      initializeLog(1, commitIndex, doneHandler);
+                    }
+                    else {
+                      setLogHandlers();
+                      new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+                    }
+                  }
+                }
+              });
             }
           });
         }
@@ -457,25 +470,11 @@ public class StateContext {
   }
 
   /**
-   * Sets the state log.
-   *
-   * @param log The state log.
-   * @return The state context.
-   */
-  public StateContext log(Log log) {
-    this.log = log;
-    if (state != null) {
-      state.setLog(log);
-    }
-    return this;
-  }
-
-  /**
    * Returns the state log.
    * 
    * @return The state log.
    */
-  public Log log() {
+  public LogProxy log() {
     return log;
   }
 

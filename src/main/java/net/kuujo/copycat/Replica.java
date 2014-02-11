@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.log.Log;
+
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.json.JsonObject;
-
-import net.kuujo.copycat.log.Log;
 
 /**
  * The replica is the primary interface for creating fault-tolerant services
@@ -57,11 +57,19 @@ public interface Replica {
   ClusterConfig config();
 
   /**
-   * Returns the replicated log.
-   * 
-   * @return The replica's log.
+   * Sets the replica log type.
+   *
+   * @param type A log type.
+   * @return The replica instance.
    */
-  Log log();
+  Replica setLogType(Log.Type type);
+
+  /**
+   * Returns the replica log type.
+   *
+   * @return The replica log type.
+   */
+  Log.Type getLogType();
 
   /**
    * Sets the maximum log size of the state machine.

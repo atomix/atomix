@@ -39,15 +39,15 @@ public class PollResponse extends Response {
   }
 
   public static PollResponse fromJson(JsonObject json) {
-    return serializer.deserialize(json, PollResponse.class);
+    return serializer.readObject(json, PollResponse.class);
   }
 
   public static PollResponse fromJson(Message<JsonObject> message) {
-    return serializer.deserialize(message.body(), PollResponse.class);
+    return serializer.readObject(message.body(), PollResponse.class);
   }
 
   public static JsonObject toJson(PollResponse response) {
-    return serializer.serialize(response);
+    return serializer.writeObject(response);
   }
 
   /**

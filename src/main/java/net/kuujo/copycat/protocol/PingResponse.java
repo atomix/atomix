@@ -37,15 +37,15 @@ public class PingResponse extends Response {
   }
 
   public static PingResponse fromJson(JsonObject json) {
-    return serializer.deserialize(json, PingResponse.class);
+    return serializer.readObject(json, PingResponse.class);
   }
 
   public static PingResponse fromJson(Message<JsonObject> message) {
-    return serializer.deserialize(message.body(), PingResponse.class);
+    return serializer.readObject(message.body(), PingResponse.class);
   }
 
   public static JsonObject toJson(PingResponse response) {
-    return serializer.serialize(response);
+    return serializer.writeObject(response);
   }
 
   /**

@@ -41,15 +41,15 @@ public class SubmitResponse extends Response {
   }
 
   public static SubmitResponse fromJson(JsonObject json) {
-    return serializer.deserialize(json, SubmitResponse.class);
+    return serializer.readObject(json, SubmitResponse.class);
   }
 
   public static SubmitResponse fromJson(Message<JsonObject> message) {
-    return serializer.deserialize(message.body(), SubmitResponse.class);
+    return serializer.readObject(message.body(), SubmitResponse.class);
   }
 
   public static JsonObject toJson(SubmitResponse response) {
-    return serializer.serialize(response);
+    return serializer.writeObject(response);
   }
 
   /**

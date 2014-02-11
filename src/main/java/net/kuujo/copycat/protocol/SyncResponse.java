@@ -39,15 +39,15 @@ public class SyncResponse extends Response {
   }
 
   public static SyncResponse fromJson(JsonObject json) {
-    return serializer.deserialize(json, SyncResponse.class);
+    return serializer.readObject(json, SyncResponse.class);
   }
 
   public static SyncResponse fromJson(Message<JsonObject> message) {
-    return serializer.deserialize(message.body(), SyncResponse.class);
+    return serializer.readObject(message.body(), SyncResponse.class);
   }
 
   public static JsonObject toJson(SyncResponse response) {
-    return serializer.serialize(response);
+    return serializer.writeObject(response);
   }
 
   /**

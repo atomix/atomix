@@ -20,9 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
-import org.vertx.java.core.impl.DefaultFutureResult;
 
 /**
  * A default log implementation.
@@ -30,16 +28,15 @@ import org.vertx.java.core.impl.DefaultFutureResult;
  * @author Jordan Halterman
  */
 public class MemoryLog implements Log {
-  private static final long DEFAULT_MAX_SIZE = 1000;
-  private final TreeMap<Long, Entry> log = new TreeMap<>();
+  private static final long DEFAULT_MAX_SIZE = 5000; // Default 5000 log entries.
+  private final TreeMap<Long, Object> log = new TreeMap<>();
   private long maxSize = DEFAULT_MAX_SIZE;
   private Handler<Void> fullHandler;
   private Handler<Void> drainHandler;
   private boolean full;
 
   @Override
-  public void init(Handler<AsyncResult<Void>> doneHandler) {
-    result(null, doneHandler);
+  public void open(String filename) {
   }
 
   @Override
@@ -66,20 +63,22 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler) {
+  public <T> long appendEntry(T entry) {
     long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
     log.put(index, entry);
-    return result(index, doneHandler);
+    checkFull();
+    return index;
   }
 
   @Override
-  public Log containsEntry(long index, Handler<AsyncResult<Boolean>> containsHandler) {
-    return result(log.containsKey(index), containsHandler);
+  public boolean containsEntry(long index) {
+    return log.containsKey(index);
   }
 
   @Override
-  public Log getEntry(long index, Handler<AsyncResult<Entry>> entryHandler) {
-    return result(log.get(index), entryHandler);
+  @SuppressWarnings("unchecked")
+  public <T> T getEntry(long index) {
+    return (T) log.get(index);
   }
 
   @Override
@@ -88,13 +87,9 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Log firstTerm(Handler<AsyncResult<Long>> handler) {
-    return result(!log.isEmpty() ? log.firstEntry().getValue().term() : 0, handler);
-  }
-
-  @Override
-  public Log firstEntry(Handler<AsyncResult<Entry>> handler) {
-    return result(!log.isEmpty() ? log.firstEntry().getValue() : null, handler);
+  @SuppressWarnings("unchecked")
+  public <T> T firstEntry() {
+    return (T) (!log.isEmpty() ? log.firstEntry().getValue() : null);
   }
 
   @Override
@@ -103,45 +98,47 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Log lastTerm(Handler<AsyncResult<Long>> handler) {
-    return result(!log.isEmpty() ? log.lastEntry().getValue().term() : 0, handler);
+  @SuppressWarnings("unchecked")
+  public <T> T lastEntry() {
+    return (T) (!log.isEmpty() ? log.lastEntry().getValue() : null);
   }
 
   @Override
-  public Log lastEntry(Handler<AsyncResult<Entry>> handler) {
-    return result(!log.isEmpty() ? log.lastEntry().getValue() : null, handler);
-  }
-
-  @Override
-  public Log getEntries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler) {
-    List<Entry> entries = new ArrayList<>();
-    for (Map.Entry<Long, Entry> entry : log.subMap(start, end+1).entrySet()) {
-      entries.add(entry.getValue());
+  @SuppressWarnings("unchecked")
+  public <T> List<T> getEntries(long start, long end) {
+    List<T> entries = new ArrayList<>();
+    for (Map.Entry<Long, Object> entry : log.subMap(start, end+1).entrySet()) {
+      entries.add((T) entry.getValue());
     }
-    return result(entries, doneHandler);
+    return entries;
   }
 
   @Override
-  public Log removeEntry(long index, Handler<AsyncResult<Entry>> doneHandler) {
-    return result(log.remove(index), doneHandler);
+  public void removeBefore(long index) {
+    long firstKey;
+    while ((firstKey = log.firstKey()) < index) {
+      log.remove(firstKey);
+    }
+    checkFull();
   }
 
   @Override
-  public Log removeBefore(long index, Handler<AsyncResult<Void>> doneHandler) {
-    log.headMap(index);
-    return result(null, doneHandler);
+  public void removeAfter(long index) {
+    long lastKey;
+    while ((lastKey = log.lastKey()) > index) {
+      log.remove(lastKey);
+    }
+    checkFull();
   }
 
   @Override
-  public Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler) {
-    log.tailMap(index);
-    return result(null, doneHandler);
+  public void close() {
   }
 
   /**
-   * Creates a triggers a result.
+   * Checks whether the log is full.
    */
-  private <T> Log result(T result, Handler<AsyncResult<T>> handler) {
+  private void checkFull() {
     if (!full) {
       if (log.size() >= maxSize) {
         full = true;
@@ -158,8 +155,6 @@ public class MemoryLog implements Log {
         }
       }
     }
-    new DefaultFutureResult<T>().setHandler(handler).setResult(result);
-    return this;
   }
 
 }

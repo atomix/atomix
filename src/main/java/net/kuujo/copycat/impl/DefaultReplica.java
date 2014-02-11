@@ -21,12 +21,12 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.json.JsonObject;
+import org.vertx.java.platform.Container;
 
 import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.Replica;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.MemoryLog;
 import net.kuujo.copycat.state.StateContext;
 import net.kuujo.copycat.state.StateType;
 
@@ -38,12 +38,8 @@ import net.kuujo.copycat.state.StateType;
 public class DefaultReplica implements Replica {
   private final StateContext context;
 
-  public DefaultReplica(String address, Vertx vertx, StateMachine stateMachine) {
-    context = new StateContext(address, vertx, new DefaultStateMachineExecutor(stateMachine), new MemoryLog());
-  }
-
-  public DefaultReplica(String address, Vertx vertx, StateMachine stateMachine, Log log) {
-    context = new StateContext(address, vertx, new DefaultStateMachineExecutor(stateMachine), log);
+  public DefaultReplica(String address, Vertx vertx, Container container, StateMachine stateMachine) {
+    context = new StateContext(address, vertx, container, new DefaultStateMachineExecutor(stateMachine));
   }
 
   @Override
@@ -57,8 +53,14 @@ public class DefaultReplica implements Replica {
   }
 
   @Override
-  public Log log() {
-    return context.log();
+  public Replica setLogType(Log.Type type) {
+    context.log().setLogType(type);
+    return this;
+  }
+
+  @Override
+  public Log.Type getLogType() {
+    return context.log().getLogType();
   }
 
   @Override

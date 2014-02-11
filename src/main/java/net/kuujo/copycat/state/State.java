@@ -23,8 +23,8 @@ import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.log.CommandEntry;
 import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.Entry.Type;
+import net.kuujo.copycat.log.LogProxy;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
@@ -45,7 +45,7 @@ abstract class State {
   protected Vertx vertx;
   protected StateClient stateClient;
   protected StateMachineExecutor stateMachine;
-  protected Log log;
+  protected LogProxy log;
   protected ClusterConfig config;
   protected StateContext context;
   protected Set<String> members = new HashSet<>();
@@ -90,7 +90,7 @@ abstract class State {
    * @param log A log instance.
    * @return The state instance.
    */
-  public State setLog(Log log) {
+  public State setLog(LogProxy log) {
     this.log = log;
     return this;
   }
@@ -345,14 +345,24 @@ abstract class State {
     // them.
     if (request.commit() > context.commitIndex() || context.commitIndex() > context.lastApplied()) {
       // Update the local commit index with min(request commit, last log // index)
-      final long lastIndex = log.lastIndex();
-      context.commitIndex(Math.min(request.commit(), lastIndex));
+      log.lastIndex(new Handler<AsyncResult<Long>>() {
+        @Override
+        public void handle(AsyncResult<Long> result) {
+          if (result.succeeded()) {
+            final long lastIndex = result.result();
+            context.commitIndex(Math.min(request.commit(), lastIndex));
 
-      // If the updated commit index indicates that commits remain to be
-      // applied to the state machine, iterate entries and apply them.
-      if (context.commitIndex() > Math.min(context.lastApplied(), lastIndex)) {
-        recursiveApplyCommits(context.lastApplied() + 1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
-      }
+            // If the updated commit index indicates that commits remain to be
+            // applied to the state machine, iterate entries and apply them.
+            if (context.commitIndex() > Math.min(context.lastApplied(), lastIndex)) {
+              recursiveApplyCommits(context.lastApplied() + 1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
+            }
+          }
+          else {
+            new DefaultFutureResult<Boolean>(true).setHandler(doneHandler);
+          }
+        }
+      });
     }
     // Otherwise, check whether the current term needs to be updated and reply
     // true to the sync request.
@@ -454,44 +464,54 @@ abstract class State {
       // the log does not contain any entries. If that is the cases then
       // the log must *always* be at least as up-to-date as all other
       // logs.
-      if (log.lastIndex() == 0) {
-        future.setResult(true);
-        context.votedFor(request.candidate());
-      }
-      else {
-        // Load the log entry to get the term. We load the log entry
-        // rather
-        // than the log term to ensure that we're receiving the term from
-        // the same entry as the loaded last log index.
-        final long lastIndex = log.lastIndex();
-        log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
-          @Override
-          public void handle(AsyncResult<Entry> result) {
-            // If the entry loading failed then don't vote for the
-            // candidate.
-            // If the log entry was null then don't vote for the
-            // candidate.
-            // This may simply result in no clear winner in the election,
-            // but
-            // it's better than an imperfect leader being elected due to a
-            // brief failure of the event bus.
-            if (result.failed() || result.result() == null) {
-              future.setResult(false);
+      log.lastIndex(new Handler<AsyncResult<Long>>() {
+        @Override
+        public void handle(AsyncResult<Long> result) {
+          if (result.failed()) {
+            request.error(result.cause());
+          }
+          else {
+            final long lastIndex = result.result();
+            if (lastIndex == 0) {
+              future.setResult(true);
+              context.votedFor(request.candidate());
             }
             else {
-              final long lastTerm = result.result().term();
-              if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-                future.setResult(true);
-                context.votedFor(request.candidate());
-              }
-              else {
-                future.setResult(false);
-                context.votedFor(null); // Reset voted for.
-              }
+              // Load the log entry to get the term. We load the log entry
+              // rather
+              // than the log term to ensure that we're receiving the term from
+              // the same entry as the loaded last log index.
+              log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
+                @Override
+                public void handle(AsyncResult<Entry> result) {
+                  // If the entry loading failed then don't vote for the
+                  // candidate.
+                  // If the log entry was null then don't vote for the
+                  // candidate.
+                  // This may simply result in no clear winner in the election,
+                  // but
+                  // it's better than an imperfect leader being elected due to a
+                  // brief failure of the event bus.
+                  if (result.failed() || result.result() == null) {
+                    future.setResult(false);
+                  }
+                  else {
+                    final long lastTerm = result.result().term();
+                    if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
+                      future.setResult(true);
+                      context.votedFor(request.candidate());
+                    }
+                    else {
+                      future.setResult(false);
+                      context.votedFor(null); // Reset voted for.
+                    }
+                  }
+                }
+              });
             }
           }
-        });
-      }
+        }
+      });
     }
     // If we've already voted for someone else then don't vote for the
     // candidate.

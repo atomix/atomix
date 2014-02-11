@@ -17,7 +17,6 @@ package net.kuujo.copycat.log;
 
 import java.util.List;
 
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
 /**
@@ -28,12 +27,79 @@ import org.vertx.java.core.Handler;
 public interface Log {
 
   /**
-   * Initializes the log.
-   * 
-   * @param visitor A log visitor.
-   * @param doneHandler A handler to be called once the log is initialized.
+   * A log type.
+   *
+   * @author Jordan Halterman
    */
-  void init(Handler<AsyncResult<Void>> doneHandler);
+  public static enum Type {
+
+    /**
+     * An in-memory log type.
+     */
+    MEMORY("memory", MemoryLog.class),
+
+    /**
+     * A file-based log type.
+     */
+    FILE("file", FileLog.class);
+
+    private final String name;
+    private final Class<? extends Log> type;
+
+    private Type(String name, Class<? extends Log> type) {
+      this.name = name;
+      this.type = type;
+    }
+
+    /**
+     * Returns the log type name.
+     *
+     * @return The log type name.
+     */
+    public String getName() {
+      return name;
+    }
+
+    /**
+     * Returns the log type.
+     *
+     * @return The log type.
+     */
+    public Class<? extends Log> getType() {
+      return type;
+    }
+
+    @Override
+    public String toString() {
+      return name;
+    }
+
+    /**
+     * Returns a log type from a string.
+     *
+     * @param name A string log type name.
+     * @return A log type.
+     * @throws IllegalArgumentException If the log type name is invalid.
+     */
+    public static Type parse(String name) {
+      switch (name) {
+        case "memory":
+          return MEMORY;
+        case "file":
+          return FILE;
+        default:
+          throw new IllegalArgumentException("Invalid log type " + name);
+      }
+    }
+
+  }
+
+  /**
+   * Opens the log.
+   * 
+   * @param filename The log file name.
+   */
+  void open(String filename);
 
   /**
    * Sets the maximum log size.
@@ -70,29 +136,26 @@ public interface Log {
    * Appends an entry to the log.
    * 
    * @param entry The entry to append.
-   * @param doneHandler A handler to be called once the entry has been appended.
-   * @return The log instance.
+   * @return The index at which the entry was appended.
    */
-  Log appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler);
+  <T> long appendEntry(T entry);
 
   /**
    * Returns a boolean indicating whether the log has an entry at the given
    * index.
    * 
    * @param index The index to check.
-   * @param containsHandler A handler to be called with the contains result.
    * @return Indicates whether the log has an entry at the given index.
    */
-  Log containsEntry(long index, Handler<AsyncResult<Boolean>> containsHandler);
+  boolean containsEntry(long index);
 
   /**
    * Returns the entry at the given index.
    * 
    * @param index The index from which to get the entry.
-   * @param entryHandler A handler to be called with the entry.
-   * @return The log instance.
+   * @return A log entry.
    */
-  Log getEntry(long index, Handler<AsyncResult<Entry>> entryHandler);
+  <T> T getEntry(long index);
 
   /**
    * Returns the first log index.
@@ -103,20 +166,11 @@ public interface Log {
   long firstIndex();
 
   /**
-   * Returns the first log entry term.
-   *
-   * @param doneHandler A handler to be called with the term.
-   * @return The log instance.
-   */
-  Log firstTerm(Handler<AsyncResult<Long>> doneHandler);
-
-  /**
    * Returns the first log entry.
    *
-   * @param doneHandler A handler to be called with the entry.
-   * @return The log instance.
+   * @return The first log entry.
    */
-  Log firstEntry(Handler<AsyncResult<Entry>> doneHandler);
+  <T> T firstEntry();
 
   /**
    * Returns the last log index.
@@ -127,20 +181,11 @@ public interface Log {
   long lastIndex();
 
   /**
-   * Returns the last log entry term.
-   *
-   * @param doneHandler A handler to be called with the term.
-   * @return The log instance.
-   */
-  Log lastTerm(Handler<AsyncResult<Long>> doneHandler);
-
-  /**
    * Returns the last log entry.
    *
-   * @param doneHandler A handler to be called with the entry.
-   * @return The log instance.
+   * @return The last log entry.
    */
-  Log lastEntry(Handler<AsyncResult<Entry>> doneHandler);
+  <T> T lastEntry();
 
   /**
    * Returns a list of log entries between two given indexes.
@@ -149,30 +194,25 @@ public interface Log {
    * @param end The ending index.
    * @return A list of entries between the two given indexes.
    */
-  Log getEntries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler);
-
-  /**
-   * Removes the entry at the given index.
-   * 
-   * @param index The index from which to remove an entry.
-   * @return Indicates whether the entry was removed.
-   */
-  Log removeEntry(long index, Handler<AsyncResult<Entry>> doneHandler);
+  <T> List<T> getEntries(long start, long end);
 
   /**
    * Removes all entries before the given index.
    * 
    * @param index The index before which to remove entries.
-   * @return The log instance.
    */
-  Log removeBefore(long index, Handler<AsyncResult<Void>> doneHandler);
+  void removeBefore(long index);
 
   /**
    * Removes all entries after the given index.
    * 
    * @param index The index after which to remove entries.
-   * @return The log instance.
    */
-  Log removeAfter(long index, Handler<AsyncResult<Void>> doneHandler);
+  void removeAfter(long index);
+
+  /**
+   * Closes the log.
+   */
+  void close();
 
 }
