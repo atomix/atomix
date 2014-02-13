@@ -337,20 +337,24 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
         for (Method method : current.getDeclaredMethods()) {
           if (method.isAnnotationPresent(Command.class)) {
             Command info = method.getAnnotation(Command.class);
-  
+            String name = info.name();
+            if (name.equals("")) {
+              name = method.getName();
+            }
+
             // If a command with this name was already added then skip it.
-            if (commands.containsKey(info.name())) {
+            if (commands.containsKey(name)) {
               continue;
             }
 
             if (method.isAnnotationPresent(Command.Arguments.class)) {
-              commands.put(info.name(), new CommandWrapper(info, method.getAnnotation(Command.Arguments.class).value(), method));
+              commands.put(name, new CommandWrapper(info, method.getAnnotation(Command.Arguments.class).value(), method));
               continue;
             }
   
             Annotation[][] params = method.getParameterAnnotations();
             if (params.length == 0) {
-              commands.put(info.name(), new CommandWrapper(info, new Command.Argument[0], method));
+              commands.put(name, new CommandWrapper(info, new Command.Argument[0], method));
               continue;
             }
 
@@ -369,7 +373,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               }
               if (!hasAnnotation) {
                 if (JsonObject.class.isAssignableFrom(method.getParameterTypes()[0])) {
-                  commands.put(info.name(), new ObjectCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
+                  commands.put(name, new ObjectCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
                   continue;
                 }
               }
@@ -396,7 +400,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               }
             }
 
-            commands.put(info.name(), new CommandWrapper(info, arguments.toArray(new Command.Argument[arguments.size()]), method));
+            commands.put(name, new CommandWrapper(info, arguments.toArray(new Command.Argument[arguments.size()]), method));
           }
         }
         current = current.getSuperclass();

@@ -85,7 +85,7 @@ public @interface Command {
     /**
      * An array of commands before which to run the method.
      */
-    String[] value();
+    String[] value() default {};
 
   }
 
@@ -101,7 +101,7 @@ public @interface Command {
     /**
      * An array of commands after which to run the method.
      */
-    String[] value();
+    String[] value() default {};
 
   }
 
@@ -155,7 +155,7 @@ public @interface Command {
   /**
    * The command name.
    */
-  String name();
+  String name() default "";
 
   /**
    * The command type.
