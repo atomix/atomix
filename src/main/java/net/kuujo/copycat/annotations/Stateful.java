@@ -15,17 +15,23 @@
  */
 package net.kuujo.copycat.annotations;
 
+import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 
 /**
- * Indicates a field that represents the state machine state.
+ * A stateful field or method.
  *
  * @author Jordan Halterman
  */
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
-public @interface StateValue {
+public @interface Stateful {
+
+  /**
+   * The property name.
+   */
+  String value() default "";
+
 }

@@ -21,9 +21,7 @@ import java.util.Map;
 
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.annotations.Command;
-import net.kuujo.copycat.annotations.StateGetter;
-import net.kuujo.copycat.annotations.StateSetter;
-import net.kuujo.copycat.annotations.StateValue;
+import net.kuujo.copycat.annotations.Stateful;
 import net.kuujo.copycat.impl.DefaultStateMachineExecutor;
 
 import org.junit.Test;
@@ -207,7 +205,7 @@ public class StateMachineTest {
   }
 
   public static class TestSnapshotStateMachine implements StateMachine {
-    @StateValue
+    @Stateful
     private final Map<String, Object> data = new HashMap<>();
 
     @Command(name="write", type=Command.Type.WRITE)
@@ -224,23 +222,24 @@ public class StateMachineTest {
     adapter.applyCommand("write", new JsonObject().putString("key", "baz").putValue("value", "foo"));
     JsonElement snapshot = adapter.takeSnapshot();
     assertTrue(snapshot instanceof JsonObject);
-    assertEquals("bar", snapshot.asObject().getString("foo"));
-    assertEquals("baz", snapshot.asObject().getString("bar"));
-    assertEquals("foo", snapshot.asObject().getString("baz"));
+    assertEquals("bar", snapshot.asObject().getObject("data").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("data").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("data").getString("baz"));
   }
 
   @Test
   public void testInstallSnapshotToField() {
     DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine());
     adapter.installSnapshot(new JsonObject()
+        .putObject("data", new JsonObject()
         .putString("foo", "bar")
         .putString("bar", "baz")
-        .putString("baz", "foo"));
+        .putString("baz", "foo")));
     JsonElement snapshot = adapter.takeSnapshot();
     assertTrue(snapshot instanceof JsonObject);
-    assertEquals("bar", snapshot.asObject().getString("foo"));
-    assertEquals("baz", snapshot.asObject().getString("bar"));
-    assertEquals("foo", snapshot.asObject().getString("baz"));
+    assertEquals("bar", snapshot.asObject().getObject("data").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("data").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("data").getString("baz"));
   }
 
   public static class TestSnapshotStateMachine2 implements StateMachine {
@@ -251,12 +250,12 @@ public class StateMachineTest {
       data.put(key, value);
     }
 
-    @StateGetter
+    @Stateful("data")
     public Map<String, Object> takeSnapshot() {
       return data;
     }
 
-    @StateSetter
+    @Stateful("data")
     public void installSnapshot(Map<String, Object> snapshot) {
       this.data = snapshot;
     }
@@ -269,23 +268,159 @@ public class StateMachineTest {
     adapter.applyCommand("write", new JsonObject().putString("key", "bar").putValue("value", "baz"));
     adapter.applyCommand("write", new JsonObject().putString("key", "baz").putValue("value", "foo"));
     JsonElement snapshot = adapter.takeSnapshot();
-    assertEquals("bar", snapshot.asObject().getString("foo"));
-    assertEquals("baz", snapshot.asObject().getString("bar"));
-    assertEquals("foo", snapshot.asObject().getString("baz"));
+    assertEquals("bar", snapshot.asObject().getObject("data").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("data").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("data").getString("baz"));
   }
 
   @Test
   public void testInstallSnapshotToMethod() {
     DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine2());
     adapter.installSnapshot(new JsonObject()
-        .putString("foo", "bar")
-        .putString("bar", "baz")
-        .putString("baz", "foo"));
+        .putObject("data", new JsonObject()
+            .putString("foo", "bar")
+            .putString("bar", "baz")
+            .putString("baz", "foo")));
     JsonElement snapshot = adapter.takeSnapshot();
     assertTrue(snapshot instanceof JsonObject);
-    assertEquals("bar", snapshot.asObject().getString("foo"));
-    assertEquals("baz", snapshot.asObject().getString("bar"));
-    assertEquals("foo", snapshot.asObject().getString("baz"));
+    assertEquals("bar", snapshot.asObject().getObject("data").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("data").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("data").getString("baz"));
+  }
+
+  public static class TestSnapshotStateMachine3 implements StateMachine {
+    @Stateful
+    private Map<String, Object> data = new HashMap<>();
+
+    @Command(name="write", type=Command.Type.WRITE)
+    public void write(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+      data.put(key, value);
+    }
+
+    public Map<String, Object> takeSnapshot() {
+      return data;
+    }
+
+    public void installSnapshot(Map<String, Object> snapshot) {
+      this.data = snapshot;
+    }
+  }
+
+  @Test
+  public void testTakeSnapshotFromDetectedMethod() {
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine3());
+    adapter.applyCommand("write", new JsonObject().putString("key", "foo").putValue("value", "bar"));
+    adapter.applyCommand("write", new JsonObject().putString("key", "bar").putValue("value", "baz"));
+    adapter.applyCommand("write", new JsonObject().putString("key", "baz").putValue("value", "foo"));
+    JsonElement snapshot = adapter.takeSnapshot();
+    assertEquals("bar", snapshot.asObject().getObject("data").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("data").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("data").getString("baz"));
+  }
+
+  @Test
+  public void testInstallSnapshotToDetectedMethod() {
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine3());
+    adapter.installSnapshot(new JsonObject()
+        .putObject("data", new JsonObject().putString("foo", "bar")
+            .putString("bar", "baz")
+            .putString("baz", "foo")));
+    JsonElement snapshot = adapter.takeSnapshot();
+    assertTrue(snapshot instanceof JsonObject);
+    assertEquals("bar", snapshot.asObject().getObject("data").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("data").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("data").getString("baz"));
+  }
+
+  public static class TestSnapshotStateMachine4 implements StateMachine {
+    @Stateful("foo")
+    private Map<String, Object> data = new HashMap<>();
+
+    @Command(name="write", type=Command.Type.WRITE)
+    public void write(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+      data.put(key, value);
+    }
+
+    public Map<String, Object> takeSnapshot() {
+      return data;
+    }
+
+    public void installSnapshot(Map<String, Object> snapshot) {
+      this.data = snapshot;
+    }
+  }
+
+  @Test
+  public void testTakeSnapshotFromNamedField() {
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine4());
+    adapter.applyCommand("write", new JsonObject().putString("key", "foo").putValue("value", "bar"));
+    adapter.applyCommand("write", new JsonObject().putString("key", "bar").putValue("value", "baz"));
+    adapter.applyCommand("write", new JsonObject().putString("key", "baz").putValue("value", "foo"));
+    JsonElement snapshot = adapter.takeSnapshot();
+    assertEquals("bar", snapshot.asObject().getObject("foo").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("foo").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("foo").getString("baz"));
+  }
+
+  @Test
+  public void testInstallSnapshotToNamedField() {
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine4());
+    adapter.installSnapshot(new JsonObject()
+        .putObject("foo", new JsonObject()
+            .putString("foo", "bar")
+            .putString("bar", "baz")
+            .putString("baz", "foo")));
+    JsonElement snapshot = adapter.takeSnapshot();
+    assertTrue(snapshot instanceof JsonObject);
+    assertEquals("bar", snapshot.asObject().getObject("foo").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("foo").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("foo").getString("baz"));
+  }
+
+  public static class TestSnapshotStateMachine5 implements StateMachine {
+    @Stateful("foo")
+    private Map<String, Object> data = new HashMap<>();
+
+    @Command(name="write", type=Command.Type.WRITE)
+    public void write(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+      data.put(key, value);
+    }
+
+    @Stateful("foo")
+    public Map<String, Object> takeSnapshot() {
+      return data;
+    }
+
+    @Stateful("foo")
+    public void installSnapshot(Map<String, Object> snapshot) {
+      this.data = snapshot;
+    }
+  }
+
+  @Test
+  public void testTakeSnapshotFromNamedMethod() {
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine5());
+    adapter.applyCommand("write", new JsonObject().putString("key", "foo").putValue("value", "bar"));
+    adapter.applyCommand("write", new JsonObject().putString("key", "bar").putValue("value", "baz"));
+    adapter.applyCommand("write", new JsonObject().putString("key", "baz").putValue("value", "foo"));
+    JsonElement snapshot = adapter.takeSnapshot();
+    assertEquals("bar", snapshot.asObject().getObject("foo").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("foo").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("foo").getString("baz"));
+  }
+
+  @Test
+  public void testInstallSnapshotToNamedMethod() {
+    DefaultStateMachineExecutor adapter = new DefaultStateMachineExecutor(new TestSnapshotStateMachine5());
+    adapter.installSnapshot(new JsonObject()
+        .putObject("foo", new JsonObject().putString("foo", "bar")
+            .putString("bar", "baz")
+            .putString("baz", "foo")));
+    JsonElement snapshot = adapter.takeSnapshot();
+    assertTrue(snapshot instanceof JsonObject);
+    assertEquals("bar", snapshot.asObject().getObject("foo").getString("foo"));
+    assertEquals("baz", snapshot.asObject().getObject("foo").getString("bar"));
+    assertEquals("foo", snapshot.asObject().getObject("foo").getString("baz"));
   }
 
 }
