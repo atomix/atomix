@@ -27,11 +27,7 @@ and submit changes as necessary.
    * [Defining command arguments](#defining-command-arguments)
 1. [Working with snapshots](#working-with-snapshots)
    * [Taking snapshots of the machine state](#taking-snapshots-of-the-state-machine)
-   * [Taking snapshots with getters](#taking-snapshots-with-getters)
-   * [Installing snapshots with setters](#installing-snapshots-with-setters)
-   * [Taking snapshots of state machine fields](#taking-snapshots-of-state-machine-fields)
-   * [Taking snapshots of fields with getters](#taking-snapshots-of-fields-with-getters)
-   * [Installing snapshots of fields with setters](#installing-snapshots-of-fields-with-setters)
+   * [Snapshot getters and setters](#snapshot-getters-and-setters)
 1. [Building a fault-tolerant in-memory key-value store](#a-simple-fault-tolerant-key-value-store)
 
 ### Features
@@ -228,101 +224,55 @@ state machine state, write it to disk, and flush the logs. If the node
 fails, once the node is restarted CopyCat will load the perisisted state,
 apply it to the state machine, and continue normal operation.
 
+All CopyCat serialization is performed using [Jackson](http://jackson.codehaus.org/),
+so any snapshottable state should be serializable by Jackson. If you need to provide
+custom serialization for Jackson, I recommend you use
+[Jackson Annotations](http://fasterxml.github.io/jackson-annotations/javadoc/2.2.0/).
+
 ### Taking snapshots of the machine state
-The simplest method of supporting snapshotting in CopyCat is to apply the
-`@StateValue` to any field within the state machine.
+The CopyCat snapshot system uses annotations to identify state machine
+state that should be persisted. This is done using only a single annotation,
+the `@Stateful` annotation.
+
+When CopyCat takes a snapshot of the machine state, it will identify any
+fields or methods with the `@Stateful` annotation as machine state. So,
+the simplest way to persist the state of the state machine is by annotating
+a field with the `@Stateful` annotation.
 
 ```java
 public class MyStateMachine implements StateMachine {
 
-  @StateValue
+  @Stateful
   private final Map<String, Object> data = new HashMap<>();
 
 }
 ```
 
-When performing log compaction, CopyCat will serialize a single `@StateValue`
-annotated field. Note that the field value must be serializable by
-[Jackson](http://jackson.codehaus.org/). If you need to provide custom
-serialization for Jackson, I recommend you use
-[Jackson Annotations](http://fasterxml.github.io/jackson-annotations/javadoc/2.2.0/).
+The `@Stateful` annotation also accepts a `value` which is a customizable
+field name. Normally, this is not necessary for fields, but it is useful
+for method annotations as you'll see in a moment.
 
-### Taking snapshots with getters
-If you need to perform some processing of the state machine state prior
-to CopyCat serializing and persisting it, you can provide a state getter
-with the `@StateGetter` annotation. This can be used to convert state
-into a `JsonObject` or `JsonArray` instance if necessary.
-
-```java
-public class MyStateMachine implements StateMachine {
-  private Map<String, Object> data = new HashMap<>();
-
-  @StateGetter
-  public Map<String, Object> takeSnapshot() {
-    return data;
-  }
-
-}
-```
-
-### Installing snapshots with setters
-If you've defined a `@StateGetter` for a state machine, you may also want
-to provide a `@StateSetter` method for when CopyCat installs the state
-at startup (after failures). State setters should be one argument and
-expect whatever serializable value type was provided by the associated
-state field or getter.
+### Snapshot getters and setters
+CopyCat supports getters and setters for `@Stateful` properties. By default,
+if a field is marked `@Stateful`, CopyCat will attempt to find any getters
+or setters associated with that field automatically.
 
 ```java
 public class MyStateMachine implements StateMachine {
 
-  private Map<String, Object> data = new HashMap<>();
+  @Stateful
+  private final Map<String, Object> data = new HashMap<>();
 
-  @StateSetter
-  public void installSnapshot(Map<String, Object> data) {
+  /**
+   * Sets the state machine state.
+   */
+  public void setData(Map<String, Object> data) {
     this.data = data;
   }
 
-}
-```
-
-### Taking snapshots of state machine fields
-CopyCat provides annotations for building snapshots from multiple fields
-and methods. When field-level snapshots are constructed, each field becomes
-a property of a json object which combines fields into a complete state.
-
-The simplest method of snapshotting multiple state machine fields is by
-using the `@StateField` annotation on an instance field.
-
-```java
-public class MyStateMachine implements StateMachine {
-
-  @StateField
-  private String name;
-
-  @StateField
-  private Map<String, Object> data = new HashMap<>();
-
-}
-```
-
-If no `value` is provided for the annotation, the state property will
-be the name of the field. In most cases naming properties is not necessary
-since Java syntax already prevents name collisions.
-
-### Taking snapshots of fields with getters
-Like complete state snapshots, individual fields can also be snapshotted
-using getters. To define a field-level getter, use the `@StateFieldGetter`
-annotation.
-
-```java
-public class MyStateMachine implements StateMachine {
-
-  @StateField
-  private String name;
-
-  private Map<String, Object> data = new HashMap<>();
-
-  @StateFieldGetter("data")
+  /**
+   * Returns the state machine state.
+   */
   public Map<String, Object> getData() {
     return data;
   }
@@ -330,32 +280,38 @@ public class MyStateMachine implements StateMachine {
 }
 ```
 
-The `@StateFieldGetter` requires a `value` that indicates the property to
-which the serialized value will be assigned in the complete state. This
-should be unique to the state, and is used to associate getters with setters.
-
-### Installing snapshots of fields with setters
-Of course, you can install field-level snapshots in the same (opposite)
-manner with the `@StateFieldSetter` annotation. Again, the field setter
-annotation requires a `value` that indicates the property name. The
-setter `value` should match the getter `value` for the getter for the
-same state field.
+In the example above, CopyCat will automatically call `setData` to install
+the `data` state and `getData` to take a snapshot of the state. Users can
+optionally provide property names to the `@Stateful` annotation in order
+to indicate which property a getter or setter belongs to.
 
 ```java
 public class MyStateMachine implements StateMachine {
 
-  @StateField
-  private String name;
+  private final Map<String, Object> data = new HashMap<>();
 
-  private Map<String, Object> data = new HashMap<>();
-
-  @StateFieldSetter("data")
+  /**
+   * Sets the state machine state.
+   */
+  @Stateful("data")
   public void setData(Map<String, Object> data) {
     this.data = data;
   }
 
+  /**
+   * Returns the state machine state.
+   */
+  @Stateful("data")
+  public Map<String, Object> getData() {
+    return data;
+  }
+
 }
 ```
+
+Note that if explicitly marked `@Stateful` getters and setters are both provided
+for a property of the same name, that field itself does not need to be explicitly
+marked `@Stateful`.
 
 ## A Simple Fault-Tolerant Key-Value Store
 To demonstrate the tools that CopyCat provides, this is a simple example
@@ -365,7 +321,7 @@ the Vert.x event bus.
 ```java
 public class KeyValueStore extends Verticle implements StateMachine {
 
-  @StateValue
+  @Stateful
   private final Map<String, Object> data = new HashMap<>();
 
   @Command(name="get", type=Command.Type.READ)
