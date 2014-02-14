@@ -72,6 +72,21 @@ public interface Replica {
   Log.Type getLogType();
 
   /**
+   * Sets the replica log file.
+   *
+   * @param filename The replica log file name
+   * @return The replica instance.
+   */
+  Replica setLogFile(String filename);
+
+  /**
+   * Returns the replica log file name.
+   *
+   * @return The replica log file name.
+   */
+  String getLogFile();
+
+  /**
    * Sets the maximum log size of the state machine.
    *
    * @param max The log size memory usage of the state machine.

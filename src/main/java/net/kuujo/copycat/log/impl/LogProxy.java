@@ -41,7 +41,7 @@ import org.vertx.java.platform.Container;
 public final class LogProxy {
   private static final Serializer serializer  = Serializer.getInstance();
   private Log.Type type = Log.Type.FILE;
-  private final String filename;
+  private String filename;
   private final Vertx vertx;
   private final Container container;
   private final String events = UUID.randomUUID().toString();
@@ -94,6 +94,26 @@ public final class LogProxy {
    */
   public Log.Type getLogType() {
     return type;
+  }
+
+  /**
+   * Sets the log file name.
+   *
+   * @param filename The log file name.
+   * @return The log proxy.
+   */
+  public LogProxy setLogFile(String filename) {
+    this.filename = filename;
+    return this;
+  }
+
+  /**
+   * Returns the log file name.
+   *
+   * @return The log file name.
+   */
+  public String getLogFile() {
+    return filename;
   }
 
   /**

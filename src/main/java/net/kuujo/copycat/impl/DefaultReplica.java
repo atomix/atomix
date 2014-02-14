@@ -79,6 +79,17 @@ public class DefaultReplica implements Replica {
   }
 
   @Override
+  public Replica setLogFile(String filename) {
+    context.log().setLogFile(filename);
+    return this;
+  }
+
+  @Override
+  public String getLogFile() {
+    return context.log().getLogFile();
+  }
+
+  @Override
   public Replica setMaxLogSize(long max) {
     context.log().setMaxSize(max);
     return this;
