@@ -85,7 +85,8 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
 
   @Override
   public Command getCommand(String name) {
-    return commands.get(name).info;
+    CommandWrapper command = commands.get(name);
+    return command != null ? command.info : null;
   }
 
   @Override
