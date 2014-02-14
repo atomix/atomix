@@ -614,9 +614,11 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     public Void call(Object obj, JsonElement arg) throws IllegalAccessException, InvocationTargetException {
       JsonObject data = arg.asObject();
       for (StatefulProperty property : properties) {
-        JsonElement value = data.getElement(property.name);
-        if (value != null) {
-          property.set(obj, value);
+        if (data.containsField(property.name)) {
+          JsonElement value = data.getElement(property.name);
+          if (value != null) {
+            property.set(obj, value);
+          }
         }
       }
       return null;
