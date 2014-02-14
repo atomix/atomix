@@ -48,7 +48,7 @@ public final class LogProxy {
   private final String address = UUID.randomUUID().toString();
   private Handler<Void> fullHandler;
   private Handler<Void> drainHandler;
-  private long maxSize = 10000;
+  private long maxSize = 32 * 1024 * 1024;
   private String deploymentID;
 
   public LogProxy(String filename, Vertx vertx, Container container) {
