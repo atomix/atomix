@@ -33,7 +33,7 @@ public class CommandEntry extends Entry {
   }
 
   public CommandEntry(long term, String command, JsonObject args) {
-    super(Type.COMMAND);
+    super(Type.COMMAND, term);
     this.command = command;
     this.args = args.toMap();
   }
