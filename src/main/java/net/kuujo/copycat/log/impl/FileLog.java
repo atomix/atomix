@@ -149,7 +149,9 @@ public class FileLog implements Log {
         currentIndex++;
       }
       String line = file.readLine();
-      entry = (T) line.substring(String.valueOf(index).length() + 1);
+      if (line != null) {
+        entry = (T) line.substring(String.valueOf(index).length() + 1);
+      }
     }
     catch (IOException e) {
       throw new LogException(e);

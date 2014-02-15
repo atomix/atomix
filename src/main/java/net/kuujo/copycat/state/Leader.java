@@ -570,6 +570,9 @@ class Leader extends State implements Observer {
         log.lastIndex(new Handler<AsyncResult<Long>>() {
           @Override
           public void handle(AsyncResult<Long> result) {
+            if (nextIndex == null) {
+              nextIndex = result.result() + 1;
+            }
             if (result.succeeded()) {
               if (nextIndex <= result.result()) {
                 sync();
@@ -597,7 +600,20 @@ class Leader extends State implements Observer {
     private void sync() {
       if (!running && !shutdown) {
         running = true;
-        doSync();
+        if (nextIndex == null) {
+          log.lastIndex(new Handler<AsyncResult<Long>>() {
+            @Override
+            public void handle(AsyncResult<Long> result) {
+              if (result.succeeded()) {
+                nextIndex = result.result() + 1;
+                doSync();
+              }
+            }
+          });
+        }
+        else {
+          doSync();
+        }
       }
     }
 

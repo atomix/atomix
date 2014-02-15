@@ -1,11 +1,14 @@
 package net.kuujo.copycat.log.impl;
 
+import java.util.List;
+
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogException;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.VoidHandler;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.platform.Verticle;
 
@@ -138,7 +141,8 @@ public class Logger extends Verticle implements Handler<Message<JsonObject>> {
 
   private void doGetEntry(final Message<JsonObject> message) {
     try {
-      message.reply(new JsonObject().putString("status", "ok").putValue("result", log.getEntry(message.body().getLong("index"))));
+      Object entry = log.getEntry(message.body().getLong("index"));
+      message.reply(new JsonObject().putString("status", "ok").putString("result", entry != null ? entry.toString() : null));
     }
     catch (LogException e) {
       message.reply(new JsonObject().putString("status", "error").putString("message", e.getMessage()));
@@ -147,7 +151,8 @@ public class Logger extends Verticle implements Handler<Message<JsonObject>> {
 
   private void doGetEntries(final Message<JsonObject> message) {
     try {
-      message.reply(new JsonObject().putString("status", "ok").putValue("result", log.getEntries(message.body().getLong("start"), message.body().getLong("end"))));
+      List<Object> entries = log.getEntries(message.body().getLong("start"), message.body().getLong("end"));
+      message.reply(new JsonObject().putString("status", "ok").putArray("result", new JsonArray(entries.toArray(new Object[entries.size()]))));
     }
     catch (LogException e) {
       message.reply(new JsonObject().putString("status", "error").putString("message", e.getMessage()));
