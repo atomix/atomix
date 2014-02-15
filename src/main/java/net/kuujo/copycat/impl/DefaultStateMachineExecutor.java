@@ -66,7 +66,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     final AnnotationIntrospector introspector = new AnnotationIntrospector();
     this.commands = new HashMap<>();
     for (CommandWrapper command : introspector.findCommands(clazz)) {
-      this.commands.put(command.info.name(), command);
+      this.commands.put(command.name, command);
     }
     this.before = introspector.findBefore(clazz);
     this.after = introspector.findAfter(clazz);
@@ -349,13 +349,13 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
             }
 
             if (method.isAnnotationPresent(Command.Arguments.class)) {
-              commands.put(name, new CommandWrapper(info, method.getAnnotation(Command.Arguments.class).value(), method));
+              commands.put(name, new CommandWrapper(name, info, method.getAnnotation(Command.Arguments.class).value(), method));
               continue;
             }
   
             Annotation[][] params = method.getParameterAnnotations();
             if (params.length == 0) {
-              commands.put(name, new CommandWrapper(info, new Command.Argument[0], method));
+              commands.put(name, new CommandWrapper(name, info, new Command.Argument[0], method));
               continue;
             }
 
@@ -374,7 +374,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               }
               if (!hasAnnotation) {
                 if (JsonObject.class.isAssignableFrom(method.getParameterTypes()[0])) {
-                  commands.put(name, new ObjectCommandWrapper(info, new Command.Argument[]{new DefaultArgument()}, method));
+                  commands.put(name, new ObjectCommandWrapper(name, info, new Command.Argument[]{new DefaultArgument()}, method));
                   continue;
                 }
               }
@@ -401,7 +401,7 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               }
             }
 
-            commands.put(name, new CommandWrapper(info, arguments.toArray(new Command.Argument[arguments.size()]), method));
+            commands.put(name, new CommandWrapper(name, info, arguments.toArray(new Command.Argument[arguments.size()]), method));
           }
         }
         current = current.getSuperclass();
@@ -467,11 +467,13 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
    * Command wrapper.
    */
   private static class CommandWrapper implements Function<Map<String, Object>, Object> {
+    protected final String name;
     protected final Command info;
     protected final Annotation[] args;
     protected final Method method;
 
-    private CommandWrapper(Command info, Annotation[] args, Method method) {
+    private CommandWrapper(String name, Command info, Annotation[] args, Method method) {
+      this.name = name;
       this.info = info;
       this.args = args;
       this.method = method;
@@ -530,8 +532,8 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
    * Object command wrapper.
    */
   private static class ObjectCommandWrapper extends CommandWrapper {
-    private ObjectCommandWrapper(Command info, Command.Argument[] args, Method method) {
-      super(info, args, method);
+    private ObjectCommandWrapper(String name, Command info, Command.Argument[] args, Method method) {
+      super(name, info, args, method);
     }
     @Override
     public Object call(Object object, Map<String, Object> arg) throws IllegalAccessException, InvocationTargetException {
