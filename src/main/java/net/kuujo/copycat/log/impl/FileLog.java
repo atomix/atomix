@@ -152,6 +152,7 @@ public class FileLog implements Log {
       if (line != null) {
         entry = (T) line.substring(String.valueOf(index).length() + 1);
       }
+      file.seek(file.length());
     }
     catch (IOException e) {
       throw new LogException(e);
@@ -224,6 +225,7 @@ public class FileLog implements Log {
           gap += section;
         }
         file.setLength(file.getFilePointer());
+        file.seek(file.length());
       }
       firstIndex = index;
     }
@@ -255,6 +257,7 @@ public class FileLog implements Log {
         currentIndex++;
       }
       lastIndex = index;
+      file.seek(file.length());
     }
     catch (IOException e) {
       throw new LogException(e);
