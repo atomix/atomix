@@ -20,7 +20,7 @@ import net.kuujo.copycat.Replica;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.annotations.Command;
 import net.kuujo.copycat.annotations.Command.Argument;
-import net.kuujo.copycat.annotations.StateValue;
+import net.kuujo.copycat.annotations.Stateful;
 import net.kuujo.copycat.impl.DefaultReplica;
 
 import org.vertx.java.core.AsyncResult;
@@ -35,7 +35,7 @@ import org.vertx.java.platform.Verticle;
  */
 public class KeyValueStore extends Verticle implements StateMachine {
 
-  @StateValue
+  @Stateful
   private final Map<String, Object> data = new HashMap<>();
 
   @Command(name="get", type=Command.Type.READ)
