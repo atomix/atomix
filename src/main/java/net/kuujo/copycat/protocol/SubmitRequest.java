@@ -15,11 +15,13 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.util.Collection;
 import java.util.Map;
 
 import net.kuujo.copycat.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -80,12 +82,19 @@ public class SubmitRequest extends Request {
    *
    * @param result The command execution result.
    */
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public void reply(Object result) {
-    if (result != null) {
-      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putValue("result", result)));
+    if (result == null) {
+      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putString("result", null)));
+    }
+    else if (result instanceof Map) {
+      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putObject("result", new JsonObject((Map) result))));
+    }
+    else if (result instanceof Collection) {
+      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putArray("result", new JsonArray(((Collection) result).toArray()))));
     }
     else {
-      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putString("result", null)));
+      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putValue("result", result)));
     }
   }
 
