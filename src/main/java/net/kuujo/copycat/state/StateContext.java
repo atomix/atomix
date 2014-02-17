@@ -727,27 +727,28 @@ public class StateContext {
    * @return The state context.
    */
   public <R> StateContext submitCommand(final String command, final JsonObject args, final Handler<AsyncResult<R>> doneHandler) {
-    stateClient.submit(currentLeader(), new SubmitRequest(command, args), new Handler<AsyncResult<SubmitResponse>>() {
-      @Override
-      @SuppressWarnings("unchecked")
-      public void handle(AsyncResult<SubmitResponse> result) {
-        if (result.failed()) {
-          // If we failed to reach the leader then queue the command and
-          // wait for a new leader to be elected.
-          // We can only queue MAX_QUEUE_SIZE commands, so fail any
-          // additional commands if the queue is full.
-          if (commands.size() > MAX_QUEUE_SIZE) {
-            new DefaultFutureResult<R>(new CopyCatException("Command queue full.")).setHandler(doneHandler);
+    if (currentLeader == null) {
+      if (commands.size() > MAX_QUEUE_SIZE) {
+        new DefaultFutureResult<R>(new CopyCatException("Command queue full.")).setHandler(doneHandler);
+      }
+      else {
+        commands.add(new WrappedCommand<R>(command, args, doneHandler));
+      }
+    }
+    else {
+      stateClient.submit(currentLeader, new SubmitRequest(command, args), new Handler<AsyncResult<SubmitResponse>>() {
+        @Override
+        @SuppressWarnings("unchecked")
+        public void handle(AsyncResult<SubmitResponse> result) {
+          if (result.failed()) {
+            new DefaultFutureResult<R>(result.cause()).setHandler(doneHandler);
           }
           else {
-            commands.add(new WrappedCommand<R>(command, args, doneHandler));
+            new DefaultFutureResult<R>((R) result.result().result()).setHandler(doneHandler);
           }
         }
-        else {
-          new DefaultFutureResult<R>((R) result.result().result()).setHandler(doneHandler);
-        }
-      }
-    });
+      });
+    }
     return this;
   }
 
