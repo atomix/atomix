@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonElement;
 import org.vertx.java.core.json.JsonObject;
 
@@ -473,49 +474,6 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
     protected final Annotation[] args;
     protected final Method method;
     protected final Class<?>[] parameters;
-    protected final boolean[] serializable;
-
-    @SuppressWarnings("serial")
-    private static final Set<Class<?>> primitiveTypes = new HashSet<Class<?>>() {{
-      add(Class.class);
-      add(String.class);
-      add(String[].class);
-      add(Boolean.class);
-      add(Boolean[].class);
-      add(boolean.class);
-      add(boolean[].class);
-      add(Character.class);
-      add(Character[].class);
-      add(char.class);
-      add(char[].class);
-      add(Byte.class);
-      add(Byte[].class);
-      add(byte.class);
-      add(byte[].class);
-      add(Short.class);
-      add(Short[].class);
-      add(short.class);
-      add(short[].class);
-      add(Integer.class);
-      add(Integer[].class);
-      add(int.class);
-      add(int[].class);
-      add(Long.class);
-      add(Long[].class);
-      add(long.class);
-      add(long[].class);
-      add(Float.class);
-      add(Float[].class);
-      add(float.class);
-      add(float[].class);
-      add(Double.class);
-      add(Double[].class);
-      add(double.class);
-      add(double[].class);
-      add(Void.class);
-      add(Void[].class);
-      add(void.class);
-    }};
 
     private CommandWrapper(String name, Command info, Annotation[] args, Method method) {
       this.name = name;
@@ -523,16 +481,6 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
       this.args = args;
       this.method = method;
       parameters = method.getParameterTypes();
-      serializable = new boolean[parameters.length];
-      for (int i = 0; i < parameters.length; i++) {
-        serializable[i] = true;
-        for (Class<?> primitive : primitiveTypes) {
-          if (primitive.isAssignableFrom(parameters[i])) {
-            serializable[i] = false;
-            break;
-          }
-        }
-      }
     }
 
     @Override
@@ -562,8 +510,21 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               }
             }
             else {
-              if (serializable[i]) {
-                args[i] = serializer.readObject(new JsonObject((Map) value), parameters[i]);
+              if (value instanceof Map) {
+                if (Map.class.isAssignableFrom(parameters[i])) {
+                  args[i] = value;
+                }
+                else {
+                  args[i] = serializer.readObject(new JsonObject((Map) value), parameters[i]);
+                }
+              }
+              else if (value instanceof List) {
+                if (List.class.isAssignableFrom(parameters[i])) {
+                  args[i] = value;
+                }
+                else {
+                  args[i] = serializer.readObject(new JsonArray((List) value), parameters[i]);
+                }
               }
               else {
                 args[i] = value;
