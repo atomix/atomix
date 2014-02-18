@@ -66,7 +66,7 @@ class Leader extends State implements Observer {
   private final Set<Majority> majorities = new HashSet<>();
 
   @Override
-  public void startUp(final Handler<Void> startHandler) {
+  public void startUp(final Handler<AsyncResult<Void>> startHandler) {
     // Create a set of replica references in the cluster.
     members = config.getMembers();
     remoteMembers = new HashSet<>(members);
@@ -92,31 +92,25 @@ class Leader extends State implements Observer {
     // then we periodically retry appending the entry until successful.
     // The leader cannot start until this no-op entry has been
     // successfully appended.
-    periodicRetry(100, new Handler<Handler<Boolean>>() {
+    log.appendEntry(new NoOpEntry(context.currentTerm()), new Handler<AsyncResult<Long>>() {
       @Override
-      public void handle(final Handler<Boolean> doneHandler) {
-        log.appendEntry(new NoOpEntry(context.currentTerm()), new Handler<AsyncResult<Long>>() {
-          @Override
-          public void handle(AsyncResult<Long> result) {
-            if (result.succeeded()) {
-              // Once the no-op entry has been appended, immediately update
-              // all nodes.
-              for (Replica replica : replicas) {
-                replica.update();
-              }
-
-              // Observe the cluster configuration for changes.
-              config.addObserver(Leader.this);
-              clusterChanged(config);
-              context.currentLeader(context.address());
-              doneHandler.handle(true);
-              startHandler.handle((Void) null);
-            }
-            else {
-              doneHandler.handle(false);
-            }
+      public void handle(AsyncResult<Long> result) {
+        if (result.succeeded()) {
+          // Once the no-op entry has been appended, immediately update
+          // all nodes.
+          for (Replica replica : replicas) {
+            replica.update();
           }
-        });
+
+          // Observe the cluster configuration for changes.
+          config.addObserver(Leader.this);
+          clusterChanged(config);
+          context.currentLeader(context.address());
+          new DefaultFutureResult<Void>((Void) null).setHandler(startHandler);
+        }
+        else {
+          new DefaultFutureResult<Void>(result.cause()).setHandler(startHandler);
+        }
       }
     });
   }
@@ -241,26 +235,6 @@ class Leader extends State implements Observer {
         });
       }
     });
-  }
-
-  /**
-   * Periodically retries a handler.
-   */
-  private void periodicRetry(final long delay, final Handler<Handler<Boolean>> handler) {
-    periodicTimers.add(vertx.setPeriodic(delay, new Handler<Long>() {
-      @Override
-      public void handle(final Long timerID) {
-        handler.handle(new Handler<Boolean>() {
-          @Override
-          public void handle(Boolean succeeded) {
-            if (succeeded) {
-              vertx.cancelTimer(timerID);
-              periodicTimers.remove(timerID);
-            }
-          }
-        });
-      }
-    }));
   }
 
   @Override
@@ -490,7 +464,7 @@ class Leader extends State implements Observer {
   }
 
   @Override
-  public void shutDown(Handler<Void> doneHandler) {
+  public void shutDown(Handler<AsyncResult<Void>> doneHandler) {
     // Cancel the ping timer.
     if (pingTimer > 0) {
       vertx.cancelTimer(pingTimer);
@@ -516,7 +490,7 @@ class Leader extends State implements Observer {
 
     // Stop observing the cluster configuration.
     config.deleteObserver(this);
-    doneHandler.handle((Void) null);
+    new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
   }
 
   /**

@@ -23,6 +23,7 @@ import net.kuujo.copycat.state.impl.StateLock;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 import org.vertx.java.core.logging.Logger;
 import org.vertx.java.core.logging.impl.LoggerFactory;
 
@@ -58,9 +59,9 @@ class Follower extends State {
   };
 
   @Override
-  public void startUp(Handler<Void> doneHandler) {
+  public void startUp(Handler<AsyncResult<Void>> doneHandler) {
     resetTimer();
-    doneHandler.handle((Void) null);
+    new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
   }
 
   /**
@@ -151,12 +152,12 @@ class Follower extends State {
   }
 
   @Override
-  public void shutDown(Handler<Void> doneHandler) {
+  public void shutDown(Handler<AsyncResult<Void>> doneHandler) {
     if (timeoutTimer > 0) {
       vertx.cancelTimer(timeoutTimer);
       timeoutTimer = 0;
     }
-    doneHandler.handle((Void) null);
+    new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
   }
 
 }

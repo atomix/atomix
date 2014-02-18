@@ -20,7 +20,9 @@ import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SyncRequest;
 
+import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
+import org.vertx.java.core.impl.DefaultFutureResult;
 
 /**
  * A start state.
@@ -30,8 +32,8 @@ import org.vertx.java.core.Handler;
 class Start extends State {
 
   @Override
-  public void startUp(Handler<Void> doneHandler) {
-    doneHandler.handle((Void) null);
+  public void startUp(Handler<AsyncResult<Void>> doneHandler) {
+    new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
   }
 
   @Override
@@ -55,8 +57,8 @@ class Start extends State {
   }
 
   @Override
-  public void shutDown(Handler<Void> doneHandler) {
-    doneHandler.handle((Void) null);
+  public void shutDown(Handler<AsyncResult<Void>> doneHandler) {
+    new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
   }
 
 }

@@ -101,6 +101,7 @@ public class StateContext {
    * @return The state context.
    */
   public StateContext configure(ClusterConfig config) {
+    config.addMember(address);
     this.cluster = config;
     if (state != null) {
       state.setConfig(config);
@@ -172,26 +173,44 @@ public class StateContext {
     final State newState = state;
 
     if (oldState != null) {
-      oldState.shutDown(new Handler<Void>() {
+      oldState.shutDown(new Handler<AsyncResult<Void>>() {
         @Override
-        public void handle(Void result) {
-          unregisterHandlers();
-          newState.startUp(new Handler<Void>() {
-            @Override
-            public void handle(Void result) {
-              registerHandlers(newState);
-              checkStart();
-            }
-          });
+        public void handle(AsyncResult<Void> result) {
+          if (result.failed()) {
+            logger.error(result.cause());
+            transition(StateType.START);
+          }
+          else {
+            unregisterHandlers();
+            newState.startUp(new Handler<AsyncResult<Void>>() {
+              @Override
+              public void handle(AsyncResult<Void> result) {
+                if (result.failed()) {
+                  logger.error(result.cause());
+                  transition(StateType.START);
+                }
+                else {
+                  registerHandlers(newState);
+                  checkStart();
+                }
+              }
+            });
+          }
         }
       });
     }
     else {
-      state.startUp(new Handler<Void>() {
+      state.startUp(new Handler<AsyncResult<Void>>() {
         @Override
-        public void handle(Void result) {
-          registerHandlers(newState);
-          checkStart();
+        public void handle(AsyncResult<Void> result) {
+          if (result.failed()) {
+            logger.error(result.cause());
+            transition(StateType.START);
+          }
+          else {
+            registerHandlers(newState);
+            checkStart();
+          }
         }
       });
     }

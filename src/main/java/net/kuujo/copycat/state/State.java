@@ -123,7 +123,7 @@ abstract class State {
    * 
    * @param doneHandler A handler to be called once the state is started up.
    */
-  public abstract void startUp(Handler<Void> doneHandler);
+  public abstract void startUp(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Executes a ping request.
@@ -158,7 +158,7 @@ abstract class State {
    * 
    * @param doneHandler A handler to be called once the state is shut down.
    */
-  public abstract void shutDown(Handler<Void> doneHandler);
+  public abstract void shutDown(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Handles a sync request.
