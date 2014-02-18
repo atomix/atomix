@@ -581,6 +581,9 @@ class Leader extends State implements Observer {
                 nextIndex = result.result() + 1;
                 doSync();
               }
+              else {
+                running = false;
+              }
             }
           });
         }
@@ -640,6 +643,7 @@ class Leader extends State implements Observer {
         running = false;
         return;
       }
+
       // If there are entries to be synced then load the entries.
       if (prevLogIndex+1 <= lastIndex) {
         log.getEntries(prevLogIndex+1, (prevLogIndex+1) + BATCH_SIZE > lastIndex ? lastIndex : (prevLogIndex+1) + BATCH_SIZE, new Handler<AsyncResult<List<Entry>>>() {
@@ -739,7 +743,11 @@ class Leader extends State implements Observer {
                 context.transition(StateType.FOLLOWER);
               }
               else {
-                if (!entries.isEmpty()) {
+                // If we were attempting to replicate log entries and not just
+                // sending a commit index or if we didn't have any log entries
+                // to replicate then decrement the next index. The node we were
+                // attempting to sync is not up to date.
+                if (!entries.isEmpty() || prevLogIndex == commitIndex) {
                   nextIndex--;
                 }
                 checkCommits();
