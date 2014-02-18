@@ -21,6 +21,7 @@ import java.util.Queue;
 import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.log.CommandEntry;
+import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.LogProxy;
 import net.kuujo.copycat.protocol.PingRequest;
@@ -349,7 +350,7 @@ public class StateContext {
                   else {
                     final long lastIndex = result.result();
                     if (lastIndex > 0 && lastIndex >= commitIndex) {
-                      initializeLog(1, commitIndex, doneHandler);
+                      initializeLog(1, lastIndex, doneHandler);
                     }
                     else {
                       setLogHandlers();
@@ -368,8 +369,8 @@ public class StateContext {
   /**
    * Initializes a single entry in the log.
    */
-  private void initializeLog(final long currentIndex, final long commitIndex, final Handler<AsyncResult<Void>> doneHandler) {
-    if (currentIndex <= commitIndex) {
+  private void initializeLog(final long currentIndex, final long lastIndex, final Handler<AsyncResult<Void>> doneHandler) {
+    if (currentIndex <= lastIndex) {
       log.containsEntry(currentIndex, new Handler<AsyncResult<Boolean>>() {
         @Override
         public void handle(AsyncResult<Boolean> result) {
@@ -383,16 +384,31 @@ public class StateContext {
                 if (result.failed()) {
                   new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
                 }
-                else if (result.result() instanceof CommandEntry) {
-                  CommandEntry entry = (CommandEntry) result.result();
-                  stateMachine.applyCommand(entry.command(), entry.args());
-                  initializeLog(currentIndex+1, commitIndex, doneHandler);
+                else {
+                  if (result.result().term() > currentTerm) {
+                    currentTerm = result.result().term();
+                  }
+                  if (result.result() instanceof ConfigurationEntry) {
+                    cluster.setMembers(((ConfigurationEntry) result.result()).members());
+                    commitIndex++;
+                    initializeLog(currentIndex+1, lastIndex, doneHandler);
+                  }
+                  else if (result.result() instanceof CommandEntry) {
+                    CommandEntry entry = (CommandEntry) result.result();
+                    stateMachine.applyCommand(entry.command(), entry.args());
+                    commitIndex++;
+                    initializeLog(currentIndex+1, lastIndex, doneHandler);
+                  }
+                  else {
+                    commitIndex++;
+                    initializeLog(currentIndex+1, lastIndex, doneHandler);
+                  }
                 }
               }
             });
           }
           else {
-            initializeLog(currentIndex+1, commitIndex, doneHandler);
+            initializeLog(currentIndex+1, lastIndex, doneHandler);
           }
         }
       });
