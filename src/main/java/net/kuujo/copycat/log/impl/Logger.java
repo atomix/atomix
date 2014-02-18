@@ -89,6 +89,9 @@ public class Logger extends Verticle implements Handler<Message<JsonObject>> {
         case "lastEntry":
           doLastEntry(message);
           break;
+        case "delete":
+          doDelete(message);
+          break;
         default:
           message.reply(new JsonObject().putString("status", "error").putString("message", "Invalid action " + action));
           break;
@@ -100,6 +103,17 @@ public class Logger extends Verticle implements Handler<Message<JsonObject>> {
   public void stop() {
     if (log != null) {
       log.close();
+      log = null;
+    }
+  }
+
+  /**
+   * Deletes the log.
+   */
+  private void doDelete(final Message<JsonObject> message) {
+    if (log != null) {
+      log.delete();
+      log = null;
     }
   }
 

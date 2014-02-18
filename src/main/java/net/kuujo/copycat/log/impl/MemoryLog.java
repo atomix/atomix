@@ -31,7 +31,7 @@ import org.vertx.java.core.Handler;
  */
 public class MemoryLog implements Log {
   private static final long DEFAULT_MAX_SIZE = 5000; // Default 5000 log entries.
-  private final TreeMap<Long, Object> log = new TreeMap<>();
+  private TreeMap<Long, Object> log = new TreeMap<>();
   private long maxSize = DEFAULT_MAX_SIZE;
   private Handler<Void> fullHandler;
   private Handler<Void> drainHandler;
@@ -135,6 +135,11 @@ public class MemoryLog implements Log {
 
   @Override
   public void close() {
+  }
+
+  @Override
+  public void delete() {
+    log = new TreeMap<>();
   }
 
   /**

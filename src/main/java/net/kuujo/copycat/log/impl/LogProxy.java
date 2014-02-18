@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import net.kuujo.copycat.log.AsyncLog;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogException;
@@ -38,7 +39,7 @@ import org.vertx.java.platform.Container;
  *
  * @author Jordan Halterman
  */
-public final class LogProxy {
+public class LogProxy implements AsyncLog {
   private static final Serializer serializer  = Serializer.getInstance();
   private Log.Type type = Log.Type.FILE;
   private String filename;
@@ -96,52 +97,29 @@ public final class LogProxy {
     return type;
   }
 
-  /**
-   * Sets the log file name.
-   *
-   * @param filename The log file name.
-   * @return The log proxy.
-   */
+  @Override
   public LogProxy setLogFile(String filename) {
     this.filename = filename;
     return this;
   }
 
-  /**
-   * Returns the log file name.
-   *
-   * @return The log file name.
-   */
+  @Override
   public String getLogFile() {
     return filename;
   }
 
-  /**
-   * Sets the maximum log size.
-   *
-   * @param maxSize The maximum log size.
-   * @return The log proxy.
-   */
+  @Override
   public LogProxy setMaxSize(long maxSize) {
     this.maxSize = maxSize;
     return this;
   }
 
-  /**
-   * Returns the maximum log size.
-   *
-   * @return The maximum log size.
-   */
+  @Override
   public long getMaxSize() {
     return maxSize;
   }
 
-  /**
-   * Opens the log.
-   *
-   * @param doneHandler An asynchronous handler to be called once the
-   *                    log has been opened.
-   */
+  @Override
   public void open(final Handler<AsyncResult<Void>> doneHandler) {
     container.deployWorkerVerticle(Logger.class.getName(), new JsonObject()
         .putString("address", address)
@@ -163,48 +141,47 @@ public final class LogProxy {
     });
   }
 
-  /**
-   * Closes the log.
-   *
-   * @param doneHandler An asynchronous handler to be called once the
-   *                    log has closed.
-   */
+  @Override
   public void close(final Handler<AsyncResult<Void>> doneHandler) {
     if (deploymentID != null) {
       container.undeployVerticle(deploymentID, doneHandler);
       deploymentID = null;
     }
+    new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
   }
 
-  /**
-   * Sets a handler to be calle when the log is full.
-   *
-   * @param handler A handler to be called when the log is full.
-   * @return The log proxy.
-   */
+  @Override
+  public void delete(final Handler<AsyncResult<Void>> doneHandler) {
+    vertx.eventBus().send(address, new JsonObject().putString("action", "delete"), new Handler<Message<JsonObject>>() {
+      @Override
+      public void handle(Message<JsonObject> message) {
+        if (message.body().getString("status").equals("ok")) {
+          if (deploymentID != null) {
+            container.undeployVerticle(deploymentID, doneHandler);
+            deploymentID = null;
+          }
+          new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+        }
+        else {
+          new DefaultFutureResult<Void>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
+        }
+      }
+    });
+  }
+
+  @Override
   public LogProxy fullHandler(Handler<Void> handler) {
     fullHandler = handler;
     return this;
   }
 
-  /**
-   * Sets a handler to be calle when the log is drained.
-   *
-   * @param handler A handler to be called when the log is drained.
-   * @return The log proxy.
-   */
+  @Override
   public LogProxy drainHandler(Handler<Void> handler) {
     drainHandler = handler;
     return this;
   }
 
-  /**
-   * Appends an entry to the log.
-   * 
-   * @param entry The entry to append.
-   * @param doneHandler A handler to be called once the entry has been appended.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy appendEntry(Entry entry, final Handler<AsyncResult<Long>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "appendEntry").putString("entry", serializer.writeString(entry)), new Handler<Message<JsonObject>>() {
       @Override
@@ -213,21 +190,14 @@ public final class LogProxy {
           new DefaultFutureResult<Long>(message.body().getLong("result")).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Long>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Long>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns a boolean indicating whether the log has an entry at the given
-   * index.
-   * 
-   * @param index The index to check.
-   * @param containsHandler A handler to be called with the contains result.
-   * @return Indicates whether the log has an entry at the given index.
-   */
+  @Override
   public LogProxy containsEntry(long index, final Handler<AsyncResult<Boolean>> containsHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "containsEntry").putNumber("index", index), new Handler<Message<JsonObject>>() {
       @Override
@@ -236,20 +206,14 @@ public final class LogProxy {
           new DefaultFutureResult<Boolean>(message.body().getBoolean("result")).setHandler(containsHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message"))).setHandler(containsHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns the entry at the given index.
-   * 
-   * @param index The index from which to get the entry.
-   * @param entryHandler A handler to be called with the entry.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy getEntry(long index, final Handler<AsyncResult<Entry>> entryHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "getEntry").putNumber("index", index), new Handler<Message<JsonObject>>() {
       @Override
@@ -263,19 +227,14 @@ public final class LogProxy {
           new DefaultFutureResult<Entry>(entry).setHandler(entryHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Entry>(new LogException(message.body().getString("message"))).setHandler(entryHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns the first log index.
-   *
-   * @return
-   *   The first log index.
-   */
+  @Override
   public LogProxy firstIndex(final Handler<AsyncResult<Long>> resultHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "firstIndex"), new Handler<Message<JsonObject>>() {
       @Override
@@ -284,19 +243,14 @@ public final class LogProxy {
           new DefaultFutureResult<Long>(message.body().getLong("result")).setHandler(resultHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Long>(new LogException(message.body().getString("message"))).setHandler(resultHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns the first log entry term.
-   *
-   * @param doneHandler A handler to be called with the term.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy firstTerm(final Handler<AsyncResult<Long>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "firstTerm"), new Handler<Message<JsonObject>>() {
       @Override
@@ -305,19 +259,14 @@ public final class LogProxy {
           new DefaultFutureResult<Long>(message.body().getLong("result")).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Long>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns the first log entry.
-   *
-   * @param doneHandler A handler to be called with the entry.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy firstEntry(final Handler<AsyncResult<Entry>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "firstEntry"), new Handler<Message<JsonObject>>() {
       @Override
@@ -331,19 +280,14 @@ public final class LogProxy {
           new DefaultFutureResult<Entry>(entry).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Entry>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns the last log index.
-   *
-   * @return
-   *   The last log index.
-   */
+  @Override
   public LogProxy lastIndex(final Handler<AsyncResult<Long>> resultHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "lastIndex"), new Handler<Message<JsonObject>>() {
       @Override
@@ -352,19 +296,14 @@ public final class LogProxy {
           new DefaultFutureResult<Long>(message.body().getLong("result")).setHandler(resultHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Long>(new LogException(message.body().getString("message"))).setHandler(resultHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns the last log entry term.
-   *
-   * @param doneHandler A handler to be called with the term.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy lastTerm(final Handler<AsyncResult<Long>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "lastTerm"), new Handler<Message<JsonObject>>() {
       @Override
@@ -373,19 +312,14 @@ public final class LogProxy {
           new DefaultFutureResult<Long>(message.body().getLong("result")).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Long>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns the last log entry.
-   *
-   * @param doneHandler A handler to be called with the entry.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy lastEntry(final Handler<AsyncResult<Entry>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "lastEntry"), new Handler<Message<JsonObject>>() {
       @Override
@@ -399,20 +333,14 @@ public final class LogProxy {
           new DefaultFutureResult<Entry>(entry).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Entry>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Returns a list of log entries between two given indexes.
-   * 
-   * @param start The starting index.
-   * @param end The ending index.
-   * @return A list of entries between the two given indexes.
-   */
+  @Override
   public LogProxy getEntries(long start, long end, final Handler<AsyncResult<List<Entry>>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "getEntries").putNumber("start", start).putNumber("end", end), new Handler<Message<JsonObject>>() {
       @Override
@@ -428,19 +356,14 @@ public final class LogProxy {
           new DefaultFutureResult<List<Entry>>(entries).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<List<Entry>>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Removes all entries before the given index.
-   * 
-   * @param index The index before which to remove entries.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy removeBefore(long index, final Handler<AsyncResult<Void>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "removeBefore").putNumber("index", index), new Handler<Message<JsonObject>>() {
       @Override
@@ -449,19 +372,14 @@ public final class LogProxy {
           new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Void>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });
     return this;
   }
 
-  /**
-   * Removes all entries after the given index.
-   * 
-   * @param index The index after which to remove entries.
-   * @return The log instance.
-   */
+  @Override
   public LogProxy removeAfter(long index, final Handler<AsyncResult<Void>> doneHandler) {
     vertx.eventBus().send(address, new JsonObject().putString("action", "removeAfter").putNumber("index", index), new Handler<Message<JsonObject>>() {
       @Override
@@ -470,7 +388,7 @@ public final class LogProxy {
           new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
         }
         else {
-          new DefaultFutureResult<Boolean>(new LogException(message.body().getString("message")));
+          new DefaultFutureResult<Void>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
         }
       }
     });

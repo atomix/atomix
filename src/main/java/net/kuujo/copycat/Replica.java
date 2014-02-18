@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.log.AsyncLog;
 import net.kuujo.copycat.log.Log;
 
 import org.vertx.java.core.AsyncResult;
@@ -100,6 +101,13 @@ public interface Replica {
    * @return The maximum allowed log size for the state machine.
    */
   long getMaxLogSize();
+
+  /**
+   * Returns the replica's log.
+   *
+   * @return The replica's state machine log.
+   */
+  AsyncLog log();
 
   /**
    * Sets the replica election timeout.

@@ -27,6 +27,7 @@ import org.vertx.java.platform.Verticle;
 import net.kuujo.copycat.ClusterConfig;
 import net.kuujo.copycat.Replica;
 import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.log.AsyncLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.state.StateContext;
 import net.kuujo.copycat.state.StateType;
@@ -98,6 +99,11 @@ public class DefaultReplica implements Replica {
   @Override
   public long getMaxLogSize() {
     return context.log().getMaxSize();
+  }
+
+  @Override
+  public AsyncLog log() {
+    return context.log();
   }
 
   @Override

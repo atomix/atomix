@@ -218,4 +218,9 @@ public interface Log {
    */
   void close();
 
+  /**
+   * Deletes the log.
+   */
+  void delete();
+
 }

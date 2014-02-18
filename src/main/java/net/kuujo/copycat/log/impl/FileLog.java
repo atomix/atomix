@@ -36,6 +36,7 @@ public class FileLog implements Log {
   private static final long DEFAULT_MAX_SIZE = 32 * 1024 * 1024; // Default 32MB log.
   private static final String LOG_DIRECTORY = "logs";
   private static final String FILE_SEPARATOR = System.getProperty("file.separator");
+  private File f;
   private RandomAccessFile file;
   private Handler<Void> fullHandler;
   private Handler<Void> drainHandler;
@@ -50,10 +51,10 @@ public class FileLog implements Log {
     if (!checkLogs.exists()) {
       checkLogs.mkdirs();
     }
-    File check = new File(filename);
-    if (!check.exists()) {
+    f = new File(filename);
+    if (!f.exists()) {
       try {
-        check.createNewFile();
+        f.createNewFile();
       }
       catch (IOException e) {
         throw new LogException(e);
@@ -272,6 +273,21 @@ public class FileLog implements Log {
     }
     catch (IOException e) {
       throw new LogException(e);
+    }
+  }
+
+  @Override
+  public void delete() {
+    try {
+      file.close();
+    }
+    catch (IOException e) {
+      throw new LogException(e);
+    }
+    finally {
+      if (f != null) {
+        f.delete();
+      }
     }
   }
 
