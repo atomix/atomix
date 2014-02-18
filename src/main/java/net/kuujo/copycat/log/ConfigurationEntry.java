@@ -26,12 +26,17 @@ public class ConfigurationEntry extends Entry {
   private Set<String> members;
 
   public ConfigurationEntry() {
-    super(Type.CONFIGURATION);
+    super();
   }
 
   public ConfigurationEntry(long term, Set<String> members) {
-    super(Type.CONFIGURATION, term);
+    super(term);
     this.members = members;
+  }
+
+  @Override
+  public Type type() {
+    return Type.CONFIGURATION;
   }
 
   /**

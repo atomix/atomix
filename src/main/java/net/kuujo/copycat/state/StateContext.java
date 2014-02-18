@@ -62,8 +62,8 @@ public class StateContext {
   private SnapshotPersistor persistor;
   private Handler<AsyncResult<String>> startHandler;
   private Queue<WrappedCommand<?>> commands = new ArrayDeque<WrappedCommand<?>>();
-  private long electionTimeout = 2500;
-  private long heartbeatInterval = 1000;
+  private long electionTimeout = 5000;
+  private long heartbeatInterval = 2500;
   private boolean useAdaptiveTimeouts = true;
   private double adaptiveTimeoutThreshold = 10;
   private boolean requireWriteMajority = true;

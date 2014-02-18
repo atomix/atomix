@@ -29,13 +29,18 @@ public class CommandEntry extends Entry {
   private Map<String, Object> args;
 
   public CommandEntry() {
-    super(Type.COMMAND);
+    super();
   }
 
   public CommandEntry(long term, String command, JsonObject args) {
-    super(Type.COMMAND, term);
+    super(term);
     this.command = command;
     this.args = args.toMap();
+  }
+
+  @Override
+  public Type type() {
+    return Type.COMMAND;
   }
 
   /**

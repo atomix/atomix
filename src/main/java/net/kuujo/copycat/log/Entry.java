@@ -16,11 +16,9 @@
 package net.kuujo.copycat.log;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
@@ -104,7 +102,6 @@ public abstract class Entry {
     }
   }
 
-  private Type type;
   private long term;
   @JsonIgnore
   protected Log log;
@@ -119,19 +116,9 @@ public abstract class Entry {
    * Constructor.
    * 
    * @param type The entry type.
-   */
-  protected Entry(Type type) {
-    this.type = type;
-  }
-
-  /**
-   * Constructor.
-   * 
-   * @param type The entry type.
    * @param term The entry term.
    */
-  protected Entry(Type type, long term) {
-    this.type = type;
+  protected Entry(long term) {
     this.term = term;
   }
 
@@ -140,19 +127,7 @@ public abstract class Entry {
    * 
    * @return The entry type.
    */
-  public Type type() {
-    return type;
-  }
-
-  @JsonGetter("type")
-  private String getSerializedType() {
-    return type.getName();
-  }
-
-  @JsonSetter("type")
-  private void setSerializedType(String name) {
-    type = Type.parse(name);
-  }
+  public abstract Type type();
 
   /**
    * Returns the log entry term.

@@ -23,11 +23,16 @@ package net.kuujo.copycat.log;
 public class NoOpEntry extends Entry {
 
   public NoOpEntry() {
-    super(Type.NOOP);
+    super();
   }
 
   public NoOpEntry(long term) {
-    super(Type.NOOP, term);
+    super(term);
+  }
+
+  @Override
+  public Type type() {
+    return Type.NOOP;
   }
 
 }
