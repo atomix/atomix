@@ -358,6 +358,9 @@ abstract class State {
             if (context.commitIndex() > Math.min(context.lastApplied(), lastIndex)) {
               recursiveApplyCommits(context.lastApplied() + 1, Math.min(context.commitIndex(), lastIndex), request, doneHandler);
             }
+            else {
+              new DefaultFutureResult<Boolean>(true).setHandler(doneHandler);
+            }
           }
           else {
             new DefaultFutureResult<Boolean>(true).setHandler(doneHandler);
