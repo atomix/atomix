@@ -467,19 +467,76 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
    * Command wrapper.
    */
   private static class CommandWrapper implements Function<Map<String, Object>, Object> {
+    private static final Serializer serializer = Serializer.getInstance();
     protected final String name;
     protected final Command info;
     protected final Annotation[] args;
     protected final Method method;
+    protected final Class<?>[] parameters;
+    protected final boolean[] serializable;
+
+    @SuppressWarnings("serial")
+    private static final Set<Class<?>> primitiveTypes = new HashSet<Class<?>>() {{
+      add(Class.class);
+      add(String.class);
+      add(String[].class);
+      add(Boolean.class);
+      add(Boolean[].class);
+      add(boolean.class);
+      add(boolean[].class);
+      add(Character.class);
+      add(Character[].class);
+      add(char.class);
+      add(char[].class);
+      add(Byte.class);
+      add(Byte[].class);
+      add(byte.class);
+      add(byte[].class);
+      add(Short.class);
+      add(Short[].class);
+      add(short.class);
+      add(short[].class);
+      add(Integer.class);
+      add(Integer[].class);
+      add(int.class);
+      add(int[].class);
+      add(Long.class);
+      add(Long[].class);
+      add(long.class);
+      add(long[].class);
+      add(Float.class);
+      add(Float[].class);
+      add(float.class);
+      add(float[].class);
+      add(Double.class);
+      add(Double[].class);
+      add(double.class);
+      add(double[].class);
+      add(Void.class);
+      add(Void[].class);
+      add(void.class);
+    }};
 
     private CommandWrapper(String name, Command info, Annotation[] args, Method method) {
       this.name = name;
       this.info = info;
       this.args = args;
       this.method = method;
+      parameters = method.getParameterTypes();
+      serializable = new boolean[parameters.length];
+      for (int i = 0; i < parameters.length; i++) {
+        serializable[i] = true;
+        for (Class<?> primitive : primitiveTypes) {
+          if (primitive.isAssignableFrom(parameters[i])) {
+            serializable[i] = false;
+            break;
+          }
+        }
+      }
     }
 
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public Object call(Object obj, Map<String, Object> arg) throws IllegalAccessException, InvocationTargetException {
       Object[] args = new Object[this.args.length];
       for (int i = 0; i < this.args.length; i++) {
@@ -495,17 +552,21 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
           }
           // If the field exists in the JsonObject then extract it.
           else if (arg.containsKey(name)) {
-            try {
-              args[i] = arg.get(name);
-            }
-            catch (RuntimeException e) {
-              // If the argument value is invalid then we may pass a null value in
-              // instead if the argument isn't required.
+            Object value = arg.get(name);
+            if (value == null) {
               if (argument.required()) {
                 throw new IllegalArgumentException("Invalid argument " + name);
               }
               else {
-                args[i] = null;
+                args[i] = value;
+              }
+            }
+            else {
+              if (serializable[i]) {
+                args[i] = serializer.readObject(new JsonObject((Map) value), parameters[i]);
+              }
+              else {
+                args[i] = value;
               }
             }
           }
