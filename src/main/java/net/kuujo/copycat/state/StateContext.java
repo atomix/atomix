@@ -80,7 +80,7 @@ public class StateContext {
     this.stateClient = new StateClient(address, vertx);
     this.log = new LogProxy(address, vertx, container);
     this.stateMachine = stateMachine;
-    this.persistor = new SnapshotPersistor(address, vertx.fileSystem());
+    this.persistor = new SnapshotPersistor(String.format("%s.snapshot", log.getLogFile()), vertx.fileSystem());
     transition(StateType.START);
   }
 
@@ -518,6 +518,26 @@ public class StateContext {
    */
   public LogProxy log() {
     return log;
+  }
+
+  /**
+   * Returns the snapshot file name.
+   *
+   * @return The snapshot file name.
+   */
+  public String snapshotFile() {
+    return persistor.getSnapshotFile();
+  }
+
+  /**
+   * Sets the snapshot file name.
+   *
+   * @param filename The snapshot file name.
+   * @return The state context.
+   */
+  public StateContext snapshotFile(String filename) {
+    persistor.setSnapshotFile(filename);
+    return this;
   }
 
   /**

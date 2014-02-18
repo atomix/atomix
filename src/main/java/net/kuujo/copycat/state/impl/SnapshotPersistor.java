@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.state.impl;
 
+import java.io.File;
+
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.buffer.Buffer;
@@ -31,14 +33,47 @@ import org.vertx.java.core.json.JsonObject;
  * @author Jordan Halterman
  */
 public final class SnapshotPersistor {
-  private static final String SNAPSHOT_DIRECTORY = "snapshots";
-  private static final String FILE_SEPARATOR = System.getProperty("file.separator");
-  private final String address;
+  private String filename;
+  private String directory;
   private final FileSystem fileSystem;
 
-  public SnapshotPersistor(String address, FileSystem fileSystem) {
-    this.address = address;
+  public SnapshotPersistor(String filename, FileSystem fileSystem) {
+    this.filename = filename;
+    File directory = new File(filename).getParentFile();
+    if (directory != null) {
+      this.directory = directory.getName();
+    }
+    else {
+      this.directory = null;
+    }
     this.fileSystem = fileSystem;
+  }
+
+  /**
+   * Returns the snapshot file name.
+   *
+   * @return The snapshot file name.
+   */
+  public String getSnapshotFile() {
+    return filename;
+  }
+
+  /**
+   * Sets the snapshot file name.
+   *
+   * @param filename The snapshot file name.
+   * @return The snapshot persistor.
+   */
+  public SnapshotPersistor setSnapshotFile(String filename) {
+    this.filename = filename;
+    File directory = new File(filename).getParentFile();
+    if (directory != null) {
+      this.directory = directory.getName();
+    }
+    else {
+      this.directory = null;
+    }
+    return this;
   }
 
   /**
@@ -47,35 +82,35 @@ public final class SnapshotPersistor {
    * @param snapshot The snapshot to store.
    */
   public void storeSnapshot(final JsonElement snapshot, final Handler<AsyncResult<Void>> doneHandler) {
-    final String path = String.format("%s%s%s.snapshot", SNAPSHOT_DIRECTORY, FILE_SEPARATOR, address);
-    if (!fileSystem.existsSync(SNAPSHOT_DIRECTORY)) {
-      fileSystem.mkdirSync(SNAPSHOT_DIRECTORY);
+    if (directory != null) {
+      fileSystem.exists(directory, new Handler<AsyncResult<Boolean>>() {
+        @Override
+        public void handle(AsyncResult<Boolean> result) {
+          if (result.failed()) {
+            new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+          }
+          else if (!result.result()) {
+            fileSystem.mkdir(directory, new Handler<AsyncResult<Void>>() {
+              @Override
+              public void handle(AsyncResult<Void> result) {
+                if (result.failed()) {
+                  new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
+                }
+                else {
+                  fileSystem.writeFile(filename, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
+                }
+              }
+            });
+          }
+          else {
+            fileSystem.writeFile(filename, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
+          }
+        }
+      });
     }
-
-    fileSystem.exists(SNAPSHOT_DIRECTORY, new Handler<AsyncResult<Boolean>>() {
-      @Override
-      public void handle(AsyncResult<Boolean> result) {
-        if (result.failed()) {
-          new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
-        }
-        else if (!result.result()) {
-          fileSystem.mkdir(SNAPSHOT_DIRECTORY, new Handler<AsyncResult<Void>>() {
-            @Override
-            public void handle(AsyncResult<Void> result) {
-              if (result.failed()) {
-                new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
-              }
-              else {
-                fileSystem.writeFile(path, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
-              }
-            }
-          });
-        }
-        else {
-          fileSystem.writeFile(path, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
-        }
-      }
-    });
+    else {
+      fileSystem.writeFile(filename, new Buffer(snapshot.isObject() ? snapshot.asObject().encode() : snapshot.asArray().encode()), doneHandler);
+    }
   }
 
   /**
@@ -84,8 +119,7 @@ public final class SnapshotPersistor {
    * @return The loaded snapshot.
    */
   public void loadSnapshot(final Handler<AsyncResult<JsonElement>> doneHandler) {
-    final String path = String.format("%s%s%s.snapshot", SNAPSHOT_DIRECTORY, FILE_SEPARATOR, address);
-    fileSystem.exists(path, new Handler<AsyncResult<Boolean>>() {
+    fileSystem.exists(filename, new Handler<AsyncResult<Boolean>>() {
       @Override
       public void handle(AsyncResult<Boolean> result) {
         if (result.failed()) {
@@ -95,7 +129,7 @@ public final class SnapshotPersistor {
           new DefaultFutureResult<JsonElement>(new JsonObject()).setHandler(doneHandler);
         }
         else {
-          fileSystem.readFile(path, new Handler<AsyncResult<Buffer>>() {
+          fileSystem.readFile(filename, new Handler<AsyncResult<Buffer>>() {
             @Override
             public void handle(AsyncResult<Buffer> result) {
               if (result.failed()) {

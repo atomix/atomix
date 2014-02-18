@@ -82,6 +82,7 @@ public class DefaultReplica implements Replica {
   @Override
   public Replica setLogFile(String filename) {
     context.log().setLogFile(filename);
+    context.snapshotFile(String.format("%s.snapshot", context.log().getLogFile()));
     return this;
   }
 
