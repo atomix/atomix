@@ -464,6 +464,7 @@ public class StateContext {
    */
   public void stop() {
     stateClient.stop();
+    log.close(null);
     transition(StateType.START);
   }
 
@@ -473,10 +474,14 @@ public class StateContext {
    * @param doneHandler
    *   An asynchronous handler to be called once the context is stopped.
    */
-  public void stop(Handler<AsyncResult<Void>> doneHandler) {
-    stateClient.stop(doneHandler);
-    transition(StateType.START);
-    new DefaultFutureResult<Void>().setHandler(doneHandler).setResult((Void) null);
+  public void stop(final Handler<AsyncResult<Void>> doneHandler) {
+    stateClient.stop(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        log.close(doneHandler);
+        transition(StateType.START);
+      }
+    });
   }
 
   /**
