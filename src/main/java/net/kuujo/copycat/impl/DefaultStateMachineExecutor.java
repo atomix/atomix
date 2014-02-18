@@ -510,7 +510,10 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
               }
             }
             else {
-              if (value instanceof Map) {
+              if (parameters[i].isPrimitive()) {
+                args[i] = value;
+              }
+              else if (value instanceof Map) {
                 if (Map.class.isAssignableFrom(parameters[i])) {
                   args[i] = value;
                 }
@@ -534,7 +537,18 @@ public class DefaultStateMachineExecutor implements StateMachineExecutor {
           // If the argument's missing from the JsonObject but it's not required
           // then just pass a null value.
           else if (!argument.required()) {
-            args[i] = null;
+            // If the type is a number then don't assign a null value to it.
+            if (parameters[i].isPrimitive()) {
+              try {
+                args[i] = parameters[i].newInstance();
+              }
+              catch (InstantiationException e) {
+                args[i] = 0;
+              }
+            }
+            else {
+              args[i] = null;
+            }
           }
           // If the argument's missing from the JsonObject but is required then
           // throw an IllegalArgumentException.
