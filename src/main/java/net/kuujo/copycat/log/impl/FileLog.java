@@ -34,8 +34,6 @@ import org.vertx.java.core.Handler;
  */
 public class FileLog implements Log {
   private static final long DEFAULT_MAX_SIZE = 32 * 1024 * 1024; // Default 32MB log.
-  private static final String LOG_DIRECTORY = "logs";
-  private static final String FILE_SEPARATOR = System.getProperty("file.separator");
   private File f;
   private RandomAccessFile file;
   private Handler<Void> fullHandler;
@@ -46,14 +44,13 @@ public class FileLog implements Log {
   private long maxSize = DEFAULT_MAX_SIZE;
 
   public void open(String filename) {
-    filename = String.format("%s%s%s.log", LOG_DIRECTORY, FILE_SEPARATOR, filename);
-    File checkLogs = new File(LOG_DIRECTORY);
-    if (!checkLogs.exists()) {
-      checkLogs.mkdirs();
-    }
     f = new File(filename);
     if (!f.exists()) {
       try {
+        File parent = f.getParentFile();
+        if (parent != null) {
+          parent.mkdirs();
+        }
         f.createNewFile();
       }
       catch (IOException e) {
@@ -269,7 +266,9 @@ public class FileLog implements Log {
   @Override
   public void close() {
     try {
-      file.close();
+      if (file != null) {
+        file.close();
+      }
     }
     catch (IOException e) {
       throw new LogException(e);
