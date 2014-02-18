@@ -218,7 +218,7 @@ abstract class State {
             @Override
             public void handle(AsyncResult<Entry> result) {
               if (result.failed()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setFailure(result.cause());
+                new DefaultFutureResult<Boolean>(result.cause()).setHandler(doneHandler);
               }
               // If the last log entry's term is not the same as the given
               // prevLogTerm then return false. This will cause the leader to
@@ -226,7 +226,7 @@ abstract class State {
               // leader's previous log entry so that the incosistent entry
               // can be overwritten.
               else if (result.result().term() != request.prevLogTerm()) {
-                new DefaultFutureResult<Boolean>().setHandler(doneHandler).setResult(false);
+                new DefaultFutureResult<Boolean>(false).setHandler(doneHandler);
               }
               // Finally, if the log appears to be consistent then continue on
               // to remove invalid entries from the log.
@@ -438,7 +438,11 @@ abstract class State {
 
     // If the requesting candidate is the current node then vote for self.
     if (request.candidate().equals(context.address())) {
-      request.reply(context.currentTerm(), true);
+      if (request.term() > context.currentTerm()) {
+        context.currentTerm(request.term());
+      }
+      future.setResult(true);
+      context.votedFor(request.candidate());
     }
 
     // If the requesting candidate is not a known member of the cluster (to
@@ -446,7 +450,7 @@ abstract class State {
     // members cannot become leader until at least a majority of the cluster
     // has been notified of their membership.
     else if (!members.contains(request.candidate())) {
-      request.reply(context.currentTerm(), false);
+      future.setResult(false);
     }
 
     // If the request term is greater than the current term then update
@@ -455,72 +459,73 @@ abstract class State {
     else if (request.term() > context.currentTerm()) {
       context.currentTerm(request.term());
     }
-
-    // If the request term is less than the current term then don't
-    // vote for the candidate.
-    if (request.term() < context.currentTerm()) {
-      future.setResult(false);
-    }
-    // If we haven't yet voted or already voted for this candidate then check
-    // that the candidate's log is at least as up-to-date as the local log.
-    else if (context.votedFor() == null || context.votedFor().equals(request.candidate())) {
-      // It's possible that the last log index could be 0, indicating that
-      // the log does not contain any entries. If that is the cases then
-      // the log must *always* be at least as up-to-date as all other
-      // logs.
-      log.lastIndex(new Handler<AsyncResult<Long>>() {
-        @Override
-        public void handle(AsyncResult<Long> result) {
-          if (result.failed()) {
-            request.error(result.cause());
-          }
-          else {
-            final long lastIndex = result.result();
-            if (lastIndex == 0) {
-              future.setResult(true);
-              context.votedFor(request.candidate());
+    else {
+      // If the request term is less than the current term then don't
+      // vote for the candidate.
+      if (request.term() < context.currentTerm()) {
+        future.setResult(false);
+      }
+      // If we haven't yet voted or already voted for this candidate then check
+      // that the candidate's log is at least as up-to-date as the local log.
+      else if (context.votedFor() == null || context.votedFor().equals(request.candidate())) {
+        // It's possible that the last log index could be 0, indicating that
+        // the log does not contain any entries. If that is the cases then
+        // the log must *always* be at least as up-to-date as all other
+        // logs.
+        log.lastIndex(new Handler<AsyncResult<Long>>() {
+          @Override
+          public void handle(AsyncResult<Long> result) {
+            if (result.failed()) {
+              future.setFailure(result.cause());
             }
             else {
-              // Load the log entry to get the term. We load the log entry
-              // rather
-              // than the log term to ensure that we're receiving the term from
-              // the same entry as the loaded last log index.
-              log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
-                @Override
-                public void handle(AsyncResult<Entry> result) {
-                  // If the entry loading failed then don't vote for the
-                  // candidate.
-                  // If the log entry was null then don't vote for the
-                  // candidate.
-                  // This may simply result in no clear winner in the election,
-                  // but
-                  // it's better than an imperfect leader being elected due to a
-                  // brief failure of the event bus.
-                  if (result.failed() || result.result() == null) {
-                    future.setResult(false);
-                  }
-                  else {
-                    final long lastTerm = result.result().term();
-                    if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-                      future.setResult(true);
-                      context.votedFor(request.candidate());
+              final long lastIndex = result.result();
+              if (lastIndex == 0) {
+                future.setResult(true);
+                context.votedFor(request.candidate());
+              }
+              else {
+                // Load the log entry to get the term. We load the log entry
+                // rather
+                // than the log term to ensure that we're receiving the term from
+                // the same entry as the loaded last log index.
+                log.getEntry(lastIndex, new Handler<AsyncResult<Entry>>() {
+                  @Override
+                  public void handle(AsyncResult<Entry> result) {
+                    // If the entry loading failed then don't vote for the
+                    // candidate.
+                    // If the log entry was null then don't vote for the
+                    // candidate.
+                    // This may simply result in no clear winner in the election,
+                    // but
+                    // it's better than an imperfect leader being elected due to a
+                    // brief failure of the event bus.
+                    if (result.failed() || result.result() == null) {
+                      future.setResult(false);
                     }
                     else {
-                      future.setResult(false);
-                      context.votedFor(null); // Reset voted for.
+                      final long lastTerm = result.result().term();
+                      if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
+                        future.setResult(true);
+                        context.votedFor(request.candidate());
+                      }
+                      else {
+                        future.setResult(false);
+                        context.votedFor(null); // Reset voted for.
+                      }
                     }
                   }
-                }
-              });
+                });
+              }
             }
           }
-        }
-      });
-    }
-    // If we've already voted for someone else then don't vote for the
-    // candidate.
-    else {
-      future.setResult(false);
+        });
+      }
+      // If we've already voted for someone else then don't vote for the
+      // candidate.
+      else {
+        future.setResult(false);
+      }
     }
   }
 
