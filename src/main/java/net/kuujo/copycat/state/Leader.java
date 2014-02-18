@@ -551,7 +551,6 @@ class Leader extends State implements Observer {
     private final String address;
     private Long nextIndex;
     private long matchIndex;
-    private long lastSyncTime;
     private long lastPingTime;
     private boolean running;
     private boolean shutdown;
@@ -707,14 +706,11 @@ class Leader extends State implements Observer {
         }
       }
 
-      final long startTime = System.currentTimeMillis();
       stateClient.sync(address, new SyncRequest(context.currentTerm(), context.address(), prevLogIndex, prevLogTerm, entries, commitIndex),
-          context.useAdaptiveTimeouts() ? (lastSyncTime > 0 ? (long) (lastSyncTime * context.adaptiveTimeoutThreshold()) : context.heartbeatInterval() / 2) : context.heartbeatInterval() / 2,
-              new Handler<AsyncResult<SyncResponse>>() {
+          context.heartbeatInterval() / 2, new Handler<AsyncResult<SyncResponse>>() {
         @Override
         public void handle(AsyncResult<SyncResponse> result) {
           if (result.succeeded()) {
-            lastSyncTime = System.currentTimeMillis() - startTime;
             if (result.result().success()) {
               if (logger.isDebugEnabled()) {
                 if (!entries.isEmpty()) {

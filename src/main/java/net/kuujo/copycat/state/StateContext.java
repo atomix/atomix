@@ -64,7 +64,7 @@ public class StateContext {
   private long electionTimeout = 2500;
   private long heartbeatInterval = 1000;
   private boolean useAdaptiveTimeouts = true;
-  private double adaptiveTimeoutThreshold = 4;
+  private double adaptiveTimeoutThreshold = 10;
   private boolean requireWriteMajority = true;
   private boolean requireReadMajority = true;
   private String currentLeader;
