@@ -144,10 +144,17 @@ public class LogProxy implements AsyncLog {
   @Override
   public void close(final Handler<AsyncResult<Void>> doneHandler) {
     if (deploymentID != null) {
-      container.undeployVerticle(deploymentID, doneHandler);
+      container.undeployVerticle(deploymentID, new Handler<AsyncResult<Void>>() {
+        @Override
+        public void handle(AsyncResult<Void> result) {
+          new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+        }
+      });
       deploymentID = null;
     }
-    new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+    else {
+      new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+    }
   }
 
   @Override
@@ -160,7 +167,9 @@ public class LogProxy implements AsyncLog {
             container.undeployVerticle(deploymentID, doneHandler);
             deploymentID = null;
           }
-          new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+          else {
+            new DefaultFutureResult<Void>((Void) null).setHandler(doneHandler);
+          }
         }
         else {
           new DefaultFutureResult<Void>(new LogException(message.body().getString("message"))).setHandler(doneHandler);
