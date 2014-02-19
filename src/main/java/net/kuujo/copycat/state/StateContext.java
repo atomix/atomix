@@ -338,6 +338,7 @@ public class StateContext {
                 new DefaultFutureResult<Void>(result.cause()).setHandler(doneHandler);
               }
               else if (result.result() != null) {
+                logger.info("Installing snapshot");
                 stateMachine.installSnapshot(result.result());
               }
 
@@ -427,6 +428,7 @@ public class StateContext {
       @Override
       public void handle(Void _) {
         final long lastApplied = lastApplied();
+        logger.info("Building snapshot");
         persistor.storeSnapshot(stateMachine.takeSnapshot(), new Handler<AsyncResult<Void>>() {
           @Override
           public void handle(AsyncResult<Void> result) {
@@ -434,6 +436,7 @@ public class StateContext {
               logger.error("Failed to store snapshot.", result.cause());
             }
             else {
+              logger.info("Cleaning logs");
               log.removeBefore(lastApplied+1, new Handler<AsyncResult<Void>>() {
                 @Override
                 public void handle(AsyncResult<Void> result) {

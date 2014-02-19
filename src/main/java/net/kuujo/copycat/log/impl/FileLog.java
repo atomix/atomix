@@ -230,6 +230,7 @@ public class FileLog implements Log {
     catch (IOException e) {
       throw new LogException(e);
     }
+    full = false;
     checkFull();
   }
 
