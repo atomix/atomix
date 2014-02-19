@@ -125,7 +125,7 @@ public class LogProxy implements AsyncLog {
         .putString("address", address)
         .putString("events", events)
         .putString("filename", filename)
-        .putNumber("size", maxSize)
+        .putNumber("max_size", maxSize)
         .putString("log", type.toString()), 1, false, new Handler<AsyncResult<String>>() {
       @Override
       public void handle(AsyncResult<String> result) {

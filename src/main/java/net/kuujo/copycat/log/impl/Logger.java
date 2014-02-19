@@ -48,7 +48,7 @@ public class Logger extends Verticle implements Handler<Message<JsonObject>> {
       }
     });
 
-    log.setMaxSize(container.config().getLong("size", 10000));
+    log.setMaxSize(container.config().getLong("max_size", 32 * 1024 * 1024));
     log.open(container.config().getString("filename"));
   }
 

@@ -294,8 +294,16 @@ public class FileLog implements Log {
    * Checks whether the log is full.
    */
   private void checkFull() {
+    long length;
+    try {
+      length = file.length();
+    }
+    catch (IOException e) {
+      return;
+    }
+
     if (!full) {
-      if (lastIndex-firstIndex >= maxSize) {
+      if (length >= maxSize) {
         full = true;
         if (fullHandler != null) {
           fullHandler.handle((Void) null);
@@ -303,7 +311,7 @@ public class FileLog implements Log {
       }
     }
     else {
-      if (lastIndex-firstIndex < maxSize) {
+      if (length < maxSize) {
         full = false;
         if (drainHandler != null) {
           drainHandler.handle((Void) null);
