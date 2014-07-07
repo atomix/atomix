@@ -35,14 +35,14 @@ public interface AsyncLog {
    * @param filename The log file name.
    * @return The log proxy.
    */
-  public AsyncLog setLogFile(String filename);
+  AsyncLog setLogFile(String filename);
 
   /**
    * Returns the log file name.
    *
    * @return The log file name.
    */
-  public String getLogFile();
+  String getLogFile();
 
   /**
    * Sets the maximum log size.
@@ -50,14 +50,14 @@ public interface AsyncLog {
    * @param maxSize The maximum log size.
    * @return The log proxy.
    */
-  public AsyncLog setMaxSize(long maxSize);
+  AsyncLog setMaxSize(long maxSize);
 
   /**
    * Returns the maximum log size.
    *
    * @return The maximum log size.
    */
-  public long getMaxSize();
+  long getMaxSize();
 
   /**
    * Opens the log.
@@ -65,7 +65,7 @@ public interface AsyncLog {
    * @param doneHandler An asynchronous handler to be called once the
    *                    log has been opened.
    */
-  public void open(Handler<AsyncResult<Void>> doneHandler);
+  void open(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Closes the log.
@@ -73,7 +73,7 @@ public interface AsyncLog {
    * @param doneHandler An asynchronous handler to be called once the
    *                    log has closed.
    */
-  public void close(Handler<AsyncResult<Void>> doneHandler);
+  void close(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Deletes the log.
@@ -81,7 +81,7 @@ public interface AsyncLog {
    * @param doneHandler An asynchronous handler to be called once the
    *                    log has been removed.
    */
-  public void delete(Handler<AsyncResult<Void>> doneHandler);
+  void delete(Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Sets a handler to be calle when the log is full.
@@ -89,7 +89,7 @@ public interface AsyncLog {
    * @param handler A handler to be called when the log is full.
    * @return The log proxy.
    */
-  public AsyncLog fullHandler(Handler<Void> handler);
+  AsyncLog fullHandler(Handler<Void> handler);
 
   /**
    * Sets a handler to be calle when the log is drained.
@@ -97,7 +97,7 @@ public interface AsyncLog {
    * @param handler A handler to be called when the log is drained.
    * @return The log proxy.
    */
-  public AsyncLog drainHandler(Handler<Void> handler);
+  AsyncLog drainHandler(Handler<Void> handler);
 
   /**
    * Appends an entry to the log.
@@ -106,7 +106,7 @@ public interface AsyncLog {
    * @param doneHandler A handler to be called once the entry has been appended.
    * @return The log instance.
    */
-  public AsyncLog appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler);
+  AsyncLog appendEntry(Entry entry, Handler<AsyncResult<Long>> doneHandler);
 
   /**
    * Returns a boolean indicating whether the log has an entry at the given
@@ -116,7 +116,7 @@ public interface AsyncLog {
    * @param containsHandler A handler to be called with the contains result.
    * @return Indicates whether the log has an entry at the given index.
    */
-  public AsyncLog containsEntry(long index, Handler<AsyncResult<Boolean>> containsHandler);
+  AsyncLog containsEntry(long index, Handler<AsyncResult<Boolean>> containsHandler);
 
   /**
    * Returns the entry at the given index.
@@ -125,7 +125,7 @@ public interface AsyncLog {
    * @param entryHandler A handler to be called with the entry.
    * @return The log instance.
    */
-  public AsyncLog getEntry(long index, Handler<AsyncResult<Entry>> entryHandler);
+  AsyncLog getEntry(long index, Handler<AsyncResult<Entry>> entryHandler);
 
   /**
    * Returns the first log index.
@@ -133,7 +133,7 @@ public interface AsyncLog {
    * @return
    *   The first log index.
    */
-  public AsyncLog firstIndex(Handler<AsyncResult<Long>> resultHandler);
+  AsyncLog firstIndex(Handler<AsyncResult<Long>> resultHandler);
 
   /**
    * Returns the first log entry term.
@@ -141,7 +141,7 @@ public interface AsyncLog {
    * @param doneHandler A handler to be called with the term.
    * @return The log instance.
    */
-  public AsyncLog firstTerm(Handler<AsyncResult<Long>> doneHandler);
+  AsyncLog firstTerm(Handler<AsyncResult<Long>> doneHandler);
 
   /**
    * Returns the first log entry.
@@ -149,7 +149,7 @@ public interface AsyncLog {
    * @param doneHandler A handler to be called with the entry.
    * @return The log instance.
    */
-  public AsyncLog firstEntry(Handler<AsyncResult<Entry>> doneHandler);
+  AsyncLog firstEntry(Handler<AsyncResult<Entry>> doneHandler);
 
   /**
    * Returns the last log index.
@@ -157,7 +157,7 @@ public interface AsyncLog {
    * @return
    *   The last log index.
    */
-  public AsyncLog lastIndex(Handler<AsyncResult<Long>> resultHandler);
+  AsyncLog lastIndex(Handler<AsyncResult<Long>> resultHandler);
 
   /**
    * Returns the last log entry term.
@@ -165,7 +165,7 @@ public interface AsyncLog {
    * @param doneHandler A handler to be called with the term.
    * @return The log instance.
    */
-  public AsyncLog lastTerm(Handler<AsyncResult<Long>> doneHandler);
+  AsyncLog lastTerm(Handler<AsyncResult<Long>> doneHandler);
 
   /**
    * Returns the last log entry.
@@ -173,7 +173,7 @@ public interface AsyncLog {
    * @param doneHandler A handler to be called with the entry.
    * @return The log instance.
    */
-  public AsyncLog lastEntry(Handler<AsyncResult<Entry>> doneHandler);
+  AsyncLog lastEntry(Handler<AsyncResult<Entry>> doneHandler);
 
   /**
    * Returns a list of log entries between two given indexes.
@@ -182,7 +182,7 @@ public interface AsyncLog {
    * @param end The ending index.
    * @return A list of entries between the two given indexes.
    */
-  public AsyncLog getEntries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler);
+  AsyncLog getEntries(long start, long end, Handler<AsyncResult<List<Entry>>> doneHandler);
 
   /**
    * Removes all entries before the given index.
@@ -190,7 +190,7 @@ public interface AsyncLog {
    * @param index The index before which to remove entries.
    * @return The log instance.
    */
-  public AsyncLog removeBefore(long index, Handler<AsyncResult<Void>> doneHandler);
+  AsyncLog removeBefore(long index, Handler<AsyncResult<Void>> doneHandler);
 
   /**
    * Removes all entries after the given index.
@@ -198,6 +198,6 @@ public interface AsyncLog {
    * @param index The index after which to remove entries.
    * @return The log instance.
    */
-  public AsyncLog removeAfter(long index, Handler<AsyncResult<Void>> doneHandler);
+  AsyncLog removeAfter(long index, Handler<AsyncResult<Void>> doneHandler);
 
 }

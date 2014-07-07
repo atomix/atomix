@@ -43,6 +43,7 @@ public class FileLog implements Log {
   private long lastIndex;
   private long maxSize = DEFAULT_MAX_SIZE;
 
+  @Override
   public void open(String filename) {
     f = new File(filename);
     if (!f.exists()) {

@@ -19,7 +19,7 @@
   <properties>
     <module.name>${project.groupId}~${project.artifactId}~${project.version}</module.name>
 
-    <vertx.version>2.1M3</vertx.version>
+    <vertx.version>2.1.1</vertx.version>
     <testtools.version>2.0.2-final</testtools.version>
     <junit.version>4.8.2</junit.version>
 
