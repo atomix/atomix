@@ -17,8 +17,8 @@ package net.kuujo.copycat.log;
 
 /**
  * A no-op log entry.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NoOpEntry extends Entry {
 

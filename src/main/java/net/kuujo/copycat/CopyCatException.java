@@ -20,7 +20,7 @@ import org.vertx.java.core.VertxException;
 /**
  * A base CopyCat exception.
  * 
- * @author Jordan Halterman
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("serial")
 public class CopyCatException extends VertxException {

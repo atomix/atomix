@@ -9,10 +9,10 @@
 
   <groupId>net.kuujo</groupId>
   <artifactId>copycat</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>CopyCat</name>
-  <description>A state replication framework for Vert.x.</description>
+  <description>Replicated state machine built on Vert.x and based on the Raft consensus algorithm.</description>
   <url>http://github.com/kuujo/copycat</url>
   <inceptionYear>2013</inceptionYear>
 
@@ -22,6 +22,7 @@
     <vertx.version>2.1.1</vertx.version>
     <testtools.version>2.0.2-final</testtools.version>
     <junit.version>4.8.2</junit.version>
+    <hazelcast.version>3.2.1</hazelcast.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -70,6 +71,18 @@
       <groupId>io.vertx</groupId>
       <artifactId>vertx-platform</artifactId>
       <version>${vertx.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-hazelcast</artifactId>
+      <version>${vertx.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.hazelcast</groupId>
+      <artifactId>hazelcast</artifactId>
+      <version>${hazelcast.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>

@@ -16,7 +16,6 @@
 package net.kuujo.copycat.log;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
@@ -24,8 +23,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
  * A log entry.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -43,6 +42,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 )
 @JsonSubTypes({
   @JsonSubTypes.Type(value=NoOpEntry.class, name="no-op"),
+  @JsonSubTypes.Type(value=SnapshotEntry.class, name="snapshot"),
   @JsonSubTypes.Type(value = ConfigurationEntry.class, name = "configuration"),
   @JsonSubTypes.Type(value = CommandEntry.class, name = "command")
 })
@@ -54,7 +54,27 @@ public abstract class Entry {
    * @author Jordan Halterman
    */
   public static enum Type {
-    NOOP("no-op"), CONFIGURATION("configuration"), COMMAND("command");
+
+    /**
+     * Indicates a placeholder entry which has no effect. This is used
+     * during cluster configuration changes.
+     */
+    NOOP("no-op"),
+
+    /**
+     * Indicates a snapshot log entry.
+     */
+    SNAPSHOT("snapshot"),
+
+    /**
+     * Indicates a cluster configuration entry.
+     */
+    CONFIGURATION("configuration"),
+
+    /**
+     * Indicates a standard state machine command entry.
+     */
+    COMMAND("command");
 
     private final String name;
 
@@ -92,6 +112,8 @@ public abstract class Entry {
       switch (name) {
         case "no-op":
           return NOOP;
+        case "snapshot":
+          return SNAPSHOT;
         case "configuration":
           return CONFIGURATION;
         case "command":
@@ -103,8 +125,6 @@ public abstract class Entry {
   }
 
   private long term;
-  @JsonIgnore
-  protected Log log;
 
   /**
    * Constructor.
@@ -136,6 +156,11 @@ public abstract class Entry {
    */
   public long term() {
     return term;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s(%s)", type().toString(), term);
   }
 
 }

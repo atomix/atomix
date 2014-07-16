@@ -15,10 +15,22 @@
  */
 package net.kuujo.copycat;
 
+import org.vertx.java.core.json.JsonObject;
+
 /**
  * A state machine.
  *
- * @author Jordan Halterman
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface StateMachine {
+
+  /**
+   * Exceutes a state machine command.
+   *
+   * @param name The name of the command to execute.
+   * @param args The command arguments.
+   * @return The command return value.
+   */
+  JsonObject applyCommand(String name, JsonObject args);
+
 }

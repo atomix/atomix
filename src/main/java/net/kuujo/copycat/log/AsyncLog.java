@@ -17,32 +17,22 @@ package net.kuujo.copycat.log;
 
 import java.util.List;
 
-import net.kuujo.copycat.log.Entry;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 
 /**
- * An asynchronous log.
+ * Asynchronous API for potentially blocking logs.
  *
- * @author Jordan Halterman
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface AsyncLog {
 
   /**
-   * Sets the log file name.
+   * Returns the synchronous log underlying the asynchronous log.
    *
-   * @param filename The log file name.
-   * @return The log proxy.
+   * @return The underlying blocking log.
    */
-  AsyncLog setLogFile(String filename);
-
-  /**
-   * Returns the log file name.
-   *
-   * @return The log file name.
-   */
-  String getLogFile();
+  Log log();
 
   /**
    * Sets the maximum log size.
@@ -128,20 +118,22 @@ public interface AsyncLog {
   AsyncLog getEntry(long index, Handler<AsyncResult<Entry>> entryHandler);
 
   /**
+   * Sets the entry at the given index.
+   *
+   * @param index The index at which to set the entry.
+   * @param entry The entry to set.
+   * @param doneHandler An asynchronous handler to be called once complete.
+   * @return The log instance.
+   */
+  AsyncLog setEntry(long index, Entry entry, Handler<AsyncResult<Void>> doneHandler);
+
+  /**
    * Returns the first log index.
    *
    * @return
    *   The first log index.
    */
   AsyncLog firstIndex(Handler<AsyncResult<Long>> resultHandler);
-
-  /**
-   * Returns the first log entry term.
-   *
-   * @param doneHandler A handler to be called with the term.
-   * @return The log instance.
-   */
-  AsyncLog firstTerm(Handler<AsyncResult<Long>> doneHandler);
 
   /**
    * Returns the first log entry.
@@ -158,14 +150,6 @@ public interface AsyncLog {
    *   The last log index.
    */
   AsyncLog lastIndex(Handler<AsyncResult<Long>> resultHandler);
-
-  /**
-   * Returns the last log entry term.
-   *
-   * @param doneHandler A handler to be called with the term.
-   * @return The log instance.
-   */
-  AsyncLog lastTerm(Handler<AsyncResult<Long>> doneHandler);
 
   /**
    * Returns the last log entry.

@@ -1,103 +1,94 @@
 CopyCat
 =======
+CopyCat is a fault-tolerant state machine replication framework built on Vert.x. It
+provides a simple and flexible API built around the Raft consensus algorithm as
+described in [the excellent paper by Diego Ongaro and John Ousterhout](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
 
-CopyCat is a fault-tolorant replication framework for Vert.x. It provides
-for state machine replication using the Raft consensus algorithm as described in
-[this paper](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
+**This project is experimental and is not recommended for production**
 
-**This project is still very much under development and is recommended for testing only**
-
-This project is being developed as the potential basis of future development of
-[Vertigo](http://github.com/kuujo/vertigo) - improved cluster and state management.
-This project is also a long way from stability, but I'm making it public in the hopes
-of it gaining interest, contributions, and particularly reviews from those who are
-knowledgable about the Raft consensus algorithm. Please feel free to poke, prod,
-and submit changes as necessary.
+Right now this project is purely academic. I'm making it public in the hopes of
+gaining intrest and contributions from the open-source community. Pull requests welcome!
 
 ## Table of contents
 1. [Features](#features)
 1. [How it works](#how-it-works)
-1. [Working with replicas](#working-with-replicas)
-   * [Creating nodes](#creating-nodes)
-   * [Configuring the cluster](#configuring-the-cluster)
-   * [Submitting commands](#submitting-commands)
-1. [Working with state machines](#working-with-state-machines)
-   * [Creating state machines](#creating-state-machines)
-   * [Creating state machine commands](#creating-state-machine-commands)
-   * [Defining command arguments](#defining-command-arguments)
+1. [Creating a replica](#creating-a-replica)
+1. [Setting up the cluster](#setting-up-the-cluster)
+1. [Registering state machine commands](#registering-state-machine-commands)
+1. [Submitting commands](#submitting-commands)
 1. [Working with snapshots](#working-with-snapshots)
-   * [Taking snapshots of the machine state](#taking-snapshots-of-the-state-machine)
-   * [Snapshot getters and setters](#snapshot-getters-and-setters)
-1. [Building a fault-tolerant in-memory key-value store](#a-simple-fault-tolerant-key-value-store)
+1. [The CopyCat context](#the-copycat-context)
+1. [Managing the cluster](#managing-the-cluster)
 
 ### Features
-* Automatically replicates state across multiple Vert.x instances in a consistent and reliable manner
-* Supports runtime cluster membership changes
-* Supports replicated log persistence in MongoDB, Redis, or in memory
-* Supports log compaction using snapshots
-* Uses adaptive failure detection for fast leader re-election
 
 ## How it works
-CopyCat is a Java-specific library that provides tools for creating fault-tolerant
-Vert.x applications by replicating state across multiple Vert.x instances and
-coordinating requests to the service. When multiple CopyCat replicas are started
-within a Vert.x cluster, the replicas communicate with each other to elect a
-leader which coordinates the cluster and replicates commands to all the nodes
-in the cluster. CopyCat's leader election and replication is performed using
-a modified implementation of the [Raft](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf)
-consensus algorithm. The replication of CopyCat cluster states means that
-if any member of the cluster dies, the state is not lost. The cluster will
-simply coordinate to share state, and once the dead replica re-joins the
-cluster, any commands missed while the node was down will be replicated
-to the node.
 
-## Working with replicas
-Replicas are essentially single nodes within a CopyCat cluster. Each
-replica is backed by a persistent log of commands that have been replicated
-to the node. Also, replicas expose an interface to the CopyCat cluster,
-allowing users to submit commands to the cluster.
-
-### Creating nodes
-Each replica represents a single node in the cluster. When a replica is
-started, it will coordinate with other known nodes in the cluster to submit
-commands and receive replicated log entries.
+### Creating a replica
+For most use cases, users will use the `CopyCat` class to create a CopyCat replica.
+CopyCat clusters are made of one or more instances of the `CopyCat` class. Each
+`CopyCat` instance contains a `ClusterConfig` which defines the replica's position
+within the cluster. CopyCat uses this cluster information to communicate with other
+nodes in the cluster to perform leader election and log replication.
 
 ```java
-public class MyVerticle extends Verticle {
+CopyCat copycat = new CopyCat(vertx);
+```
 
-  public void start() {
-    Replica replica = new DefaultReplica("test", this);
-    replica.start();
+The `CopyCat` constructor accepts a number of arguments. Most important of these are
+the `ClusterConfig` and `Log`.
+
+CopyCat provides two different log implementations: an in-memory log and a file-based
+log. By default, the `CopyCat` class uses a `MemoryLog` for simplicity. To use a `FileLog`
+simply pass a `FileLog` instance to the constructor.
+
+```java
+CopyCat copycat = new CopyCat(vertx, new FileLog("foo.dat"));
+```
+
+To start the `CopyCat` instance, simply call the `start` method.
+
+```java
+copycat.start();
+```
+
+The replica will be started asynchronously. Once the replica has identified a cluster
+leader or has itself been elected leader, it will call the optional `AsyncResult` handler.
+
+```java
+copycat.start(Handler<AsyncResult<Void>>() {
+  public void handle(AsyncResult<Void> result) {
+    if (result.succeeded()) {
+      // A leader has been elected
+    }
   }
-
-}
+});
 ```
 
-### Configuring the cluster
-In order for replicas to be able to coordinate command submissions with other
-nodes in the cluster, they need to be notified of the cluster membership.
-Cluster membership is configured using a `ClusterConfig` object which can
-be accessed by the `Replica.config()` method. The `ClusterConfig` class
-exposes the following methods:
-* `addMember(String address)`
-* `removeMember(String address)`
-* `setMembers(String... addresses)`
-* `setMembers(Set<String> addresses)`
-* `getMembers()`
-
-The cluster configuration should list the addresses of all the nodes in the
-cluster. CopyCat also supports runtime cluster configuration changes. When
-the cluster configuration is changed while the replica is running, the
-updated configuration will be sent to the cluster leader just like a regular
-command. The cluster leader will then log the configuration change and
-replicate it to the rest of the cluster.
+### Setting up the cluster
+In order for your `CopyCat` instance to know how to communicate with other nodes in
+the cluster, it must know its position within a cluster. CopyCat nodes are identified
+by unique event bus addresses. To assign an event bus address to a node, create a
+`ClusterConfig`.
 
 ```java
-Replica replica = new Replica("test", this, stateMachine);
-replica.config().addMember("foo");
-replica.config().addMember("bar");
-replica.config().addMember("baz");
+ClusterConfig cluster = new StaticClusterConfig("foo");
+CopyCat copycat = new CopyCat(vertx, cluster);
 ```
+
+The first argument to the cluster configuration will always be the local member address.
+However, in order for the local node to communicate with other nodes in the cluster, you
+must identify those other nodes through the cluster configuration.
+
+```java
+cluster.addRemoteMember("bar");
+cluster.addRemoteMember("baz"):
+```
+
+CopyCat provides a `StaticClusterConfig` and `DynamicClusterConfig` for static and dynamic
+clusters respectively. The only real difference between these two configuration classes is
+that the `DynamicClusterConfig` is an `Observable` type. This allows the cluster's configuration
+to be dynamically changed at runtime.
 
 The configuration change process is actually a two-phase process that ensures
 that consistency remains intact during the transition. When the leader receives
@@ -106,28 +97,10 @@ with the combined old and new configuration, and - once that configuration
 has been replicated and committed - the final updated configuration. This
 ensures that split majorities cannot occur during the transition.
 
-### Submitting commands
-To submit a command to the cluster, use the `Replica.submitCommand` method.
-When a command is submitted to a CopyCat cluster, the command is forwarded
-to the cluster leader. Once the command has been replicated to the rest
-of the cluster, it will be applied to the leader's state machine and the
-result will be sent back to the requester.
+CopyCat does provide facilities for automatically detecting cluster membership. More on
+that later.
 
-```java
-replica.submitCommand("get", new JsonObject().putString("key", "foo"), new Handler<AsyncResult<Object>>() {
-  public void handle(AsyncResult<Object> result) {
-    if (result.succeeded()) {
-      Object value = result.result();
-    }
-  }
-});
-```
-
-Each command call takes a `JsonObject` containing command arguments. Command
-argument requirement depend on specific command implementations. More on
-implementing commands in a moment.
-
-## Working with state machines
+### Registering state machine commands
 A state machine is a model of a machine whose state changes over time.
 Multiple instances of the same state machine will always arrive at the
 same state given the same set of commands in the same order. This means
@@ -136,300 +109,223 @@ replicates application state, it's actually replicating a log of commands
 which will be applied to each state machine once they've been reliably
 replicated to the majority of the cluster.
 
-### Creating state machines
-State machines are defined by simply implementing the `StateMachine`
-interface.
+`CopyCat` instances are replicated state machines. In order for log replication and command
+execution to take place, each instance must have a set of registered state machine commands.
+Commands should be identical on each node in the cluster.
+
+Java commands are defined by implementing the `Command<JsonObject, JsonObject>` interface.
+Each command is assigned a unique name by which it can be referenced when executing commands.
+To register a command on a `CopyCat` instance call the `registerCommand` method.
 
 ```java
-public class MyStateMachine implements StateMachine {
+final Map<String, Object> data = new HashMap<>();
 
-}
-```
-
-The `StateMachine` interface is simply an identifier interface as it does
-not expose any methods on its own. Instead, the interface is created by
-annotating the `StateMachine` implementation.
-
-### Creating state machine commands
-CopyCat state machines are made up of any number of commands. Commands are
-named methods that receive input and provide output. Remember, state machine
-commands should always provide the same output given the same arguments and
-state.
-
-To create a state machine command, use the `@Command` annotation. Each command
-should be given a `name` which is used to identify the command method when
-users submit commands to the CopyCat cluster.
-
-```java
-@Command(name="get")
-public String get() {
-  return "Hello world!";
-}
-```
-
-The `@Command` annotation also has an additional `type` parameter. The type
-is a `Command.Type` which indicates how the command should be logged and
-replicated within the CopyCat cluster. For instance, since read-only commands
-do not impact the state of the state machine, they do not need to be logged
-and replicated. Specifying the `type` command can help improve read performance
-significantly.
-
-```java
-@Command(name="get", type=Command.Type.READ)
-public String get() {
-  return "Hello world!";
-}
-```
-
-There are three types of `Command.Type`:
-* `Command.Type.READ` - indicates a read-only command
-* `Command.Type.WRITE` - indicates a write-only command (state altering)
-* `Command.Type.READ_WRITE` - indicates a read/write command. This is the default
-
-### Defining command arguments
-Most of the time, commands require arguments to be passed when the user submits
-a command to the cluster. Command arguments are submitted in the form of a
-`JsonObject` instance, but CopyCat annotations can be used to parse and validate
-the json arguments before executing the command.
-
-To define a command argument, use the `@Command.Argument` parameter annotation.
-This annotation accept a `value` which is the argument field name and optionally
-a `required` boolean, which defaults to `true`.
-
-```java
-@Command(name="get", type=Command.Type.READ)
-public String get(@Argument("key") String key) {
-  return data.get(key);
-}
-```
-
-You can also use the `@Command.Arguments` method annotation to define all
-arguments in the order in which they appear.
-
-```java
-@Command(name="get", type=Command.Type.READ)
-@Arguments({
-  @Argument(name="key"),
-  @Argument(name="value")
-})
-public String put(String key, Object value) {
-  return data.put(key, value);
-}
-```
-
-## Working with snapshots
-CopyCat provides a dynamic API for persisting the system state. When logs
-begin to grow too large, CopyCat will automatically take a snapshot of the
-state machine state, write it to disk, and flush the logs. If the node
-fails, once the node is restarted CopyCat will load the perisisted state,
-apply it to the state machine, and continue normal operation.
-
-All CopyCat serialization is performed using [Jackson](http://jackson.codehaus.org/),
-so any snapshottable state should be serializable by Jackson. If you need to provide
-custom serialization for Jackson, I recommend you use
-[Jackson Annotations](http://fasterxml.github.io/jackson-annotations/javadoc/2.2.0/).
-
-### Taking snapshots of the machine state
-The CopyCat snapshot system uses annotations to identify state machine
-state that should be persisted. This is done using only a single annotation,
-the `@Stateful` annotation.
-
-When CopyCat takes a snapshot of the machine state, it will identify any
-fields or methods with the `@Stateful` annotation as machine state. So,
-the simplest way to persist the state of the state machine is by annotating
-a field with the `@Stateful` annotation.
-
-```java
-public class MyStateMachine implements StateMachine {
-
-  @Stateful
-  private final Map<String, Object> data = new HashMap<>();
-
-}
-```
-
-The `@Stateful` annotation also accepts a `value` which is a customizable
-field name. Normally, this is not necessary for fields, but it is useful
-for method annotations as you'll see in a moment.
-
-### Snapshot getters and setters
-CopyCat supports getters and setters for `@Stateful` properties. By default,
-if a field is marked `@Stateful`, CopyCat will attempt to find any getters
-or setters associated with that field automatically.
-
-```java
-public class MyStateMachine implements StateMachine {
-
-  @Stateful
-  private final Map<String, Object> data = new HashMap<>();
-
-  /**
-   * Sets the state machine state.
-   */
-  public void setData(Map<String, Object> data) {
-    this.data = data;
-  }
-
-  /**
-   * Returns the state machine state.
-   */
-  public Map<String, Object> getData() {
-    return data;
-  }
-
-}
-```
-
-In the example above, CopyCat will automatically call `setData` to install
-the `data` state and `getData` to take a snapshot of the state. Users can
-optionally provide property names to the `@Stateful` annotation in order
-to indicate which property a getter or setter belongs to.
-
-```java
-public class MyStateMachine implements StateMachine {
-
-  private final Map<String, Object> data = new HashMap<>();
-
-  /**
-   * Sets the state machine state.
-   */
-  @Stateful("data")
-  public void setData(Map<String, Object> data) {
-    this.data = data;
-  }
-
-  /**
-   * Returns the state machine state.
-   */
-  @Stateful("data")
-  public Map<String, Object> getData() {
-    return data;
-  }
-
-}
-```
-
-Note that if explicitly marked `@Stateful` getters and setters are both provided
-for a property of the same name, that field itself does not need to be explicitly
-marked `@Stateful`.
-
-## A Simple Fault-Tolerant Key-Value Store
-To demonstrate the tools that CopyCat provides, this is a simple example
-of a Redis-style fault-tolerant in-memory key-value store exposed over
-the Vert.x event bus.
-
-```java
-public class KeyValueStore extends Verticle implements StateMachine {
-
-  @Stateful
-  private final Map<String, Object> data = new HashMap<>();
-
-  @Command(name="get", type=Command.Type.READ)
-  public Object get(@Argument("key") String key, @Argument(value="default", required=false) Object defaultValue) {
-    return data.containsKey(key) ? data.get(key) : defaultValue;
-  }
-
-  @Command(name="set", type=Command.Type.WRITE)
-  public boolean set(@Argument("key") String key, @Argument("value") Object value) {
-    data.put(key, value);
-    return true;
-  }
-
-  @Command(name="del", type=Command.Type.WRITE)
-  public boolean del(@Argument("key") String key) {
-    if (data.containsKey(key)) {
-      data.remove(key);
-      return true;
-    }
-    return false;
-  }
-
+copycat.registerCommand("set", new Command<JsonObject, JsonObject>() {
   @Override
-  public void start(final Future<Void> startResult) {
-    String address = container.config().getString("address");
-    JsonArray cluster = container.config().getArray("cluster");
-
-    // Create a replica.
-    final Replica replica = new DefaultReplica(address, this, this);
-
-    // Add members to the cluster so we will share state with them.
-    for (Object member : cluster) {
-      replica.config().addMember((String) member);
-    }
-
-    // Start the replica.
-    replica.start(new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          startResult.setFailure(result.cause());
-        }
-        else {
-          // Register a handler to allow commands to be submitted to the cluster via the event bus.
-          vertx.eventBus().registerHandler("keyvalue", new Handler<Message<JsonObject>>() {
-            public void handle(final Message<JsonObject> message) {
-
-              // Submit the command.
-              replica.submitCommand(message.body().getString("command"), message.body(), new Handler<AsyncResult<Object>>() {
-                public void handle(AsyncResult<Object> result) {
-                  if (result.failed()) {
-                    message.reply(new JsonObject().putString("status", "error").putString("message", result.cause().getMessage()));
-                  }
-                  else {
-                    message.reply(new JsonObject().putString("status", "ok").putValue("result", result.result()));
-                  }
-                }
-              });
-            }
-          });
-        }
-      }
-    });
+  public JsonObject execute(JsonObject args) {
+    String key = args.getString("key");
+    Object value = args.getValue("value");
+    data.put(key, value);
+    return null;
   }
-
-}
+});
 ```
 
-This example demonstrates a fault-tolerant key-value store. To start the
-store, all we need to do is simply run the verticle in cluster mode, passing
-an `address` and an array of `cluster` members as the verticle configuration.
-
-```
-vertx run KeyValueStore.java -cluster -cluster-host ...
-```
-
-We can start as many instances of the data store as we want. Replicas will
-automatically detect and replicate state (the key-value store) to one another.
-To execute a service command, we simply use the API exposed on the event
-bus.
+In this case, we register a write command that writes a key and value to an internal map.
+Alternatively, we can register a command to read data from the same map.
 
 ```java
-// Create a set command
-JsonObject command = new JsonObject()
-  .putString("command", "set")
+final Map<String, Object> data = new HashMap<>();
+
+copycat.registerCommand("get", new Command<JsonObject, JsonObject>() {
+  @Override
+  public JsonObject execute(JsonObject args) {
+    String key = args.getString("key");
+    return new JsonObject().putValue("value", data.get(key));
+  }
+});
+```
+
+When registering read-only commands like the one above, it is useful to register the command
+using a command type. By registering the command as a `READ` command, CopyCat can take measures
+to improve performance by removing the need to log and replicate the command. This makes reads
+potentially much faster than writes.
+
+```java
+copycat.registerCommand("get", CommandInfo.Type.READ, new Command<JsonObject, JsonObject>() ...);
+// or
+copycat.registerReadCommand("get", new Command<JsonObject, JsonObject>() ...);
+```
+
+### Submitting commands
+Once commands have been registered for the state machine and the `CopyCat` instance has been
+started, we can submit commands to be evaluated by the cluster. To submit a command to the
+CopyCat cluster use the `submitCommand` method.
+
+```java
+JsonObject data = new JsonObject()
   .putString("key", "foo")
   .putString("value", "Hello world!");
-
-// Set "foo" to "Hello world!"
-vertx.eventBus().send("keyvalue", command, new Handler<Message<JsonObject>>() {
-  public void handle(Message<JsonObject> message) {
-    if (message.body().getString("status").equals("ok")) {
-
-      // Create a get command
-      JsonObject command = new JsonObject()
-        .putString("command", "get")
-        .putString("key", "foo");
-
-      // Get the "foo" key
-      vertx.eventBus().send("keyvalue", command, new Handler<Message<JsonObject>>() {
-        public void handle(Message<JsonObject> message) {
-          if (message.body().getString("status").equals("ok")) {
-            String value = message.body().getString("result");
-            System.out.println(value); // Hello world!
-          }
-        }
-      });
+copycat.submitCommand("set", data, new Handler<AsyncResult<JsonObject>>() {
+  @Override
+  public void handle(AsyncResult<JsonObject> result) {
+    if (result.succeeded()) {
+      // Successfully wrote the value.
     }
   }
 });
 ```
+
+When the command is submitted to the cluster, it will first be forwarded to the currently
+elected leader. If no leader is currently available then the command will be queued. If the
+command queue fills up then the command will fail. If a leader does exist, once the leader
+receives the command submission, it will do the following:
+* If the command is a `READ` command, the leader will ensure the replicated log is in sync
+  and apply the command to its state machine, returning the result
+* If the command is a `WRITE` or `READ_WRITE` command, the leader will log the command, replicate
+  the entry to its followers, and once the entry has been committed (replicated to a quorum
+  of the cluster) apply the command to its state machine and return the result
+
+### Working with snapshots
+In order to support log compaction, CopyCat provides facilities for creating and installing
+state machine snapshots. When the local log becomes too full, CopyCat will automatically
+attempt to take a snapshot of the machine state by calling the `SnapshotCreator` if one
+exists. Alternatively, when the state machine is first started, it will install any
+persisted snapshots using the registered `SnapshotInstaller`. Snapshots are persisted to
+the local log but are not replicated. Once a snapshot has been persisted to the log, all
+log entries prior to the snapshot entry will be purged from the log.
+
+To support snapshots in your state machine, register a `SnapshotCreator` and `SnapshotInstaller`.
+
+```java
+copycat.snapshotCreator(new SnapshotCreator() {
+  @Override
+  public JsonObject createSnapshot() {
+    return new JsonObject(data);
+  }
+});
+
+copycat.snapshotInstaller(new SnapshotInstaller() {
+  @Override
+  public void installSnapshot(JsonObject snapshot) {
+    data = snapshot.toMap();
+  }
+});
+```
+
+### The CopyCat context
+Underlying each `CopyCat` instance is a `CopyCatContext` which handles the internal replica
+state. This API is hidden because it is primarily only useful in the Java context, but users
+can use it as an alternative to the `CopyCat` class. The primary difference is that a
+`StateMachine` instance must be provided when using the `CopyCatContext`.
+
+```java
+public class MyStateMachine implements StateMachine {
+
+  @Override
+  public JsonObject applyCommand(String command, JsonObject args) {
+    switch (command) {
+      case "get":
+        return get(args);
+      case "set":
+        return set(args);
+    }
+  }
+
+}
+```
+
+If you want to provide types for commands in a `StateMachine` implementation, implement
+the `CommandProvider` interface in order to provide `CommandInfo` to CopyCat.
+
+```java
+public class MyStateMachine implements StateMachine, CommandProvider {
+
+  @Override
+  public CommandInfo getCommandInfo(String name) {
+    if (name.equals("get")) {
+      return new GenericCommandInfo("get", CommandInfo.Type.READ);
+    }
+    return null;
+  }
+
+}
+```
+
+Similarly, the `StateMachine` can support snapshots by implementing the `SnapshotCreator`
+and `SnapshotInstaller` interfaces just as before.
+
+```java
+public class MyStateMachine implements StateMachine, SnapshotCreator, SnapshotInstaller {
+  private Map<String, Object> data = new HashMap<>();
+
+  @Override
+  public JsonObject createSnapshot() {
+    return new JsonObject(data);
+  }
+
+  @Override
+  public void installSnapshot(JsonObject snapshot) {
+    this.data = snapshot.toMap();
+  }
+
+}
+```
+
+### Managing the cluster
+CopyCat provides facilities for managing cluster membership using Vert.x features. CopyCat
+can detect cluster members through either Vert.x shared data or through the Vert.x
+Hazelcast cluster. Cluster membership detection is done by a `ClusterManager`.
+
+To use a `ClusterManager` with a `CopyCat` instance, simply pass a `ClusterManager` instance
+rather than a `ClusterConfig` to the `CopyCat` constructor.
+
+```java
+CopyCat copycat = new CopyCat(vertx, new HazelcastClusterManager("test", vertx));
+```
+
+Cluster manager constructors generally require a cluster name with which they can coordinate
+cluster membership. What this means varies depending on the cluster manager type. CopyCat
+provides several cluster manager implementations:
+* `StaticClusterManager` - a placeholder cluster manager which does not change cluster membership
+* `LocalClusterManager` - a cluster manager implemented on Vert.x shared data and the event bus.
+  The local cluster manager can detect cluster membership changes within the current Vert.x instance.
+* `HazelcastClusterManager` - a Vert.x Hazelcast cluster based cluster manager. The Hazelcast cluster
+  manager uses Hazelcast data structures and events to detect cluster membership changes.
+
+Cluster managers remove the need for managing the cluster configuration yourself. So, if you
+want to cluster several `CopyCat` instances within a single Vert.x instance, all you need to
+do is create each instance with a `LocalClusterManager` using the same name.
+
+```java
+CopyCat copycat1 = new CopyCat(vertx, new LocalClusterManager("cluster", vertx)).start();
+CopyCat copycat1 = new CopyCat(vertx, new LocalClusterManager("cluster", vertx)).start();
+CopyCat copycat1 = new CopyCat(vertx, new LocalClusterManager("cluster", vertx)).start();
+```
+
+These three `CopyCat` instances will be automatically clustered with one another.
+
+#### Issues with cluster management
+Dynamic cluster membership changes are a risky proposition when using the Raft algorithm.
+CopyCat takes measures to ensure that logs do not become out of sync during configuration
+changes by incrementally committing cluster configuration changes to the replicated log.
+But when dynamic cluster detection is used, network partitions can still result in logs
+becoming out of sync. This is because the cluster manager may simply assume that the network
+has been reconfigured and thus commit the reconfiguration to the CopyCat log. However, in
+the case that the network has not been reconfigured and a partition occurred, each side of
+the partition will continue to accept writes, and once the partition is resolved, one log
+will overwrite the other.
+
+In order to prevent this type of issue resulting from network partitions when using cluster
+membership detection, it is *strongly recommended* that you specify a `quorumSize` required
+for the cluster to operate. To specify a quorum size, pass the size as an additional argument
+to the cluster manager.
+
+```java
+CopyCat copycat1 = new CopyCat(vertx, new LocalClusterManager("cluster", vertx, 2)).start();
+CopyCat copycat1 = new CopyCat(vertx, new LocalClusterManager("cluster", vertx, 2)).start();
+CopyCat copycat1 = new CopyCat(vertx, new LocalClusterManager("cluster", vertx, 2)).start();
+```
+
+If your cluster consists of at most three nodes, the quorum size should be `2`. If your
+cluster consists of at most five nodes, the quorum size should be `3`, and so on...

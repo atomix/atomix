@@ -15,21 +15,27 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
+import java.util.Map;
+
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 /**
  * A submit response.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SubmitResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
-  private Object result;
+  private Map<String, Object> result;
 
   public SubmitResponse() {
+  }
+
+  public SubmitResponse(Map<String, Object> result) {
+    this.result = result;
   }
 
   public SubmitResponse(JsonObject result) {
@@ -53,9 +59,13 @@ public class SubmitResponse extends Response {
    *
    * @return The command execution result.
    */
-  @SuppressWarnings("unchecked")
-  public <T> T result() {
-    return (T) result;
+  public JsonObject result() {
+    return result != null ? new JsonObject(result) : new JsonObject();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("SubmitResponse[result=%s]", result);
   }
 
 }

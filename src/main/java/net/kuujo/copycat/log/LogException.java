@@ -19,8 +19,8 @@ import net.kuujo.copycat.CopyCatException;
 
 /**
  * A log exception.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("serial")
 public class LogException extends CopyCatException {

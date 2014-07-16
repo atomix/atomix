@@ -17,15 +17,12 @@ package net.kuujo.copycat.log;
 
 import java.util.List;
 
-import net.kuujo.copycat.log.impl.FileLog;
-import net.kuujo.copycat.log.impl.MemoryLog;
-
 import org.vertx.java.core.Handler;
 
 /**
  * A replicated log.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Log {
 
@@ -99,10 +96,8 @@ public interface Log {
 
   /**
    * Opens the log.
-   * 
-   * @param filename The log file name.
    */
-  void open(String filename);
+  void open();
 
   /**
    * Sets the maximum log size.
@@ -141,7 +136,7 @@ public interface Log {
    * @param entry The entry to append.
    * @return The index at which the entry was appended.
    */
-  <T> long appendEntry(T entry);
+  long appendEntry(Entry entry);
 
   /**
    * Returns a boolean indicating whether the log has an entry at the given
@@ -158,7 +153,16 @@ public interface Log {
    * @param index The index from which to get the entry.
    * @return A log entry.
    */
-  <T> T getEntry(long index);
+  Entry getEntry(long index);
+
+  /**
+   * Sets an entry at a specific index.
+   *
+   * @param index The index at which to set the entry.
+   * @param entry The entry to set.
+   * @return The log instance.
+   */
+  Log setEntry(long index, Entry entry);
 
   /**
    * Returns the first log index.
@@ -173,7 +177,7 @@ public interface Log {
    *
    * @return The first log entry.
    */
-  <T> T firstEntry();
+  Entry firstEntry();
 
   /**
    * Returns the last log index.
@@ -188,7 +192,7 @@ public interface Log {
    *
    * @return The last log entry.
    */
-  <T> T lastEntry();
+  Entry lastEntry();
 
   /**
    * Returns a list of log entries between two given indexes.
@@ -197,7 +201,7 @@ public interface Log {
    * @param end The ending index.
    * @return A list of entries between the two given indexes.
    */
-  <T> List<T> getEntries(long start, long end);
+  List<Entry> getEntries(long start, long end);
 
   /**
    * Removes all entries before the given index.

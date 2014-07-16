@@ -19,8 +19,8 @@ import java.util.Set;
 
 /**
  * A special configuration log entry.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ConfigurationEntry extends Entry {
   private Set<String> members;
@@ -46,6 +46,11 @@ public class ConfigurationEntry extends Entry {
    */
   public Set<String> members() {
     return members;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Configuration%s", members);
   }
 
 }

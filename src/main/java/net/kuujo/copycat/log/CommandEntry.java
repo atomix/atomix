@@ -21,8 +21,8 @@ import org.vertx.java.core.json.JsonObject;
 
 /**
  * A state machine command entry.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommandEntry extends Entry {
   private String command;
@@ -59,6 +59,11 @@ public class CommandEntry extends Entry {
    */
   public JsonObject args() {
     return new JsonObject(args);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Command[%s(%s)]", command, args);
   }
 
 }

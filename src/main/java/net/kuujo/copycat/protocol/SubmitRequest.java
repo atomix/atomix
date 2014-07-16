@@ -15,19 +15,17 @@
  */
 package net.kuujo.copycat.protocol;
 
-import java.util.Collection;
 import java.util.Map;
 
-import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
  * A submit request.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SubmitRequest extends Request {
   private static final Serializer serializer = Serializer.getInstance();
@@ -47,16 +45,13 @@ public class SubmitRequest extends Request {
   }
 
   public static SubmitRequest fromJson(JsonObject json, Message<JsonObject> message) {
-    return serializer.readObject(json, SubmitRequest.class).setMessage(message);
+    SubmitRequest request = serializer.readObject(json, SubmitRequest.class);
+    request.setMessage(message);
+    return request;
   }
 
   public static JsonObject toJson(SubmitRequest request) {
     return serializer.writeObject(request);
-  }
-
-  private SubmitRequest setMessage(Message<JsonObject> message) {
-    this.message = message;
-    return this;
   }
 
   /**
@@ -82,20 +77,22 @@ public class SubmitRequest extends Request {
    *
    * @param result The command execution result.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public void reply(Object result) {
-    if (result == null) {
-      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putString("result", null)));
-    }
-    else if (result instanceof Map) {
-      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putObject("result", new JsonObject((Map) result))));
-    }
-    else if (result instanceof Collection) {
-      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putArray("result", new JsonArray(((Collection) result).toArray()))));
-    }
-    else {
-      message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject().putValue("result", result)));
-    }
+  public void reply(JsonObject result) {
+    super.reply(new JsonObject().putObject("result", result));
+  }
+
+  /**
+   * Replies to the request with an error.
+   *
+   * @param message The error message.
+   */
+  public void error(String message) {
+    super.error(message);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("SubmitRequest[command=%s, args=%s]", command, args);
   }
 
 }

@@ -25,8 +25,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A base request.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
@@ -36,11 +36,20 @@ public abstract class Request {
   protected Message<JsonObject> message;
 
   /**
+   * Sets the request message.
+   *
+   * @param message The request message.
+   */
+  protected void setMessage(Message<JsonObject> message) {
+    this.message = message;
+  }
+
+  /**
    * Replies to the request with a generic object.
    * 
    * @param result The request result.
    */
-  public void reply(JsonObject result) {
+  protected void reply(JsonObject result) {
     message.reply(new JsonObject().putString("status", "ok").putObject("result", result));
   }
 
@@ -49,7 +58,7 @@ public abstract class Request {
    * 
    * @param message The error message.
    */
-  public void error(String message) {
+  protected void error(String message) {
     this.message.reply(new JsonObject().putString("status", "error").putString("message", message));
   }
 

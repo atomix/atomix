@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 /**
  * A sync response.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SyncResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
@@ -66,6 +66,11 @@ public class SyncResponse extends Response {
    */
   public boolean success() {
     return success;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("SyncResponse[term=%s, success=%s]", term, success);
   }
 
 }

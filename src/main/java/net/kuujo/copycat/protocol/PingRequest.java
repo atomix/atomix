@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 /**
  * A ping request.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PingRequest extends Request {
   private static final Serializer serializer = Serializer.getInstance();
@@ -43,16 +43,13 @@ public class PingRequest extends Request {
   }
 
   public static PingRequest fromJson(JsonObject json, Message<JsonObject> message) {
-    return serializer.readObject(json, PingRequest.class).setMessage(message);
+    PingRequest request = serializer.readObject(json, PingRequest.class);
+    request.setMessage(message);
+    return request;
   }
 
   public static JsonObject toJson(PingRequest request) {
     return serializer.writeObject(request);
-  }
-
-  private PingRequest setMessage(Message<JsonObject> message) {
-    this.message = message;
-    return this;
   }
 
   /**
@@ -80,6 +77,20 @@ public class PingRequest extends Request {
    */
   public void reply(long term) {
     reply(new JsonObject().putNumber("term", term));
+  }
+
+  /**
+   * Replies to the request with an error.
+   *
+   * @param message The error message.
+   */
+  public void error(String message) {
+    super.error(message);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("PingRequest[term=%s, leader=%s]", term, leader);
   }
 
 }

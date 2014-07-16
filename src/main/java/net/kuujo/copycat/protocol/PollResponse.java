@@ -18,12 +18,12 @@ package net.kuujo.copycat.protocol;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
-import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 /**
  * A poll response.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
@@ -66,6 +66,11 @@ public class PollResponse extends Response {
    */
   public boolean voteGranted() {
     return voteGranted;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("PollResponse[term=%s, voteGranted=%s]", term, voteGranted);
   }
 
 }

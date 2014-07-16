@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.json.JsonObject;
 
 /**
  * A ping response.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PingResponse extends Response {
   private static final Serializer serializer = Serializer.getInstance();
@@ -55,6 +55,11 @@ public class PingResponse extends Response {
    */
   public long term() {
     return term;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("PingResponse[term=%s]", term);
   }
 
 }

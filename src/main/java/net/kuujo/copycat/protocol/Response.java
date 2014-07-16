@@ -21,8 +21,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * A request response.
- * 
- * @author Jordan Halterman
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
