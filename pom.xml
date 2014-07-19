@@ -8,21 +8,16 @@
   </parent>
 
   <groupId>net.kuujo</groupId>
-  <artifactId>copycat</artifactId>
+  <artifactId>copycat-parent</artifactId>
   <version>0.2.0-SNAPSHOT</version>
-  <packaging>jar</packaging>
+  <packaging>pom</packaging>
   <name>CopyCat</name>
-  <description>Replicated state machine built on Vert.x and based on the Raft consensus algorithm.</description>
+  <description>Replicated state machine framework based on the Raft consensus algorithm.</description>
   <url>http://github.com/kuujo/copycat</url>
   <inceptionYear>2013</inceptionYear>
 
   <properties>
-    <module.name>${project.groupId}~${project.artifactId}~${project.version}</module.name>
-
-    <vertx.version>2.1.1</vertx.version>
-    <testtools.version>2.0.2-final</testtools.version>
     <junit.version>4.8.2</junit.version>
-    <hazelcast.version>3.2.1</hazelcast.version>
 
     <maven.source.plugin.version>2.2.1</maven.source.plugin.version>
     <maven.compiler.plugin.version>3.0</maven.compiler.plugin.version>
@@ -60,42 +55,18 @@
     <url>http://github.com/kuujo/copycat/issues</url>
   </issueManagement>
 
+  <modules>
+    <module>copycat-core</module>
+    <module>copycat-vertx</module>
+    <module>copycat-netty</module>
+  </modules>
+
   <dependencies>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-core</artifactId>
-      <version>${vertx.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-platform</artifactId>
-      <version>${vertx.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>vertx-hazelcast</artifactId>
-      <version>${vertx.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.hazelcast</groupId>
-      <artifactId>hazelcast</artifactId>
-      <version>${hazelcast.version}</version>
-      <scope>provided</scope>
-    </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>${junit.version}</version>
       <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.vertx</groupId>
-      <artifactId>testtools</artifactId>
-      <version>${testtools.version}</version>
-      <scope>provided</scope>
     </dependency>
   </dependencies>
 
@@ -110,84 +81,6 @@
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>${maven.resources.plugin.version}</version>
-        <executions>
-          <execution>
-            <id>copy-classes</id>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <overwrite>true</overwrite>
-              <outputDirectory>${basedir}/target/mods/${module.name}/net</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>target/classes/net</directory>
-                  <filtering>false</filtering>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-          <execution>
-            <id>copy-resources</id>
-            <phase>process-resources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <overwrite>true</overwrite>
-              <outputDirectory>${basedir}/target/mods/${module.name}</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>src/main/resources</directory>
-                  <filtering>true</filtering>
-                  <includes>  
-                    <include>mod.json</include>
-                  </includes>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <version>${maven.assembly.plugin.version}</version>
-        <configuration>
-          <attach>true</attach>
-        </configuration>
-        <executions>
-          <execution>
-            <id>mod</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <descriptor>src/main/assembly/mod.xml</descriptor>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-clean-plugin</artifactId>
-        <version>${maven.clean.plugin.version}</version>
-        <configuration>
-          <filesets>
-            <fileset>
-              <directory>${basedir}/build/mods</directory>
-            </fileset>
-            <fileset>
-              <directory>${basedir}/target/mods</directory>
-            </fileset>
-          </filesets>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
         <version>${maven.source.plugin.version}</version>
         <executions>
@@ -196,34 +89,6 @@
             <phase>verify</phase>
             <goals>
               <goal>jar-no-fork</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-failsafe-plugin</artifactId>
-        <version>${maven.failsafe.plugin.version}</version>
-        <configuration>
-          <systemProperties>
-            <property>
-              <name>vertx.mods</name>
-              <value>target/mods</value>
-            </property>
-            <property>
-              <name>vertx.test.timeout</name>
-              <value>30</value>
-            </property>
-          </systemProperties>
-          <includes>
-            <include>**/integration/**</include>
-          </includes>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>integration-test</goal>
-              <goal>verify</goal>
             </goals>
           </execution>
         </executions>
@@ -310,7 +175,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <show>public</show>
-              <excludePackageNames>net.kuujo.copycat.state:net.kuujo.copycat.protocol:net.kuujo.copycat.serializer:*.impl.*</excludePackageNames>
+              <excludePackageNames>net.kuujo.copycat.util:*.impl.*</excludePackageNames>
               <reportOutputDirectory>docs</reportOutputDirectory>
               <destDir>java</destDir>
             </configuration>
@@ -321,12 +186,6 @@
                 <goals>
                   <goal>jar</goal>
                 </goals>
-                <configuration>
-                  <includeDependencySources>true</includeDependencySources>
-                  <dependencySourceIncludes>
-                    <dependencySourceInclude>org.vertx.java.core:*</dependencySourceInclude>
-                  </dependencySourceIncludes>
-                </configuration>
               </execution>
             </executions>
           </plugin>
