@@ -23,8 +23,6 @@ package net.kuujo.copycat;
 public class CopyCatConfig {
   private long electionTimeout = 2000;
   private long heartbeatInterval = 1000;
-  private boolean useAdaptiveTimeouts = false;
-  private double adaptiveTimeoutThreshold = 10;
   private boolean requireWriteQuorum = true;
   private boolean requireReadQuorum = true;
   private int maxLogSize = 32 * 1024^2;
@@ -67,46 +65,6 @@ public class CopyCatConfig {
    */
   public long getHeartbeatInterval() {
     return heartbeatInterval;
-  }
-
-  /**
-   * Returns a boolean indicating whether adaptive timeouts are enabled.
-   * 
-   * @return Indicates whether adaptive timeouts are enabled.
-   */
-  public boolean isUseAdaptiveTimeouts() {
-    return useAdaptiveTimeouts;
-  }
-
-  /**
-   * Indicates whether the replica should use adaptive timeouts.
-   * 
-   * @param useAdaptive Indicates whether to use adaptive timeouts.
-   * @return The replica configuration.
-   */
-  public CopyCatConfig setUseAdaptiveTimeouts(boolean useAdaptive) {
-    this.useAdaptiveTimeouts = useAdaptive;
-    return this;
-  }
-
-  /**
-   * Returns the adaptive timeout threshold.
-   * 
-   * @return The adaptive timeout threshold.
-   */
-  public double getAdaptiveTimeoutThreshold() {
-    return adaptiveTimeoutThreshold;
-  }
-
-  /**
-   * Sets the adaptive timeout threshold.
-   * 
-   * @param threshold The adaptive timeout threshold.
-   * @return The replica configuration.
-   */
-  public CopyCatConfig setAdaptiveTimeoutThreshold(double threshold) {
-    this.adaptiveTimeoutThreshold = threshold;
-    return this;
   }
 
   /**

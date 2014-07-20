@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.util.serializer.Serializer;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
 
 /**
  * A poll response.
@@ -23,7 +24,7 @@ import net.kuujo.copycat.util.serializer.Serializer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollResponse extends Response {
-  private static final Serializer serializer = Serializer.getInstance();
+  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private boolean voteGranted;
 

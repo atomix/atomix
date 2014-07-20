@@ -13,60 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util.serializer;
+package net.kuujo.copycat.serializer.impl;
 
 import java.io.IOException;
+
+import net.kuujo.copycat.serializer.SerializationException;
+import net.kuujo.copycat.serializer.Serializer;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * Json serializer.
- * <p>
- * 
- * Via serializers serialize objects to Vert.x {@link JsonObject} instances for
- * easy passage over the Vert.x event bus.
+ * Jackson json-based serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Serializer {
-  private static Serializer instance;
-
-  /**
-   * Gets a singleton serializer instance.
-   * 
-   * @return A singleton serializer instance.
-   */
-  public static Serializer getInstance() {
-    if (instance == null) {
-      instance = new Serializer();
-    }
-    return instance;
-  }
-
+public class JacksonSerializer implements Serializer {
   private final ObjectMapper mapper = new ObjectMapper();
 
-  /**
-   * Serializes the value to a byte array.
-   *
-   * @param object The object to serialize.
-   * @return The serialized object.
-   */
-  public byte[] writeValue(Object object) {
+  @Override
+  public byte[] writeValue(Object value) {
     try {
-      return mapper.writeValueAsBytes(object);
+      return mapper.writeValueAsBytes(value);
     } catch (JsonProcessingException e) {
       throw new SerializationException(e.getMessage());
     }
   }
 
-  /**
-   * Deserializes the value from a byte array.
-   *
-   * @param bytes The byte array to deserialize.
-   * @param type The type to which to deserialize the bytes.
-   * @return The deserialized object.
-   */
+  @Override
   public <T> T readValue(byte[] bytes, Class<T> type) {
     try {
       return mapper.readValue(bytes, type);

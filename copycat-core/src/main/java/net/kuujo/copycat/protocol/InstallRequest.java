@@ -1,4 +1,21 @@
+/*
+ * Copyright 2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package net.kuujo.copycat.protocol;
+
+import java.util.Set;
 
 /**
  * Install request.
@@ -10,14 +27,16 @@ public class InstallRequest extends Request<InstallResponse> {
   private String leader;
   private long snapshotIndex;
   private long snapshotTerm;
+  private Set<String> cluster;
   private byte[] data;
   private boolean complete;
 
-  public InstallRequest(long term, String leader, long snapshotIndex, long snapshotTerm, byte[] data, boolean complete) {
+  public InstallRequest(long term, String leader, long snapshotIndex, long snapshotTerm, Set<String> cluster, byte[] data, boolean complete) {
     this.term = term;
     this.leader = leader;
     this.snapshotIndex = snapshotIndex;
     this.snapshotTerm = snapshotTerm;
+    this.cluster = cluster;
     this.data = data;
     this.complete = complete;
   }
@@ -59,6 +78,15 @@ public class InstallRequest extends Request<InstallResponse> {
   }
 
   /**
+   * Returns the snapshot's cluster membership.
+   *
+   * @return The snapshot's cluster configuration.
+   */
+  public Set<String> cluster() {
+    return cluster;
+  }
+
+  /**
    * Returns the snapshot data.
    *
    * @return The snapshot data.
@@ -80,9 +108,10 @@ public class InstallRequest extends Request<InstallResponse> {
    * Responds to the request.
    *
    * @param term The current term.
+   * @param succeeded Whether the installation was successful.
    */
-  public void respond(long term) {
-    super.respond(new InstallResponse(term));
+  public void respond(long term, boolean succeeded) {
+    super.respond(new InstallResponse(term, succeeded));
   }
 
   /**

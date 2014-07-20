@@ -13,21 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.test.unit;
-
-import net.kuujo.copycat.log.FileLog;
-import net.kuujo.copycat.log.Log;
+package net.kuujo.copycat.serializer;
 
 /**
- * File log tests.
+ * Serializer interface.
  *
- * @author Jordan Halterman
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FileLogTest extends LogTest {
+public interface Serializer {
 
-  @Override
-  protected Log createLog() {
-    return new FileLog("test");
-  }
+  /**
+   * Serializes a value to a byte array.
+   *
+   * @param value The value to serialize.
+   * @return The serialized value.
+   */
+  byte[] writeValue(Object value);
+
+  /**
+   * Deserializes a value from a byte array.
+   *
+   * @param bytes The bytes to deserialize.
+   * @param type The type to which to deserialize the given value.
+   * @return
+   */
+  <T> T readValue(byte[] bytes, Class<T> type);
 
 }

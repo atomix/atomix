@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,211 +27,167 @@ import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.util.serializer.Serializer;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
+import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * Base replica state implementation.
+ * Base replica state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class BaseState {
-  protected final CopyCatContext context;
+abstract class BaseState implements State {
+  private static final Serializer serializer = SerializerFactory.getSerializer();
+  protected CopyCatContext context;
 
-  protected BaseState(CopyCatContext context) {
+  @Override
+  public void init(CopyCatContext context) {
     this.context = context;
-  }
-
-  /**
-   * Starts up the state.
-   */
-  void init() {
+    context.cluster.pingCallback(new AsyncCallback<PingRequest>() {
+      @Override
+      public void complete(PingRequest request) {
+        try {
+          handlePing(request);
+        } catch (Exception e) {
+          request.respond(e);
+        }
+      }
+      @Override
+      public void fail(Throwable t) {
+      }
+    });
+    context.cluster.syncCallback(new AsyncCallback<SyncRequest>() {
+      @Override
+      public void complete(SyncRequest request) {
+        try {
+          handleSync(request);
+        } catch (Exception e) {
+          request.respond(e);
+        }
+      }
+      @Override
+      public void fail(Throwable t) {
+      }
+    });
+    context.cluster.installCallback(new AsyncCallback<InstallRequest>() {
+      @Override
+      public void complete(InstallRequest request) {
+        try {
+          handleInstall(request);
+        } catch (Exception e) {
+          request.respond(e);
+        }
+      }
+      @Override
+      public void fail(Throwable t) {
+      }
+    });
+    context.cluster.pollCallback(new AsyncCallback<PollRequest>() {
+      @Override
+      public void complete(PollRequest request) {
+        try {
+          handlePoll(request);
+        } catch (Exception e) {
+          request.respond(e);
+        }
+      }
+      @Override
+      public void fail(Throwable t) {
+      }
+    });
+    context.cluster.submitCallback(new AsyncCallback<SubmitRequest>() {
+      @Override
+      public void complete(SubmitRequest request) {
+        try {
+          handleSubmit(request);
+        } catch (Exception e) {
+          request.respond(e);
+        }
+      }
+      @Override
+      public void fail(Throwable t) {
+      }
+    });
   }
 
   /**
    * Handles a ping request.
-   * 
-   * @param request The request to handle.
    */
-  abstract void ping(PingRequest request);
-
-  /**
-   * Handles a sync request.
-   * 
-   * @param request The request to handle.
-   */
-  abstract void sync(SyncRequest request);
-
-  /**
-   * Handles an install request.
-   *
-   * @param request The request to handle.
-   */
-  abstract void install(InstallRequest request);
-
-  /**
-   * Handles a poll request.
-   * 
-   * @param request The request to handle.
-   */
-  abstract void poll(PollRequest request);
-
-  /**
-   * Handles a submit command request.
-   * 
-   * @param request The request to handle.
-   */
-  abstract void submit(SubmitRequest request);
-
-  /**
-   * Tears down the state.
-   */
-  void destroy() {
-  }
-
-  /**
-   * Handles an install request.
-   */
-  protected boolean doInstall(final InstallRequest request) {
-    if (request.term() < context.getCurrentTerm()) {
-      return false;
+  protected void handlePing(PingRequest request) {
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    if (request.term() > context.getCurrentTerm()) {
+      context.setCurrentTerm(request.term());
+      context.setCurrentLeader(request.leader());
+    } else if (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null) {
+      context.setCurrentLeader(request.leader());
     }
-
-    // Get the index of the snapshot entry.
-    long index = request.snapshotIndex();
-
-    // Determine whether a partial snapshot was already written to the log.
-    Entry entry = context.log.getEntry(index);
-    if (entry == null) {
-      // If no snapshot entry exists, create a new snapshot entry. The snapshot
-      // entry should be appended at the given index. If the indexes don't match
-      // then respond with a failure message. Otherwise, just respond with the
-      // current term which we've already determine matches the request term.
-      SnapshotEntry newEntry = new SnapshotEntry(request.term(), context.stateCluster.getMembers(), request.data(), request.complete());
-      long appendIndex = context.log.appendEntry(newEntry);
-      if (appendIndex != index) {
-        return false;
-      } else {
-        return true;
-      }
-    }
-
-    // If an entry already exists at the given index, ensure it's a snapshot
-    // entry and matches the given snapshot request. If the entry is not a
-    // snapshot entry or does not match the request information, replace the
-    // entry with a new snapshot entry. Otherwise, if the snapshot entry
-    // is not complete then append the given request to the entry.
-    if (entry instanceof SnapshotEntry) {
-      SnapshotEntry snapshotEntry = (SnapshotEntry) entry;
-      if (snapshotEntry.term() != request.snapshotTerm()) {
-        SnapshotEntry newEntry = new SnapshotEntry(request.term(), context.stateCluster.getMembers(), request.data(), request.complete());
-        context.log.setEntry(index, newEntry);
-      } else {
-        byte[] newBytes = new byte[snapshotEntry.data().length + request.data().length];
-        System.arraycopy(snapshotEntry.data(), 0, newBytes, 0, snapshotEntry.data().length);
-        System.arraycopy(request.data(), 0, newBytes, snapshotEntry.data().length, request.data().length);
-        SnapshotEntry newEntry = new SnapshotEntry(snapshotEntry.term(), context.stateCluster.getMembers(), newBytes, request.complete());
-        context.log.setEntry(index, newEntry);
-      }
-    } else {
-      SnapshotEntry newEntry = new SnapshotEntry(request.term(), context.stateCluster.getMembers(), request.data(), request.complete());
-      context.log.setEntry(index, newEntry);
-    }
-    return true;
+    request.respond(context.getCurrentTerm());
   }
 
   /**
    * Handles a sync request.
    */
-  protected boolean doSync(final SyncRequest request) {
+  protected void handleSync(SyncRequest request) {
     // If the request term is less than the current term then immediately
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getCurrentTerm()) {
-      return false;
+      request.respond(context.getCurrentTerm(), false);
+    } else if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
+      checkPreviousEntry(request);
     } else {
-      // Otherwise, continue on to check the log consistency.
-      return checkConsistency(request);
+      appendEntries(request);
     }
   }
 
   /**
-   * Checks log consistency for a sync request.
+   * Checks the previous log entry for consistency.
    */
-  private boolean checkConsistency(final SyncRequest request) {
-    // If a previous log index and term were provided then check to ensure
-    // that they match this node's previous log index and term.
-    if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
-      return checkPreviousEntry(request);
+  private void checkPreviousEntry(SyncRequest request) {
+    // If the log entry exists then load the entry.
+    // If the last log entry's term is not the same as the given
+    // prevLogTerm then return false. This will cause the leader to
+    // decrement this node's nextIndex and ultimately retry with the
+    // leader's previous log entry so that the inconsistent entry
+    // can be overwritten.
+    Entry entry = context.log.getEntry(request.prevLogIndex());
+    if (entry == null || entry.term() != request.prevLogTerm()) {
+      request.respond(context.getCurrentTerm(), false);
     } else {
-      // Otherwise, continue on to check the entry being appended.
-      return appendEntries(request);
+      appendEntries(request);
     }
   }
 
   /**
-   * Checks that the given previous log entry of a sync request matches the
-   * previous log entry of this node.
+   * Appends entries to the local log.
    */
-  private boolean checkPreviousEntry(final SyncRequest request) {
-    // Check whether the log contains an entry at prevLogIndex.
-    if (context.log.containsEntry(request.prevLogIndex())) {
-      // If the log entry exists then load the entry.
-      // If the last log entry's term is not the same as the given
-      // prevLogTerm then return false. This will cause the leader to
-      // decrement this node's nextIndex and ultimately retry with the
-      // leader's previous log entry so that the inconsistent entry
-      // can be overwritten.
-      Entry entry = context.log.getEntry(request.prevLogIndex());
-      if (entry.term() != request.prevLogTerm()) {
-        return false;
-      } else {
-        // Finally, if the log appears to be consistent then continue on
-        // to remove invalid entries from the log.
-        return appendEntries(request);
-      }
-    } else {
-      // If no log entry was found at the previous log index then return false.
-      // This will cause the leader to decrement this node's nextIndex and
-      // ultimately retry with the leader's previous log entry.
-      return false;
-    }
-  }
-
-  /**
-   * Appends request entries to the log.
-   */
-  private boolean appendEntries(final SyncRequest request) {
-    return appendEntries(request.prevLogIndex(), request.entries(), request);
-  }
-
-  /**
-   * Appends request entries to the log.
-   */
-  private boolean appendEntries(final long prevIndex, final List<Entry> entries, final SyncRequest request) {
-    for (int i = (int) (prevIndex+1); i < prevIndex + entries.size(); i++) {
+  private void appendEntries(SyncRequest request) {
+    long prevIndex = request.prevLogIndex();
+    for (int i = (int) (prevIndex+1); i < prevIndex + request.entries().size(); i++) {
       // Get the entry at the current index from the log.
       Entry entry = context.log.getEntry(i);
       // If the log does not contain an entry at this index then this
       // indicates no conflict, append the new entry.
       if (entry == null) {
-        context.log.appendEntry(entries.get(i));
-      } else if (entry.term() != entries.get(i).term()) {
+        context.log.appendEntry(request.entries().get(i));
+      } else if (entry.term() != request.entries().get(i).term()) {
         // If the local log's equivalent entry's term does not match the
         // synced entry's term then that indicates that it came from a
         // different leader. The log must be purged of this entry and all
         // entries following it.
         context.log.removeAfter(i-1);
-        context.log.appendEntry(entries.get(i));
+        context.log.appendEntry(request.entries().get(i));
       }
     }
-    return checkApplyCommits(request);
+    applyCommits(request);
   }
 
   /**
-   * Checks for entries that have been committed and applies committed entries
-   * to the local state machine.
+   * Applies commits to the local state machine.
    */
-  private boolean checkApplyCommits(final SyncRequest request) {
+  @SuppressWarnings("unchecked")
+  private void applyCommits(SyncRequest request) {
     // If the synced commit index is greater than the local commit index then
     // apply commits to the local state machine.
     // Also, it's possible that one of the previous command applications failed
@@ -271,10 +226,19 @@ abstract class BaseState {
           // Configuration entries are applied to the immutable context configuration.
           else if (entry instanceof ConfigurationEntry) {
             Set<String> members = ((ConfigurationEntry) entry).members();
-            members.remove(context.stateCluster.getLocalMember());
-            context.stateCluster.setRemoteMembers(members);
+            members.remove(context.cluster.config().getLocalMember());
+            context.cluster.config().setRemoteMembers(members);
           }
-          context.setLastApplied(context.getLastApplied() + 1);
+          // It's possible that an entry being committed is a snapshot entry. In
+          // cases where a leader has replicated a snapshot to this node's log,
+          // once the snapshot has been committed we can clear all entries before
+          // the snapshot entry and apply the snapshot to the state machine.
+          else if (entry instanceof SnapshotEntry) {
+            Map<String, Object> snapshot = serializer.readValue(((SnapshotEntry) entry).data(), Map.class);
+            context.stateMachine.installSnapshot(snapshot);
+            context.log.removeBefore(i);
+          }
+          context.setLastApplied(i);
         }
 
         // Once entries have been applied check whether we need to compact the log.
@@ -284,81 +248,129 @@ abstract class BaseState {
         // entry in order to make replication simpler if the node becomes a leader.
         if (context.log.size() > context.config().getMaxLogSize()) {
           Map<String, Object> snapshot = context.stateMachine.createSnapshot();
-          byte[] bytes = Serializer.getInstance().writeValue(snapshot);
-          SnapshotEntry entry = new SnapshotEntry(context.getCurrentTerm(), context.stateCluster.getMembers(), bytes, true);
+          byte[] bytes = serializer.writeValue(snapshot);
+          SnapshotEntry entry = new SnapshotEntry(context.getCurrentTerm(), context.cluster.config().getMembers(), bytes, true);
           context.log.setEntry(context.getLastApplied(), entry);
           context.log.removeBefore(context.getLastApplied());
         }
-        return true;
       }
     }
-    return true;
+    request.respond(context.getCurrentTerm(), true);
+  }
+
+  /**
+   * Handles an install request.
+   */
+  protected void handleInstall(InstallRequest request) {
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    if (request.term() > context.getCurrentTerm()) {
+      context.setCurrentTerm(request.term());
+      context.setCurrentLeader(request.leader());
+    } else if (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null) {
+      context.setCurrentLeader(request.leader());
+    }
+
+    // Load the entry at the given position in the log.
+    Entry entry = context.log.getEntry(request.snapshotIndex());
+
+    // If the entry doesn't exist or if the entry isn't a snapshot entry or the
+    // existing snapshot entry's term doesn't match the given snapshot term then
+    // add a new snapshot entry to the log.
+    SnapshotEntry snapshot;
+    if (entry == null || !(entry instanceof SnapshotEntry) || ((SnapshotEntry) entry).term() != request.snapshotTerm()) {
+      snapshot = new SnapshotEntry(request.snapshotTerm(), request.cluster(), request.data(), request.complete());
+      context.log.setEntry(request.snapshotIndex(), snapshot);
+    } else {
+      // If the entry already existed then we need to append the request to the
+      // existing entry. Snapshot entries are sent in chunks.
+      int oldLength = ((SnapshotEntry) entry).data().length;
+      int newLength = request.data().length;
+      byte[] combined = new byte[oldLength + newLength];
+      System.arraycopy(((SnapshotEntry) entry).data(), 0, combined, 0, oldLength);
+      System.arraycopy(request.data(), 0, combined, oldLength, newLength);
+      snapshot = new SnapshotEntry(request.snapshotTerm(), request.cluster(), combined, request.complete());
+    }
+    // Note that we don't clear the log or apply the snapshot here. We will do that
+    // once the snapshot entry has been committed and we know that a quorum of
+    // the cluster's logs have advanced beyond the snapshot index.
   }
 
   /**
    * Handles a poll request.
    */
-  protected boolean doPoll(final PollRequest request) {
+  protected void handlePoll(PollRequest request) {
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    boolean transition = false;
     if (request.term() > context.getCurrentTerm()) {
       context.setCurrentTerm(request.term());
+      context.setCurrentLeader(null);
+      transition = true;
     }
 
-    // If the requesting candidate is the current node then vote for self.
-    if (request.candidate().equals(context.cluster().getLocalMember())) {
-      context.setLastVotedFor(request.candidate());
-      return true;
-
-    // If the requesting candidate is not a known member of the cluster (to
-    // this replica) then reject the vote. This helps ensure that new cluster
-    // members cannot become leader until at least a majority of the cluster
-    // has been notified of their membership.
-    } else if (!context.stateCluster.getMembers().contains(request.candidate())) {
-      return false;
-    } else {
-      // If the request term is less than the current term then don't
-      // vote for the candidate.
-      if (request.term() < context.getCurrentTerm()) {
-        return false;
-      }
-      // If we haven't yet voted or already voted for this candidate then check
-      // that the candidate's log is at least as up-to-date as the local log.
-      else if (context.getLastVotedFor() == null || context.getLastVotedFor().equals(request.candidate())) {
-        // It's possible that the last log index could be 0, indicating that
-        // the log does not contain any entries. If that is the cases then
-        // the log must *always* be at least as up-to-date as all other
-        // logs.
+    // If the request term is not as great as the current context term then don't
+    // vote for the candidate. We want to vote for candidates that are at least
+    // as up to date as us.
+    if (request.term() < context.getCurrentTerm()) {
+      request.respond(context.getCurrentTerm(), false);
+    }
+    // If the requesting candidate is ourself then always vote for ourself. Votes
+    // for self are done by calling the local node. Note that this obviously
+    // doesn't make sense for a leader.
+    else if (request.candidate().equals(context.cluster.config().getLocalMember())) {
+      request.respond(context.getCurrentTerm(), true);
+    }
+    // If the requesting candidate is not a known member of the cluster (to this
+    // node) then don't vote for it. Only vote for candidates that we know about.
+    else if (!context.cluster.config().getMembers().contains(request.candidate())) {
+      request.respond(context.getCurrentTerm(), false);
+    }
+    // If we've already voted for someone else then don't vote again.
+    else if (context.getLastVotedFor() == null || context.getLastVotedFor().equals(request.candidate())) {
+      // If the log is empty then vote for the candidate.
+      if (context.log.isEmpty()) {
+        request.respond(context.getCurrentTerm(), true);
+      } else {
+        // Otherwise, load the last entry in the log. The last entry should be
+        // at least as up to date as the candidates entry and term.
         long lastIndex = context.log.lastIndex();
-        if (lastIndex == 0) {
+        Entry entry = context.log.getEntry(lastIndex);
+        long lastTerm = entry.term();
+        if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           context.setLastVotedFor(request.candidate());
-          return true;
+          request.respond(context.getCurrentTerm(), true);
         } else {
-          // Load the log entry to get the term. We load the log entry rather
-          // than the log term to ensure that we're receiving the term from
-          // the same entry as the loaded last log index.
-          Entry entry = context.log.getEntry(lastIndex);
-
-          // If the log entry was null then don't vote for the candidate.
-          // This may simply result in no clear winner in the election, but
-          // it's better than an imperfect leader being elected due to a
-          // brief failure of the event bus.
-          if (entry == null) {
-            return false;
-          }
-
-          final long lastTerm = entry.term();
-          if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-            context.setLastVotedFor(request.candidate());
-            return true;
-          } else {
-            context.setLastVotedFor(null); // Reset voted for.
-            return false;
-          }
+          context.setLastVotedFor(null);
+          request.respond(context.getCurrentTerm(), false);
         }
       }
-      // If we've already voted for someone else then don't vote for the
-      // candidate.
-      return false;
     }
+    // In this case, we've already voted for someone else.
+    else {
+      request.respond(context.getCurrentTerm(), false);
+    }
+
+    // Finally, transition out of this state if necessary.
+    if (transition) {
+      context.transition(Follower.class);
+    }
+  }
+
+  /**
+   * Handles a submit request.
+   */
+  protected void handleSubmit(SubmitRequest request) {
+    request.respond("Not the leader");
+  }
+
+  @Override
+  public void destroy() {
+    context.cluster.pingCallback(null);
+    context.cluster.syncCallback(null);
+    context.cluster.installCallback(null);
+    context.cluster.pollCallback(null);
+    context.cluster.submitCallback(null);
   }
 
 }

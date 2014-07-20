@@ -23,6 +23,7 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ConfigurationEntry extends Entry {
+  private static final long serialVersionUID = -3175332895044610666L;
   private Set<String> members;
 
   public ConfigurationEntry() {

@@ -22,21 +22,19 @@ import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.util.AsyncCallback;
 import net.kuujo.copycat.util.Quorum;
 
 /**
- * A candidate state.
+ * Candidate replica state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class Candidate extends BaseState {
+public class Candidate extends BaseState {
   private static final Logger logger = Logger.getLogger(Candidate.class.getCanonicalName());
   private Quorum quorum;
   private final Timer electionTimer = new Timer();
@@ -56,12 +54,9 @@ class Candidate extends BaseState {
     }
   };
 
-  Candidate(CopyCatContext context) {
-    super(context);
-  }
-
   @Override
-  void init() {
+  public void init(CopyCatContext context) {
+    super.init(context);
     logger.info("Starting election");
     resetTimer();
     pollMembers();
@@ -83,22 +78,22 @@ class Candidate extends BaseState {
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
     if (quorum == null) {
-      final Set<String> pollMembers = new HashSet<>(context.stateCluster.getMembers());
-      quorum = new Quorum(context.stateCluster.getQuorumSize());
+      final Set<String> pollMembers = new HashSet<>(context.cluster.config().getMembers());
+      quorum = new Quorum(context.cluster.config().getQuorumSize());
       quorum.setCallback(new AsyncCallback<Boolean>() {
         @Override
         public void complete(Boolean succeeded) {
           quorum = null;
           if (succeeded) {
-            context.transition(CopyCatState.LEADER);
+            context.transition(Leader.class);
           } else {
-            context.transition(CopyCatState.FOLLOWER);
+            context.transition(Follower.class);
           }
         }
         @Override
         public void fail(Throwable t) {
           quorum = null;
-          context.transition(CopyCatState.FOLLOWER);
+          context.transition(Follower.class);
         }
       });
 
@@ -111,7 +106,7 @@ class Candidate extends BaseState {
       // of the cluster and poll each member for a vote.
       final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
       for (String member : pollMembers) {
-        context.protocol.poll(member, new PollRequest(context.getCurrentTerm(), context.stateCluster.getLocalMember(), lastIndex, lastTerm), context.config().getElectionTimeout(), new AsyncCallback<PollResponse>() {
+        context.cluster.poll(member, new PollRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<PollResponse>() {
           @Override
           public void complete(PollResponse response) {
             if (quorum != null) {
@@ -132,60 +127,35 @@ class Candidate extends BaseState {
   }
 
   @Override
-  void ping(PingRequest request) {
+  protected void handlePing(PingRequest request) {
+    super.handlePing(request);
     if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentLeader(request.leader());
-      context.setCurrentTerm(request.term());
-      context.transition(CopyCatState.FOLLOWER);
+      context.transition(Follower.class);
     }
-    request.respond(context.getCurrentTerm());
   }
 
   @Override
-  void sync(final SyncRequest request) {
-    boolean result = doSync(request);
-    // If the request term is greater than the current term then this
-    // indicates that another leader was already elected. Update the
-    // current leader and term and transition back to a follower.
+  protected void handleSync(SyncRequest request) {
+    super.handleSync(request);
     if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentLeader(request.leader());
       context.setCurrentTerm(request.term());
-      context.transition(CopyCatState.FOLLOWER);
+      context.setCurrentLeader(request.leader());
+      context.transition(Follower.class);
     }
-    request.respond(context.getCurrentTerm(), result);
   }
 
   @Override
-  void install(final InstallRequest request) {
-    doInstall(request);
-
-    // If the request term is greater than the current term then update
-    // the current leader and term.
+  protected void handlePoll(PollRequest request) {
+    super.handlePoll(request);
     if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentLeader(request.leader());
       context.setCurrentTerm(request.term());
-      context.transition(CopyCatState.FOLLOWER);
-    }
-    request.respond(context.getCurrentTerm());
-  }
-
-  @Override
-  void poll(PollRequest request) {
-    if (request.candidate().equals(context.cluster().getLocalMember())) {
-      request.respond(context.getCurrentTerm(), true);
-      context.setLastVotedFor(context.cluster().getLocalMember());
-    } else {
-      request.respond(context.getCurrentTerm(), false);
+      context.setCurrentLeader(null);
+      context.transition(Follower.class);
     }
   }
 
   @Override
-  void submit(SubmitRequest request) {
-    request.respond("Not a leader");
-  }
-
-  @Override
-  void destroy() {
+  public void destroy() {
     electionTimer.cancel();
     if (quorum != null) {
       quorum.cancel();

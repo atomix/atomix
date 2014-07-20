@@ -21,6 +21,7 @@ package net.kuujo.copycat.log;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NoOpEntry extends Entry {
+  private static final long serialVersionUID = 5240217873800235626L;
 
   public NoOpEntry() {
     super();

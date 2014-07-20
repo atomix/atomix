@@ -15,40 +15,48 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SyncRequest;
 
 /**
- * A start state.
+ * Start state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class Start extends BaseState {
+public class Start extends BaseState {
 
-  Start(CopyCatContext context) {
-    super(context);
+  @Override
+  public void init(CopyCatContext context) {
+    // Don't call super.init() here so that server handlers won't be registered.
+    context.setCurrentLeader(null);
   }
 
   @Override
-  public void ping(PingRequest request) {
-    request.respond("Service not started");
+  protected void handlePing(PingRequest request) {
+    request.respond("Replica is not alive");
   }
 
   @Override
-  public void sync(SyncRequest request) {
-    request.respond("Service not started");
+  protected void handleSync(SyncRequest request) {
+    request.respond("Replica is not alive");
   }
 
   @Override
-  public void poll(PollRequest request) {
-    request.respond("Service not started");
+  protected void handleInstall(InstallRequest request) {
+    request.respond("Replica is not alive");
   }
 
   @Override
-  public void submit(SubmitRequest request) {
-    request.respond("Service not started");
+  protected void handlePoll(PollRequest request) {
+    request.respond("Replica is not alive");
+  }
+
+  @Override
+  protected void handleSubmit(SubmitRequest request) {
+    request.respond("Replica is not alive");
   }
 
 }

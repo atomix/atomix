@@ -17,7 +17,8 @@ package net.kuujo.copycat.protocol;
 
 import java.util.Map;
 
-import net.kuujo.copycat.util.serializer.Serializer;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
 
 /**
  * A submit response.
@@ -25,7 +26,7 @@ import net.kuujo.copycat.util.serializer.Serializer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SubmitResponse extends Response {
-  private static final Serializer serializer = Serializer.getInstance();
+  private static final Serializer serializer = SerializerFactory.getSerializer();
   private Map<String, Object> result;
 
   public SubmitResponse() {

@@ -23,6 +23,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommandEntry extends Entry {
+  private static final long serialVersionUID = 3257184123473104135L;
   private String command;
   private Map<String, Object> args;
 

@@ -23,6 +23,7 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SnapshotEntry extends Entry {
+  private static final long serialVersionUID = -5487522806426222419L;
   private Set<String> cluster;
   private byte[] data;
   private boolean complete;

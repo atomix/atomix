@@ -18,8 +18,9 @@ package net.kuujo.copycat.protocol;
 import java.util.List;
 
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.AsyncCallback;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 /**
  * A sync request.
@@ -27,7 +28,7 @@ import net.kuujo.copycat.util.serializer.Serializer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SyncRequest extends Request<SyncResponse> {
-  private static final Serializer serializer = Serializer.getInstance();
+  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private String leader;
   private long prevLogIndex;
@@ -119,10 +120,10 @@ public class SyncRequest extends Request<SyncResponse> {
    * Responds to the request.
    * 
    * @param term The responding node's current term.
-   * @param success Indicates whether the sync was successful.
+   * @param succeeded Indicates whether the sync was successful.
    */
-  public void respond(long term, boolean success) {
-    super.respond(new SyncResponse(term, success));
+  public void respond(long term, boolean succeeded) {
+    super.respond(new SyncResponse(term, succeeded));
   }
 
   /**

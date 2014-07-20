@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.util.serializer.Serializer;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
 
 /**
  * A sync response.
@@ -23,17 +24,17 @@ import net.kuujo.copycat.util.serializer.Serializer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SyncResponse extends Response {
-  private static final Serializer serializer = Serializer.getInstance();
+  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
-  private boolean success;
+  private boolean succeeded;
 
   public SyncResponse() {
   }
 
-  public SyncResponse(long term, boolean success) {
+  public SyncResponse(long term, boolean succeeded) {
     super(Status.OK);
     this.term = term;
-    this.success = success;
+    this.succeeded = succeeded;
   }
 
   public SyncResponse(Throwable t) {
@@ -66,13 +67,13 @@ public class SyncResponse extends Response {
    * 
    * @return Indicates whether the sync was successful.
    */
-  public boolean success() {
-    return success;
+  public boolean succeeded() {
+    return succeeded;
   }
 
   @Override
   public String toString() {
-    return String.format("SyncResponse[term=%s, success=%s]", term, success);
+    return String.format("SyncResponse[term=%s, succeeded=%s]", term, succeeded);
   }
 
 }

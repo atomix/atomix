@@ -15,40 +15,23 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.util.AsyncCallback;
-
 /**
- * Base interface for types that can be asynchronously started and stopped.
+ * Replica state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Service {
+interface State {
 
   /**
-   * Starts the service.
+   * Initializes the state.
    *
-   * @return The service.
+   * @param context The state context.
    */
-  Service start();
+  void init(CopyCatContext context);
 
   /**
-   * Starts the service.
-   *
-   * @param callback An asynchronous callback to be called once the service has been started.
-   * @return The service.
+   * Destroys the state.
    */
-  Service start(AsyncCallback<Void> callback);
-
-  /**
-   * Stops the service.
-   */
-  void stop();
-
-  /**
-   * Stops the service.
-   *
-   * @param callback An asynchronous callback to be called once the service has been stopped.
-   */
-  void stop(AsyncCallback<Void> callback);
+  void destroy();
 
 }

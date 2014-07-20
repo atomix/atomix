@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.serializer.impl;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
 
 /**
- * Stateful annotation.
+ * Jackson json serializer factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target({ElementType.FIELD, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Stateful {
+public class JacksonSerializerFactory extends SerializerFactory {
 
-  /**
-   * The JSON property in which to store the state during snapshots.
-   */
-  String value() default "";
+  @Override
+  public Serializer createSerializer() {
+    return new JacksonSerializer();
+  }
 
 }

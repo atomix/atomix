@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat;
 
-
 /**
  * A base CopyCat exception.
  * 

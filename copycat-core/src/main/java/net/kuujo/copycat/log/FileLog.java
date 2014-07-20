@@ -22,7 +22,8 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.kuujo.copycat.util.serializer.Serializer;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
 
 /**
  * A file-based log implementation.
@@ -30,7 +31,7 @@ import net.kuujo.copycat.util.serializer.Serializer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileLog implements Log {
-  private static final Serializer serializer  = Serializer.getInstance();
+  private static final Serializer serializer  = SerializerFactory.getSerializer();
   private File f;
   private RandomAccessFile file;
   private long firstIndex;

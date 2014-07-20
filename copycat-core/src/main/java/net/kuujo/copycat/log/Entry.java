@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -46,7 +48,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
   @JsonSubTypes.Type(value=ConfigurationEntry.class, name="configuration"),
   @JsonSubTypes.Type(value=CommandEntry.class, name="command")
 })
-public abstract class Entry {
+@SuppressWarnings("serial")
+public abstract class Entry implements Serializable {
 
   private long term;
 
