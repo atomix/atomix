@@ -25,6 +25,7 @@ import net.kuujo.copycat.util.AsyncCallback;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollRequest extends Request<PollResponse> {
+  private static final long serialVersionUID = -5282035829185619414L;
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private String candidate;

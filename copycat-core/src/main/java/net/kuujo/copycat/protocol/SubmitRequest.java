@@ -27,6 +27,7 @@ import net.kuujo.copycat.util.AsyncCallback;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SubmitRequest extends Request<SubmitResponse> {
+  private static final long serialVersionUID = -8657438748181101192L;
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private String command;
   private Map<String, Object> args;

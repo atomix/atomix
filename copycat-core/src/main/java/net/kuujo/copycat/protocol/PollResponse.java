@@ -24,6 +24,7 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollResponse extends Response {
+  private static final long serialVersionUID = 8188723576438876929L;
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private boolean voteGranted;

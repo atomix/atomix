@@ -25,6 +25,7 @@ import net.kuujo.copycat.util.AsyncCallback;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PingRequest extends Request<PingResponse> {
+  private static final long serialVersionUID = -4293135418334841156L;
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private String leader;

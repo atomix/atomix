@@ -28,6 +28,7 @@ import net.kuujo.copycat.util.AsyncCallback;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SyncRequest extends Request<SyncResponse> {
+  private static final long serialVersionUID = 8870779945535041744L;
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private String leader;

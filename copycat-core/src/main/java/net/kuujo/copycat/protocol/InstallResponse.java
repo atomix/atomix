@@ -21,6 +21,7 @@ package net.kuujo.copycat.protocol;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class InstallResponse extends Response {
+  private static final long serialVersionUID = -2857849500915162283L;
   private long term;
   private boolean succeeded;
 

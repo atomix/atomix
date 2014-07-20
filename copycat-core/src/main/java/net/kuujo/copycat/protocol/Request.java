@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.io.Serializable;
+
 import net.kuujo.copycat.util.AsyncCallback;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
@@ -29,8 +31,15 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(creatorVisibility = JsonAutoDetect.Visibility.NONE, fieldVisibility = JsonAutoDetect.Visibility.ANY, getterVisibility = JsonAutoDetect.Visibility.NONE, isGetterVisibility = JsonAutoDetect.Visibility.NONE, setterVisibility = JsonAutoDetect.Visibility.NONE)
-public abstract class Request<T extends Response> {
+@JsonAutoDetect(
+  creatorVisibility=JsonAutoDetect.Visibility.NONE,
+  fieldVisibility=JsonAutoDetect.Visibility.ANY,
+  getterVisibility=JsonAutoDetect.Visibility.NONE,
+  isGetterVisibility=JsonAutoDetect.Visibility.NONE,
+  setterVisibility=JsonAutoDetect.Visibility.NONE
+)
+@SuppressWarnings("serial")
+public abstract class Request<T extends Response> implements Serializable {
   @JsonIgnore
   protected AsyncCallback<T> responseCallback;
 

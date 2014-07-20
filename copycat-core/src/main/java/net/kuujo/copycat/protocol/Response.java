@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.io.Serializable;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -33,7 +35,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
     isGetterVisibility=JsonAutoDetect.Visibility.NONE,
     setterVisibility=JsonAutoDetect.Visibility.NONE
 )
-public abstract class Response {
+@SuppressWarnings("serial")
+public abstract class Response implements Serializable {
   public static final String STATUS_OK = "ok";
   public static final String STATUS_ERROR = "error";
 

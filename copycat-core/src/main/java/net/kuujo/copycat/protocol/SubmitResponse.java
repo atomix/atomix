@@ -26,6 +26,7 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SubmitResponse extends Response {
+  private static final long serialVersionUID = -2137570252386650195L;
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private Map<String, Object> result;
 

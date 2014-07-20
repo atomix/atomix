@@ -23,6 +23,7 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class InstallRequest extends Request<InstallResponse> {
+  private static final long serialVersionUID = 1475758554918256823L;
   private long term;
   private String leader;
   private long snapshotIndex;
