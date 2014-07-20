@@ -17,6 +17,11 @@ package net.kuujo.copycat.log;
 
 import java.io.Serializable;
 
+import net.kuujo.copycat.log.impl.CommandEntry;
+import net.kuujo.copycat.log.impl.ConfigurationEntry;
+import net.kuujo.copycat.log.impl.NoOpEntry;
+import net.kuujo.copycat.log.impl.SnapshotEntry;
+
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;

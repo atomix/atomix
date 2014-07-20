@@ -51,7 +51,7 @@ public abstract class Request<T extends Response> implements Serializable {
    *
    * @param callback The request response callback.
    */
-  protected void setResponseCallback(AsyncCallback<T> callback) {
+  public void responseCallback(AsyncCallback<T> callback) {
     this.responseCallback = callback;
   }
 

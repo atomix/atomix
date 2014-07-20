@@ -106,7 +106,7 @@ public class Candidate extends BaseState {
       // of the cluster and poll each member for a vote.
       final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
       for (String member : pollMembers) {
-        context.cluster.poll(member, new PollRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<PollResponse>() {
+        context.cluster.member(member).protocol().client().poll(new PollRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<PollResponse>() {
           @Override
           public void complete(PollResponse response) {
             if (quorum != null) {

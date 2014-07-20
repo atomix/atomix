@@ -17,10 +17,6 @@ package net.kuujo.copycat.protocol;
 
 import java.util.Map;
 
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-import net.kuujo.copycat.util.AsyncCallback;
-
 /**
  * A submit request.
  *
@@ -28,7 +24,6 @@ import net.kuujo.copycat.util.AsyncCallback;
  */
 public class SubmitRequest extends Request<SubmitResponse> {
   private static final long serialVersionUID = -8657438748181101192L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private String command;
   private Map<String, Object> args;
 
@@ -38,20 +33,6 @@ public class SubmitRequest extends Request<SubmitResponse> {
   public SubmitRequest(String command, Map<String, Object> args) {
     this.command = command;
     this.args = args;
-  }
-
-  public static SubmitRequest fromJson(byte[] json) {
-    return serializer.readValue(json, SubmitRequest.class);
-  }
-
-  public static SubmitRequest fromJson(byte[] json, AsyncCallback<SubmitResponse> callback) {
-    SubmitRequest request = serializer.readValue(json, SubmitRequest.class);
-    request.setResponseCallback(callback);
-    return request;
-  }
-
-  public static byte[] toJson(SubmitRequest request) {
-    return serializer.writeValue(request);
   }
 
   /**

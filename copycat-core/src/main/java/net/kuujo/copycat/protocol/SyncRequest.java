@@ -18,9 +18,6 @@ package net.kuujo.copycat.protocol;
 import java.util.List;
 
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * A sync request.
@@ -29,7 +26,6 @@ import net.kuujo.copycat.util.AsyncCallback;
  */
 public class SyncRequest extends Request<SyncResponse> {
   private static final long serialVersionUID = 8870779945535041744L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private String leader;
   private long prevLogIndex;
@@ -47,20 +43,6 @@ public class SyncRequest extends Request<SyncResponse> {
     this.prevLogTerm = prevLogTerm;
     this.entries = entries;
     this.commit = commitIndex;
-  }
-
-  public static SyncRequest fromJson(byte[] json) {
-    return serializer.readValue(json, SyncRequest.class);
-  }
-
-  public static SyncRequest fromJson(byte[] json, AsyncCallback<SyncResponse> callback) {
-    SyncRequest request = serializer.readValue(json, SyncRequest.class);
-    request.setResponseCallback(callback);
-    return request;
-  }
-
-  public static byte[] toJson(SyncRequest request) {
-    return serializer.writeValue(request);
   }
 
   /**

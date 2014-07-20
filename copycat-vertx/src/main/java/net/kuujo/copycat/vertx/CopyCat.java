@@ -25,7 +25,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterManager;
 import net.kuujo.copycat.cluster.StaticClusterManager;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.MemoryLog;
+import net.kuujo.copycat.log.impl.MemoryLog;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;

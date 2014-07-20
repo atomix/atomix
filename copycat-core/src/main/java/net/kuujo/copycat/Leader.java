@@ -35,11 +35,11 @@ import java.util.logging.Logger;
 import net.kuujo.copycat.CommandInfo;
 import net.kuujo.copycat.CommandProvider;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.CommandEntry;
-import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.NoOpEntry;
-import net.kuujo.copycat.log.SnapshotEntry;
+import net.kuujo.copycat.log.impl.CommandEntry;
+import net.kuujo.copycat.log.impl.ConfigurationEntry;
+import net.kuujo.copycat.log.impl.NoOpEntry;
+import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
 import net.kuujo.copycat.protocol.PingRequest;
@@ -460,7 +460,7 @@ public class Leader extends BaseState implements Observer {
         }
 
         SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), prevIndex, prevEntry.term(), entries, commitIndex);
-        context.cluster.sync(address, request, new AsyncCallback<SyncResponse>() {
+        context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
           @Override
           public void complete(SyncResponse response) {
             if (response.status().equals(Response.Status.OK)) {
@@ -561,7 +561,7 @@ public class Leader extends BaseState implements Observer {
         final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
         byte[] bytes = new byte[bytesLength];
         System.arraycopy(snapshot, position, bytes, 0, bytesLength);
-        context.cluster.install(address, new InstallRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
+        context.cluster.member(address).protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
           @Override
           public void complete(InstallResponse value) {
             doIncrementalInstall(index, term, snapshot, position + bytesLength, length, callback);
@@ -586,7 +586,7 @@ public class Leader extends BaseState implements Observer {
      */
     private void ping(final AsyncCallback<Void> callback) {
       if (!shutdown) {
-        context.cluster.ping(address, new PingRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember()), new AsyncCallback<PingResponse>() {
+        context.cluster.member(address).protocol().client().ping(new PingRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember()), new AsyncCallback<PingResponse>() {
           @Override
           public void complete(PingResponse response) {
             if (response.status().equals(Response.Status.OK)) {

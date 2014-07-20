@@ -15,10 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-import net.kuujo.copycat.util.AsyncCallback;
-
 /**
  * A poll request.
  *
@@ -26,7 +22,6 @@ import net.kuujo.copycat.util.AsyncCallback;
  */
 public class PollRequest extends Request<PollResponse> {
   private static final long serialVersionUID = -5282035829185619414L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private String candidate;
   private long lastLogIndex;
@@ -40,20 +35,6 @@ public class PollRequest extends Request<PollResponse> {
     this.candidate = candidate;
     this.lastLogIndex = lastLogIndex;
     this.lastLogTerm = lastLogTerm;
-  }
-
-  public static PollRequest fromJson(byte[] json) {
-    return serializer.readValue(json, PollRequest.class);
-  }
-
-  public static PollRequest fromJson(byte[] json, AsyncCallback<PollResponse> callback) {
-    PollRequest request = serializer.readValue(json, PollRequest.class);
-    request.setResponseCallback(callback);
-    return request;
-  }
-
-  public static byte[] toJson(PollRequest request) {
-    return serializer.writeValue(request);
   }
 
   /**

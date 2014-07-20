@@ -18,11 +18,13 @@ package net.kuujo.copycat;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.DynamicClusterConfig;
-import net.kuujo.copycat.cluster.StaticClusterConfig;
+import net.kuujo.copycat.cluster.impl.DefaultCluster;
+import net.kuujo.copycat.cluster.impl.DynamicClusterConfig;
+import net.kuujo.copycat.cluster.impl.StaticClusterConfig;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.MemoryLog;
+import net.kuujo.copycat.log.impl.MemoryLog;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
@@ -37,7 +39,7 @@ public class CopyCatContext {
   private static final Logger logger = Logger.getLogger(CopyCatContext.class.getCanonicalName());
   final ClusterConfig clusterConfig;
   private final DynamicClusterConfig internalConfig = new DynamicClusterConfig();
-  final ClusterContext cluster;
+  final Cluster cluster;
   final Log log;
   final StateMachine stateMachine;
   private State state;
@@ -69,7 +71,7 @@ public class CopyCatContext {
     this.log = log;
     this.config = config;
     this.clusterConfig = cluster;
-    this.cluster = new ClusterContext(internalConfig, this);
+    this.cluster = new DefaultCluster(cluster, this);
     this.stateMachine = stateMachine;
   }
 
@@ -132,7 +134,7 @@ public class CopyCatContext {
     internalConfig.setRemoteMembers(clusterConfig.getRemoteMembers());
 
     transition(Start.class);
-    cluster.start(new AsyncCallback<Void>() {
+    cluster.localMember().protocol().server().start(new AsyncCallback<Void>() {
       @Override
       public void complete(Void value) {
         startCallback = callback;
@@ -173,7 +175,7 @@ public class CopyCatContext {
    * @return The replica context.
    */
   public void stop(final AsyncCallback<Void> callback) {
-    cluster.stop(new AsyncCallback<Void>() {
+    cluster.localMember().protocol().server().stop(new AsyncCallback<Void>() {
       @Override
       public void complete(Void value) {
         log.close();
@@ -277,7 +279,7 @@ public class CopyCatContext {
     if (currentLeader == null) {
       callback.fail(new CopyCatException("No leader found"));
     } else {
-      cluster.submit(currentLeader, new SubmitRequest(command, args), new AsyncCallback<SubmitResponse>() {
+      cluster.member(currentLeader).protocol().client().submit(new SubmitRequest(command, args), new AsyncCallback<SubmitResponse>() {
         @Override
         public void complete(SubmitResponse response) {
           if (response.status().equals(Response.Status.OK)) {

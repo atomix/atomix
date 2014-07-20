@@ -15,10 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-import net.kuujo.copycat.util.AsyncCallback;
-
 /**
  * A ping request.
  *
@@ -26,7 +22,6 @@ import net.kuujo.copycat.util.AsyncCallback;
  */
 public class PingRequest extends Request<PingResponse> {
   private static final long serialVersionUID = -4293135418334841156L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private String leader;
 
@@ -36,39 +31,6 @@ public class PingRequest extends Request<PingResponse> {
   public PingRequest(long term, String leader) {
     this.term = term;
     this.leader = leader;
-  }
-
-  /**
-   * Deserializes a ping request from a json byte array.
-   *
-   * @param json The json byte array.
-   * @return The deserialized ping request.
-   */
-  public static PingRequest fromJson(byte[] json) {
-    return serializer.readValue(json, PingRequest.class);
-  }
-
-  /**
-   * Deserializes a ping request from a json byte array.
-   *
-   * @param json The json byte array.
-   * @param callback The request response callback.
-   * @return The deserialized ping request.
-   */
-  public static PingRequest fromJson(byte[] json, AsyncCallback<PingResponse> callback) {
-    PingRequest request = serializer.readValue(json, PingRequest.class);
-    request.setResponseCallback(callback);
-    return request;
-  }
-
-  /**
-   * Serializes a ping request to json.
-   *
-   * @param request The request to serialize.
-   * @return The serialized ping request.
-   */
-  public static byte[] toJson(PingRequest request) {
-    return serializer.writeValue(request);
   }
 
   /**

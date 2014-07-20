@@ -13,31 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.cluster.impl;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Observable;
 import java.util.Set;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.protocol.ProtocolUri;
 
 /**
- * Cluster configuration implementation that can be arbitrarily updated
- * by the user during runtime.
+ * Static cluster configuration that does not change once the cluster
+ * has been started.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DynamicClusterConfig extends Observable implements ClusterConfig {
+public class StaticClusterConfig implements ClusterConfig {
   private int quorumSize;
   private String localMember;
   private final Set<String> remoteMembers = new HashSet<>();
 
-  public DynamicClusterConfig() {
+  public StaticClusterConfig() {
     this(null);
   }
 
-  public DynamicClusterConfig(String local) {
+  public StaticClusterConfig(String local) {
     this.localMember = local;
   }
 
@@ -66,7 +66,6 @@ public class DynamicClusterConfig extends Observable implements ClusterConfig {
       throw new IllegalArgumentException(uri + " is not a valid protocol URI");
     }
     this.localMember = uri;
-    callObservers();
     return this;
   }
 
@@ -84,7 +83,6 @@ public class DynamicClusterConfig extends Observable implements ClusterConfig {
       }
       remoteMembers.add(uri);
     }
-    callObservers();
     return this;
   }
 
@@ -97,7 +95,6 @@ public class DynamicClusterConfig extends Observable implements ClusterConfig {
       }
       remoteMembers.add(uri);
     }
-    callObservers();
     return this;
   }
 
@@ -107,7 +104,6 @@ public class DynamicClusterConfig extends Observable implements ClusterConfig {
       throw new IllegalArgumentException(uri + " is not a valid protocol URI");
     }
     remoteMembers.add(uri);
-    callObservers();
     return this;
   }
 
@@ -119,7 +115,6 @@ public class DynamicClusterConfig extends Observable implements ClusterConfig {
       }
       remoteMembers.add(uri);
     }
-    callObservers();
     return this;
   }
 
@@ -131,34 +126,25 @@ public class DynamicClusterConfig extends Observable implements ClusterConfig {
       }
       remoteMembers.add(uri);
     }
-    callObservers();
     return this;
   }
 
   @Override
   public ClusterConfig removeRemoteMember(String uri) {
     remoteMembers.remove(uri);
-    callObservers();
     return this;
   }
 
   @Override
   public ClusterConfig removeRemoteMembers(String... members) {
     remoteMembers.removeAll(Arrays.asList(members));
-    callObservers();
     return this;
   }
 
   @Override
   public ClusterConfig removeRemoteMembers(Set<String> members) {
     remoteMembers.removeAll(members);
-    callObservers();
     return this;
-  }
-
-  private void callObservers() {
-    setChanged();
-    notifyObservers();
   }
 
 }

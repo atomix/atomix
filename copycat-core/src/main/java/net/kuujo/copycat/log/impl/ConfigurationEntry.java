@@ -13,51 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.log.impl;
 
-import java.util.Map;
+import java.util.Set;
+
+import net.kuujo.copycat.log.Entry;
 
 /**
- * A state machine command entry.
+ * A special configuration log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommandEntry extends Entry {
-  private static final long serialVersionUID = 3257184123473104135L;
-  private String command;
-  private Map<String, Object> args;
+public class ConfigurationEntry extends Entry {
+  private static final long serialVersionUID = -3175332895044610666L;
+  private Set<String> members;
 
-  public CommandEntry() {
+  public ConfigurationEntry() {
     super();
   }
 
-  public CommandEntry(long term, String command, Map<String, Object> args) {
+  public ConfigurationEntry(long term, Set<String> members) {
     super(term);
-    this.command = command;
-    this.args = args;
+    this.members = members;
   }
 
   /**
-   * Returns the state machine command.
+   * Returns a set of updated cluster members.
    * 
-   * @return The state machine command.
+   * @return A set of cluster member addresses.
    */
-  public String command() {
-    return command;
-  }
-
-  /**
-   * Returns command arguments.
-   *
-   * @return The command arguments.
-   */
-  public Map<String, Object> args() {
-    return args;
+  public Set<String> members() {
+    return members;
   }
 
   @Override
   public String toString() {
-    return String.format("Command[%s(%s)]", command, args);
+    return String.format("Configuration%s", members);
   }
 
 }

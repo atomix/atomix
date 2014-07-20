@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -24,13 +23,6 @@ import net.kuujo.copycat.util.AsyncCallback;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface ProtocolClient {
-
-  /**
-   * Initializes the client.
-   *
-   * @param context The copycat context.
-   */
-  void init(CopyCatContext context);
 
   /**
    * Sends a ping request.

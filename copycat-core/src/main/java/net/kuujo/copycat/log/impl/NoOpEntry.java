@@ -13,40 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.log.impl;
 
-import java.util.Set;
+import net.kuujo.copycat.log.Entry;
 
 /**
- * A special configuration log entry.
+ * A no-op log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationEntry extends Entry {
-  private static final long serialVersionUID = -3175332895044610666L;
-  private Set<String> members;
+public class NoOpEntry extends Entry {
+  private static final long serialVersionUID = 5240217873800235626L;
 
-  public ConfigurationEntry() {
+  public NoOpEntry() {
     super();
   }
 
-  public ConfigurationEntry(long term, Set<String> members) {
+  public NoOpEntry(long term) {
     super(term);
-    this.members = members;
-  }
-
-  /**
-   * Returns a set of updated cluster members.
-   * 
-   * @return A set of cluster member addresses.
-   */
-  public Set<String> members() {
-    return members;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("Configuration%s", members);
   }
 
 }

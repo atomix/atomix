@@ -79,6 +79,16 @@ public class ProtocolUri {
   }
 
   /**
+   * Returns the protocol class.
+   *
+   * @return The protocol class.
+   */
+  @SuppressWarnings("unchecked")
+  public Class<? extends Protocol> getProtocolClass() {
+    return info.getProperty("class", Class.class);
+  }
+
+  /**
    * Returns the protocol server class.
    *
    * @return The protocol server class.

@@ -13,9 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.log.impl;
 
 import java.util.Set;
+
+import net.kuujo.copycat.log.Entry;
 
 /**
  * State snapshot entry.

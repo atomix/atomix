@@ -18,10 +18,10 @@ package net.kuujo.copycat;
 import java.util.Map;
 import java.util.Set;
 
-import net.kuujo.copycat.log.CommandEntry;
-import net.kuujo.copycat.log.ConfigurationEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.SnapshotEntry;
+import net.kuujo.copycat.log.impl.CommandEntry;
+import net.kuujo.copycat.log.impl.ConfigurationEntry;
+import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
@@ -43,7 +43,7 @@ abstract class BaseState implements State {
   @Override
   public void init(CopyCatContext context) {
     this.context = context;
-    context.cluster.pingCallback(new AsyncCallback<PingRequest>() {
+    context.cluster.localMember().protocol().server().pingCallback(new AsyncCallback<PingRequest>() {
       @Override
       public void complete(PingRequest request) {
         try {
@@ -56,7 +56,7 @@ abstract class BaseState implements State {
       public void fail(Throwable t) {
       }
     });
-    context.cluster.syncCallback(new AsyncCallback<SyncRequest>() {
+    context.cluster.localMember().protocol().server().syncCallback(new AsyncCallback<SyncRequest>() {
       @Override
       public void complete(SyncRequest request) {
         try {
@@ -69,7 +69,7 @@ abstract class BaseState implements State {
       public void fail(Throwable t) {
       }
     });
-    context.cluster.installCallback(new AsyncCallback<InstallRequest>() {
+    context.cluster.localMember().protocol().server().installCallback(new AsyncCallback<InstallRequest>() {
       @Override
       public void complete(InstallRequest request) {
         try {
@@ -82,7 +82,7 @@ abstract class BaseState implements State {
       public void fail(Throwable t) {
       }
     });
-    context.cluster.pollCallback(new AsyncCallback<PollRequest>() {
+    context.cluster.localMember().protocol().server().pollCallback(new AsyncCallback<PollRequest>() {
       @Override
       public void complete(PollRequest request) {
         try {
@@ -95,7 +95,7 @@ abstract class BaseState implements State {
       public void fail(Throwable t) {
       }
     });
-    context.cluster.submitCallback(new AsyncCallback<SubmitRequest>() {
+    context.cluster.localMember().protocol().server().submitCallback(new AsyncCallback<SubmitRequest>() {
       @Override
       public void complete(SubmitRequest request) {
         try {
@@ -366,11 +366,11 @@ abstract class BaseState implements State {
 
   @Override
   public void destroy() {
-    context.cluster.pingCallback(null);
-    context.cluster.syncCallback(null);
-    context.cluster.installCallback(null);
-    context.cluster.pollCallback(null);
-    context.cluster.submitCallback(null);
+    context.cluster.localMember().protocol().server().pingCallback(null);
+    context.cluster.localMember().protocol().server().syncCallback(null);
+    context.cluster.localMember().protocol().server().installCallback(null);
+    context.cluster.localMember().protocol().server().pollCallback(null);
+    context.cluster.localMember().protocol().server().submitCallback(null);
   }
 
 }
