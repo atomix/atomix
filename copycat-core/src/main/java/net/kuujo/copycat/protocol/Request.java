@@ -29,7 +29,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@JsonIgnoreProperties(ignoreUnknown = true)
+@JsonIgnoreProperties(ignoreUnknown=true)
 @JsonInclude(JsonInclude.Include.ALWAYS)
 @JsonAutoDetect(
   creatorVisibility=JsonAutoDetect.Visibility.NONE,

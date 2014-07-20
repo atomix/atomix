@@ -37,8 +37,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 )
 @SuppressWarnings("serial")
 public abstract class Response implements Serializable {
-  public static final String STATUS_OK = "ok";
-  public static final String STATUS_ERROR = "error";
 
   /**
    * Response status.
