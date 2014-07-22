@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-
 /**
  * A sync response.
  *
@@ -25,7 +22,6 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  */
 public class SyncResponse extends Response {
   private static final long serialVersionUID = 8897167973047662707L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private boolean succeeded;
 
@@ -44,14 +40,6 @@ public class SyncResponse extends Response {
 
   public SyncResponse(String message) {
     super(Status.ERROR, message);
-  }
-
-  public static SyncResponse fromJson(byte[] json) {
-    return serializer.readValue(json, SyncResponse.class);
-  }
-
-  public static byte[] toJson(SyncResponse response) {
-    return serializer.writeValue(response);
   }
 
   /**

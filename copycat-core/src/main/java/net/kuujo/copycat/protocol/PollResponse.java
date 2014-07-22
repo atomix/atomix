@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-
 /**
  * A poll response.
  *
@@ -25,7 +22,6 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  */
 public class PollResponse extends Response {
   private static final long serialVersionUID = 8188723576438876929L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
   private boolean voteGranted;
 
@@ -44,14 +40,6 @@ public class PollResponse extends Response {
 
   public PollResponse(String message) {
     super(Status.ERROR, message);
-  }
-
-  public static PollResponse fromJson(byte[] json) {
-    return serializer.readValue(json, PollResponse.class);
-  }
-
-  public static byte[] toJson(PollResponse response) {
-    return serializer.writeValue(response);
   }
 
   /**

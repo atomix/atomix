@@ -17,9 +17,6 @@ package net.kuujo.copycat.protocol;
 
 import java.util.Map;
 
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-
 /**
  * A submit response.
  *
@@ -27,7 +24,6 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  */
 public class SubmitResponse extends Response {
   private static final long serialVersionUID = -2137570252386650195L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private Map<String, Object> result;
 
   public SubmitResponse() {
@@ -44,14 +40,6 @@ public class SubmitResponse extends Response {
 
   public SubmitResponse(String message) {
     super(Status.ERROR, message);
-  }
-
-  public static SubmitResponse fromJson(byte[] json) {
-    return serializer.readValue(json, SubmitResponse.class);
-  }
-
-  public static byte[] toJson(SubmitResponse response) {
-    return serializer.writeValue(response);
   }
 
   /**

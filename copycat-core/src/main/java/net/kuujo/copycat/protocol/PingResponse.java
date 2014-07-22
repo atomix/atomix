@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
-
 /**
  * A ping response.
  *
@@ -25,7 +22,6 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  */
 public class PingResponse extends Response {
   private static final long serialVersionUID = -6062714826824861784L;
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private long term;
 
   public PingResponse() {
@@ -43,14 +39,6 @@ public class PingResponse extends Response {
 
   public PingResponse(String message) {
     super(Status.ERROR, message);
-  }
-
-  public static PingResponse fromJson(byte[] json) {
-    return serializer.readValue(json, PingResponse.class);
-  }
-
-  public static byte[] toJson(PingResponse response) {
-    return serializer.writeValue(response);
   }
 
   /**
