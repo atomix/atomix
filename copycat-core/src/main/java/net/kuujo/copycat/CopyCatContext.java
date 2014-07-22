@@ -28,6 +28,8 @@ import net.kuujo.copycat.log.impl.MemoryLog;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.registry.Registry;
+import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -37,7 +39,8 @@ import net.kuujo.copycat.util.AsyncCallback;
  */
 public class CopyCatContext {
   private static final Logger logger = Logger.getLogger(CopyCatContext.class.getCanonicalName());
-  final ClusterConfig clusterConfig;
+  private final ClusterConfig clusterConfig;
+  private final Registry registry;
   private final DynamicClusterConfig internalConfig = new DynamicClusterConfig();
   final Cluster cluster;
   final Log log;
@@ -59,6 +62,10 @@ public class CopyCatContext {
     this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig());
   }
 
+  public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, Registry registry) {
+    this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig(), registry);
+  }
+
   public CopyCatContext(StateMachine stateMachine, Log log) {
     this(stateMachine, log, new StaticClusterConfig(), new CopyCatConfig());
   }
@@ -68,8 +75,13 @@ public class CopyCatContext {
   }
 
   public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
+    this(stateMachine, log, cluster, config, new ConcurrentRegistry());
+  }
+
+  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
     this.log = log;
     this.config = config;
+    this.registry = registry;
     this.clusterConfig = cluster;
     this.cluster = new DefaultCluster(cluster, this);
     this.stateMachine = stateMachine;
@@ -109,6 +121,15 @@ public class CopyCatContext {
    */
   public Log log() {
     return log;
+  }
+
+  /**
+   * Returns the context registry.
+   *
+   * @return The context registry.
+   */
+  public Registry registry() {
+    return registry;
   }
 
   /**
@@ -194,7 +215,7 @@ public class CopyCatContext {
    * @param type The state to which to transition.
    */
   void transition(Class<? extends State> type) {
-    if (type.isAssignableFrom(this.state.getClass()))
+    if (this.state != null && type != null && type.isAssignableFrom(this.state.getClass()))
       return;
     logger.info(cluster.config().getLocalMember() + " transitioning to " + type.toString());
     final State oldState = state;

@@ -59,4 +59,9 @@ public class Start extends BaseState {
     request.respond("Replica is not alive");
   }
 
+  @Override
+  public void destroy() {
+    // Do nothing.
+  }
+
 }

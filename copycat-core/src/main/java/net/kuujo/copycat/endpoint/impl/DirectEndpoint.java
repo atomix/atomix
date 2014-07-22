@@ -13,36 +13,46 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol.impl;
+package net.kuujo.copycat.endpoint.impl;
+
+import java.util.Map;
 
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.endpoint.Endpoint;
+import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * Direct protocol implementation.
+ * Direct endpoint implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectProtocol implements Protocol {
-  private ProtocolServer server;
-  private ProtocolClient client;
+public class DirectEndpoint implements Endpoint {
+  private CopyCatContext context;
 
   @Override
   public void init(String address, CopyCatContext context) {
-    server = new DirectProtocolServer(address, context);
-    client = new DirectProtocolClient(address, context);
+    this.context = context;
   }
 
   @Override
-  public ProtocolServer server() {
-    return server;
+  public void start(AsyncCallback<Void> callback) {
   }
 
   @Override
-  public ProtocolClient client() {
-    return client;
+  public void stop(AsyncCallback<Void> callback) {
+  }
+
+  /**
+   * Submits a command via the endpoint.
+   *
+   * @param command The command to submit.
+   * @param args The command arguments.
+   * @param callback An asynchronous callback to be called once complete.
+   * @return
+   */
+  public DirectEndpoint submitCommand(String command, Map<String, Object> args, AsyncCallback<Map<String, Object>> callback) {
+    context.submitCommand(command, args, callback);
+    return this;
   }
 
 }

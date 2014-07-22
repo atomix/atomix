@@ -22,6 +22,7 @@ import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
@@ -38,38 +39,45 @@ public class Candidate extends BaseState {
   private static final Logger logger = Logger.getLogger(Candidate.class.getCanonicalName());
   private Quorum quorum;
   private final Timer electionTimer = new Timer();
-  private final TimerTask electionTimerTask = new TimerTask() {
-    @Override
-    public void run() {
-      // When the election times out, clear the previous majority vote
-      // check and restart the election.
-      logger.info("Election timed out");
-      if (quorum != null) {
-        quorum.cancel();
-        quorum = null;
-      }
-      resetTimer();
-      pollMembers();
-      logger.info("Restarted election");
-    }
-  };
+  private TimerTask electionTimerTask;
 
   @Override
   public void init(CopyCatContext context) {
     super.init(context);
-    logger.info("Starting election");
+    logger.info(String.format("%s starting election", context.cluster.config().getLocalMember()));
     resetTimer();
-    pollMembers();
   }
 
   /**
    * Resets the election timer.
    */
   private void resetTimer() {
+    // Cancel the current timer task and purge the election timer of cancelled tasks.
+    if (electionTimerTask != null) {
+      electionTimerTask.cancel();
+      electionTimer.purge();
+    }
+
+    electionTimerTask = new TimerTask() {
+      @Override
+      public void run() {
+        // When the election times out, clear the previous majority vote
+        // check and restart the election.
+        logger.info(String.format("%s election timed out", context.cluster.config().getLocalMember()));
+        if (quorum != null) {
+          quorum.cancel();
+          quorum = null;
+        }
+        resetTimer();
+        logger.info(String.format("%s restarted election", context.cluster.config().getLocalMember()));
+      }
+    };
+
     // When the election timer is reset, increment the current term.
     context.setCurrentTerm(context.getCurrentTerm() + 1);
     long timeout = context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4) + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2)));
     electionTimer.schedule(electionTimerTask, timeout);
+    pollMembers();
   }
 
   private void pollMembers() {
@@ -105,7 +113,7 @@ public class Candidate extends BaseState {
       // Once we got the last log term, iterate through each current member
       // of the cluster and poll each member for a vote.
       final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
-      for (String member : pollMembers) {
+      for (final String member : pollMembers) {
         context.cluster.member(member).protocol().client().poll(new PollRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<PollResponse>() {
           @Override
           public void complete(PollResponse response) {
@@ -129,29 +137,21 @@ public class Candidate extends BaseState {
   @Override
   protected void handlePing(PingRequest request) {
     super.handlePing(request);
-    if (request.term() > context.getCurrentTerm()) {
-      context.transition(Follower.class);
-    }
   }
 
   @Override
   protected void handleSync(SyncRequest request) {
     super.handleSync(request);
-    if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(request.leader());
-      context.transition(Follower.class);
-    }
+  }
+
+  @Override
+  protected void handleInstall(InstallRequest request) {
+    super.handleInstall(request);
   }
 
   @Override
   protected void handlePoll(PollRequest request) {
     super.handlePoll(request);
-    if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(null);
-      context.transition(Follower.class);
-    }
   }
 
   @Override

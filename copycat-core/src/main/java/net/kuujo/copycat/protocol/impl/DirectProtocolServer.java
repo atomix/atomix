@@ -1,3 +1,18 @@
+/*
+ * Copyright 2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package net.kuujo.copycat.protocol.impl;
 
 import net.kuujo.copycat.CopyCatContext;
@@ -14,9 +29,14 @@ import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
+/**
+ * Direct protocol server.
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ */
 public class DirectProtocolServer implements ProtocolServer {
   private final String address;
-  private final DirectProtocolRegistry registry;
+  private final CopyCatContext context;
   private AsyncCallback<PingRequest> pingCallback;
   private AsyncCallback<SyncRequest> syncCallback;
   private AsyncCallback<InstallRequest> installCallback;
@@ -25,7 +45,7 @@ public class DirectProtocolServer implements ProtocolServer {
 
   public DirectProtocolServer(String address, CopyCatContext context) {
     this.address = address;
-    registry = DirectProtocolRegistry.getInstance(context);
+    this.context = context;
   }
 
   @Override
@@ -90,13 +110,13 @@ public class DirectProtocolServer implements ProtocolServer {
 
   @Override
   public void start(AsyncCallback<Void> callback) {
-    registry.register(address, this);
+    context.registry().bind(address, this);
     callback.complete(null);
   }
 
   @Override
   public void stop(AsyncCallback<Void> callback) {
-    registry.unregister(address);
+    context.registry().unbind(address);
     callback.complete(null);
   }
 

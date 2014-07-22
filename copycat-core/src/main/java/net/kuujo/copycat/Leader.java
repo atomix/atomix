@@ -62,14 +62,7 @@ public class Leader extends BaseState implements Observer {
   private static final Logger logger = Logger.getLogger(Leader.class.getCanonicalName());
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private final Timer pingTimer = new Timer();
-  private final TimerTask pingTimerTask = new TimerTask() {
-    @Override
-    public void run() {
-      for (RemoteReplica replica : replicas) {
-        replica.update();
-      }
-    }
-  };
+  private TimerTask pingTimerTask;
   private final List<RemoteReplica> replicas = new ArrayList<>();
   private final Map<String, RemoteReplica> replicaMap = new HashMap<>();
   private final TreeMap<Long, Runnable> tasks = new TreeMap<>();
@@ -81,8 +74,8 @@ public class Leader extends BaseState implements Observer {
     // Set the current leader as this replica.
     context.setCurrentLeader(context.cluster.config().getLocalMember());
 
-    // Set up a timer for pinging cluster members.
-    pingTimer.schedule(pingTimerTask, context.config().getHeartbeatInterval());
+    // Set the periodic ping timer.
+    setPingTimer();
 
     // The first thing the leader needs to do is check whether the log is empty.
     // If the log is empty then we immediately commit an empty SnapshotEntry to
@@ -107,16 +100,35 @@ public class Leader extends BaseState implements Observer {
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
-    if (context.clusterConfig instanceof Observable) {
-      ((Observable) context.clusterConfig).addObserver(this);
+    if (context.cluster() instanceof Observable) {
+      ((Observable) context.cluster()).addObserver(this);
     }
 
     // Immediately commit the current cluster configuration.
-    clusterChanged(context.cluster.config());
+    Set<String> members = new HashSet<>(context.cluster.config().getMembers());
+    context.log.appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
+
+    // Immediately after the entry is appended to the log, apply the combined
+    // membership. Cluster membership changes do not wait for commitment.
+    Set<String> remoteMembers = new HashSet<>(members);
+    remoteMembers.remove(context.cluster.config().getLocalMember());
+    context.cluster.config().setRemoteMembers(remoteMembers);
+
+    // Whenever the local cluster membership changes, ensure we update the
+    // local replicas.
+    for (String member : context.cluster.config().getRemoteMembers()) {
+      if (!replicaMap.containsKey(member)) {
+        RemoteReplica replica = new RemoteReplica(member);
+        replicaMap.put(member, replica);
+        replicas.add(replica);
+      }
+    }
 
     // Once the initialization entries have been logged and the cluster configuration
     // has been updated, update all nodes in the cluster.
-    pingTimerTask.run();
+    for (RemoteReplica replica : replicas) {
+      replica.update();
+    }
   }
 
   @Override
@@ -167,7 +179,7 @@ public class Leader extends BaseState implements Observer {
 
         // Whenever the local cluster membership changes, ensure we update the
         // local replicas.
-        for (String member : context.cluster.config().getRemoteMembers()) {
+        for (String member : combinedRemoteMembers) {
           if (!replicaMap.containsKey(member)) {
             RemoteReplica replica = new RemoteReplica(member);
             replicaMap.put(member, replica);
@@ -208,12 +220,32 @@ public class Leader extends BaseState implements Observer {
     });
   }
 
+  /**
+   * Resets the ping timer.
+   */
+  private void setPingTimer() {
+    pingTimerTask = new TimerTask() {
+      @Override
+      public void run() {
+        for (RemoteReplica replica : replicas) {
+          replica.update();
+        }
+        setPingTimer();
+      }
+    };
+    pingTimer.schedule(pingTimerTask, context.config().getHeartbeatInterval());
+  }
+
   @Override
   protected void handlePing(PingRequest request) {
-    super.handlePing(request);
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getCurrentTerm()) {
+      context.setCurrentTerm(request.term());
+      context.setCurrentLeader(request.leader());
       context.transition(Follower.class);
     }
+    request.respond(context.getCurrentTerm());
   }
 
   @Override
@@ -376,8 +408,8 @@ public class Leader extends BaseState implements Observer {
     pingTimer.cancel();
 
     // Stop observing the observable cluster configuration.
-    if (context.clusterConfig instanceof Observable) {
-      ((Observable) context.clusterConfig).deleteObserver(this);
+    if (context.cluster() instanceof Observable) {
+      ((Observable) context.cluster()).deleteObserver(this);
     }
   }
 
@@ -416,9 +448,13 @@ public class Leader extends BaseState implements Observer {
      * Synchronizes the log with the replica.
      */
     private void sync() {
-      if (!running && !shutdown) {
-        running = true;
-        doSync();
+      if (!shutdown) {
+        if (!running) {
+          running = true;
+          doSync();
+        } else {
+          ping();
+        }
       }
     }
 
@@ -444,7 +480,7 @@ public class Leader extends BaseState implements Observer {
         final Entry prevEntry = context.log.getEntry(prevIndex);
 
         // Load up to ten entries for replication.
-        final List<Entry> entries = context.log.getEntries(prevIndex+1, prevIndex+11 < context.log.lastIndex() ? prevIndex+11 : context.log.lastIndex());
+        final List<Entry> entries = context.log.getEntries(nextIndex, nextIndex+10 < context.log.lastIndex() ? nextIndex+10 : context.log.lastIndex());
 
         final long commitIndex = context.getCommitIndex();
         if (logger.isLoggable(Level.FINER)) {
@@ -459,7 +495,7 @@ public class Leader extends BaseState implements Observer {
           }
         }
 
-        SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), prevIndex, prevEntry.term(), entries, commitIndex);
+        SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
         context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
           @Override
           public void complete(SyncResponse response) {
@@ -555,7 +591,7 @@ public class Leader extends BaseState implements Observer {
      * Sends incremental install requests to the replica.
      */
     private void doIncrementalInstall(final long index, final long term, final byte[] snapshot, final int position, final int length, final AsyncCallback<Void> callback) {
-      if (position > snapshot.length) {
+      if (position == snapshot.length) {
         callback.complete(null);
       } else {
         final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
@@ -563,12 +599,12 @@ public class Leader extends BaseState implements Observer {
         System.arraycopy(snapshot, position, bytes, 0, bytesLength);
         context.cluster.member(address).protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
           @Override
-          public void complete(InstallResponse value) {
+          public void complete(InstallResponse response) {
             doIncrementalInstall(index, term, snapshot, position + bytesLength, length, callback);
           }
           @Override
           public void fail(Throwable t) {
-            running = false;
+            callback.fail(t);
           }
         });
       }

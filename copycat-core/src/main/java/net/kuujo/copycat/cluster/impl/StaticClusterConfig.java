@@ -62,7 +62,9 @@ public class StaticClusterConfig implements ClusterConfig {
 
   @Override
   public ClusterConfig setLocalMember(String uri) {
-    if (!ProtocolUri.isValidUri(uri)) {
+    if (uri == null) {
+      return this;
+    } else if (!ProtocolUri.isValidUri(uri)) {
       throw new IllegalArgumentException(uri + " is not a valid protocol URI");
     }
     this.localMember = uri;
@@ -100,7 +102,9 @@ public class StaticClusterConfig implements ClusterConfig {
 
   @Override
   public ClusterConfig addRemoteMember(String uri) {
-    if (!ProtocolUri.isValidUri(uri)) {
+    if (uri == null) {
+      return this;
+    } if (!ProtocolUri.isValidUri(uri)) {
       throw new IllegalArgumentException(uri + " is not a valid protocol URI");
     }
     remoteMembers.add(uri);

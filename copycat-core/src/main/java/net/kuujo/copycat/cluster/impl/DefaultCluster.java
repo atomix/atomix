@@ -1,3 +1,18 @@
+/*
+ * Copyright 2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package net.kuujo.copycat.cluster.impl;
 
 import java.util.HashMap;
@@ -13,6 +28,11 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 
+/**
+ * Default cluster implementation.
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ */
 public class DefaultCluster implements Cluster, Observer {
   private final CopyCatContext context;
   private final DynamicClusterConfig config = new DynamicClusterConfig();
@@ -23,6 +43,7 @@ public class DefaultCluster implements Cluster, Observer {
     this.config.addObserver(this);
     this.config.setLocalMember(config.getLocalMember());
     this.config.setRemoteMembers(config.getRemoteMembers());
+    clusterChanged(this.config);
   }
 
   @Override

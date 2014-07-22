@@ -116,11 +116,10 @@ abstract class BaseState implements State {
   protected void handlePing(PingRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getCurrentTerm()) {
+    if ((request.term() > context.getCurrentTerm()) || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
       context.setCurrentTerm(request.term());
       context.setCurrentLeader(request.leader());
-    } else if (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null) {
-      context.setCurrentLeader(request.leader());
+      context.transition(Follower.class);
     }
     request.respond(context.getCurrentTerm());
   }
@@ -129,6 +128,15 @@ abstract class BaseState implements State {
    * Handles a sync request.
    */
   protected void handleSync(SyncRequest request) {
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    boolean transition = false;
+    if (request.term() > context.getCurrentTerm()) {
+      context.setCurrentTerm(request.term());
+      context.setCurrentLeader(request.leader());
+      transition = true;
+    }
+
     // If the request term is less than the current term then immediately
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
@@ -138,6 +146,12 @@ abstract class BaseState implements State {
       checkPreviousEntry(request);
     } else {
       appendEntries(request);
+    }
+
+    // If a transition is required then transition back to the follower state.
+    // If the node is already a follower then the transition will be ignored.
+    if (transition) {
+      context.transition(Follower.class);
     }
   }
 
@@ -163,10 +177,9 @@ abstract class BaseState implements State {
    * Appends entries to the local log.
    */
   private void appendEntries(SyncRequest request) {
-    long prevIndex = request.prevLogIndex();
-    for (int i = (int) (prevIndex+1); i < prevIndex + request.entries().size(); i++) {
+    for (int i = 0; i < request.entries().size(); i++) {
       // Get the entry at the current index from the log.
-      Entry entry = context.log.getEntry(i);
+      Entry entry = context.log.getEntry(i + request.prevLogIndex() + 1);
       // If the log does not contain an entry at this index then this
       // indicates no conflict, append the new entry.
       if (entry == null) {
@@ -176,7 +189,7 @@ abstract class BaseState implements State {
         // synced entry's term then that indicates that it came from a
         // different leader. The log must be purged of this entry and all
         // entries following it.
-        context.log.removeAfter(i-1);
+        context.log.removeAfter(request.prevLogIndex());
         context.log.appendEntry(request.entries().get(i));
       }
     }
@@ -264,11 +277,11 @@ abstract class BaseState implements State {
   protected void handleInstall(InstallRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getCurrentTerm()) {
+    boolean transition = false;
+    if ((request.term() > context.getCurrentTerm()) || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
       context.setCurrentTerm(request.term());
       context.setCurrentLeader(request.leader());
-    } else if (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null) {
-      context.setCurrentLeader(request.leader());
+      transition = true;
     }
 
     // Load the entry at the given position in the log.
@@ -291,9 +304,19 @@ abstract class BaseState implements State {
       System.arraycopy(request.data(), 0, combined, oldLength, newLength);
       snapshot = new SnapshotEntry(request.snapshotTerm(), request.cluster(), combined, request.complete());
     }
+
+    // Respond to the install request.
+    request.respond(context.getCurrentTerm(), true);
+
     // Note that we don't clear the log or apply the snapshot here. We will do that
     // once the snapshot entry has been committed and we know that a quorum of
     // the cluster's logs have advanced beyond the snapshot index.
+
+    // If a transition is required then transition back to the follower state.
+    // If the node is already a follower then the transition will be ignored.
+    if (transition) {
+      context.transition(Follower.class);
+    }
   }
 
   /**
@@ -302,11 +325,9 @@ abstract class BaseState implements State {
   protected void handlePoll(PollRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
-    boolean transition = false;
     if (request.term() > context.getCurrentTerm()) {
       context.setCurrentTerm(request.term());
       context.setCurrentLeader(null);
-      transition = true;
     }
 
     // If the request term is not as great as the current context term then don't
@@ -319,6 +340,7 @@ abstract class BaseState implements State {
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
     else if (request.candidate().equals(context.cluster.config().getLocalMember())) {
+      context.setLastVotedFor(context.cluster.config().getLocalMember());
       request.respond(context.getCurrentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
@@ -330,6 +352,7 @@ abstract class BaseState implements State {
     else if (context.getLastVotedFor() == null || context.getLastVotedFor().equals(request.candidate())) {
       // If the log is empty then vote for the candidate.
       if (context.log.isEmpty()) {
+        context.setLastVotedFor(request.candidate());
         request.respond(context.getCurrentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
@@ -349,11 +372,6 @@ abstract class BaseState implements State {
     // In this case, we've already voted for someone else.
     else {
       request.respond(context.getCurrentTerm(), false);
-    }
-
-    // Finally, transition out of this state if necessary.
-    if (transition) {
-      context.transition(Follower.class);
     }
   }
 
