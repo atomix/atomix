@@ -29,9 +29,12 @@ import net.kuujo.copycat.util.AsyncCallback;
 public class DirectEndpoint implements Endpoint {
   private CopyCatContext context;
 
-  @Override
-  public void init(String address, CopyCatContext context) {
+  public void setContext(CopyCatContext context) {
     this.context = context;
+  }
+
+  public CopyCatContext getContext() {
+    return context;
   }
 
   @Override

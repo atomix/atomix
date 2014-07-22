@@ -13,31 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.endpoint;
-
-import net.kuujo.copycat.util.AsyncCallback;
+package net.kuujo.copycat.protocol;
 
 /**
- * CopyCat endpoint.
+ * Protocol factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Endpoint {
+public interface ProtocolFactory {
 
   /**
-   * Starts the endpoint.
+   * Creates a new protocol instance.
    *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been started.
+   * @param uri The protocol URI.
+   * @return A new protocol instance.
    */
-  void start(AsyncCallback<Void> callback);
-
-  /**
-   * Stops the endpoint.
-   *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been stopped.
-   */
-  void stop(AsyncCallback<Void> callback);
+  Protocol createProtocol(ProtocolUri uri);
 
 }

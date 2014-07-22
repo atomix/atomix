@@ -15,29 +15,19 @@
  */
 package net.kuujo.copycat.endpoint;
 
-import net.kuujo.copycat.util.AsyncCallback;
-
 /**
- * CopyCat endpoint.
+ * Endpoint factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Endpoint {
+public interface EndpointFactory {
 
   /**
-   * Starts the endpoint.
+   * Creates a new endpoint instance.
    *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been started.
+   * @param uri The endpoint URI.
+   * @return An endpoint instance.
    */
-  void start(AsyncCallback<Void> callback);
-
-  /**
-   * Stops the endpoint.
-   *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been stopped.
-   */
-  void stop(AsyncCallback<Void> callback);
+  Endpoint createEndpoint(EndpointUri uri);
 
 }

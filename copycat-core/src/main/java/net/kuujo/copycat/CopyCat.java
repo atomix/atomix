@@ -17,9 +17,10 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.endpoint.Endpoint;
+import net.kuujo.copycat.endpoint.EndpointFactory;
 import net.kuujo.copycat.endpoint.EndpointUri;
+import net.kuujo.copycat.endpoint.impl.BeanEndpointFactory;
 import net.kuujo.copycat.util.AsyncCallback;
-import net.kuujo.copycat.util.ServiceInfo;
 
 /**
  * Primary copycat API.
@@ -35,17 +36,11 @@ public class CopyCat {
     this.context = new CopyCatContext(stateMachine, cluster);
   }
 
-  @SuppressWarnings("unchecked")
   public CopyCat(String endpoint, StateMachine stateMachine, ClusterConfig cluster) {
-    EndpointUri uri = new EndpointUri(endpoint);
-    ServiceInfo info = uri.getServiceInfo();
-    Class<? extends Endpoint> endpointClass = info.getProperty("class", Class.class);
-    try {
-      this.endpoint = endpointClass.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new CopyCatException(e);
-    }
     this.context = new CopyCatContext(stateMachine, cluster);
+    EndpointUri uri = new EndpointUri(endpoint, context);
+    EndpointFactory factory = new BeanEndpointFactory();
+    this.endpoint = factory.createEndpoint(uri);
   }
 
   /**

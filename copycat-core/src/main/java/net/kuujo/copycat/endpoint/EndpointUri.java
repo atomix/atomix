@@ -15,9 +15,14 @@
  */
 package net.kuujo.copycat.endpoint;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
+import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.util.ServiceInfo;
 import net.kuujo.copycat.util.ServiceLoader;
 
@@ -27,21 +32,20 @@ import net.kuujo.copycat.util.ServiceLoader;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EndpointUri {
+  private final String address;
   private final URI uri;
   private final ServiceInfo info;
+  private final CopyCatContext context;
 
-  public EndpointUri(String uri) {
+  public EndpointUri(String address, CopyCatContext context) {
+    this.address = address;
     try {
-      this.uri = new URI(uri);
+      this.uri = new URI(address);
     } catch (URISyntaxException e) {
       throw new EndpointException(e);
     }
-    info = ServiceLoader.load(String.format("net.kuujo.copycat.endpoint.%s", this.uri.getScheme()));
-  }
-
-  public EndpointUri(URI uri) {
-    this.uri = uri;
-    info = ServiceLoader.load(String.format("net.kuujo.copycat.endpoint.%s", this.uri.getScheme()));
+    this.info = ServiceLoader.load(String.format("net.kuujo.copycat.endpoint.%s", this.uri.getScheme()));
+    this.context = context;
   }
 
   /**
@@ -61,21 +65,59 @@ public class EndpointUri {
   }
 
   /**
-   * Returns the protocol service name.
+   * Returns the endpoint service name.
    *
-   * @return The protocol service name.
+   * @return The endpoint service name.
    */
   public String getServiceName() {
     return uri.getScheme();
   }
 
   /**
-   * Returns the protocol service info.
+   * Returns the endpoint service info.
    *
-   * @return The protocol service info.
+   * @return The endpoint service info.
    */
   public ServiceInfo getServiceInfo() {
     return info;
+  }
+
+  /**
+   * Returns the endpoint implementation class.
+   *
+   * @return The endpoint implementation class.
+   */
+  @SuppressWarnings("unchecked")
+  public Class<? extends Endpoint> getEndpointClass() {
+    return info.getProperty("class", Class.class);
+  }
+
+  /**
+   * Returns a map of endpoint arguments.
+   *
+   * @return A map of endpoint query arguments.
+   */
+  public Map<String, Object> getEndpointArgs() {
+    Map<String, Object> args = new LinkedHashMap<String, Object>();
+    args.put("address", address);
+    args.put("context", context);
+    for (String key : context.registry().keys()) {
+      args.put(key, context.registry().lookup(key));
+    }
+    String query = uri.getQuery();
+    if (query == null) {
+      return args;
+    }
+    String[] pairs = query.split("&");
+    for (String pair : pairs) {
+      int index = pair.indexOf("=");
+      try {
+        args.put(URLDecoder.decode(pair.substring(0, index), "UTF-8"), URLDecoder.decode(pair.substring(index + 1), "UTF-8"));
+      } catch (UnsupportedEncodingException e) {
+        throw new EndpointException(e);
+      }
+    }
+    return args;
   }
 
 }
