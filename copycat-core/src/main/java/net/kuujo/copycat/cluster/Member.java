@@ -16,7 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.protocol.ProtocolUri;
 
 /**
  * Cluster member.
@@ -31,13 +30,6 @@ public interface Member {
    * @return The member address.
    */
   String address();
-
-  /**
-   * Returns the member protocol URI.
-   *
-   * @return The member protocol URI.
-   */
-  ProtocolUri uri();
 
   /**
    * Returns the member's protocol instance.

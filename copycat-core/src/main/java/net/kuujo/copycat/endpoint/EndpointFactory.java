@@ -28,6 +28,6 @@ public interface EndpointFactory {
    * @param uri The endpoint URI.
    * @return An endpoint instance.
    */
-  Endpoint createEndpoint(EndpointUri uri);
+  Endpoint createEndpoint(String uri);
 
 }

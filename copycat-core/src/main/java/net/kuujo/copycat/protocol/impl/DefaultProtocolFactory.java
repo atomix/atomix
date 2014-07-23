@@ -17,41 +17,30 @@ package net.kuujo.copycat.protocol.impl;
 
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriInject;
-import net.kuujo.copycat.uri.UriSchemeSpecificPart;
+import net.kuujo.copycat.protocol.ProtocolFactory;
+import net.kuujo.copycat.protocol.ProtocolUri;
+import net.kuujo.copycat.uri.UriInjector;
 
 /**
- * Direct protocol implementation.
+ * Protocol factory that injects URI arguments into the protocol instance.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectProtocol implements Protocol {
-  private String address;
-  private ProtocolServer server;
-  private ProtocolClient client;
+public class DefaultProtocolFactory implements ProtocolFactory {
+  private final CopyCatContext context;
 
-  @UriInject
-  public DirectProtocol(@UriAuthority @UriSchemeSpecificPart String address) {
-    this.address = address;
+  public DefaultProtocolFactory(CopyCatContext context) {
+    this.context = context;
   }
 
   @Override
-  public void init(CopyCatContext context) {
-    server = new DirectProtocolServer(address, context);
-    client = new DirectProtocolClient(address, context);
-  }
-
-  @Override
-  public ProtocolServer server() {
-    return server;
-  }
-
-  @Override
-  public ProtocolClient client() {
-    return client;
+  public Protocol createProtocol(String uri) {
+    ProtocolUri wrappedUri = new ProtocolUri(uri);
+    Class<? extends Protocol> protocolClass = wrappedUri.getProtocolClass();
+    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context);
+    Protocol protocol = injector.inject(protocolClass);
+    protocol.init(context);
+    return protocol;
   }
 
 }

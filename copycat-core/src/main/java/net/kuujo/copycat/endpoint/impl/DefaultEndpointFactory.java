@@ -15,44 +15,32 @@
  */
 package net.kuujo.copycat.endpoint.impl;
 
-import java.util.Map;
-
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
-import net.kuujo.copycat.util.AsyncCallback;
+import net.kuujo.copycat.endpoint.EndpointFactory;
+import net.kuujo.copycat.endpoint.EndpointUri;
+import net.kuujo.copycat.uri.UriInjector;
 
 /**
- * Direct endpoint implementation.
+ * Endpoint factory that injects URI arguments into the endpoint instance.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectEndpoint implements Endpoint {
-  private CopyCatContext context;
+public class DefaultEndpointFactory implements EndpointFactory {
+  private final CopyCatContext context;
 
-  @Override
-  public void init(CopyCatContext context) {
+  public DefaultEndpointFactory(CopyCatContext context) {
     this.context = context;
   }
 
   @Override
-  public void start(AsyncCallback<Void> callback) {
-  }
-
-  @Override
-  public void stop(AsyncCallback<Void> callback) {
-  }
-
-  /**
-   * Submits a command via the endpoint.
-   *
-   * @param command The command to submit.
-   * @param args The command arguments.
-   * @param callback An asynchronous callback to be called once complete.
-   * @return
-   */
-  public DirectEndpoint submitCommand(String command, Map<String, Object> args, AsyncCallback<Map<String, Object>> callback) {
-    context.submitCommand(command, args, callback);
-    return this;
+  public Endpoint createEndpoint(String uri) {
+    EndpointUri wrappedUri = new EndpointUri(uri);
+    Class<? extends Endpoint> endpointClass = wrappedUri.getEndpointClass();
+    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context);
+    Endpoint endpoint = injector.inject(endpointClass);
+    endpoint.init(context);
+    return endpoint;
   }
 
 }

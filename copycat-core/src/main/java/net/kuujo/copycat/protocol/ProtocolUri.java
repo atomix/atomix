@@ -15,15 +15,9 @@
  */
 package net.kuujo.copycat.protocol;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
-import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.endpoint.EndpointException;
 import net.kuujo.copycat.util.ServiceInfo;
 import net.kuujo.copycat.util.ServiceLoader;
 
@@ -35,22 +29,19 @@ import net.kuujo.copycat.util.ServiceLoader;
 public class ProtocolUri {
   private final URI uri;
   private final ServiceInfo info;
-  private final CopyCatContext context;
 
-  public ProtocolUri(String uri, CopyCatContext context) {
+  public ProtocolUri(String uri) {
     try {
       this.uri = new URI(uri);
     } catch (URISyntaxException e) {
       throw new ProtocolException(e);
     }
     info = ServiceLoader.load(String.format("net.kuujo.copycat.protocol.%s", this.uri.getScheme()));
-    this.context = context;
   }
 
-  public ProtocolUri(URI uri, CopyCatContext context) {
+  public ProtocolUri(URI uri) {
     this.uri = uri;
     info = ServiceLoader.load(String.format("net.kuujo.copycat.protocol.%s", this.uri.getScheme()));
-    this.context = context;
   }
 
   /**
@@ -67,6 +58,15 @@ public class ProtocolUri {
     }
     ServiceLoader.load(String.format("net.kuujo.copycat.protocol.%s", ruri.getScheme()));
     return true;
+  }
+
+  /**
+   * Returns the raw protocol URI.
+   *
+   * @return The raw protocol URI.
+   */
+  public URI getRawUri() {
+    return uri;
   }
 
   /**
@@ -95,33 +95,6 @@ public class ProtocolUri {
   @SuppressWarnings("unchecked")
   public Class<? extends Protocol> getProtocolClass() {
     return info.getProperty("class", Class.class);
-  }
-
-  /**
-   * Returns a map of protocol arguments.
-   *
-   * @return A map of protocol query arguments.
-   */
-  public Map<String, Object> getProtocolArgs() {
-    Map<String, Object> args = new LinkedHashMap<String, Object>();
-    args.put("context", context);
-    for (String key : context.registry().keys()) {
-      args.put(key, context.registry().lookup(key));
-    }
-    String query = uri.getQuery();
-    if (query == null) {
-      return args;
-    }
-    String[] pairs = query.split("&");
-    for (String pair : pairs) {
-      int index = pair.indexOf("=");
-      try {
-        args.put(URLDecoder.decode(pair.substring(0, index), "UTF-8"), URLDecoder.decode(pair.substring(index + 1), "UTF-8"));
-      } catch (UnsupportedEncodingException e) {
-        throw new EndpointException(e);
-      }
-    }
-    return args;
   }
 
 }

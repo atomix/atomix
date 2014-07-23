@@ -13,39 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.endpoint;
+package net.kuujo.copycat.uri;
 
-import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.util.AsyncCallback;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * CopyCat endpoint.
+ * Named URI query argument injector annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Endpoint {
+@UriInject
+@Target(ElementType.PARAMETER)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface UriArgument {
 
   /**
-   * Initializes the endpoint.
-   *
-   * @param context The copycat context.
+   * The argument name.
    */
-  void init(CopyCatContext context);
-
-  /**
-   * Starts the endpoint.
-   *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been started.
-   */
-  void start(AsyncCallback<Void> callback);
-
-  /**
-   * Stops the endpoint.
-   *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been stopped.
-   */
-  void stop(AsyncCallback<Void> callback);
+  String value();
 
 }

@@ -18,8 +18,7 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.endpoint.EndpointFactory;
-import net.kuujo.copycat.endpoint.EndpointUri;
-import net.kuujo.copycat.endpoint.impl.BeanEndpointFactory;
+import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -36,11 +35,11 @@ public class CopyCat {
     this.context = new CopyCatContext(stateMachine, cluster);
   }
 
-  public CopyCat(String endpoint, StateMachine stateMachine, ClusterConfig cluster) {
+  public CopyCat(String uri, StateMachine stateMachine, ClusterConfig cluster) {
     this.context = new CopyCatContext(stateMachine, cluster);
-    EndpointUri uri = new EndpointUri(endpoint, context);
-    EndpointFactory factory = new BeanEndpointFactory();
+    EndpointFactory factory = new DefaultEndpointFactory(context);
     this.endpoint = factory.createEndpoint(uri);
+    this.endpoint.init(context);
   }
 
   /**

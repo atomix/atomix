@@ -13,39 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.endpoint;
+package net.kuujo.copycat.uri;
 
-import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.util.AsyncCallback;
+import net.kuujo.copycat.CopyCatException;
 
 /**
- * CopyCat endpoint.
+ * URI exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Endpoint {
+@SuppressWarnings("serial")
+public class UriException extends CopyCatException {
 
-  /**
-   * Initializes the endpoint.
-   *
-   * @param context The copycat context.
-   */
-  void init(CopyCatContext context);
+  public UriException(String message) {
+    super(message);
+  }
 
-  /**
-   * Starts the endpoint.
-   *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been started.
-   */
-  void start(AsyncCallback<Void> callback);
+  public UriException(String message, Throwable cause) {
+    super(message, cause);
+  }
 
-  /**
-   * Stops the endpoint.
-   *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been stopped.
-   */
-  void stop(AsyncCallback<Void> callback);
+  public UriException(Throwable cause) {
+    super(cause);
+  }
 
 }

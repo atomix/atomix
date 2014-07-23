@@ -28,6 +28,6 @@ public interface ProtocolFactory {
    * @param uri The protocol URI.
    * @return A new protocol instance.
    */
-  Protocol createProtocol(ProtocolUri uri);
+  Protocol createProtocol(String uri);
 
 }

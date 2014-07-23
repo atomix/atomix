@@ -30,7 +30,7 @@ public interface Protocol {
    * @param address The protocol address.
    * @param context The protocol context.
    */
-  void init(String address, CopyCatContext context);
+  void init(CopyCatContext context);
 
   /**
    * Returns a protocol server.
