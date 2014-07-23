@@ -210,11 +210,11 @@ abstract class BaseState implements State {
     if (request.commit() > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
       // Update the local commit index with min(request commit, last log // index)
       long lastIndex = context.log.lastIndex();
-      context.setCommitIndex(Math.min(request.commit(), lastIndex));
+      context.setCommitIndex(Math.min(Math.max(request.commit(), context.getCommitIndex()), lastIndex));
 
       // If the updated commit index indicates that commits remain to be
       // applied to the state machine, iterate entries and apply them.
-      if (context.getCommitIndex() > Math.min(context.getLastApplied(), lastIndex)) {
+      if (context.getCommitIndex() > context.getLastApplied()) {
         // Starting after the last applied entry, iterate through new entries
         // and apply them to the state machine up to the commit index.
         for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
