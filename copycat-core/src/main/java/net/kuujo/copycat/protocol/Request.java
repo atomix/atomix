@@ -17,10 +17,7 @@ package net.kuujo.copycat.protocol;
 
 import java.io.Serializable;
 
-import net.kuujo.copycat.util.AsyncCallback;
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -38,32 +35,5 @@ import com.fasterxml.jackson.annotation.JsonInclude;
   isGetterVisibility=JsonAutoDetect.Visibility.NONE,
   setterVisibility=JsonAutoDetect.Visibility.NONE
 )
-@SuppressWarnings("serial")
-public abstract class Request<T extends Response> implements Serializable {
-  @JsonIgnore
-  protected AsyncCallback<T> responseCallback;
-
-  protected Request() {
-  }
-
-  /**
-   * Sets the request response callback.
-   *
-   * @param callback The request response callback.
-   */
-  public void responseCallback(AsyncCallback<T> callback) {
-    this.responseCallback = callback;
-  }
-
-  /**
-   * Responds with a response message.
-   *
-   * @param response The response message.
-   */
-  protected void respond(T response) {
-    if (responseCallback != null) {
-      responseCallback.complete(response);
-    }
-  }
-
+public interface Request extends Serializable {
 }

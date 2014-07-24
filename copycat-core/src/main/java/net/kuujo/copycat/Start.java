@@ -16,10 +16,16 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.protocol.InstallRequest;
+import net.kuujo.copycat.protocol.InstallResponse;
 import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * Start state.
@@ -35,28 +41,28 @@ public class Start extends BaseState {
   }
 
   @Override
-  protected void handlePing(PingRequest request) {
-    request.respond("Replica is not alive");
+  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
+    responseCallback.complete(new PingResponse("Replica is not alive"));
   }
 
   @Override
-  protected void handleSync(SyncRequest request) {
-    request.respond("Replica is not alive");
+  public void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback) {
+    responseCallback.complete(new SyncResponse("Replica is not alive"));
   }
 
   @Override
-  protected void handleInstall(InstallRequest request) {
-    request.respond("Replica is not alive");
+  public void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback) {
+    responseCallback.complete(new InstallResponse("Replica is not alive"));
   }
 
   @Override
-  protected void handlePoll(PollRequest request) {
-    request.respond("Replica is not alive");
+  public void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback) {
+    responseCallback.complete(new PollResponse("Replica is not alive"));
   }
 
   @Override
-  protected void handleSubmit(SubmitRequest request) {
-    request.respond("Replica is not alive");
+  public void submit(SubmitRequest request, AsyncCallback<SubmitResponse> responseCallback) {
+    responseCallback.complete(new SubmitResponse("Replica is not alive"));
   }
 
   @Override

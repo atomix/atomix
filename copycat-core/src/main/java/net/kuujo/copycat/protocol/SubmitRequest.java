@@ -22,7 +22,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitRequest extends Request<SubmitResponse> {
+public class SubmitRequest implements Request {
   private static final long serialVersionUID = -8657438748181101192L;
   private String command;
   private Map<String, Object> args;
@@ -51,33 +51,6 @@ public class SubmitRequest extends Request<SubmitResponse> {
    */
   public Map<String, Object> args() {
     return args;
-  }
-
-  /**
-   * Responds to the request.
-   *
-   * @param result The command execution result.
-   */
-  public void respond(Map<String, Object> result) {
-    super.respond(new SubmitResponse(result));
-  }
-
-  /**
-   * Responds to the request with an error.
-   *
-   * @param t The error that occurred.
-   */
-  public void respond(Throwable t) {
-    super.respond(new SubmitResponse(t));
-  }
-
-  /**
-   * Responds to the request with an error message.
-   *
-   * @param message The error message.
-   */
-  public void respond(String message) {
-    super.respond(new SubmitResponse(message));
   }
 
   @Override

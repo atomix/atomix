@@ -23,10 +23,13 @@ import java.util.logging.Logger;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
+import net.kuujo.copycat.protocol.InstallResponse;
 import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 import net.kuujo.copycat.util.Quorum;
 
@@ -135,23 +138,23 @@ public class Candidate extends BaseState {
   }
 
   @Override
-  protected void handlePing(PingRequest request) {
-    super.handlePing(request);
+  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
+    super.ping(request, responseCallback);
   }
 
   @Override
-  protected void handleSync(SyncRequest request) {
-    super.handleSync(request);
+  public void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback) {
+    super.sync(request, responseCallback);
   }
 
   @Override
-  protected void handleInstall(InstallRequest request) {
-    super.handleInstall(request);
+  public void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback) {
+    super.install(request, responseCallback);
   }
 
   @Override
-  protected void handlePoll(PollRequest request) {
-    super.handlePoll(request);
+  public void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback) {
+    super.poll(request, responseCallback);
   }
 
   @Override

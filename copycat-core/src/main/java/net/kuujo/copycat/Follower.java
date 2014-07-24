@@ -20,9 +20,14 @@ import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.protocol.InstallRequest;
+import net.kuujo.copycat.protocol.InstallResponse;
 import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * Follower replica state.
@@ -76,27 +81,27 @@ public class Follower extends BaseState {
   }
 
   @Override
-  protected void handlePing(PingRequest request) {
+  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
     resetTimer();
-    super.handlePing(request);
+    super.ping(request, responseCallback);
   }
 
   @Override
-  protected void handleSync(SyncRequest request) {
+  public void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback) {
     resetTimer();
-    super.handleSync(request);
+    super.sync(request, responseCallback);
   }
 
   @Override
-  protected void handleInstall(InstallRequest request) {
+  public void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback) {
     resetTimer();
-    super.handleInstall(request);
+    super.install(request, responseCallback);
   }
 
   @Override
-  protected void handlePoll(PollRequest request) {
+  public void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback) {
     resetTimer();
-    super.handlePoll(request);
+    super.poll(request, responseCallback);
   }
 
   @Override

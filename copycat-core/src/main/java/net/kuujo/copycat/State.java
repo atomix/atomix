@@ -15,12 +15,14 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.protocol.ProtocolHandler;
+
 /**
  * Replica state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-interface State {
+public interface State extends ProtocolHandler {
 
   /**
    * Initializes the state.

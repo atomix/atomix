@@ -25,39 +25,11 @@ import net.kuujo.copycat.util.AsyncCallback;
 public interface ProtocolServer {
 
   /**
-   * Registers a ping request callback.
+   * Initializes the server with a protocol handler.
    *
-   * @param callback A callback to be called when a ping request is received.
+   * @param handler A request handler to handle requests received by the server.
    */
-  void pingCallback(AsyncCallback<PingRequest> callback);
-
-  /**
-   * Registers a sync request callback.
-   *
-   * @param callback A callback to be called when a sync request is received.
-   */
-  void syncCallback(AsyncCallback<SyncRequest> callback);
-
-  /**
-   * Registers an install request callback.
-   *
-   * @param callback A callback to be called when an install request is received.
-   */
-  void installCallback(AsyncCallback<InstallRequest> callback);
-
-  /**
-   * Registers a poll request callback.
-   *
-   * @param callback A callback to be called when a poll request is received.
-   */
-  void pollCallback(AsyncCallback<PollRequest> callback);
-
-  /**
-   * Registers a submit request callback.
-   *
-   * @param callback A callback to be called when a submit request is received.
-   */
-  void submitCallback(AsyncCallback<SubmitRequest> callback);
+  void protocolHandler(ProtocolHandler handler);
 
   /**
    * Starts the server.

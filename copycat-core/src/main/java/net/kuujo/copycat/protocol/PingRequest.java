@@ -20,7 +20,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PingRequest extends Request<PingResponse> {
+public class PingRequest implements Request {
   private static final long serialVersionUID = -4293135418334841156L;
   private long term;
   private String leader;
@@ -49,33 +49,6 @@ public class PingRequest extends Request<PingResponse> {
    */
   public String leader() {
     return leader;
-  }
-
-  /**
-   * Responds to the request.
-   *
-   * @param term The responding node's current term.
-   */
-  public void respond(long term) {
-    super.respond(new PingResponse(term));
-  }
-
-  /**
-   * Responds to the request with an error.
-   *
-   * @param t The error that occurred.
-   */
-  public void respond(Throwable t) {
-    super.respond(new PingResponse(t));
-  }
-
-  /**
-   * Responds to the request with an error message.
-   *
-   * @param message The error message.
-   */
-  public void respond(String message) {
-    super.respond(new PingResponse(message));
   }
 
   @Override

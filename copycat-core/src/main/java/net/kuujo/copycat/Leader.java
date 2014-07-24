@@ -32,8 +32,6 @@ import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import net.kuujo.copycat.CommandInfo;
-import net.kuujo.copycat.CommandProvider;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
@@ -46,6 +44,7 @@ import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.serializer.Serializer;
@@ -237,7 +236,7 @@ public class Leader extends BaseState implements Observer {
   }
 
   @Override
-  protected void handlePing(PingRequest request) {
+  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getCurrentTerm()) {
@@ -245,11 +244,11 @@ public class Leader extends BaseState implements Observer {
       context.setCurrentLeader(request.leader());
       context.transition(Follower.class);
     }
-    request.respond(context.getCurrentTerm());
+    responseCallback.complete(new PingResponse(context.getCurrentTerm()));
   }
 
   @Override
-  protected void handleSubmit(final SubmitRequest request) {
+  public void submit(final SubmitRequest request, final AsyncCallback<SubmitResponse> responseCallback) {
     // Try to determine the type of command this request is executing. The command
     // type is provided by a CommandProvider which provides CommandInfo for a
     // given command. If no CommandInfo is provided then all commands are assumed
@@ -274,17 +273,17 @@ public class Leader extends BaseState implements Observer {
           public void complete(Boolean succeeded) {
             if (succeeded) {
               try {
-                request.respond(context.stateMachine.applyCommand(request.command(), request.args()));
+                responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
               } catch (Exception e) {
-                request.respond(e.getMessage());
+                responseCallback.fail(e);
               }
             } else {
-              request.respond("Failed to acquire read quorum");
+              responseCallback.fail(new CopyCatException("Failed to acquire read quorum"));
             }
           }
           @Override
           public void fail(Throwable t) {
-            request.respond(t);
+            responseCallback.fail(t);
           }
         });
         for (RemoteReplica replica : replicas) {
@@ -301,9 +300,9 @@ public class Leader extends BaseState implements Observer {
         }
       } else {
         try {
-          request.respond(context.stateMachine.applyCommand(request.command(), request.args()));
+          responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
         } catch (Exception e) {
-          request.respond(e.getMessage());
+          responseCallback.fail(e);
         }
       }
     } else {
@@ -324,9 +323,9 @@ public class Leader extends BaseState implements Observer {
             // Once the entry has been replicated we can apply it to the state
             // machine and respond with the command result.
             try {
-              request.respond(context.stateMachine.applyCommand(request.command(), request.args()));
+              responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
             } catch (Exception e) {
-              request.respond(e.getMessage());
+              responseCallback.fail(e);
             } finally {
               context.setLastApplied(index);
             }
@@ -338,9 +337,9 @@ public class Leader extends BaseState implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          request.respond(context.stateMachine.applyCommand(request.command(), request.args()));
+          responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
         } catch (Exception e) {
-          request.respond(e.getMessage());
+          responseCallback.fail(e);
         } finally {
           context.setLastApplied(index);
         }

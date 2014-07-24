@@ -18,50 +18,50 @@ package net.kuujo.copycat.protocol;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * Protocol client.
+ * Request handler for requests between CopyCat replicas.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public interface ProtocolHandler {
 
   /**
-   * Sends a ping request.
+   * Sends or handles a protocol ping request.
    *
    * @param request The ping request.
-   * @param callback A callback to be called once the response is received.
+   * @param responseCallback A ping response callback.
    */
-  void ping(PingRequest request, AsyncCallback<PingResponse> callback);
+  void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback);
 
   /**
-   * Sends a sync request.
+   * Sends or handles a protocol sync request.
    *
    * @param request The sync request.
-   * @param callback A callback to be called once the response is received.
+   * @param responseCallback A sync response callback.
    */
-  void sync(SyncRequest request, AsyncCallback<SyncResponse> callback);
+  void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback);
 
   /**
-   * Sends an install request.
+   * Sends or handles a protocol install request.
    *
    * @param request The install request.
-   * @param callback A callback to be called once the response is received.
+   * @param responseCallback A install response callback.
    */
-  void install(InstallRequest request, AsyncCallback<InstallResponse> callback);
+  void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback);
 
   /**
-   * Sends a poll request.
+   * Sends or handles a protocol poll request.
    *
    * @param request The poll request.
-   * @param callback A callback to be called once the response is received.
+   * @param responseCallback A poll response callback.
    */
-  void poll(PollRequest request, AsyncCallback<PollResponse> callback);
+  void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback);
 
   /**
-   * Sends a submit request.
+   * Sends or handles a protocol submit request.
    *
    * @param request The submit request.
-   * @param callback A callback to be called once the response is received.
+   * @param responseCallback A submit response callback.
    */
-  void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback);
+  void submit(SubmitRequest request, AsyncCallback<SubmitResponse> responseCallback);
 
 }

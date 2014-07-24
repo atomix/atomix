@@ -22,7 +22,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InstallRequest extends Request<InstallResponse> {
+public class InstallRequest implements Request {
   private static final long serialVersionUID = 1475758554918256823L;
   private long term;
   private String leader;
@@ -105,32 +105,9 @@ public class InstallRequest extends Request<InstallResponse> {
     return complete;
   }
 
-  /**
-   * Responds to the request.
-   *
-   * @param term The current term.
-   * @param succeeded Whether the installation was successful.
-   */
-  public void respond(long term, boolean succeeded) {
-    super.respond(new InstallResponse(term, succeeded));
-  }
-
-  /**
-   * Responds to the request.
-   *
-   * @param t A response exception.
-   */
-  public void respond(Throwable t) {
-    super.respond(new InstallResponse(t));
-  }
-
-  /**
-   * Responds to the request with an error.
-   *
-   * @param error The error message.
-   */
-  public void respond(String error) {
-    super.respond(new InstallResponse(error));
+  @Override
+  public String toString() {
+    return String.format("InstallRequest[term=%s, leader=%s, snapshotIndex=%d, snapshotTerm=%d, cluster=%s, data=%s]", term, leader, snapshotIndex, snapshotTerm, cluster, data);
   }
 
 }

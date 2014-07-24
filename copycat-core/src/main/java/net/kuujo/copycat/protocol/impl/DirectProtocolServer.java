@@ -22,6 +22,7 @@ import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
@@ -37,11 +38,7 @@ import net.kuujo.copycat.util.AsyncCallback;
 public class DirectProtocolServer implements ProtocolServer {
   private final String address;
   private final CopyCatContext context;
-  private AsyncCallback<PingRequest> pingCallback;
-  private AsyncCallback<SyncRequest> syncCallback;
-  private AsyncCallback<InstallRequest> installCallback;
-  private AsyncCallback<PollRequest> pollCallback;
-  private AsyncCallback<SubmitRequest> submitCallback;
+  private ProtocolHandler requestHandler;
 
   public DirectProtocolServer(String address, CopyCatContext context) {
     this.address = address;
@@ -49,62 +46,37 @@ public class DirectProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void pingCallback(AsyncCallback<PingRequest> callback) {
-    pingCallback = callback;
+  public void protocolHandler(ProtocolHandler handler) {
+    this.requestHandler = handler;
   }
 
   void ping(PingRequest request, AsyncCallback<PingResponse> callback) {
-    request.responseCallback(callback);
-    if (pingCallback != null) {
-      pingCallback.complete(request);
+    if (requestHandler != null) {
+      requestHandler.ping(request, callback);
     }
-  }
-
-  @Override
-  public void syncCallback(AsyncCallback<SyncRequest> callback) {
-    syncCallback = callback;
   }
 
   void sync(SyncRequest request, AsyncCallback<SyncResponse> callback) {
-    request.responseCallback(callback);
-    if (syncCallback != null) {
-      syncCallback.complete(request);
+    if (requestHandler != null) {
+      requestHandler.sync(request, callback);
     }
-  }
-
-  @Override
-  public void installCallback(AsyncCallback<InstallRequest> callback) {
-    installCallback = callback;
   }
 
   void install(InstallRequest request, AsyncCallback<InstallResponse> callback) {
-    request.responseCallback(callback);
-    if (installCallback != null) {
-      installCallback.complete(request);
+    if (requestHandler != null) {
+      requestHandler.install(request, callback);
     }
-  }
-
-  @Override
-  public void pollCallback(AsyncCallback<PollRequest> callback) {
-    pollCallback = callback;
   }
 
   void poll(PollRequest request, AsyncCallback<PollResponse> callback) {
-    request.responseCallback(callback);
-    if (pollCallback != null) {
-      pollCallback.complete(request);
+    if (requestHandler != null) {
+      requestHandler.poll(request, callback);
     }
   }
 
-  @Override
-  public void submitCallback(AsyncCallback<SubmitRequest> callback) {
-    submitCallback = callback;
-  }
-
   void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback) {
-    request.responseCallback(callback);
-    if (submitCallback != null) {
-      submitCallback.complete(request);
+    if (requestHandler != null) {
+      requestHandler.submit(request, callback);
     }
   }
 

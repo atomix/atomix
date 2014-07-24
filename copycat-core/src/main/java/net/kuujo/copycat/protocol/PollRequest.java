@@ -20,7 +20,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PollRequest extends Request<PollResponse> {
+public class PollRequest implements Request {
   private static final long serialVersionUID = -5282035829185619414L;
   private long term;
   private String candidate;
@@ -71,34 +71,6 @@ public class PollRequest extends Request<PollResponse> {
    */
   public long lastLogTerm() {
     return lastLogTerm;
-  }
-
-  /**
-   * Responds to the vote request.
-   * 
-   * @param term The responding node's term.
-   * @param voteGranted Indicates whether the vote was granted.
-   */
-  public void respond(long term, boolean voteGranted) {
-    super.respond(new PollResponse(term, voteGranted));
-  }
-
-  /**
-   * Responds to the request with an error.
-   *
-   * @param t The error that occurred.
-   */
-  public void respond(Throwable t) {
-    super.respond(new PollResponse(t));
-  }
-
-  /**
-   * Responds to the request with an error message.
-   *
-   * @param message The error message.
-   */
-  public void respond(String message) {
-    super.respond(new PollResponse(message));
   }
 
   @Override

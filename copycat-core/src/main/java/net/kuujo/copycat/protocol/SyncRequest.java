@@ -24,7 +24,7 @@ import net.kuujo.copycat.log.Entry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SyncRequest extends Request<SyncResponse> {
+public class SyncRequest implements Request {
   private static final long serialVersionUID = 8870779945535041744L;
   private long term;
   private String leader;
@@ -97,34 +97,6 @@ public class SyncRequest extends Request<SyncResponse> {
    */
   public long commit() {
     return commit;
-  }
-
-  /**
-   * Responds to the request.
-   * 
-   * @param term The responding node's current term.
-   * @param succeeded Indicates whether the sync was successful.
-   */
-  public void respond(long term, boolean succeeded) {
-    super.respond(new SyncResponse(term, succeeded));
-  }
-
-  /**
-   * Responds to the request with an error.
-   *
-   * @param t The error that occurred.
-   */
-  public void respond(Throwable t) {
-    super.respond(new SyncResponse(t));
-  }
-
-  /**
-   * Responds to the request with an error message.
-   *
-   * @param message The error message.
-   */
-  public void respond(String message) {
-    super.respond(new SyncResponse(message));
   }
 
   @Override
