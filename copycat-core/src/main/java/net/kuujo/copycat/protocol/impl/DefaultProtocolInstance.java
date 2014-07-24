@@ -15,41 +15,39 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolInstance;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriInject;
-import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
 /**
- * Direct protocol implementation.
+ * Default protocol instance implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectProtocol implements Protocol {
-  private String address;
-  private CopyCatContext context;
+public class DefaultProtocolInstance implements ProtocolInstance {
+  private final Protocol protocol;
+  private ProtocolClient client;
+  private ProtocolServer server;
 
-  @UriInject
-  public DirectProtocol(@UriAuthority @UriSchemeSpecificPart String address) {
-    this.address = address;
+  public DefaultProtocolInstance(Protocol protocol) {
+    this.protocol = protocol;
   }
 
   @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
+  public ProtocolClient client() {
+    if (client == null) {
+      client = protocol.createClient();
+    }
+    return client;
   }
 
   @Override
-  public ProtocolServer createServer() {
-    return new DirectProtocolServer(address, context);
-  }
-
-  @Override
-  public ProtocolClient createClient() {
-    return new DirectProtocolClient(address, context);
+  public ProtocolServer server() {
+    if (server == null) {
+      protocol.createServer();
+    }
+    return server;
   }
 
 }

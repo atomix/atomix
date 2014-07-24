@@ -45,8 +45,6 @@ import org.vertx.java.core.impl.DefaultVertx;
 public class EventBusProtocol implements Protocol {
   private Vertx vertx;
   private String address;
-  private EventBusProtocolServer server;
-  private EventBusProtocolClient client;
 
   @UriInject
   public EventBusProtocol(@UriArgument("vertx") Vertx vertx, @UriAuthority @UriSchemeSpecificPart String address) {
@@ -73,18 +71,16 @@ public class EventBusProtocol implements Protocol {
 
   @Override
   public void init(CopyCatContext context) {
-    server = new EventBusProtocolServer(address, vertx);
-    client = new EventBusProtocolClient(address, vertx);
   }
 
   @Override
-  public ProtocolServer server() {
-    return server;
+  public ProtocolServer createServer() {
+    return new EventBusProtocolServer(address, vertx);
   }
 
   @Override
-  public ProtocolClient client() {
-    return client;
+  public ProtocolClient createClient() {
+    return new EventBusProtocolClient(address, vertx);
   }
 
 }

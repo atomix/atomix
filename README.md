@@ -37,18 +37,15 @@ public interface Protocol {
 
   void init(CopyCatContext context);
 
-  ProtocolClient client();
+  ProtocolClient createClient();
 
-  ProtocolServer server();
+  ProtocolServer createServer();
 
 }
 ```
 
 You'll notice that the `Protocol` itself doesn't actually do anything. Instead,
-it simply provides a `ProtocolClient` and `ProtocolServer` instance. *It is very
-important to remember that these are not factory methods.* Each `Protocol` instance
-should always contain a single `ProtocolClient` and a single `ProtocolServer` which
-should be constructed during `init`.
+it simply provides factories for `ProtocolClient` and `ProtocolServer`.
 
 ### Writing a protocol server
 The `ProtocolServer` interface is implemented by the receiving side of the protocol.
@@ -273,18 +270,16 @@ public class RestProtocol implements Protocol {
 
   @Override
   public void init(CopyCatContext context) {
-    client = new RestProtocolClient(client, path);
-    server = new RestProtocolServer(server, path);
   }
 
   @Override
-  public ProtocolClient client() {
-    return client;
+  public ProtocolClient createClient() {
+    return new RestProtocolClient(client, path);
   }
 
   @Override
-  public ProtocolServer server() {
-    return server;
+  public ProtocolServer createServer() {
+    return new RestProtocolServer(server, path);
   }
 
 }

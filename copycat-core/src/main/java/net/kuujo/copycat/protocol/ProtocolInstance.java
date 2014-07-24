@@ -13,29 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
-
-import net.kuujo.copycat.protocol.ProtocolInstance;
+package net.kuujo.copycat.protocol;
 
 /**
- * Cluster member.
+ * Wrapped instance of a protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Member {
+public interface ProtocolInstance {
 
   /**
-   * Returns the member address.
+   * Returns the instance client.
    *
-   * @return The member address.
+   * @return The protocol client.
    */
-  String address();
+  ProtocolClient client();
 
   /**
-   * Returns the member's protocol instance.
+   * Returns the instance server.
    *
-   * @return The member's protocol instance.
+   * @return The protocol server.
    */
-  ProtocolInstance protocol();
+  ProtocolServer server();
 
 }

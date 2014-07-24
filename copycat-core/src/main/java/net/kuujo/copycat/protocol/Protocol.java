@@ -33,17 +33,17 @@ public interface Protocol {
   void init(CopyCatContext context);
 
   /**
-   * Returns a protocol server.
+   * Creates a protocol server.
    *
    * @return The protocol server.
    */
-  ProtocolServer server();
+  ProtocolServer createServer();
 
   /**
-   * Returns a protocol client.
+   * Creates a protocol client.
    *
    * @return The protocol client.
    */
-  ProtocolClient client();
+  ProtocolClient createClient();
 
 }
