@@ -56,15 +56,7 @@ callbacks for each command. Each callback is in the form of an `AsyncCallback` i
 ```java
 public interface ProtocolServer {
 
-  void pingCallback(AsyncCallback<PingRequest> callback);
-
-  void syncCallback(AsyncCallback<SyncRequest> callback);
-
-  void installCallback(AsyncCallback<InstallRequest> callback);
-
-  void pollCallback(AsyncCallback<PollRequest> callback);
-
-  void submitCallback(AsyncCallback<SubmitRequest> callback);
+  void protocolHandler(ProtocolHandler handler);
 
   void start(AsyncCallback<Void> callback);
 
