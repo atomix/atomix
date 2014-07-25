@@ -66,6 +66,9 @@ public class UriInjector {
     }
   }
 
+  /**
+   * Creates a new instance of the given type.
+   */
   @SuppressWarnings("unchecked")
   public <T> T inject(Class<T> type) {
     T object = null;
