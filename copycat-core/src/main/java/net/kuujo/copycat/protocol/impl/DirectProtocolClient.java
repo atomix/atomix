@@ -94,4 +94,14 @@ public class DirectProtocolClient implements ProtocolClient {
     }
   }
 
+  @Override
+  public void connect(AsyncCallback<Void> callback) {
+    callback.complete(null);
+  }
+
+  @Override
+  public void close(AsyncCallback<Void> callback) {
+    callback.complete(null);
+  }
+
 }

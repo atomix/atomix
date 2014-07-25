@@ -64,4 +64,18 @@ public interface ProtocolClient extends ProtocolHandler {
    */
   void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback);
 
+  /**
+   * Connects the client.
+   *
+   * @param callback A callback to be called once connected.
+   */
+  void connect(AsyncCallback<Void> callback);
+
+  /**
+   * Closes the client.
+   *
+   * @param callback A callback to be called once closed.
+   */
+  void close(AsyncCallback<Void> callback);
+
 }
