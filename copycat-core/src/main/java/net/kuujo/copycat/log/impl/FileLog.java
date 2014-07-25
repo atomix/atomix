@@ -35,6 +35,7 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  */
 public class FileLog implements Log {
   private static final Serializer serializer  = SerializerFactory.getSerializer();
+  private static final String separator = System.getProperty("line.separator");
   private File f;
   private RandomAccessFile file;
   private long firstIndex;
@@ -105,7 +106,13 @@ public class FileLog implements Log {
   public synchronized long appendEntry(Entry entry) {
     long index = lastIndex+1;
     try {
-      file.writeBytes(String.format("%d:%s%n", index, serializer.writeValue(entry)));
+      String bytes = new StringBuilder()
+        .append(index)
+        .append(':')
+        .append(new String(serializer.writeValue(entry)))
+        .append(separator)
+        .toString();
+      file.writeBytes(bytes);
       lastIndex++;
       if (firstIndex == 0) {
         firstIndex = 1;
@@ -118,33 +125,39 @@ public class FileLog implements Log {
 
   @Override
   public boolean containsEntry(long index) {
-    return firstIndex <= index && index <= lastIndex;
+    return indexInRange(index);
   }
 
   @Override
   public synchronized Entry getEntry(long index) {
     Entry entry = null;
-    try {
-      findFilePointer(index);
-      String line = file.readLine();
-      if (line != null) {
-        entry = serializer.readValue(line.substring(String.valueOf(index).length() + 1).getBytes(), Entry.class);
+    if (indexInRange(index)) {
+      try {
+        findFilePointer(index);
+        String line = file.readLine();
+        if (line != null) {
+          entry = serializer.readValue(line.substring(String.valueOf(index).length() + 1).getBytes(), Entry.class);
+        }
+        file.seek(file.length());
+      } catch (IOException e) {
+        throw new LogException(e);
       }
-      file.seek(file.length());
-    } catch (IOException e) {
-      throw new LogException(e);
     }
     return entry;
   }
 
   @Override
   public synchronized Log setEntry(long index, Entry entry) {
-    if (index < firstIndex || index > lastIndex) throw new IndexOutOfBoundsException();
     try {
       long pointer = findFilePointer(index);
       String line = file.readLine();
       int length = line.length();
-      String bytes = String.format("%d:%s%n", index, serializer.writeValue(entry));
+      String bytes = new StringBuilder()
+        .append(index)
+        .append(':')
+        .append(new String(serializer.writeValue(entry)))
+        .append(separator)
+        .toString();
       int newLength = bytes.length();
       if (newLength > length) {
         expandFile(pointer+length, pointer+newLength);
@@ -194,35 +207,42 @@ public class FileLog implements Log {
 
   @Override
   public synchronized void removeBefore(long index) {
-    if (index > lastIndex) {
-      return;
+    if (indexInRange(index)) {
+      long pointer = findFilePointer(index);
+      compactFile(pointer, 0);
+      firstIndex = index;
     }
-
-    long pointer = findFilePointer(index);
-    compactFile(pointer, 0);
-    firstIndex = index;
   }
 
   @Override
   public synchronized void removeAfter(long index) {
-    if (firstIndex == 0) {
-      return;
+    if (firstIndex > 0 && indexInRange(index)) {
+      try {
+        long pointer = findFilePointer(index+1);
+        file.setLength(pointer);
+        lastIndex = index;
+        file.seek(file.length());
+      } catch (IOException e) {
+        throw new LogException(e);
+      }
     }
+  }
 
-    try {
-      long pointer = findFilePointer(index+1);
-      file.setLength(pointer);
-      lastIndex = index;
-      file.seek(file.length());
-    } catch (IOException e) {
-      throw new LogException(e);
-    }
+  /**
+   * Returns a boolean indicating whether the given index is within the range
+   * of the log.
+   */
+  private boolean indexInRange(long index) {
+    return index >= firstIndex && index <= lastIndex;
   }
 
   /**
    * Finds the file pointer for the entry at the given index.
    */
   private long findFilePointer(long index) {
+    if (!indexInRange(index)) {
+      throw new IndexOutOfBoundsException("Index out of bounds");
+    }
     try {
       file.seek(0);
       long currentIndex = firstIndex;
