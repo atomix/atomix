@@ -45,7 +45,7 @@ public class DefaultProtocolInstance implements ProtocolInstance {
   @Override
   public ProtocolServer server() {
     if (server == null) {
-      protocol.createServer();
+      server = protocol.createServer();
     }
     return server;
   }
