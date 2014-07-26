@@ -232,6 +232,25 @@ public class CopyCatContext {
     }
   }
 
+  /**
+   * Returns the current cluster leader.
+   *
+   * @return The current cluster leader.
+   */
+  public String leader() {
+    return currentLeader;
+  }
+
+  /**
+   * Returns a boolean indicating whether this node is the leader.
+   *
+   * @return Indicates whether this node is the leader.
+   */
+  public boolean isLeader() {
+    return currentLeader != null && currentLeader.equals(cluster.localMember().uri());
+  }
+
+
   String getCurrentLeader() {
     return currentLeader;
   }
@@ -298,7 +317,7 @@ public class CopyCatContext {
    */
   public CopyCatContext submitCommand(final String command, final Map<String, Object> args, final AsyncCallback<Map<String, Object>> callback) {
     if (currentLeader == null) {
-      callback.fail(new CopyCatException("No leader found"));
+      callback.fail(new CopyCatException("No leader available"));
     } else {
       cluster.member(currentLeader).protocol().client().submit(new SubmitRequest(command, args), new AsyncCallback<SubmitResponse>() {
         @Override
