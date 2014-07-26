@@ -58,10 +58,20 @@ public interface ProtocolClient extends ProtocolHandler {
 
   /**
    * Connects the client.
+   */
+  void connect();
+
+  /**
+   * Connects the client.
    *
    * @param callback A callback to be called once connected.
    */
   void connect(AsyncCallback<Void> callback);
+
+  /**
+   * Closes the client.
+   */
+  void close();
 
   /**
    * Closes the client.

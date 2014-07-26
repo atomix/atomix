@@ -15,17 +15,18 @@
  */
 package net.kuujo.copycat;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.util.AsyncCallback;
@@ -90,7 +91,7 @@ public class Candidate extends BaseState {
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
     if (quorum == null) {
-      final Set<String> pollMembers = new HashSet<>(context.cluster.config().getMembers());
+      final Set<Member> pollMembers = context.cluster.members();
       quorum = new Quorum(context.cluster.config().getQuorumSize());
       quorum.setCallback(new AsyncCallback<Boolean>() {
         @Override
@@ -111,23 +112,36 @@ public class Candidate extends BaseState {
 
       // First, load the last log entry to get its term. We load the entry
       // by its index since the index is required by the protocol.
-      long lastIndex = context.log.lastIndex();
+      final long lastIndex = context.log.lastIndex();
       Entry lastEntry = context.log.getEntry(lastIndex);
 
       // Once we got the last log term, iterate through each current member
       // of the cluster and poll each member for a vote.
       final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
-      for (final String member : pollMembers) {
-        context.cluster.member(member).protocol().client().poll(new PollRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<PollResponse>() {
+      for (Member member : pollMembers) {
+        final ProtocolClient client = member.protocol().client();
+        client.connect(new AsyncCallback<Void>() {
           @Override
-          public void complete(PollResponse response) {
-            if (quorum != null) {
-              if (!response.voteGranted()) {
-                quorum.fail();
-              } else {
-                quorum.succeed();
+          public void complete(Void value) {
+            client.poll(new PollRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<PollResponse>() {
+              @Override
+              public void complete(PollResponse response) {
+                client.close();
+                if (quorum != null) {
+                  if (!response.voteGranted()) {
+                    quorum.fail();
+                  } else {
+                    quorum.succeed();
+                  }
+                }
               }
-            }
+              @Override
+              public void fail(Throwable t) {
+                if (quorum != null) {
+                  quorum.fail();
+                }
+              }
+            });
           }
           @Override
           public void fail(Throwable t) {

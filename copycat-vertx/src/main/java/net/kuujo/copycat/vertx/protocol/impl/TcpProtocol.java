@@ -33,8 +33,10 @@ public class TcpProtocol implements Protocol {
   }
 
   @UriInject
-  public TcpProtocol(@UriHost String host) {
-    this(host, 0);
+  public TcpProtocol(@UriHost String host, @Optional @UriPort int port, @UriArgument("vertx") Vertx vertx) {
+    this.host = host;
+    this.port = port;
+    this.vertx = vertx;
   }
 
   @UriInject
@@ -45,10 +47,8 @@ public class TcpProtocol implements Protocol {
   }
 
   @UriInject
-  public TcpProtocol(@UriHost String host, @Optional @UriPort int port, @UriArgument("vertx") Vertx vertx) {
-    this.host = host;
-    this.port = port;
-    this.vertx = vertx;
+  public TcpProtocol(@UriHost String host) {
+    this(host, 0);
   }
 
   /**

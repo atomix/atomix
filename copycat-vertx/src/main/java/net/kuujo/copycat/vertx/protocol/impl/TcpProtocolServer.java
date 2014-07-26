@@ -138,7 +138,7 @@ public class TcpProtocolServer implements ProtocolServer {
         @Override
         public void complete(SyncResponse response) {
           if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject().putNumber("term", response.term()).putBoolean("succeeded", response.succeeded())));
+            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
           } else {
             respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
           }
@@ -168,7 +168,7 @@ public class TcpProtocolServer implements ProtocolServer {
         @Override
         public void complete(InstallResponse response) {
           if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject().putNumber("term", response.term()).putBoolean("succeeded", response.succeeded())));
+            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
           } else {
             respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
           }
@@ -191,7 +191,7 @@ public class TcpProtocolServer implements ProtocolServer {
         @Override
         public void complete(PollResponse response) {
           if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject().putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted())));
+            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
           } else {
             respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
           }

@@ -95,7 +95,7 @@ public class TcpProtocolClient implements ProtocolClient {
       long requestId = ++id;
       JsonArray jsonEntries = new JsonArray();
       for (Entry entry : request.entries()) {
-        jsonEntries.addBinary(serializer.writeValue(entry));
+        jsonEntries.addString(new String(serializer.writeValue(entry)));
       }
       socket.write(new JsonObject().putString("type", "sync")
           .putNumber("id", requestId)
@@ -263,6 +263,11 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
+  public void connect() {
+    connect(null);
+  }
+
+  @Override
   public void connect(final AsyncCallback<Void> callback) {
     if (client == null) {
       client = vertx.createNetClient();
@@ -270,7 +275,9 @@ public class TcpProtocolClient implements ProtocolClient {
         @Override
         public void handle(AsyncResult<NetSocket> result) {
           if (result.failed()) {
-            callback.fail(result.cause());
+            if (callback != null) {
+              callback.fail(result.cause());
+            }
           } else {
             socket = result.result();
             socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
@@ -281,13 +288,20 @@ public class TcpProtocolClient implements ProtocolClient {
                 handleResponse(id, response);
               }
             }));
-            callback.complete(null);
+            if (callback != null) {
+              callback.complete(null);
+            }
           }
         }
       });
-    } else {
+    } else if (callback != null) {
       callback.complete(null);
     }
+  }
+
+  @Override
+  public void close() {
+    close(null);
   }
 
   @Override
@@ -299,14 +313,18 @@ public class TcpProtocolClient implements ProtocolClient {
           socket = null;
           client.close();
           client = null;
-          callback.complete(null);
+          if (callback != null) {
+            callback.complete(null);
+          }
         }
       }).close();
     } else if (client != null) {
       client.close();
       client = null;
-      callback.complete(null);
-    } else {
+      if (callback != null) {
+        callback.complete(null);
+      }
+    } else if (callback != null) {
       callback.complete(null);
     }
   }

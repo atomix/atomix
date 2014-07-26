@@ -29,10 +29,12 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
@@ -113,11 +115,15 @@ public class Leader extends BaseState implements Observer {
 
     // Whenever the local cluster membership changes, ensure we update the
     // local replicas.
-    for (String member : context.cluster.config().getRemoteMembers()) {
-      if (!replicaMap.containsKey(member)) {
-        RemoteReplica replica = new RemoteReplica(member);
-        replicaMap.put(member, replica);
-        replicas.add(replica);
+    for (String uri : context.cluster.config().getRemoteMembers()) {
+      if (!replicaMap.containsKey(uri)) {
+        Member member = context.cluster.member(uri);
+        if (member != null) {
+          RemoteReplica replica = new RemoteReplica(member);
+          replicaMap.put(uri, replica);
+          replica.open();
+          replicas.add(replica);
+        }
       }
     }
 
@@ -176,12 +182,16 @@ public class Leader extends BaseState implements Observer {
 
         // Whenever the local cluster membership changes, ensure we update the
         // local replicas.
-        for (String member : combinedRemoteMembers) {
-          if (!replicaMap.containsKey(member)) {
-            RemoteReplica replica = new RemoteReplica(member);
-            replicaMap.put(member, replica);
-            replicas.add(replica);
-            replica.update();
+        for (String uri : combinedRemoteMembers) {
+          if (!replicaMap.containsKey(uri)) {
+            Member member = context.cluster.member(uri);
+            if (member != null) {
+              RemoteReplica replica = new RemoteReplica(member);
+              replicaMap.put(uri, replica);
+              replicas.add(replica);
+              replica.open();
+              replica.update();
+            }
           }
         }
 
@@ -205,10 +215,10 @@ public class Leader extends BaseState implements Observer {
             Iterator<RemoteReplica> iterator = replicas.iterator();
             while (iterator.hasNext()) {
               RemoteReplica replica = iterator.next();
-              if (!remoteMembers.contains(replica.address)) {
-                replica.shutdown();
+              if (!remoteMembers.contains(replica.member.uri())) {
+                replica.close();
                 iterator.remove();
-                replicaMap.remove(replica.address);
+                replicaMap.remove(replica.member.uri());
               }
             }
           }
@@ -402,16 +412,37 @@ public class Leader extends BaseState implements Observer {
    * Represents a reference to a remote replica.
    */
   private class RemoteReplica {
-    private final String address;
+    private final Member member;
+    private boolean open;
     private long nextIndex;
     private long matchIndex;
-    private boolean running;
-    private boolean shutdown;
+    private AtomicBoolean running = new AtomicBoolean();
     private List<AsyncCallback<Void>> responseCallbacks = new ArrayList<>();
 
-    public RemoteReplica(String address) {
-      this.address = address;
+    public RemoteReplica(Member member) {
+      this.member = member;
       this.nextIndex = context.log.lastIndex();
+    }
+
+    /**
+     * Opens the connection to the replica.
+     */
+    private void open() {
+      if (open == false && running.compareAndSet(false, true)) {
+        member.protocol().client().connect(new AsyncCallback<Void>() {
+          @Override
+          public void complete(Void value) {
+            open = true;
+            running.set(false);
+            triggerCallbacks();
+          }
+          @Override
+          public void fail(Throwable t) {
+            running.set(false);
+            triggerCallbacks(t);
+          }
+        });
+      }
     }
 
     /**
@@ -419,7 +450,7 @@ public class Leader extends BaseState implements Observer {
      * or by pinging the replica.
      */
     private void update() {
-      if (!shutdown && !running) {
+      if (open && running.compareAndSet(false, true)) {
         if (nextIndex == context.log.firstIndex()) {
           Entry entry = context.log.getEntry(context.log.firstIndex());
           if (entry instanceof SnapshotEntry) {
@@ -437,17 +468,18 @@ public class Leader extends BaseState implements Observer {
      * Installs a snapshot to the remote replica.
      */
     private void doInstall(long index, SnapshotEntry entry) {
-      running = true;
       doIncrementalInstall(index, entry.term(), entry.data(), 0, 4096, new AsyncCallback<Void>() {
         @Override
         public void complete(Void value) {
           nextIndex++;
-          running = false;
+          running.set(false);
+          triggerCallbacks();
           update();
         }
         @Override
         public void fail(Throwable t) {
-          running = false;
+          running.set(false);
+          triggerCallbacks();
         }
       });
     }
@@ -462,7 +494,7 @@ public class Leader extends BaseState implements Observer {
         final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
         byte[] bytes = new byte[bytesLength];
         System.arraycopy(snapshot, position, bytes, 0, bytesLength);
-        context.cluster.member(address).protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
+        member.protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
           @Override
           public void complete(InstallResponse response) {
             doIncrementalInstall(index, term, snapshot, position + bytesLength, length, callback);
@@ -489,17 +521,17 @@ public class Leader extends BaseState implements Observer {
       if (logger.isLoggable(Level.FINER)) {
         if (!entries.isEmpty()) {
           if (entries.size() > 1) {
-            logger.finer(String.format("%s replicating entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
+            logger.finer(String.format("%s replicating entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
           } else {
-            logger.finer(String.format("%s replicating entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
+            logger.finer(String.format("%s replicating entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, member.uri()));
           }
         } else {
-          logger.finer(String.format("%s committing entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
+          logger.finer(String.format("%s committing entry %d to %s", context.cluster().getLocalMember(), commitIndex, member.uri()));
         }
       }
 
       SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
-      context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
+      member.protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
         @Override
         public void complete(SyncResponse response) {
           if (response.status().equals(Response.Status.OK)) {
@@ -507,12 +539,12 @@ public class Leader extends BaseState implements Observer {
               if (logger.isLoggable(Level.FINER)) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.finer(String.format("%s successfully replicated entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
+                    logger.finer(String.format("%s successfully replicated entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
                   } else {
-                    logger.finer(String.format("%s successfully replicated entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
+                    logger.finer(String.format("%s successfully replicated entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, member.uri()));
                   }
                 } else {
-                  logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
+                  logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster().getLocalMember(), commitIndex, member.uri()));
                 }
               }
 
@@ -522,17 +554,19 @@ public class Leader extends BaseState implements Observer {
                 matchIndex = Math.max(matchIndex, prevIndex + entries.size());
                 checkCommits();
                 doSync();
+              } else {
+                running.set(false);
               }
             } else {
               if (logger.isLoggable(Level.FINER)) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.finer(String.format("%s failed to replicate entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
+                    logger.finer(String.format("%s failed to replicate entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
                   } else {
-                    logger.finer(String.format("%s failed to replicate entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
+                    logger.finer(String.format("%s failed to replicate entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, member.uri()));
                   }
                 } else {
-                  logger.finer(String.format("%s failed to commit entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
+                  logger.finer(String.format("%s failed to commit entry %d to %s", context.cluster().getLocalMember(), commitIndex, member.uri()));
                 }
               }
 
@@ -541,7 +575,7 @@ public class Leader extends BaseState implements Observer {
               // a next index of 0 then something must have gone wrong. Revert to
               // a follower.
               if (nextIndex-1 == 0) {
-                running = false;
+                running.set(false);
                 context.transition(Follower.class);
               } else {
                 // If we were attempting to replicate log entries and not just
@@ -550,20 +584,25 @@ public class Leader extends BaseState implements Observer {
                 // attempting to sync is not up to date.
                 if (!entries.isEmpty() || prevIndex == commitIndex) {
                   nextIndex--;
+                  checkCommits();
+                  doSync();
+                } else {
+                  checkCommits();
+                  running.set(false);
                 }
-                checkCommits();
-                doSync();
               }
             }
           } else {
-            running = false;
+            running.set(false);
             logger.warning(response.error().getMessage());
+            triggerCallbacks();
           }
         }
         @Override
         public void fail(Throwable t) {
-          running = false;
+          running.set(false);
           logger.warning(t.getMessage());
+          triggerCallbacks(t);
         }
       });
     }
@@ -572,26 +611,23 @@ public class Leader extends BaseState implements Observer {
      * Pings the replica.
      */
     private void ping(AsyncCallback<Void> callback) {
-      if (!shutdown) {
+      if (open) {
         responseCallbacks.add(callback);
-        if (!running) {
+        if (running.compareAndSet(false, true)) {
           doPing();
         }
       }
-      responseCallbacks.add(callback);
-      doPing();
     }
 
     /**
      * Pins the replica.
      */
     private void doPing() {
-      running = true;
       SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
-      context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
+      member.protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
         @Override
         public void complete(SyncResponse response) {
-          running = false;
+          running.set(false);
           if (response.status().equals(Response.Status.OK)) {
             if (response.term() > context.getCurrentTerm()) {
               context.setCurrentTerm(response.term());
@@ -608,7 +644,7 @@ public class Leader extends BaseState implements Observer {
         }
         @Override
         public void fail(Throwable t) {
-          running = false;
+          running.set(false);
           triggerCallbacks(t);
         }
       });
@@ -635,10 +671,13 @@ public class Leader extends BaseState implements Observer {
     }
 
     /**
-     * Shuts down the replica.
+     * Closes down the replica.
      */
-    private void shutdown() {
-      shutdown = true;
+    private void close() {
+      if (open) {
+        open = false;
+        member.protocol().client().close();
+      }
     }
   }
 
