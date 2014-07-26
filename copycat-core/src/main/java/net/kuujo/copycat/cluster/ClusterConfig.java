@@ -18,7 +18,10 @@ package net.kuujo.copycat.cluster;
 import java.util.Set;
 
 /**
- * Cluster configuration.
+ * Cluster configuration.<p>
+ *
+ * The cluster configuration is used by CopyCat replicas to determine
+ * how to replicate data.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

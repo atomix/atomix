@@ -69,7 +69,7 @@ public class Leader extends BaseState implements Observer {
     super.init(context);
 
     // Set the current leader as this replica.
-    context.setCurrentLeader(context.cluster.localMember().address());
+    context.setCurrentLeader(context.cluster.localMember().uri());
 
     // Set the periodic ping timer.
     setPingTimer();
@@ -108,7 +108,7 @@ public class Leader extends BaseState implements Observer {
     // Immediately after the entry is appended to the log, apply the combined
     // membership. Cluster membership changes do not wait for commitment.
     Set<String> remoteMembers = new HashSet<>(members);
-    remoteMembers.remove(context.cluster.localMember().address());
+    remoteMembers.remove(context.cluster.localMember().uri());
     context.cluster.config().setRemoteMembers(remoteMembers);
 
     // Whenever the local cluster membership changes, ensure we update the
@@ -171,7 +171,7 @@ public class Leader extends BaseState implements Observer {
         // Immediately after the entry is appended to the log, apply the combined
         // membership. Cluster membership changes do not wait for commitment.
         Set<String> combinedRemoteMembers = new HashSet<>(combinedMembers);
-        combinedRemoteMembers.remove(context.cluster.localMember().address());
+        combinedRemoteMembers.remove(context.cluster.localMember().uri());
         context.cluster.config().setRemoteMembers(combinedMembers);
 
         // Whenever the local cluster membership changes, ensure we update the
@@ -197,7 +197,7 @@ public class Leader extends BaseState implements Observer {
             // Again, once we've appended the new configuration to the log, update
             // the local internal configuration.
             Set<String> remoteMembers = new HashSet<>(members);
-            remoteMembers.remove(context.cluster.localMember().address());
+            remoteMembers.remove(context.cluster.localMember().uri());
             context.cluster.config().setRemoteMembers(remoteMembers);
 
             // Once the local internal configuration has been updated, remove
@@ -462,7 +462,7 @@ public class Leader extends BaseState implements Observer {
         final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
         byte[] bytes = new byte[bytesLength];
         System.arraycopy(snapshot, position, bytes, 0, bytesLength);
-        context.cluster.member(address).protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.localMember().address(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
+        context.cluster.member(address).protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
           @Override
           public void complete(InstallResponse response) {
             doIncrementalInstall(index, term, snapshot, position + bytesLength, length, callback);
@@ -498,7 +498,7 @@ public class Leader extends BaseState implements Observer {
         }
       }
 
-      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().address(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
       context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
         @Override
         public void complete(SyncResponse response) {
@@ -587,7 +587,7 @@ public class Leader extends BaseState implements Observer {
      */
     private void doPing() {
       running = true;
-      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().address(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
+      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
       context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
         @Override
         public void complete(SyncResponse response) {

@@ -28,18 +28,18 @@ import net.kuujo.copycat.protocol.impl.DefaultProtocolInstance;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultMember implements Member {
-  private final String address;
+  private final String uri;
   private final ProtocolInstance protocol;
 
-  public DefaultMember(String address, CopyCatContext context) {
-    this.address = address;
+  public DefaultMember(String uri, CopyCatContext context) {
+    this.uri = uri;
     ProtocolFactory factory = new DefaultProtocolFactory(context);
-    this.protocol = new DefaultProtocolInstance(factory.createProtocol(address));
+    this.protocol = new DefaultProtocolInstance(factory.createProtocol(uri));
   }
 
   @Override
-  public String address() {
-    return address;
+  public String uri() {
+    return uri;
   }
 
   @Override

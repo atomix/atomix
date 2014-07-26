@@ -34,7 +34,7 @@ public interface Cluster {
   CopyCatContext context();
 
   /**
-   * Returns the dynamic cluster configuration.
+   * Returns the user-provided cluster configuration.
    *
    * @return The cluster configuration.
    */
@@ -57,9 +57,9 @@ public interface Cluster {
   /**
    * Returns a cluster member by address.
    *
-   * @param address The address of the member to return.
+   * @param uri The uri of the member to return.
    * @return The cluster member, or <code>null</code> if the member is not known.
    */
-  Member member(String address);
+  Member member(String uri);
 
 }

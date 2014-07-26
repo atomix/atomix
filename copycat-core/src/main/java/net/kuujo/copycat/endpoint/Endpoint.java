@@ -19,21 +19,39 @@ import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * CopyCat endpoint.
+ * CopyCat endpoint.<p>
+ *
+ * Endpoints are user-facing interfaces that can be used to
+ * send commands to a CopyCat cluster. When an endpoint receives
+ * a request, if the current node is the cluster leader then the
+ * command will be submitted to the cluster. If the current node
+ * is not the cluster leader then the leader will be returned
+ * to the client. This allows clients to locate the cluster leader.<p>
+ *
+ * Endpoints are defined via the CopyCat services API. To define a
+ * new endpoint service, create a file in
+ * <code>META-INF/services/net/kuujo/copycat/endpoints</code>. The
+ * file name is the service name, and the file should contain the
+ * name of a class that implements <code>Endpoint</code>.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Endpoint {
 
   /**
-   * Initializes the endpoint.
+   * Initializes the endpoint with the current CopyCat context.
    *
    * @param context The copycat context.
    */
   void init(CopyCatContext context);
 
   /**
-   * Starts the endpoint.
+   * Starts the endpoint.<p>
+   *
+   * CopyCat makes no assumptions about whether an endpoint is
+   * asynchronous or not, so endpoints can be either synchronous
+   * or asynchronous. Both types of endpoints should call the
+   * given callback once started.
    *
    * @param callback An asynchronous callback to be called once the endpoint has
    *        been started.

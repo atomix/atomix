@@ -89,8 +89,8 @@ public class DefaultCluster implements Cluster, Observer {
   }
 
   @Override
-  public Member member(String address) {
-    return members.get(address);
+  public Member member(String uri) {
+    return members.get(uri);
   }
 
 }

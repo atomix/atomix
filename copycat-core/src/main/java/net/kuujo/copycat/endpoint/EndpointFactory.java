@@ -16,7 +16,11 @@
 package net.kuujo.copycat.endpoint;
 
 /**
- * Endpoint factory.
+ * Endpoint factory.<p>
+ *
+ * The endpoint factory supports constructing URI based endpoints
+ * that can be annotated with annotations from the <code>uri</code>
+ * package.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

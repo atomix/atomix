@@ -18,18 +18,18 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.protocol.ProtocolInstance;
 
 /**
- * Cluster member.
+ * Cluster member info.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Member {
 
   /**
-   * Returns the member address.
+   * Returns the member uri.
    *
-   * @return The member address.
+   * @return The member uri.
    */
-  String address();
+  String uri();
 
   /**
    * Returns the member's protocol instance.
