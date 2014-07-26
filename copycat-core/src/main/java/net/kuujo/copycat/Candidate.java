@@ -131,7 +131,9 @@ public class Candidate extends BaseState {
           }
           @Override
           public void fail(Throwable t) {
-            quorum.fail();
+            if (quorum != null) {
+              quorum.fail();
+            }
           }
         });
       }
