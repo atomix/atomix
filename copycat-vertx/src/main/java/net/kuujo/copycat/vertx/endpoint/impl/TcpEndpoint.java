@@ -134,11 +134,11 @@ public class TcpEndpoint implements Endpoint {
             context.submitCommand(json.getString("command"), json.getObject("args").toMap(), new AsyncCallback<Map<String, Object>>() {
               @Override
               public void complete(Map<String, Object> value) {
-                socket.write(new JsonObject().putString("status", "ok").putObject("result", new JsonObject(value)).encode() + '\00');
+                socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject(value)).encode() + '\00');
               }
               @Override
               public void fail(Throwable t) {
-                socket.write(new JsonObject().putString("status", "error").putString("message", t.getMessage()).encode() + '\00');
+                socket.write(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", t.getMessage()).encode() + '\00');
               }
             });
           }

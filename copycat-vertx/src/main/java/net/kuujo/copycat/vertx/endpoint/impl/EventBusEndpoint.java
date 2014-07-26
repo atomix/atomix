@@ -82,11 +82,11 @@ public class EventBusEndpoint implements Endpoint {
         context.submitCommand(command, args, new AsyncCallback<Map<String, Object>>() {
           @Override
           public void complete(Map<String, Object> result) {
-            message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject(result)));
+            message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject(result)));
           }
           @Override
           public void fail(Throwable t) {
-            message.reply(new JsonObject().putString("status", "error").putString("message", t.getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", t.getMessage()));
           }
         });
       }

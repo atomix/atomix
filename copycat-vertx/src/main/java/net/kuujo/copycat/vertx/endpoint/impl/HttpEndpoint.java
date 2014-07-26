@@ -91,7 +91,7 @@ public class HttpEndpoint implements Endpoint {
               @Override
               public void complete(Map<String, Object> result) {
                 request.response().setStatusCode(200);
-                request.response().end(new JsonObject(result).encode());
+                request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject(result)).encode());
               }
               @Override
               public void fail(Throwable t) {
