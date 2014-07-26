@@ -23,8 +23,6 @@ import java.util.Set;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
@@ -61,9 +59,6 @@ public class EventBusProtocolServer implements ProtocolServer {
     public void handle(Message<JsonObject> message) {
       String action = message.body().getString("action");
       switch (action) {
-        case "ping":
-          doPing(message);
-          break;
         case "sync":
           doSync(message);
           break;
@@ -88,26 +83,6 @@ public class EventBusProtocolServer implements ProtocolServer {
   @Override
   public void protocolHandler(ProtocolHandler handler) {
     this.requestHandler = handler;
-  }
-
-  private void doPing(final Message<JsonObject> message) {
-    if (requestHandler != null) {
-      PingRequest request = new PingRequest(message.body().getLong("term"), message.body().getString("leader"));
-      requestHandler.ping(request, new AsyncCallback<PingResponse>() {
-        @Override
-        public void complete(PingResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            message.reply(new JsonObject().putString("status", "ok").putNumber("term", response.term()));
-          } else {
-            message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
-          }
-        }
-        @Override
-        public void fail(Throwable t) {
-          message.reply(new JsonObject().putString("status", "error").putString("message", t.getMessage()));
-        }
-      });
-    }
   }
 
   private void doSync(final Message<JsonObject> message) {

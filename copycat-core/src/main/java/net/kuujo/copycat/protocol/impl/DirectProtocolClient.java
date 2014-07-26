@@ -18,8 +18,6 @@ package net.kuujo.copycat.protocol.impl;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -42,16 +40,6 @@ public class DirectProtocolClient implements ProtocolClient {
   public DirectProtocolClient(String address, CopyCatContext context) {
     this.address = address;
     this.context = context;
-  }
-
-  @Override
-  public void ping(PingRequest request, AsyncCallback<PingResponse> callback) {
-    DirectProtocolServer server = context.registry().lookup(address);
-    if (server != null) {
-      server.ping(request, callback);
-    } else {
-      callback.fail(new ProtocolException("Invalid server address"));
-    }
   }
 
   @Override

@@ -21,8 +21,6 @@ import java.util.Map;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -79,7 +77,6 @@ public class TcpProtocolClient implements ProtocolClient {
    * Indicates response types.
    */
   private static enum ResponseType {
-    PING,
     SYNC,
     INSTALL,
     POLL,
@@ -90,20 +87,6 @@ public class TcpProtocolClient implements ProtocolClient {
     this.vertx = vertx;
     this.host = host;
     this.port = port;
-  }
-
-  @Override
-  public void ping(PingRequest request, AsyncCallback<PingResponse> callback) {
-    if (socket != null) {
-      long requestId = ++id;
-      socket.write(new JsonObject().putString("type", "ping")
-          .putNumber("id", requestId)
-          .putNumber("term", request.term())
-          .putString("leader", request.leader()).encode() + '\00');
-      storeCallback(requestId, ResponseType.PING, callback);
-    } else {
-      callback.fail(new ProtocolException("Client not connected"));
-    }
   }
 
   @Override
@@ -190,9 +173,6 @@ public class TcpProtocolClient implements ProtocolClient {
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
       switch (holder.type) {
-        case PING:
-          handlePingResponse(response, (AsyncCallback<PingResponse>) holder.callback);
-          break;
         case SYNC:
           handleSyncResponse(response, (AsyncCallback<SyncResponse>) holder.callback);
           break;
@@ -206,20 +186,6 @@ public class TcpProtocolClient implements ProtocolClient {
           handleSubmitResponse(response, (AsyncCallback<SubmitResponse>) holder.callback);
           break;
       }
-    }
-  }
-
-  /**
-   * Handles a ping response.
-   */
-  private void handlePingResponse(JsonObject response, AsyncCallback<PingResponse> callback) {
-    String status = response.getString("status");
-    if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      callback.complete(new PingResponse(response.getLong("term")));
-    } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
     }
   }
 

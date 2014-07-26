@@ -17,8 +17,6 @@ package net.kuujo.copycat.vertx.protocol.impl;
 
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -46,26 +44,6 @@ public class EventBusProtocolClient implements ProtocolClient {
   public EventBusProtocolClient(String address, Vertx vertx) {
     this.address = address;
     this.vertx = vertx;
-  }
-
-  @Override
-  public void ping(PingRequest request, final AsyncCallback<PingResponse> callback) {
-    JsonObject message = new JsonObject();
-    vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          callback.fail(result.cause());
-        } else {
-          String status = result.result().body().getString("status");
-          if (status.equals("ok")) {
-            callback.complete(new PingResponse(result.result().body().getLong("term")));
-          } else if (status.equals("error")) {
-            callback.complete(new PingResponse(result.result().body().getString("message")));
-          }
-        }
-      }
-    });
   }
 
   @Override

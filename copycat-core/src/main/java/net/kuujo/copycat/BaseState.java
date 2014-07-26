@@ -24,8 +24,6 @@ import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SubmitRequest;
@@ -52,23 +50,11 @@ abstract class BaseState implements State {
   }
 
   @Override
-  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
-    // If the request indicates a term that is greater than the current term then
-    // assign that term and leader to the current context and step down as leader.
-    if ((request.term() > context.getCurrentTerm()) || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(request.leader());
-      context.transition(Follower.class);
-    }
-    responseCallback.complete(new PingResponse(context.getCurrentTerm()));
-  }
-
-  @Override
   public void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     boolean transition = false;
-    if (request.term() > context.getCurrentTerm()) {
+    if (request.term() > context.getCurrentTerm() || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
       context.setCurrentTerm(request.term());
       context.setCurrentLeader(request.leader());
       transition = true;

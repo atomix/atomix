@@ -24,8 +24,6 @@ import java.util.logging.Logger;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
@@ -54,7 +52,7 @@ public class Candidate extends BaseState {
   /**
    * Resets the election timer.
    */
-  private void resetTimer() {
+  private synchronized void resetTimer() {
     // Cancel the current timer task and purge the election timer of cancelled tasks.
     if (electionTimerTask != null) {
       electionTimerTask.cancel();
@@ -83,6 +81,9 @@ public class Candidate extends BaseState {
     pollMembers();
   }
 
+  /**
+   * Polls all the members of the cluster for votes.
+   */
   private void pollMembers() {
     // Send vote requests to all nodes. The vote request that is sent
     // to this node will be automatically successful.
@@ -135,11 +136,6 @@ public class Candidate extends BaseState {
         });
       }
     }
-  }
-
-  @Override
-  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
-    super.ping(request, responseCallback);
   }
 
   @Override

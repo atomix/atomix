@@ -25,14 +25,6 @@ import net.kuujo.copycat.util.AsyncCallback;
 public interface ProtocolHandler {
 
   /**
-   * Sends or handles a protocol ping request.
-   *
-   * @param request The ping request.
-   * @param responseCallback A ping response callback.
-   */
-  void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback);
-
-  /**
    * Sends or handles a protocol sync request.
    *
    * @param request The sync request.

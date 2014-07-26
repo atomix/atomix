@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
@@ -49,7 +47,7 @@ public class Follower extends BaseState {
   /**
    * Resets the election timer.
    */
-  private void resetTimer() {
+  private synchronized void resetTimer() {
     if (timeoutTimerTask != null) {
       timeoutTimerTask.cancel();
       timeoutTimer.purge();
@@ -78,12 +76,6 @@ public class Follower extends BaseState {
     // timeout.
     timeoutTimer.schedule(timeoutTimerTask, context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4)
         + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2))));
-  }
-
-  @Override
-  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
-    resetTimer();
-    super.ping(request, responseCallback);
   }
 
   @Override

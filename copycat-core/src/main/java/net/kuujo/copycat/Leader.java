@@ -40,8 +40,6 @@ import net.kuujo.copycat.log.impl.NoOpEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
@@ -71,7 +69,7 @@ public class Leader extends BaseState implements Observer {
     super.init(context);
 
     // Set the current leader as this replica.
-    context.setCurrentLeader(context.cluster.config().getLocalMember());
+    context.setCurrentLeader(context.cluster.localMember().address());
 
     // Set the periodic ping timer.
     setPingTimer();
@@ -110,7 +108,7 @@ public class Leader extends BaseState implements Observer {
     // Immediately after the entry is appended to the log, apply the combined
     // membership. Cluster membership changes do not wait for commitment.
     Set<String> remoteMembers = new HashSet<>(members);
-    remoteMembers.remove(context.cluster.config().getLocalMember());
+    remoteMembers.remove(context.cluster.localMember().address());
     context.cluster.config().setRemoteMembers(remoteMembers);
 
     // Whenever the local cluster membership changes, ensure we update the
@@ -173,7 +171,7 @@ public class Leader extends BaseState implements Observer {
         // Immediately after the entry is appended to the log, apply the combined
         // membership. Cluster membership changes do not wait for commitment.
         Set<String> combinedRemoteMembers = new HashSet<>(combinedMembers);
-        combinedRemoteMembers.remove(context.cluster.config().getLocalMember());
+        combinedRemoteMembers.remove(context.cluster.localMember().address());
         context.cluster.config().setRemoteMembers(combinedMembers);
 
         // Whenever the local cluster membership changes, ensure we update the
@@ -183,7 +181,7 @@ public class Leader extends BaseState implements Observer {
             RemoteReplica replica = new RemoteReplica(member);
             replicaMap.put(member, replica);
             replicas.add(replica);
-            replica.ping();
+            replica.update();
           }
         }
 
@@ -199,7 +197,7 @@ public class Leader extends BaseState implements Observer {
             // Again, once we've appended the new configuration to the log, update
             // the local internal configuration.
             Set<String> remoteMembers = new HashSet<>(members);
-            remoteMembers.remove(context.cluster.config().getLocalMember());
+            remoteMembers.remove(context.cluster.localMember().address());
             context.cluster.config().setRemoteMembers(remoteMembers);
 
             // Once the local internal configuration has been updated, remove
@@ -233,18 +231,6 @@ public class Leader extends BaseState implements Observer {
       }
     };
     pingTimer.schedule(pingTimerTask, context.config().getHeartbeatInterval());
-  }
-
-  @Override
-  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
-    // If the request indicates a term that is greater than the current term then
-    // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(request.leader());
-      context.transition(Follower.class);
-    }
-    responseCallback.complete(new PingResponse(context.getCurrentTerm()));
   }
 
   @Override
@@ -391,7 +377,7 @@ public class Leader extends BaseState implements Observer {
       // Since replicas is a list with zero based indexes, use the negation of
       // the required quorum size to get the index of the replica with the least
       // possible quorum replication. That replica's match index is the commit index.
-      int index = replicas.size() - context.cluster.config().getQuorumSize();
+      int index = replicas.size() + 1 - context.cluster.config().getQuorumSize();
       if (index > 0) {
         // Set the commit index. Once the commit index has been set we can run
         // all tasks up to the given commit.
@@ -421,6 +407,7 @@ public class Leader extends BaseState implements Observer {
     private long matchIndex;
     private boolean running;
     private boolean shutdown;
+    private List<AsyncCallback<Void>> responseCallbacks = new ArrayList<>();
 
     public RemoteReplica(String address) {
       this.address = address;
@@ -432,139 +419,17 @@ public class Leader extends BaseState implements Observer {
      * or by pinging the replica.
      */
     private void update() {
-      if (!shutdown) {
-        // If there are entries to be sent to the replica then synchronize,
-        // otherwise just ping the replica.
-        if (nextIndex <= context.log.lastIndex() || matchIndex < context.getCommitIndex()) {
-          sync();
-        } else {
-          ping();
-        }
-      }
-    }
-
-    /**
-     * Synchronizes the log with the replica.
-     */
-    private void sync() {
-      if (!shutdown) {
-        if (!running) {
-          running = true;
+      if (!shutdown && !running) {
+        if (nextIndex == context.log.firstIndex()) {
+          Entry entry = context.log.getEntry(context.log.firstIndex());
+          if (entry instanceof SnapshotEntry) {
+            doInstall(context.log.firstIndex(), (SnapshotEntry) entry);
+          }
+        } else if (nextIndex <= context.log.lastIndex() || matchIndex < context.getCommitIndex()) {
           doSync();
         } else {
-          ping();
+          doPing();
         }
-      }
-    }
-
-    /**
-     * Begins synchronization with the replica.
-     */
-    private void doSync() {
-      // If the next index to be send to the replica is the first entry in the
-      // log then it should be a snapshot. In that case, we need to send an
-      // install request to the replica.
-      if (nextIndex == context.log.firstIndex()) {
-        Entry entry = context.log.getEntry(context.log.firstIndex());
-        if (entry instanceof SnapshotEntry) {
-          doInstall(context.log.firstIndex(), (SnapshotEntry) entry);
-          return;
-        }
-      }
-
-      // Only perform synchronization if the next index to send is less than
-      // or equal to the last log index or if there are entries to be committed.
-      if (nextIndex <= context.log.lastIndex() || matchIndex < context.getCommitIndex()) {
-        final long prevIndex = nextIndex - 1;
-        final Entry prevEntry = context.log.getEntry(prevIndex);
-
-        // Load up to ten entries for replication.
-        final List<Entry> entries = context.log.getEntries(nextIndex, nextIndex+10 < context.log.lastIndex() ? nextIndex+10 : context.log.lastIndex());
-
-        final long commitIndex = context.getCommitIndex();
-        if (logger.isLoggable(Level.FINER)) {
-          if (!entries.isEmpty()) {
-            if (entries.size() > 1) {
-              logger.finer(String.format("%s replicating entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
-            } else {
-              logger.finer(String.format("%s replicating entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
-            }
-          } else {
-            logger.finer(String.format("%s committing entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
-          }
-        }
-
-        SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
-        context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
-          @Override
-          public void complete(SyncResponse response) {
-            if (response.status().equals(Response.Status.OK)) {
-              if (response.succeeded()) {
-                if (logger.isLoggable(Level.FINER)) {
-                  if (!entries.isEmpty()) {
-                    if (entries.size() > 1) {
-                      logger.finer(String.format("%s successfully replicated entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
-                    } else {
-                      logger.finer(String.format("%s successfully replicated entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
-                    }
-                  } else {
-                    logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
-                  }
-                }
-
-                // Update the next index to send and the last index known to be replicated.
-                nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
-                matchIndex = Math.max(matchIndex, prevIndex + entries.size());
-
-                // Update the current commit index and continue the synchronization.
-                checkCommits();
-                doSync();
-              } else {
-                if (logger.isLoggable(Level.FINER)) {
-                  if (!entries.isEmpty()) {
-                    if (entries.size() > 1) {
-                      logger.finer(String.format("%s failed to replicate entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
-                    } else {
-                      logger.finer(String.format("%s failed to replicate entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
-                    }
-                  } else {
-                    logger.finer(String.format("%s failed to commit entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
-                  }
-                }
-
-                // If replication failed then decrement the next index and attemt to
-                // retry replication. If decrementing the next index would result in
-                // a next index of 0 then something must have gone wrong. Revert to
-                // a follower.
-                if (nextIndex-1 == 0) {
-                  running = false;
-                  context.transition(Follower.class);
-                } else {
-                  // If we were attempting to replicate log entries and not just
-                  // sending a commit index or if we didn't have any log entries
-                  // to replicate then decrement the next index. The node we were
-                  // attempting to sync is not up to date.
-                  if (!entries.isEmpty() || prevIndex == commitIndex) {
-                    nextIndex--;
-                  }
-                  checkCommits();
-                  doSync();
-                }
-              }
-            } else {
-              running = false;
-              logger.warning(response.error().getMessage());
-            }
-          }
-          @Override
-          public void fail(Throwable t) {
-            running = false;
-            logger.warning(t.getMessage());
-          }
-        });
-      } else {
-        running = false;
-        ping();
       }
     }
 
@@ -572,6 +437,7 @@ public class Leader extends BaseState implements Observer {
      * Installs a snapshot to the remote replica.
      */
     private void doInstall(long index, SnapshotEntry entry) {
+      running = true;
       doIncrementalInstall(index, entry.term(), entry.data(), 0, 4096, new AsyncCallback<Void>() {
         @Override
         public void complete(Void value) {
@@ -596,7 +462,7 @@ public class Leader extends BaseState implements Observer {
         final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
         byte[] bytes = new byte[bytesLength];
         System.arraycopy(snapshot, position, bytes, 0, bytesLength);
-        context.cluster.member(address).protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
+        context.cluster.member(address).protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.localMember().address(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
           @Override
           public void complete(InstallResponse response) {
             doIncrementalInstall(index, term, snapshot, position + bytesLength, length, callback);
@@ -610,43 +476,162 @@ public class Leader extends BaseState implements Observer {
     }
 
     /**
-     * Pings the replica.
+     * Begins synchronization with the replica.
      */
-    private void ping() {
-      ping(null);
+    private void doSync() {
+      final long prevIndex = nextIndex - 1;
+      final Entry prevEntry = context.log.getEntry(prevIndex);
+
+      // Load up to ten entries for replication.
+      final List<Entry> entries = context.log.getEntries(nextIndex, nextIndex + 10 < context.log.lastIndex() ? nextIndex+10 : context.log.lastIndex());
+
+      final long commitIndex = context.getCommitIndex();
+      if (logger.isLoggable(Level.FINER)) {
+        if (!entries.isEmpty()) {
+          if (entries.size() > 1) {
+            logger.finer(String.format("%s replicating entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
+          } else {
+            logger.finer(String.format("%s replicating entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
+          }
+        } else {
+          logger.finer(String.format("%s committing entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
+        }
+      }
+
+      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().address(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+      context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
+        @Override
+        public void complete(SyncResponse response) {
+          if (response.status().equals(Response.Status.OK)) {
+            if (response.succeeded()) {
+              if (logger.isLoggable(Level.FINER)) {
+                if (!entries.isEmpty()) {
+                  if (entries.size() > 1) {
+                    logger.finer(String.format("%s successfully replicated entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
+                  } else {
+                    logger.finer(String.format("%s successfully replicated entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
+                  }
+                } else {
+                  logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
+                }
+              }
+
+              // Update the next index to send and the last index known to be replicated.
+              if (!entries.isEmpty()) {
+                nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
+                matchIndex = Math.max(matchIndex, prevIndex + entries.size());
+                checkCommits();
+                doSync();
+              }
+            } else {
+              if (logger.isLoggable(Level.FINER)) {
+                if (!entries.isEmpty()) {
+                  if (entries.size() > 1) {
+                    logger.finer(String.format("%s failed to replicate entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), address));
+                  } else {
+                    logger.finer(String.format("%s failed to replicate entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, address));
+                  }
+                } else {
+                  logger.finer(String.format("%s failed to commit entry %d to %s", context.cluster().getLocalMember(), commitIndex, address));
+                }
+              }
+
+              // If replication failed then decrement the next index and attemt to
+              // retry replication. If decrementing the next index would result in
+              // a next index of 0 then something must have gone wrong. Revert to
+              // a follower.
+              if (nextIndex-1 == 0) {
+                running = false;
+                context.transition(Follower.class);
+              } else {
+                // If we were attempting to replicate log entries and not just
+                // sending a commit index or if we didn't have any log entries
+                // to replicate then decrement the next index. The node we were
+                // attempting to sync is not up to date.
+                if (!entries.isEmpty() || prevIndex == commitIndex) {
+                  nextIndex--;
+                }
+                checkCommits();
+                doSync();
+              }
+            }
+          } else {
+            running = false;
+            logger.warning(response.error().getMessage());
+          }
+        }
+        @Override
+        public void fail(Throwable t) {
+          running = false;
+          logger.warning(t.getMessage());
+        }
+      });
     }
 
     /**
      * Pings the replica.
      */
-    private void ping(final AsyncCallback<Void> callback) {
+    private void ping(AsyncCallback<Void> callback) {
       if (!shutdown) {
-        context.cluster.member(address).protocol().client().ping(new PingRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember()), new AsyncCallback<PingResponse>() {
-          @Override
-          public void complete(PingResponse response) {
-            if (response.status().equals(Response.Status.OK)) {
-              if (response.term() > context.getCurrentTerm()) {
-                context.setCurrentTerm(response.term());
-                context.setCurrentLeader(null);
-                context.transition(Follower.class);
-                if (callback != null) {
-                  callback.fail(new CopyCatException("Not the leader"));
-                }
-              } else if (callback != null) {
-                callback.complete(null);
-              }
-            } else if (callback != null) {
-              callback.fail(response.error());
-            }
-          }
-          @Override
-          public void fail(Throwable t) {
-            if (callback != null) {
-              callback.fail(t);
-            }
-          }
-        });
+        responseCallbacks.add(callback);
+        if (!running) {
+          doPing();
+        }
       }
+      responseCallbacks.add(callback);
+      doPing();
+    }
+
+    /**
+     * Pins the replica.
+     */
+    private void doPing() {
+      running = true;
+      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().address(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
+      context.cluster.member(address).protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
+        @Override
+        public void complete(SyncResponse response) {
+          running = false;
+          if (response.status().equals(Response.Status.OK)) {
+            if (response.term() > context.getCurrentTerm()) {
+              context.setCurrentTerm(response.term());
+              context.setCurrentLeader(null);
+              context.transition(Follower.class);
+              triggerCallbacks(new CopyCatException("Not the leader"));
+            } else {
+              triggerCallbacks();
+            }
+          } else {
+            triggerCallbacks(new CopyCatException(response.error()));
+          }
+          checkCommits();
+        }
+        @Override
+        public void fail(Throwable t) {
+          running = false;
+          triggerCallbacks(t);
+        }
+      });
+    }
+
+    /**
+     * Triggers response callbacks with a completion result.
+     */
+    private void triggerCallbacks() {
+      for (AsyncCallback<Void> callback : responseCallbacks) {
+        callback.complete(null);
+      }
+      responseCallbacks.clear();
+    }
+
+    /**
+     * Triggers response callbacks with an error result.
+     */
+    private void triggerCallbacks(Throwable t) {
+      for (AsyncCallback<Void> callback : responseCallbacks) {
+        callback.fail(t);
+      }
+      responseCallbacks.clear();
     }
 
     /**

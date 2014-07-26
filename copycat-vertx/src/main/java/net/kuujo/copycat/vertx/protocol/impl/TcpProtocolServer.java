@@ -23,8 +23,6 @@ import java.util.Set;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
@@ -86,9 +84,6 @@ public class TcpProtocolServer implements ProtocolServer {
               String type = request.getString("type");
               if (type != null) {
                 switch (type) {
-                  case "ping":
-                    handlePing(socket, request);
-                    break;
                   case "sync":
                     handleSync(socket, request);
                     break;
@@ -123,29 +118,6 @@ public class TcpProtocolServer implements ProtocolServer {
       });
     } else {
       callback.complete(null);
-    }
-  }
-
-  /**
-   * Handles a ping request.
-   */
-  private void handlePing(final NetSocket socket, JsonObject request) {
-    if (requestHandler != null) {
-      final long id = request.getLong("id");
-      requestHandler.ping(new PingRequest(request.getLong("term"), request.getString("leader")), new AsyncCallback<PingResponse>() {
-        @Override
-        public void complete(PingResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject().putNumber("term", response.term())));
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
-          }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
-        }
-      });
     }
   }
 

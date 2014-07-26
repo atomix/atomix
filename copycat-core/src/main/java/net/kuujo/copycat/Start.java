@@ -17,8 +17,6 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SubmitRequest;
@@ -38,11 +36,6 @@ public class Start extends BaseState {
   public void init(CopyCatContext context) {
     // Don't call super.init() here so that server handlers won't be registered.
     context.setCurrentLeader(null);
-  }
-
-  @Override
-  public void ping(PingRequest request, AsyncCallback<PingResponse> responseCallback) {
-    responseCallback.complete(new PingResponse("Replica is not alive"));
   }
 
   @Override

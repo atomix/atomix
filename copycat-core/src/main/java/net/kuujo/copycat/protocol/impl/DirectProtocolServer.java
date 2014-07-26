@@ -18,8 +18,6 @@ package net.kuujo.copycat.protocol.impl;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
@@ -48,12 +46,6 @@ public class DirectProtocolServer implements ProtocolServer {
   @Override
   public void protocolHandler(ProtocolHandler handler) {
     this.requestHandler = handler;
-  }
-
-  void ping(PingRequest request, AsyncCallback<PingResponse> callback) {
-    if (requestHandler != null) {
-      requestHandler.ping(request, callback);
-    }
   }
 
   void sync(SyncRequest request, AsyncCallback<SyncResponse> callback) {
