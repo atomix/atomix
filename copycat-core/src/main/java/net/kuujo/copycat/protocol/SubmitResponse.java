@@ -17,7 +17,10 @@ package net.kuujo.copycat.protocol;
 
 
 /**
- * A submit response.
+ * Submit response.<p>
+ *
+ * Submit responses are sent back to the forwarding node upon
+ * successful submission of a command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

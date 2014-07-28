@@ -16,7 +16,11 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * A poll response.
+ * Poll response.<p>
+ *
+ * Poll responses are sent in response to a poll request. The poll
+ * response contains information regarding the requestee's current
+ * term and whether it voted for the candidate.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

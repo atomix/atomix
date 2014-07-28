@@ -18,7 +18,11 @@ package net.kuujo.copycat.protocol;
 import net.kuujo.copycat.Arguments;
 
 /**
- * A submit request.
+ * Submit request.<p>
+ *
+ * Submit requests are simply command submissions that are forwarded
+ * to the cluster leader. When a node receives a command submission,
+ * it can optionally reject the command or forward it using this request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

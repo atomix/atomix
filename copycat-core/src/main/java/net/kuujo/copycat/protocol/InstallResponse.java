@@ -16,7 +16,11 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Install response.
+ * Install response.<p>
+ *
+ * The install response is sent in response to an install request.
+ * The response indicates the receiving node's current term as well
+ * as whether the installation of the snapshot was successful.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

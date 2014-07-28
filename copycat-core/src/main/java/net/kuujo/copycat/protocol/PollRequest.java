@@ -16,7 +16,13 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * A poll request.
+ * Poll request.<p>
+ *
+ * Poll requests are simple vote requests between one node and another.
+ * When a node becomes a candidate, it will send poll requests to each
+ * other node in the cluster. The poll request includes information about
+ * the candidate node's log which will be used to determine whether a
+ * requestee will vote for the candidate.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

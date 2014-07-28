@@ -16,7 +16,11 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * A sync response.
+ * Sync response.<p>
+ *
+ * The sync response is sent in response to a sync request from
+ * the cluster leader. The response simply indicates whether the
+ * synchronization was successful.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

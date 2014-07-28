@@ -20,7 +20,14 @@ import java.util.List;
 import net.kuujo.copycat.log.Entry;
 
 /**
- * A sync request.
+ * Sync request.<p>
+ *
+ * Sync requests are at the core of CopyCat's state machine replication
+ * algorithm. Whenever a new command is applied to the leader's state
+ * machine, the leader will replicate the command to other nodes in the
+ * cluster using the sync request. Additionally, sync requests are sent
+ * periodically to other nodes by the leader in order to ensure replicas
+ * are up to date.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

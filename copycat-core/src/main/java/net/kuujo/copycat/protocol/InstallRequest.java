@@ -18,7 +18,12 @@ package net.kuujo.copycat.protocol;
 import java.util.Set;
 
 /**
- * Install request.
+ * Install request.<p>
+ *
+ * Install requests are used by the cluster leader to replicate the
+ * current state machine snapshot. This usually occurs when a new replica
+ * has joined the cluster (i.e. after cluster configuration changes
+ * occur), but it can also happen if a replica falls too far behind.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
