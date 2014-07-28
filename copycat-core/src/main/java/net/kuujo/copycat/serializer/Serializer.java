@@ -16,7 +16,14 @@
 package net.kuujo.copycat.serializer;
 
 /**
- * Serializer interface.
+ * Serializer interface.<p>
+ *
+ * The serializer is used by CopyCat primarily to serialize log entries.
+ * Users can provide custom log serialization by registering the
+ * serializer as a service. To do this, simply add a file containing
+ * the serializer factory class at
+ * <code>META-INF/services/net/kuujo/copycat/Serializer</code>. CopyCat
+ * will pick up the new serializer and use it for all internal serialization.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
