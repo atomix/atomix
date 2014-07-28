@@ -39,12 +39,16 @@ of the Raft algorithm such as snapshotting and dynamic cluster configuration cha
    * [Making annotated URI parameters optional](#making-annotated-uri-parameters-optional)
    * [The complete protocol](#the-complete-protocol)
 1. [Built-in protocols](#built-in-protocols)
-   * [Direct](#direct)
-   * [Vert.x Event Bus](#vertx-event-bus)
-   * [Vert.x TCP](#vertx-tcp)
+   * [Direct](#direct-protocol)
+   * [Vert.x Event Bus](#vertx-event-bus-protocol)
+   * [Vert.x TCP](#vertx-tcp-protocol)
 1. [Endpoints](#endpoints)
    * [Using URI annotations with endpoints](#using-uri-annotations-with-endpoints)
    * [Wrapping the CopyCatContext in an endpoint service](#wrapping-the-copycatcontext-in-an-endpoint-service)
+1. [Built-in endpoints](#build-in-endpoints)
+   * [Vert.x Event Bus](#vertx-event-bus-endpoint)
+   * [Vert.x TCP](#vertx-tcp-endpoint)
+   * [Vert.x HTTP](#vertx-http-endpoint)
 
 ## How it works
 CopyCat uses a Raft-based consensus algorithm to perform leader election and state
@@ -644,7 +648,7 @@ replicas, each protocol instance's client is used to send messages to those repl
 CopyCat maintains several built-in protocols, some of which are implemented on top
 of asynchronous frameworks like Vert.x.
 
-### Direct
+### Direct Protocol
 The `direct` protocol is a simple protocol that communicates between contexts using
 direct method calls. This protocol is intended purely for testing.
 
@@ -657,7 +661,7 @@ CopyCatContext context = new CopyCatContext(new MyStateMachine, cluster, registr
 
 Note that you should use a `ConcurrentRegistry` when using the `direct` protocol.
 
-### Vert.x Event Bus
+### Vert.x Event Bus Protocol
 The Vert.x `eventbus` protocol communicates between replicas on the Vert.x event
 bus. The event bus can either be created in a new `Vertx` instance or referenced
 in an existing `Vertx` instance.
@@ -674,7 +678,7 @@ Registry registry = new BasicRegistry();
 registry.bind("vertx", vertx);
 ```
 
-### Vert.x TCP
+### Vert.x TCP Protocol
 The Vert.x `tcp` protocol communicates between replicas using a simple wire protocol
 over Vert.x `NetClient` and `NetServer` instances. To configure the `tcp` protocol,
 simply use an ordinary TCP address.
@@ -735,13 +739,26 @@ CopyCat also provides a couple of built-in endpoints via the `copycat-vertx`
 project. In order to use Vert.x endpoints, you must add the `copycat-vertx`
 project as a dependency.
 
-### Vert.x TCP
+### Vert.x Event Bus Endpoint
+The Vert.x event bus endpoint receives submissions over the Vert.x event bus.
+
+```java
+CopyCat copycat = new CopyCat("eventbus://localhost:8080/foo", new MyStateMachine(), cluster);
+
+// or...
+
+Registry registry = new BasicRegistry();
+registry.bind("vertx", vertx);
+CopyCat copycat = new CopyCat("eventbus://foo?vertx=#vertx", new MyStateMachine(), cluster, registry);
+```
+
+### Vert.x TCP Endpoint
 The Vert.x TCP endpoint uses a delimited JSON-based protocol:
 ```java
 CopyCat copycat = new CopyCat("tcp://localhost:8080", new MyStateMachine(), cluster);
 ```
 
-### Vert.x HTTP
+### Vert.x HTTP Endpoint
 The Vert.x HTTP endpoint uses a simple HTTP server which accepts JSON `POST` requests
 to the command path. For instance, to submit the `read` command with `{"key":"foo"}`
 execute a `POST` request to the `/read` path using a JSON body containing command arguments.
