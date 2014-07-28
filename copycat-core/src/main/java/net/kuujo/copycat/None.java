@@ -26,11 +26,14 @@ import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * Start state.
+ * Non-existent state.<p>
+ *
+ * The <code>None</code> state is used to represent a non-existent
+ * state in a CopyCat context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Start extends BaseState {
+class None extends BaseState {
 
   @Override
   public void init(CopyCatContext context) {

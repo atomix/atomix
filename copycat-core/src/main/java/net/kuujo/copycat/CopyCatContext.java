@@ -32,7 +32,37 @@ import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * Default replica context implementation.
+ * CopyCat replica context.<p>
+ *
+ * The <code>CopyCatContext</code> is the primary API for creating
+ * and running a CopyCat replica. Given a state machine, a cluster
+ * configuration, and a log, the context will communicate with other
+ * nodes in the cluster, applying and replicating state machine commands.<p>
+ *
+ * CopyCat uses a Raft-based consensus algorithm to perform leader election
+ * and state machine replication. In CopyCat, all state changes are made
+ * through the cluster leader. When a cluster is started, nodes will
+ * communicate with one another to elect a leader. When a command is submitted
+ * to any node in the cluster, the command will be forwarded to the leader.
+ * When the leader receives a command submission, it will first replicate
+ * the command to its followers before applying the command to its state
+ * machine and returning the result.<p>
+ *
+ * In order to prevent logs from growing too large, CopyCat uses snapshotting
+ * to periodically compact logs. In CopyCat, snapshots are simply log
+ * entries before which all previous entries are cleared. When a node first
+ * becomes the cluster leader, it will first commit a snapshot of its current
+ * state to its log. This snapshot can be used to get any new nodes up to date.<p>
+ *
+ * CopyCat supports dynamic cluster membership changes. If the {@link ClusterConfig}
+ * provided to the CopyCat context is {@link java.util.Observable}, the cluster
+ * leader will observe the configuration for changes. Note that cluster membership
+ * changes can only occur on the leader's cluster configuration. This is because,
+ * as with all state changes, cluster membership changes must go through the leader.
+ * When cluster membership changes occur, the cluster leader will log and replicate
+ * the configuration change just like any other state change, and it will ensure
+ * that the membership change occurs in a manner that prevents a dual-majority
+ * in the cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -96,9 +126,15 @@ public class CopyCatContext {
   }
 
   /**
-   * Returns the cluster configuration.
+   * Returns the user-defined cluster configuration.<p>
    *
-   * @return The cluster configuration.
+   * Note that because of the nature of CopyCat's dynamic cluster membership
+   * support, the user-defined cluster configuration may temporarily differ
+   * from the internal CopyCat cluster configuration. This is because when
+   * the cluster configuration changes, CopyCat needs to replicate the configuration
+   * change before officially committing the change in order to ensure log consistency.
+   *
+   * @return The user-defined cluster configuration.
    */
   public ClusterConfig cluster() {
     return clusterConfig;
@@ -123,7 +159,11 @@ public class CopyCatContext {
   }
 
   /**
-   * Returns the context registry.
+   * Returns the context registry.<p>
+   *
+   * The registry can be used to register objects that can be accessed
+   * by {@link net.kuujo.copycat.protocol.Protocol} and
+   * {@link net.kuujo.copycat.endpoint.Endpoint} implementations.
    *
    * @return The context registry.
    */
@@ -153,7 +193,7 @@ public class CopyCatContext {
     internalConfig.setLocalMember(clusterConfig.getLocalMember());
     internalConfig.setRemoteMembers(clusterConfig.getRemoteMembers());
 
-    transition(Start.class);
+    transition(None.class);
     cluster.localMember().protocol().server().start(new AsyncCallback<Void>() {
       @Override
       public void complete(Void value) {
@@ -199,7 +239,7 @@ public class CopyCatContext {
       @Override
       public void complete(Void value) {
         log.close();
-        transition(Start.class);
+        transition(None.class);
       }
       @Override
       public void fail(Throwable t) {

@@ -28,11 +28,17 @@ import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * Follower replica state.
+ * Follower state.<p>
+ *
+ * The follower state is the initial state of any replica once it
+ * has been started, and for most replicas it remains the state for
+ * most of their lifetime. Followers simply serve to listen for
+ * synchronization requests from the cluster <code>Leader</code>
+ * and dutifully maintain their logs according to those requests.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Follower extends BaseState {
+class Follower extends BaseState {
   private static final Logger logger = Logger.getLogger(Follower.class.getCanonicalName());
   private final Timer timeoutTimer = new Timer();
   private TimerTask timeoutTimerTask;

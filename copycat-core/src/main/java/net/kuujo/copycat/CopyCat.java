@@ -22,7 +22,10 @@ import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
- * Primary copycat API.
+ * Primary copycat API.<p>
+ *
+ * The <code>CopyCat</code> class provides a fluent API for
+ * combining the {@link CopyCatContext} with an {@link Endpoint}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

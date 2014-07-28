@@ -29,7 +29,7 @@ import net.kuujo.copycat.Command.Argument;
  *
  * Users should extend this class in order to implement annotation-based
  * state machines. The annotated state machine supports all CopyCat features
- * through annotations, such as command types and named arguments.
+ * through annotations, such as command types and named arguments.<p>
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

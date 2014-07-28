@@ -33,11 +33,17 @@ import net.kuujo.copycat.util.AsyncCallback;
 import net.kuujo.copycat.util.Quorum;
 
 /**
- * Candidate replica state.
+ * Candidate state.<p>
+ *
+ * The candidate state is a brief state in which the replica is
+ * a candidate in an election. During its candidacy, the replica
+ * will send vote requests to all other nodes in the cluster. Based
+ * on the vote result, the replica will then either transition back
+ * to <code>Follower</code> or become the leader.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Candidate extends BaseState {
+class Candidate extends BaseState {
   private static final Logger logger = Logger.getLogger(Candidate.class.getCanonicalName());
   private Quorum quorum;
   private final Timer electionTimer = new Timer();
@@ -75,7 +81,8 @@ public class Candidate extends BaseState {
       }
     };
 
-    // When the election timer is reset, increment the current term.
+    // When the election timer is reset, increment the current term and
+    // restart the election.
     context.setCurrentTerm(context.getCurrentTerm() + 1);
     long timeout = context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4) + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2)));
     electionTimer.schedule(electionTimerTask, timeout);

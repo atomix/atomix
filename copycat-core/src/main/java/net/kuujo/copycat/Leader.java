@@ -53,11 +53,17 @@ import net.kuujo.copycat.util.AsyncCallback;
 import net.kuujo.copycat.util.Quorum;
 
 /**
- * Leader replica state.
+ * Leader state.<p>
+ *
+ * The leader state is assigned to replicas who have assumed
+ * a leadership role in the cluster through a cluster-wide election.
+ * The leader's role is to receive command submissions and log and
+ * replicate state changes. All state changes go through the leader
+ * for simplicity.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Leader extends BaseState implements Observer {
+class Leader extends BaseState implements Observer {
   private static final Logger logger = Logger.getLogger(Leader.class.getCanonicalName());
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private final Timer pingTimer = new Timer();
@@ -73,13 +79,18 @@ public class Leader extends BaseState implements Observer {
     // Set the current leader as this replica.
     context.setCurrentLeader(context.cluster.localMember().uri());
 
-    // Set the periodic ping timer.
+    // Set a timer that will be used to periodically synchronize with other nodes
+    // in the cluster. This timer acts as a heartbeat to ensure this node remains
+    // the leader.
     setPingTimer();
 
     // The first thing the leader needs to do is check whether the log is empty.
     // If the log is empty then we immediately commit an empty SnapshotEntry to
     // the log which will be replicated to other nodes if necessary. The first
-    // entry in the log must always be a snapshot entry for consistency.
+    // entry in the log must always be a snapshot entry for consistency. This ensures
+    // that when a new node joins the cluster, the current state machine snapshot
+    // will be immediately replicated to it, bringing the new node up to date much
+    // more quickly than if we had to replicate a large number of log entries.
     if (context.log.isEmpty()) {
       Snapshot snapshot = context.stateMachine.takeSnapshot();
       byte[] snapshotBytes = serializer.writeValue(snapshot);
@@ -88,13 +99,14 @@ public class Leader extends BaseState implements Observer {
 
     // Next, the leader must write a no-op entry to the log and replicate the log
     // to all the nodes in the cluster. This ensures that other nodes are notified
-    // of the leader's election.
+    // of the leader's election and that their terms are updated with the leader's term.
     context.log.appendEntry(new NoOpEntry(context.getCurrentTerm()));
 
-    // Finally, ensure that the cluster configuration is up-to-date and properly
+    // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
-    context.log.appendEntry(new ConfigurationEntry(context.getCurrentTerm(), context.cluster.config().getMembers()));
+    Set<String> members = new HashSet<>(context.cluster.config().getMembers());
+    context.log.appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
@@ -103,18 +115,9 @@ public class Leader extends BaseState implements Observer {
       ((Observable) context.cluster()).addObserver(this);
     }
 
-    // Immediately commit the current cluster configuration.
-    Set<String> members = new HashSet<>(context.cluster.config().getMembers());
-    context.log.appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
-
-    // Immediately after the entry is appended to the log, apply the combined
-    // membership. Cluster membership changes do not wait for commitment.
-    Set<String> remoteMembers = new HashSet<>(members);
-    remoteMembers.remove(context.cluster.localMember().uri());
-    context.cluster.config().setRemoteMembers(remoteMembers);
-
-    // Whenever the local cluster membership changes, ensure we update the
-    // local replicas.
+    // Create a map and list of remote replicas. We create both a map and
+    // list because the list is sortable, so we can use a little math
+    // trick to determine the current cluster-wide log commit index.
     for (String uri : context.cluster.config().getRemoteMembers()) {
       if (!replicaMap.containsKey(uri)) {
         Member member = context.cluster.member(uri);
@@ -145,9 +148,13 @@ public class Leader extends BaseState implements Observer {
   private void clusterChanged(final ClusterConfig cluster) {
     // All cluster configuration changes must go through the leader. In order to
     // perform cluster configuration changes, the leader observes the local cluster
-    // configuration if it is indeed observable. When a configuration change is
-    // detected, in order to ensure log consistency we need to perform a two-step
-    // configuration change:
+    // configuration if it is indeed observable. We have to be very careful about
+    // the order in which cluster configuration changes occur. If two configuration
+    // changes are taking place at the same time, one can overwrite the other.
+    // Additionally, if a new cluster configuration immediately overwrites an old
+    // configuration without first replicating a combined old/new configuration,
+    // a dual-majority can result, meaning logs will ultimately become out of sync.
+    // In order to avoid this, we need to perform a two-step configuration change:
     // - First log the combined current cluster configuration and new cluster
     // configuration. For instance, if a node was added to the cluster, log the
     // new configuration. If a node was removed, log the old configuration.
@@ -156,7 +163,7 @@ public class Leader extends BaseState implements Observer {
     // This two-step process ensures log consistency by ensuring that two majorities
     // cannot result from adding and removing too many nodes at once.
 
-    // First, store the set of members in a final local variable. We don't want
+    // First, store the set of new members in a final local variable. We don't want
     // to be calling getMembers() at a later time after it has changed again.
     final Set<String> members = cluster.getMembers();
 
@@ -252,11 +259,10 @@ public class Leader extends BaseState implements Observer {
     Command info = context.stateMachine instanceof CommandProvider
         ? ((CommandProvider) context.stateMachine).getCommandInfo(request.command()) : null;
 
-    // Depending on the command type, read or write
-    // commands may or may not be replicated to a quorum based on configuration
-    // options. For write commands, if a quorum is required then the command will
-    // be replicated. For read commands, if a quorum is required then we simply
-    // ping a quorum of the cluster to ensure that data is not stale.
+    // Depending on the command type, read or write commands may or may not be replicated
+    // to a quorum based on configuration  options. For write commands, if a quorum is
+    // required then the command will be replicated. For read commands, if a quorum is
+    // required then we simply ping a quorum of the cluster to ensure that data is not stale.
     if (info != null && info.type().equals(Command.Type.READ)) {
       // Users have the option of whether to allow stale data to be returned. By
       // default, read quorums are enabled. If read quorums are disabled then we
@@ -282,6 +288,10 @@ public class Leader extends BaseState implements Observer {
             responseCallback.fail(t);
           }
         });
+
+        // To acquire a read quorum, iterate through all the available remote
+        // replicas and ping each replica. This will ensure that remote replicas
+        // are still up-to-date with the leader's log.
         for (RemoteReplica replica : replicas) {
           replica.ping(new AsyncCallback<Void>() {
             @Override
@@ -451,6 +461,11 @@ public class Leader extends BaseState implements Observer {
      */
     private void update() {
       if (open && running.compareAndSet(false, true)) {
+        // If the next log entry to send is the first entry in the log, the
+        // entry should be a SnapshotEntry. This is because CopyCat requires
+        // that the first entry in the log *always* be a snapshot entry. If
+        // the first entry is indeed a snapshot entry, replicate the snapshot
+        // to the remote replica.
         if (nextIndex == context.log.firstIndex()) {
           Entry entry = context.log.getEntry(context.log.firstIndex());
           if (entry instanceof SnapshotEntry) {
@@ -468,6 +483,11 @@ public class Leader extends BaseState implements Observer {
      * Installs a snapshot to the remote replica.
      */
     private void doInstall(long index, SnapshotEntry entry) {
+      // Snapshots are replicated incrementally in 4096 byte chunks
+      // since they could be very large. We send each chunk and wait
+      // for a successful response before sending the next. Note that
+      // replication to the remote replica will essentially be haulted
+      // until the snapshot has been replicated and installed.
       doIncrementalInstall(index, entry.term(), entry.data(), 0, 4096, new AsyncCallback<Void>() {
         @Override
         public void complete(Void value) {
@@ -623,6 +643,7 @@ public class Leader extends BaseState implements Observer {
      * Pins the replica.
      */
     private void doPing() {
+      // The "ping" request is simply an empty synchronization request.
       SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
       member.protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
         @Override

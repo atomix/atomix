@@ -21,7 +21,14 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a stateful field or method.
+ * Annotates a stateful field.<p>
+ *
+ * This annotation should be used in conjunction with the
+ * {@link AnnotatedStateMachine} to annotate a field within the
+ * state machine as being persisted for snapshots. The state machine
+ * will automatically store the current state of the annotated field
+ * when a snapshot of the state machine is take. When a snapshot is
+ * installed, the field will be populated with the snapshot state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
