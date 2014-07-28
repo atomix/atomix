@@ -22,14 +22,14 @@ of the Raft algorithm such as snapshotting and dynamic cluster configuration cha
    * [Candidates](#candidates)
    * [Leaders](#leaders)
 1. [Getting started](#getting-started)
-   * [Creating a state machine]
-   * [Providing command types]
-   * [Snapshotting]
-   * [Creating an annotated state machine]
-   * [Configuring the cluster]
-   * [Creating a dynamic cluster]
-   * [Creating the CopyCatContext]
-   * [Setting the log type]
+   * [Creating a state machine](#creating-a-state-machine)
+   * [Providing command types](#providing-command-types)
+   * [Snapshotting](#snapshotting)
+   * [Creating an annotated state machine](#creating-an-annotated-state-machine)
+   * [Configuring the cluster](#configuring-the-cluster)
+   * [Creating a dynamic cluster](#creating-a-dynamic-cluster)
+   * [Creating the CopyCatContext](#creating-the-copycatcontext)
+   * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
 1. [Protocols](#protocols)
    * [Writing a protocol server](#writing-a-protocol-server)
