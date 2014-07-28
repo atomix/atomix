@@ -170,7 +170,7 @@ abstract class BaseState implements State {
           // once the snapshot has been committed we can clear all entries before
           // the snapshot entry and apply the snapshot to the state machine.
           else if (entry instanceof SnapshotEntry) {
-            Map<String, Object> snapshot = serializer.readValue(((SnapshotEntry) entry).data(), Map.class);
+            Snapshot snapshot = new Snapshot(serializer.readValue(((SnapshotEntry) entry).data(), Map.class));
             context.stateMachine.installSnapshot(snapshot);
             context.log.removeBefore(i);
           }
@@ -183,7 +183,7 @@ abstract class BaseState implements State {
         // entries with a single snapshot entry. The snapshot is stored as a log
         // entry in order to make replication simpler if the node becomes a leader.
         if (context.log.size() > context.config().getMaxLogSize()) {
-          Map<String, Object> snapshot = context.stateMachine.createSnapshot();
+          Snapshot snapshot = context.stateMachine.takeSnapshot();
           byte[] bytes = serializer.writeValue(snapshot);
           SnapshotEntry entry = new SnapshotEntry(context.getCurrentTerm(), context.cluster.config().getMembers(), bytes, true);
           context.log.setEntry(context.getLastApplied(), entry);

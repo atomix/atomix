@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import java.util.Map;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Cluster;
@@ -315,7 +314,7 @@ public class CopyCatContext {
    * @param callback An asynchronous callback to be called with the command result.
    * @return The replica context.
    */
-  public CopyCatContext submitCommand(final String command, final Map<String, Object> args, final AsyncCallback<Map<String, Object>> callback) {
+  public CopyCatContext submitCommand(final String command, Arguments args, final AsyncCallback<Object> callback) {
     if (currentLeader == null) {
       callback.fail(new CopyCatException("No leader available"));
     } else {

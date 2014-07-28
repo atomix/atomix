@@ -18,8 +18,10 @@ package net.kuujo.copycat.vertx.protocol.impl;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
@@ -161,12 +163,19 @@ public class EventBusProtocolServer implements ProtocolServer {
 
   private void doSubmit(final Message<JsonObject> message) {
     if (requestHandler != null) {
-      SubmitRequest request = new SubmitRequest(message.body().getString("command"), message.body().getObject("args").toMap());
+      SubmitRequest request = new SubmitRequest(message.body().getString("command"), new Arguments(message.body().getObject("args").toMap()));
       requestHandler.submit(request, new AsyncCallback<SubmitResponse>() {
         @Override
+        @SuppressWarnings({"unchecked", "rawtypes"})
         public void complete(SubmitResponse response) {
           if (response.status().equals(Response.Status.OK)) {
-            message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject(response.result())));
+            if (response.result() instanceof Map) {
+              message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject((Map) response.result())));
+            } else if (response.result() instanceof List) {
+              message.reply(new JsonObject().putString("status", "ok").putArray("result", new JsonArray((List) response.result())));
+            } else {
+              message.reply(new JsonObject().putString("status", "ok").putValue("result", response.result()));
+            }
           } else {
             message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
           }

@@ -15,8 +15,10 @@
  */
 package net.kuujo.copycat.vertx.endpoint.impl;
 
+import java.util.List;
 import java.util.Map;
 
+import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.Optional;
@@ -31,6 +33,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -131,10 +134,17 @@ public class TcpEndpoint implements Endpoint {
           @Override
           public void handle(Buffer buffer) {
             JsonObject json = new JsonObject(buffer.toString());
-            context.submitCommand(json.getString("command"), json.getObject("args").toMap(), new AsyncCallback<Map<String, Object>>() {
+            context.submitCommand(json.getString("command"), new Arguments(json.getObject("args").toMap()), new AsyncCallback<Object>() {
               @Override
-              public void complete(Map<String, Object> value) {
-                socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject(value)).encode() + '\00');
+              @SuppressWarnings({"unchecked", "rawtypes"})
+              public void complete(Object result) {
+                if (result instanceof Map) {
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
+                } else if (result instanceof List) {
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
+                } else {
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result).encode() + '\00');
+                }
               }
               @Override
               public void fail(Throwable t) {

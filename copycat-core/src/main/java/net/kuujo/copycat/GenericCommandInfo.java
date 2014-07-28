@@ -26,11 +26,11 @@ import java.lang.annotation.Annotation;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("all")
-public class GenericCommandInfo implements Annotation, CommandInfo {
+public class GenericCommandInfo implements Annotation, Command {
   private final String name;
-  private final CommandInfo.Type type;
+  private final Command.Type type;
 
-  public GenericCommandInfo(String name, CommandInfo.Type type) {
+  public GenericCommandInfo(String name, Command.Type type) {
     this.name = name;
     this.type = type;
   }
@@ -41,12 +41,12 @@ public class GenericCommandInfo implements Annotation, CommandInfo {
   }
 
   @Override
-  public CommandInfo.Type type() {
+  public Command.Type type() {
     return type;
   }
 
   @Override
   public Class<? extends Annotation> annotationType() {
-    return CommandInfo.class;
+    return Command.class;
   }
 }

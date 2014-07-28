@@ -15,8 +15,10 @@
  */
 package net.kuujo.copycat.vertx.endpoint.impl;
 
+import java.util.List;
 import java.util.Map;
 
+import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.Optional;
@@ -34,6 +36,7 @@ import org.vertx.java.core.http.HttpServer;
 import org.vertx.java.core.http.HttpServerRequest;
 import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -87,11 +90,18 @@ public class HttpEndpoint implements Endpoint {
         request.bodyHandler(new Handler<Buffer>() {
           @Override
           public void handle(Buffer buffer) {
-            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new JsonObject(buffer.toString()).toMap(), new AsyncCallback<Map<String, Object>>() {
+            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new Arguments(new JsonObject(buffer.toString()).toMap()), new AsyncCallback<Object>() {
               @Override
-              public void complete(Map<String, Object> result) {
+              @SuppressWarnings({"unchecked", "rawtypes"})
+              public void complete(Object result) {
                 request.response().setStatusCode(200);
-                request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject(result)).encode());
+                if (result instanceof Map) {
+                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result)).encode());                  
+                } else if (result instanceof List) {
+                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result)).encode());
+                } else {
+                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result).encode());
+                }
               }
               @Override
               public void fail(Throwable t) {

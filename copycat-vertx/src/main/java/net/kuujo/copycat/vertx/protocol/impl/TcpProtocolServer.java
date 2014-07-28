@@ -18,8 +18,10 @@ package net.kuujo.copycat.vertx.protocol.impl;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallRequest;
 import net.kuujo.copycat.protocol.InstallResponse;
@@ -210,11 +212,18 @@ public class TcpProtocolServer implements ProtocolServer {
   private void handleSubmit(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final long id = request.getLong("id");
-      requestHandler.submit(new SubmitRequest(request.getString("command"), request.getObject("args").toMap()), new AsyncCallback<SubmitResponse>() {
+      requestHandler.submit(new SubmitRequest(request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitResponse>() {
+        @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
         public void complete(SubmitResponse response) {
           if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject(response.result())));
+            if (response.result() instanceof Map) {
+              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject((Map) response.result())));
+            } else if (response.result() instanceof List) {
+              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putArray("result", new JsonArray((List) response.result())));
+            } else {
+              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putValue("result", response.result()));
+            }
           } else {
             respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
           }

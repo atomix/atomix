@@ -15,10 +15,12 @@
  */
 package net.kuujo.copycat.vertx.endpoint.impl;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.protocol.ProtocolException;
@@ -37,6 +39,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -77,12 +80,19 @@ public class EventBusEndpoint implements Endpoint {
     public void handle(final Message<JsonObject> message) {
       String command = message.body().getString("command");
       if (command != null) {
-        Map<String, Object> args = message.body().toMap();
+        Arguments args = new Arguments(message.body().toMap());
         args.remove("command");
-        context.submitCommand(command, args, new AsyncCallback<Map<String, Object>>() {
+        context.submitCommand(command, args, new AsyncCallback<Object>() {
           @Override
-          public void complete(Map<String, Object> result) {
-            message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject(result)));
+          @SuppressWarnings({"unchecked", "rawtypes"})
+          public void complete(Object result) {
+            if (result instanceof Map) {
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)));
+            } else if (result instanceof List) {
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)));
+            } else {
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result));
+            }
           }
           @Override
           public void fail(Throwable t) {

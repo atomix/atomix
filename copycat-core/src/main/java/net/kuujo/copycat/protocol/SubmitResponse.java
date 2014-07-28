@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import java.util.Map;
 
 /**
  * A submit response.
@@ -24,12 +23,12 @@ import java.util.Map;
  */
 public class SubmitResponse extends Response {
   private static final long serialVersionUID = -2137570252386650195L;
-  private Map<String, Object> result;
+  private Object result;
 
   public SubmitResponse() {
   }
 
-  public SubmitResponse(Map<String, Object> result) {
+  public SubmitResponse(Object result) {
     super(Status.OK);
     this.result = result;
   }
@@ -47,7 +46,7 @@ public class SubmitResponse extends Response {
    *
    * @return The command execution result.
    */
-  public Map<String, Object> result() {
+  public Object result() {
     return result;
   }
 

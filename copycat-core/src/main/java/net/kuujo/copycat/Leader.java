@@ -81,7 +81,7 @@ public class Leader extends BaseState implements Observer {
     // the log which will be replicated to other nodes if necessary. The first
     // entry in the log must always be a snapshot entry for consistency.
     if (context.log.isEmpty()) {
-      Map<String, Object> snapshot = context.stateMachine.createSnapshot();
+      Snapshot snapshot = context.stateMachine.takeSnapshot();
       byte[] snapshotBytes = serializer.writeValue(snapshot);
       context.log.appendEntry(new SnapshotEntry(context.getCurrentTerm(), context.cluster.config().getMembers(), snapshotBytes, true));
     }
@@ -249,7 +249,7 @@ public class Leader extends BaseState implements Observer {
     // type is provided by a CommandProvider which provides CommandInfo for a
     // given command. If no CommandInfo is provided then all commands are assumed
     // to be READ_WRITE commands.
-    CommandInfo info = context.stateMachine instanceof CommandProvider
+    Command info = context.stateMachine instanceof CommandProvider
         ? ((CommandProvider) context.stateMachine).getCommandInfo(request.command()) : null;
 
     // Depending on the command type, read or write
@@ -257,7 +257,7 @@ public class Leader extends BaseState implements Observer {
     // options. For write commands, if a quorum is required then the command will
     // be replicated. For read commands, if a quorum is required then we simply
     // ping a quorum of the cluster to ensure that data is not stale.
-    if (info != null && info.type().equals(CommandInfo.Type.READ)) {
+    if (info != null && info.type().equals(Command.Type.READ)) {
       // Users have the option of whether to allow stale data to be returned. By
       // default, read quorums are enabled. If read quorums are disabled then we
       // simply apply the command, otherwise we need to ping a quorum of the

@@ -34,6 +34,6 @@ public interface CommandProvider {
    * @param name The name of the command for which to return info.
    * @return The command info.
    */
-  CommandInfo getCommandInfo(String name);
+  Command getCommandInfo(String name);
 
 }

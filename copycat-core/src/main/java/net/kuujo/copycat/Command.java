@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CommandInfo {
+public @interface Command {
 
   /**
    * The command name.
@@ -104,16 +104,6 @@ public @interface CommandInfo {
   public static @interface Argument {
     String value() default "";
     boolean required() default false;
-  }
-
-  /**
-   * Indicates that an argument accepts the entire command arguments value.
-   *
-   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
-   */
-  @Target(ElementType.PARAMETER)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface Value {
   }
 
   /**
