@@ -17,6 +17,8 @@ package net.kuujo.copycat;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
@@ -32,7 +34,9 @@ import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
+import net.kuujo.copycat.util.AsyncAction;
 import net.kuujo.copycat.util.AsyncCallback;
+import net.kuujo.copycat.util.AsyncExecutor;
 
 /**
  * Base replica state.
@@ -42,6 +46,8 @@ import net.kuujo.copycat.util.AsyncCallback;
 abstract class BaseState implements State {
   private static final Serializer serializer = SerializerFactory.getSerializer();
   protected CopyCatContext context;
+  private final AtomicBoolean snapshotting = new AtomicBoolean();
+  private final AsyncExecutor executor = new AsyncExecutor(Executors.newSingleThreadExecutor());
 
   @Override
   public void init(CopyCatContext context) {
@@ -152,46 +158,75 @@ abstract class BaseState implements State {
           }
 
           // If the entry was successfully loaded then apply it to the state machine.
-          if (entry instanceof CommandEntry) {
-            CommandEntry command = (CommandEntry) entry;
-            try {
+          try {
+            if (entry instanceof CommandEntry) {
+              CommandEntry command = (CommandEntry) entry;
               context.stateMachine.applyCommand(command.command(), command.args());
-            } catch (Exception e) {
             }
+            // Configuration entries are applied to the immutable context configuration.
+            else if (entry instanceof ConfigurationEntry) {
+              Set<String> members = ((ConfigurationEntry) entry).members();
+              members.remove(context.cluster.config().getLocalMember());
+              context.cluster.config().setRemoteMembers(members);
+            }
+            // It's possible that an entry being committed is a snapshot entry. In
+            // cases where a leader has replicated a snapshot to this node's log,
+            // once the snapshot has been committed we can clear all entries before
+            // the snapshot entry and apply the snapshot to the state machine.
+            else if (entry instanceof SnapshotEntry) {
+              synchronized (context.log) {
+                Snapshot snapshot = new Snapshot(serializer.readValue(((SnapshotEntry) entry).data(), Map.class));
+                context.stateMachine.installSnapshot(snapshot);
+                context.log.removeBefore(i);
+              }
+            }
+          } finally {
+            context.setLastApplied(i);
           }
-          // Configuration entries are applied to the immutable context configuration.
-          else if (entry instanceof ConfigurationEntry) {
-            Set<String> members = ((ConfigurationEntry) entry).members();
-            members.remove(context.cluster.config().getLocalMember());
-            context.cluster.config().setRemoteMembers(members);
-          }
-          // It's possible that an entry being committed is a snapshot entry. In
-          // cases where a leader has replicated a snapshot to this node's log,
-          // once the snapshot has been committed we can clear all entries before
-          // the snapshot entry and apply the snapshot to the state machine.
-          else if (entry instanceof SnapshotEntry) {
-            Snapshot snapshot = new Snapshot(serializer.readValue(((SnapshotEntry) entry).data(), Map.class));
-            context.stateMachine.installSnapshot(snapshot);
-            context.log.removeBefore(i);
-          }
-          context.setLastApplied(i);
         }
 
         // Once entries have been applied check whether we need to compact the log.
-        // If the log has now grown past the maximum local log size, create a
-        // snapshot of the current state machine state and replace the applied
-        // entries with a single snapshot entry. The snapshot is stored as a log
-        // entry in order to make replication simpler if the node becomes a leader.
-        if (context.log.size() > context.config().getMaxLogSize()) {
-          Snapshot snapshot = context.stateMachine.takeSnapshot();
-          byte[] bytes = serializer.writeValue(snapshot);
-          SnapshotEntry entry = new SnapshotEntry(context.getCurrentTerm(), context.cluster.config().getMembers(), bytes, true);
-          context.log.setEntry(context.getLastApplied(), entry);
-          context.log.removeBefore(context.getLastApplied());
-        }
+        compactLog();
       }
     }
     responseCallback.complete(new SyncResponse(context.getCurrentTerm(), true));
+  }
+
+  /**
+   * Compacts the local log.
+   */
+  protected void compactLog() {
+    compactLog(null);
+  }
+
+  /**
+   * Compacts the local log.
+   */
+  protected void compactLog(AsyncCallback<Void> callback) {
+    // If the log has now grown past the maximum local log size, create a
+    // snapshot of the current state machine state and replace the applied
+    // entries with a single snapshot entry. This process is done in the
+    // background in order to allow new entries to continue being appended
+    // to the log. The snapshot is stored as a log entry in order to simplify
+    // replication of snapshots if the node becomes the leader.
+    if (context.log.size() > context.config().getMaxLogSize() && !snapshotting.compareAndSet(false, true)) {
+      executor.execute(new AsyncAction<Void>() {
+        @Override
+        public Void execute() {
+          synchronized (context.log) {
+            final long lastApplied = context.getLastApplied();
+            Snapshot snapshot = context.stateMachine.takeSnapshot();
+            byte[] bytes = serializer.writeValue(snapshot);
+            SnapshotEntry entry = new SnapshotEntry(context.getCurrentTerm(), context.cluster.config().getMembers(), bytes, true);
+            context.log.setEntry(lastApplied, entry);
+            context.log.removeBefore(lastApplied);
+          }
+          return null;
+        }
+      }, callback);
+    } else if (callback != null) {
+      callback.complete(null);
+    }
   }
 
   @Override
