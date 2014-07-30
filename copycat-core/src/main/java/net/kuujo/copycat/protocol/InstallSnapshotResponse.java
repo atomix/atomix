@@ -16,7 +16,7 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Install response.<p>
+ * Install snapshot response.<p>
  *
  * The install response is sent in response to an install request.
  * The response indicates the receiving node's current term as well
@@ -24,22 +24,22 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InstallResponse extends Response {
+public class InstallSnapshotResponse extends Response {
   private static final long serialVersionUID = -2857849500915162283L;
   private long term;
   private boolean succeeded;
 
-  public InstallResponse(long term, boolean succeeded) {
+  public InstallSnapshotResponse(long term, boolean succeeded) {
     super(Status.OK);
     this.term = term;
     this.succeeded = succeeded;
   }
 
-  public InstallResponse(Throwable t) {
+  public InstallSnapshotResponse(Throwable t) {
     super(Status.ERROR, t);
   }
 
-  public InstallResponse(String error) {
+  public InstallSnapshotResponse(String error) {
     super(Status.ERROR, error);
   }
 
@@ -59,6 +59,11 @@ public class InstallResponse extends Response {
    */
   public boolean succeeded() {
     return succeeded;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[term=%d, succeeded=%b]", getClass().getSimpleName(), term, succeeded);
   }
 
 }

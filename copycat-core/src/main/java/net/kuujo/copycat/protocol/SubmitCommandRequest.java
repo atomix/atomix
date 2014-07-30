@@ -18,7 +18,7 @@ package net.kuujo.copycat.protocol;
 import net.kuujo.copycat.Arguments;
 
 /**
- * Submit request.<p>
+ * Submit command request.<p>
  *
  * Submit requests are simply command submissions that are forwarded
  * to the cluster leader. When a node receives a command submission,
@@ -26,15 +26,15 @@ import net.kuujo.copycat.Arguments;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitRequest implements Request {
+public class SubmitCommandRequest implements Request {
   private static final long serialVersionUID = -8657438748181101192L;
   private String command;
   private Arguments args;
 
-  public SubmitRequest() {
+  public SubmitCommandRequest() {
   }
 
-  public SubmitRequest(String command, Arguments args) {
+  public SubmitCommandRequest(String command, Arguments args) {
     this.command = command;
     this.args = args;
   }
@@ -59,7 +59,7 @@ public class SubmitRequest implements Request {
 
   @Override
   public String toString() {
-    return String.format("SubmitRequest[command=%s, args=%s]", command, args);
+    return String.format("%s[command=%s, args=%s]", getClass().getSimpleName(), command, args);
   }
 
 }

@@ -40,13 +40,13 @@ import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.NoOpEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.AsyncCallback;
@@ -251,7 +251,7 @@ class Leader extends BaseState implements Observer {
   }
 
   @Override
-  public void submit(final SubmitRequest request, final AsyncCallback<SubmitResponse> responseCallback) {
+  public void submitCommand(final SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> responseCallback) {
     // Try to determine the type of command this request is executing. The command
     // type is provided by a CommandProvider which provides CommandInfo for a
     // given command. If no CommandInfo is provided then all commands are assumed
@@ -275,7 +275,7 @@ class Leader extends BaseState implements Observer {
           public void complete(Boolean succeeded) {
             if (succeeded) {
               try {
-                responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
+                responseCallback.complete(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args())));
               } catch (Exception e) {
                 responseCallback.fail(e);
               }
@@ -306,7 +306,7 @@ class Leader extends BaseState implements Observer {
         }
       } else {
         try {
-          responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
+          responseCallback.complete(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           responseCallback.fail(e);
         }
@@ -329,7 +329,7 @@ class Leader extends BaseState implements Observer {
             // Once the entry has been replicated we can apply it to the state
             // machine and respond with the command result.
             try {
-              responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
+              responseCallback.complete(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args())));
             } catch (Exception e) {
               responseCallback.fail(e);
             } finally {
@@ -344,7 +344,7 @@ class Leader extends BaseState implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          responseCallback.complete(new SubmitResponse(context.stateMachine.applyCommand(request.command(), request.args())));
+          responseCallback.complete(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           responseCallback.fail(e);
         } finally {
@@ -516,9 +516,9 @@ class Leader extends BaseState implements Observer {
         final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
         byte[] bytes = new byte[bytesLength];
         System.arraycopy(snapshot, position, bytes, 0, bytesLength);
-        member.protocol().client().install(new InstallRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallResponse>() {
+        member.protocol().client().installSnapshot(new InstallSnapshotRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallSnapshotResponse>() {
           @Override
-          public void complete(InstallResponse response) {
+          public void complete(InstallSnapshotResponse response) {
             doIncrementalInstall(index, term, snapshot, position + bytesLength, length, callback);
           }
           @Override
@@ -552,10 +552,10 @@ class Leader extends BaseState implements Observer {
         }
       }
 
-      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
-      member.protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
+      AppendEntriesRequest request = new AppendEntriesRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+      member.protocol().client().appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
-        public void complete(SyncResponse response) {
+        public void complete(AppendEntriesResponse response) {
           if (response.status().equals(Response.Status.OK)) {
             if (response.succeeded()) {
               if (logger.isLoggable(Level.FINER)) {
@@ -646,10 +646,10 @@ class Leader extends BaseState implements Observer {
      */
     private void doPing() {
       // The "ping" request is simply an empty synchronization request.
-      SyncRequest request = new SyncRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
-      member.protocol().client().sync(request, new AsyncCallback<SyncResponse>() {
+      AppendEntriesRequest request = new AppendEntriesRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
+      member.protocol().client().appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
-        public void complete(SyncResponse response) {
+        public void complete(AppendEntriesResponse response) {
           running.set(false);
           if (response.status().equals(Response.Status.OK)) {
             if (response.term() > context.getCurrentTerm()) {

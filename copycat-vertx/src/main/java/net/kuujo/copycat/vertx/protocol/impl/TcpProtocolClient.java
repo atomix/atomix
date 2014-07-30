@@ -19,17 +19,17 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.AsyncCallback;
@@ -90,7 +90,7 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void sync(SyncRequest request, AsyncCallback<SyncResponse> callback) {
+  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
     if (socket != null) {
       long requestId = ++id;
       JsonArray jsonEntries = new JsonArray();
@@ -104,7 +104,7 @@ public class TcpProtocolClient implements ProtocolClient {
           .putNumber("prevIndex", request.prevLogIndex())
           .putNumber("prevTerm", request.prevLogTerm())
           .putArray("entries", jsonEntries)
-          .putNumber("commit", request.commit()).encode() + '\00');
+          .putNumber("commit", request.commitIndex()).encode() + '\00');
       storeCallback(requestId, ResponseType.SYNC, callback);
     } else {
       callback.fail(new ProtocolException("Client not connected"));
@@ -112,7 +112,7 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void install(InstallRequest request, AsyncCallback<InstallResponse> callback) {
+  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
     if (socket != null) {
       long requestId = ++id;
       JsonArray jsonCluster = new JsonArray();
@@ -134,7 +134,7 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void poll(PollRequest request, AsyncCallback<PollResponse> callback) {
+  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
     if (socket != null) {
       long requestId = ++id;
       socket.write(new JsonObject().putString("type", "poll")
@@ -151,7 +151,7 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback) {
+  public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
     if (socket != null) {
       long requestId = ++id;
       socket.write(new JsonObject().putString("type", "submit")
@@ -174,16 +174,16 @@ public class TcpProtocolClient implements ProtocolClient {
       vertx.cancelTimer(holder.timer);
       switch (holder.type) {
         case SYNC:
-          handleSyncResponse(response, (AsyncCallback<SyncResponse>) holder.callback);
+          handleSyncResponse(response, (AsyncCallback<AppendEntriesResponse>) holder.callback);
           break;
         case INSTALL:
-          handleInstallResponse(response, (AsyncCallback<InstallResponse>) holder.callback);
+          handleInstallResponse(response, (AsyncCallback<InstallSnapshotResponse>) holder.callback);
           break;
         case POLL:
-          handlePollResponse(response, (AsyncCallback<PollResponse>) holder.callback);
+          handlePollResponse(response, (AsyncCallback<RequestVoteResponse>) holder.callback);
           break;
         case SUBMIT:
-          handleSubmitResponse(response, (AsyncCallback<SubmitResponse>) holder.callback);
+          handleSubmitResponse(response, (AsyncCallback<SubmitCommandResponse>) holder.callback);
           break;
       }
     }
@@ -192,12 +192,12 @@ public class TcpProtocolClient implements ProtocolClient {
   /**
    * Handles a sync response.
    */
-  private void handleSyncResponse(JsonObject response, AsyncCallback<SyncResponse> callback) {
+  private void handleSyncResponse(JsonObject response, AsyncCallback<AppendEntriesResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
       callback.fail(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      callback.complete(new SyncResponse(response.getLong("term"), response.getBoolean("succeeded")));
+      callback.complete(new AppendEntriesResponse(response.getLong("term"), response.getBoolean("succeeded")));
     } else if (status.equals("error")) {
       callback.fail(new ProtocolException(response.getString("message")));
     }
@@ -206,12 +206,12 @@ public class TcpProtocolClient implements ProtocolClient {
   /**
    * Handles an install response.
    */
-  private void handleInstallResponse(JsonObject response, AsyncCallback<InstallResponse> callback) {
+  private void handleInstallResponse(JsonObject response, AsyncCallback<InstallSnapshotResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
       callback.fail(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      callback.complete(new InstallResponse(response.getLong("term"), response.getBoolean("succeeded")));
+      callback.complete(new InstallSnapshotResponse(response.getLong("term"), response.getBoolean("succeeded")));
     } else if (status.equals("error")) {
       callback.fail(new ProtocolException(response.getString("message")));
     }
@@ -220,12 +220,12 @@ public class TcpProtocolClient implements ProtocolClient {
   /**
    * Handles a poll response.
    */
-  private void handlePollResponse(JsonObject response, AsyncCallback<PollResponse> callback) {
+  private void handlePollResponse(JsonObject response, AsyncCallback<RequestVoteResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
       callback.fail(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      callback.complete(new PollResponse(response.getLong("term"), response.getBoolean("voteGranted")));
+      callback.complete(new RequestVoteResponse(response.getLong("term"), response.getBoolean("voteGranted")));
     } else if (status.equals("error")) {
       callback.fail(new ProtocolException(response.getString("message")));
     }
@@ -234,12 +234,12 @@ public class TcpProtocolClient implements ProtocolClient {
   /**
    * Handles a submit response.
    */
-  private void handleSubmitResponse(JsonObject response, AsyncCallback<SubmitResponse> callback) {
+  private void handleSubmitResponse(JsonObject response, AsyncCallback<SubmitCommandResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
       callback.fail(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      callback.complete(new SubmitResponse(response.getObject("result").toMap()));
+      callback.complete(new SubmitCommandResponse(response.getObject("result").toMap()));
     } else if (status.equals("error")) {
       callback.fail(new ProtocolException(response.getString("message")));
     }

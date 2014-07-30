@@ -15,32 +15,31 @@
  */
 package net.kuujo.copycat.protocol;
 
-
 /**
- * Submit response.<p>
+ * Submit command response.<p>
  *
  * Submit responses are sent back to the forwarding node upon
  * successful submission of a command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitResponse extends Response {
+public class SubmitCommandResponse extends Response {
   private static final long serialVersionUID = -2137570252386650195L;
   private Object result;
 
-  public SubmitResponse() {
+  public SubmitCommandResponse() {
   }
 
-  public SubmitResponse(Object result) {
+  public SubmitCommandResponse(Object result) {
     super(Status.OK);
     this.result = result;
   }
 
-  public SubmitResponse(Throwable t) {
+  public SubmitCommandResponse(Throwable t) {
     super(Status.ERROR, t);
   }
 
-  public SubmitResponse(String message) {
+  public SubmitCommandResponse(String message) {
     super(Status.ERROR, message);
   }
 
@@ -55,7 +54,7 @@ public class SubmitResponse extends Response {
 
   @Override
   public String toString() {
-    return String.format("SubmitResponse[result=%s]", result);
+    return String.format("%s[result=%s]", getClass().getSimpleName(), result);
   }
 
 }

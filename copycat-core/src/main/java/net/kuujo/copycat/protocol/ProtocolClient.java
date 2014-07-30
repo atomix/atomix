@@ -30,7 +30,7 @@ public interface ProtocolClient extends ProtocolHandler {
    * @param request The sync request.
    * @param callback A callback to be called once the response is received.
    */
-  void sync(SyncRequest request, AsyncCallback<SyncResponse> callback);
+  void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback);
 
   /**
    * Sends an install request.
@@ -38,7 +38,7 @@ public interface ProtocolClient extends ProtocolHandler {
    * @param request The install request.
    * @param callback A callback to be called once the response is received.
    */
-  void install(InstallRequest request, AsyncCallback<InstallResponse> callback);
+  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback);
 
   /**
    * Sends a poll request.
@@ -46,15 +46,15 @@ public interface ProtocolClient extends ProtocolHandler {
    * @param request The poll request.
    * @param callback A callback to be called once the response is received.
    */
-  void poll(PollRequest request, AsyncCallback<PollResponse> callback);
+  void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback);
 
   /**
-   * Sends a submit request.
+   * Sends a submit command request.
    *
    * @param request The submit request.
    * @param callback A callback to be called once the response is received.
    */
-  void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback);
+  void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback);
 
   /**
    * Connects the client.

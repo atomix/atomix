@@ -16,9 +16,9 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Poll request.<p>
+ * Request vote request.<p>
  *
- * Poll requests are simple vote requests between one node and another.
+ * Request vote requests are simple vote requests between one node and another.
  * When a node becomes a candidate, it will send poll requests to each
  * other node in the cluster. The poll request includes information about
  * the candidate node's log which will be used to determine whether a
@@ -26,17 +26,17 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PollRequest implements Request {
+public class RequestVoteRequest implements Request {
   private static final long serialVersionUID = -5282035829185619414L;
   private long term;
   private String candidate;
   private long lastLogIndex;
   private long lastLogTerm;
 
-  public PollRequest() {
+  public RequestVoteRequest() {
   }
 
-  public PollRequest(long term, String candidate, long lastLogIndex, long lastLogTerm) {
+  public RequestVoteRequest(long term, String candidate, long lastLogIndex, long lastLogTerm) {
     this.term = term;
     this.candidate = candidate;
     this.lastLogIndex = lastLogIndex;
@@ -81,7 +81,7 @@ public class PollRequest implements Request {
 
   @Override
   public String toString() {
-    return String.format("PollRequest[term=%s, candidate=%s, lastLogIndex=%s, lastLogTerm=%s]", term, candidate, lastLogIndex, lastLogTerm);
+    return String.format("%s[term=%d, candidate=%s, lastLogIndex=%d, lastLogTerm=%d]", getClass().getSimpleName(), term, candidate, lastLogIndex, lastLogTerm);
   }
 
 }

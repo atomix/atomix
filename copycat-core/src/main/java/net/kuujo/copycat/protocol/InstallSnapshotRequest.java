@@ -18,7 +18,7 @@ package net.kuujo.copycat.protocol;
 import java.util.Set;
 
 /**
- * Install request.<p>
+ * Install snapshot request.<p>
  *
  * Install requests are used by the cluster leader to replicate the
  * current state machine snapshot. This usually occurs when a new replica
@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InstallRequest implements Request {
+public class InstallSnapshotRequest implements Request {
   private static final long serialVersionUID = 1475758554918256823L;
   private long term;
   private String leader;
@@ -37,7 +37,7 @@ public class InstallRequest implements Request {
   private byte[] data;
   private boolean complete;
 
-  public InstallRequest(long term, String leader, long snapshotIndex, long snapshotTerm, Set<String> cluster, byte[] data, boolean complete) {
+  public InstallSnapshotRequest(long term, String leader, long snapshotIndex, long snapshotTerm, Set<String> cluster, byte[] data, boolean complete) {
     this.term = term;
     this.leader = leader;
     this.snapshotIndex = snapshotIndex;
@@ -112,7 +112,7 @@ public class InstallRequest implements Request {
 
   @Override
   public String toString() {
-    return String.format("InstallRequest[term=%s, leader=%s, snapshotIndex=%d, snapshotTerm=%d, cluster=%s, data=%s]", term, leader, snapshotIndex, snapshotTerm, cluster, data);
+    return String.format("%s[term=%d, leader=%s, snapshotIndex=%d, snapshotTerm=%d, cluster=%s, data=%s]", getClass().getSimpleName(), term, leader, snapshotIndex, snapshotTerm, cluster, data);
   }
 
 }

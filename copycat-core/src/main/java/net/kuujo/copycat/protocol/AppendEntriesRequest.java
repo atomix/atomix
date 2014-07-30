@@ -20,9 +20,9 @@ import java.util.List;
 import net.kuujo.copycat.log.Entry;
 
 /**
- * Sync request.<p>
+ * Append entries request.<p>
  *
- * Sync requests are at the core of CopyCat's state machine replication
+ * Append entries requests are at the core of Raft's state machine replication
  * algorithm. Whenever a new command is applied to the leader's state
  * machine, the leader will replicate the command to other nodes in the
  * cluster using the sync request. Additionally, sync requests are sent
@@ -31,25 +31,25 @@ import net.kuujo.copycat.log.Entry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SyncRequest implements Request {
+public class AppendEntriesRequest implements Request {
   private static final long serialVersionUID = 8870779945535041744L;
   private long term;
   private String leader;
   private long prevLogIndex;
   private long prevLogTerm;
   private List<Entry> entries;
-  private long commit;
+  private long commitIndex;
 
-  public SyncRequest() {
+  public AppendEntriesRequest() {
   }
 
-  public SyncRequest(long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex) {
+  public AppendEntriesRequest(long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex) {
     this.term = term;
     this.leader = leader;
     this.prevLogIndex = prevLogIndex;
     this.prevLogTerm = prevLogTerm;
     this.entries = entries;
-    this.commit = commitIndex;
+    this.commitIndex = commitIndex;
   }
 
   /**
@@ -102,13 +102,13 @@ public class SyncRequest implements Request {
    * 
    * @return The leader commit index.
    */
-  public long commit() {
-    return commit;
+  public long commitIndex() {
+    return commitIndex;
   }
 
   @Override
   public String toString() {
-    return String.format("SyncRequest[term=%s, leader=%s, prevLogIndex=%s, prevLogTerm=%s, commit=%s, entries=%s]", term, leader, prevLogIndex, prevLogTerm, commit, entries);
+    return String.format("%s[term=%d, leader=%s, prevLogIndex=%d, prevLogTerm=%d, commitIndex=%d, entries=%s]", getClass().getSimpleName(), term, leader, prevLogIndex, prevLogTerm, commitIndex, entries);
   }
 
 }

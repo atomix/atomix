@@ -16,33 +16,33 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Sync response.<p>
+ * Append entries response.<p>
  *
- * The sync response is sent in response to a sync request from
- * the cluster leader. The response simply indicates whether the
+ * The append entries response is sent in response to an append request
+ * from the cluster leader. The response simply indicates whether the
  * synchronization was successful.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SyncResponse extends Response {
+public class AppendEntriesResponse extends Response {
   private static final long serialVersionUID = 8897167973047662707L;
   private long term;
   private boolean succeeded;
 
-  public SyncResponse() {
+  public AppendEntriesResponse() {
   }
 
-  public SyncResponse(long term, boolean succeeded) {
+  public AppendEntriesResponse(long term, boolean succeeded) {
     super(Status.OK);
     this.term = term;
     this.succeeded = succeeded;
   }
 
-  public SyncResponse(Throwable t) {
+  public AppendEntriesResponse(Throwable t) {
     super(Status.ERROR, t);
   }
 
-  public SyncResponse(String message) {
+  public AppendEntriesResponse(String message) {
     super(Status.ERROR, message);
   }
 
@@ -66,7 +66,7 @@ public class SyncResponse extends Response {
 
   @Override
   public String toString() {
-    return String.format("SyncResponse[term=%s, succeeded=%s]", term, succeeded);
+    return String.format("%s[term=%d, succeeded=%b]", getClass().getSimpleName(), term, succeeded);
   }
 
 }

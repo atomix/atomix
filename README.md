@@ -1,12 +1,11 @@
 CopyCat
 =======
-CopyCat is a fault-tolerant state machine replication framework built on the
-Raft consensus algorithm as described in
-[the excellent paper by Diego Ongaro and John Ousterhout](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
+CopyCat is an extensible Java-based implementation of the
+[Raft consensus protocol](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
 
 The core of CopyCat is a framework designed to support a variety of protocols and
 transports. CopyCat provides a simple extensible API that can be used to build a
-fault-tolerant state machine over TCP, HTTP/REST, messaging systems, or any other
+fault-tolerant state machine over TCP, HTTP, messaging systems, or any other
 form of communication. The CopyCat Raft implementation supports advanced features
 of the Raft algorithm such as snapshotting and dynamic cluster configuration changes.
 
@@ -135,11 +134,11 @@ interface. The state machine interface exposes three methods:
 ```java
 public interface StateMachine {
 
-  Map<String, Object> createSnapshot();
+  Snapshot takeSnapshot();
 
-  void installSnapshot(Map<String, Object> snapshot);
+  void installSnapshot(Snapshot snapshot);
 
-  Map<String, Object> applyCommand(String command, Map<String, Object> args);
+  Object applyCommand(String command, Arguments args);
 
 }
 ```
@@ -260,6 +259,8 @@ The annotated state machine will introspect itself to find commands defined with
 
 ```java
 public class MyStateMachine extends AnnotatedStateMachine {
+  @Stateful
+  private Map<String, Object> data = new HashMap<>();
 
   @Command(name="get", type=Command.Type.READ)
   public String get(@Command.Argument("key") String key) {
@@ -268,6 +269,9 @@ public class MyStateMachine extends AnnotatedStateMachine {
 
 }
 ```
+
+Note also that the `@Stateful` annotation is used to indicate that the `data` field
+should be persisted whenever a snapshot is taken.
 
 ### Configuring the cluster
 When a CopyCat cluster is first started, the cluster configuration must be explicitly
@@ -373,10 +377,10 @@ To define a new protocol, simply create a file in your project's
 project name. In the file should be a single string indicating the name of the protocol
 class. For example:
 
-`META-INF/services/net/kuujo/copycat/protocol/rest`
+`META-INF/services/net/kuujo/copycat/protocol/http`
 
 ```
-net.kuujo.copycat.protocol.impl.RestProtocol
+net.kuujo.copycat.protocol.impl.HttpProtocol
 ```
 
 The class name should point to a class that implements the `Protocol` interface.
@@ -420,6 +424,9 @@ at any given time. When the `start` and `stop` methods are called, the server sh
 obviously start and stop servicing requests respectively. It's up to the server to
 transform wire-level messages into the appropriate `Request` instances.
 
+The `ProtocolHandler` to which the server calls implements the same interface as
+`ProtocolClient` below.
+
 ### Writing a protocol client
 The client's task is equally simple - to send messages to another replica when asked.
 In order to do so, the `ProtocolClient` implements the other side of the `ProtocolServer`
@@ -428,15 +435,13 @@ callback methods.
 ```java
 public interface ProtocolClient {
 
-  void ping(PingRequest request, AsyncCallback<PingResponse> callback);
+  void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback);
 
-  void sync(SyncRequest request, AsyncCallback<SyncResponse> callback);
+  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback);
 
-  void install(InstallRequest request, AsyncCallback<InstallResponse> callback);
+  void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback);
 
-  void poll(PollRequest request, AsyncCallback<PollResponse> callback);
-
-  void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback);
+  void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback);
 
 }
 ```
@@ -469,13 +474,13 @@ In either case, constructors or methods *must first be annotated with the
 at an example of constructor injection:
 
 ```java
-public class RestProtocol implements Protocol {
+public class HttpProtocol implements Protocol {
   private final String host;
   private final int port;
   private final String path;
 
   @UriInject
-  public RestProtocol(@UriHost String host, @UriPort int port @UriPath String path) {
+  public HttpProtocol(@UriHost String host, @UriPort int port @UriPath String path) {
     this.host = host;
     this.port = port;
     this.path = path;
@@ -492,24 +497,24 @@ exists then a `ProtocolException` will be thrown.
 
 The CopyCat URI injector also supports multiple constructors. This can be useful
 for when there are several ways to construct the same object. For instance, we may
-be constructing a `RestClient` instance within our `RestProtocol` constructor. We
+be constructing a `HttpClient` instance within our `HttpProtocol` constructor. We
 can then create two constructors, one accepting a `host` and a `port` and one accepting
 a `client`.
 
 ```java
-public class RestProtocol implements Protocol {
-  private final RestClient client;
+public class HttpProtocol implements Protocol {
+  private final HttpClient client;
   private final String path;
 
   @UriInject
-  public RestProtocol(@UriArgument("client") RestClient client, @UriPath String path) {
+  public HttpProtocol(@UriArgument("client") HttpClient client, @UriPath String path) {
     this.client = client;
     this.path = path;
   }
 
   @UriInject
-  public RestProtocol(@UriHost String host, @UriPort int port @UriPath String path) {
-    this(new RestClient(host, port), path);
+  public HttpProtocol(@UriHost String host, @UriPort int port @UriPath String path) {
+    this(new HttpClient(host, port), path);
   }
 
 }
@@ -522,15 +527,15 @@ used due to a missing argument (such as the named `@UriArgument("client")`), the
 will be skipped. Once all constructors have been exhausted, the injector will again attempt
 to fall back to a no-argument constructor.
 
-Note also that the `@UriArgument("client")` annotation is referencing a `RestClient` object
+Note also that the `@UriArgument("client")` annotation is referencing a `HttpClient` object
 which obviously can't exist within a raw URI string. Users can use a `Registry` instance
 to register named objects that can then be referenced in URIs using the `#` prefix. For
 instance:
 
 ```java
 Registry registry = new BasicRegistry();
-registry.bind("rest_client", new RestClient("localhost", 8080));
-String uri = "rest://copycat?client=#rest_client";
+registry.bind("http_client", new HttpClient("localhost", 8080));
+String uri = "http://copycat?client=#http_client";
 ```
 
 The registry can then be passed to a `CopyCatContext` constructor.
@@ -548,8 +553,8 @@ URI schemas can often be inflexible for this type of use case, and users may wan
 be able to back a parameter with multiple annotations. These two URIs will not parse
 in the same way:
 
-* `rest:copycat`
-* `rest://copycat`
+* `http:copycat`
+* `http://copycat`
 
 In the first example, the `copycat` path can be fetch via `URI.getSchemeSpecificPart()`,
 but the second example requires `URI.getAuthority()`. CopyCat supports multiple URI
@@ -562,7 +567,7 @@ will not be null.
 
 ```java
 @UriInject
-public RestProtocol(@UriAuthority @UriSchemeSpecificPart String path) {
+public HttpProtocol(@UriAuthority @UriSchemeSpecificPart String path) {
   this.path = path;
 }
 ```
@@ -571,15 +576,15 @@ public RestProtocol(@UriAuthority @UriSchemeSpecificPart String path) {
 In order to allow for more control over the way CopyCat selects constructors, users
 can use the `@Optional` annotation to indicate that a `null` parameter can be ignored
 if necessary. This will prevent CopyCat from skipping otherwise successful constructors.
-For instance, in our `RestProtocol` example, the constructor could certainly take a
+For instance, in our `HttpProtocol` example, the constructor could certainly take a
 `host` without a `port`. Of course, we could simply create another constructor, but
 maybe we just don't wan to :-)
 
 ```java
-public class RestProtocol implements Protocol {
+public class HttpProtocol implements Protocol {
 
   @UriInject
-  public RestProtocol(@UriHost String host, @Optional @UriPort int port) {
+  public HttpProtocol(@UriHost String host, @Optional @UriPort int port) {
     this.host = host;
     this.port = port >= 0 ? port : 0;
   }
@@ -591,22 +596,22 @@ public class RestProtocol implements Protocol {
 Now that we have all that out of the way, here's the complete `Protocol` implementation:
 
 ```java
-public class RestProtocol implements Protocol {
-  private RestClient client;
-  private RestServer server;
+public class HttpProtocol implements Protocol {
+  private HttpClient client;
+  private HttpServer server;
   private String path;
 
   @UriInject
-  public RestProtocol(@UriArgument("client") RestClient client, @UriArgument("server") RestServer server @UriAuthority String path) {
+  public HttpProtocol(@UriArgument("client") HttpClient client, @UriArgument("server") HttpServer server @UriAuthority String path) {
     this.client = client;
     this.server = server;
     this.path = path;
   }
 
   @UriInject
-  public RestProtocol(@UriHost String host, @Optional @UriPort int port, @UriPath String path) {
-    this.client = new RestClient(host, port);
-    this.server = new RestServer(host, port);
+  public HttpProtocol(@UriHost String host, @Optional @UriPort int port, @UriPath String path) {
+    this.client = new HttpClient(host, port);
+    this.server = new HttpServer(host, port);
     this.path = path;
   }
 
@@ -616,12 +621,12 @@ public class RestProtocol implements Protocol {
 
   @Override
   public ProtocolClient createClient() {
-    return new RestProtocolClient(client, path);
+    return new HttpProtocolClient(client, path);
   }
 
   @Override
   public ProtocolServer createServer() {
-    return new RestProtocolServer(server, path);
+    return new HttpProtocolServer(server, path);
   }
 
 }
@@ -633,9 +638,9 @@ Let's take a look at an example of how to configure the CopyCat cluster when usi
 custom protocols.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("rest://localhost:8080/copycat");
-cluster.addRemoteMember("rest://localhost:8081/copycat");
-cluster.addRemoteMember("rest://localhost:8082/copycat");
+ClusterConfig cluster = new StaticClusterConfig("http://localhost:8080/copycat");
+cluster.addRemoteMember("http://localhost:8081/copycat");
+cluster.addRemoteMember("http://localhost:8082/copycat");
 ```
 
 Note that CopyCat does not particularly care about the protocol of any given node
@@ -730,7 +735,7 @@ simply accepts a single additional argument which is the endpoint URI.
 
 ```java
 ClusterConfig cluster = new StaticClusterConfig("tcp://localhost:5555", "tcp://localhost:5556", "tcp://localhost:5557");
-CopyCat copycat = new CopyCat("rest://localhost:8080", new MyStateMachine(), cluster)
+CopyCat copycat = new CopyCat("http://localhost:8080", new MyStateMachine(), cluster)
 copycat.start();
 ```
 

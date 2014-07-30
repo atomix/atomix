@@ -16,16 +16,16 @@
 package net.kuujo.copycat.protocol.impl;
 
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -43,7 +43,7 @@ public class DirectProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void sync(SyncRequest request, AsyncCallback<SyncResponse> callback) {
+  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
     DirectProtocolServer server = context.registry().lookup(address);
     if (server != null) {
       server.sync(request, callback);
@@ -53,7 +53,7 @@ public class DirectProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void install(InstallRequest request, AsyncCallback<InstallResponse> callback) {
+  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
     DirectProtocolServer server = context.registry().lookup(address);
     if (server != null) {
       server.install(request, callback);
@@ -63,7 +63,7 @@ public class DirectProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void poll(PollRequest request, AsyncCallback<PollResponse> callback) {
+  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
     DirectProtocolServer server = context.registry().lookup(address);
     if (server != null) {
       server.poll(request, callback);
@@ -73,7 +73,7 @@ public class DirectProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback) {
+  public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
     DirectProtocolServer server = context.registry().lookup(address);
     if (server != null) {
       server.submit(request, callback);

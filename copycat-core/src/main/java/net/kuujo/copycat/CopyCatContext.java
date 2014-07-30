@@ -25,8 +25,8 @@ import net.kuujo.copycat.cluster.impl.StaticClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.MemoryLog;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 import net.kuujo.copycat.util.AsyncCallback;
@@ -362,9 +362,9 @@ public class CopyCatContext {
     if (currentLeader == null) {
       callback.fail(new CopyCatException("No leader available"));
     } else {
-      cluster.member(currentLeader).protocol().client().submit(new SubmitRequest(command, args), new AsyncCallback<SubmitResponse>() {
+      cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(command, args), new AsyncCallback<SubmitCommandResponse>() {
         @Override
-        public void complete(SubmitResponse response) {
+        public void complete(SubmitCommandResponse response) {
           if (response.status().equals(Response.Status.OK)) {
             callback.complete(response.result());
           } else {

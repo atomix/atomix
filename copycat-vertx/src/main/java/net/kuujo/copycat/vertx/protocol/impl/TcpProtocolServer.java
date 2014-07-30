@@ -23,17 +23,17 @@ import java.util.Set;
 
 import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.AsyncCallback;
@@ -136,9 +136,9 @@ public class TcpProtocolServer implements ProtocolServer {
           entries.add(serializer.readValue(jsonEntry.toString().getBytes(), Entry.class));
         }
       }
-      requestHandler.sync(new SyncRequest(request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit")), new AsyncCallback<SyncResponse>() {
+      requestHandler.appendEntries(new AppendEntriesRequest(request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit")), new AsyncCallback<AppendEntriesResponse>() {
         @Override
-        public void complete(SyncResponse response) {
+        public void complete(AppendEntriesResponse response) {
           if (response.status().equals(Response.Status.OK)) {
             respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
           } else {
@@ -166,9 +166,9 @@ public class TcpProtocolServer implements ProtocolServer {
           cluster.add(jsonNode.toString());
         }
       }
-      requestHandler.install(new InstallRequest(request.getLong("term"), request.getString("leader"), request.getLong("snapshotIndex"), request.getLong("snapshotTerm"), cluster, request.getBinary("data"), request.getBoolean("complete")), new AsyncCallback<InstallResponse>() {
+      requestHandler.installSnapshot(new InstallSnapshotRequest(request.getLong("term"), request.getString("leader"), request.getLong("snapshotIndex"), request.getLong("snapshotTerm"), cluster, request.getBinary("data"), request.getBoolean("complete")), new AsyncCallback<InstallSnapshotResponse>() {
         @Override
-        public void complete(InstallResponse response) {
+        public void complete(InstallSnapshotResponse response) {
           if (response.status().equals(Response.Status.OK)) {
             respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
           } else {
@@ -189,9 +189,9 @@ public class TcpProtocolServer implements ProtocolServer {
   private void handlePoll(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final long id = request.getLong("id");
-      requestHandler.poll(new PollRequest(request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<PollResponse>() {
+      requestHandler.requestVote(new RequestVoteRequest(request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<RequestVoteResponse>() {
         @Override
-        public void complete(PollResponse response) {
+        public void complete(RequestVoteResponse response) {
           if (response.status().equals(Response.Status.OK)) {
             respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
           } else {
@@ -212,10 +212,10 @@ public class TcpProtocolServer implements ProtocolServer {
   private void handleSubmit(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final long id = request.getLong("id");
-      requestHandler.submit(new SubmitRequest(request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitResponse>() {
+      requestHandler.submitCommand(new SubmitCommandRequest(request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
         @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
-        public void complete(SubmitResponse response) {
+        public void complete(SubmitCommandResponse response) {
           if (response.status().equals(Response.Status.OK)) {
             if (response.result() instanceof Map) {
               respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject((Map) response.result())));

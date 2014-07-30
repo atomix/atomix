@@ -30,7 +30,7 @@ public interface ProtocolHandler {
    * @param request The sync request.
    * @param responseCallback A sync response callback.
    */
-  void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback);
+  void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback);
 
   /**
    * Sends or handles a protocol install request.
@@ -38,7 +38,7 @@ public interface ProtocolHandler {
    * @param request The install request.
    * @param responseCallback A install response callback.
    */
-  void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback);
+  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback);
 
   /**
    * Sends or handles a protocol poll request.
@@ -46,7 +46,7 @@ public interface ProtocolHandler {
    * @param request The poll request.
    * @param responseCallback A poll response callback.
    */
-  void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback);
+  void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback);
 
   /**
    * Sends or handles a protocol submit request.
@@ -54,6 +54,6 @@ public interface ProtocolHandler {
    * @param request The submit request.
    * @param responseCallback A submit response callback.
    */
-  void submit(SubmitRequest request, AsyncCallback<SubmitResponse> responseCallback);
+  void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> responseCallback);
 
 }

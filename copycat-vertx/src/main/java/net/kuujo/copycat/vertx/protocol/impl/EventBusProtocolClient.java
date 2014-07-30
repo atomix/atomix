@@ -15,15 +15,15 @@
  */
 package net.kuujo.copycat.vertx.protocol.impl;
 
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 import org.vertx.java.core.AsyncResult;
@@ -47,7 +47,7 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void sync(SyncRequest request, final AsyncCallback<SyncResponse> callback) {
+  public void appendEntries(AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -57,9 +57,9 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new SyncResponse(result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
+            callback.complete(new AppendEntriesResponse(result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
           } else if (status.equals("error")) {
-            callback.complete(new SyncResponse(result.result().body().getString("message")));
+            callback.complete(new AppendEntriesResponse(result.result().body().getString("message")));
           }
         }
       }
@@ -67,7 +67,7 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void install(InstallRequest request, final AsyncCallback<InstallResponse> callback) {
+  public void installSnapshot(InstallSnapshotRequest request, final AsyncCallback<InstallSnapshotResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -77,9 +77,9 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new InstallResponse(result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
+            callback.complete(new InstallSnapshotResponse(result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
           } else if (status.equals("error")) {
-            callback.complete(new InstallResponse(result.result().body().getString("message")));
+            callback.complete(new InstallSnapshotResponse(result.result().body().getString("message")));
           }
         }
       }
@@ -87,7 +87,7 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void poll(PollRequest request, final AsyncCallback<PollResponse> callback) {
+  public void requestVote(RequestVoteRequest request, final AsyncCallback<RequestVoteResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -97,9 +97,9 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new PollResponse(result.result().body().getLong("term"), result.result().body().getBoolean("voteGranted")));
+            callback.complete(new RequestVoteResponse(result.result().body().getLong("term"), result.result().body().getBoolean("voteGranted")));
           } else if (status.equals("error")) {
-            callback.complete(new PollResponse(result.result().body().getString("message")));
+            callback.complete(new RequestVoteResponse(result.result().body().getString("message")));
           }
         }
       }
@@ -107,7 +107,7 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void submit(SubmitRequest request, final AsyncCallback<SubmitResponse> callback) {
+  public void submitCommand(SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
@@ -117,9 +117,9 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new SubmitResponse(result.result().body().getObject("result").toMap()));
+            callback.complete(new SubmitCommandResponse(result.result().body().getObject("result").toMap()));
           } else if (status.equals("error")) {
-            callback.complete(new SubmitResponse(result.result().body().getString("message")));
+            callback.complete(new SubmitCommandResponse(result.result().body().getString("message")));
           }
         }
       }

@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -42,23 +42,23 @@ class None extends BaseState {
   }
 
   @Override
-  public void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback) {
-    responseCallback.complete(new SyncResponse("Replica is not alive"));
+  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
+    responseCallback.complete(new AppendEntriesResponse("Replica is not alive"));
   }
 
   @Override
-  public void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback) {
-    responseCallback.complete(new InstallResponse("Replica is not alive"));
+  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
+    responseCallback.complete(new InstallSnapshotResponse("Replica is not alive"));
   }
 
   @Override
-  public void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback) {
-    responseCallback.complete(new PollResponse("Replica is not alive"));
+  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback) {
+    responseCallback.complete(new RequestVoteResponse("Replica is not alive"));
   }
 
   @Override
-  public void submit(SubmitRequest request, AsyncCallback<SubmitResponse> responseCallback) {
-    responseCallback.complete(new SubmitResponse("Replica is not alive"));
+  public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> responseCallback) {
+    responseCallback.complete(new SubmitCommandResponse("Replica is not alive"));
   }
 
   @Override

@@ -22,13 +22,13 @@ import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 import net.kuujo.copycat.util.Quorum;
 
@@ -130,9 +130,9 @@ class Candidate extends BaseState {
         client.connect(new AsyncCallback<Void>() {
           @Override
           public void complete(Void value) {
-            client.poll(new PollRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<PollResponse>() {
+            client.requestVote(new RequestVoteRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<RequestVoteResponse>() {
               @Override
-              public void complete(PollResponse response) {
+              public void complete(RequestVoteResponse response) {
                 client.close();
                 if (quorum != null) {
                   if (!response.voteGranted()) {
@@ -162,18 +162,18 @@ class Candidate extends BaseState {
   }
 
   @Override
-  public void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback) {
-    super.sync(request, responseCallback);
+  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
+    super.appendEntries(request, responseCallback);
   }
 
   @Override
-  public void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback) {
-    super.install(request, responseCallback);
+  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
+    super.installSnapshot(request, responseCallback);
   }
 
   @Override
-  public void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback) {
-    super.poll(request, responseCallback);
+  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback) {
+    super.requestVote(request, responseCallback);
   }
 
   @Override

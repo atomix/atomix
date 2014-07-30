@@ -19,12 +19,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -85,21 +85,21 @@ class Follower extends BaseState {
   }
 
   @Override
-  public void sync(SyncRequest request, AsyncCallback<SyncResponse> responseCallback) {
+  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
     resetTimer();
-    super.sync(request, responseCallback);
+    super.appendEntries(request, responseCallback);
   }
 
   @Override
-  public void install(InstallRequest request, AsyncCallback<InstallResponse> responseCallback) {
+  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
     resetTimer();
-    super.install(request, responseCallback);
+    super.installSnapshot(request, responseCallback);
   }
 
   @Override
-  public void poll(PollRequest request, AsyncCallback<PollResponse> responseCallback) {
+  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback) {
     resetTimer();
-    super.poll(request, responseCallback);
+    super.requestVote(request, responseCallback);
   }
 
   @Override

@@ -16,16 +16,16 @@
 package net.kuujo.copycat.protocol.impl;
 
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.protocol.InstallRequest;
-import net.kuujo.copycat.protocol.InstallResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -48,27 +48,27 @@ public class DirectProtocolServer implements ProtocolServer {
     this.requestHandler = handler;
   }
 
-  void sync(SyncRequest request, AsyncCallback<SyncResponse> callback) {
+  void sync(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
     if (requestHandler != null) {
-      requestHandler.sync(request, callback);
+      requestHandler.appendEntries(request, callback);
     }
   }
 
-  void install(InstallRequest request, AsyncCallback<InstallResponse> callback) {
+  void install(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
     if (requestHandler != null) {
-      requestHandler.install(request, callback);
+      requestHandler.installSnapshot(request, callback);
     }
   }
 
-  void poll(PollRequest request, AsyncCallback<PollResponse> callback) {
+  void poll(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
     if (requestHandler != null) {
-      requestHandler.poll(request, callback);
+      requestHandler.requestVote(request, callback);
     }
   }
 
-  void submit(SubmitRequest request, AsyncCallback<SubmitResponse> callback) {
+  void submit(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
     if (requestHandler != null) {
-      requestHandler.submit(request, callback);
+      requestHandler.submitCommand(request, callback);
     }
   }
 

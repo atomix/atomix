@@ -16,33 +16,33 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Poll response.<p>
+ * Request vote response.<p>
  *
- * Poll responses are sent in response to a poll request. The poll
+ * Request vote responses are sent in response to a poll request. The vote
  * response contains information regarding the requestee's current
  * term and whether it voted for the candidate.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PollResponse extends Response {
+public class RequestVoteResponse extends Response {
   private static final long serialVersionUID = 8188723576438876929L;
   private long term;
   private boolean voteGranted;
 
-  public PollResponse() {
+  public RequestVoteResponse() {
   }
 
-  public PollResponse(long term, boolean voteGranted) {
+  public RequestVoteResponse(long term, boolean voteGranted) {
     super(Status.OK);
     this.term = term;
     this.voteGranted = voteGranted;
   }
 
-  public PollResponse(Throwable t) {
+  public RequestVoteResponse(Throwable t) {
     super(Status.ERROR, t);
   }
 
-  public PollResponse(String message) {
+  public RequestVoteResponse(String message) {
     super(Status.ERROR, message);
   }
 
@@ -66,7 +66,7 @@ public class PollResponse extends Response {
 
   @Override
   public String toString() {
-    return String.format("PollResponse[term=%s, voteGranted=%s]", term, voteGranted);
+    return String.format("%s[term=%d, voteGranted=%b]", getClass().getSimpleName(), term, voteGranted);
   }
 
 }
