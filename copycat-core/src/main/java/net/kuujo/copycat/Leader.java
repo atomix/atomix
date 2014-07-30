@@ -334,6 +334,7 @@ class Leader extends BaseState implements Observer {
               responseCallback.fail(e);
             } finally {
               context.setLastApplied(index);
+              compactLog();
             }
           }
         });
@@ -348,6 +349,7 @@ class Leader extends BaseState implements Observer {
           responseCallback.fail(e);
         } finally {
           context.setLastApplied(index);
+          compactLog();
         }
       }
     }
