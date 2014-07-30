@@ -29,7 +29,13 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 /**
- * A log entry.
+ * Log entry.<p>
+ *
+ * Log entries represent events that are appended to the local
+ * log. CopyCat uses logged events to manage cluster configuration
+ * and replicate state information across the cluster. While CopyCat
+ * uses several types of entries to communicate different events,
+ * each entry has an associated log index and term.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -85,7 +91,7 @@ public abstract class Entry implements Serializable {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof Entry && ((Entry) object).term() == term;
+    return getClass().isAssignableFrom(object.getClass()) && ((Entry) object).term() == term;
   }
 
   @Override

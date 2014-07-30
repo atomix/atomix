@@ -19,7 +19,12 @@ import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.log.Entry;
 
 /**
- * A state machine command entry.
+ * State machine command log entry.<p>
+ *
+ * This log entry stores information about a state machine command
+ * that was submitted to the cluster. When a command entry is committed
+ * to a replica's log, the replica should immediately apply the command
+ * to its state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

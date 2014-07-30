@@ -18,7 +18,13 @@ package net.kuujo.copycat.log;
 import java.util.List;
 
 /**
- * A replicated log.
+ * Replicated event log.<p>
+ *
+ * The log is at the core of CopyCat's replication system. Logs are
+ * used to replicate cluster configuration information, leader state,
+ * and state machine commands. Because CopyCat supports snapshotting
+ * logs, the <code>Log</code> interface supports a wide variety of
+ * methods for modifying the log size and structure.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

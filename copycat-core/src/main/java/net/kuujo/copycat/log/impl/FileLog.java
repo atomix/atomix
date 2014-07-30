@@ -29,7 +29,10 @@ import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 
 /**
- * A file-based log implementation.
+ * File-based log implementation.<p>
+ *
+ * This log entries to a {@link RandomAccessFile}. Pointers are
+ * managed internally by the <code>FileLog</code>.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

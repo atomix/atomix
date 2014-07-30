@@ -25,7 +25,12 @@ import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
 
 /**
- * A default log implementation.
+ * In-memory log implementation.<p>
+ *
+ * This log implementation uses an in-memory {@link TreeMap} to store
+ * log entries in log order. While this log is intended for testing
+ * purposes, it can be used in production in cases where snapshots
+ * suffice to maintain a small memory footprint.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

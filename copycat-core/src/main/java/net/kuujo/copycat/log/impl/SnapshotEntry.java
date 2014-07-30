@@ -20,7 +20,13 @@ import java.util.Set;
 import net.kuujo.copycat.log.Entry;
 
 /**
- * State snapshot entry.
+ * State machine snapshot log entry.<p>
+ *
+ * The snapshot entry is a log entry containing a snapshot of the
+ * local state machine's state at a given moment in time. Rather than
+ * storing snapshots in a separate snapshot file, CopyCat logs snapshots
+ * in order to more easily facilitate replication of snapshots to
+ * replicas that are too far out of sync with the leader's log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

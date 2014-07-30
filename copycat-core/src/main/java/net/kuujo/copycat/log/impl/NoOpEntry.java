@@ -18,7 +18,12 @@ package net.kuujo.copycat.log.impl;
 import net.kuujo.copycat.log.Entry;
 
 /**
- * A no-op log entry.
+ * No-op (empty) log entry.<p>
+ *
+ * This type of entry is used at the leader's discretion to commit
+ * an empty entry to its log. The no-op entry can be used to log
+ * and replicate the leader's current term and index in order to
+ * ensure that other replicas are up-to-date.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

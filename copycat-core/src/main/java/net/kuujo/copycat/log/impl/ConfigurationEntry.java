@@ -20,7 +20,11 @@ import java.util.Set;
 import net.kuujo.copycat.log.Entry;
 
 /**
- * A special configuration log entry.
+ * Cluster configuration log entry.<p>
+ *
+ * The configuration entry is used internally by CopyCat to replicate
+ * cluster configuration information. Cluster membership changes are
+ * supported through logging and replication of memberships.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
