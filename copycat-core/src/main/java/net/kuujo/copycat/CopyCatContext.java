@@ -95,6 +95,10 @@ public class CopyCatContext {
     this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig(), registry);
   }
 
+  public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+    this(stateMachine, new MemoryLog(), cluster, config, registry);
+  }
+
   public CopyCatContext(StateMachine stateMachine, Log log) {
     this(stateMachine, log, new StaticClusterConfig(), new CopyCatConfig());
   }

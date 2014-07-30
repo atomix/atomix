@@ -47,7 +47,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public long appendEntry(Entry entry) {
+  public synchronized long appendEntry(Entry entry) {
     long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
     log.put(index, entry);
     return index;
@@ -64,7 +64,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Log setEntry(long index, Entry entry) {
+  public synchronized Log setEntry(long index, Entry entry) {
     log.put(index, entry);
     return this;
   }
@@ -90,7 +90,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public List<Entry> getEntries(long start, long end) {
+  public synchronized List<Entry> getEntries(long start, long end) {
     List<Entry> entries = new ArrayList<>();
     for (Map.Entry<Long, Entry> entry : log.subMap(start, end+1).entrySet()) {
       entries.add(entry.getValue());
@@ -99,7 +99,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public void removeBefore(long index) {
+  public synchronized void removeBefore(long index) {
     try {
       long firstKey;
       while ((firstKey = log.firstKey()) < index) {
@@ -110,7 +110,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public void removeAfter(long index) {
+  public synchronized void removeAfter(long index) {
     try {
       long lastKey;
       while ((lastKey = log.lastKey()) > index) {
@@ -125,7 +125,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public void delete() {
+  public synchronized void delete() {
     log = new TreeMap<>();
   }
 
