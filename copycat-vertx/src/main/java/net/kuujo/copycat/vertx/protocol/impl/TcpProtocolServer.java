@@ -86,17 +86,17 @@ public class TcpProtocolServer implements ProtocolServer {
               String type = request.getString("type");
               if (type != null) {
                 switch (type) {
-                  case "sync":
-                    handleSync(socket, request);
+                  case "append":
+                    handleAppendRequest(socket, request);
                     break;
                   case "install":
-                    handleInstall(socket, request);
+                    handleInstallRequest(socket, request);
                     break;
-                  case "poll":
-                    handlePoll(socket, request);
+                  case "vote":
+                    handleVoteRequest(socket, request);
                     break;
                   case "submit":
-                    handleSubmit(socket, request);
+                    handleSubmitRequest(socket, request);
                     break;
                   default:
                     respond(socket, new JsonObject().putString("status", "error").putString("message", "Invalid request type"));
@@ -124,9 +124,9 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   /**
-   * Handles a sync request.
+   * Handles an append entries request.
    */
-  private void handleSync(final NetSocket socket, JsonObject request) {
+  private void handleAppendRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final long id = request.getLong("id");
       List<Entry> entries = new ArrayList<>();
@@ -156,7 +156,7 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles an install request.
    */
-  private void handleInstall(final NetSocket socket, JsonObject request) {
+  private void handleInstallRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final long id = request.getLong("id");
       Set<String> cluster = new HashSet<>();
@@ -184,9 +184,9 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   /**
-   * Handles a poll request.
+   * Handles a vote request.
    */
-  private void handlePoll(final NetSocket socket, JsonObject request) {
+  private void handleVoteRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final long id = request.getLong("id");
       requestHandler.requestVote(new RequestVoteRequest(request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<RequestVoteResponse>() {
@@ -209,7 +209,7 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles a submit request.
    */
-  private void handleSubmit(final NetSocket socket, JsonObject request) {
+  private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final long id = request.getLong("id");
       requestHandler.submitCommand(new SubmitCommandRequest(request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {

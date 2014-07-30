@@ -77,9 +77,9 @@ public class TcpProtocolClient implements ProtocolClient {
    * Indicates response types.
    */
   private static enum ResponseType {
-    SYNC,
+    APPEND,
     INSTALL,
-    POLL,
+    VOTE,
     SUBMIT;
   }
 
@@ -97,7 +97,7 @@ public class TcpProtocolClient implements ProtocolClient {
       for (Entry entry : request.entries()) {
         jsonEntries.addString(new String(serializer.writeValue(entry)));
       }
-      socket.write(new JsonObject().putString("type", "sync")
+      socket.write(new JsonObject().putString("type", "append")
           .putNumber("id", requestId)
           .putNumber("term", request.term())
           .putString("leader", request.leader())
@@ -105,7 +105,7 @@ public class TcpProtocolClient implements ProtocolClient {
           .putNumber("prevTerm", request.prevLogTerm())
           .putArray("entries", jsonEntries)
           .putNumber("commit", request.commitIndex()).encode() + '\00');
-      storeCallback(requestId, ResponseType.SYNC, callback);
+      storeCallback(requestId, ResponseType.APPEND, callback);
     } else {
       callback.fail(new ProtocolException("Client not connected"));
     }
@@ -137,14 +137,14 @@ public class TcpProtocolClient implements ProtocolClient {
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
     if (socket != null) {
       long requestId = ++id;
-      socket.write(new JsonObject().putString("type", "poll")
+      socket.write(new JsonObject().putString("type", "vote")
           .putNumber("id", requestId)
           .putNumber("term", request.term())
           .putString("candidate", request.candidate())
           .putNumber("lastIndex", request.lastLogIndex())
           .putNumber("lastTerm", request.lastLogTerm())
           .encode() + '\00');
-      storeCallback(requestId, ResponseType.POLL, callback);
+      storeCallback(requestId, ResponseType.VOTE, callback);
     } else {
       callback.fail(new ProtocolException("Client not connected"));
     }
@@ -173,14 +173,14 @@ public class TcpProtocolClient implements ProtocolClient {
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
       switch (holder.type) {
-        case SYNC:
-          handleSyncResponse(response, (AsyncCallback<AppendEntriesResponse>) holder.callback);
+        case APPEND:
+          handleAppendResponse(response, (AsyncCallback<AppendEntriesResponse>) holder.callback);
           break;
         case INSTALL:
           handleInstallResponse(response, (AsyncCallback<InstallSnapshotResponse>) holder.callback);
           break;
-        case POLL:
-          handlePollResponse(response, (AsyncCallback<RequestVoteResponse>) holder.callback);
+        case VOTE:
+          handleVoteResponse(response, (AsyncCallback<RequestVoteResponse>) holder.callback);
           break;
         case SUBMIT:
           handleSubmitResponse(response, (AsyncCallback<SubmitCommandResponse>) holder.callback);
@@ -190,9 +190,9 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   /**
-   * Handles a sync response.
+   * Handles an append entries response.
    */
-  private void handleSyncResponse(JsonObject response, AsyncCallback<AppendEntriesResponse> callback) {
+  private void handleAppendResponse(JsonObject response, AsyncCallback<AppendEntriesResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
       callback.fail(new ProtocolException("Invalid response"));
@@ -218,9 +218,9 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   /**
-   * Handles a poll response.
+   * Handles a vote response.
    */
-  private void handlePollResponse(JsonObject response, AsyncCallback<RequestVoteResponse> callback) {
+  private void handleVoteResponse(JsonObject response, AsyncCallback<RequestVoteResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
       callback.fail(new ProtocolException("Invalid response"));
