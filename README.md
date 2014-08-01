@@ -979,6 +979,24 @@ context.start();
 Note that this example only demonstrates how to start a single node. In a
 real-world scenario this snippet would need to be run on several nodes in a cluster.
 
+Once the node has been started, we can begin submitting commands.
+
+```java
+String command = "set";
+Arguments args = new Arguments();
+args.put("key", "test");
+args.put("value", "Hello world!");
+
+context.submitCommand(command, args, new AsyncCallback<Void>() {
+  public void complete(Void result) {
+    // Command was successful.
+  }
+  public void fail(Throwable t) {
+    // Command failed.
+  }
+});
+```
+
 ## Improving the key-value store with custom protocols and endpoints
 At its core, CopyCat is an implementation of the Raft consensus algorithm but
 without a transport. However, CopyCat does provide a pluggable API for users to
