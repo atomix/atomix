@@ -18,7 +18,7 @@ package net.kuujo.copycat;
 import java.lang.annotation.Annotation;
 
 /**
- * Generic command info implementation.<p>
+ * Generic command descriptor implementation.<p>
  *
  * This class can be used by {@link StateMachine} implementations to provide
  * command info for state machine commands.
@@ -26,11 +26,11 @@ import java.lang.annotation.Annotation;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("all")
-public class GenericCommandInfo implements Annotation, Command {
+public class GenericCommand implements Annotation, Command {
   private final String name;
   private final Command.Type type;
 
-  public GenericCommandInfo(String name, Command.Type type) {
+  public GenericCommand(String name, Command.Type type) {
     this.name = name;
     this.type = type;
   }

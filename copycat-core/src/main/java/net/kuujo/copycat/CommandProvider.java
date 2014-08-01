@@ -21,7 +21,7 @@ package net.kuujo.copycat;
  * State machines which implement this interface can support typed
  * commands which allow CopyCat to improve performance by supporting
  * read-only operations without requiring log replication. Command
- * providers should use the {@link GenericCommandInfo} helper class
+ * providers should use the {@link GenericCommand} helper class
  * to provide command info for arbitrary named commands.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -34,6 +34,6 @@ public interface CommandProvider {
    * @param name The name of the command for which to return info.
    * @return The command info.
    */
-  Command getCommandInfo(String name);
+  Command getCommand(String name);
 
 }

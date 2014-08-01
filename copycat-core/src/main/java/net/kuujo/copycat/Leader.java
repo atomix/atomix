@@ -257,7 +257,7 @@ class Leader extends BaseState implements Observer {
     // given command. If no CommandInfo is provided then all commands are assumed
     // to be READ_WRITE commands.
     Command info = context.stateMachine instanceof CommandProvider
-        ? ((CommandProvider) context.stateMachine).getCommandInfo(request.command()) : null;
+        ? ((CommandProvider) context.stateMachine).getCommand(request.command()) : null;
 
     // Depending on the command type, read or write commands may or may not be replicated
     // to a quorum based on configuration  options. For write commands, if a quorum is

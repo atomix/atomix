@@ -91,7 +91,7 @@ public abstract class AnnotatedStateMachine implements StateMachine, CommandProv
             name = method.getName();
           }
           if (!commands.containsKey(name)) {
-            commands.put(name, new CommandHolder(this, new GenericCommandInfo(name, command.type()), method));
+            commands.put(name, new CommandHolder(this, new GenericCommand(name, command.type()), method));
           }
         }
       }
@@ -106,7 +106,7 @@ public abstract class AnnotatedStateMachine implements StateMachine, CommandProv
   }
 
   @Override
-  public Command getCommandInfo(String name) {
+  public Command getCommand(String name) {
     CommandHolder command = commands.get(name);
     return command != null ? command.info : null;
   }
