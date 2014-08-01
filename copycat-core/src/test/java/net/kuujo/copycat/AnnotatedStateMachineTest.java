@@ -30,7 +30,7 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testGetCommandType() {
     AnnotatedStateMachine stateMachine = new TestGetCommandType();
-    Command command = stateMachine.getCommandInfo("foo");
+    Command command = stateMachine.getCommand("foo");
     Assert.assertNotNull(command);
     Assert.assertEquals(Command.Type.READ, command.type());
   }
