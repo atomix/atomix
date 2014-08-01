@@ -24,6 +24,8 @@ User Manual
    * [Followers](#followers)
    * [Candidates](#candidates)
    * [Leaders](#leaders)
+   * [Protocols](#protocols)
+   * [Endpoints](#endpoints)
 1. [Getting started](#getting-started)
    * [Creating a state machine](#creating-a-state-machine)
    * [Providing command types](#providing-command-types)
@@ -34,7 +36,7 @@ User Manual
    * [Creating the CopyCatContext](#creating-the-copycatcontext)
    * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
-1. [Protocols](#protocols)
+1. [Protocols](#protocols-1)
    * [Writing a protocol server](#writing-a-protocol-server)
    * [Writing a protocol client](#writing-a-protocol-client)
    * [Injecting URI arguments into a protocol](#injecting-uri-arguments-into-a-protocol)
@@ -45,7 +47,7 @@ User Manual
       * [Direct](#direct-protocol)
       * [Vert.x Event Bus](#vertx-event-bus-protocol)
       * [Vert.x TCP](#vertx-tcp-protocol)
-1. [Endpoints](#endpoints)
+1. [Endpoints](#endpoints-1)
    * [Using URI annotations with endpoints](#using-uri-annotations-with-endpoints)
    * [Wrapping the CopyCatContext in an endpoint service](#wrapping-the-copycatcontext-in-an-endpoint-service)
    * [Built-in endpoints](#build-in-endpoints)
@@ -73,11 +75,13 @@ to note about state machines.
 * Following from that rule, each node's state machine should be identical.
 
 ### Logs
-CopyCat replicates state using an internal log. When a command is submitted to the
-CopyCat cluster, the command will be appended to the log and replicated to other
-nodes in the cluster. The log is essential to the operation of the CopyCat cluster
-in that it both helps maintain consistency of state across nodes and assists in
-leader election.
+CopyCat nodes share state using a replicated log. When a command is submitted to the
+CopyCat cluster, the command is appended to the [leader's](#leader-election) log and
+replicated to other nodes in the cluster. If a node dies and later restarts, the node
+will rebuild its internal state by reapplying logged commands to its state machine.
+The log is essential to the operation of the CopyCat cluster in that it both helps
+maintain consistency of state across nodes and assists in [leader election](#leader-election).
+CopyCat provides both in-memory logs for testing and file-based logs for production.
 
 ### Snapshots
 In order to ensure logs do not grow too large for the disk, CopyCat replicas periodically
@@ -88,8 +92,8 @@ removed from the log.
 Normally, when a node crashes and recovers, it restores its state using the latest snapshot
 and then rebuilds the rest of its state by reapplying committed log entries. But in some
 cases, replicas can become so far out of sync that the cluster leader has already written
-a new snapshot to its log. In that case, the leader will replicate its latest snapshot
-to the recovering node, allowing it to start with the leader's snapshot.
+a new snapshot to its log. In that case, the [leader](#leader-election) will replicate its
+latest snapshot to the recovering node, allowing it to start with the leader's snapshot.
 
 ### Cluster configurations
 CopyCat replicas communicate with one another through a user-defined cluster configuration.
@@ -128,6 +132,19 @@ Based on the command type - read or write - the leader will then replicate the c
 to its followers, apply it to its state machine, and return the result. The leader
 is also responsible for maintaining log consistency during
 [cluster configuration changes](#cluster-configurations).
+
+### Protocols
+The `copycat-core` project is purely an implementation of the Raft consensus algorithm.
+It does not implement any specific transport aside from a `direct` transport for testing.
+Instead, the CopyCat API is designed to allow users to implement the transport layer
+using the `Protocol` API. CopyCat does, however, provide some core protocol implementations
+in the `copycat-vertx` project.
+
+### Endpoints
+CopyCat provides a framework for building fault-tolerant state machines on the Raft
+consensus algorithm, but fault-tolerant distributed systems are of no use if they can't
+be accessed from the outside world. CopyCat's `Endpoint` API facilitates creating user-facing
+interfaces (servers) to the CopyCat cluster.
 
 ## Getting Started
 
