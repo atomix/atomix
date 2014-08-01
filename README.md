@@ -244,7 +244,7 @@ public class MyStateMachine implements StateMachine, CommandProvider {
 Note that `Command` is actually an annotation, so CopyCat provides a helper class for
 constructing annotations call `GenericCommand`.
 
-### Taking snapshots
+### Taking [snapshots](#snapshots)
 One of the issues with a [replicated log](#logs) is that over time it will only continue to grow.
 There are a couple of ways to potentially handle this, and CopyCat uses the [snapshotting](#snapshots)
 method that is recommended by the authors of the Raft algorithm. However, in favor of simplicity,
@@ -295,7 +295,7 @@ public class MyStateMachine implements StateMachine {
 }
 ```
 
-### Creating an annotated state machine
+### Creating an annotated [state machine](#state-machines)
 CopyCat provides a helpful base class which supports purely annotation based state
 machines. To create an annotated state machine, simply extend the `AnnotatedStateMachine`
 class. This is the recommended method for creating Java-based state machines.
@@ -339,7 +339,7 @@ providers and `switch` statements for command application.
 Note also that the `@Stateful` annotation is used to indicate that the `data` field
 should be persisted whenever a snapshot is taken.
 
-### Configuring the cluster
+### Configuring the [cluster](#cluster-configurations)
 When a CopyCat cluster is first started, the [cluster configuration](#cluster-configurations)
 must be explicitly provided by the user. However, as the cluster runs, explicit cluster
 configurations may no longer be required. This is because once a cluster leader has been
@@ -371,7 +371,7 @@ cluster.addRemoteMember("tcp://localhost:1235");
 cluster.addRemoteMember("tcp://localhost1236");
 ```
 
-### Creating a dynamic cluster
+### Creating a [dynamic cluster](#cluster-configurations)
 Dynamic cluster membership changes are supported via any `ClusterConfig` that
 extends the `Observable` class. If a cluster configuration is `Observable`, the cluster
 leader will observe the configuration once it is elected. When the configuration changes,
@@ -401,7 +401,7 @@ CopyCatContext context = new CopyCatContext(stateMachine, cluster);
 context.start();
 ```
 
-### Setting the log type
+### Setting the [log](#logs) type
 By default, CopyCat uses an in-memory log for simplicity. However, in production
 users should use a disk-based log. CopyCat provides two `Log` implementations:
 * `MemoryLog` - an in-memory `TreeMap` based log
@@ -415,7 +415,7 @@ CopyCatContext context = new CopyCatContext(new MyStateMachine(), new FileLog("m
 context.start();
 ```
 
-### Submitting commands to the cluster
+### Submitting [commands](#commands) to the cluster
 To submit commands to the CopyCat cluster, simply call the `submitCommand` method
 on any `CopyCatContext`.
 
