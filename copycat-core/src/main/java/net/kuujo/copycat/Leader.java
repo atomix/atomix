@@ -372,8 +372,8 @@ class Leader extends BaseState implements Observer {
     while (iterator.hasNext()) {
       Map.Entry<Long, Runnable> entry = iterator.next();
       if (entry.getKey() <= index) {
-        entry.getValue().run();
         iterator.remove();
+        entry.getValue().run();
       } else {
         break;
       }
