@@ -121,6 +121,13 @@ public class CopyCatContext {
   }
 
   /**
+   * Kills the copycat instance.
+   */
+  void kill() {
+    transition(None.class);
+  }
+
+  /**
    * Returns the replica configuration.
    *
    * @return The replica configuration.
@@ -358,15 +365,16 @@ public class CopyCatContext {
    * @param callback An asynchronous callback to be called with the command result.
    * @return The replica context.
    */
-  public CopyCatContext submitCommand(final String command, Arguments args, final AsyncCallback<Object> callback) {
+  public <T> CopyCatContext submitCommand(final String command, Arguments args, final AsyncCallback<T> callback) {
     if (currentLeader == null) {
       callback.fail(new CopyCatException("No leader available"));
     } else {
       cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(command, args), new AsyncCallback<SubmitCommandResponse>() {
         @Override
+        @SuppressWarnings("unchecked")
         public void complete(SubmitCommandResponse response) {
           if (response.status().equals(Response.Status.OK)) {
-            callback.complete(response.result());
+            callback.complete((T) response.result());
           } else {
             callback.fail(response.error());
           }
