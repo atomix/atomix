@@ -88,8 +88,9 @@ public class Arguments implements Map<String, Object>, Serializable {
   }
 
   @Override
-  public Object put(String key, Object value) {
-    return args.put(key, value);
+  public Arguments put(String key, Object value) {
+    args.put(key, value);
+    return this;
   }
 
   @Override
