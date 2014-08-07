@@ -85,6 +85,7 @@ public class UriInjector {
         }
         try {
           object = (T) constructor.newInstance(args);
+          break;
         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
           throw new UriException(e);
         }
