@@ -413,6 +413,7 @@ class Leader extends BaseState implements Observer {
   public void destroy() {
     // Cancel the ping timer.
     pingTimer.cancel();
+    pingTimerTask.cancel();
 
     // Stop observing the observable cluster configuration.
     if (context.cluster() instanceof Observable) {
@@ -429,7 +430,7 @@ class Leader extends BaseState implements Observer {
     private long nextIndex;
     private long matchIndex;
     private AtomicBoolean running = new AtomicBoolean();
-    private List<AsyncCallback<Void>> responseCallbacks = new ArrayList<>();
+    private final List<AsyncCallback<Void>> responseCallbacks = new ArrayList<>();
 
     public RemoteReplica(Member member) {
       this.member = member;

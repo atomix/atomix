@@ -177,8 +177,9 @@ class Candidate extends BaseState {
   }
 
   @Override
-  public void destroy() {
+  public synchronized void destroy() {
     electionTimer.cancel();
+    electionTimerTask.cancel();
     if (quorum != null) {
       quorum.cancel();
       quorum = null;

@@ -19,12 +19,12 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.logging.Logger;
 
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.InstallSnapshotRequest;
 import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.util.AsyncCallback;
 
 /**
@@ -42,9 +42,11 @@ class Follower extends BaseState {
   private static final Logger logger = Logger.getLogger(Follower.class.getCanonicalName());
   private final Timer timeoutTimer = new Timer();
   private TimerTask timeoutTimerTask;
+  private boolean shutdown = true;
 
   @Override
-  public void init(CopyCatContext context) {
+  public synchronized void init(CopyCatContext context) {
+    shutdown = false;
     super.init(context);
     context.setCurrentLeader(null);
     resetTimer();
@@ -54,34 +56,36 @@ class Follower extends BaseState {
    * Resets the election timer.
    */
   private synchronized void resetTimer() {
-    if (timeoutTimerTask != null) {
-      timeoutTimerTask.cancel();
-      timeoutTimer.purge();
-    }
-
-    timeoutTimerTask = new TimerTask() {
-      @Override
-      public void run() {
-        // If the node has not yet voted for anyone then transition to
-        // candidate and start a new election.
-        if (context.getLastVotedFor() == null) {
-          logger.info("Election timed out. Transitioning to candidate.");
-          context.transition(Candidate.class);
-        } else {
-          // If the node voted for a candidate then reset the election timer.
-          resetTimer();
-        }
+    if (!shutdown) {
+      if (timeoutTimerTask != null) {
+        timeoutTimerTask.cancel();
+        timeoutTimer.purge();
       }
-    };
 
-    // Reset the last voted for candidate.
-    context.setLastVotedFor(null);
+      timeoutTimerTask = new TimerTask() {
+        @Override
+        public void run() {
+          // If the node has not yet voted for anyone then transition to
+          // candidate and start a new election.
+          if (context.getLastVotedFor() == null) {
+            logger.info("Election timed out. Transitioning to candidate.");
+            context.transition(Candidate.class);
+          } else {
+            // If the node voted for a candidate then reset the election timer.
+            resetTimer();
+          }
+        }
+      };
 
-    // Set the election timeout in a semi-random fashion with the random range
-    // being somewhere between .75 * election timeout and 1.25 * election
-    // timeout.
-    timeoutTimer.schedule(timeoutTimerTask, context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4)
-        + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2))));
+      // Reset the last voted for candidate.
+      context.setLastVotedFor(null);
+
+      // Set the election timeout in a semi-random fashion with the random range
+      // being somewhere between .75 * election timeout and 1.25 * election
+      // timeout.
+      timeoutTimer.schedule(timeoutTimerTask, context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4)
+          + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2))));
+    }
   }
 
   @Override
@@ -103,8 +107,10 @@ class Follower extends BaseState {
   }
 
   @Override
-  public void destroy() {
+  public synchronized void destroy() {
     timeoutTimer.cancel();
+    timeoutTimerTask.cancel();
+    shutdown = true;
   }
 
 }
