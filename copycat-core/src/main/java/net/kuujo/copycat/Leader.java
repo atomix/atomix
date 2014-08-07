@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,13 +41,13 @@ import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.NoOpEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.InstallSnapshotRequest;
 import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.AsyncCallback;
@@ -430,7 +431,7 @@ class Leader extends BaseState implements Observer {
     private long nextIndex;
     private long matchIndex;
     private AtomicBoolean running = new AtomicBoolean();
-    private final List<AsyncCallback<Void>> responseCallbacks = new ArrayList<>();
+    private final List<AsyncCallback<Void>> responseCallbacks = new CopyOnWriteArrayList<>();
 
     public RemoteReplica(Member member) {
       this.member = member;
