@@ -89,11 +89,9 @@ public class TcpEndpoint implements Endpoint {
    * Sets the endpoint host.
    *
    * @param host The TCP host.
-   * @return The TCP endpoint.
    */
-  public TcpEndpoint setHost(String host) {
+  public void setHost(String host) {
     this.host = host;
-    return this;
   }
 
   /**
@@ -106,14 +104,23 @@ public class TcpEndpoint implements Endpoint {
   }
 
   /**
+   * Sets the endpoint host, returning the endpoint for method chaining.
+   *
+   * @param host The TCP host.
+   * @return The TCP endpoint.
+   */
+  public TcpEndpoint withHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
    * Sets the endpoint port.
    *
    * @param port The TCP port.
-   * @return The TCP endpoint.
    */
-  public TcpEndpoint setPort(int port) {
+  public void setPort(int port) {
     this.port = port;
-    return this;
   }
 
   /**
@@ -123,6 +130,17 @@ public class TcpEndpoint implements Endpoint {
    */
   public int getPort() {
     return port;
+  }
+
+  /**
+   * Sets the endpoint port, returning the endpoint for method chaining.
+   *
+   * @param port The TCP port.
+   * @return The TCP endpoint.
+   */
+  public TcpEndpoint withPort(int port) {
+    this.port = port;
+    return this;
   }
 
   @Override

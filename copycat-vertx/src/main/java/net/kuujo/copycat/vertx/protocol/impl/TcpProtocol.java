@@ -55,11 +55,9 @@ public class TcpProtocol implements Protocol {
    * Sets the protocol host.
    *
    * @param host The TCP host.
-   * @return The TCP protocol.
    */
-  public TcpProtocol setHost(String host) {
+  public void setHost(String host) {
     this.host = host;
-    return this;
   }
 
   /**
@@ -72,14 +70,23 @@ public class TcpProtocol implements Protocol {
   }
 
   /**
+   * Sets the protocol host, returning the protocol for method chaining.
+   *
+   * @param host The TCP host.
+   * @return The TCP protocol.
+   */
+  public TcpProtocol withHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
    * Sets the protocol port.
    *
    * @param port The TCP port.
-   * @return The TCP protocol.
    */
-  public TcpProtocol setPort(int port) {
+  public void setPort(int port) {
     this.port = port;
-    return this;
   }
 
   /**
@@ -89,6 +96,17 @@ public class TcpProtocol implements Protocol {
    */
   public int getPort() {
     return port;
+  }
+
+  /**
+   * Sets the protocol port, returning the protocol for method chaining.
+   *
+   * @param port The TCP port.
+   * @return The TCP protocol.
+   */
+  public TcpProtocol withPort(int port) {
+    this.port = port;
+    return this;
   }
 
   @Override
