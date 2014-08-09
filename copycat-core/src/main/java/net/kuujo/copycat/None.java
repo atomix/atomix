@@ -42,22 +42,22 @@ class None extends BaseState {
 
   @Override
   public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
-    responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse("Replica is not alive")));
+    responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), "Replica is not alive")));
   }
 
   @Override
   public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
-    responseCallback.call(new AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse("Replica is not alive")));
+    responseCallback.call(new AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), "Replica is not alive")));
   }
 
   @Override
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback) {
-    responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse("Replica is not alive")));
+    responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), "Replica is not alive")));
   }
 
   @Override
   public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> responseCallback) {
-    responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse("Replica is not alive")));
+    responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), "Replica is not alive")));
   }
 
   @Override

@@ -276,7 +276,7 @@ class Leader extends BaseState implements Observer {
           public void call(Boolean succeeded) {
             if (succeeded) {
               try {
-                responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args()))));
+                responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
               } catch (Exception e) {
                 responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
               }
@@ -303,7 +303,7 @@ class Leader extends BaseState implements Observer {
         }
       } else {
         try {
-          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args()))));
+          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
         } catch (Exception e) {
           responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
         }
@@ -326,7 +326,7 @@ class Leader extends BaseState implements Observer {
             // Once the entry has been replicated we can apply it to the state
             // machine and respond with the command result.
             try {
-              responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args()))));
+              responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
             } catch (Exception e) {
               responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
             } finally {
@@ -341,7 +341,7 @@ class Leader extends BaseState implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(context.stateMachine.applyCommand(request.command(), request.args()))));
+          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
         } catch (Exception e) {
           responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
         } finally {

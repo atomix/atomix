@@ -29,18 +29,18 @@ public class InstallSnapshotResponse extends Response {
   private long term;
   private boolean succeeded;
 
-  public InstallSnapshotResponse(long term, boolean succeeded) {
-    super(Status.OK);
+  public InstallSnapshotResponse(String id, long term, boolean succeeded) {
+    super(id, Status.OK);
     this.term = term;
     this.succeeded = succeeded;
   }
 
-  public InstallSnapshotResponse(Throwable t) {
-    super(Status.ERROR, t);
+  public InstallSnapshotResponse(String id, Throwable t) {
+    super(id, Status.ERROR, t);
   }
 
-  public InstallSnapshotResponse(String error) {
-    super(Status.ERROR, error);
+  public InstallSnapshotResponse(String id, String error) {
+    super(id, Status.ERROR, error);
   }
 
   /**

@@ -32,18 +32,18 @@ public class AppendEntriesResponse extends Response {
   public AppendEntriesResponse() {
   }
 
-  public AppendEntriesResponse(long term, boolean succeeded) {
-    super(Status.OK);
+  public AppendEntriesResponse(String id, long term, boolean succeeded) {
+    super(id, Status.OK);
     this.term = term;
     this.succeeded = succeeded;
   }
 
-  public AppendEntriesResponse(Throwable t) {
-    super(Status.ERROR, t);
+  public AppendEntriesResponse(String id, Throwable t) {
+    super(id, Status.ERROR, t);
   }
 
-  public AppendEntriesResponse(String message) {
-    super(Status.ERROR, message);
+  public AppendEntriesResponse(String id, String message) {
+    super(id, Status.ERROR, message);
   }
 
   /**
