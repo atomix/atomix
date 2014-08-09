@@ -128,7 +128,7 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleAppendRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
-      final long id = request.getLong("id");
+      final String id = request.getString("id");
       List<Entry> entries = new ArrayList<>();
       JsonArray jsonEntries = request.getArray("entries");
       if (jsonEntries != null) {
@@ -136,18 +136,18 @@ public class TcpProtocolServer implements ProtocolServer {
           entries.add(serializer.readValue(jsonEntry.toString().getBytes(), Entry.class));
         }
       }
-      requestHandler.appendEntries(new AppendEntriesRequest(request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit")), new AsyncCallback<AppendEntriesResponse>() {
+      requestHandler.appendEntries(new AppendEntriesRequest(id, request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit")), new AsyncCallback<AppendEntriesResponse>() {
         @Override
         public void call(net.kuujo.copycat.AsyncResult<AppendEntriesResponse> result) {
           if (result.succeeded()) {
             AppendEntriesResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+              respond(socket, new JsonObject().putString("status", "ok").putString("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
             } else {
-              respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
+              respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", result.cause().getMessage()));
+            respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });
@@ -159,7 +159,7 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleInstallRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
-      final long id = request.getLong("id");
+      final String id = request.getString("id");
       Set<String> cluster = new HashSet<>();
       JsonArray jsonNodes = request.getArray("cluster");
       if (jsonNodes != null) {
@@ -167,18 +167,18 @@ public class TcpProtocolServer implements ProtocolServer {
           cluster.add(jsonNode.toString());
         }
       }
-      requestHandler.installSnapshot(new InstallSnapshotRequest(request.getLong("term"), request.getString("leader"), request.getLong("snapshotIndex"), request.getLong("snapshotTerm"), cluster, request.getBinary("data"), request.getBoolean("complete")), new AsyncCallback<InstallSnapshotResponse>() {
+      requestHandler.installSnapshot(new InstallSnapshotRequest(id, request.getLong("term"), request.getString("leader"), request.getLong("snapshotIndex"), request.getLong("snapshotTerm"), cluster, request.getBinary("data"), request.getBoolean("complete")), new AsyncCallback<InstallSnapshotResponse>() {
         @Override
         public void call(net.kuujo.copycat.AsyncResult<InstallSnapshotResponse> result) {
           if (result.succeeded()) {
             InstallSnapshotResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+              respond(socket, new JsonObject().putString("status", "ok").putString("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
             } else {
-              respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
+              respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", result.cause().getMessage()));
+            respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });
@@ -190,19 +190,19 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleVoteRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
-      final long id = request.getLong("id");
-      requestHandler.requestVote(new RequestVoteRequest(request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<RequestVoteResponse>() {
+      final String id = request.getString("id");
+      requestHandler.requestVote(new RequestVoteRequest(id, request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<RequestVoteResponse>() {
         @Override
         public void call(net.kuujo.copycat.AsyncResult<RequestVoteResponse> result) {
           if (result.succeeded()) {
             RequestVoteResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
+              respond(socket, new JsonObject().putString("status", "ok").putString("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
             } else {
-              respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
+              respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", result.cause().getMessage()));
+            respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });
@@ -214,8 +214,8 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
-      final long id = request.getLong("id");
-      requestHandler.submitCommand(new SubmitCommandRequest(request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
+      final String id = request.getString("id");
+      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
         @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
         public void call(net.kuujo.copycat.AsyncResult<SubmitCommandResponse> result) {
@@ -223,17 +223,17 @@ public class TcpProtocolServer implements ProtocolServer {
             SubmitCommandResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
               if (response.result() instanceof Map) {
-                respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject((Map) response.result())));
+                respond(socket, new JsonObject().putString("status", "ok").putString("id", id).putObject("result", new JsonObject((Map) response.result())));
               } else if (response.result() instanceof List) {
-                respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putArray("result", new JsonArray((List) response.result())));
+                respond(socket, new JsonObject().putString("status", "ok").putString("id", id).putArray("result", new JsonArray((List) response.result())));
               } else {
-                respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putValue("result", response.result()));
+                respond(socket, new JsonObject().putString("status", "ok").putString("id", id).putValue("result", response.result()));
               }
             } else {
-              respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
+              respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", result.cause().getMessage()));
+            respond(socket, new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });
