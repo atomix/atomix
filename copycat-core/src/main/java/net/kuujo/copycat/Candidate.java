@@ -18,6 +18,7 @@ package net.kuujo.copycat;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Member;
@@ -125,7 +126,7 @@ class Candidate extends BaseState {
           @Override
           public void call(AsyncResult<Void> result) {
             if (result.succeeded()) {
-              client.requestVote(new RequestVoteRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<RequestVoteResponse>() {
+              client.requestVote(new RequestVoteRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<RequestVoteResponse>() {
                 @Override
                 public void call(AsyncResult<RequestVoteResponse> result) {
                   client.close();

@@ -16,6 +16,7 @@
 package net.kuujo.copycat.protocol;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -57,27 +58,41 @@ public abstract class Response implements Serializable {
 
   }
 
+  private final String id;
   private final Status status;
   private final String error;
 
   protected Response() {
+    this.id = null;
     this.status = Status.OK;
     this.error = null;
   }
 
   protected Response(Status status) {
+    this.id = UUID.randomUUID().toString();
     this.status = status;
     this.error = null;
   }
 
   protected Response(Status status, Throwable t) {
+    this.id = UUID.randomUUID().toString();
     this.status = status;
     this.error = t.getMessage();
   }
 
   protected Response(Status status, String error) {
+    this.id = UUID.randomUUID().toString();
     this.status = status;
     this.error = error;
+  }
+
+  /**
+   * Returns the response ID.
+   *
+   * @return The response ID.
+   */
+  public String id() {
+    return id;
   }
 
   /**

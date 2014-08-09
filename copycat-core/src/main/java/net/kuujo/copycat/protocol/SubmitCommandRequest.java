@@ -26,15 +26,17 @@ import net.kuujo.copycat.Arguments;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitCommandRequest implements Request {
+public class SubmitCommandRequest extends Request {
   private static final long serialVersionUID = -8657438748181101192L;
   private String command;
   private Arguments args;
 
   public SubmitCommandRequest() {
+    super(null);
   }
 
-  public SubmitCommandRequest(String command, Arguments args) {
+  public SubmitCommandRequest(String id, String command, Arguments args) {
+    super(id);
     this.command = command;
     this.args = args;
   }

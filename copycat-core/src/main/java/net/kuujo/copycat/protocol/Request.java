@@ -35,5 +35,21 @@ import com.fasterxml.jackson.annotation.JsonInclude;
   isGetterVisibility=JsonAutoDetect.Visibility.NONE,
   setterVisibility=JsonAutoDetect.Visibility.NONE
 )
-public interface Request extends Serializable {
+@SuppressWarnings("serial")
+public abstract class Request implements Serializable {
+  private final String id;
+
+  public Request(String id) {
+    this.id = id;
+  }
+
+  /**
+   * Returns the request ID.
+   *
+   * @return The request ID.
+   */
+  public String id() {
+    return id;
+  }
+
 }

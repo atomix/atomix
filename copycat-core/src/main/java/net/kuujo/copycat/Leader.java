@@ -29,6 +29,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
+import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -513,7 +514,7 @@ class Leader extends BaseState implements Observer {
         final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
         byte[] bytes = new byte[bytesLength];
         System.arraycopy(snapshot, position, bytes, 0, bytesLength);
-        member.protocol().client().installSnapshot(new InstallSnapshotRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallSnapshotResponse>() {
+        member.protocol().client().installSnapshot(new InstallSnapshotRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallSnapshotResponse>() {
           @Override
           public void call(AsyncResult<InstallSnapshotResponse> result) {
             if (result.succeeded()) {
@@ -549,7 +550,7 @@ class Leader extends BaseState implements Observer {
         }
       }
 
-      AppendEntriesRequest request = new AppendEntriesRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+      AppendEntriesRequest request = new AppendEntriesRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
       member.protocol().client().appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
         public void call(AsyncResult<AppendEntriesResponse> result) {
@@ -644,7 +645,7 @@ class Leader extends BaseState implements Observer {
      */
     private void doPing() {
       // The "ping" request is simply an empty synchronization request.
-      AppendEntriesRequest request = new AppendEntriesRequest(context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
+      AppendEntriesRequest request = new AppendEntriesRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
       member.protocol().client().appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
         public void call(AsyncResult<AppendEntriesResponse> result) {
