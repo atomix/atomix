@@ -30,16 +30,16 @@ public class SubmitCommandResponse extends Response {
   public SubmitCommandResponse() {
   }
 
-  public SubmitCommandResponse(String id, Object result) {
+  public SubmitCommandResponse(Object id, Object result) {
     super(id, Status.OK);
     this.result = result;
   }
 
-  public SubmitCommandResponse(String id, Throwable t) {
+  public SubmitCommandResponse(Object id, Throwable t) {
     super(id, Status.ERROR, t);
   }
 
-  public SubmitCommandResponse(String id, String message) {
+  public SubmitCommandResponse(Object id, String message) {
     super(id, Status.ERROR, message);
   }
 

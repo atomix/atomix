@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.protocol.CorrelationStrategy;
+import net.kuujo.copycat.protocol.impl.UuidCorrelationStrategy;
+
 /**
  * Replica configuration.
  *
@@ -26,6 +29,7 @@ public class CopyCatConfig {
   private boolean requireWriteQuorum = true;
   private boolean requireReadQuorum = true;
   private int maxLogSize = 32 * 1024^2;
+  private CorrelationStrategy<?> correlationStrategy = new UuidCorrelationStrategy();
 
   /**
    * Sets the replica election timeout.
@@ -174,6 +178,35 @@ public class CopyCatConfig {
    */
   public CopyCatConfig withMaxLogSize(int maxSize) {
     this.maxLogSize = maxSize;
+    return this;
+  }
+
+  /**
+   * Sets the message correlation strategy.
+   *
+   * @param strategy The message correlation strategy.
+   */
+  public void setCorrelationStrategy(CorrelationStrategy<?> strategy) {
+    this.correlationStrategy = strategy;
+  }
+
+  /**
+   * Returns the message correlation strategy.
+   *
+   * @return The message correlation strategy.
+   */
+  public CorrelationStrategy<?> getCorrelationStrategy() {
+    return correlationStrategy;
+  }
+
+  /**
+   * Sets the message correlation strategy, returning the configuration for method chaining.
+   *
+   * @param strategy The message correlation strategy.
+   * @return The copycat configuration.
+   */
+  public CopyCatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
+    this.correlationStrategy = strategy;
     return this;
   }
 

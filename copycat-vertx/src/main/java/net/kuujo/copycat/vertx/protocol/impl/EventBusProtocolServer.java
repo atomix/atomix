@@ -96,7 +96,7 @@ public class EventBusProtocolServer implements ProtocolServer {
           entries.add(serializer.readValue(jsonEntry.toString().getBytes(), Entry.class));
         }
       }
-      final String id = message.body().getString("id");
+      final Object id = message.body().getValue("id");
       AppendEntriesRequest request = new AppendEntriesRequest(id, message.body().getLong("term"), message.body().getString("leader"), message.body().getLong("prevIndex"), message.body().getLong("prevTerm"), entries, message.body().getLong("commit"));
       requestHandler.appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
@@ -104,12 +104,12 @@ public class EventBusProtocolServer implements ProtocolServer {
           if (result.succeeded()) {
             AppendEntriesResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
-              message.reply(new JsonObject().putString("status", "ok").putString("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+              message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
             } else {
-              message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
+              message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });
@@ -125,7 +125,7 @@ public class EventBusProtocolServer implements ProtocolServer {
           members.add((String) jsonMember);
         }
       }
-      final String id = message.body().getString("id");
+      final Object id = message.body().getValue("id");
       InstallSnapshotRequest request = new InstallSnapshotRequest(id, message.body().getLong("term"), message.body().getString("leader"), message.body().getLong("snapshotIndex"), message.body().getLong("snapshotTerm"), members, message.body().getBinary("data"), message.body().getBoolean("complete"));
       requestHandler.installSnapshot(request, new AsyncCallback<InstallSnapshotResponse>() {
         @Override
@@ -133,12 +133,12 @@ public class EventBusProtocolServer implements ProtocolServer {
           if (result.succeeded()) {
             InstallSnapshotResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
-              message.reply(new JsonObject().putString("status", "ok").putString("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+              message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
             } else {
-              message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
+              message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });
@@ -147,7 +147,7 @@ public class EventBusProtocolServer implements ProtocolServer {
 
   private void doPoll(final Message<JsonObject> message) {
     if (requestHandler != null) {
-      final String id = message.body().getString("id");
+      final Object id = message.body().getValue("id");
       RequestVoteRequest request = new RequestVoteRequest(id, message.body().getLong("term"), message.body().getString("candidate"), message.body().getLong("lastIndex"), message.body().getLong("lastTerm"));
       requestHandler.requestVote(request, new AsyncCallback<RequestVoteResponse>() {
         @Override
@@ -155,12 +155,12 @@ public class EventBusProtocolServer implements ProtocolServer {
           if (result.succeeded()) {
             RequestVoteResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
-              message.reply(new JsonObject().putString("status", "ok").putString("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
+              message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
             } else {
-              message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
+              message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });
@@ -169,7 +169,7 @@ public class EventBusProtocolServer implements ProtocolServer {
 
   private void doSubmit(final Message<JsonObject> message) {
     if (requestHandler != null) {
-      final String id = message.body().getString("id");
+      final Object id = message.body().getValue("id");
       SubmitCommandRequest request = new SubmitCommandRequest(id, message.body().getString("command"), new Arguments(message.body().getObject("args").toMap()));
       requestHandler.submitCommand(request, new AsyncCallback<SubmitCommandResponse>() {
         @Override
@@ -179,17 +179,17 @@ public class EventBusProtocolServer implements ProtocolServer {
             SubmitCommandResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
               if (response.result() instanceof Map) {
-                message.reply(new JsonObject().putString("status", "ok").putString("id", id).putObject("result", new JsonObject((Map) response.result())));
+                message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putObject("result", new JsonObject((Map) response.result())));
               } else if (response.result() instanceof List) {
-                message.reply(new JsonObject().putString("status", "ok").putString("id", id).putArray("result", new JsonArray((List) response.result())));
+                message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putArray("result", new JsonArray((List) response.result())));
               } else {
-                message.reply(new JsonObject().putString("status", "ok").putString("id", id).putValue("result", response.result()));
+                message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putValue("result", response.result()));
               }
             } else {
-              message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", response.error().getMessage()));
+              message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("id", id).putString("message", result.cause().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
           }
         }
       });

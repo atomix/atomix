@@ -37,18 +37,18 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 )
 @SuppressWarnings("serial")
 public abstract class Request implements Serializable {
-  private final String id;
+  private final Object id;
 
-  public Request(String id) {
+  public Request(Object id) {
     this.id = id;
   }
 
   /**
-   * Returns the request ID.
+   * Returns the request correlation ID.
    *
-   * @return The request ID.
+   * @return The request correlation ID.
    */
-  public String id() {
+  public Object id() {
     return id;
   }
 

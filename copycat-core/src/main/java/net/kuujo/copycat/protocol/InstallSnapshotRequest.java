@@ -41,7 +41,7 @@ public class InstallSnapshotRequest extends Request {
     super(null);
   }
 
-  public InstallSnapshotRequest(String id, long term, String leader, long snapshotIndex, long snapshotTerm, Set<String> cluster, byte[] data, boolean complete) {
+  public InstallSnapshotRequest(Object id, long term, String leader, long snapshotIndex, long snapshotTerm, Set<String> cluster, byte[] data, boolean complete) {
     super(id);
     this.term = term;
     this.leader = leader;

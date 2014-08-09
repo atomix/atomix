@@ -57,7 +57,7 @@ public abstract class Response implements Serializable {
 
   }
 
-  private final String id;
+  private final Object id;
   private final Status status;
   private final String error;
 
@@ -67,30 +67,30 @@ public abstract class Response implements Serializable {
     this.error = null;
   }
 
-  protected Response(String id, Status status) {
+  protected Response(Object id, Status status) {
     this.id = id;
     this.status = status;
     this.error = null;
   }
 
-  protected Response(String id, Status status, Throwable t) {
+  protected Response(Object id, Status status, Throwable t) {
     this.id = id;
     this.status = status;
     this.error = t.getMessage();
   }
 
-  protected Response(String id, Status status, String error) {
+  protected Response(Object id, Status status, String error) {
     this.id = id;
     this.status = status;
     this.error = error;
   }
 
   /**
-   * Returns the response ID.
+   * Returns the response correlation ID.
    *
-   * @return The response ID.
+   * @return The response correlation ID.
    */
-  public String id() {
+  public Object id() {
     return id;
   }
 

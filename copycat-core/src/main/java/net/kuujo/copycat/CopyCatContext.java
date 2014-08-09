@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Cluster;
@@ -353,6 +352,10 @@ public class CopyCatContext {
     return this;
   }
 
+  Object nextCorrelationId() {
+    return config.getCorrelationStrategy().nextCorrelationId(this);
+  }
+
   /**
    * Submits a command to the service.
    *
@@ -365,7 +368,7 @@ public class CopyCatContext {
     if (currentLeader == null) {
       callback.call(new AsyncResult<T>(new CopyCatException("No leader available")));
     } else {
-      cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(UUID.randomUUID().toString(), command, args), new AsyncCallback<SubmitCommandResponse>() {
+      cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, args), new AsyncCallback<SubmitCommandResponse>() {
         @Override
         @SuppressWarnings("unchecked")
         public void call(AsyncResult<SubmitCommandResponse> result) {

@@ -56,7 +56,7 @@ public class TcpProtocolClient implements ProtocolClient {
   private final int port;
   private NetClient client;
   private NetSocket socket;
-  private final Map<String, ResponseHolder> responses = new HashMap<>();
+  private final Map<Object, ResponseHolder> responses = new HashMap<>();
 
   /**
    * Holder for response handlers.
@@ -97,7 +97,7 @@ public class TcpProtocolClient implements ProtocolClient {
         jsonEntries.addString(new String(serializer.writeValue(entry)));
       }
       socket.write(new JsonObject().putString("type", "append")
-          .putString("id", request.id())
+          .putValue("id", request.id())
           .putNumber("term", request.term())
           .putString("leader", request.leader())
           .putNumber("prevIndex", request.prevLogIndex())
@@ -118,7 +118,7 @@ public class TcpProtocolClient implements ProtocolClient {
         jsonCluster.addString(member);
       }
       socket.write(new JsonObject().putString("type", "install")
-          .putString("id", request.id())
+          .putValue("id", request.id())
           .putNumber("term", request.term())
           .putString("leader", request.leader())
           .putArray("cluster", jsonCluster)
@@ -135,7 +135,7 @@ public class TcpProtocolClient implements ProtocolClient {
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
     if (socket != null) {
       socket.write(new JsonObject().putString("type", "vote")
-          .putString("id", request.id())
+          .putValue("id", request.id())
           .putNumber("term", request.term())
           .putString("candidate", request.candidate())
           .putNumber("lastIndex", request.lastLogIndex())
@@ -151,7 +151,7 @@ public class TcpProtocolClient implements ProtocolClient {
   public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
     if (socket != null) {
       socket.write(new JsonObject().putString("type", "submit")
-          .putString("id", request.id())
+          .putValue("id", request.id())
           .putString("command", request.command())
           .putObject("args", new JsonObject(request.args()))
           .encode() + '\00');
@@ -245,7 +245,7 @@ public class TcpProtocolClient implements ProtocolClient {
   /**
    * Stores a response callback by ID.
    */
-  private <T extends Response> void storeCallback(final String id, ResponseType responseType, AsyncCallback<T> callback) {
+  private <T extends Response> void storeCallback(final Object id, ResponseType responseType, AsyncCallback<T> callback) {
     long timerId = vertx.setTimer(30000, new Handler<Long>() {
       @Override
       @SuppressWarnings("unchecked")
