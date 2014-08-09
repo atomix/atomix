@@ -19,7 +19,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.endpoint.EndpointFactory;
 import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
-import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * Primary copycat API.<p>
@@ -63,22 +62,12 @@ public class CopyCat {
   public CopyCat start(final AsyncCallback<Void> callback) {
     context.start(new AsyncCallback<String>() {
       @Override
-      public void complete(String value) {
-        endpoint.start(new AsyncCallback<Void>() {
-          @Override
-          public void complete(Void value) {
-            callback.complete(null);
-          }
-          @Override
-          public void fail(Throwable t) {
-            context.stop();
-            callback.fail(t);
-          }
-        });
-      }
-      @Override
-      public void fail(Throwable t) {
-        callback.fail(t);
+      public void call(AsyncResult<String> result) {
+        if (result.succeeded()) {
+          callback.call(new AsyncResult<Void>((Void) null));
+        } else {
+          callback.call(new AsyncResult<Void>(result.cause()));
+        }
       }
     });
     return this;
@@ -97,25 +86,7 @@ public class CopyCat {
    * @param callback A callback to be called once the replica has been stopped.
    */
   public void stop(final AsyncCallback<Void> callback) {
-    endpoint.stop(new AsyncCallback<Void>() {
-      @Override
-      public void complete(Void value) {
-        context.stop(new AsyncCallback<Void>() {
-          @Override
-          public void complete(Void value) {
-            callback.complete(null);
-          }
-          @Override
-          public void fail(Throwable t) {
-            callback.fail(t);
-          }
-        });
-      }
-      @Override
-      public void fail(Throwable t) {
-        callback.fail(t);
-      }
-    });
+    endpoint.stop(callback);
   }
 
 }

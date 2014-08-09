@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.kuujo.copycat.Arguments;
+import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.Optional;
@@ -26,7 +27,6 @@ import net.kuujo.copycat.uri.UriArgument;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.util.AsyncCallback;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -137,18 +137,18 @@ public class TcpEndpoint implements Endpoint {
             context.submitCommand(json.getString("command"), new Arguments(json.getObject("args").toMap()), new AsyncCallback<Object>() {
               @Override
               @SuppressWarnings({"unchecked", "rawtypes"})
-              public void complete(Object result) {
-                if (result instanceof Map) {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
-                } else if (result instanceof List) {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
+              public void call(net.kuujo.copycat.AsyncResult<Object> result) {
+                if (result.succeeded()) {
+                  if (result instanceof Map) {
+                    socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
+                  } else if (result instanceof List) {
+                    socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
+                  } else {
+                    socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result).encode() + '\00');
+                  }
                 } else {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", result.cause().getMessage()).encode() + '\00');
                 }
-              }
-              @Override
-              public void fail(Throwable t) {
-                socket.write(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", t.getMessage()).encode() + '\00');
               }
             });
           }
@@ -158,9 +158,9 @@ public class TcpEndpoint implements Endpoint {
       @Override
       public void handle(AsyncResult<NetServer> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });
@@ -172,9 +172,9 @@ public class TcpEndpoint implements Endpoint {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });

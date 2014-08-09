@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 
 import net.kuujo.copycat.Arguments;
+import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.InstallSnapshotRequest;
 import net.kuujo.copycat.protocol.InstallSnapshotResponse;
@@ -36,7 +37,6 @@ import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
-import net.kuujo.copycat.util.AsyncCallback;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -99,16 +99,17 @@ public class EventBusProtocolServer implements ProtocolServer {
       AppendEntriesRequest request = new AppendEntriesRequest(message.body().getLong("term"), message.body().getString("leader"), message.body().getLong("prevIndex"), message.body().getLong("prevTerm"), entries, message.body().getLong("commit"));
       requestHandler.appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
-        public void complete(AppendEntriesResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            message.reply(new JsonObject().putString("status", "ok").putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+        public void call(net.kuujo.copycat.AsyncResult<AppendEntriesResponse> result) {
+          if (result.succeeded()) {
+            AppendEntriesResponse response = result.value();
+            if (response.status().equals(Response.Status.OK)) {
+              message.reply(new JsonObject().putString("status", "ok").putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+            } else {
+              message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
+            }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putString("message", result.cause().getMessage()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          message.reply(new JsonObject().putString("status", "error").putString("message", t.getMessage()));
         }
       });
     }
@@ -126,16 +127,17 @@ public class EventBusProtocolServer implements ProtocolServer {
       InstallSnapshotRequest request = new InstallSnapshotRequest(message.body().getLong("term"), message.body().getString("leader"), message.body().getLong("snapshotIndex"), message.body().getLong("snapshotTerm"), members, message.body().getBinary("data"), message.body().getBoolean("complete"));
       requestHandler.installSnapshot(request, new AsyncCallback<InstallSnapshotResponse>() {
         @Override
-        public void complete(InstallSnapshotResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            message.reply(new JsonObject().putString("status", "ok").putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+        public void call(net.kuujo.copycat.AsyncResult<InstallSnapshotResponse> result) {
+          if (result.succeeded()) {
+            InstallSnapshotResponse response = result.value();
+            if (response.status().equals(Response.Status.OK)) {
+              message.reply(new JsonObject().putString("status", "ok").putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+            } else {
+              message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
+            }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putString("message", result.cause().getMessage()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          message.reply(new JsonObject().putString("status", "error").putString("message", t.getMessage()));
         }
       });
     }
@@ -146,16 +148,17 @@ public class EventBusProtocolServer implements ProtocolServer {
       RequestVoteRequest request = new RequestVoteRequest(message.body().getLong("term"), message.body().getString("candidate"), message.body().getLong("lastIndex"), message.body().getLong("lastTerm"));
       requestHandler.requestVote(request, new AsyncCallback<RequestVoteResponse>() {
         @Override
-        public void complete(RequestVoteResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            message.reply(new JsonObject().putString("status", "ok").putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
+        public void call(net.kuujo.copycat.AsyncResult<RequestVoteResponse> result) {
+          if (result.succeeded()) {
+            RequestVoteResponse response = result.value();
+            if (response.status().equals(Response.Status.OK)) {
+              message.reply(new JsonObject().putString("status", "ok").putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
+            } else {
+              message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
+            }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putString("message", result.cause().getMessage()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          message.reply(new JsonObject().putString("status", "error").putString("message", t.getMessage()));
         }
       });
     }
@@ -167,22 +170,23 @@ public class EventBusProtocolServer implements ProtocolServer {
       requestHandler.submitCommand(request, new AsyncCallback<SubmitCommandResponse>() {
         @Override
         @SuppressWarnings({"unchecked", "rawtypes"})
-        public void complete(SubmitCommandResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            if (response.result() instanceof Map) {
-              message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject((Map) response.result())));
-            } else if (response.result() instanceof List) {
-              message.reply(new JsonObject().putString("status", "ok").putArray("result", new JsonArray((List) response.result())));
+        public void call(net.kuujo.copycat.AsyncResult<SubmitCommandResponse> result) {
+          if (result.succeeded()) {
+            SubmitCommandResponse response = result.value();
+            if (response.status().equals(Response.Status.OK)) {
+              if (response.result() instanceof Map) {
+                message.reply(new JsonObject().putString("status", "ok").putObject("result", new JsonObject((Map) response.result())));
+              } else if (response.result() instanceof List) {
+                message.reply(new JsonObject().putString("status", "ok").putArray("result", new JsonArray((List) response.result())));
+              } else {
+                message.reply(new JsonObject().putString("status", "ok").putValue("result", response.result()));
+              }
             } else {
-              message.reply(new JsonObject().putString("status", "ok").putValue("result", response.result()));
+              message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
             }
           } else {
-            message.reply(new JsonObject().putString("status", "error").putString("message", response.error().getMessage()));
+            message.reply(new JsonObject().putString("status", "error").putString("message", result.cause().getMessage()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          message.reply(new JsonObject().putString("status", "error").putString("message", t.getMessage()));
         }
       });
     }
@@ -194,9 +198,9 @@ public class EventBusProtocolServer implements ProtocolServer {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });
@@ -208,9 +212,9 @@ public class EventBusProtocolServer implements ProtocolServer {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });

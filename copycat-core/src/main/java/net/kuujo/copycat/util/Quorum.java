@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.util;
 
+import net.kuujo.copycat.Callback;
+
 /**
  * Quorum helper.
  *
@@ -24,7 +26,7 @@ public class Quorum {
   private int succeeded;
   private int failed;
   private int quorum;
-  private AsyncCallback<Boolean> callback;
+  private Callback<Boolean> callback;
   private boolean complete;
 
   public Quorum(int quorum) {
@@ -37,7 +39,7 @@ public class Quorum {
    * @param callback The quorum callback.
    * @return The quorum instance.
    */
-  public Quorum setCallback(AsyncCallback<Boolean> callback) {
+  public Quorum setCallback(Callback<Boolean> callback) {
     this.callback = callback;
     return this;
   }
@@ -55,10 +57,10 @@ public class Quorum {
     if (!complete && callback != null) {
       if (succeeded >= quorum) {
         complete = true;
-        callback.complete(true);
+        callback.call(true);
       } else if (failed >= quorum) {
         complete = true;
-        callback.complete(false);
+        callback.call(false);
       }
     }
   }

@@ -15,15 +15,14 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.InstallSnapshotRequest;
 import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * Non-existent state.<p>
@@ -43,22 +42,22 @@ class None extends BaseState {
 
   @Override
   public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
-    responseCallback.complete(new AppendEntriesResponse("Replica is not alive"));
+    responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse("Replica is not alive")));
   }
 
   @Override
   public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
-    responseCallback.complete(new InstallSnapshotResponse("Replica is not alive"));
+    responseCallback.call(new AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse("Replica is not alive")));
   }
 
   @Override
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback) {
-    responseCallback.complete(new RequestVoteResponse("Replica is not alive"));
+    responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse("Replica is not alive")));
   }
 
   @Override
   public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> responseCallback) {
-    responseCallback.complete(new SubmitCommandResponse("Replica is not alive"));
+    responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse("Replica is not alive")));
   }
 
   @Override

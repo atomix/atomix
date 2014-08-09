@@ -15,18 +15,19 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
+import net.kuujo.copycat.AsyncCallback;
+import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.util.AsyncCallback;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolException;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 /**
  * Direct protocol client.
@@ -48,7 +49,7 @@ public class DirectProtocolClient implements ProtocolClient {
     if (server != null) {
       server.sync(request, callback);
     } else {
-      callback.fail(new ProtocolException("Invalid server address"));
+      callback.call(new AsyncResult<AppendEntriesResponse>(new ProtocolException("Invalid server address")));
     }
   }
 
@@ -58,7 +59,7 @@ public class DirectProtocolClient implements ProtocolClient {
     if (server != null) {
       server.install(request, callback);
     } else {
-      callback.fail(new ProtocolException("Invalid server address"));
+      callback.call(new AsyncResult<InstallSnapshotResponse>(new ProtocolException("Invalid server address")));
     }
   }
 
@@ -68,7 +69,7 @@ public class DirectProtocolClient implements ProtocolClient {
     if (server != null) {
       server.poll(request, callback);
     } else {
-      callback.fail(new ProtocolException("Invalid server address"));
+      callback.call(new AsyncResult<RequestVoteResponse>(new ProtocolException("Invalid server address")));
     }
   }
 
@@ -78,7 +79,7 @@ public class DirectProtocolClient implements ProtocolClient {
     if (server != null) {
       server.submit(request, callback);
     } else {
-      callback.fail(new ProtocolException("Invalid server address"));
+      callback.call(new AsyncResult<SubmitCommandResponse>(new ProtocolException("Invalid server address")));
     }
   }
 
@@ -88,7 +89,7 @@ public class DirectProtocolClient implements ProtocolClient {
 
   @Override
   public void connect(AsyncCallback<Void> callback) {
-    callback.complete(null);
+    callback.call(new AsyncResult<Void>((Void) null));
   }
 
   @Override
@@ -97,7 +98,7 @@ public class DirectProtocolClient implements ProtocolClient {
 
   @Override
   public void close(AsyncCallback<Void> callback) {
-    callback.complete(null);
+    callback.call(new AsyncResult<Void>((Void) null));
   }
 
 }

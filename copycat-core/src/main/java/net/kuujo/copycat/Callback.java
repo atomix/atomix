@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
+package net.kuujo.copycat;
 
 /**
- * An asynchronous handler.
+ * Functional callback interface.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ *
+ * @param <T> The callback value.
  */
-public interface AsyncCallback<T> {
+public interface Callback<T> {
 
   /**
-   * Called when the asynchronous action is complete.
+   * Calls the callback.
    *
-   * @param value The callback argument.
+   * @param result The callback result.
    */
-  void complete(T value);
-
-  /**
-   * Fails the asynchronous action.
-   *
-   * @param t The failure cause.
-   */
-  void fail(Throwable t);
+  void call(T result);
 
 }
