@@ -31,11 +31,9 @@ public class CopyCatConfig {
    * Sets the replica election timeout.
    * 
    * @param timeout The election timeout.
-   * @return The replica configuration.
    */
-  public CopyCatConfig setElectionTimeout(long timeout) {
+  public void setElectionTimeout(long timeout) {
     this.electionTimeout = timeout;
-    return this;
   }
 
   /**
@@ -48,14 +46,23 @@ public class CopyCatConfig {
   }
 
   /**
+   * Sets the replica election timeout, returning the configuration for method chaining.
+   * 
+   * @param timeout The election timeout.
+   * @return The copycat configuration.
+   */
+  public CopyCatConfig withElectionTimeout(long timeout) {
+    this.electionTimeout = timeout;
+    return this;
+  }
+
+  /**
    * Sets the replica heartbeat interval.
    * 
    * @param interval The interval at which the node should send heartbeat messages.
-   * @return The replica configuration.
    */
-  public CopyCatConfig setHeartbeatInterval(long interval) {
+  public void setHeartbeatInterval(long interval) {
     this.heartbeatInterval = interval;
-    return this;
   }
 
   /**
@@ -65,6 +72,25 @@ public class CopyCatConfig {
    */
   public long getHeartbeatInterval() {
     return heartbeatInterval;
+  }
+
+  /**
+   * Sets the replica heartbeat interval, returning the configuration for method chaining.
+   * 
+   * @param interval The interval at which the node should send heartbeat messages.
+   * @return The replica configuration.
+   */
+  public CopyCatConfig withHeartbeatInterval(long interval) {
+    this.heartbeatInterval = interval;
+    return this;
+  }
+
+  /**
+   * Sets whether a quorum replication is required for write operations.
+   * 
+   * @param require Indicates whether a quorum replication should be required for writes.   */
+  public void setRequireWriteQuorum(boolean require) {
+    this.requireWriteQuorum = require;
   }
 
   /**
@@ -78,14 +104,25 @@ public class CopyCatConfig {
   }
 
   /**
-   * Sets whether a quorum replication is required for write operations.
+   * Sets whether a quorum replication is required for write operations, returning the
+   * configuration for method chaining.
    * 
    * @param require Indicates whether a quorum replication should be required for writes.
    * @return The replica configuration.
    */
-  public CopyCatConfig setRequireWriteQuorum(boolean require) {
+  public CopyCatConfig withRequireWriteQuorum(boolean require) {
     this.requireWriteQuorum = require;
     return this;
+  }
+
+  /**
+   * Sets whether a quorum synchronization is required for read operations.
+   * 
+   * @param require Indicates whether a quorum synchronization should be required for read
+   *          operations.
+   */
+  public void setRequireReadQuorum(boolean require) {
+    this.requireReadQuorum = require;
   }
 
   /**
@@ -99,13 +136,14 @@ public class CopyCatConfig {
   }
 
   /**
-   * Sets whether a quorum synchronization is required for read operations.
+   * Sets whether a quorum synchronization is required for read operations, returning
+   * the configuration for method chaining.
    * 
    * @param require Indicates whether a quorum synchronization should be required for read
    *          operations.
    * @return The replica configuration.
    */
-  public CopyCatConfig setRequireReadQuorum(boolean require) {
+  public CopyCatConfig withRequireReadQuorum(boolean require) {
     this.requireReadQuorum = require;
     return this;
   }
@@ -114,11 +152,9 @@ public class CopyCatConfig {
    * Sets the maximum log size.
    *
    * @param maxSize The maximum local log size.
-   * @return The replica configuration.
    */
-  public CopyCatConfig setMaxLogSize(int maxSize) {
+  public void setMaxLogSize(int maxSize) {
     this.maxLogSize = maxSize;
-    return this;
   }
 
   /**
@@ -128,6 +164,17 @@ public class CopyCatConfig {
    */
   public int getMaxLogSize() {
     return maxLogSize;
+  }
+
+  /**
+   * Sets the maximum log size, returning the configuration for method chaining.
+   *
+   * @param maxSize The maximum local log size.
+   * @return The replica configuration.
+   */
+  public CopyCatConfig withMaxLogSize(int maxSize) {
+    this.maxLogSize = maxSize;
+    return this;
   }
 
 }
