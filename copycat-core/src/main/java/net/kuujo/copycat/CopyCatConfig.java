@@ -37,6 +37,7 @@ public class CopyCatConfig {
    * @param timeout The election timeout.
    */
   public void setElectionTimeout(long timeout) {
+    if (timeout < 0) throw new IllegalArgumentException("Election timeout must be positive");
     this.electionTimeout = timeout;
   }
 
@@ -56,6 +57,7 @@ public class CopyCatConfig {
    * @return The copycat configuration.
    */
   public CopyCatConfig withElectionTimeout(long timeout) {
+    if (timeout < 0) throw new IllegalArgumentException("Election timeout must be positive");
     this.electionTimeout = timeout;
     return this;
   }
@@ -66,6 +68,7 @@ public class CopyCatConfig {
    * @param interval The interval at which the node should send heartbeat messages.
    */
   public void setHeartbeatInterval(long interval) {
+    if (interval < 0) throw new IllegalArgumentException("Heart beat interval must be positive");
     this.heartbeatInterval = interval;
   }
 
@@ -85,6 +88,7 @@ public class CopyCatConfig {
    * @return The replica configuration.
    */
   public CopyCatConfig withHeartbeatInterval(long interval) {
+    if (interval < 0) throw new IllegalArgumentException("Heart beat interval must be positive");
     this.heartbeatInterval = interval;
     return this;
   }
@@ -158,6 +162,7 @@ public class CopyCatConfig {
    * @param maxSize The maximum local log size.
    */
   public void setMaxLogSize(int maxSize) {
+    if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
     this.maxLogSize = maxSize;
   }
 
@@ -177,6 +182,7 @@ public class CopyCatConfig {
    * @return The replica configuration.
    */
   public CopyCatConfig withMaxLogSize(int maxSize) {
+    if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
     this.maxLogSize = maxSize;
     return this;
   }
@@ -187,6 +193,7 @@ public class CopyCatConfig {
    * @param strategy The message correlation strategy.
    */
   public void setCorrelationStrategy(CorrelationStrategy<?> strategy) {
+    if (strategy == null) throw new NullPointerException();
     this.correlationStrategy = strategy;
   }
 
@@ -206,6 +213,7 @@ public class CopyCatConfig {
    * @return The copycat configuration.
    */
   public CopyCatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
+    if (strategy == null) throw new NullPointerException();
     this.correlationStrategy = strategy;
     return this;
   }
