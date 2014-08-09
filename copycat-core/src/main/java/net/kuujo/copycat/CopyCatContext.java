@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -25,6 +28,8 @@ import net.kuujo.copycat.cluster.impl.DynamicClusterConfig;
 import net.kuujo.copycat.cluster.impl.StaticClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.MemoryLog;
+import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
@@ -77,7 +82,11 @@ public class CopyCatContext {
   private State state;
   private AsyncCallback<String> startCallback;
   private CopyCatConfig config;
+  private String localUri;
   private String currentLeader;
+  private ProtocolClient leaderClient;
+  private final List<Callback<Void>> leaderConnectCallbacks = new ArrayList<>();
+  private boolean leaderConnected;
   private long currentTerm;
   private String lastVotedFor;
   private long commitIndex = 0;
@@ -204,6 +213,8 @@ public class CopyCatContext {
     internalConfig.setLocalMember(clusterConfig.getLocalMember());
     internalConfig.setRemoteMembers(clusterConfig.getRemoteMembers());
 
+    localUri = clusterConfig.getLocalMember();
+
     transition(None.class);
     cluster.localMember().protocol().server().start(new AsyncCallback<Void>() {
       @Override
@@ -263,7 +274,7 @@ public class CopyCatContext {
   void transition(Class<? extends State> type) {
     if (this.state != null && type != null && type.isAssignableFrom(this.state.getClass()))
       return;
-    logger.info(cluster.config().getLocalMember() + " transitioning to " + type.toString());
+    logger.info(localUri + " transitioning to " + type.toString());
     final State oldState = state;
     try {
       state = type.newInstance();
@@ -293,7 +304,7 @@ public class CopyCatContext {
    * @return Indicates whether this node is the leader.
    */
   public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(cluster.localMember().uri());
+    return currentLeader != null && currentLeader.equals(localUri);
   }
 
 
@@ -306,7 +317,40 @@ public class CopyCatContext {
       logger.finer(String.format("Current cluster leader changed: %s", leader));
     }
     currentLeader = leader;
-    checkStart();
+
+    // When a new leader is elected, we create a client and connect to the leader.
+    // Once this node is connected to the leader we can begin submitting commands.
+    if (leader == null) {
+      leaderConnected = false;
+      leaderClient = null;
+    } else if (!isLeader()) {
+      leaderConnected = false;
+      leaderClient = cluster.member(currentLeader).protocol().client();
+      leaderClient.connect(new AsyncCallback<Void>() {
+        @Override
+        public void call(AsyncResult<Void> result) {
+          if (result.succeeded()) {
+            leaderConnected = true;
+            Iterator<Callback<Void>> iterator = leaderConnectCallbacks.iterator();
+            while (iterator.hasNext()) {
+              Callback<Void> callback = iterator.next();
+              iterator.remove();
+              callback.call((Void) null);
+            }
+            checkStart();
+          }
+        }
+      });
+    } else {
+      leaderConnected = true;
+      Iterator<Callback<Void>> iterator = leaderConnectCallbacks.iterator();
+      while (iterator.hasNext()) {
+        Callback<Void> callback = iterator.next();
+        iterator.remove();
+        callback.call((Void) null);
+      }
+      checkStart();
+    }
     return this;
   }
 
@@ -364,8 +408,30 @@ public class CopyCatContext {
   public <T> CopyCatContext submitCommand(final String command, Arguments args, final AsyncCallback<T> callback) {
     if (currentLeader == null) {
       callback.call(new AsyncResult<T>(new CopyCatException("No leader available")));
+    } else if (!leaderConnected) {
+      leaderConnectCallbacks.add(new Callback<Void>() {
+        @Override
+        public void call(Void result) {
+          leaderClient.submitCommand(new SubmitCommandRequest(UUID.randomUUID().toString(), command, args), new AsyncCallback<SubmitCommandResponse>() {
+            @Override
+            @SuppressWarnings("unchecked")
+            public void call(AsyncResult<SubmitCommandResponse> result) {
+              if (result.succeeded()) {
+                if (result.value().status().equals(Response.Status.OK)) {
+                  callback.call(new AsyncResult<T>((T) result.value()));
+                } else {
+                  callback.call(new AsyncResult<T>(result.value().error()));
+                }
+              } else {
+                callback.call(new AsyncResult<T>(result.cause()));
+              }
+            }
+          });
+        }
+      });
     } else {
-      cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(UUID.randomUUID().toString(), command, args), new AsyncCallback<SubmitCommandResponse>() {
+      ProtocolHandler handler = currentLeader.equals(localUri) ? state : leaderClient;
+      handler.submitCommand(new SubmitCommandRequest(UUID.randomUUID().toString(), command, args), new AsyncCallback<SubmitCommandResponse>() {
         @Override
         @SuppressWarnings("unchecked")
         public void call(AsyncResult<SubmitCommandResponse> result) {
