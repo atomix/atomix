@@ -74,6 +74,10 @@ public class UriInjector {
     T object = null;
 
     // First, attempt to create the object from a @UriInject annotated constructor.
+    // We attempt to do this by invoking the constructur with the most available arguments.
+    Constructor<?> matchConstructor = null;
+    Object[] matchArgs = null;
+    Integer matchCount = null;
     for (Constructor<?> constructor : type.getDeclaredConstructors()) {
       if (constructor.isAnnotationPresent(UriInject.class)) {
         constructor.setAccessible(true);
@@ -83,23 +87,35 @@ public class UriInjector {
         } catch (IllegalStateException e) {
           continue;
         }
-        try {
-          object = (T) constructor.newInstance(args);
-          break;
-        } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-          throw new UriException(e);
+
+        // Count the number of non-null arguments for the constructor.
+        int count = 0;
+        for (Object arg : args) {
+          if (arg != null) {
+            count++;
+          }
+        }
+
+        // If the number of non-null arguments is greater than that of the current
+        // best constructor, use this constructor as the best match.
+        if (matchCount == null || count > matchCount) {
+          matchConstructor = constructor;
+          matchArgs = args;
+          matchCount = count;
         }
       }
     }
 
-    // If no object could be constructed (no @UriInject annotation was found) then
-    // attempt to create the object from a no-argument constructor.
-    if (object == null) {
-      try {
+    // Construct the object. If no matching URI injectable constructor was
+    // found then the class must declare a default constructor.
+    try {
+      if (matchConstructor != null) {
+        object = (T) matchConstructor.newInstance(matchArgs);
+      } else {
         object = type.newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new UriException(e);
       }
+    } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      throw new UriException(e);
     }
 
     // Once the object has been constructed, inject additional URI values
