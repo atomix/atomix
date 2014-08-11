@@ -338,7 +338,7 @@ abstract class BaseState implements State {
     for (int i = 0; i < snapshotBytes.length; i += SNAPSHOT_ENTRY_SIZE) {
       final int bytesLength = snapshotBytes.length - i > SNAPSHOT_ENTRY_SIZE ? SNAPSHOT_ENTRY_SIZE : snapshotBytes.length - i;
       byte[] bytes = new byte[bytesLength];
-      System.arraycopy(snapshot, i, bytes, 0, bytesLength);
+      System.arraycopy(snapshotBytes, i, bytes, 0, bytesLength);
       entries.add(new SnapshotChunkEntry(term, bytes));
     }
     entries.add(new SnapshotEndEntry(term, snapshotBytes.length));
