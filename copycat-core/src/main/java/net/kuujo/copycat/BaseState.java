@@ -190,8 +190,13 @@ abstract class BaseState implements State {
     else if (entry instanceof ConfigurationEntry) {
       applyConfig(index, (ConfigurationEntry) entry);
     }
+    // If the entry is a snapshot entry, apply the snapshot to the local state machine.
     else if (entry instanceof SnapshotEntry) {
       applySnapshot(index, (SnapshotEntry) entry);
+    }
+    // If the entry is of another type, e.g. a no-op entry, simply set last applied.
+    else {
+      context.setLastApplied(index);
     }
   }
 
