@@ -318,6 +318,13 @@ abstract class BaseState implements State {
   }
 
   /**
+   * Takes a snapshot of the state machine state and appends it to the local log.
+   */
+  protected void takeSnapshot() {
+    
+  }
+
+  /**
    * Creates a snapshot of the state machine state.
    *
    * @return A snapshot of the state machine state.
@@ -361,9 +368,8 @@ abstract class BaseState implements State {
         public Void execute() {
           synchronized (context.log) {
             final long lastApplied = context.getLastApplied();
-            Entries<SnapshotEntry> entries = createSnapshot();
-            context.log.appendEntries(entries);
             context.log.removeBefore(lastApplied);
+            context.log.prependEntries(createSnapshot());
           }
           snapshotting.set(false);
           return null;

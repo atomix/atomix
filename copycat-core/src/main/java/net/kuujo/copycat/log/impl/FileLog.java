@@ -195,6 +195,99 @@ public class FileLog implements Log {
   }
 
   @Override
+  public long setEntry(long index, Entry entry) {
+    try {
+      long pointer = findFilePointer(index);
+      String line = file.readLine();
+      int length = line.length();
+      String bytes = new StringBuilder()
+        .append(index)
+        .append(DELIMITER)
+        .append(new String(serializer.writeValue(entry)))
+        .append(SEPARATOR)
+        .toString();
+      int newLength = bytes.length();
+      if (newLength > length) {
+        expandFile(pointer+length, pointer+newLength);
+      } else if (length > newLength) {
+        compactFile(pointer+newLength, pointer+length);
+      }
+      file.seek(pointer);
+      file.writeBytes(bytes);
+      file.seek(file.length());
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+    return index;
+  }
+
+  @Override
+  public long prependEntry(Entry entry) {
+    if (firstIndex == 0) {
+      return appendEntry(entry);
+    }
+
+    try {
+      long index = firstIndex - 1;
+      if (index < 1) {
+        throw new IndexOutOfBoundsException("Cannot prepend entry at index " + index);
+      }
+      String bytes = new StringBuilder()
+        .append(index)
+        .append(DELIMITER)
+        .append(new String(serializer.writeValue(entry)))
+        .append(SEPARATOR)
+        .toString();
+      expandFile(0, bytes.length());
+      file.seek(0);
+      file.writeBytes(bytes);
+      file.seek(file.length());
+      firstIndex = index;
+      return index;
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  @Override
+  public List<Long> prependEntries(Entry... entries) {
+    return prependEntries(Arrays.asList(entries));
+  }
+
+  @Override
+  public List<Long> prependEntries(List<? extends Entry> entries) {
+    if (firstIndex == 0) {
+      return appendEntries(entries);
+    }
+
+    if (firstIndex - entries.size() < 1) {
+      throw new IndexOutOfBoundsException("Cannot prepend " + entries.size() + " entries at index " + (firstIndex - 1));
+    }
+
+    try {
+      List<Long> indices = new ArrayList<>();
+      StringBuilder bytes = new StringBuilder();
+      for (int i = entries.size() - 1; i >= 0; i--) {
+        Entry entry = entries.get(i);
+        long index = firstIndex - entries.size() + i;
+        bytes.append(index)
+          .append(DELIMITER)
+          .append(new String(serializer.writeValue(entry)))
+          .append(SEPARATOR);
+      }
+
+      expandFile(0, bytes.length());
+      file.seek(0);
+      file.writeBytes(bytes.toString());
+      file.seek(file.length());
+      firstIndex -= entries.size();
+      return indices;
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  @Override
   public boolean containsEntry(long index) {
     return indexInRange(index);
   }
@@ -328,6 +421,35 @@ public class FileLog implements Log {
         writeCursor += bytesToRead;
       }
       file.setLength(originalLength - (from - to));
+      file.seek(file.length());
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  /**
+   * Extends the length of the file by moving bytes from the start position to the end position.
+   */
+  private void expandFile(long from, long to) {
+    if (from > to) throw new IllegalArgumentException("Cannot expand file from " + from + " to " + to);
+    try {
+      long difference = to - from;
+      long originalLength = file.length();
+      long newLength = originalLength + difference;
+      file.setLength(newLength);
+      long readCursor = originalLength;
+      long writeCursor = newLength;
+      int bufferSize = 4096;
+      while (readCursor > from) {
+        int bytesToRead = (int) (readCursor - bufferSize < from ? readCursor - from : bufferSize);
+        readCursor -= bytesToRead;
+        file.seek(readCursor);
+        byte[] bytes = new byte[bytesToRead];
+        file.read(bytes, 0, bytesToRead);
+        writeCursor -= bytesToRead;
+        file.seek(writeCursor);
+        file.write(bytes);
+      }
       file.seek(file.length());
     } catch (IOException e) {
       throw new LogException(e);
