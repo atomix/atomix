@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InstallSnapshotRequest implements Request {
+public class InstallSnapshotRequest extends Request {
   private static final long serialVersionUID = 1475758554918256823L;
   private long term;
   private String leader;
@@ -37,7 +37,12 @@ public class InstallSnapshotRequest implements Request {
   private byte[] data;
   private boolean complete;
 
-  public InstallSnapshotRequest(long term, String leader, long snapshotIndex, long snapshotTerm, Set<String> cluster, byte[] data, boolean complete) {
+  public InstallSnapshotRequest() {
+    super(null);
+  }
+
+  public InstallSnapshotRequest(Object id, long term, String leader, long snapshotIndex, long snapshotTerm, Set<String> cluster, byte[] data, boolean complete) {
+    super(id);
     this.term = term;
     this.leader = leader;
     this.snapshotIndex = snapshotIndex;

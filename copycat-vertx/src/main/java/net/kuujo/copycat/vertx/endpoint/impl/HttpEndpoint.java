@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.kuujo.copycat.Arguments;
+import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.Optional;
@@ -26,7 +27,6 @@ import net.kuujo.copycat.uri.UriArgument;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.util.AsyncCallback;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -93,19 +93,19 @@ public class HttpEndpoint implements Endpoint {
             HttpEndpoint.this.context.submitCommand(request.params().get("command"), new Arguments(new JsonObject(buffer.toString()).toMap()), new AsyncCallback<Object>() {
               @Override
               @SuppressWarnings({"unchecked", "rawtypes"})
-              public void complete(Object result) {
-                request.response().setStatusCode(200);
-                if (result instanceof Map) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result)).encode());                  
-                } else if (result instanceof List) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result)).encode());
+              public void call(net.kuujo.copycat.AsyncResult<Object> result) {
+                if (result.succeeded()) {
+                  request.response().setStatusCode(200);
+                  if (result instanceof Map) {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result.value())).encode());                  
+                  } else if (result instanceof List) {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result.value())).encode());
+                  } else {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result.value()).encode());
+                  }
                 } else {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result).encode());
+                  request.response().setStatusCode(400);
                 }
-              }
-              @Override
-              public void fail(Throwable t) {
-                request.response().setStatusCode(400);
               }
             });
           }
@@ -119,11 +119,9 @@ public class HttpEndpoint implements Endpoint {
    * Sets the endpoint host.
    *
    * @param host The TCP host.
-   * @return The TCP endpoint.
    */
-  public HttpEndpoint setHost(String host) {
+  public void setHost(String host) {
     this.host = host;
-    return this;
   }
 
   /**
@@ -136,14 +134,23 @@ public class HttpEndpoint implements Endpoint {
   }
 
   /**
+   * Sets the endpoint host, returning the endpoint for method chaining.
+   *
+   * @param host The TCP host.
+   * @return The TCP endpoint.
+   */
+  public HttpEndpoint withHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
    * Sets the endpoint port.
    *
    * @param port The TCP port.
-   * @return The TCP endpoint.
    */
-  public HttpEndpoint setPort(int port) {
+  public void setPort(int port) {
     this.port = port;
-    return this;
   }
 
   /**
@@ -155,15 +162,26 @@ public class HttpEndpoint implements Endpoint {
     return port;
   }
 
+  /**
+   * Sets the endpoint port, returning the endpoint for method chaining.
+   *
+   * @param port The TCP port.
+   * @return The TCP endpoint.
+   */
+  public HttpEndpoint withPort(int port) {
+    this.port = port;
+    return this;
+  }
+
   @Override
   public void start(final AsyncCallback<Void> callback) {
     server.listen(port, host, new Handler<AsyncResult<HttpServer>>() {
       @Override
       public void handle(AsyncResult<HttpServer> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });
@@ -175,9 +193,9 @@ public class HttpEndpoint implements Endpoint {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });

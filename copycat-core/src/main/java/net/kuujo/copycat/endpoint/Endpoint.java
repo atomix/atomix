@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.endpoint;
 
+import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * CopyCat endpoint.<p>

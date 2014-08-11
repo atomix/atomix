@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.util.AsyncCallback;
+import net.kuujo.copycat.AsyncCallback;
 
 /**
  * Request handler for requests between CopyCat replicas.

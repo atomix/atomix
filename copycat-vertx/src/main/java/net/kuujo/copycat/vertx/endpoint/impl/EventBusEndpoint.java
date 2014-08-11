@@ -21,6 +21,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.Arguments;
+import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.protocol.ProtocolException;
@@ -32,7 +33,6 @@ import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPath;
 import net.kuujo.copycat.uri.UriPort;
 import net.kuujo.copycat.uri.UriSchemeSpecificPart;
-import net.kuujo.copycat.util.AsyncCallback;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -85,18 +85,16 @@ public class EventBusEndpoint implements Endpoint {
         context.submitCommand(command, args, new AsyncCallback<Object>() {
           @Override
           @SuppressWarnings({"unchecked", "rawtypes"})
-          public void complete(Object result) {
-            if (result instanceof Map) {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)));
-            } else if (result instanceof List) {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)));
-            } else {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result));
+          public void call(net.kuujo.copycat.AsyncResult<Object> result) {
+            if (result.succeeded()) {
+              if (result.value() instanceof Map) {
+                message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result.value())));
+              } else if (result instanceof List) {
+                message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result.value())));
+              } else {
+                message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result.value()));
+              }
             }
-          }
-          @Override
-          public void fail(Throwable t) {
-            message.reply(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", t.getMessage()));
           }
         });
       }
@@ -114,9 +112,9 @@ public class EventBusEndpoint implements Endpoint {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });
@@ -128,9 +126,9 @@ public class EventBusEndpoint implements Endpoint {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });

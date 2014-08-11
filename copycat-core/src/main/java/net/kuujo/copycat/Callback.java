@@ -13,36 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
-
-import net.kuujo.copycat.AsyncCallback;
+package net.kuujo.copycat;
 
 /**
- * Protocol server.
+ * Functional callback interface.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ *
+ * @param <T> The callback value.
  */
-public interface ProtocolServer {
+public interface Callback<T> {
 
   /**
-   * Initializes the server with a protocol handler.
+   * Calls the callback.
    *
-   * @param handler A request handler to handle requests received by the server.
+   * @param result The callback result.
    */
-  void protocolHandler(ProtocolHandler handler);
-
-  /**
-   * Starts the server.
-   *
-   * @param callback A callback to be called once complete.
-   */
-  void start(AsyncCallback<Void> callback);
-
-  /**
-   * Starts the server.
-   *
-   * @param callback A callback to be called once complete.
-   */
-  void stop(AsyncCallback<Void> callback);
+  void call(T result);
 
 }

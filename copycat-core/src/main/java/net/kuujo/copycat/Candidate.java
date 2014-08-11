@@ -22,14 +22,13 @@ import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.util.AsyncCallback;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.util.Quorum;
 
 /**
@@ -100,20 +99,15 @@ class Candidate extends BaseState {
     if (quorum == null) {
       final Set<Member> pollMembers = context.cluster.members();
       quorum = new Quorum(context.cluster.config().getQuorumSize());
-      quorum.setCallback(new AsyncCallback<Boolean>() {
+      quorum.setCallback(new Callback<Boolean>() {
         @Override
-        public void complete(Boolean succeeded) {
+        public void call(Boolean succeeded) {
           quorum = null;
           if (succeeded) {
             context.transition(Leader.class);
           } else {
             context.transition(Follower.class);
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          quorum = null;
-          context.transition(Follower.class);
         }
       });
 
@@ -129,30 +123,26 @@ class Candidate extends BaseState {
         final ProtocolClient client = member.protocol().client();
         client.connect(new AsyncCallback<Void>() {
           @Override
-          public void complete(Void value) {
-            client.requestVote(new RequestVoteRequest(context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<RequestVoteResponse>() {
-              @Override
-              public void complete(RequestVoteResponse response) {
-                client.close();
-                if (quorum != null) {
-                  if (!response.voteGranted()) {
+          public void call(AsyncResult<Void> result) {
+            if (result.succeeded()) {
+              client.requestVote(new RequestVoteRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<RequestVoteResponse>() {
+                @Override
+                public void call(AsyncResult<RequestVoteResponse> result) {
+                  client.close();
+                  if (result.succeeded()) {
+                    if (quorum != null) {
+                      if (!result.value().voteGranted()) {
+                        quorum.fail();
+                      } else {
+                        quorum.succeed();
+                      }
+                    }
+                  } else if (quorum != null) {
                     quorum.fail();
-                  } else {
-                    quorum.succeed();
                   }
                 }
-              }
-              @Override
-              public void fail(Throwable t) {
-                if (quorum != null) {
-                  quorum.fail();
-                }
-              }
-            });
-          }
-          @Override
-          public void fail(Throwable t) {
-            if (quorum != null) {
+              });
+            } else if (quorum != null) {
               quorum.fail();
             }
           }

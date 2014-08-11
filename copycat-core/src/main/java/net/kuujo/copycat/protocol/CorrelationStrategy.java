@@ -13,27 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
+package net.kuujo.copycat.protocol;
+
+import net.kuujo.copycat.CopyCatContext;
 
 /**
- * An asynchronous handler.
+ * Message correlation strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCallback<T> {
+public interface CorrelationStrategy<T> {
 
   /**
-   * Called when the asynchronous action is complete.
+   * Returns the next correlation ID for the given context.
    *
-   * @param value The callback argument.
+   * @param context The copycat context.
+   * @return The unique correlation ID.
    */
-  void complete(T value);
-
-  /**
-   * Fails the asynchronous action.
-   *
-   * @param t The failure cause.
-   */
-  void fail(Throwable t);
+  T nextCorrelationId(CopyCatContext context);
 
 }

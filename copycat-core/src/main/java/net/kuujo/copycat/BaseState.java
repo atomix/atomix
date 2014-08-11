@@ -35,7 +35,6 @@ import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.AsyncAction;
-import net.kuujo.copycat.util.AsyncCallback;
 import net.kuujo.copycat.util.AsyncExecutor;
 
 /**
@@ -70,7 +69,7 @@ abstract class BaseState implements State {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getCurrentTerm()) {
-      responseCallback.complete(new AppendEntriesResponse(context.getCurrentTerm(), false));
+      responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false)));
     } else if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
       doCheckPreviousEntry(request, responseCallback);
     } else {
@@ -96,7 +95,7 @@ abstract class BaseState implements State {
     // can be overwritten.
     Entry entry = context.log.getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
-      responseCallback.complete(new AppendEntriesResponse(context.getCurrentTerm(), false));
+      responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false)));
     } else {
       doAppendEntries(request, responseCallback);
     }
@@ -189,7 +188,7 @@ abstract class BaseState implements State {
         compactLog();
       }
     }
-    responseCallback.complete(new AppendEntriesResponse(context.getCurrentTerm(), true));
+    responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), true)));
   }
 
   /**
@@ -225,7 +224,7 @@ abstract class BaseState implements State {
         }
       }, callback);
     } else if (callback != null) {
-      callback.complete(null);
+      callback.call(new AsyncResult<Void>((Void) null));
     }
   }
 
@@ -262,7 +261,7 @@ abstract class BaseState implements State {
     }
 
     // Respond to the install request.
-    responseCallback.complete(new InstallSnapshotResponse(context.getCurrentTerm(), true));
+    responseCallback.call(new AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), context.getCurrentTerm(), true)));
 
     // Note that we don't clear the log or apply the snapshot here. We will do that
     // once the snapshot entry has been committed and we know that a quorum of
@@ -288,26 +287,26 @@ abstract class BaseState implements State {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getCurrentTerm()) {
-      responseCallback.complete(new RequestVoteResponse(context.getCurrentTerm(), false));
+      responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false)));
     }
     // If the requesting candidate is ourself then always vote for ourself. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
     else if (request.candidate().equals(context.cluster.config().getLocalMember())) {
       context.setLastVotedFor(context.cluster.config().getLocalMember());
-      responseCallback.complete(new RequestVoteResponse(context.getCurrentTerm(), true));
+      responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), true)));
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.cluster.config().getMembers().contains(request.candidate())) {
-      responseCallback.complete(new RequestVoteResponse(context.getCurrentTerm(), false));
+      responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false)));
     }
     // If we've already voted for someone else then don't vote again.
     else if (context.getLastVotedFor() == null || context.getLastVotedFor().equals(request.candidate())) {
       // If the log is empty then vote for the candidate.
       if (context.log.isEmpty()) {
         context.setLastVotedFor(request.candidate());
-        responseCallback.complete(new RequestVoteResponse(context.getCurrentTerm(), true));
+        responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), true)));
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
@@ -316,22 +315,22 @@ abstract class BaseState implements State {
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           context.setLastVotedFor(request.candidate());
-          responseCallback.complete(new RequestVoteResponse(context.getCurrentTerm(), true));
+          responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), true)));
         } else {
           context.setLastVotedFor(null);
-          responseCallback.complete(new RequestVoteResponse(context.getCurrentTerm(), false));
+          responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false)));
         }
       }
     }
     // In this case, we've already voted for someone else.
     else {
-      responseCallback.complete(new RequestVoteResponse(context.getCurrentTerm(), false));
+      responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false)));
     }
   }
 
   @Override
   public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> responseCallback) {
-    responseCallback.complete(new SubmitCommandResponse("Not the leader"));
+    responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), "Not the leader")));
   }
 
   @Override

@@ -26,7 +26,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RequestVoteRequest implements Request {
+public class RequestVoteRequest extends Request {
   private static final long serialVersionUID = -5282035829185619414L;
   private long term;
   private String candidate;
@@ -34,9 +34,11 @@ public class RequestVoteRequest implements Request {
   private long lastLogTerm;
 
   public RequestVoteRequest() {
+    super(null);
   }
 
-  public RequestVoteRequest(long term, String candidate, long lastLogIndex, long lastLogTerm) {
+  public RequestVoteRequest(Object id, long term, String candidate, long lastLogIndex, long lastLogTerm) {
+    super(id);
     this.term = term;
     this.candidate = candidate;
     this.lastLogIndex = lastLogIndex;

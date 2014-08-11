@@ -31,7 +31,7 @@ import net.kuujo.copycat.log.Entry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AppendEntriesRequest implements Request {
+public class AppendEntriesRequest extends Request {
   private static final long serialVersionUID = 8870779945535041744L;
   private long term;
   private String leader;
@@ -41,9 +41,11 @@ public class AppendEntriesRequest implements Request {
   private long commitIndex;
 
   public AppendEntriesRequest() {
+    super(null);
   }
 
-  public AppendEntriesRequest(long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex) {
+  public AppendEntriesRequest(Object id, long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex) {
+    super(id);
     this.term = term;
     this.leader = leader;
     this.prevLogIndex = prevLogIndex;

@@ -26,7 +26,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.DynamicClusterConfig;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
-import net.kuujo.copycat.util.AsyncCallback;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -48,23 +47,17 @@ public class CopyCatTest {
         final CopyCatContext context = contexts.iterator().next();
         context.submitCommand("set", args, new AsyncCallback<Void>() {
           @Override
-          public void complete(Void value) {
+          public void call(AsyncResult<Void> result) {
+            Assert.assertTrue(result.succeeded());
             Arguments args = new Arguments().put("key", "foo");
             context.submitCommand("get", args, new AsyncCallback<String>() {
               @Override
-              public void complete(String value) {
-                Assert.assertEquals("bar", value);
+              public void call(AsyncResult<String> result) {
+                Assert.assertTrue(result.succeeded());
+                Assert.assertEquals("bar", result.value());
                 testComplete();
               }
-              @Override
-              public void fail(Throwable t) {
-                Assert.fail(t.getMessage());
-              }
             });
-          }
-          @Override
-          public void fail(Throwable t) {
-            Assert.fail(t.getMessage());
           }
         });
       }
@@ -80,11 +73,8 @@ public class CopyCatTest {
     for (CopyCatContext context : contexts) {
       context.start(new AsyncCallback<String>() {
         @Override
-        public void complete(String leader) {
-          latch.countDown();
-        }
-        @Override
-        public void fail(Throwable t) {
+        public void call(AsyncResult<String> result) {
+          Assert.assertTrue(result.succeeded());
           latch.countDown();
         }
       });
@@ -107,7 +97,7 @@ public class CopyCatTest {
           cluster.addRemoteMember(String.format("direct:%d", j));
         }
       }
-      instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().setMaxLogSize(10), registry));
+      instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().withMaxLogSize(10), registry));
     }
     return instances;
   }

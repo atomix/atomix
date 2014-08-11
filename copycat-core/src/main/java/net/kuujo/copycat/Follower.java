@@ -25,7 +25,6 @@ import net.kuujo.copycat.protocol.InstallSnapshotRequest;
 import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * Follower state.<p>

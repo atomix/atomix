@@ -29,7 +29,6 @@ import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
-import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * CopyCat replica context.<p>
@@ -207,13 +206,13 @@ public class CopyCatContext {
     transition(None.class);
     cluster.localMember().protocol().server().start(new AsyncCallback<Void>() {
       @Override
-      public void complete(Void value) {
-        startCallback = callback;
-        transition(Follower.class);
-      }
-      @Override
-      public void fail(Throwable t) {
-        callback.fail(t);
+      public void call(AsyncResult<Void> result) {
+        if (result.succeeded()) {
+          startCallback = callback;
+          transition(Follower.class);
+        } else {
+          callback.call(new AsyncResult<String>(result.cause()));
+        }
       }
     });
     return this;
@@ -224,7 +223,7 @@ public class CopyCatContext {
    */
   private void checkStart() {
     if (currentLeader != null && startCallback != null) {
-      startCallback.complete(currentLeader);
+      startCallback.call(new AsyncResult<String>(currentLeader));
       startCallback = null;
     }
   }
@@ -248,13 +247,9 @@ public class CopyCatContext {
   public void stop(final AsyncCallback<Void> callback) {
     cluster.localMember().protocol().server().stop(new AsyncCallback<Void>() {
       @Override
-      public void complete(Void value) {
+      public void call(AsyncResult<Void> result) {
         log.close();
         transition(None.class);
-      }
-      @Override
-      public void fail(Throwable t) {
-        logger.severe("Failed to stop context");
       }
     });
   }
@@ -357,6 +352,10 @@ public class CopyCatContext {
     return this;
   }
 
+  Object nextCorrelationId() {
+    return config.getCorrelationStrategy().nextCorrelationId(this);
+  }
+
   /**
    * Submits a command to the service.
    *
@@ -367,21 +366,21 @@ public class CopyCatContext {
    */
   public <T> CopyCatContext submitCommand(final String command, Arguments args, final AsyncCallback<T> callback) {
     if (currentLeader == null) {
-      callback.fail(new CopyCatException("No leader available"));
+      callback.call(new AsyncResult<T>(new CopyCatException("No leader available")));
     } else {
-      cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(command, args), new AsyncCallback<SubmitCommandResponse>() {
+      cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, args), new AsyncCallback<SubmitCommandResponse>() {
         @Override
         @SuppressWarnings("unchecked")
-        public void complete(SubmitCommandResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            callback.complete((T) response.result());
+        public void call(AsyncResult<SubmitCommandResponse> result) {
+          if (result.succeeded()) {
+            if (result.value().status().equals(Response.Status.OK)) {
+              callback.call(new AsyncResult<T>((T) result.value()));
+            } else {
+              callback.call(new AsyncResult<T>(result.value().error()));
+            }
           } else {
-            callback.fail(response.error());
+            callback.call(new AsyncResult<T>(result.cause()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          callback.fail(t);
         }
       });
     }

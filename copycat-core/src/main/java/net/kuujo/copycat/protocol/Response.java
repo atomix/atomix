@@ -57,27 +57,41 @@ public abstract class Response implements Serializable {
 
   }
 
+  private final Object id;
   private final Status status;
   private final String error;
 
   protected Response() {
+    this.id = null;
     this.status = Status.OK;
     this.error = null;
   }
 
-  protected Response(Status status) {
+  protected Response(Object id, Status status) {
+    this.id = id;
     this.status = status;
     this.error = null;
   }
 
-  protected Response(Status status, Throwable t) {
+  protected Response(Object id, Status status, Throwable t) {
+    this.id = id;
     this.status = status;
     this.error = t.getMessage();
   }
 
-  protected Response(Status status, String error) {
+  protected Response(Object id, Status status, String error) {
+    this.id = id;
     this.status = status;
     this.error = error;
+  }
+
+  /**
+   * Returns the response correlation ID.
+   *
+   * @return The response correlation ID.
+   */
+  public Object id() {
+    return id;
   }
 
   /**

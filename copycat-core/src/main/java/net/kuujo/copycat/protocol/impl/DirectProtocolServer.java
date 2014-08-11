@@ -15,18 +15,19 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
+import net.kuujo.copycat.AsyncCallback;
+import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.util.AsyncCallback;
+import net.kuujo.copycat.protocol.InstallSnapshotRequest;
+import net.kuujo.copycat.protocol.InstallSnapshotResponse;
+import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 /**
  * Direct protocol server.
@@ -75,13 +76,13 @@ public class DirectProtocolServer implements ProtocolServer {
   @Override
   public void start(AsyncCallback<Void> callback) {
     context.registry().bind(address, this);
-    callback.complete(null);
+    callback.call(new AsyncResult<Void>((Void) null));
   }
 
   @Override
   public void stop(AsyncCallback<Void> callback) {
     context.registry().unbind(address);
-    callback.complete(null);
+    callback.call(new AsyncResult<Void>((Void) null));
   }
 
 }

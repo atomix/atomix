@@ -16,9 +16,9 @@
 package net.kuujo.copycat.endpoint.impl;
 
 import net.kuujo.copycat.Arguments;
+import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
-import net.kuujo.copycat.util.AsyncCallback;
 
 /**
  * Direct endpoint implementation.

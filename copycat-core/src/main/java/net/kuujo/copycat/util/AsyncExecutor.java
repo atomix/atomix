@@ -17,6 +17,9 @@ package net.kuujo.copycat.util;
 
 import java.util.concurrent.Executor;
 
+import net.kuujo.copycat.AsyncCallback;
+import net.kuujo.copycat.AsyncResult;
+
 /**
  * Asynchronous action executor.
  *
@@ -46,7 +49,7 @@ public class AsyncExecutor {
             executor.execute(new Runnable() {
               @Override
               public void run() {
-                callback.complete(result);
+                callback.call(new AsyncResult<T>(result));
               }
             });
           }
@@ -55,7 +58,7 @@ public class AsyncExecutor {
             executor.execute(new Runnable() {
               @Override
               public void run() {
-                callback.fail(e);
+                callback.call(new AsyncResult<T>(e));
               }
             });
           }

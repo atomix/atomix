@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.vertx.protocol.impl;
 
+import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.protocol.InstallSnapshotRequest;
 import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
@@ -24,7 +25,6 @@ import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.util.AsyncCallback;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -47,19 +47,19 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void appendEntries(AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> callback) {
+  public void appendEntries(final AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(result.cause()));
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new AppendEntriesResponse(result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
+            callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"))));
           } else if (status.equals("error")) {
-            callback.complete(new AppendEntriesResponse(result.result().body().getString("message")));
+            callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), result.result().body().getString("message"))));
           }
         }
       }
@@ -67,19 +67,19 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void installSnapshot(InstallSnapshotRequest request, final AsyncCallback<InstallSnapshotResponse> callback) {
+  public void installSnapshot(final InstallSnapshotRequest request, final AsyncCallback<InstallSnapshotResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(result.cause()));
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new InstallSnapshotResponse(result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
+            callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"))));
           } else if (status.equals("error")) {
-            callback.complete(new InstallSnapshotResponse(result.result().body().getString("message")));
+            callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), result.result().body().getString("message"))));
           }
         }
       }
@@ -87,19 +87,19 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void requestVote(RequestVoteRequest request, final AsyncCallback<RequestVoteResponse> callback) {
+  public void requestVote(final RequestVoteRequest request, final AsyncCallback<RequestVoteResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(result.cause()));
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new RequestVoteResponse(result.result().body().getLong("term"), result.result().body().getBoolean("voteGranted")));
+            callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("voteGranted"))));
           } else if (status.equals("error")) {
-            callback.complete(new RequestVoteResponse(result.result().body().getString("message")));
+            callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), result.result().body().getString("message"))));
           }
         }
       }
@@ -107,19 +107,19 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void submitCommand(SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> callback) {
+  public void submitCommand(final SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> callback) {
     JsonObject message = new JsonObject();
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(result.cause()));
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.complete(new SubmitCommandResponse(result.result().body().getObject("result").toMap()));
+            callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), result.result().body().getObject("result").toMap())));
           } else if (status.equals("error")) {
-            callback.complete(new SubmitCommandResponse(result.result().body().getString("message")));
+            callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), result.result().body().getString("message"))));
           }
         }
       }
@@ -132,7 +132,7 @@ public class EventBusProtocolClient implements ProtocolClient {
 
   @Override
   public void connect(AsyncCallback<Void> callback) {
-    callback.complete(null);
+    callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
   }
 
   @Override
@@ -141,7 +141,7 @@ public class EventBusProtocolClient implements ProtocolClient {
 
   @Override
   public void close(AsyncCallback<Void> callback) {
-    callback.complete(null);
+    callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
   }
 
 }
