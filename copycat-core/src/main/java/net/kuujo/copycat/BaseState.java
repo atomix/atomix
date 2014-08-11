@@ -193,33 +193,6 @@ abstract class BaseState implements State {
     else if (entry instanceof SnapshotEntry) {
       applySnapshot(index, (SnapshotEntry) entry);
     }
-    // If the entry is a snapshot entry, we need to load all related entries
-    // and aggregate and install the snapshot on the state machine.
-    else if (entry instanceof SnapshotEndEntry) {
-      SnapshotStartEntry start = (SnapshotStartEntry) entry;
-      List<SnapshotChunkEntry> chunks = new ArrayList<>();
-      SnapshotEndEntry end = null;
-      long i = index;
-      while (end == null && i < context.log.lastIndex()) {
-        i++;
-        Entry child = context.log.getEntry(i);
-        if (child instanceof SnapshotChunkEntry) {
-          chunks.add((SnapshotChunkEntry) child);
-        } else if (child instanceof SnapshotEndEntry) {
-          end = (SnapshotEndEntry) child;
-        }
-      }
-
-      if (end != null) {
-        Entries<SnapshotEntry> entries = new ArrayListEntries<>();
-        entries.add(start);
-        entries.addAll(chunks);
-        entries.add(end);
-        applySnapshot(index, entries);
-      } else {
-        context.setLastApplied(index + chunks.size() + (end != null ? 1 : 0));
-      }
-    }
   }
 
   /**
@@ -315,13 +288,6 @@ abstract class BaseState implements State {
     } finally {
       context.setLastApplied(lastIndex);
     }
-  }
-
-  /**
-   * Takes a snapshot of the state machine state and appends it to the local log.
-   */
-  protected void takeSnapshot() {
-    
   }
 
   /**
