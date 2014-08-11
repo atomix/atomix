@@ -126,7 +126,7 @@ public class FileLog implements Log {
   }
 
   private long parseIndex(String line) {
-    return Long.valueOf(line.substring(0, line.indexOf(":")));
+    return Long.valueOf(line.substring(0, line.indexOf(DELIMITER)));
   }
 
   @Override
