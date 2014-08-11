@@ -13,6 +13,9 @@ CopyCat's Raft implementation also supports advanced features of the Raft algori
 snapshotting and dynamic cluster configuration changes and provides additional optimizations
 for various scenarios such as failure detection and read-only state queries.
 
+CopyCat is a pluggable framework, providing protocol and endpoint implementations for
+various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
+
 User Manual
 ===========
 
@@ -47,6 +50,7 @@ User Manual
    * [The complete protocol](#the-complete-protocol)
    * [Built-in protocols](#built-in-protocols)
       * [Direct](#direct-protocol)
+      * [Netty TCP](#netty-tcp-protocol)
       * [Vert.x Event Bus](#vertx-event-bus-protocol)
       * [Vert.x TCP](#vertx-tcp-protocol)
 1. [Endpoints](#endpoints-1)
@@ -99,9 +103,11 @@ CopyCat provides both in-memory logs for testing and file-based logs for product
 
 ### Snapshots
 In order to ensure [logs](#logs) do not grow too large for the disk, CopyCat replicas periodically
-take and persist snapshots of the [state machine](#state-machines) state. In CopyCat, when a
-snapshot is taken, the snapshot is appended to the local log, and all committed entries are
-subsequently removed from the log.
+take and persist snapshots of the [state machine](#state-machines) state. CopyCat manages snapshots
+using a method different than is described in the original Raft paper. Rather than persisting
+snapshots to separate snapshot files and replicating snapshots using an additional RCP method,
+CopyCat appends snapshots directly to the log. This allows CopyCat to minimize complexity by
+transfering snapshots as a normal part of log replication.
 
 Normally, when a node crashes and recovers, it restores its state using the latest snapshot
 and then rebuilds the rest of its state by reapplying committed [command](#commands) entries.
@@ -726,7 +732,7 @@ replicas, each protocol instance's client is used to send messages to those repl
 
 ## Built-in protocols
 CopyCat maintains several built-in protocols, some of which are implemented on top
-of asynchronous frameworks like Vert.x.
+of asynchronous frameworks like [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
 ### Direct Protocol
 The `direct` protocol is a simple protocol that communicates between contexts using
@@ -740,6 +746,17 @@ CopyCatContext context = new CopyCatContext(new MyStateMachine, cluster, registr
 ```
 
 Note that you should use a `ConcurrentRegistry` when using the `direct` protocol.
+
+### Netty TCP Protocol
+The netty `tcp` protocol communicates between replicas using Netty TCP channels.
+
+In order to use Netty protocols, you must add the `copycat-netty` project as a
+dependency. Once the `copycat-netty` library is available on your classpath,
+CopyCat will automatically find the Netty `tcp` protocol.
+
+```java
+ClusterConfig cluster = new StaticClusterConfig("tcp://localhost:1234");
+```
 
 ### Vert.x Event Bus Protocol
 The Vert.x `eventbus` protocol communicates between replicas on the Vert.x event
