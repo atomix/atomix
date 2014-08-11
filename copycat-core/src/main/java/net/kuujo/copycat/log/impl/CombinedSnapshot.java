@@ -13,39 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.log.impl;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.Set;
 
 /**
- * Protocol client.
+ * Combination of all snapshot data.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public class CombinedSnapshot {
+  private final long term;
+  private final Set<String> cluster;
+  private final byte[] bytes;
 
-  /**
-   * Connects the client.
-   */
-  void connect();
+  CombinedSnapshot(long term, Set<String> cluster, byte[] bytes) {
+    this.term = term;
+    this.cluster = cluster;
+    this.bytes = bytes;
+  }
 
-  /**
-   * Connects the client.
-   *
-   * @param callback A callback to be called once connected.
-   */
-  void connect(AsyncCallback<Void> callback);
+  public long term() {
+    return term;
+  }
 
-  /**
-   * Closes the client.
-   */
-  void close();
+  public Set<String> cluster() {
+    return cluster;
+  }
 
-  /**
-   * Closes the client.
-   *
-   * @param callback A callback to be called once closed.
-   */
-  void close(AsyncCallback<Void> callback);
+  public byte[] bytes() {
+    return bytes;
+  }
 
 }

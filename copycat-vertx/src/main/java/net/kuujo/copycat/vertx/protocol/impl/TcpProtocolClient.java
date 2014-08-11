@@ -22,8 +22,6 @@ import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
@@ -78,7 +76,6 @@ public class TcpProtocolClient implements ProtocolClient {
    */
   private static enum ResponseType {
     APPEND,
-    INSTALL,
     VOTE,
     SUBMIT;
   }
@@ -107,27 +104,6 @@ public class TcpProtocolClient implements ProtocolClient {
       storeCallback(request.id(), ResponseType.APPEND, callback);
     } else {
       callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException("Client not connected")));
-    }
-  }
-
-  @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
-    if (socket != null) {
-      JsonArray jsonCluster = new JsonArray();
-      for (String member : request.cluster()) {
-        jsonCluster.addString(member);
-      }
-      socket.write(new JsonObject().putString("type", "install")
-          .putValue("id", request.id())
-          .putNumber("term", request.term())
-          .putString("leader", request.leader())
-          .putArray("cluster", jsonCluster)
-          .putBinary("data", request.data())
-          .putBoolean("complete", request.complete())
-          .encode() + '\00');
-      storeCallback(request.id(), ResponseType.INSTALL, callback);
-    } else {
-      callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new ProtocolException("Client not connected")));
     }
   }
 
@@ -173,9 +149,6 @@ public class TcpProtocolClient implements ProtocolClient {
         case APPEND:
           handleAppendResponse(response, (AsyncCallback<AppendEntriesResponse>) holder.callback);
           break;
-        case INSTALL:
-          handleInstallResponse(response, (AsyncCallback<InstallSnapshotResponse>) holder.callback);
-          break;
         case VOTE:
           handleVoteResponse(response, (AsyncCallback<RequestVoteResponse>) holder.callback);
           break;
@@ -197,20 +170,6 @@ public class TcpProtocolClient implements ProtocolClient {
       callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(response.getString("id"), response.getLong("term"), response.getBoolean("succeeded"))));
     } else if (status.equals("error")) {
       callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException(response.getString("message"))));
-    }
-  }
-
-  /**
-   * Handles an install response.
-   */
-  private void handleInstallResponse(JsonObject response, AsyncCallback<InstallSnapshotResponse> callback) {
-    String status = response.getString("status");
-    if (status == null) {
-      callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new ProtocolException("Invalid response")));
-    } else if (status.equals("ok")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(response.getString("id"), response.getLong("term"), response.getBoolean("succeeded"))));
-    } else if (status.equals("error")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new ProtocolException(response.getString("message"))));
     }
   }
 

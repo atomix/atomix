@@ -59,6 +59,24 @@ public class MemoryLog implements Log {
   }
 
   @Override
+  public synchronized List<Long> appendEntries(Entry... entries) {
+    List<Long> indices = new ArrayList<>();
+    for (Entry entry : entries) {
+      indices.add(appendEntry(entry));
+    }
+    return indices;
+  }
+
+  @Override
+  public synchronized List<Long> appendEntries(List<? extends Entry> entries) {
+    List<Long> indices = new ArrayList<>();
+    for (Entry entry : entries) {
+      indices.add(appendEntry(entry));
+    }
+    return indices;
+  }
+
+  @Override
   public boolean containsEntry(long index) {
     return log.containsKey(index);
   }
@@ -66,12 +84,6 @@ public class MemoryLog implements Log {
   @Override
   public Entry getEntry(long index) {
     return log.get(index);
-  }
-
-  @Override
-  public synchronized Log setEntry(long index, Entry entry) {
-    log.put(index, entry);
-    return this;
   }
 
   @Override

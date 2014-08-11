@@ -67,29 +67,6 @@ public abstract class LogTest {
   }
 
   @Test
-  public void testSetEntry() {
-    Log log = createLog();
-    log.open();
-    long index1 = log.appendEntry(new NoOpEntry(1));
-    long index2 = log.appendEntry(new NoOpEntry(2));
-    long index3 = log.appendEntry(new NoOpEntry(3));
-    Entry entry1 = log.getEntry(index1);
-    Assert.assertTrue(entry1 instanceof NoOpEntry);
-    Assert.assertEquals(1, entry1.term());
-    Entry entry2 = log.getEntry(index2);
-    Assert.assertTrue(entry2 instanceof NoOpEntry);
-    Assert.assertEquals(2, entry2.term());
-    Entry entry3 = log.getEntry(index3);
-    Assert.assertTrue(entry3 instanceof NoOpEntry);
-    Assert.assertEquals(3, entry3.term());
-    log.setEntry(index2, new NoOpEntry(4));
-    Entry entry4 = log.getEntry(index2);
-    Assert.assertTrue(entry4 instanceof NoOpEntry);
-    Assert.assertEquals(4, entry4.term());
-    log.close();
-  }
-
-  @Test
   public void testFirstIndex() {
     Log log = createLog();
     log.open();

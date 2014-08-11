@@ -20,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import net.kuujo.copycat.log.Entry;
@@ -38,7 +39,8 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  */
 public class FileLog implements Log {
   private static final Serializer serializer  = SerializerFactory.getSerializer();
-  private static final String separator = System.getProperty("line.separator");
+  private static final String SEPARATOR = System.getProperty("line.separator");
+  private static final Byte DELIMITER = '\0';
   private File f;
   private RandomAccessFile file;
   private long firstIndex;
@@ -111,9 +113,9 @@ public class FileLog implements Log {
     try {
       String bytes = new StringBuilder()
         .append(index)
-        .append(':')
+        .append(DELIMITER)
         .append(new String(serializer.writeValue(entry)))
-        .append(separator)
+        .append(SEPARATOR)
         .toString();
       file.writeBytes(bytes);
       lastIndex++;
@@ -121,6 +123,37 @@ public class FileLog implements Log {
         firstIndex = 1;
       }
       return index;
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  @Override
+  public List<Long> appendEntries(Entry... entries) {
+    return appendEntries(Arrays.asList(entries));
+  }
+
+  @Override
+  public List<Long> appendEntries(List<? extends Entry> entries) {
+    long index = lastIndex+1;
+    List<Long> indices = new ArrayList<>();
+    StringBuilder bytesBuilder = new StringBuilder();
+    for (Entry entry : entries) {
+      bytesBuilder.append(index)
+        .append(DELIMITER)
+        .append(new String(serializer.writeValue(entry)))
+        .append(SEPARATOR);
+      indices.add(index++);
+    }
+
+    try {
+      file.writeBytes(bytesBuilder.toString());
+      lastIndex += entries.size();
+      if (firstIndex == 0) {
+        firstIndex = 1;
+      }
+      lastIndex += indices.size();
+      return indices;
     } catch (IOException e) {
       throw new LogException(e);
     }
@@ -147,33 +180,6 @@ public class FileLog implements Log {
       }
     }
     return entry;
-  }
-
-  @Override
-  public synchronized Log setEntry(long index, Entry entry) {
-    try {
-      long pointer = findFilePointer(index);
-      String line = file.readLine();
-      int length = line.length();
-      String bytes = new StringBuilder()
-        .append(index)
-        .append(':')
-        .append(new String(serializer.writeValue(entry)))
-        .append(separator)
-        .toString();
-      int newLength = bytes.length();
-      if (newLength > length) {
-        expandFile(pointer+length, pointer+newLength);
-      } else if (length > newLength) {
-        compactFile(pointer+newLength, pointer+length);
-      }
-      file.seek(pointer);
-      file.writeBytes(bytes);
-      file.seek(file.length());
-    } catch (IOException e) {
-      throw new LogException(e);
-    }
-    return this;
   }
 
   @Override
@@ -246,6 +252,7 @@ public class FileLog implements Log {
     if (!indexInRange(index)) {
       throw new IndexOutOfBoundsException("Index out of bounds");
     }
+
     try {
       file.seek(0);
       long currentIndex = firstIndex;
@@ -280,35 +287,6 @@ public class FileLog implements Log {
         writeCursor += bytesToRead;
       }
       file.setLength(originalLength - (from - to));
-      file.seek(file.length());
-    } catch (IOException e) {
-      throw new LogException(e);
-    }
-  }
-
-  /**
-   * Extends the length of the file by moving bytes from the start position to the end position.
-   */
-  private void expandFile(long from, long to) {
-    if (from > to) throw new IllegalArgumentException("Cannot expand file from " + from + " to " + to);
-    try {
-      long difference = to - from;
-      long originalLength = file.length();
-      long newLength = originalLength + difference;
-      file.setLength(newLength);
-      long readCursor = originalLength;
-      long writeCursor = newLength;
-      int bufferSize = 4096;
-      while (readCursor > from) {
-        int bytesToRead = (int) (readCursor - bufferSize < from ? readCursor - from : bufferSize);
-        readCursor -= bytesToRead;
-        file.seek(readCursor);
-        byte[] bytes = new byte[bytesToRead];
-        file.read(bytes, 0, bytesToRead);
-        writeCursor -= bytesToRead;
-        file.seek(writeCursor);
-        file.write(bytes);
-      }
       file.seek(file.length());
     } catch (IOException e) {
       throw new LogException(e);

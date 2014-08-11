@@ -20,8 +20,6 @@ import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
@@ -50,16 +48,6 @@ public class DirectProtocolClient implements ProtocolClient {
       server.sync(request, callback);
     } else {
       callback.call(new AsyncResult<AppendEntriesResponse>(new ProtocolException("Invalid server address")));
-    }
-  }
-
-  @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
-    DirectProtocolServer server = context.registry().lookup(address);
-    if (server != null) {
-      server.install(request, callback);
-    } else {
-      callback.call(new AsyncResult<InstallSnapshotResponse>(new ProtocolException("Invalid server address")));
     }
   }
 

@@ -20,8 +20,6 @@ import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
@@ -52,12 +50,6 @@ public class DirectProtocolServer implements ProtocolServer {
   void sync(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
     if (requestHandler != null) {
       requestHandler.appendEntries(request, callback);
-    }
-  }
-
-  void install(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
-    if (requestHandler != null) {
-      requestHandler.installSnapshot(request, callback);
     }
   }
 

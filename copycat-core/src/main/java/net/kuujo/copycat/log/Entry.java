@@ -20,7 +20,9 @@ import java.io.Serializable;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.NoOpEntry;
-import net.kuujo.copycat.log.impl.SnapshotEntry;
+import net.kuujo.copycat.log.impl.SnapshotChunkEntry;
+import net.kuujo.copycat.log.impl.SnapshotEndEntry;
+import net.kuujo.copycat.log.impl.SnapshotStartEntry;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -55,9 +57,11 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 )
 @JsonSubTypes({
   @JsonSubTypes.Type(value=NoOpEntry.class, name="no-op"),
-  @JsonSubTypes.Type(value=SnapshotEntry.class, name="snapshot"),
   @JsonSubTypes.Type(value=ConfigurationEntry.class, name="configuration"),
-  @JsonSubTypes.Type(value=CommandEntry.class, name="command")
+  @JsonSubTypes.Type(value=CommandEntry.class, name="command"),
+  @JsonSubTypes.Type(value=SnapshotStartEntry.class, name="snapshot-start"),
+  @JsonSubTypes.Type(value=SnapshotChunkEntry.class, name="snapshot-chunk"),
+  @JsonSubTypes.Type(value=SnapshotEndEntry.class, name="snapshot-end")
 })
 @SuppressWarnings("serial")
 public abstract class Entry implements Serializable {

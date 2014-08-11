@@ -16,15 +16,13 @@
 package net.kuujo.copycat.vertx.protocol.impl;
 
 import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
+import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -60,26 +58,6 @@ public class EventBusProtocolClient implements ProtocolClient {
             callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"))));
           } else if (status.equals("error")) {
             callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), result.result().body().getString("message"))));
-          }
-        }
-      }
-    });
-  }
-
-  @Override
-  public void installSnapshot(final InstallSnapshotRequest request, final AsyncCallback<InstallSnapshotResponse> callback) {
-    JsonObject message = new JsonObject();
-    vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
-        if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(result.cause()));
-        } else {
-          String status = result.result().body().getString("status");
-          if (status.equals("ok")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"))));
-          } else if (status.equals("error")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), result.result().body().getString("message"))));
           }
         }
       }

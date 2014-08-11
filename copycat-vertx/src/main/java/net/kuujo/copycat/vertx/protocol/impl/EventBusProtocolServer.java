@@ -16,18 +16,14 @@
 package net.kuujo.copycat.vertx.protocol.impl;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
@@ -63,9 +59,6 @@ public class EventBusProtocolServer implements ProtocolServer {
       switch (action) {
         case "sync":
           doSync(message);
-          break;
-        case "install":
-          doInstall(message);
           break;
         case "poll":
           doPoll(message);
@@ -103,35 +96,6 @@ public class EventBusProtocolServer implements ProtocolServer {
         public void call(net.kuujo.copycat.AsyncResult<AppendEntriesResponse> result) {
           if (result.succeeded()) {
             AppendEntriesResponse response = result.value();
-            if (response.status().equals(Response.Status.OK)) {
-              message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
-            } else {
-              message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
-            }
-          } else {
-            message.reply(new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
-          }
-        }
-      });
-    }
-  }
-
-  private void doInstall(final Message<JsonObject> message) {
-    if (requestHandler != null) {
-      Set<String> members = new HashSet<>();
-      JsonArray jsonMembers = message.body().getArray("members");
-      if (jsonMembers != null) {
-        for (Object jsonMember : jsonMembers) {
-          members.add((String) jsonMember);
-        }
-      }
-      final Object id = message.body().getValue("id");
-      InstallSnapshotRequest request = new InstallSnapshotRequest(id, message.body().getLong("term"), message.body().getString("leader"), message.body().getLong("snapshotIndex"), message.body().getLong("snapshotTerm"), members, message.body().getBinary("data"), message.body().getBoolean("complete"));
-      requestHandler.installSnapshot(request, new AsyncCallback<InstallSnapshotResponse>() {
-        @Override
-        public void call(net.kuujo.copycat.AsyncResult<InstallSnapshotResponse> result) {
-          if (result.succeeded()) {
-            InstallSnapshotResponse response = result.value();
             if (response.status().equals(Response.Status.OK)) {
               message.reply(new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
             } else {
