@@ -255,6 +255,17 @@ class Leader extends BaseState implements Observer {
   }
 
   @Override
+  public void appendEntries(final AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> responseCallback) {
+    if (request.term() > context.getCurrentTerm()) {
+      super.appendEntries(request, responseCallback);
+    } else if (request.term() < context.getCurrentTerm()) {
+      responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false)));
+    } else {
+      context.transition(Follower.class);
+    }
+  }
+
+  @Override
   public void submitCommand(final SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> responseCallback) {
     // Try to determine the type of command this request is executing. The command
     // type is provided by a CommandProvider which provides CommandInfo for a

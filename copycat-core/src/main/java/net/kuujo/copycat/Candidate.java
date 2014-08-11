@@ -156,7 +156,19 @@ class Candidate extends BaseState {
 
   @Override
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback) {
-    super.requestVote(request, responseCallback);
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    if (request.term() > context.getCurrentTerm()) {
+      context.setCurrentTerm(request.term());
+      context.setCurrentLeader(null);
+      context.transition(Follower.class);
+    }
+    // If the vote request is not for this candidate then reject the vote.
+    else if (!request.candidate().equals(context.cluster.config().getLocalMember())) {
+      responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false)));
+    } else {
+      super.requestVote(request, responseCallback);
+    }
   }
 
   @Override

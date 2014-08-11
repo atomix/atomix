@@ -358,6 +358,7 @@ abstract class BaseState implements State {
     if (request.term() > context.getCurrentTerm()) {
       context.setCurrentTerm(request.term());
       context.setCurrentLeader(null);
+      context.setLastVotedFor(null);
     }
 
     // If the request term is not as great as the current context term then don't
