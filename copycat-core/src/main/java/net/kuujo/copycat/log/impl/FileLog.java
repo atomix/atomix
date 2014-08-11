@@ -371,8 +371,10 @@ public class FileLog implements Log {
    * Cleans the buffer of entries which should no longer be buffered.
    */
   private void cleanBuffer() {
-    long lowIndex = lastIndex - bufferSize;
-    buffer.headMap(lowIndex > firstIndex ? lowIndex : firstIndex).clear();
+    if (lastIndex % 100 == 0) {
+      long lowIndex = lastIndex - bufferSize;
+      buffer.headMap(lowIndex > firstIndex ? lowIndex : firstIndex).clear();
+    }
   }
 
   @Override
