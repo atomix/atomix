@@ -32,17 +32,17 @@ public class RequestVoteResponse extends Response {
   public RequestVoteResponse() {
   }
 
-  public RequestVoteResponse(String id, long term, boolean voteGranted) {
+  public RequestVoteResponse(Object id, long term, boolean voteGranted) {
     super(id, Status.OK);
     this.term = term;
     this.voteGranted = voteGranted;
   }
 
-  public RequestVoteResponse(String id, Throwable t) {
+  public RequestVoteResponse(Object id, Throwable t) {
     super(id, Status.ERROR, t);
   }
 
-  public RequestVoteResponse(String id, String message) {
+  public RequestVoteResponse(Object id, String message) {
     super(id, Status.ERROR, message);
   }
 

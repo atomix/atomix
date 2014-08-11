@@ -105,7 +105,7 @@ public class NettyTest {
           cluster.addRemoteMember(String.format("tcp://localhost:%d", j+50505));
         }
       }
-      instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().setMaxLogSize(10), registry));
+      instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().withMaxLogSize(10), registry));
     }
     return instances;
   }

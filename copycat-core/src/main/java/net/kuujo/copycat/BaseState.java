@@ -15,23 +15,31 @@
  */
 package net.kuujo.copycat;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.kuujo.copycat.log.Entries;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.LogException;
+import net.kuujo.copycat.log.impl.CombinedSnapshot;
+import net.kuujo.copycat.log.impl.ArrayListEntries;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
+import net.kuujo.copycat.log.impl.SnapshotCombiner;
+import net.kuujo.copycat.log.impl.SnapshotChunkEntry;
+import net.kuujo.copycat.log.impl.SnapshotEndEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
+import net.kuujo.copycat.log.impl.SnapshotStartEntry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.serializer.SerializationException;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.AsyncAction;
@@ -44,6 +52,7 @@ import net.kuujo.copycat.util.AsyncExecutor;
  */
 abstract class BaseState implements State {
   private static final Serializer serializer = SerializerFactory.getSerializer();
+  private static final int SNAPSHOT_ENTRY_SIZE = 4096;
   protected CopyCatContext context;
   private final AtomicBoolean snapshotting = new AtomicBoolean();
   private final AsyncExecutor executor = new AsyncExecutor(Executors.newSingleThreadExecutor());
@@ -105,29 +114,19 @@ abstract class BaseState implements State {
    * Appends entries to the local log.
    */
   private void doAppendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
-    for (int i = 0; i < request.entries().size(); i++) {
-      // Get the entry at the current index from the log.
-      Entry entry = context.log.getEntry(i + request.prevLogIndex() + 1);
-      // If the log does not contain an entry at this index then this
-      // indicates no conflict, append the new entry.
-      if (entry == null) {
-        context.log.appendEntry(request.entries().get(i));
-      } else if (entry.term() != request.entries().get(i).term()) {
-        // If the local log's equivalent entry's term does not match the
-        // synced entry's term then that indicates that it came from a
-        // different leader. The log must be purged of this entry and all
-        // entries following it.
-        context.log.removeAfter(request.prevLogIndex());
-        context.log.appendEntry(request.entries().get(i));
-      }
+    // If the log contains entries after the request's previous log index
+    // then remove those entries to be replaced by the request entries.
+    if (context.log.lastIndex() > request.prevLogIndex()) {
+      context.log.removeAfter(request.prevLogIndex());
     }
+    // Once the log has been cleaned, append all request entries to the log.
+    context.log.appendEntries(request.entries());
     doApplyCommits(request, responseCallback);
   }
 
   /**
    * Applies commits to the local state machine.
    */
-  @SuppressWarnings("unchecked")
   private void doApplyCommits(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
     // If the synced commit index is greater than the local commit index then
     // apply commits to the local state machine.
@@ -146,42 +145,8 @@ abstract class BaseState implements State {
         // Starting after the last applied entry, iterate through new entries
         // and apply them to the state machine up to the commit index.
         for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
-          // Load the log entry to be applied to the state machine.
-          Entry entry = context.log.getEntry(i);
-
-          // If no entry exists in this position then just break the loop. Even if
-          // there are entries after this for some reason, we can't apply them since
-          // entries must be applied in log order.
-          if (entry == null) {
-            break;
-          }
-
-          // If the entry was successfully loaded then apply it to the state machine.
-          try {
-            if (entry instanceof CommandEntry) {
-              CommandEntry command = (CommandEntry) entry;
-              context.stateMachine.applyCommand(command.command(), command.args());
-            }
-            // Configuration entries are applied to the immutable context configuration.
-            else if (entry instanceof ConfigurationEntry) {
-              Set<String> members = ((ConfigurationEntry) entry).members();
-              members.remove(context.cluster.config().getLocalMember());
-              context.cluster.config().setRemoteMembers(members);
-            }
-            // It's possible that an entry being committed is a snapshot entry. In
-            // cases where a leader has replicated a snapshot to this node's log,
-            // once the snapshot has been committed we can clear all entries before
-            // the snapshot entry and apply the snapshot to the state machine.
-            else if (entry instanceof SnapshotEntry) {
-              synchronized (context.log) {
-                Snapshot snapshot = new Snapshot(serializer.readValue(((SnapshotEntry) entry).data(), Map.class));
-                context.stateMachine.installSnapshot(snapshot);
-                context.log.removeBefore(i);
-              }
-            }
-          } finally {
-            context.setLastApplied(i);
-          }
+          // Apply the entry to the state machine.
+          applyEntry(i);
         }
 
         // Once entries have been applied check whether we need to compact the log.
@@ -189,6 +154,166 @@ abstract class BaseState implements State {
       }
     }
     responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), true)));
+  }
+
+  /**
+   * Applies the entry at the given index.
+   *
+   * @param index The index of the entry to apply.
+   */
+  protected void applyEntry(long index) {
+    applyEntry(index, context.log.getEntry(index));
+  }
+
+  /**
+   * Applies the entry at the given index.
+   *
+   * @param index The index of the entry to apply.
+   * @param entry The entry to apply.
+   */
+  protected void applyEntry(long index, Entry entry) {
+    // Validate that the entry being applied is the next entry in the log.
+    if (context.getLastApplied() != index-1) {
+      throw new IllegalStateException("Entry cannot be applied out of order");
+    }
+
+    // Ensure that the entry exists.
+    if (entry == null) {
+      throw new IllegalStateException("null entry cannot be applied to state machine");
+    }
+
+    // If the entry is a command entry, apply the command to the state machine.
+    if (entry instanceof CommandEntry) {
+      applyCommand(index, (CommandEntry) entry);
+    }
+    // If the entry is a configuration entry, update the local cluster configuration.
+    else if (entry instanceof ConfigurationEntry) {
+      applyConfig(index, (ConfigurationEntry) entry);
+    }
+    // If the entry is a snapshot entry, apply the snapshot to the local state machine.
+    else if (entry instanceof SnapshotEntry) {
+      applySnapshot(index, (SnapshotEntry) entry);
+    }
+    // If the entry is of another type, e.g. a no-op entry, simply set last applied.
+    else {
+      context.setLastApplied(index);
+    }
+  }
+
+  /**
+   * Applies a command entry to the state machine.
+   *
+   * @param index The index of the entry being applied.
+   * @param entry The entry to apply.
+   */
+  protected void applyCommand(long index, CommandEntry entry) {
+    try {
+      context.stateMachine.applyCommand(entry.command(), entry.args());
+    } catch (Exception e) {
+    } finally {
+      context.setLastApplied(index);
+    }
+  }
+
+  /**
+   * Applies a configuration entry to the replica.
+   *
+   * @param index The index of the entry being applied.
+   * @param entry The entry to apply.
+   */
+  protected void applyConfig(long index, ConfigurationEntry entry) {
+    try {
+      Set<String> members = ((ConfigurationEntry) entry).members();
+      members.remove(context.cluster.config().getLocalMember());
+      context.cluster.config().setRemoteMembers(members);
+    } catch (Exception e) {
+    } finally {
+      context.setLastApplied(index);
+    }
+  }
+
+  /**
+   * Applies a single snapshot entry to the state machine.
+   *
+   * @param index The index of the entry to apply.
+   * @param entry The entry to apply.
+   */
+  protected void applySnapshot(long index, SnapshotEntry entry) {
+    // If the snapshot entry is a snapshot end entry, read the log
+    // backwards and build the complete snapshot.
+    if (entry instanceof SnapshotEndEntry) {
+      SnapshotEndEntry end = (SnapshotEndEntry) entry;
+      List<SnapshotChunkEntry> chunks = new ArrayList<>();
+      SnapshotStartEntry start = null;
+      long i = index;
+      while (start == null && i > context.log.firstIndex()) {
+        i--;
+        Entry previous = context.log.getEntry(i);
+        if (previous == null) {
+          break;
+        } else if (previous instanceof SnapshotChunkEntry) {
+          chunks.add((SnapshotChunkEntry) previous);
+        } else if (previous instanceof SnapshotStartEntry) {
+          start = (SnapshotStartEntry) previous;
+        } else {
+          break;
+        }
+      }
+
+      if (start != null) {
+        Entries<SnapshotEntry> entries = new ArrayListEntries<>();
+        entries.add(start);
+        entries.addAll(chunks);
+        entries.add(end);
+        applySnapshot(index, entries);
+      } else {
+        context.setLastApplied(index);
+      }
+    } else {
+      context.setLastApplied(index);
+    }
+  }
+
+  /**
+   * Applies a snapshot entry to the state machine.
+   *
+   * @param lastIndex The last index of the entry set being applied.
+   * @param entries A list of snapshot entries.
+   */
+  protected void applySnapshot(long lastIndex, Entries<SnapshotEntry> entries) {
+    try {
+      CombinedSnapshot snapshot = new SnapshotCombiner()
+        .withStart(entries.get(0, SnapshotStartEntry.class))
+        .withChunks(entries.subList(1, entries.size() - 1, SnapshotChunkEntry.class))
+        .withEnd(entries.get(entries.size() - 1, SnapshotEndEntry.class))
+        .combine();
+      context.stateMachine.installSnapshot(serializer.readValue(snapshot.bytes(), Snapshot.class));
+      context.log.removeBefore(lastIndex - entries.size() + 1);
+    } catch (LogException | SerializationException e) {
+    } finally {
+      context.setLastApplied(lastIndex);
+    }
+  }
+
+  /**
+   * Creates a snapshot of the state machine state.
+   *
+   * @return A snapshot of the state machine state.
+   */
+  protected Entries<SnapshotEntry> createSnapshot() {
+    Entries<SnapshotEntry> entries = new ArrayListEntries<>();
+    Snapshot snapshot = context.stateMachine.takeSnapshot();
+    long term = context.getCurrentTerm();
+    entries.add(new SnapshotStartEntry(context.getCurrentTerm(), context.cluster.config().getMembers()));
+    byte[] snapshotBytes = serializer.writeValue(snapshot);
+    for (int i = 0; i < snapshotBytes.length; i += SNAPSHOT_ENTRY_SIZE) {
+      final int bytesLength = snapshotBytes.length - i > SNAPSHOT_ENTRY_SIZE ? SNAPSHOT_ENTRY_SIZE : snapshotBytes.length - i;
+      byte[] bytes = new byte[bytesLength];
+      System.arraycopy(snapshotBytes, i, bytes, 0, bytesLength);
+      entries.add(new SnapshotChunkEntry(term, bytes));
+    }
+    entries.add(new SnapshotEndEntry(term, snapshotBytes.length));
+    return entries;
   }
 
   /**
@@ -214,63 +339,15 @@ abstract class BaseState implements State {
         public Void execute() {
           synchronized (context.log) {
             final long lastApplied = context.getLastApplied();
-            Snapshot snapshot = context.stateMachine.takeSnapshot();
-            byte[] bytes = serializer.writeValue(snapshot);
-            SnapshotEntry entry = new SnapshotEntry(context.getCurrentTerm(), context.cluster.config().getMembers(), bytes, true);
-            context.log.setEntry(lastApplied, entry);
             context.log.removeBefore(lastApplied);
+            context.log.prependEntries(createSnapshot());
           }
+          snapshotting.set(false);
           return null;
         }
       }, callback);
     } else if (callback != null) {
       callback.call(new AsyncResult<Void>((Void) null));
-    }
-  }
-
-  @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
-    // If the request indicates a term that is greater than the current term then
-    // assign that term and leader to the current context and step down as leader.
-    boolean transition = false;
-    if ((request.term() > context.getCurrentTerm()) || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(request.leader());
-      transition = true;
-    }
-
-    // Load the entry at the given position in the log.
-    Entry entry = context.log.getEntry(request.snapshotIndex());
-
-    // If the entry doesn't exist or if the entry isn't a snapshot entry or the
-    // existing snapshot entry's term doesn't match the given snapshot term then
-    // add a new snapshot entry to the log.
-    SnapshotEntry snapshot;
-    if (entry == null || !(entry instanceof SnapshotEntry) || ((SnapshotEntry) entry).term() != request.snapshotTerm()) {
-      snapshot = new SnapshotEntry(request.snapshotTerm(), request.cluster(), request.data(), request.complete());
-      context.log.setEntry(request.snapshotIndex(), snapshot);
-    } else {
-      // If the entry already existed then we need to append the request to the
-      // existing entry. Snapshot entries are sent in chunks.
-      int oldLength = ((SnapshotEntry) entry).data().length;
-      int newLength = request.data().length;
-      byte[] combined = new byte[oldLength + newLength];
-      System.arraycopy(((SnapshotEntry) entry).data(), 0, combined, 0, oldLength);
-      System.arraycopy(request.data(), 0, combined, oldLength, newLength);
-      snapshot = new SnapshotEntry(request.snapshotTerm(), request.cluster(), combined, request.complete());
-    }
-
-    // Respond to the install request.
-    responseCallback.call(new AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), context.getCurrentTerm(), true)));
-
-    // Note that we don't clear the log or apply the snapshot here. We will do that
-    // once the snapshot entry has been committed and we know that a quorum of
-    // the cluster's logs have advanced beyond the snapshot index.
-
-    // If a transition is required then transition back to the follower state.
-    // If the node is already a follower then the transition will be ignored.
-    if (transition) {
-      context.transition(Follower.class);
     }
   }
 
@@ -281,6 +358,7 @@ abstract class BaseState implements State {
     if (request.term() > context.getCurrentTerm()) {
       context.setCurrentTerm(request.term());
       context.setCurrentLeader(null);
+      context.setLastVotedFor(null);
     }
 
     // If the request term is not as great as the current context term then don't

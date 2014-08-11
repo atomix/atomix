@@ -13,39 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
-
-import net.kuujo.copycat.AsyncCallback;
+package net.kuujo.copycat.log.impl;
 
 /**
- * Protocol client.
+ * Entry indicating the end of a snapshot entry set.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public class SnapshotEndEntry extends SnapshotEntry {
+  private static final long serialVersionUID = -7343120000478427483L;
+  private long length;
+
+  public SnapshotEndEntry() {
+    super();
+  }
+
+  public SnapshotEndEntry(long term, long length) {
+    super(term);
+    this.length = length;
+  }
 
   /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
+   * Returns the total length of the snapshot.
    *
-   * @param callback A callback to be called once connected.
+   * @return The total byte length of the snapshot.
    */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
-
-  /**
-   * Closes the client.
-   *
-   * @param callback A callback to be called once closed.
-   */
-  void close(AsyncCallback<Void> callback);
+  public long length() {
+    return length;
+  }
 
 }

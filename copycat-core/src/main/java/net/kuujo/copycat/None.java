@@ -17,8 +17,6 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
@@ -43,11 +41,6 @@ class None extends BaseState {
   @Override
   public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
     responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), "Replica is not alive")));
-  }
-
-  @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
-    responseCallback.call(new AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), "Replica is not alive")));
   }
 
   @Override

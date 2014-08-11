@@ -58,6 +58,55 @@ public interface Log {
   long appendEntry(Entry entry);
 
   /**
+   * Appends a list of entries to the log.
+   *
+   * @param entries The entries to append.
+   * @return A list of indices for the appended entries.
+   */
+  List<Long> appendEntries(Entry... entries);
+
+  /**
+   * Appends a list of entries to the log.
+   *
+   * @param entries The entries to append.
+   * @return A list of indices for the appended entries.
+   */
+  List<Long> appendEntries(List<? extends Entry> entries);
+
+  /**
+   * Sets an entry in the log.
+   *
+   * @param index The index of the entry to set.
+   * @param entry The entry to set.
+   * @return The entry index.
+   */
+  long setEntry(long index, Entry entry);
+
+  /**
+   * Prepends an entry to the log.
+   * 
+   * @param entry The entry to prepend.
+   * @return The index at which the entry was prepended.
+   */
+  long prependEntry(Entry entry);
+
+  /**
+   * Prepends a list of entries to the log.
+   *
+   * @param entries The entries to prepend.
+   * @return A list of indices for the prepended entries.
+   */
+  List<Long> prependEntries(Entry... entries);
+
+  /**
+   * Prepends a list of entries to the log.
+   *
+   * @param entries The entries to prepend.
+   * @return A list of indices for the prepended entries.
+   */
+  List<Long> prependEntries(List<? extends Entry> entries);
+
+  /**
    * Returns a boolean indicating whether the log has an entry at the given
    * index.
    * 
@@ -73,15 +122,6 @@ public interface Log {
    * @return A log entry.
    */
   Entry getEntry(long index);
-
-  /**
-   * Sets an entry at a specific index.
-   *
-   * @param index The index at which to set the entry.
-   * @param entry The entry to set.
-   * @return The log instance.
-   */
-  Log setEntry(long index, Entry entry);
 
   /**
    * Returns the first log index.

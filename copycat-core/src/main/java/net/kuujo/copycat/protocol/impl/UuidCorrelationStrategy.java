@@ -13,39 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.UUID;
+
+import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.protocol.CorrelationStrategy;
 
 /**
- * Protocol client.
+ * UUID based correlation strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public class UuidCorrelationStrategy implements CorrelationStrategy<String> {
 
-  /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
-   *
-   * @param callback A callback to be called once connected.
-   */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
-
-  /**
-   * Closes the client.
-   *
-   * @param callback A callback to be called once closed.
-   */
-  void close(AsyncCallback<Void> callback);
+  @Override
+  public String nextCorrelationId(CopyCatContext context) {
+    return UUID.randomUUID().toString();
+  }
 
 }

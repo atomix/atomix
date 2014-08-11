@@ -18,15 +18,12 @@ package net.kuujo.copycat;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
@@ -126,7 +123,7 @@ class Candidate extends BaseState {
           @Override
           public void call(AsyncResult<Void> result) {
             if (result.succeeded()) {
-              client.requestVote(new RequestVoteRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<RequestVoteResponse>() {
+              client.requestVote(new RequestVoteRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm), new AsyncCallback<RequestVoteResponse>() {
                 @Override
                 public void call(AsyncResult<RequestVoteResponse> result) {
                   client.close();
@@ -158,13 +155,20 @@ class Candidate extends BaseState {
   }
 
   @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
-    super.installSnapshot(request, responseCallback);
-  }
-
-  @Override
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback) {
-    super.requestVote(request, responseCallback);
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    if (request.term() > context.getCurrentTerm()) {
+      context.setCurrentTerm(request.term());
+      context.setCurrentLeader(null);
+      context.transition(Follower.class);
+    }
+    // If the vote request is not for this candidate then reject the vote.
+    else if (!request.candidate().equals(context.cluster.config().getLocalMember())) {
+      responseCallback.call(new AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false)));
+    } else {
+      super.requestVote(request, responseCallback);
+    }
   }
 
   @Override

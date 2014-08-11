@@ -27,8 +27,6 @@ import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.Request;
@@ -157,20 +155,6 @@ public class TcpProtocolServer implements ProtocolServer {
             server.handler.appendEntries((AppendEntriesRequest) request, new AsyncCallback<AppendEntriesResponse>() {
               @Override
               public void call(AsyncResult<AppendEntriesResponse> result) {
-                if (result.succeeded()) {
-                  context.writeAndFlush(result.value());
-                }
-              }
-            });
-          }
-        });
-      } else if (request instanceof InstallSnapshotRequest) {
-        context.channel().eventLoop().submit(new Runnable() {
-          @Override
-          public void run() {
-            server.handler.installSnapshot((InstallSnapshotRequest) request, new AsyncCallback<InstallSnapshotResponse>() {
-              @Override
-              public void call(AsyncResult<InstallSnapshotResponse> result) {
                 if (result.succeeded()) {
                   context.writeAndFlush(result.value());
                 }

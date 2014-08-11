@@ -33,14 +33,6 @@ public interface ProtocolHandler {
   void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback);
 
   /**
-   * Sends or handles a protocol install request.
-   *
-   * @param request The install request.
-   * @param responseCallback A install response callback.
-   */
-  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback);
-
-  /**
    * Sends or handles a protocol poll request.
    *
    * @param request The poll request.

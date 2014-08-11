@@ -13,39 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.List;
 
 /**
- * Protocol client.
+ * An ordered list of log entries.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public interface Entries<U extends Entry> extends List<U> {
 
   /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
+   * Returns a typed entry.
    *
-   * @param callback A callback to be called once connected.
+   * @param index The index of the entry to return.
+   * @param type The type of the entry to return.
+   * @return The entry at the given index.
    */
-  void connect(AsyncCallback<Void> callback);
+  <T extends U> T get(int index, Class<T> type);
 
   /**
-   * Closes the client.
-   */
-  void close();
-
-  /**
-   * Closes the client.
+   * Returns a sublist of the entries list as a given type.
    *
-   * @param callback A callback to be called once closed.
+   * @param fromIndex The start index.
+   * @param toIndex The end index.
+   * @param type The type of entries expected.
+   * @return A sublist of entries of the given type.
    */
-  void close(AsyncCallback<Void> callback);
+  <T extends U> List<T> subList(int fromIndex, int toIndex, Class<T> type);
 
 }

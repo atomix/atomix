@@ -35,7 +35,7 @@ public class SubmitCommandRequest extends Request {
     super(null);
   }
 
-  public SubmitCommandRequest(String id, String command, Arguments args) {
+  public SubmitCommandRequest(Object id, String command, Arguments args) {
     super(id);
     this.command = command;
     this.args = args;

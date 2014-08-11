@@ -16,6 +16,7 @@
 package net.kuujo.copycat;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -29,7 +30,6 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.TreeMap;
-import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
@@ -37,6 +37,7 @@ import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.log.Entries;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
@@ -44,13 +45,9 @@ import net.kuujo.copycat.log.impl.NoOpEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.Quorum;
 
 /**
@@ -66,7 +63,6 @@ import net.kuujo.copycat.util.Quorum;
  */
 class Leader extends BaseState implements Observer {
   private static final Logger logger = Logger.getLogger(Leader.class.getCanonicalName());
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private final Timer pingTimer = new Timer();
   private TimerTask pingTimerTask;
   private final List<RemoteReplica> replicas = new ArrayList<>();
@@ -85,18 +81,25 @@ class Leader extends BaseState implements Observer {
     // the leader.
     setPingTimer();
 
-    // The first thing the leader needs to do is check whether the log is empty.
-    // If the log is empty then we immediately commit an empty SnapshotEntry to
-    // the log which will be replicated to other nodes if necessary. The first
-    // entry in the log must always be a snapshot entry for consistency. This ensures
-    // that when a new node joins the cluster, the current state machine snapshot
-    // will be immediately replicated to it, bringing the new node up to date much
-    // more quickly than if we had to replicate a large number of log entries.
-    if (context.log.isEmpty()) {
-      Snapshot snapshot = context.stateMachine.takeSnapshot();
-      byte[] snapshotBytes = serializer.writeValue(snapshot);
-      context.log.appendEntry(new SnapshotEntry(context.getCurrentTerm(), context.cluster.config().getMembers(), snapshotBytes, true));
+    // When the leader is first elected, it needs to commit any pending commands
+    // in its log to the state machine and then commit a snapshot to its log.
+    // This methodology differs slightly from the standard Raft algorithm. Instead
+    // if storing snapshots in a separate file, we store them as normal log entries.
+    // Using this methodology, *all* nodes should always have a snapshot as the
+    // first entry in their log, whether it be a local snapshot or a snapshot that
+    // was replicated by the leader. This greatly simplifies snapshot management as
+    // snapshots are simply replicated as a normal part of each node's log.
+    for (long i = context.getLastApplied(); i < context.log.lastIndex(); i++) {
+      applyEntry(i);
     }
+
+    // Once all pending entries have been applied to the state machine, create
+    // a new snapshot of the local state machine state, commit it to the local
+    // log, and wipe the log of committed entries.
+    Entries<SnapshotEntry> snapshotEntries = createSnapshot();
+    long index = context.log.lastIndex() + 1;
+    context.log.appendEntries(snapshotEntries);
+    context.log.removeBefore(index);
 
     // Next, the leader must write a no-op entry to the log and replicate the log
     // to all the nodes in the cluster. This ensures that other nodes are notified
@@ -249,6 +252,17 @@ class Leader extends BaseState implements Observer {
       }
     };
     pingTimer.schedule(pingTimerTask, context.config().getHeartbeatInterval());
+  }
+
+  @Override
+  public void appendEntries(final AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> responseCallback) {
+    if (request.term() > context.getCurrentTerm()) {
+      super.appendEntries(request, responseCallback);
+    } else if (request.term() < context.getCurrentTerm()) {
+      responseCallback.call(new AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false)));
+    } else {
+      context.transition(Follower.class);
+    }
   }
 
   @Override
@@ -461,69 +475,11 @@ class Leader extends BaseState implements Observer {
      */
     private void update() {
       if (open && running.compareAndSet(false, true)) {
-        // If the next log entry to send is the first entry in the log, the
-        // entry should be a SnapshotEntry. This is because CopyCat requires
-        // that the first entry in the log *always* be a snapshot entry. If
-        // the first entry is indeed a snapshot entry, replicate the snapshot
-        // to the remote replica.
-        if (nextIndex == context.log.firstIndex()) {
-          Entry entry = context.log.getEntry(context.log.firstIndex());
-          if (entry instanceof SnapshotEntry) {
-            doInstall(context.log.firstIndex(), (SnapshotEntry) entry);
-          }
-        } else if (nextIndex <= context.log.lastIndex() || matchIndex < context.getCommitIndex()) {
+        if (nextIndex <= context.log.lastIndex() || matchIndex < context.getCommitIndex()) {
           doSync();
         } else {
           doPing();
         }
-      }
-    }
-
-    /**
-     * Installs a snapshot to the remote replica.
-     */
-    private void doInstall(long index, SnapshotEntry entry) {
-      // Snapshots are replicated incrementally in 4096 byte chunks
-      // since they could be very large. We send each chunk and wait
-      // for a successful response before sending the next. Note that
-      // replication to the remote replica will essentially be haulted
-      // until the snapshot has been replicated and installed.
-      doIncrementalInstall(index, entry.term(), entry.data(), 0, 4096, new AsyncCallback<Void>() {
-        @Override
-        public void call(AsyncResult<Void> result) {
-          if (result.succeeded()) {
-            nextIndex++;
-            running.set(false);
-            triggerCallbacks();
-            update();
-          } else {
-            running.set(false);
-            triggerCallbacks();
-          }
-        }
-      });
-    }
-
-    /**
-     * Sends incremental install requests to the replica.
-     */
-    private void doIncrementalInstall(final long index, final long term, final byte[] snapshot, final int position, final int length, final AsyncCallback<Void> callback) {
-      if (position == snapshot.length) {
-        callback.call(new AsyncResult<Void>((Void) null));
-      } else {
-        final int bytesLength = snapshot.length - position > length ? length : snapshot.length - position;
-        byte[] bytes = new byte[bytesLength];
-        System.arraycopy(snapshot, position, bytes, 0, bytesLength);
-        member.protocol().client().installSnapshot(new InstallSnapshotRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.localMember().uri(), index, term, context.cluster.config().getMembers(), bytes, position + bytesLength == snapshot.length), new AsyncCallback<InstallSnapshotResponse>() {
-          @Override
-          public void call(AsyncResult<InstallSnapshotResponse> result) {
-            if (result.succeeded()) {
-              doIncrementalInstall(index, term, snapshot, position + bytesLength, length, callback);
-            } else {
-              callback.call(new AsyncResult<Void>(result.cause()));
-            }
-          }
-        });
       }
     }
 
@@ -534,9 +490,37 @@ class Leader extends BaseState implements Observer {
       final long prevIndex = nextIndex - 1;
       final Entry prevEntry = context.log.getEntry(prevIndex);
 
-      // Load up to ten entries for replication.
-      final List<Entry> entries = context.log.getEntries(nextIndex, nextIndex + 10 < context.log.lastIndex() ? nextIndex+10 : context.log.lastIndex());
+      // Create a list of up to ten entries to send to the follower.
+      // We can only send one snapshot entry in any given request. So, if any of
+      // the entries are snapshot entries, send all entries up to the snapshot and
+      // then send snapshot entries individually.
+      List<Entry> entries = new ArrayList<>();
+      long lastIndex = nextIndex + 10 > context.log.lastIndex() ? context.log.lastIndex() : nextIndex + 10;
+      for (long i = nextIndex; i < lastIndex; i++) {
+        Entry entry = context.log.getEntry(i);
 
+        // If we ran into a snapshot entry, immediately send all entries up to the
+        // snapshot entry. If the snapshot entry is the first entry, send snapshot
+        // entries one at a time.
+        if (entry instanceof SnapshotEntry) {
+          if (entries.isEmpty()) {
+            doAppendEntries(prevIndex, prevEntry, Arrays.asList(entry));
+          } else {
+            doAppendEntries(prevIndex, prevEntry, entries);
+          }
+          return;
+        } else {
+          entries.add(entry);
+        }
+      }
+
+      doAppendEntries(prevIndex, prevEntry, entries);
+    }
+
+    /**
+     * Sends an append entries request to the follower.
+     */
+    private void doAppendEntries(long prevIndex, Entry prevEntry, List<Entry> entries) {
       final long commitIndex = context.getCommitIndex();
       if (logger.isLoggable(Level.FINER)) {
         if (!entries.isEmpty()) {
@@ -550,7 +534,7 @@ class Leader extends BaseState implements Observer {
         }
       }
 
-      AppendEntriesRequest request = new AppendEntriesRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+      AppendEntriesRequest request = new AppendEntriesRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
       member.protocol().client().appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
         public void call(AsyncResult<AppendEntriesResponse> result) {
@@ -645,7 +629,7 @@ class Leader extends BaseState implements Observer {
      */
     private void doPing() {
       // The "ping" request is simply an empty synchronization request.
-      AppendEntriesRequest request = new AppendEntriesRequest(UUID.randomUUID().toString(), context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
+      AppendEntriesRequest request = new AppendEntriesRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
       member.protocol().client().appendEntries(request, new AsyncCallback<AppendEntriesResponse>() {
         @Override
         public void call(AsyncResult<AppendEntriesResponse> result) {

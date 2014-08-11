@@ -13,39 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
-
-import net.kuujo.copycat.AsyncCallback;
+package net.kuujo.copycat.log.impl;
 
 /**
- * Protocol client.
+ * Snapshot chunk entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public class SnapshotChunkEntry extends SnapshotEntry {
+  private static final long serialVersionUID = 5312083721474985163L;
+  private byte[] data;
+
+  public SnapshotChunkEntry() {
+    super();
+  }
+
+  public SnapshotChunkEntry(long term, byte[] data) {
+    super(term);
+    this.data = data;
+  }
 
   /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
+   * Returns the entry's chunk of snapshot data.
    *
-   * @param callback A callback to be called once connected.
+   * @return The entry's chunk of snapshot data.
    */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
-
-  /**
-   * Closes the client.
-   *
-   * @param callback A callback to be called once closed.
-   */
-  void close(AsyncCallback<Void> callback);
+  public byte[] data() {
+    return data;
+  }
 
 }

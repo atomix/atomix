@@ -15,37 +15,21 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.AsyncCallback;
+import net.kuujo.copycat.CopyCatContext;
 
 /**
- * Protocol client.
+ * Message correlation strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public interface CorrelationStrategy<T> {
 
   /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
+   * Returns the next correlation ID for the given context.
    *
-   * @param callback A callback to be called once connected.
+   * @param context The copycat context.
+   * @return The unique correlation ID.
    */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
-
-  /**
-   * Closes the client.
-   *
-   * @param callback A callback to be called once closed.
-   */
-  void close(AsyncCallback<Void> callback);
+  T nextCorrelationId(CopyCatContext context);
 
 }

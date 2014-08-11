@@ -37,7 +37,7 @@ public class RequestVoteRequest extends Request {
     super(null);
   }
 
-  public RequestVoteRequest(String id, long term, String candidate, long lastLogIndex, long lastLogTerm) {
+  public RequestVoteRequest(Object id, long term, String candidate, long lastLogIndex, long lastLogTerm) {
     super(id);
     this.term = term;
     this.candidate = candidate;

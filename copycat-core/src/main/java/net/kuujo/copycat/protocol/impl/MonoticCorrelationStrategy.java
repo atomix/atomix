@@ -13,39 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.AsyncCallback;
+import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.protocol.CorrelationStrategy;
 
 /**
- * Protocol client.
+ * Correlation strategy that uses monotonically increasing IDs.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public class MonoticCorrelationStrategy implements CorrelationStrategy<Long> {
+  private long id;
 
-  /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
-   *
-   * @param callback A callback to be called once connected.
-   */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
-
-  /**
-   * Closes the client.
-   *
-   * @param callback A callback to be called once closed.
-   */
-  void close(AsyncCallback<Void> callback);
+  @Override
+  public Long nextCorrelationId(CopyCatContext context) {
+    return ++id;
+  }
 
 }

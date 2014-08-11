@@ -13,39 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.log.impl;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.Set;
 
 /**
- * Protocol client.
+ * Entry indicating the start of a snapshot set.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public class SnapshotStartEntry extends SnapshotEntry {
+  private static final long serialVersionUID = 2026796603990813501L;
+  private Set<String> cluster;
+
+  public SnapshotStartEntry() {
+    super();
+  }
+
+  public SnapshotStartEntry(long term, Set<String> cluster) {
+    super(term);
+    this.cluster = cluster;
+  }
 
   /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
+   * Returns the snapshot cluster configuration.
    *
-   * @param callback A callback to be called once connected.
+   * @return The snapshot cluster configuration.
    */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
-
-  /**
-   * Closes the client.
-   *
-   * @param callback A callback to be called once closed.
-   */
-  void close(AsyncCallback<Void> callback);
+  public Set<String> cluster() {
+    return cluster;
+  }
 
 }

@@ -97,7 +97,7 @@ public class CopyCatTest {
           cluster.addRemoteMember(String.format("direct:%d", j));
         }
       }
-      instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().setMaxLogSize(10), registry));
+      instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().withMaxLogSize(10), registry));
     }
     return instances;
   }

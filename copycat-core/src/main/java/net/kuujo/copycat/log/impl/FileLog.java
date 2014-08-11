@@ -20,7 +20,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.TreeMap;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
@@ -38,11 +40,14 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  */
 public class FileLog implements Log {
   private static final Serializer serializer  = SerializerFactory.getSerializer();
-  private static final String separator = System.getProperty("line.separator");
+  private static final String SEPARATOR = System.getProperty("line.separator");
+  private static final Byte DELIMITER = '\0';
   private File f;
   private RandomAccessFile file;
   private long firstIndex;
   private long lastIndex;
+  private int bufferSize = 1000;
+  private final TreeMap<Long, Entry> buffer = new TreeMap<>();
 
   public FileLog(String fileName) {
     this.f = new File(fileName);
@@ -50,6 +55,35 @@ public class FileLog implements Log {
 
   public FileLog(File file) {
     this.f = file;
+  }
+
+  /**
+   * Sets the internal entry buffer size.
+   *
+   * @param bufferSize The internal entry read buffer size.
+   */
+  public void setBufferSize(int bufferSize) {
+    this.bufferSize = bufferSize;
+  }
+
+  /**
+   * Returns the internal entry read buffer size.
+   *
+   * @return The internal entry read buffer size.
+   */
+  public int getBufferSize() {
+    return bufferSize;
+  }
+
+  /**
+   * Sets the internal entry buffer size.
+   *
+   * @param bufferSize The internal entry read buffer size.
+   * @return The file log.
+   */
+  public FileLog withBufferSize(int bufferSize) {
+    this.bufferSize = bufferSize;
+    return this;
   }
 
   @Override
@@ -92,7 +126,7 @@ public class FileLog implements Log {
   }
 
   private long parseIndex(String line) {
-    return Long.valueOf(line.substring(0, line.indexOf(":")));
+    return Long.valueOf(line.substring(0, line.indexOf(DELIMITER)));
   }
 
   @Override
@@ -111,15 +145,17 @@ public class FileLog implements Log {
     try {
       String bytes = new StringBuilder()
         .append(index)
-        .append(':')
+        .append(DELIMITER)
         .append(new String(serializer.writeValue(entry)))
-        .append(separator)
+        .append(SEPARATOR)
         .toString();
       file.writeBytes(bytes);
       lastIndex++;
       if (firstIndex == 0) {
         firstIndex = 1;
       }
+      buffer.put(index, entry);
+      cleanBuffer();
       return index;
     } catch (IOException e) {
       throw new LogException(e);
@@ -127,39 +163,48 @@ public class FileLog implements Log {
   }
 
   @Override
-  public boolean containsEntry(long index) {
-    return indexInRange(index);
+  public List<Long> appendEntries(Entry... entries) {
+    return appendEntries(Arrays.asList(entries));
   }
 
   @Override
-  public synchronized Entry getEntry(long index) {
-    Entry entry = null;
-    if (indexInRange(index)) {
-      try {
-        findFilePointer(index);
-        String line = file.readLine();
-        if (line != null) {
-          entry = serializer.readValue(line.substring(String.valueOf(index).length() + 1).getBytes(), Entry.class);
-        }
-        file.seek(file.length());
-      } catch (IOException e) {
-        throw new LogException(e);
-      }
+  public List<Long> appendEntries(List<? extends Entry> entries) {
+    long index = lastIndex+1;
+    List<Long> indices = new ArrayList<>();
+    StringBuilder bytesBuilder = new StringBuilder();
+    for (Entry entry : entries) {
+      bytesBuilder.append(index)
+        .append(DELIMITER)
+        .append(new String(serializer.writeValue(entry)))
+        .append(SEPARATOR);
+      buffer.put(index, entry);
+      indices.add(index++);
     }
-    return entry;
+
+    try {
+      file.writeBytes(bytesBuilder.toString());
+      if (firstIndex == 0) {
+        firstIndex = 1;
+      }
+      lastIndex += entries.size();
+      cleanBuffer();
+      return indices;
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
   }
 
   @Override
-  public synchronized Log setEntry(long index, Entry entry) {
+  public long setEntry(long index, Entry entry) {
     try {
       long pointer = findFilePointer(index);
       String line = file.readLine();
       int length = line.length();
       String bytes = new StringBuilder()
         .append(index)
-        .append(':')
+        .append(DELIMITER)
         .append(new String(serializer.writeValue(entry)))
-        .append(separator)
+        .append(SEPARATOR)
         .toString();
       int newLength = bytes.length();
       if (newLength > length) {
@@ -173,7 +218,100 @@ public class FileLog implements Log {
     } catch (IOException e) {
       throw new LogException(e);
     }
-    return this;
+    return index;
+  }
+
+  @Override
+  public long prependEntry(Entry entry) {
+    if (firstIndex == 0) {
+      return appendEntry(entry);
+    }
+
+    try {
+      long index = firstIndex - 1;
+      if (index < 1) {
+        throw new IndexOutOfBoundsException("Cannot prepend entry at index " + index);
+      }
+      String bytes = new StringBuilder()
+        .append(index)
+        .append(DELIMITER)
+        .append(new String(serializer.writeValue(entry)))
+        .append(SEPARATOR)
+        .toString();
+      expandFile(0, bytes.length());
+      file.seek(0);
+      file.writeBytes(bytes);
+      file.seek(file.length());
+      firstIndex = index;
+      return index;
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  @Override
+  public List<Long> prependEntries(Entry... entries) {
+    return prependEntries(Arrays.asList(entries));
+  }
+
+  @Override
+  public List<Long> prependEntries(List<? extends Entry> entries) {
+    if (firstIndex == 0) {
+      return appendEntries(entries);
+    }
+
+    if (firstIndex - entries.size() < 1) {
+      throw new IndexOutOfBoundsException("Cannot prepend " + entries.size() + " entries at index " + (firstIndex - 1));
+    }
+
+    try {
+      List<Long> indices = new ArrayList<>();
+      StringBuilder bytes = new StringBuilder();
+      for (int i = entries.size() - 1; i >= 0; i--) {
+        Entry entry = entries.get(i);
+        long index = firstIndex - entries.size() + i;
+        bytes.append(index)
+          .append(DELIMITER)
+          .append(new String(serializer.writeValue(entry)))
+          .append(SEPARATOR);
+      }
+
+      expandFile(0, bytes.length());
+      file.seek(0);
+      file.writeBytes(bytes.toString());
+      file.seek(file.length());
+      firstIndex -= entries.size();
+      return indices;
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  @Override
+  public boolean containsEntry(long index) {
+    return indexInRange(index);
+  }
+
+  @Override
+  public synchronized Entry getEntry(long index) {
+    Entry entry = buffer.get(index);
+    if (entry != null) {
+      return entry;
+    }
+
+    if (indexInRange(index)) {
+      try {
+        findFilePointer(index);
+        String line = file.readLine();
+        if (line != null) {
+          entry = serializer.readValue(line.substring(String.valueOf(index).length() + 1).getBytes(), Entry.class);
+        }
+        file.seek(file.length());
+      } catch (IOException e) {
+        throw new LogException(e);
+      }
+    }
+    return entry;
   }
 
   @Override
@@ -214,6 +352,7 @@ public class FileLog implements Log {
       long pointer = findFilePointer(index);
       compactFile(pointer, 0);
       firstIndex = index;
+      cleanBuffer();
     }
   }
 
@@ -225,6 +364,7 @@ public class FileLog implements Log {
         file.setLength(pointer);
         lastIndex = index;
         file.seek(file.length());
+        cleanBuffer();
       } catch (IOException e) {
         throw new LogException(e);
       }
@@ -246,6 +386,7 @@ public class FileLog implements Log {
     if (!indexInRange(index)) {
       throw new IndexOutOfBoundsException("Index out of bounds");
     }
+
     try {
       file.seek(0);
       long currentIndex = firstIndex;
@@ -312,6 +453,16 @@ public class FileLog implements Log {
       file.seek(file.length());
     } catch (IOException e) {
       throw new LogException(e);
+    }
+  }
+
+  /**
+   * Cleans the buffer of entries which should no longer be buffered.
+   */
+  private void cleanBuffer() {
+    if (lastIndex % 100 == 0) {
+      long lowIndex = lastIndex - bufferSize;
+      buffer.headMap(lowIndex > firstIndex ? lowIndex : firstIndex).clear();
     }
   }
 

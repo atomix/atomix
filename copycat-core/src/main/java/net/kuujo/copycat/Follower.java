@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 
@@ -91,12 +89,6 @@ class Follower extends BaseState {
   public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback) {
     resetTimer();
     super.appendEntries(request, responseCallback);
-  }
-
-  @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback) {
-    resetTimer();
-    super.installSnapshot(request, responseCallback);
   }
 
   @Override

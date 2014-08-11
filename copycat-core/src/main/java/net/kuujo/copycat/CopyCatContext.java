@@ -397,6 +397,10 @@ public class CopyCatContext {
     return this;
   }
 
+  Object nextCorrelationId() {
+    return config.getCorrelationStrategy().nextCorrelationId(this);
+  }
+
   /**
    * Submits a command to the service.
    *

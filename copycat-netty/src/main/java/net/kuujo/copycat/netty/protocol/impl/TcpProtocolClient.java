@@ -28,8 +28,6 @@ import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
@@ -41,7 +39,7 @@ import net.kuujo.copycat.protocol.SubmitCommandResponse;
 public class TcpProtocolClient implements ProtocolClient {
   private final TcpProtocol protocol;
   private Channel channel;
-  private final Map<String, AsyncCallback<? extends Response>> responseHandlers = new HashMap<>();
+  private final Map<Object, AsyncCallback<? extends Response>> responseHandlers = new HashMap<>();
 
   public TcpProtocolClient(TcpProtocol protocol) {
     this.protocol = protocol;
@@ -62,24 +60,6 @@ public class TcpProtocolClient implements ProtocolClient {
       });
     } else {
       callback.call(new AsyncResult<AppendEntriesResponse>(new ProtocolException("Client not connected")));
-    }
-  }
-
-  @Override
-  public void installSnapshot(final InstallSnapshotRequest request, final AsyncCallback<InstallSnapshotResponse> callback) {
-    if (channel != null) {
-      channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            responseHandlers.put(request.id(), callback);
-          } else {
-            callback.call(new AsyncResult<InstallSnapshotResponse>(new ProtocolException(future.cause())));
-          }
-        }
-      });
-    } else {
-      callback.call(new AsyncResult<InstallSnapshotResponse>(new ProtocolException("Client not connected")));
     }
   }
 
