@@ -183,11 +183,10 @@ public class FileLog implements Log {
 
     try {
       file.writeBytes(bytesBuilder.toString());
-      lastIndex += entries.size();
       if (firstIndex == 0) {
         firstIndex = 1;
       }
-      lastIndex += indices.size();
+      lastIndex += entries.size();
       cleanBuffer();
       return indices;
     } catch (IOException e) {
