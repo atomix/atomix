@@ -121,4 +121,13 @@ public class Snapshot implements Serializable {
     data.clear();
   }
 
+  /**
+   * Returns a map view of the snapshot.
+   *
+   * @return The snapshot as a map.
+   */
+  public Map<String, Object> toMap() {
+    return data;
+  }
+
 }

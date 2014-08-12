@@ -19,6 +19,7 @@ various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io
 User Manual
 ===========
 
+1. [A Brief Introduction](#a-brief-introduction)
 1. [How it works](#how-it-works)
    * [State machines](#state-machines)
    * [Commands](#commands)
@@ -64,6 +65,78 @@ User Manual
       * [Vert.x Event Bus](#vertx-event-bus-endpoint)
       * [Vert.x TCP](#vertx-tcp-endpoint)
       * [Vert.x HTTP](#vertx-http-endpoint)
+
+# A brief introduction
+CopyCat is a "protocol agnostic" implementation of the Raft consensus algorithm. It
+provides a framework for constructing a partition-tolerant replicated state machine
+over a variety of wire-level protocols. It sounds complex, but the API is actually
+quite simply. Here's a quick example.
+
+```java
+public class KeyValueStore implements StateMachine {
+  private Map<String, Object> data = new HashMap<>();
+
+  @Override
+  public Snapshot takeSnapshot() {
+    return new Snapshot(data);
+  }
+
+  @Override
+  public void installSnapshot(Snapshot snapshot) {
+    this.data = snapshot.toMap();
+  }
+
+  @Command(name="get", type=Command.Type.READ)
+  public Object get(@Command.Argument("key") String key) {
+    return data.get(key);
+  }
+
+  @Command(name="set", type=Command.Type.WRITE)
+  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+    data.put(key, value);
+  }
+
+  @Command(name="delete", type=Command.Type.WRITE)
+  public void delete(@Command.Argument("key") String key) {
+    data.remove(key);
+  }
+
+}
+```
+
+Here we've created a simple key value store. By deploying this state machine on several
+nodes in a cluster, CopyCat will ensure commands (i.e. `get`, `set`, and `delete`) are
+applied to the state machine in the order in which they're submitted to the cluster
+(log order). Internally, CopyCat uses a replicated log to order and replicate commands,
+and it uses leader election to coordinate log replication.
+
+```java
+Log log = new FileLog("key-value.log");
+```
+
+To configure the CopyCat cluster, we simply create a `ClusterConfig`.
+
+```java
+ClusterConfig cluster = new StaticClusterConfig();
+cluster.setLocalMember("tcp://localhost:8080");
+cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
+```
+
+Note that the cluster configuration identifies a particular protocol, `tcp`. These are
+the endpoints the nodes within the CopyCat cluster use to communicate with one another.
+CopyCat provides a number of different [protocol](#protocols) and [endpoint](#endpoints)
+implementations.
+
+Now that the cluster has been set up, we simply create a `CopyCat` instance, specifying
+an [endpoint](#endpoints) through which the outside world can communicate with the cluster.
+
+```java
+CopyCat copycat = new CopyCat("http://localhost:5000", new KeyValueStore(), log, cluster);
+copycat.start();
+```
+
+That's it! We've just created a highly consistent, fault-tolerant key-value store with an
+HTTP API in less than 25 lines of code!
 
 # How it works
 CopyCat uses a Raft-based consensus algorithm to perform leader election and state
