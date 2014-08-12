@@ -23,7 +23,6 @@ import net.kuujo.copycat.uri.Optional;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.uri.UriQueryParam;
 
 /**
  * Netty TCP protocol.
@@ -34,7 +33,7 @@ public class TcpProtocol implements Protocol {
   private String host = "localhost";
   private int port;
   private int threads = 1;
-  private boolean tcpKeepAlive;
+  private boolean tcpKeepAlive = true;
   private boolean tcpNoDelay;
   private boolean reuseAddress;
   private int sendBufferSize = 8 * 1024;
@@ -125,7 +124,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param numThreads The number of server threads to run.
    */
-  @UriQueryParam("threads")
   public void setThreads(int numThreads) {
     this.threads = numThreads;
   }
@@ -155,7 +153,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param keepAlive Whether to keep connections alive.
    */
-  @UriQueryParam("keepAlive")
   public void setKeepAlive(boolean keepAlive) {
     this.tcpKeepAlive = keepAlive;
   }
@@ -185,7 +182,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param noDelay If <code>true</code>, turns of Nagle's algorithm.
    */
-  @UriQueryParam("noDelay")
   public void setNoDelay(boolean noDelay) {
     this.tcpNoDelay = noDelay;
   }
@@ -215,7 +211,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param reuseAddress Whether to reuseAddress.
    */
-  @UriQueryParam("reuseAddress")
   public void setReuseAddress(boolean reuseAddress) {
     this.reuseAddress = reuseAddress;
   }
@@ -303,7 +298,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param useSsl Whether to use SSL encryption.
    */
-  @UriQueryParam("ssl")
   public void setSsl(boolean useSsl) {
     this.useSsl = useSsl;
   }
@@ -333,7 +327,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param soLinger TCP soLinger settings for connections.
    */
-  @UriQueryParam("soLinger")
   public void setSoLinger(int soLinger) {
     this.soLinger = soLinger;
   }
@@ -363,7 +356,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param trafficClass The traffic class.
    */
-  @UriQueryParam("trafficClass")
   public void setTrafficClass(int trafficClass) {
     this.trafficClass = trafficClass;
   }
@@ -393,7 +385,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param backlog The accept backlog.
    */
-  @UriQueryParam("acceptBacklog")
   public void setAcceptBacklog(int backlog) {
     this.acceptBacklog = backlog;
   }
@@ -423,7 +414,6 @@ public class TcpProtocol implements Protocol {
    *
    * @param connectTimeout The connection timeout.
    */
-  @UriQueryParam("connectTimeout")
   public void setConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
   }
