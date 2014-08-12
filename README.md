@@ -42,6 +42,8 @@ User Manual
    * [Creating the CopyCatContext](#creating-the-copycatcontext)
    * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
+1. [Serialization](#serialization)
+   * [Providing custom log serializers](#providing-custom-log-serializers)
 1. [Protocols](#protocols-1)
    * [Writing a protocol server](#writing-a-protocol-server)
    * [Writing a protocol client](#writing-a-protocol-client)
@@ -484,6 +486,60 @@ When a command is submitted to a `CopyCatContext`, the command will automaticall
 be forwarded on to the current cluster [leader](#leaders). If the cluster does not have any
 currently [elected](#leader-election) leader (or the node to which the command is submitted
 doesn't know of any cluster leader) then the submission will fail.
+
+# Serializers
+CopyCat provides a pluggable serialization API that allows users to control how log
+entries are serialized to the log. CopyCat provides two serializer implementations, one
+using the core Java serialization mechanism, and one [Jackson](http://jackson.codehaus.org/)
+based serializer (the default). To configure the serializer in use, add a file to the classpath
+at `META-INF/services/net/kuujo/copycat/Serializer` containing the serializer factory class name:
+* `net.kuujo.copycat.setializer.impl.JacksonSerializerFactory` (default)
+* `net.kuujo.copycat.serializer.impl.JavaSerializerFactory`
+
+### Providing custom log serializers
+CopyCat locates log serializers via its custom service loader implementation. To provide
+a custom serializer to CopyCat, simply add a configuration file to your classpath at
+`META-INF/services/net/kuujo/copycat/Serializer` containing the `Serializer` factory
+class name.
+
+```java
+public class JacksonSerializerFactory extends SerializerFactory {
+
+  @Override
+  public Serializer createSerializer() {
+    return new JacksonSerializer();
+  }
+
+}
+```
+
+The serializer factory should return a `Serializer` instance via the `createSerializer` method.
+This is the basic default serializer used by CopyCat:
+
+```java
+public class JacksonSerializer implements Serializer {
+  private final ObjectMapper mapper = new ObjectMapper();
+
+  @Override
+  public byte[] writeValue(Object value) {
+    try {
+      return mapper.writeValueAsBytes(value);
+    } catch (JsonProcessingException e) {
+      throw new SerializationException(e.getMessage());
+    }
+  }
+
+  @Override
+  public <T> T readValue(byte[] bytes, Class<T> type) {
+    try {
+      return mapper.readValue(bytes, type);
+    } catch (IOException e) {
+      throw new SerializationException(e.getMessage());
+    }
+  }
+
+}
+```
 
 # Protocols
 CopyCat is an abstract API that can implement the Raft consensus algorithm over
