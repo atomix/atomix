@@ -73,7 +73,7 @@ public class TcpProtocolServer implements ProtocolServer {
   public void start(final AsyncCallback<Void> callback) {
     // TODO: Configure proper SSL trust store.
     final SslContext sslContext;
-    if (protocol.isUseSsl()) {
+    if (protocol.isSsl()) {
       try {
         SelfSignedCertificate ssc = new SelfSignedCertificate();
         sslContext = SslContext.newServerContext(ssc.certificate(), ssc.privateKey());
@@ -107,10 +107,26 @@ public class TcpProtocolServer implements ProtocolServer {
         );
       }
     })
-    .option(ChannelOption.SO_BACKLOG, 128)
-    .option(ChannelOption.SO_SNDBUF, protocol.getSendBufferSize())
-    .option(ChannelOption.SO_RCVBUF, protocol.getReceiveBufferSize())
-    .childOption(ChannelOption.SO_KEEPALIVE, true);
+    .option(ChannelOption.SO_BACKLOG, 128);
+
+    if (protocol.getSendBufferSize() > -1) {
+      bootstrap.option(ChannelOption.SO_SNDBUF, protocol.getSendBufferSize());
+    }
+
+    if (protocol.getReceiveBufferSize() > -1) {
+      bootstrap.option(ChannelOption.SO_RCVBUF, protocol.getReceiveBufferSize());
+    }
+
+    bootstrap.option(ChannelOption.TCP_NODELAY, protocol.isNoDelay());
+    bootstrap.option(ChannelOption.SO_REUSEADDR, protocol.isReuseAddress());
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, protocol.isKeepAlive());
+    bootstrap.option(ChannelOption.SO_BACKLOG, protocol.getAcceptBacklog());
+
+    if (protocol.getTrafficClass() > -1) {
+      bootstrap.option(ChannelOption.IP_TOS, protocol.getTrafficClass());
+    }
+
+    bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
     // Bind and start to accept incoming connections.
     bootstrap.bind(protocol.getHost(), protocol.getPort()).addListener(new ChannelFutureListener() {

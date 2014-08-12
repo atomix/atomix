@@ -134,7 +134,7 @@ public class TcpProtocolClient implements ProtocolClient {
     }
 
     final SslContext sslContext;
-    if (protocol.isUseSsl()) {
+    if (protocol.isSsl()) {
       try {
         sslContext = SslContext.newClientContext(InsecureTrustManagerFactory.INSTANCE);
       } catch (SSLException e) {
@@ -164,9 +164,24 @@ public class TcpProtocolClient implements ProtocolClient {
               new TcpProtocolClientHandler(TcpProtocolClient.this)
           );
         }
-      })
-      .option(ChannelOption.SO_SNDBUF, protocol.getSendBufferSize())
-      .option(ChannelOption.SO_RCVBUF, protocol.getReceiveBufferSize());
+      });
+
+    if (protocol.getSendBufferSize() > -1) {
+      bootstrap.option(ChannelOption.SO_SNDBUF, protocol.getSendBufferSize());
+    }
+
+    if (protocol.getReceiveBufferSize() > -1) {
+      bootstrap.option(ChannelOption.SO_RCVBUF, protocol.getReceiveBufferSize());
+    }
+
+    if (protocol.getTrafficClass() > -1) {
+      bootstrap.option(ChannelOption.IP_TOS, protocol.getTrafficClass());
+    }
+
+    bootstrap.option(ChannelOption.TCP_NODELAY, protocol.isNoDelay());
+    bootstrap.option(ChannelOption.SO_LINGER, protocol.getSoLinger());
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, protocol.isKeepAlive());
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, protocol.getConnectTimeout());
 
     bootstrap.connect(protocol.getHost(), protocol.getPort()).addListener(new ChannelFutureListener() {
       @Override
