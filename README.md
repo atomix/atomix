@@ -54,7 +54,7 @@ User Manual
    * [Injecting URI arguments via annotated setters](#injecting-uri-arguments-annotated-setters)
    * [The complete protocol](#the-complete-protocol)
    * [Built-in protocols](#built-in-protocols)
-      * [Direct](#direct-protocol)
+      * [Local](#local-protocol)
       * [Netty TCP](#netty-tcp-protocol)
       * [Vert.x Event Bus](#vertx-event-bus-protocol)
       * [Vert.x TCP](#vertx-tcp-protocol)
@@ -304,7 +304,7 @@ the result. The leader is also responsible for maintaining log consistency durin
 
 ### Protocols
 The `copycat-core` project is purely an implementation of the Raft consensus algorithm.
-It does not implement any specific transport aside from a `direct` transport for testing.
+It does not implement any specific transport aside from a `local` transport for testing.
 Instead, the CopyCat API is designed to allow users to implement the transport layer
 using the `Protocol` API. CopyCat does, however, provide some core protocol implementations
 in the `copycat-netty` and `copycat-vertx` projects.
@@ -561,7 +561,7 @@ The CopyCat cluster configuration is `Observable`, and once the local node is el
 leader, it will begin observing the configuration for changes.
 
 Once the local node has been started, simply adding or removing nodes from the observable
-`DynamicClusterConfig` may cause the replica's configuration to be updated. However,
+`ClusterConfig` may cause the replica's configuration to be updated. However,
 it's important to remember that as with commands, configuration changes must go through
 the cluster leader and be replicated to the rest of the cluster. This allows CopyCat
 to ensure that logs remain consistent while nodes are added or removed, but it also
@@ -668,7 +668,7 @@ public class JacksonSerializer implements Serializer {
 # Protocols
 CopyCat is an abstract API that can implement the Raft consensus algorithm over
 any conceivable protocol. To do this, CopyCat provides a flexible protocol plugin
-system. Protocols use special URIs - such as `direct:foo` or `tcp://localhost:5050` -
+system. Protocols use special URIs - such as `local:foo` or `tcp://localhost:5050` -
 and CopyCat uses a custom service loader similar to the Java service loader. Using
 URIs, a protocol can be constructed and started by CopyCat without the large amounts
 of boilerplate code that would otherwise be required.
@@ -998,18 +998,18 @@ replicas, each protocol instance's client is used to send messages to those repl
 CopyCat maintains several built-in protocols, some of which are implemented on top
 of asynchronous frameworks like [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
-### Direct Protocol
-The `direct` protocol is a simple protocol that communicates between contexts using
+### Local Protocol
+The `local` protocol is a simple protocol that communicates between contexts using
 direct method calls. This protocol is intended purely for testing.
 
 ```java
 Registry registry = new ConcurrentRegistry();
-ClusterConfig cluster = new ClusterConfig("direct:foo");
-cluster.setRemoteMembers("direct:bar", "direct:baz");
+ClusterConfig cluster = new ClusterConfig("local:foo");
+cluster.setRemoteMembers("local:bar", "local:baz");
 CopyCatContext context = new CopyCatContext(new MyStateMachine, cluster, registry);
 ```
 
-Note that you should use a `ConcurrentRegistry` when using the `direct` protocol.
+Note that you should use a `ConcurrentRegistry` when using the `local` protocol.
 
 ### Netty TCP Protocol
 The netty `tcp` protocol communicates between replicas using Netty TCP channels.
@@ -1235,7 +1235,7 @@ cluster.setRemoteMembers("tcp://localhost:5556", "tcp://localhost:5557");
 ```
 
 In this case, we're using a TCP-based protocol. Remember that CopyCat core does
-not implement any network-based protocols (it does provide a test `direct` protocol),
+not implement any network-based protocols (it does provide a test `local` protocol),
 but additional projects provide protocol implementations. See the section on
 [protocols](#protocols) for more info.
 

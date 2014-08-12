@@ -28,16 +28,16 @@ import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 /**
- * Direct protocol server.
+ * Local protocol server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectProtocolServer implements ProtocolServer {
+public class LocalProtocolServer implements ProtocolServer {
   private final String address;
   private final CopyCatContext context;
   private ProtocolHandler requestHandler;
 
-  public DirectProtocolServer(String address, CopyCatContext context) {
+  public LocalProtocolServer(String address, CopyCatContext context) {
     this.address = address;
     this.context = context;
   }

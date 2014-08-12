@@ -26,7 +26,7 @@ import net.kuujo.copycat.endpoint.Endpoint;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectEndpoint implements Endpoint {
+public class LocalEndpoint implements Endpoint {
   private CopyCatContext context;
 
   @Override
@@ -50,7 +50,7 @@ public class DirectEndpoint implements Endpoint {
    * @param callback An asynchronous callback to be called once complete.
    * @return
    */
-  public DirectEndpoint submitCommand(String command, Map<String, Object> args, AsyncCallback<Object> callback) {
+  public LocalEndpoint submitCommand(String command, Map<String, Object> args, AsyncCallback<Object> callback) {
     context.submitCommand(command, args, callback);
     return this;
   }

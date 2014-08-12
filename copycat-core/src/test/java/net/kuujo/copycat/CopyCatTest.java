@@ -93,10 +93,10 @@ public class CopyCatTest {
     Set<CopyCatContext> instances = new HashSet<>();
     for (int i = 1; i <= numInstances; i++) {
       ClusterConfig cluster = new ClusterConfig();
-      cluster.setLocalMember(String.format("direct:%d", i));
+      cluster.setLocalMember(String.format("local:%d", i));
       for (int j = 1; j <= numInstances; j++) {
         if (j != i) {
-          cluster.addRemoteMember(String.format("direct:%d", j));
+          cluster.addRemoteMember(String.format("local:%d", j));
         }
       }
       instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().withMaxLogSize(10), registry));

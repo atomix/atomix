@@ -28,22 +28,22 @@ import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 /**
- * Direct protocol client.
+ * Local protocol client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectProtocolClient implements ProtocolClient {
+public class LocalProtocolClient implements ProtocolClient {
   private final String address;
   private final CopyCatContext context;
 
-  public DirectProtocolClient(String address, CopyCatContext context) {
+  public LocalProtocolClient(String address, CopyCatContext context) {
     this.address = address;
     this.context = context;
   }
 
   @Override
   public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
-    DirectProtocolServer server = context.registry().lookup(address);
+    LocalProtocolServer server = context.registry().lookup(address);
     if (server != null) {
       server.sync(request, callback);
     } else {
@@ -53,7 +53,7 @@ public class DirectProtocolClient implements ProtocolClient {
 
   @Override
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
-    DirectProtocolServer server = context.registry().lookup(address);
+    LocalProtocolServer server = context.registry().lookup(address);
     if (server != null) {
       server.poll(request, callback);
     } else {
@@ -63,7 +63,7 @@ public class DirectProtocolClient implements ProtocolClient {
 
   @Override
   public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
-    DirectProtocolServer server = context.registry().lookup(address);
+    LocalProtocolServer server = context.registry().lookup(address);
     if (server != null) {
       server.submit(request, callback);
     } else {

@@ -24,19 +24,19 @@ import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
 /**
- * Direct protocol implementation.
+ * Local protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectProtocol implements Protocol {
+public class LocalProtocol implements Protocol {
   private String address;
   private CopyCatContext context;
 
-  public DirectProtocol() {
+  public LocalProtocol() {
   }
 
   @UriInject
-  public DirectProtocol(@UriAuthority @UriSchemeSpecificPart String address) {
+  public LocalProtocol(@UriAuthority @UriSchemeSpecificPart String address) {
     this.address = address;
   }
 
@@ -71,19 +71,19 @@ public class DirectProtocol implements Protocol {
    * @param address The protocol address.
    * @return The protocol instance.
    */
-  public DirectProtocol withAddress(String address) {
+  public LocalProtocol withAddress(String address) {
     this.address = address;
     return this;
   }
 
   @Override
   public ProtocolServer createServer() {
-    return new DirectProtocolServer(address, context);
+    return new LocalProtocolServer(address, context);
   }
 
   @Override
   public ProtocolClient createClient() {
-    return new DirectProtocolClient(address, context);
+    return new LocalProtocolClient(address, context);
   }
 
 }
