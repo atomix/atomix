@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
@@ -134,7 +133,7 @@ public class EventBusProtocolServer implements ProtocolServer {
   private void doSubmit(final Message<JsonObject> message) {
     if (requestHandler != null) {
       final Object id = message.body().getValue("id");
-      SubmitCommandRequest request = new SubmitCommandRequest(id, message.body().getString("command"), new Arguments(message.body().getObject("args").toMap()));
+      SubmitCommandRequest request = new SubmitCommandRequest(id, message.body().getString("command"), message.body().getObject("args").toMap());
       requestHandler.submitCommand(request, new AsyncCallback<SubmitCommandResponse>() {
         @Override
         @SuppressWarnings({"unchecked", "rawtypes"})

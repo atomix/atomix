@@ -18,6 +18,7 @@ package net.kuujo.copycat;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -419,7 +420,7 @@ public class CopyCatContext {
    * @param callback An asynchronous callback to be called with the command result.
    * @return The replica context.
    */
-  public <T> CopyCatContext submitCommand(final String command, Arguments args, final AsyncCallback<T> callback) {
+  public <T> CopyCatContext submitCommand(final String command, Map<String, Object> args, final AsyncCallback<T> callback) {
     if (currentLeader == null) {
       callback.call(new AsyncResult<T>(new CopyCatException("No leader available")));
     } else if (!leaderConnected) {

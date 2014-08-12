@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import net.kuujo.copycat.Command.Argument;
 
 import org.junit.Assert;
@@ -45,7 +48,7 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testApplyUnnamedCommand() {
     AnnotatedStateMachine stateMachine = new TestApplyUnnamedCommand();
-    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new Arguments()));
+    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new HashMap<>()));
   }
 
   private static class TestApplyUnnamedCommand extends AnnotatedStateMachine {
@@ -58,7 +61,7 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testApplyNamedCommand() {
     AnnotatedStateMachine stateMachine = new TestApplyNamedCommand();
-    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new Arguments()));
+    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new HashMap<>()));
   }
 
   private static class TestApplyNamedCommand extends AnnotatedStateMachine {
@@ -71,10 +74,10 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testApplyOptionalArgCommand() {
     AnnotatedStateMachine stateMachine = new TestApplyOptionalArgCommand();
-    Arguments args1 = new Arguments();
+    Map<String, Object> args1 = new HashMap<>();
     args1.put("arg1", "bar");
     Assert.assertEquals("bar", stateMachine.applyCommand("foo", args1));
-    Assert.assertNull(stateMachine.applyCommand("foo", new Arguments()));
+    Assert.assertNull(stateMachine.applyCommand("foo", new HashMap<>()));
   }
 
   private static class TestApplyOptionalArgCommand extends AnnotatedStateMachine {
@@ -87,11 +90,11 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testApplyRequiredArgCommand() {
     AnnotatedStateMachine stateMachine = new TestApplyRequiredArgCommand();
-    Arguments args1 = new Arguments();
+    Map<String, Object> args1 = new HashMap<>();
     args1.put("arg1", "bar");
     Assert.assertEquals("bar", stateMachine.applyCommand("foo", args1));
     try {
-      stateMachine.applyCommand("foo", new Arguments());
+      stateMachine.applyCommand("foo", new HashMap<>());
       Assert.fail("No exception thrown");
     } catch (CopyCatException e) {
     }
@@ -107,7 +110,7 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testApplyManyArgsCommand() {
     AnnotatedStateMachine stateMachine = new TestApplyManyArgsCommand();
-    Arguments args = new Arguments();
+    Map<String, Object> args = new HashMap<>();
     args.put("arg1", "foo");
     args.put("arg2", "bar");
     Assert.assertEquals("foobar", stateMachine.applyCommand("foo", args));
@@ -123,7 +126,7 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testTakeSnapshotWithField() {
     AnnotatedStateMachine stateMachine = new TakeSnapshotWithFieldStateMachine();
-    Snapshot snapshot = stateMachine.takeSnapshot();
+    Map<String, Object> snapshot = stateMachine.takeSnapshot();
     Assert.assertEquals("bar", snapshot.get("foo"));
   }
 
@@ -135,7 +138,7 @@ public class AnnotatedStateMachineTest {
   @Test
   public void testInstallSnapshotWithField() {
     InstallSnapshotWithFieldStateMachine stateMachine = new InstallSnapshotWithFieldStateMachine();
-    Snapshot snapshot = new Snapshot();
+    Map<String, Object> snapshot = new HashMap<>();
     snapshot.put("foo", "bar");
     stateMachine.installSnapshot(snapshot);
     Assert.assertEquals("bar", stateMachine.foo);

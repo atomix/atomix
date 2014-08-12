@@ -17,6 +17,7 @@ package net.kuujo.copycat;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -24,12 +25,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import net.kuujo.copycat.log.Entries;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.LogException;
-import net.kuujo.copycat.log.impl.CombinedSnapshot;
 import net.kuujo.copycat.log.impl.ArrayListEntries;
+import net.kuujo.copycat.log.impl.CombinedSnapshot;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
-import net.kuujo.copycat.log.impl.SnapshotCombiner;
 import net.kuujo.copycat.log.impl.SnapshotChunkEntry;
+import net.kuujo.copycat.log.impl.SnapshotCombiner;
 import net.kuujo.copycat.log.impl.SnapshotEndEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.log.impl.SnapshotStartEntry;
@@ -280,6 +281,7 @@ abstract class BaseState implements State {
    * @param lastIndex The last index of the entry set being applied.
    * @param entries A list of snapshot entries.
    */
+  @SuppressWarnings("unchecked")
   protected void applySnapshot(long lastIndex, Entries<SnapshotEntry> entries) {
     try {
       CombinedSnapshot snapshot = new SnapshotCombiner()
@@ -287,7 +289,7 @@ abstract class BaseState implements State {
         .withChunks(entries.subList(1, entries.size() - 1, SnapshotChunkEntry.class))
         .withEnd(entries.get(entries.size() - 1, SnapshotEndEntry.class))
         .combine();
-      context.stateMachine.installSnapshot(serializer.readValue(snapshot.bytes(), Snapshot.class));
+      context.stateMachine.installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
       context.log.removeBefore(lastIndex - entries.size() + 1);
     } catch (LogException | SerializationException e) {
     } finally {
@@ -302,7 +304,7 @@ abstract class BaseState implements State {
    */
   protected Entries<SnapshotEntry> createSnapshot() {
     Entries<SnapshotEntry> entries = new ArrayListEntries<>();
-    Snapshot snapshot = context.stateMachine.takeSnapshot();
+    Map<String, Object> snapshot = context.stateMachine.takeSnapshot();
     long term = context.getCurrentTerm();
     entries.add(new SnapshotStartEntry(context.getCurrentTerm(), context.cluster.config().getMembers()));
     byte[] snapshotBytes = serializer.writeValue(snapshot);

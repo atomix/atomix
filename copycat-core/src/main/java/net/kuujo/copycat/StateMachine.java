@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat;
 
+import java.util.Map;
+
 /**
  * A state machine.
  *
@@ -27,14 +29,14 @@ public interface StateMachine {
    *
    * @return The state machine snapshot.
    */
-  Snapshot takeSnapshot();
+  Map<String, Object> takeSnapshot();
 
   /**
    * Installs a snapshot of the state machine state.
    *
    * @param snapshot The snapshot to install.
    */
-  void installSnapshot(Snapshot snapshot);
+  void installSnapshot(Map<String, Object> snapshot);
 
   /**
    * Exceutes a state machine command.
@@ -43,6 +45,6 @@ public interface StateMachine {
    * @param args The command arguments.
    * @return The command return value.
    */
-  Object applyCommand(String name, Arguments args);
+  Object applyCommand(String name, Map<String, Object> args);
 
 }

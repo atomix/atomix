@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
@@ -177,7 +176,7 @@ public class TcpProtocolServer implements ProtocolServer {
   private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final Object id = request.getValue("id");
-      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
+      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), request.getObject("args").toMap()), new AsyncCallback<SubmitCommandResponse>() {
         @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
         public void call(net.kuujo.copycat.AsyncResult<SubmitCommandResponse> result) {

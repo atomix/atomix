@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
@@ -84,7 +83,7 @@ public class EventBusEndpoint implements Endpoint {
     public void handle(final Message<JsonObject> message) {
       String command = message.body().getString("command");
       if (command != null) {
-        Arguments args = new Arguments(message.body().toMap());
+        Map<String, Object> args = message.body().toMap();
         args.remove("command");
         context.submitCommand(command, args, new AsyncCallback<Object>() {
           @Override

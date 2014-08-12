@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import net.kuujo.copycat.Arguments;
+import java.util.Map;
+
 import net.kuujo.copycat.log.Entry;
 
 /**
@@ -31,13 +32,13 @@ import net.kuujo.copycat.log.Entry;
 public class CommandEntry extends Entry {
   private static final long serialVersionUID = 3257184123473104135L;
   private String command;
-  private Arguments args;
+  private Map<String, Object> args;
 
   public CommandEntry() {
     super();
   }
 
-  public CommandEntry(long term, String command, Arguments args) {
+  public CommandEntry(long term, String command, Map<String, Object> args) {
     super(term);
     this.command = command;
     this.args = args;
@@ -57,7 +58,7 @@ public class CommandEntry extends Entry {
    *
    * @return The command arguments.
    */
-  public Arguments args() {
+  public Map<String, Object> args() {
     return args;
   }
 

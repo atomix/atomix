@@ -46,14 +46,14 @@ public abstract class AnnotatedStateMachine implements StateMachine, CommandProv
       this.info = info;
       this.method = method;
     }
-    private Object call(Arguments args) {
+    private Object call(Map<String, Object> args) {
       try {
         return method.invoke(stateMachine, buildArguments(args));
       } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
         throw new CopyCatException(e);
       }
     }
-    private Object[] buildArguments(Arguments arguments) {
+    private Object[] buildArguments(Map<String, Object> arguments) {
       Parameter[] params = method.getParameters();
       Object[] args = new Object[params.length];
       for (int i = 0; i < params.length; i++) {
@@ -112,8 +112,8 @@ public abstract class AnnotatedStateMachine implements StateMachine, CommandProv
   }
 
   @Override
-  public Snapshot takeSnapshot() {
-    Snapshot snapshot = new Snapshot();
+  public Map<String, Object> takeSnapshot() {
+    Map<String, Object> snapshot = new HashMap<>();
     for (Map.Entry<String, Field> entry : stateFields.entrySet()) {
       entry.getValue().setAccessible(true);
       try {
@@ -126,8 +126,8 @@ public abstract class AnnotatedStateMachine implements StateMachine, CommandProv
   }
 
   @Override
-  public void installSnapshot(Snapshot snapshot) {
-    for (String key : snapshot.keys()) {
+  public void installSnapshot(Map<String, Object> snapshot) {
+    for (String key : snapshot.keySet()) {
       Field field = stateFields.get(key);
       if (field != null) {
         field.setAccessible(true);
@@ -141,7 +141,7 @@ public abstract class AnnotatedStateMachine implements StateMachine, CommandProv
   }
 
   @Override
-  public Object applyCommand(String name, Arguments args) {
+  public Object applyCommand(String name, Map<String, Object> args) {
     CommandHolder command = commands.get(name);
     if (command != null) {
       return command.call(args);

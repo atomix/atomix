@@ -77,18 +77,18 @@ public class KeyValueStore implements StateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 
-  @Command(name="get", type=Command.Type.READ)
-  public Object get(@Command.Argument("key") String key) {
+  @Command(name = "get", type = Command.Type.READ)
+  public Object get(@Argument("key") String key) {
     return data.get(key);
   }
 
-  @Command(name="set", type=Command.Type.WRITE)
-  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+  @Command(name = "set", type = Command.Type.WRITE)
+  public void set(@Argument("key") String key, @Argument("value") Object value) {
     data.put(key, value);
   }
 
-  @Command(name="delete", type=Command.Type.WRITE)
-  public void delete(@Command.Argument("key") String key) {
+  @Command(name = "delete", type = Command.Type.WRITE)
+  public void delete(@Argument("key") String key) {
     data.remove(key);
   }
 
@@ -143,22 +143,53 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore imple
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 
-  @Command(name="get", type=Command.Type.READ)
-  public Object get(@Command.Argument("key") String key) {
+  @Command(name = "get", type = Command.Type.READ)
+  public Object get(@Argument("key") String key) {
     return data.get(key);
   }
 
-  @Command(name="set", type=Command.Type.WRITE)
-  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+  @Command(name = "set", type = Command.Type.WRITE)
+  public void set(@Argument("key") String key, @Argument("value") Object value) {
     data.put(key, value);
   }
 
-  @Command(name="delete", type=Command.Type.WRITE)
-  public void delete(@Command.Argument("key") String key) {
+  @Command(name = "delete", type = Command.Type.WRITE)
+  public void delete(@Argument("key") String key) {
     data.remove(key);
   }
 
 }
+```
+
+We can now execute commands on the state machine by making `POST` requests to
+the HTTP interface.
+
+```
+POST http://localhost:5000/set
+{
+  "key": "foo",
+  "value": "Hello world!"
+}
+
+200 OK
+
+POST http://localhost:5000/get
+{
+  "key": "foo"
+}
+
+200 OK
+
+{
+  "result": "Hello world!"
+}
+
+POST http://localhost:5000/delete
+{
+  "key": "foo"
+}
+
+200 OK
 ```
 
 # How it works
@@ -286,7 +317,7 @@ public interface StateMachine {
 
   void installSnapshot(Snapshot snapshot);
 
-  Object applyCommand(String command, Arguments args);
+  Object applyCommand(String command, Map<String, Object> args);
 
 }
 ```
@@ -384,7 +415,7 @@ public class MyStateMachine implements StateMachine {
   }
 
   @Override
-  public Object applyCommand(String command, Arguments args) {
+  public Object applyCommand(String command, Map<String, Object> args) {
     switch (command) {
       case "get":
         return data.get(args.get("key"));
@@ -419,18 +450,18 @@ public class MyStateMachine extends AnnotatedStateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 
-  @Command(name="get", type=Command.Type.READ)
-  public Object get(@Command.Argument("key") String key) {
+  @Command(name = "get", type = Command.Type.READ)
+  public Object get(@Argument("key") String key) {
     return data.get(key);
   }
 
-  @Command(name="set", type=Command.Type.WRITE)
-  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+  @Command(name = "set", type = Command.Type.WRITE)
+  public void set(@Argument("key") String key, @Argument("value") Object value) {
     data.put(key, value);
   }
 
-  @Command(name="delete", type=Command.Type.READ_WRITE)
-  public Object delete(@Command.Argument("key") String key) {
+  @Command(name = "delete", type = Command.Type.READ_WRITE)
+  public Object delete(@Argument("key") String key) {
     return data.remove(key);
   }
 
@@ -564,16 +595,11 @@ To submit commands to the CopyCat cluster, simply call the `submitCommand` metho
 on any `CopyCatContext`.
 
 ```java
-Arguments args = new Arguments();
+Map<String, Object> args = new HashMap<>();
 args.put("key", "foo");
-context.submitCommand("read", args, new AsyncCallback<Object>() {
-  @Override
-  public void complete(Object result) {
-    // Command succeeded.
-  }
-  @Override
-  public void fail(Throwable t) {
-    // Command failed.
+context.submitCommand("read", args, result -> {
+  if (result.succeeded()) {
+    Object value = result.value();
   }
 });
 ```
@@ -1163,9 +1189,9 @@ command is a `WRITE` or `READ_WRITE` command, CopyCat will log and replicate the
 before applying it to the state machine. Alternatively, if the command is a `READ` command
 then CopyCat will skip logging the command since it has no effect on the state machine state.
 
-Each command can have any number of arguments annotated by the `@Command.Argument` annotation. When
+Each command can have any number of arguments annotated by the `@Argument` annotation. When
 a command is submitted to the CopyCat cluster, the user is allowed to provide arbitrary
-named `Arguments`. The `AnnotatedStateMachine` will automatically validate argument types
+named arguments. The `AnnotatedStateMachine` will automatically validate argument types
 against user provided arguments according to parameter annotations.
 
 ```java
@@ -1174,18 +1200,18 @@ public class KeyValueStore extends AnnotatedStateMachine {
   @Stateful
   private final Map<String, Object> data = new HashMap<>();
 
-  @Command(name="get", type=Command.Type.READ)
-  public Object get(@Command.Argument("key") String key) {
+  @Command(name = "get", type = Command.Type.READ)
+  public Object get(@Argument("key") String key) {
     return data.get(key);
   }
 
-  @Command(name="set", type=Command.Type.WRITE)
-  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+  @Command(name = "set", type = Command.Type.WRITE)
+  public void set(@Argument("key") String key, @Argument("value") Object value) {
     data.put(key, value);
   }
 
-  @Command(name="delete", type=Command.Type.WRITE)
-  public void delete(@Command.Argument("key") String key) {
+  @Command(name = "delete", type = Command.Type.WRITE)
+  public void delete(@Argument("key") String key) {
     data.remove(key);
   }
 
@@ -1236,16 +1262,30 @@ Once the node has been started, we can begin submitting commands.
 
 ```java
 String command = "set";
-Arguments args = new Arguments();
+Map<String, Object> args = new HashMap<>();
 args.put("key", "test");
 args.put("value", "Hello world!");
 
-context.submitCommand(command, args, new AsyncCallback<Void>() {
-  public void complete(Void result) {
-    // Command was successful.
+context.submitCommand(command, args, result -> {
+  if (result.succeeded()) {
+    Object value = result.value();
   }
-  public void fail(Throwable t) {
-    // Command failed.
+});
+```
+
+Or, in Java 7...
+
+```java
+String command = "set";
+Map<String, Object> args = new HashMap<>();
+args.put("key", "test");
+args.put("value", "Hello world!");
+
+context.submitCommand(command, args, new AsyncCallback<Object>() {
+  public void call(AsyncResult<Object> result) {
+    if (result.succeeded()) {
+      Object value = result.value();
+    }
   }
 });
 ```
@@ -1376,7 +1416,7 @@ public class TcpProtocolServer implements ProtocolServer {
       server.connectHandler(new Handler<NetSocket>() {
         @Override
         public void handle(final NetSocket socket) {
-          socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
+          socket.dataHandler(RecordParser.newDelimited(new byte[]{'\0'}, new Handler<Buffer>() {
             @Override
             public void handle(Buffer buffer) {
               JsonObject request = new JsonObject(buffer.toString());
@@ -1478,7 +1518,7 @@ public class TcpProtocolServer implements ProtocolServer {
   private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final Object id = request.getValue("id");
-      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
+      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), request.getObject("args").toMap()), new AsyncCallback<SubmitCommandResponse>() {
         @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
         public void call(net.kuujo.copycat.AsyncResult<SubmitCommandResponse> result) {
@@ -1507,7 +1547,7 @@ public class TcpProtocolServer implements ProtocolServer {
    * Responds to a request from the given socket.
    */
   private void respond(NetSocket socket, JsonObject response) {
-    socket.write(response.encode() + '\00');
+    socket.write(response.encode() + '\0');
   }
 
   @Override
@@ -1850,7 +1890,7 @@ public class HttpEndpoint implements Endpoint {
 #### Writing the HTTP server
 A properly functioning endpoint will start a server and listen for commands
 to forward to the CopyCat cluster. This is done by simply parsing requests
-into a `command` and `Arguments` and calling `submitCommand` on the local
+into a `command` and arguments and calling `submitCommand` on the local
 `CopyCatContext`. CopyCat will internally handle routing of commands to the
 appropriate node for logging and replication.
 
@@ -1901,7 +1941,7 @@ public class HttpEndpoint implements Endpoint {
         request.bodyHandler(new Handler<Buffer>() {
           @Override
           public void handle(Buffer buffer) {
-            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new Arguments(new JsonObject(buffer.toString()).toMap()), new AsyncCallback<Object>() {
+            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new JsonObject(buffer.toString()).toMap(), new AsyncCallback<Object>() {
               @Override
               @SuppressWarnings({"unchecked", "rawtypes"})
               public void call(net.kuujo.copycat.AsyncResult<Object> result) {

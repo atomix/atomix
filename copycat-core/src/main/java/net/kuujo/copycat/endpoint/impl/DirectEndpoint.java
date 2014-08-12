@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.endpoint.impl;
 
-import net.kuujo.copycat.Arguments;
+import java.util.Map;
+
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
@@ -49,7 +50,7 @@ public class DirectEndpoint implements Endpoint {
    * @param callback An asynchronous callback to be called once complete.
    * @return
    */
-  public DirectEndpoint submitCommand(String command, Arguments args, AsyncCallback<Object> callback) {
+  public DirectEndpoint submitCommand(String command, Map<String, Object> args, AsyncCallback<Object> callback) {
     context.submitCommand(command, args, callback);
     return this;
   }

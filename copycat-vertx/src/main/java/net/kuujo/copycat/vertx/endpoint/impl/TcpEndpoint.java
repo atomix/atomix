@@ -18,7 +18,6 @@ package net.kuujo.copycat.vertx.endpoint.impl;
 import java.util.List;
 import java.util.Map;
 
-import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
@@ -154,7 +153,7 @@ public class TcpEndpoint implements Endpoint {
           @Override
           public void handle(Buffer buffer) {
             JsonObject json = new JsonObject(buffer.toString());
-            context.submitCommand(json.getString("command"), new Arguments(json.getObject("args").toMap()), new AsyncCallback<Object>() {
+            context.submitCommand(json.getString("command"), json.getObject("args").toMap(), new AsyncCallback<Object>() {
               @Override
               @SuppressWarnings({"unchecked", "rawtypes"})
               public void call(net.kuujo.copycat.AsyncResult<Object> result) {

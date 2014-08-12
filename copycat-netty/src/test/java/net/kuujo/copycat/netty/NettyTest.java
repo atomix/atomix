@@ -23,7 +23,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.AnnotatedStateMachine;
-import net.kuujo.copycat.Arguments;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.Command;
@@ -51,13 +50,16 @@ public class NettyTest {
       @Override
       public void run() throws Exception {
         Set<CopyCatContext> contexts = startCluster(3);
-        Arguments args = new Arguments().put("key", "foo").put("value", "bar");
+        Map<String, Object> args = new HashMap<>();
+        args.put("key", "foo");
+        args.put("value", "bar");
         final CopyCatContext context = contexts.iterator().next();
         context.submitCommand("set", args, new AsyncCallback<Void>() {
           @Override
           public void call(AsyncResult<Void> result) {
             Assert.assertTrue(result.succeeded());
-            Arguments args = new Arguments().put("key", "foo");
+            Map<String, Object> args = new HashMap<>();
+            args.put("key", "foo");
             context.submitCommand("get", args, new AsyncCallback<String>() {
               @Override
               public void call(AsyncResult<String> result) {

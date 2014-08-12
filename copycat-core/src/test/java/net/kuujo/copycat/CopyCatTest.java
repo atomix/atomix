@@ -43,13 +43,16 @@ public class CopyCatTest {
       @Override
       public void run() throws Exception {
         Set<CopyCatContext> contexts = startCluster(3);
-        Arguments args = new Arguments().put("key", "foo").put("value", "bar");
+        Map<String, Object> args = new HashMap<>();
+        args.put("key", "foo");
+        args.put("value", "bar");
         final CopyCatContext context = contexts.iterator().next();
         context.submitCommand("set", args, new AsyncCallback<Void>() {
           @Override
           public void call(AsyncResult<Void> result) {
             Assert.assertTrue(result.succeeded());
-            Arguments args = new Arguments().put("key", "foo");
+            Map<String, Object> args = new HashMap<>();
+            args.put("key", "foo");
             context.submitCommand("get", args, new AsyncCallback<String>() {
               @Override
               public void call(AsyncResult<String> result) {
