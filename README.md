@@ -377,6 +377,13 @@ various protocols. By default, CopyCat uses `UuidCorrelationStrategy` - a `UUID`
 generator, but depending on the protocol being used, the `MonotonicCorrelationStrategy` which generates
 monotonically increasing IDs may be safe to use (it's safe with all core CopyCat protocols).
 Defaults to `UuidCorrelationStrategy`
+* `setTimerStrategy`/`withTimerStrategy` - sets the replica timer strategy. This allows users to
+control how CopyCat's internal timers work. By default, replicas use a `ThreadTimerStrategy`
+which uses the Java `Timer` to schedule delays on a background thread. Users can implement their
+own `TimerStrategy` in order to, for example, implement an event loop based timer. Timers should
+return monotonically increasing timer IDs that never repeat. Note also that timers do not need
+to be multi-threaded since CopyCat only sets a timeout a couple time a second. Defaults to
+`ThreadTimerStrategy`
 
 ### Configuring the [cluster](#cluster-configurations)
 When a CopyCat cluster is first started, the [cluster configuration](#cluster-configurations)

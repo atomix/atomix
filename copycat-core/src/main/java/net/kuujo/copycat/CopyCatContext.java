@@ -401,6 +401,16 @@ public class CopyCatContext {
     return config.getCorrelationStrategy().nextCorrelationId(this);
   }
 
+  long startTimer(long delay, Callback<Long> callback) {
+    return config.getTimerStrategy().startTimer(delay, callback);
+  }
+
+  void cancelTimer(long id) {
+    if (id > 0) {
+      config.getTimerStrategy().cancelTimer(id);
+    }
+  }
+
   /**
    * Submits a command to the service.
    *

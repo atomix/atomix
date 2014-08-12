@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
@@ -37,8 +35,7 @@ import net.kuujo.copycat.protocol.RequestVoteResponse;
  */
 class Follower extends BaseState {
   private static final Logger logger = Logger.getLogger(Follower.class.getCanonicalName());
-  private final Timer timeoutTimer = new Timer();
-  private TimerTask timeoutTimerTask;
+  private long currentTimer;
   private boolean shutdown = true;
 
   @Override
@@ -54,16 +51,23 @@ class Follower extends BaseState {
    */
   private synchronized void resetTimer() {
     if (!shutdown) {
-      if (timeoutTimerTask != null) {
-        timeoutTimerTask.cancel();
-        timeoutTimer.purge();
-      }
+      // If a timer is already set, cancel the timer.
+      context.cancelTimer(currentTimer);
 
-      timeoutTimerTask = new TimerTask() {
+      // Reset the last voted for candidate.
+      context.setLastVotedFor(null);
+
+      // Set the election timeout in a semi-random fashion with the random range
+      // being somewhere between .75 * election timeout and 1.25 * election
+      // timeout.
+      long delay = context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4)
+          + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2)));
+      currentTimer = context.startTimer(delay, new Callback<Long>() {
         @Override
-        public void run() {
+        public void call(Long id) {
           // If the node has not yet voted for anyone then transition to
           // candidate and start a new election.
+          currentTimer = 0;
           if (context.getLastVotedFor() == null) {
             logger.info("Election timed out. Transitioning to candidate.");
             context.transition(Candidate.class);
@@ -72,16 +76,7 @@ class Follower extends BaseState {
             resetTimer();
           }
         }
-      };
-
-      // Reset the last voted for candidate.
-      context.setLastVotedFor(null);
-
-      // Set the election timeout in a semi-random fashion with the random range
-      // being somewhere between .75 * election timeout and 1.25 * election
-      // timeout.
-      timeoutTimer.schedule(timeoutTimerTask, context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4)
-          + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2))));
+      });
     }
   }
 
@@ -99,8 +94,7 @@ class Follower extends BaseState {
 
   @Override
   public synchronized void destroy() {
-    timeoutTimer.cancel();
-    timeoutTimerTask.cancel();
+    context.cancelTimer(currentTimer);
     shutdown = true;
   }
 

@@ -16,8 +16,6 @@
 package net.kuujo.copycat;
 
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Member;
@@ -43,8 +41,7 @@ import net.kuujo.copycat.util.Quorum;
 class Candidate extends BaseState {
   private static final Logger logger = Logger.getLogger(Candidate.class.getCanonicalName());
   private Quorum quorum;
-  private final Timer electionTimer = new Timer();
-  private TimerTask electionTimerTask;
+  private long currentTimer;
 
   @Override
   public void init(CopyCatContext context) {
@@ -58,14 +55,15 @@ class Candidate extends BaseState {
    */
   private synchronized void resetTimer() {
     // Cancel the current timer task and purge the election timer of cancelled tasks.
-    if (electionTimerTask != null) {
-      electionTimerTask.cancel();
-      electionTimer.purge();
-    }
+    context.cancelTimer(currentTimer);
 
-    electionTimerTask = new TimerTask() {
+    // When the election timer is reset, increment the current term and
+    // restart the election.
+    context.setCurrentTerm(context.getCurrentTerm() + 1);
+    long delay = context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4) + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2)));
+    currentTimer = context.startTimer(delay, new Callback<Long>() {
       @Override
-      public void run() {
+      public void call(Long id) {
         // When the election times out, clear the previous majority vote
         // check and restart the election.
         logger.info(String.format("%s election timed out", context.cluster.config().getLocalMember()));
@@ -76,13 +74,7 @@ class Candidate extends BaseState {
         resetTimer();
         logger.info(String.format("%s restarted election", context.cluster.config().getLocalMember()));
       }
-    };
-
-    // When the election timer is reset, increment the current term and
-    // restart the election.
-    context.setCurrentTerm(context.getCurrentTerm() + 1);
-    long timeout = context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4) + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2)));
-    electionTimer.schedule(electionTimerTask, timeout);
+    });
     pollMembers();
   }
 
@@ -173,8 +165,7 @@ class Candidate extends BaseState {
 
   @Override
   public synchronized void destroy() {
-    electionTimer.cancel();
-    electionTimerTask.cancel();
+    context.cancelTimer(currentTimer);
     if (quorum != null) {
       quorum.cancel();
       quorum = null;

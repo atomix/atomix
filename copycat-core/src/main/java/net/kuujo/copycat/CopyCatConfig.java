@@ -16,6 +16,8 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.protocol.CorrelationStrategy;
+import net.kuujo.copycat.protocol.TimerStrategy;
+import net.kuujo.copycat.protocol.impl.ThreadTimerStrategy;
 import net.kuujo.copycat.protocol.impl.UuidCorrelationStrategy;
 
 /**
@@ -30,6 +32,7 @@ public class CopyCatConfig {
   private boolean requireReadQuorum = true;
   private int maxLogSize = 32 * 1024^2;
   private CorrelationStrategy<?> correlationStrategy = new UuidCorrelationStrategy();
+  private TimerStrategy timerStrategy = new ThreadTimerStrategy();
 
   /**
    * Sets the replica election timeout.
@@ -215,6 +218,36 @@ public class CopyCatConfig {
   public CopyCatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
     if (strategy == null) throw new NullPointerException();
     this.correlationStrategy = strategy;
+    return this;
+  }
+
+  /**
+   * Sets the timer strategy.
+   *
+   * @param strategy The timer strategy.
+   */
+  public void setTimerStrategy(TimerStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.timerStrategy = strategy;
+  }
+
+  /**
+   * Returns the timer strategy.
+   *
+   * @return The timer strategy.
+   */
+  public TimerStrategy getTimerStrategy() {
+    return timerStrategy;
+  }
+
+  /**
+   * Sets the timer strategy, returning the configuration for method chaining.
+   *
+   * @param strategy The timer strategy.
+   * @return The copycat configuration.
+   */
+  public CopyCatConfig withTimerStrategy(TimerStrategy strategy) {
+    this.timerStrategy = strategy;
     return this;
   }
 

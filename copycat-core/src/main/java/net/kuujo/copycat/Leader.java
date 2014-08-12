@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -63,8 +61,7 @@ import net.kuujo.copycat.util.Quorum;
  */
 class Leader extends BaseState implements Observer {
   private static final Logger logger = Logger.getLogger(Leader.class.getCanonicalName());
-  private final Timer pingTimer = new Timer();
-  private TimerTask pingTimerTask;
+  private long currentTimer;
   private final List<RemoteReplica> replicas = new ArrayList<>();
   private final Map<String, RemoteReplica> replicaMap = new HashMap<>();
   private final TreeMap<Long, Runnable> tasks = new TreeMap<>();
@@ -242,16 +239,15 @@ class Leader extends BaseState implements Observer {
    * Resets the ping timer.
    */
   private void setPingTimer() {
-    pingTimerTask = new TimerTask() {
+    currentTimer = context.startTimer(context.config().getHeartbeatInterval(), new Callback<Long>() {
       @Override
-      public void run() {
+      public void call(Long id) {
         for (RemoteReplica replica : replicas) {
           replica.update();
         }
         setPingTimer();
       }
-    };
-    pingTimer.schedule(pingTimerTask, context.config().getHeartbeatInterval());
+    });
   }
 
   @Override
@@ -422,9 +418,7 @@ class Leader extends BaseState implements Observer {
 
   @Override
   public void destroy() {
-    // Cancel the ping timer.
-    pingTimer.cancel();
-    pingTimerTask.cancel();
+    context.cancelTimer(currentTimer);
 
     // Stop observing the observable cluster configuration.
     if (context.cluster() instanceof Observable) {
