@@ -141,7 +141,7 @@ public class TcpProtocolClient implements ProtocolClient {
    * Handles an identifiable response.
    */
   @SuppressWarnings("unchecked")
-  private void handleResponse(String id, JsonObject response) {
+  private void handleResponse(Object id, JsonObject response) {
     ResponseHolder holder = responses.remove(id);
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
@@ -167,7 +167,7 @@ public class TcpProtocolClient implements ProtocolClient {
     if (status == null) {
       callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException("Invalid response")));
     } else if (status.equals("ok")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(response.getString("id"), response.getLong("term"), response.getBoolean("succeeded"))));
+      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("succeeded"))));
     } else if (status.equals("error")) {
       callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException(response.getString("message"))));
     }
@@ -181,7 +181,7 @@ public class TcpProtocolClient implements ProtocolClient {
     if (status == null) {
       callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException("Invalid response")));
     } else if (status.equals("ok")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(response.getString("id"), response.getLong("term"), response.getBoolean("voteGranted"))));
+      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("voteGranted"))));
     } else if (status.equals("error")) {
       callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException(response.getString("message"))));
     }
@@ -195,7 +195,7 @@ public class TcpProtocolClient implements ProtocolClient {
     if (status == null) {
       callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException("Invalid response")));
     } else if (status.equals("ok")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(response.getString("id"), response.getObject("result").toMap())));
+      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(response.getValue("id"), response.getObject("result").toMap())));
     } else if (status.equals("error")) {
       callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException(response.getString("message"))));
     }
@@ -241,7 +241,7 @@ public class TcpProtocolClient implements ProtocolClient {
               @Override
               public void handle(Buffer buffer) {
                 JsonObject response = new JsonObject(buffer.toString());
-                String id = response.getString("id");
+                Object id = response.getValue("id");
                 handleResponse(id, response);
               }
             }));
