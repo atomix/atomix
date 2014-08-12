@@ -36,6 +36,7 @@ User Manual
    * [Providing command types](#providing-command-types)
    * [Taking snapshots](#taking-snapshots)
    * [Creating an annotated state machine](#creating-an-annotated-state-machine)
+   * [Configuring the replica](#configuring-the-replica)
    * [Configuring the cluster](#configuring-the-cluster)
    * [Creating a dynamic cluster](#creating-a-dynamic-cluster)
    * [Creating the CopyCatContext](#creating-the-copycatcontext)
@@ -47,6 +48,7 @@ User Manual
    * [Injecting URI arguments into a protocol](#injecting-uri-arguments-into-a-protocol)
    * [Using multiple URI annotations on a single parameter](#using-multiple-uri-annotations-on-a-single-parameter)
    * [Making annotated URI parameters optional](#making-annotated-uri-parameters-optional)
+   * [Using annotated setters](#using-annotated-setters)
    * [The complete protocol](#the-complete-protocol)
    * [Built-in protocols](#built-in-protocols)
       * [Direct](#direct-protocol)
@@ -165,7 +167,7 @@ The `copycat-core` project is purely an implementation of the Raft consensus alg
 It does not implement any specific transport aside from a `direct` transport for testing.
 Instead, the CopyCat API is designed to allow users to implement the transport layer
 using the `Protocol` API. CopyCat does, however, provide some core protocol implementations
-in the `copycat-vertx` project.
+in the `copycat-netty` and `copycat-vertx` projects.
 
 ### Endpoints
 CopyCat provides a framework for building fault-tolerant [state machines](#state-machines) on
@@ -344,6 +346,37 @@ providers and `switch` statements for command application.
 
 Note also that the `@Stateful` annotation is used to indicate that the `data` field
 should be persisted whenever a snapshot is taken.
+
+### Configuring the replica
+CopyCat exposes a configuration API that allows users to configure how CopyCat behaves
+during elections and how it replicates commands. To configure a CopyCat replica, create
+a `CopyCatConfig` to pass to the `CopyCatContext` constructor.
+
+```java
+CopyCatConfig config = new CopyCatConfig();
+```
+
+The `CopyCatConfig` exposes the following configuration methods:
+* `setElectionTimeout`/`withElectionTimeout` - sets the timeout within which a [follower](#follower)
+must receive an `AppendEntries` request from the leader before starting a new election. This timeout
+is also used to calculate the election timeout during elections. Defaults to `2000` milliseconds
+* `setHeartbeatInterval`/`withHeartbeatInterval` - sets the interval at which the leader will send
+heartbeats (`AppendEntries` requests) to followers. Defaults to `500` milliseconds
+* `setRequireWriteQuorum`/`withRequireWriteQuorum` - sets whether to require a quorum during write
+operations. It is strongly recommended that this remain enabled for consistency. Defaults to `true` (enabled)
+* `setRequireReadQuorum`/`withRequireReadQuorum` - sets whether to require a quorum during read operations.
+Read quorums can optionally be disabled in order to improve performance at the risk of reading stale data.
+When read quorums are disabled, the leader will immediately respond to `READ` type commands by applying
+the command to its state machine and returning the result. Defaults to `true` (enabled)
+* `setMaxLogSize`/`withMaxLogSize` - sets the maximum log size before a snapshot should be taken. As
+entries are appended to the local log, replicas will monitor the size of the local log to determine
+whether a snapshot should be taken based on this value. Defaults to `32 * 1024^2`
+* `setCorrelationStrategy`/`withCorrelationStrategy` - CopyCat generates correlation identifiers
+for each request/response pair that it sends. This helps assist in correlating messages across
+various protocols. By default, CopyCat uses `UuidCorrelationStrategy` - a `UUID` based correlation ID
+generator, but depending on the protocol being used, the `MonotonicCorrelationStrategy` which generates
+monotonically increasing IDs may be safe to use (it's safe with all core CopyCat protocols).
+Defaults to `UuidCorrelationStrategy`
 
 ### Configuring the [cluster](#cluster-configurations)
 When a CopyCat cluster is first started, the [cluster configuration](#cluster-configurations)
@@ -610,13 +643,13 @@ to fall back to a no-argument constructor.
 
 Note also that the `@UriArgument("client")` annotation is referencing a `HttpClient` object
 which obviously can't exist within a raw URI string. Users can use a `Registry` instance
-to register named objects that can then be referenced in URIs using the `#` prefix. For
+to register named objects that can then be referenced in URIs using the `$` prefix. For
 instance:
 
 ```java
 Registry registry = new BasicRegistry();
 registry.bind("http_client", new HttpClient("localhost", 8080));
-String uri = "http://copycat?client=#http_client";
+String uri = "http://copycat?client=$http_client";
 ```
 
 The registry can then be passed to a `CopyCatContext` constructor.
@@ -625,7 +658,7 @@ The registry can then be passed to a `CopyCatContext` constructor.
 CopyCatContext context = new CopyCatContext(new MyStateMachine, cluster, registry);
 ```
 
-When the URI query string is parsed, the parser will look for strings beginning with `#`
+When the URI query string is parsed, the parser will look for strings beginning with `$`
 and use those strings to look up referenced objects in the context's registry.
 
 ### Using multiple URI annotations on a single parameter
@@ -672,6 +705,52 @@ public class HttpProtocol implements Protocol {
 
 }
 ```
+
+### Using annotated setters
+Just as constructors support annotated parameters, protocols can also support URI injection
+via bean properties. To use annotated setters, simply annotate the setter with any URI
+injectable annotation.
+
+```java
+public class HttpProtocol implements Protocol {
+  private String host = "localhost";
+
+  @UriHost
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+}
+```
+
+All setter injected URI arguments are optional, so you should ensure that required arguments
+have been injected prior to constructing client or server instances.
+
+The setter injector also supports injecting arbitrary bean properties. Any bean setters
+will be injected with named query parameters.
+
+```java
+public class HttpProtocol implements Protocol {
+  private long timeout;
+
+  public void setTimeout(long timeout) {
+    this.timeout = timeout;
+  }
+
+  public long getTimeout() {
+    return timeout;
+  }
+
+}
+```
+
+When this class is injected with a URI like `http://localhost:8080?timeout=1000` the
+`timeout` will automatically be injected based on the matching bean descriptor. This also
+works with registered objects.
 
 ### The complete protocol
 Now that we have all that out of the way, here's the complete `Protocol` implementation:
@@ -770,7 +849,7 @@ ClusterConfig cluster = new StaticClusterConfig("eventbus://localhost:1234/foo")
 
 // or...
 
-ClusterConfig cluster = new StaticClusterConfig("eventbus://foo?vertx=#vertx");
+ClusterConfig cluster = new StaticClusterConfig("eventbus://foo?vertx=$vertx");
 Registry registry = new BasicRegistry();
 registry.bind("vertx", vertx);
 ```
@@ -846,7 +925,7 @@ CopyCat copycat = new CopyCat("eventbus://localhost:8080/foo", new MyStateMachin
 
 Registry registry = new BasicRegistry();
 registry.bind("vertx", vertx);
-CopyCat copycat = new CopyCat("eventbus://foo?vertx=#vertx", new MyStateMachine(), cluster, registry);
+CopyCat copycat = new CopyCat("eventbus://foo?vertx=$vertx", new MyStateMachine(), cluster, registry);
 ```
 
 ### Vert.x TCP Endpoint
@@ -1150,9 +1229,6 @@ public class TcpProtocolServer implements ProtocolServer {
                   case "append":
                     handleAppendRequest(socket, request);
                     break;
-                  case "install":
-                    handleInstallRequest(socket, request);
-                    break;
                   case "vote":
                     handleVoteRequest(socket, request);
                     break;
@@ -1173,14 +1249,14 @@ public class TcpProtocolServer implements ProtocolServer {
         @Override
         public void handle(AsyncResult<NetServer> result) {
           if (result.failed()) {
-            callback.fail(result.cause());
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
           } else {
-            callback.complete(null);
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
           }
         }
       });
     } else {
-      callback.complete(null);
+      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
     }
   }
 
@@ -1189,7 +1265,7 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleAppendRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
-      final long id = request.getLong("id");
+      final Object id = request.getValue("id");
       List<Entry> entries = new ArrayList<>();
       JsonArray jsonEntries = request.getArray("entries");
       if (jsonEntries != null) {
@@ -1197,48 +1273,19 @@ public class TcpProtocolServer implements ProtocolServer {
           entries.add(serializer.readValue(jsonEntry.toString().getBytes(), Entry.class));
         }
       }
-      requestHandler.appendEntries(new AppendEntriesRequest(request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit")), new AsyncCallback<AppendEntriesResponse>() {
+      requestHandler.appendEntries(new AppendEntriesRequest(id, request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit")), new AsyncCallback<AppendEntriesResponse>() {
         @Override
-        public void complete(AppendEntriesResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+        public void call(net.kuujo.copycat.AsyncResult<AppendEntriesResponse> result) {
+          if (result.succeeded()) {
+            AppendEntriesResponse response = result.value();
+            if (response.status().equals(Response.Status.OK)) {
+              respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+            } else {
+              respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
+            }
           } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
+            respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
-        }
-      });
-    }
-  }
-
-  /**
-   * Handles an install request.
-   */
-  private void handleInstallRequest(final NetSocket socket, JsonObject request) {
-    if (requestHandler != null) {
-      final long id = request.getLong("id");
-      Set<String> cluster = new HashSet<>();
-      JsonArray jsonNodes = request.getArray("cluster");
-      if (jsonNodes != null) {
-        for (Object jsonNode : jsonNodes) {
-          cluster.add(jsonNode.toString());
-        }
-      }
-      requestHandler.installSnapshot(new InstallSnapshotRequest(request.getLong("term"), request.getString("leader"), request.getLong("snapshotIndex"), request.getLong("snapshotTerm"), cluster, request.getBinary("data"), request.getBoolean("complete")), new AsyncCallback<InstallSnapshotResponse>() {
-        @Override
-        public void complete(InstallSnapshotResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
-          }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
         }
       });
     }
@@ -1249,19 +1296,20 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleVoteRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
-      final long id = request.getLong("id");
-      requestHandler.requestVote(new RequestVoteRequest(request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<RequestVoteResponse>() {
+      final Object id = request.getValue("id");
+      requestHandler.requestVote(new RequestVoteRequest(id, request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<RequestVoteResponse>() {
         @Override
-        public void complete(RequestVoteResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
+        public void call(net.kuujo.copycat.AsyncResult<RequestVoteResponse> result) {
+          if (result.succeeded()) {
+            RequestVoteResponse response = result.value();
+            if (response.status().equals(Response.Status.OK)) {
+              respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
+            } else {
+              respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
+            }
           } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
+            respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
         }
       });
     }
@@ -1272,26 +1320,27 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
-      final long id = request.getLong("id");
-      requestHandler.submitCommand(new SubmitCommandRequest(request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
+      final Object id = request.getValue("id");
+      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
         @SuppressWarnings({"unchecked", "rawtypes"})
         @Override
-        public void complete(SubmitCommandResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            if (response.result() instanceof Map) {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject((Map) response.result())));
-            } else if (response.result() instanceof List) {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putArray("result", new JsonArray((List) response.result())));
+        public void call(net.kuujo.copycat.AsyncResult<SubmitCommandResponse> result) {
+          if (result.succeeded()) {
+            SubmitCommandResponse response = result.value();
+            if (response.status().equals(Response.Status.OK)) {
+              if (response.result() instanceof Map) {
+                respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putObject("result", new JsonObject((Map) response.result())));
+              } else if (response.result() instanceof List) {
+                respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putArray("result", new JsonArray((List) response.result())));
+              } else {
+                respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putValue("result", response.result()));
+              }
             } else {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putValue("result", response.result()));
+              respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
             }
           } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
+            respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", result.cause().getMessage()));
           }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
         }
       });
     }
@@ -1311,14 +1360,14 @@ public class TcpProtocolServer implements ProtocolServer {
         @Override
         public void handle(AsyncResult<Void> result) {
           if (result.failed()) {
-            callback.fail(result.cause());
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
           } else {
-            callback.complete(null);
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
           }
         }
       });
     } else {
-      callback.complete(null);
+      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
     }
   }
 
@@ -1337,17 +1386,17 @@ public class TcpProtocolClient implements ProtocolClient {
   private final int port;
   private NetClient client;
   private NetSocket socket;
-  private long id;
-  private final Map<Long, ResponseHolder<?>> responses = new HashMap<>();
+  private final Map<Object, ResponseHolder> responses = new HashMap<>();
 
   /**
    * Holder for response handlers.
    */
-  private static class ResponseHolder<T extends Response> {
-    private final AsyncCallback<T> callback;
+  @SuppressWarnings("rawtypes")
+  private static class ResponseHolder {
+    private final AsyncCallback callback;
     private final ResponseType type;
     private final long timer;
-    private ResponseHolder(long timerId, ResponseType type, AsyncCallback<T> callback) {
+    private ResponseHolder(long timerId, ResponseType type, AsyncCallback callback) {
       this.timer = timerId;
       this.type = type;
       this.callback = callback;
@@ -1359,7 +1408,6 @@ public class TcpProtocolClient implements ProtocolClient {
    */
   private static enum ResponseType {
     APPEND,
-    INSTALL,
     VOTE,
     SUBMIT;
   }
@@ -1373,75 +1421,51 @@ public class TcpProtocolClient implements ProtocolClient {
   @Override
   public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
     if (socket != null) {
-      long requestId = ++id;
       JsonArray jsonEntries = new JsonArray();
       for (Entry entry : request.entries()) {
         jsonEntries.addString(new String(serializer.writeValue(entry)));
       }
       socket.write(new JsonObject().putString("type", "append")
-          .putNumber("id", requestId)
+          .putValue("id", request.id())
           .putNumber("term", request.term())
           .putString("leader", request.leader())
           .putNumber("prevIndex", request.prevLogIndex())
           .putNumber("prevTerm", request.prevLogTerm())
           .putArray("entries", jsonEntries)
           .putNumber("commit", request.commitIndex()).encode() + '\00');
-      storeCallback(requestId, ResponseType.APPEND, callback);
+      storeCallback(request.id(), ResponseType.APPEND, callback);
     } else {
-      callback.fail(new ProtocolException("Client not connected"));
-    }
-  }
-
-  @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
-    if (socket != null) {
-      long requestId = ++id;
-      JsonArray jsonCluster = new JsonArray();
-      for (String member : request.cluster()) {
-        jsonCluster.addString(member);
-      }
-      socket.write(new JsonObject().putString("type", "install")
-          .putNumber("id", requestId)
-          .putNumber("term", request.term())
-          .putString("leader", request.leader())
-          .putArray("cluster", jsonCluster)
-          .putBinary("data", request.data())
-          .putBoolean("complete", request.complete())
-          .encode() + '\00');
-      storeCallback(requestId, ResponseType.INSTALL, callback);
-    } else {
-      callback.fail(new ProtocolException("Client not connected"));
+      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException("Client not connected")));
     }
   }
 
   @Override
   public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
     if (socket != null) {
-      long requestId = ++id;
       socket.write(new JsonObject().putString("type", "vote")
-          .putNumber("id", requestId)
+          .putValue("id", request.id())
           .putNumber("term", request.term())
           .putString("candidate", request.candidate())
           .putNumber("lastIndex", request.lastLogIndex())
           .putNumber("lastTerm", request.lastLogTerm())
           .encode() + '\00');
-      storeCallback(requestId, ResponseType.VOTE, callback);
+      storeCallback(request.id(), ResponseType.VOTE, callback);
     } else {
-      callback.fail(new ProtocolException("Client not connected"));
+      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException("Client not connected")));
     }
   }
 
   @Override
   public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
     if (socket != null) {
-      long requestId = ++id;
       socket.write(new JsonObject().putString("type", "submit")
+          .putValue("id", request.id())
           .putString("command", request.command())
           .putObject("args", new JsonObject(request.args()))
           .encode() + '\00');
-      storeCallback(requestId, ResponseType.SUBMIT, callback);
+      storeCallback(request.id(), ResponseType.SUBMIT, callback);
     } else {
-      callback.fail(new ProtocolException("Client not connected"));
+      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException("Client not connected")));
     }
   }
 
@@ -1449,16 +1473,13 @@ public class TcpProtocolClient implements ProtocolClient {
    * Handles an identifiable response.
    */
   @SuppressWarnings("unchecked")
-  private void handleResponse(long id, JsonObject response) {
-    ResponseHolder<?> holder = responses.remove(id);
+  private void handleResponse(Object id, JsonObject response) {
+    ResponseHolder holder = responses.remove(id);
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
       switch (holder.type) {
         case APPEND:
           handleAppendResponse(response, (AsyncCallback<AppendEntriesResponse>) holder.callback);
-          break;
-        case INSTALL:
-          handleInstallResponse(response, (AsyncCallback<InstallSnapshotResponse>) holder.callback);
           break;
         case VOTE:
           handleVoteResponse(response, (AsyncCallback<RequestVoteResponse>) holder.callback);
@@ -1476,25 +1497,11 @@ public class TcpProtocolClient implements ProtocolClient {
   private void handleAppendResponse(JsonObject response, AsyncCallback<AppendEntriesResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
+      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException("Invalid response")));
     } else if (status.equals("ok")) {
-      callback.complete(new AppendEntriesResponse(response.getLong("term"), response.getBoolean("succeeded")));
+      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("succeeded"))));
     } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
-    }
-  }
-
-  /**
-   * Handles an install response.
-   */
-  private void handleInstallResponse(JsonObject response, AsyncCallback<InstallSnapshotResponse> callback) {
-    String status = response.getString("status");
-    if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      callback.complete(new InstallSnapshotResponse(response.getLong("term"), response.getBoolean("succeeded")));
-    } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
+      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException(response.getString("message"))));
     }
   }
 
@@ -1504,11 +1511,11 @@ public class TcpProtocolClient implements ProtocolClient {
   private void handleVoteResponse(JsonObject response, AsyncCallback<RequestVoteResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
+      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException("Invalid response")));
     } else if (status.equals("ok")) {
-      callback.complete(new RequestVoteResponse(response.getLong("term"), response.getBoolean("voteGranted")));
+      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("voteGranted"))));
     } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
+      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException(response.getString("message"))));
     }
   }
 
@@ -1518,28 +1525,29 @@ public class TcpProtocolClient implements ProtocolClient {
   private void handleSubmitResponse(JsonObject response, AsyncCallback<SubmitCommandResponse> callback) {
     String status = response.getString("status");
     if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
+      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException("Invalid response")));
     } else if (status.equals("ok")) {
-      callback.complete(new SubmitCommandResponse(response.getObject("result").toMap()));
+      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(response.getValue("id"), response.getObject("result").toMap())));
     } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
+      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException(response.getString("message"))));
     }
   }
 
   /**
    * Stores a response callback by ID.
    */
-  private <T extends Response> void storeCallback(final long id, ResponseType responseType, AsyncCallback<T> callback) {
+  private <T extends Response> void storeCallback(final Object id, ResponseType responseType, AsyncCallback<T> callback) {
     long timerId = vertx.setTimer(30000, new Handler<Long>() {
       @Override
+      @SuppressWarnings("unchecked")
       public void handle(Long timerID) {
-        ResponseHolder<?> holder = responses.remove(id);
+        ResponseHolder holder = responses.remove(id);
         if (holder != null) {
-          holder.callback.fail(new ProtocolException("Request timed out"));
+          holder.callback.call(new net.kuujo.copycat.AsyncResult<T>(new ProtocolException("Request timed out")));
         }
       }
     });
-    ResponseHolder<T> holder = new ResponseHolder<T>(timerId, responseType, callback);
+    ResponseHolder holder = new ResponseHolder(timerId, responseType, callback);
     responses.put(id, holder);
   }
 
@@ -1557,7 +1565,7 @@ public class TcpProtocolClient implements ProtocolClient {
         public void handle(AsyncResult<NetSocket> result) {
           if (result.failed()) {
             if (callback != null) {
-              callback.fail(result.cause());
+              callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
             }
           } else {
             socket = result.result();
@@ -1565,18 +1573,18 @@ public class TcpProtocolClient implements ProtocolClient {
               @Override
               public void handle(Buffer buffer) {
                 JsonObject response = new JsonObject(buffer.toString());
-                long id = response.getLong("id");
+                Object id = response.getValue("id");
                 handleResponse(id, response);
               }
             }));
             if (callback != null) {
-              callback.complete(null);
+              callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
             }
           }
         }
       });
     } else if (callback != null) {
-      callback.complete(null);
+      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
     }
   }
 
@@ -1595,7 +1603,7 @@ public class TcpProtocolClient implements ProtocolClient {
           client.close();
           client = null;
           if (callback != null) {
-            callback.complete(null);
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
           }
         }
       }).close();
@@ -1603,15 +1611,20 @@ public class TcpProtocolClient implements ProtocolClient {
       client.close();
       client = null;
       if (callback != null) {
-        callback.complete(null);
+        callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
       }
     } else if (callback != null) {
-      callback.complete(null);
+      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
     }
   }
 
 }
 ```
+
+Note that CopyCat uses correlation identifiers to correlate requests and responses,
+and it's important that protocol implementations respect this correlation. Do not
+generate your own correlation IDs. Correlation identifiers are generated by a
+`CorrelationStrategy` which is configured in the `CopyCatConfig`.
 
 ### Creating the HTTP endpoint
 Endpoints are simply servers that listen for requests from the outside worl.
@@ -1689,14 +1702,35 @@ public class HttpEndpoint implements Endpoint {
   private final Vertx vertx;
   private CopyCatContext context;
   private HttpServer server;
-  private final String host;
-  private final int port;
+  private String host;
+  private int port;
+
+  public HttpEndpoint() {
+    this.vertx = new DefaultVertx();
+  }
+
+  @UriInject
+  public HttpEndpoint(@UriQueryParam("vertx") Vertx vertx) {
+    this.vertx = vertx;
+  }
+
+  @UriInject
+  public HttpEndpoint(@UriHost String host) {
+    this(host, 0);
+  }
 
   @UriInject
   public HttpEndpoint(@UriHost String host, @Optional @UriPort int port) {
     this.host = host;
     this.port = port;
     this.vertx = new DefaultVertx();
+  }
+
+  @UriInject
+  public HttpEndpoint(@UriHost String host, @Optional @UriPort int port, @UriQueryParam("vertx") Vertx vertx) {
+    this.host = host;
+    this.port = port;
+    this.vertx = vertx;
   }
 
   @Override
@@ -1710,23 +1744,22 @@ public class HttpEndpoint implements Endpoint {
         request.bodyHandler(new Handler<Buffer>() {
           @Override
           public void handle(Buffer buffer) {
-            // Submit the command to the CopyCat cluster.
             HttpEndpoint.this.context.submitCommand(request.params().get("command"), new Arguments(new JsonObject(buffer.toString()).toMap()), new AsyncCallback<Object>() {
               @Override
               @SuppressWarnings({"unchecked", "rawtypes"})
-              public void complete(Object result) {
-                request.response().setStatusCode(200);
-                if (result instanceof Map) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result)).encode());                  
-                } else if (result instanceof List) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result)).encode());
+              public void call(net.kuujo.copycat.AsyncResult<Object> result) {
+                if (result.succeeded()) {
+                  request.response().setStatusCode(200);
+                  if (result instanceof Map) {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result.value())).encode());                  
+                  } else if (result instanceof List) {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result.value())).encode());
+                  } else {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result.value()).encode());
+                  }
                 } else {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result).encode());
+                  request.response().setStatusCode(400);
                 }
-              }
-              @Override
-              public void fail(Throwable t) {
-                request.response().setStatusCode(400);
               }
             });
           }
@@ -1736,15 +1769,75 @@ public class HttpEndpoint implements Endpoint {
     server.requestHandler(routeMatcher);
   }
 
+  /**
+   * Sets the endpoint host.
+   *
+   * @param host The TCP host.
+   */
+  @UriHost
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  /**
+   * Returns the endpoint host.
+   *
+   * @return The endpoint host.
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * Sets the endpoint host, returning the endpoint for method chaining.
+   *
+   * @param host The TCP host.
+   * @return The TCP endpoint.
+   */
+  public HttpEndpoint withHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
+   * Sets the endpoint port.
+   *
+   * @param port The TCP port.
+   */
+  @UriPort
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  /**
+   * Returns the endpoint port.
+   *
+   * @return The TCP port.
+   */
+  public int getPort() {
+    return port;
+  }
+
+  /**
+   * Sets the endpoint port, returning the endpoint for method chaining.
+   *
+   * @param port The TCP port.
+   * @return The TCP endpoint.
+   */
+  public HttpEndpoint withPort(int port) {
+    this.port = port;
+    return this;
+  }
+
   @Override
   public void start(final AsyncCallback<Void> callback) {
     server.listen(port, host, new Handler<AsyncResult<HttpServer>>() {
       @Override
       public void handle(AsyncResult<HttpServer> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });
@@ -1756,9 +1849,9 @@ public class HttpEndpoint implements Endpoint {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.fail(result.cause());
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
         } else {
-          callback.complete(null);
+          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
         }
       }
     });

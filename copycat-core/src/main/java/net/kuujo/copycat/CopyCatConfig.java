@@ -25,7 +25,7 @@ import net.kuujo.copycat.protocol.impl.UuidCorrelationStrategy;
  */
 public class CopyCatConfig {
   private long electionTimeout = 2000;
-  private long heartbeatInterval = 1000;
+  private long heartbeatInterval = 500;
   private boolean requireWriteQuorum = true;
   private boolean requireReadQuorum = true;
   private int maxLogSize = 32 * 1024^2;
