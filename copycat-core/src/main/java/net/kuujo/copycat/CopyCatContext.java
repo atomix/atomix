@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Cluster;
@@ -425,7 +424,7 @@ public class CopyCatContext {
       leaderConnectCallbacks.add(new Callback<Void>() {
         @Override
         public void call(Void result) {
-          leaderClient.submitCommand(new SubmitCommandRequest(UUID.randomUUID().toString(), command, args), new AsyncCallback<SubmitCommandResponse>() {
+          leaderClient.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, args), new AsyncCallback<SubmitCommandResponse>() {
             @Override
             @SuppressWarnings("unchecked")
             public void call(AsyncResult<SubmitCommandResponse> result) {
@@ -444,7 +443,7 @@ public class CopyCatContext {
       });
     } else {
       ProtocolHandler handler = currentLeader.equals(localUri) ? state : leaderClient;
-      handler.submitCommand(new SubmitCommandRequest(UUID.randomUUID().toString(), command, args), new AsyncCallback<SubmitCommandResponse>() {
+      handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, args), new AsyncCallback<SubmitCommandResponse>() {
         @Override
         @SuppressWarnings("unchecked")
         public void call(AsyncResult<SubmitCommandResponse> result) {
