@@ -74,17 +74,8 @@ quite simply. Here's a quick example.
 
 ```java
 public class KeyValueStore implements StateMachine {
+  @Stateful
   private Map<String, Object> data = new HashMap<>();
-
-  @Override
-  public Snapshot takeSnapshot() {
-    return new Snapshot(data);
-  }
-
-  @Override
-  public void installSnapshot(Snapshot snapshot) {
-    this.data = snapshot.toMap();
-  }
 
   @Command(name="get", type=Command.Type.READ)
   public Object get(@Command.Argument("key") String key) {
@@ -135,8 +126,40 @@ CopyCat copycat = new CopyCat("http://localhost:5000", new KeyValueStore(), log,
 copycat.start();
 ```
 
-That's it! We've just created a highly consistent, fault-tolerant key-value store with an
+That's it! We've just created a strongly consistent, fault-tolerant key-value store with an
 HTTP API in less than 25 lines of code!
+
+```java
+public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore implements StateMachine {
+
+  public static void main(String[] args) {
+    Log log = new FileLog("key-value.log");
+    ClusterConfig cluster = new StaticClusterConfig();
+    cluster.setLocalMember("tcp://localhost:8080");
+    cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
+    new CopyCat("http://localhost:5000", new KeyValueStore(), log, cluster).start();
+  }
+
+  @Stateful
+  private Map<String, Object> data = new HashMap<>();
+
+  @Command(name="get", type=Command.Type.READ)
+  public Object get(@Command.Argument("key") String key) {
+    return data.get(key);
+  }
+
+  @Command(name="set", type=Command.Type.WRITE)
+  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+    data.put(key, value);
+  }
+
+  @Command(name="delete", type=Command.Type.WRITE)
+  public void delete(@Command.Argument("key") String key) {
+    data.remove(key);
+  }
+
+}
+```
 
 # How it works
 CopyCat uses a Raft-based consensus algorithm to perform leader election and state
