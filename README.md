@@ -50,7 +50,7 @@ User Manual
    * [Injecting URI arguments into a protocol](#injecting-uri-arguments-into-a-protocol)
    * [Using multiple URI annotations on a single parameter](#using-multiple-uri-annotations-on-a-single-parameter)
    * [Making annotated URI parameters optional](#making-annotated-uri-parameters-optional)
-   * [Using annotated setters](#using-annotated-setters)
+   * [Injecting URI arguments via annotated setters](#injecting-uri-arguments-annotated-setters)
    * [The complete protocol](#the-complete-protocol)
    * [Built-in protocols](#built-in-protocols)
       * [Direct](#direct-protocol)
@@ -487,7 +487,7 @@ be forwarded on to the current cluster [leader](#leaders). If the cluster does n
 currently [elected](#leader-election) leader (or the node to which the command is submitted
 doesn't know of any cluster leader) then the submission will fail.
 
-# Serializers
+# Serialization
 CopyCat provides a pluggable serialization API that allows users to control how log
 entries are serialized to the log. CopyCat provides two serializer implementations, one
 using the core Java serialization mechanism, and one [Jackson](http://jackson.codehaus.org/)
@@ -499,8 +499,8 @@ at `META-INF/services/net/kuujo/copycat/Serializer` containing the serializer fa
 ### Providing custom log serializers
 CopyCat locates log serializers via its custom service loader implementation. To provide
 a custom serializer to CopyCat, simply add a configuration file to your classpath at
-`META-INF/services/net/kuujo/copycat/Serializer` containing the `Serializer` factory
-class name.
+`META-INF/services/net/kuujo/copycat/Serializer` containing the `SerializerFactory`
+implementation class name.
 
 ```java
 public class JacksonSerializerFactory extends SerializerFactory {
@@ -614,8 +614,6 @@ public interface ProtocolClient {
 
   void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback);
 
-  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback);
-
   void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback);
 
   void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback);
@@ -638,11 +636,11 @@ These are the available URI annotations:
 * `@UriAuthority`
 * `@UriPath`
 * `@UriQuery`
+* `@UriQueryParam`
 * `@UriFragment`
-* `@UriArgument`
 
 Each of these annotations mirrors a method on the `URI` interface except for the
-last one, `@UriArgument`. The `@UriArgument` annotation is a special annotation
+last one, `@UriQueryParam`. The `@UriQueryParam` annotation is a special annotation
 for referencing parsed named query arguments.
 
 URI annotations can be used either on protocol constructors or setter methods.
@@ -684,7 +682,7 @@ public class HttpProtocol implements Protocol {
   private final String path;
 
   @UriInject
-  public HttpProtocol(@UriArgument("client") HttpClient client, @UriPath String path) {
+  public HttpProtocol(@UriQueryParam("client") HttpClient client, @UriPath String path) {
     this.client = client;
     this.path = path;
   }
@@ -700,11 +698,11 @@ public class HttpProtocol implements Protocol {
 You may be interested in how CopyCat decides which constructor to use. Actually, it's
 quite simple: the URI injector simply iterates over `@UriInject` annotated constructors
 and attempts to construct the object from each one. If a given constructor cannot be
-used due to a missing argument (such as the named `@UriArgument("client")`), the constructor
+used due to a missing argument (such as the named `@UriQueryParam("client")`), the constructor
 will be skipped. Once all constructors have been exhausted, the injector will again attempt
 to fall back to a no-argument constructor.
 
-Note also that the `@UriArgument("client")` annotation is referencing a `HttpClient` object
+Note also that the `@UriQueryParam("client")` annotation is referencing a `HttpClient` object
 which obviously can't exist within a raw URI string. Users can use a `Registry` instance
 to register named objects that can then be referenced in URIs using the `$` prefix. For
 instance:
@@ -769,7 +767,7 @@ public class HttpProtocol implements Protocol {
 }
 ```
 
-### Using annotated setters
+### Injecting URI arguments via annotated setters
 Just as constructors support annotated parameters, protocols can also support URI injection
 via bean properties. To use annotated setters, simply annotate the setter with any URI
 injectable annotation.
@@ -825,7 +823,7 @@ public class HttpProtocol implements Protocol {
   private String path;
 
   @UriInject
-  public HttpProtocol(@UriArgument("client") HttpClient client, @UriArgument("server") HttpServer server @UriAuthority String path) {
+  public HttpProtocol(@UriQueryParam("client") HttpClient client, @UriQueryParam("server") HttpServer server @UriAuthority String path) {
     this.client = client;
     this.server = server;
     this.path = path;
@@ -1069,7 +1067,7 @@ command is a `WRITE` or `READ_WRITE` command, CopyCat will log and replicate the
 before applying it to the state machine. Alternatively, if the command is a `READ` command
 then CopyCat will skip logging the command since it has no effect on the state machine state.
 
-Each command can have any number of arguments annotated by the `@Argument` annotation. When
+Each command can have any number of arguments annotated by the `@Command.Argument` annotation. When
 a command is submitted to the CopyCat cluster, the user is allowed to provide arbitrary
 named `Arguments`. The `AnnotatedStateMachine` will automatically validate argument types
 against user provided arguments according to parameter annotations.
@@ -1081,17 +1079,17 @@ public class KeyValueStore extends AnnotatedStateMachine {
   private final Map<String, Object> data = new HashMap<>();
 
   @Command(name="get", type=Command.Type.READ)
-  public Object get(@Argument("key") String key) {
+  public Object get(@Command.Argument("key") String key) {
     return data.get(key);
   }
 
   @Command(name="set", type=Command.Type.WRITE)
-  public void set(@Argument("key") String key, @Argument("value") Object value) {
+  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
     data.put(key, value);
   }
 
   @Command(name="delete", type=Command.Type.WRITE)
-  public void delete(@Argument("key") String key) {
+  public void delete(@Command.Argument("key") String key) {
     data.remove(key);
   }
 
