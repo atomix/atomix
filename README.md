@@ -148,7 +148,7 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore exten
     cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
 
     // Create and start a server at localhost:5000.
-    new CopyCat("http://localhost:5000", new KeyValueStore(), log, cluster).start();
+    new CopyCat("http://localhost:5000", new StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore(), log, cluster).start();
   }
 
   @Stateful
