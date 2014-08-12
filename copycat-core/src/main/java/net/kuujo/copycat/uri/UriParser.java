@@ -15,35 +15,39 @@
  */
 package net.kuujo.copycat.uri;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.lang.annotation.Annotation;
 import java.net.URI;
 
 import net.kuujo.copycat.registry.Registry;
 
 /**
- * URI host injector annotation.
+ * Parser for parsing an injectable URI argument.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@UriInjectable(UriHost.Parser.class)
-@Target({ElementType.PARAMETER, ElementType.METHOD})
-@Retention(RetentionPolicy.RUNTIME)
-public @interface UriHost {
+public interface UriParser<U extends Annotation, T> {
 
   /**
-   * URI host parser.
+   * Parses an argument from the URI.
+   *
+   * @param uri The URI from which to parse the argument.
+   * @param annotation The annotation being parsed.
+   * @param registry The current local registry.
+   * @param type The expected return value type.
+   * @return The parsed argument.
+   */
+  T parse(URI uri, U annotation, Registry registry, Class<T> type);
+
+  /**
+   * Placeholder implementation which represents no URI parser.
    *
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
-  public static class Parser implements UriParser<UriHost, String> {
+  public static class None implements UriParser<UriHost, Object> {
     @Override
-    public String parse(URI uri, UriHost annotation, Registry registry, Class<String> type) {
-      return uri.getHost();
+    public Object parse(URI uri, UriHost annotation, Registry registry, Class<Object> type) {
+      throw new UnsupportedOperationException();
     }
-    
   }
 
 }

@@ -19,14 +19,30 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.net.URI;
+
+import net.kuujo.copycat.registry.Registry;
 
 /**
  * Injects a URI scheme.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@UriInject
-@Target(ElementType.PARAMETER)
+@UriInjectable(UriScheme.Parser.class)
+@Target({ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UriScheme {
+
+  /**
+   * URI scheme parser.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static class Parser implements UriParser<UriScheme, String> {
+    @Override
+    public String parse(URI uri, UriScheme annotation, Registry registry, Class<String> type) {
+      return uri.getScheme();
+    }
+  }
+
 }

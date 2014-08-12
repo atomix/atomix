@@ -24,12 +24,12 @@ import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.uri.Optional;
-import net.kuujo.copycat.uri.UriArgument;
 import net.kuujo.copycat.uri.UriAuthority;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPath;
 import net.kuujo.copycat.uri.UriPort;
+import net.kuujo.copycat.uri.UriQueryParam;
 import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
 import org.vertx.java.core.AsyncResult;
@@ -46,8 +46,12 @@ public class EventBusProtocol implements Protocol {
   private Vertx vertx;
   private String address;
 
+  public EventBusProtocol(Vertx vertx) {
+    this.vertx = vertx;
+  }
+
   @UriInject
-  public EventBusProtocol(@UriArgument("vertx") Vertx vertx, @UriAuthority @UriSchemeSpecificPart String address) {
+  public EventBusProtocol(@UriQueryParam("vertx") Vertx vertx, @UriAuthority @UriSchemeSpecificPart String address) {
     this.vertx = vertx;
     this.address = address;
   }
@@ -71,6 +75,35 @@ public class EventBusProtocol implements Protocol {
 
   @Override
   public void init(CopyCatContext context) {
+  }
+
+  /**
+   * Sets the event bus address.
+   *
+   * @param address The event bus address.
+   */
+  public void setAddress(String address) {
+    this.address = address;
+  }
+
+  /**
+   * Returns the event bus address.
+   *
+   * @return The event bus address.
+   */
+  public String getAddress() {
+    return address;
+  }
+
+  /**
+   * Sets the event bus address, returning the protocol for method chaining.
+   *
+   * @param address The event bus address.
+   * @return The event bus protocol.
+   */
+  public EventBusProtocol withAddress(String address) {
+    this.address = address;
+    return this;
   }
 
   @Override

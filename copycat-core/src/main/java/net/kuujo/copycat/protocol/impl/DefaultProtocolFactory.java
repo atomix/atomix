@@ -37,7 +37,7 @@ public class DefaultProtocolFactory implements ProtocolFactory {
   public Protocol createProtocol(String uri) {
     ProtocolUri wrappedUri = new ProtocolUri(uri);
     Class<? extends Protocol> protocolClass = wrappedUri.getProtocolClass();
-    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context);
+    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context.registry());
     Protocol protocol = injector.inject(protocolClass);
     protocol.init(context);
     return protocol;

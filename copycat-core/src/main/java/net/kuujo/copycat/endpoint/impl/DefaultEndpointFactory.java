@@ -37,7 +37,7 @@ public class DefaultEndpointFactory implements EndpointFactory {
   public Endpoint createEndpoint(String uri) {
     EndpointUri wrappedUri = new EndpointUri(uri);
     Class<? extends Endpoint> endpointClass = wrappedUri.getEndpointClass();
-    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context);
+    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context.registry());
     Endpoint endpoint = injector.inject(endpointClass);
     endpoint.init(context);
     return endpoint;

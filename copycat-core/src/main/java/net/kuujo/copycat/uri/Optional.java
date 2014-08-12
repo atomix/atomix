@@ -21,7 +21,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation for indicating that a parameter value is optional.
+ * Annotation for indicating that a constructor parameter value is optional.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

@@ -21,18 +21,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Named URI query argument injector annotation.
+ * Annotation for URI injectable annotations.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@UriInject
-@Target(ElementType.PARAMETER)
+@Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface UriArgument {
+public @interface UriInjectable {
 
   /**
-   * The argument name.
+   * The URI argument parser.
    */
-  String value();
+  @SuppressWarnings("rawtypes")
+  Class<? extends UriParser> value();
 
 }

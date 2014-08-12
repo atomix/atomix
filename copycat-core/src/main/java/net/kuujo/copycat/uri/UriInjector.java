@@ -15,77 +15,106 @@
  */
 package net.kuujo.copycat.uri;
 
-import java.io.UnsupportedEncodingException;
+import java.beans.BeanInfo;
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.net.URI;
-import java.net.URLDecoder;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 
-import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.endpoint.EndpointException;
+import net.kuujo.copycat.registry.Registry;
+import net.kuujo.copycat.registry.impl.BasicRegistry;
+import net.kuujo.copycat.uri.Optional;
+import net.kuujo.copycat.uri.UriException;
+import net.kuujo.copycat.uri.UriInject;
 
 /**
- * Handles injection of URI parts into new or existing objects.<p>
- *
- * The URI injector uses constructor, method and parameter annotations
- * to determine which URI values should be injected in place of which
- * parameters via which methods.
+ * URI injector.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class UriInjector {
   private final URI uri;
-  private final Map<String, Object> args = new HashMap<>();
+  private final Registry registry;
 
-  public UriInjector(URI uri, CopyCatContext context) {
+  public UriInjector(URI uri) {
     this.uri = uri;
-    String query = uri.getQuery();
-    if (query != null) {
-      String[] pairs = query.split("&");
-      for (String pair : pairs) {
-        int index = pair.indexOf("=");
-        try {
-          String key = URLDecoder.decode(pair.substring(0, index), "UTF-8");
-          String value = URLDecoder.decode(pair.substring(index + 1), "UTF-8");
-          if (value.startsWith("#")) {
-            args.put(key, context.registry().lookup(value.substring(1)));
-          } else {
-            args.put(key, value);
-          }
-        } catch (UnsupportedEncodingException e) {
-          throw new EndpointException(e);
-        }
-      }
-    }
+    this.registry = new BasicRegistry();
+  }
+
+  public UriInjector(URI uri, Registry registry) {
+    this.uri = uri;
+    this.registry = registry;
   }
 
   /**
-   * Creates a new instance of the given type.
+   * Injects the given type with URI arguments.
+   *
+   * @param type The type to inject.
+   * @return The injected object.
+   */
+  public <T> T inject(Class<T> type) {
+    return injectSetters(injectConstructor(type));
+  }
+
+  /**
+   * Injects the object constructor.
    */
   @SuppressWarnings("unchecked")
-  public <T> T inject(Class<T> type) {
-    T object = null;
-
-    // First, attempt to create the object from a @UriInject annotated constructor.
-    // We attempt to do this by invoking the constructur with the most available arguments.
+  private <T> T injectConstructor(Class<T> type) {
+    // Find the best matching constructor for the given URI. This is done by locating
+    // the first constructor with the most available arguments in the URI since ordering
+    // of constructors is unreliable.
     Constructor<?> matchConstructor = null;
     Object[] matchArgs = null;
     Integer matchCount = null;
     for (Constructor<?> constructor : type.getDeclaredConstructors()) {
       if (constructor.isAnnotationPresent(UriInject.class)) {
         constructor.setAccessible(true);
-        Object[] args;
+
+        // Map parameter types to URI parameters by locating constructor parameter
+        // annotations and parsing the URI to inject URI values into the constructor.
+        Parameter[] params = constructor.getParameters();
+        Object[] args = new Object[params.length];
+
         try {
-          args = buildArguments(constructor.getParameters());
-        } catch (IllegalStateException e) {
-          continue;
+          for (int i = 0; i < params.length; i++) {
+            Parameter param = params[i];
+  
+            // Iterate through annotations in order and create annotation values by
+            // parsing the URI. Whichever annotation produces a non-null value first wins.
+            Object value = null;
+            for (Annotation annotation : param.getAnnotations()) {
+              UriInjectable injectable = annotation.annotationType().getAnnotation(UriInjectable.class);
+              if (injectable != null) {
+                injectable.value().getConstructor(new Class<?>[]{}).setAccessible(true);
+                try {
+                  Object result = injectable.value().newInstance().parse(uri, annotation, registry, param.getType());
+                  if (result != null) {
+                    value = result;
+                    break;
+                  }
+                } catch (ClassCastException e) {
+                  throw new UriException(e);
+                }
+              }
+            }
+  
+            // If no value was found for this parameter, check to see if the parameter
+            // is optional. Optional parameters will continue on with null values.
+            // Otherwise, an IllegalStateException will be thrown.
+            if (value == null && !param.isAnnotationPresent(Optional.class)) {
+              throw new IllegalStateException("Missing argument of type " + param.getType());
+            }
+  
+            args[i] = value;
+          }
+        } catch (SecurityException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
+          throw new UriException(e);
         }
 
         // Count the number of non-null arguments for the constructor.
@@ -110,135 +139,90 @@ public class UriInjector {
     // found then the class must declare a default constructor.
     try {
       if (matchConstructor != null) {
-        object = (T) matchConstructor.newInstance(matchArgs);
+        return (T) matchConstructor.newInstance(matchArgs);
       } else {
-        object = type.newInstance();
+        return type.newInstance();
       }
     } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
       throw new UriException(e);
     }
-
-    // Once the object has been constructed, inject additional URI values
-    // via annotated methods if available.
-    return inject(object);
   }
 
   /**
-   * Injects the given object with values from the URI.
-   *
-   * @param object The object to inject.
-   * @return The injected object.
+   * Injects the object setters.
    */
-  public <T> T inject(T object) {
-    Class<?> type = object.getClass();
-    Set<String> injectedMethods = new HashSet<>();
-    while (type != Object.class) {
-      for (Method method : type.getDeclaredMethods()) {
-        if (method.isAnnotationPresent(UriInject.class) && !injectedMethods.contains(String.format("%s%s", method.getName(), method.getParameterTypes()))) {
-          Object[] args = buildArguments(method.getParameters());
-          method.setAccessible(true);
+  @SuppressWarnings("unchecked")
+  private <T> T injectSetters(T object) {
+    try {
+      // Search bean write methods for @UriInjectable annotations.
+      BeanInfo info = Introspector.getBeanInfo(object.getClass());
+      for (PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
+        Method method = descriptor.getWriteMethod();
+        if (method == null) continue;
+
+        // Iterate through the write method's annotations and search
+        // for injectable annotations. The URI is parsed by injectable parsers
+        // until the first non-null argument value is found.
+        Object value = null;
+        for (Annotation annotation : method.getAnnotations()) {
+          UriInjectable injectable = annotation.annotationType().getAnnotation(UriInjectable.class);
+          if (injectable != null) {
+            injectable.value().getConstructor(new Class<?>[]{}).setAccessible(true);
+            try {
+              Object result = injectable.value().newInstance().parse(uri, annotation, registry, descriptor.getPropertyType());
+              if (result != null) {
+                value = result;
+                break;
+              }
+            } catch (ClassCastException e) {
+              throw new UriException(e);
+            }
+          }
+        }
+
+        // If no non-null value was found then attempt to apply a named query parameter.
+        if (value == null) {
+          UriParser<UriQueryParam, Object> parser = new UriQueryParam.Parser<Object>();
           try {
-            method.invoke(object, args);
-          } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            value = parser.parse(uri, new GenericUriQueryParam(descriptor.getName()), registry, (Class<Object>) descriptor.getPropertyType());
+          } catch (ClassCastException e) {
             throw new UriException(e);
           }
         }
+
+        // If an argument value was found, apply the value to the object via the bean setter.
+        if (value != null) {
+          method.invoke(object, value);
+        }
       }
-      type = type.getSuperclass();
+    } catch (IntrospectionException | IllegalStateException | IllegalAccessException
+        | InstantiationException | NoSuchMethodException | IllegalArgumentException
+        | InvocationTargetException e) {
+      throw new UriException(e);
     }
+
     return object;
   }
 
   /**
-   * Builds an array of arguments given a set of parameters.
-   *
-   * @param parameters An array of parameters from which to build arguments.
-   * @return An array arguments for the given parameters.
+   * Generic URI query parameter that can be dynamically constructed.
    */
-  private Object[] buildArguments(Parameter[] parameters) throws IllegalStateException {
-    Object[] args = new Object[parameters.length];
-    for (int i = 0; i < parameters.length; i++) {
-      Parameter parameter = parameters[i];
-      Object value = null;
-      for (Annotation annotation : parameter.getAnnotations()) {
-        if (annotation.annotationType().isAnnotationPresent(UriInject.class)) {
-          if (annotation instanceof UriScheme) {
-            String scheme = uri.getScheme();
-            if (scheme != null) {
-              value = scheme;
-              break;
-            }
-          } else if (annotation instanceof UriSchemeSpecificPart) {
-            String schemeSpecificPart = uri.getSchemeSpecificPart();
-            if (schemeSpecificPart != null) {
-              value = schemeSpecificPart;
-              break;
-            }
-          } else if (annotation instanceof UriUserInfo) {
-            String userInfo = uri.getUserInfo();
-            if (userInfo != null) {
-              value = userInfo;
-              break;
-            }
-          } else if (annotation instanceof UriHost) {
-            String host = uri.getHost();
-            if (host != null) {
-              value = host;
-              break;
-            }
-          } else if (annotation instanceof UriPort) {
-            int port = uri.getPort();
-            if (port >= 0) {
-              value = port;
-              break;
-            }
-          } else if (annotation instanceof UriAuthority) {
-            String authority = uri.getAuthority();
-            if (authority != null) {
-              value = authority;
-              break;
-            }
-          } else if (annotation instanceof UriPath) {
-            String path = uri.getPath();
-            if (path != null) {
-              value = path;
-              break;
-            }
-          } else if (annotation instanceof UriQuery) {
-            String query = uri.getQuery();
-            if (query != null) {
-              value = query;
-              break;
-            }
-          } else if (annotation instanceof UriFragment) {
-            String fragment = uri.getFragment();
-            if (fragment != null) {
-              value = fragment;
-              break;
-            }
-          } else if (annotation instanceof UriArgument) {
-            Object arg = this.args.get(((UriArgument) annotation).value());
-            if (arg != null) {
-              value = arg;
-              break;
-            }
-          }
-        }
-      }
+  private static class GenericUriQueryParam implements Annotation, UriQueryParam {
+    private final String name;
 
-      // If no value was found for this parameter, check to see if the parameter
-      // is optional. Optional parameters will continue on with null values.
-      // Otherwise, an IllegalStateException will be thrown.
-      if (value == null) {
-        Optional optional = parameter.getAnnotation(Optional.class);
-        if (optional == null) {
-          throw new IllegalStateException("Missing argument of type " + parameter.getType());
-        }
-      }
-
-      args[i] = value;
+    private GenericUriQueryParam(String name) {
+      this.name = name;
     }
-    return args;
+
+    @Override
+    public String value() {
+      return name;
+    }
+
+    @Override
+    public Class<? extends Annotation> annotationType() {
+      return UriQueryParam.class;
+    }
   }
 
 }

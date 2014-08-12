@@ -23,10 +23,10 @@ import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.Optional;
-import net.kuujo.copycat.uri.UriArgument;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
+import net.kuujo.copycat.uri.UriQueryParam;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -56,7 +56,7 @@ public class TcpEndpoint implements Endpoint {
   }
 
   @UriInject
-  public TcpEndpoint(@UriArgument("vertx") Vertx vertx) {
+  public TcpEndpoint(@UriQueryParam("vertx") Vertx vertx) {
     this.vertx = vertx;
   }
 
@@ -73,7 +73,7 @@ public class TcpEndpoint implements Endpoint {
   }
 
   @UriInject
-  public TcpEndpoint(@UriHost String host, @Optional @UriPort int port, @UriArgument("vertx") Vertx vertx) {
+  public TcpEndpoint(@UriHost String host, @Optional @UriPort int port, @UriQueryParam("vertx") Vertx vertx) {
     this.host = host;
     this.port = port;
     this.vertx = vertx;
@@ -90,6 +90,7 @@ public class TcpEndpoint implements Endpoint {
    *
    * @param host The TCP host.
    */
+  @UriHost
   public void setHost(String host) {
     this.host = host;
   }
@@ -119,6 +120,7 @@ public class TcpEndpoint implements Endpoint {
    *
    * @param port The TCP port.
    */
+  @UriPort
   public void setPort(int port) {
     this.port = port;
   }

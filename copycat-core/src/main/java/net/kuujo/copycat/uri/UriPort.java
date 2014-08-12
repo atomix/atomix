@@ -19,14 +19,30 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.net.URI;
+
+import net.kuujo.copycat.registry.Registry;
 
 /**
  * URI port injector annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@UriInject
-@Target(ElementType.PARAMETER)
+@UriInjectable(UriPort.Parser.class)
+@Target({ElementType.PARAMETER, ElementType.METHOD})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface UriPort {
+
+  /**
+   * URI port parser.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static class Parser implements UriParser<UriPort, Integer> {
+    @Override
+    public Integer parse(URI uri, UriPort annotation, Registry registry, Class<Integer> type) {
+      return Integer.valueOf(uri.getPort());
+    }
+  }
+
 }

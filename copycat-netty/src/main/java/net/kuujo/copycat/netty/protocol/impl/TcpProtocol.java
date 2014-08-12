@@ -10,7 +10,7 @@ import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
 
 public class TcpProtocol implements Protocol {
-  private String host = "127.0.0.1";
+  private String host = "localhost";
   private int port;
   private int threads = 1;
   private boolean tcpNoDelay;
@@ -19,7 +19,7 @@ public class TcpProtocol implements Protocol {
   private boolean useSsl;
 
   public TcpProtocol() {
-    this("127.0.0.1", 0);
+    this("localhost", 0);
   }
 
   @UriInject
@@ -38,6 +38,7 @@ public class TcpProtocol implements Protocol {
    *
    * @param host The TCP host.
    */
+  @UriHost
   public void setHost(String host) {
     this.host = host;
   }
@@ -67,6 +68,7 @@ public class TcpProtocol implements Protocol {
    *
    * @param port The TCP port.
    */
+  @UriPort
   public void setPort(int port) {
     this.port = port;
   }

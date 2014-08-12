@@ -32,6 +32,9 @@ public class DirectProtocol implements Protocol {
   private String address;
   private CopyCatContext context;
 
+  public DirectProtocol() {
+  }
+
   @UriInject
   public DirectProtocol(@UriAuthority @UriSchemeSpecificPart String address) {
     this.address = address;
@@ -40,6 +43,37 @@ public class DirectProtocol implements Protocol {
   @Override
   public void init(CopyCatContext context) {
     this.context = context;
+  }
+
+  /**
+   * Sets the protocol address.
+   *
+   * @param address The protocol address.
+   */
+  @UriAuthority
+  @UriSchemeSpecificPart
+  public void setAddress(String address) {
+    this.address = address;
+  }
+
+  /**
+   * Returns the protocol address.
+   *
+   * @return The protocol address.
+   */
+  public String getAddress() {
+    return address;
+  }
+
+  /**
+   * Sets the protocol address, returning the protocol for method chaining.
+   *
+   * @param address The protocol address.
+   * @return The protocol instance.
+   */
+  public DirectProtocol withAddress(String address) {
+    this.address = address;
+    return this;
   }
 
   @Override

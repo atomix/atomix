@@ -5,10 +5,10 @@ import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.uri.Optional;
-import net.kuujo.copycat.uri.UriArgument;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
+import net.kuujo.copycat.uri.UriQueryParam;
 
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultVertx;
@@ -28,12 +28,12 @@ public class TcpProtocol implements Protocol {
   }
 
   @UriInject
-  public TcpProtocol(@UriArgument("vertx") Vertx vertx) {
+  public TcpProtocol(@UriQueryParam("vertx") Vertx vertx) {
     this.vertx = vertx;
   }
 
   @UriInject
-  public TcpProtocol(@UriHost String host, @Optional @UriPort int port, @UriArgument("vertx") Vertx vertx) {
+  public TcpProtocol(@UriHost String host, @Optional @UriPort int port, @UriQueryParam("vertx") Vertx vertx) {
     this.host = host;
     this.port = port;
     this.vertx = vertx;
@@ -56,6 +56,7 @@ public class TcpProtocol implements Protocol {
    *
    * @param host The TCP host.
    */
+  @UriHost
   public void setHost(String host) {
     this.host = host;
   }
@@ -85,6 +86,7 @@ public class TcpProtocol implements Protocol {
    *
    * @param port The TCP port.
    */
+  @UriPort
   public void setPort(int port) {
     this.port = port;
   }
