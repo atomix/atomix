@@ -35,7 +35,7 @@ import net.kuujo.copycat.cluster.Member;
  */
 public class DefaultCluster implements Cluster, Observer {
   private final CopyCatContext context;
-  private final DynamicClusterConfig config = new DynamicClusterConfig();
+  private final ClusterConfig config = new ClusterConfig();
   private final Map<String, Member> members = new HashMap<>();
 
   public DefaultCluster(ClusterConfig config, CopyCatContext context) {

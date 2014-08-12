@@ -112,9 +112,7 @@ class Leader extends BaseState implements Observer {
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
-    if (context.cluster() instanceof Observable) {
-      ((Observable) context.cluster()).addObserver(this);
-    }
+    context.cluster().addObserver(this);
 
     // Create a map and list of remote replicas. We create both a map and
     // list because the list is sortable, so we can use a little math
@@ -421,9 +419,7 @@ class Leader extends BaseState implements Observer {
     context.cancelTimer(currentTimer);
 
     // Stop observing the observable cluster configuration.
-    if (context.cluster() instanceof Observable) {
-      ((Observable) context.cluster()).deleteObserver(this);
-    }
+    context.cluster().deleteObserver(this);
   }
 
   /**

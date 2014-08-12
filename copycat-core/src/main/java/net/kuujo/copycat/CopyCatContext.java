@@ -25,8 +25,6 @@ import java.util.logging.Logger;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.DefaultCluster;
-import net.kuujo.copycat.cluster.impl.DynamicClusterConfig;
-import net.kuujo.copycat.cluster.impl.StaticClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.MemoryLog;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -76,7 +74,7 @@ public class CopyCatContext {
   private static final Logger logger = Logger.getLogger(CopyCatContext.class.getCanonicalName());
   private final ClusterConfig clusterConfig;
   private final Registry registry;
-  private final DynamicClusterConfig internalConfig = new DynamicClusterConfig();
+  private final ClusterConfig internalConfig = new ClusterConfig();
   final Cluster cluster;
   final Log log;
   final StateMachine stateMachine;
@@ -94,7 +92,7 @@ public class CopyCatContext {
   private long lastApplied = 0;
 
   public CopyCatContext(StateMachine stateMachine) {
-    this(stateMachine, new MemoryLog(), new StaticClusterConfig(), new CopyCatConfig());
+    this(stateMachine, new MemoryLog(), new ClusterConfig(), new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster) {
@@ -110,7 +108,7 @@ public class CopyCatContext {
   }
 
   public CopyCatContext(StateMachine stateMachine, Log log) {
-    this(stateMachine, log, new StaticClusterConfig(), new CopyCatConfig());
+    this(stateMachine, log, new ClusterConfig(), new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster) {

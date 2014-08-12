@@ -99,7 +99,9 @@ Here we've created a simple key value store. By deploying this state machine on 
 nodes in a cluster, CopyCat will ensure commands (i.e. `get`, `set`, and `delete`) are
 applied to the state machine in the order in which they're submitted to the cluster
 (log order). Internally, CopyCat uses a replicated log to order and replicate commands,
-and it uses leader election to coordinate log replication.
+and it uses leader election to coordinate log replication. When the replicated log grows
+too large, CopyCat will take a snapshot of the `@Stateful` state machine state and
+compact the log.
 
 ```java
 Log log = new FileLog("key-value.log");
@@ -108,7 +110,7 @@ Log log = new FileLog("key-value.log");
 To configure the CopyCat cluster, we simply create a `ClusterConfig`.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig();
+ClusterConfig cluster = new ClusterConfig();
 cluster.setLocalMember("tcp://localhost:8080");
 cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
 ```
@@ -117,6 +119,10 @@ Note that the cluster configuration identifies a particular protocol, `tcp`. The
 the endpoints the nodes within the CopyCat cluster use to communicate with one another.
 CopyCat provides a number of different [protocol](#protocols) and [endpoint](#endpoints)
 implementations.
+
+Additionally, CopyCat cluster membership is dynamic, and the `ClusterConfig` is `Observable`.
+This means that if the `ClusterConfig` is changed while the cluster is running, CopyCat
+will pick up the membership change and replicate the cluster configuration in a safe manner.
 
 Now that the cluster has been set up, we simply create a `CopyCat` instance, specifying
 an [endpoint](#endpoints) through which the outside world can communicate with the cluster.
@@ -137,7 +143,7 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore exten
     Log log = new FileLog("key-value.log");
 
     // Configure the cluster.
-    ClusterConfig cluster = new StaticClusterConfig();
+    ClusterConfig cluster = new ClusterConfig();
     cluster.setLocalMember("tcp://localhost:8080");
     cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
 
@@ -529,7 +535,7 @@ and the user-defined configuration will be replaced by an internal configuration
 To configure the CopyCat cluster, create a `ClusterConfig`.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig();
+ClusterConfig cluster = new ClusterConfig();
 ```
 
 Each cluster configuration must contain a *local* member and a set of *remote* members.
@@ -552,16 +558,8 @@ cluster.addRemoteMember("tcp://localhost1236");
 ```
 
 ### Creating a [dynamic cluster](#cluster-configurations)
-Dynamic cluster membership changes are supported via any `ClusterConfig` that
-extends the `Observable` class. If a cluster configuration is `Observable`, the cluster
-leader will observe the configuration once it is elected. When the configuration changes,
-the leader will log and replicate the configuration change.
-
-CopyCat provides an `Observable` cluster configuration called `DynamicClusterConfig`:
-
-```java
-ClusterConfig cluster = new DynamicClusterConfig();
-```
+The CopyCat cluster configuration is `Observable`, and once the local node is elected
+leader, it will begin observing the configuration for changes.
 
 Once the local node has been started, simply adding or removing nodes from the observable
 `DynamicClusterConfig` may cause the replica's configuration to be updated. However,
@@ -986,7 +984,7 @@ Let's take a look at an example of how to configure the CopyCat cluster when usi
 custom protocols.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("http://localhost:8080/copycat");
+ClusterConfig cluster = new ClusterConfig("http://localhost:8080/copycat");
 cluster.addRemoteMember("http://localhost:8081/copycat");
 cluster.addRemoteMember("http://localhost:8082/copycat");
 ```
@@ -1007,7 +1005,7 @@ direct method calls. This protocol is intended purely for testing.
 
 ```java
 Registry registry = new ConcurrentRegistry();
-ClusterConfig cluster = new StaticClusterConfig("direct:foo");
+ClusterConfig cluster = new ClusterConfig("direct:foo");
 cluster.setRemoteMembers("direct:bar", "direct:baz");
 CopyCatContext context = new CopyCatContext(new MyStateMachine, cluster, registry);
 ```
@@ -1022,7 +1020,7 @@ dependency. Once the `copycat-netty` library is available on your classpath,
 CopyCat will automatically find the Netty `tcp` protocol.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("tcp://localhost:1234");
+ClusterConfig cluster = new ClusterConfig("tcp://localhost:1234");
 ```
 
 ### Vert.x Event Bus Protocol
@@ -1033,11 +1031,11 @@ in an existing `Vertx` instance.
 In order to use Vert.x protocols, you must add the `copycat-vertx` project as a dependency.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("eventbus://localhost:1234/foo");
+ClusterConfig cluster = new ClusterConfig("eventbus://localhost:1234/foo");
 
 // or...
 
-ClusterConfig cluster = new StaticClusterConfig("eventbus://foo?vertx=$vertx");
+ClusterConfig cluster = new ClusterConfig("eventbus://foo?vertx=$vertx");
 Registry registry = new BasicRegistry();
 registry.bind("vertx", vertx);
 ```
@@ -1050,7 +1048,7 @@ simply use an ordinary TCP address.
 In order to use Vert.x protocols, you must add the `copycat-vertx` project as a dependency.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("tcp://localhost:1234");
+ClusterConfig cluster = new ClusterConfig("tcp://localhost:1234");
 cluster.setRemoteMembers("tcp://localhost:1235", "tcp://localhost:1236");
 ```
 
@@ -1093,7 +1091,7 @@ endpoint. To wrap a context, use the `CopyCat` class. The `CopyCat` constructor
 simply accepts a single additional argument which is the endpoint URI.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("tcp://localhost:5555", "tcp://localhost:5556", "tcp://localhost:5557");
+ClusterConfig cluster = new ClusterConfig("tcp://localhost:5555", "tcp://localhost:5556", "tcp://localhost:5557");
 CopyCat copycat = new CopyCat("http://localhost:8080", new MyStateMachine(), cluster)
 copycat.start();
 ```
@@ -1232,7 +1230,7 @@ log replication. Nodes in CopyCat are defined by special URIs which reference th
 protocol over which the node communicates.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig();
+ClusterConfig cluster = new ClusterConfig();
 cluster.setLocalMember("tcp://localhost:5555");
 cluster.setRemoteMembers("tcp://localhost:5556", "tcp://localhost:5557");
 ```
@@ -2069,7 +2067,7 @@ together, CopyCat provides a helper `CopyCat` class which handles binding
 an `Endpoint` to a `CopyCatContext`.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig();
+ClusterConfig cluster = new ClusterConfig();
 cluster.setLocalMember("tcp://localhost:5005");
 cluster.addRemoteMember("tcp://localhost:5006");
 cluster.addRemoteMember("tcp://localhost:5007");

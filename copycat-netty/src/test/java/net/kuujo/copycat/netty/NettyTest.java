@@ -30,7 +30,6 @@ import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.impl.DynamicClusterConfig;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 
@@ -100,7 +99,7 @@ public class NettyTest {
     Registry registry = new ConcurrentRegistry();
     Set<CopyCatContext> instances = new HashSet<>();
     for (int i = 1; i <= numInstances; i++) {
-      ClusterConfig cluster = new DynamicClusterConfig();
+      ClusterConfig cluster = new ClusterConfig();
       cluster.setLocalMember(String.format("tcp://localhost:%d", i+50505));
       for (int j = 1; j <= numInstances; j++) {
         if (j != i) {
