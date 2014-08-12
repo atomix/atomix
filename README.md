@@ -324,9 +324,9 @@ interface. The state machine interface exposes three methods:
 ```java
 public interface StateMachine {
 
-  Snapshot takeSnapshot();
+  Map<String, Object> takeSnapshot();
 
-  void installSnapshot(Snapshot snapshot);
+  void installSnapshot(Map<String, Object> snapshot);
 
   Object applyCommand(String command, Map<String, Object> args);
 
@@ -408,20 +408,19 @@ need only create and install the data via the `takeSnapshot` and `installSnapsho
 respectively. Once the log grows to a predetermined size (configurable in `CopyCatConfig`),
 CopyCat will take a snaphsot of the log and wipe all previous log entries.
 
-Snapshots are stored in a special `Snapshot` class which is essentially just a wrapper for
-`Map<String, Object>`.
+Snapshots are simply `Map<String, Object>` maps.
 
 ```java
 public class MyStateMachine implements StateMachine {
   private Map<String, Object> data = new HashMap<>();
 
   @Override
-  public Snapshot takeSnapshot() {
-    return new Snapshot(data);
+  public Map<String, Object> takeSnapshot() {
+    return data;
   }
 
   @Override
-  public void installSnapshot(Snapshot data) {
+  public void installSnapshot(Map<String, Object> data) {
     this.data = data;
   }
 
