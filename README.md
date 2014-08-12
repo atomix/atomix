@@ -69,11 +69,11 @@ User Manual
 # A brief introduction
 CopyCat is a "protocol agnostic" implementation of the Raft consensus algorithm. It
 provides a framework for constructing a partition-tolerant replicated state machine
-over a variety of wire-level protocols. It sounds complex, but the API is actually
-quite simply. Here's a quick example.
+over a variety of wire-level protocols. It sounds complicated, but the API is actually
+quite simple. Here's a quick example.
 
 ```java
-public class KeyValueStore implements StateMachine {
+public class KeyValueStore extends AnnotatedStateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 
@@ -130,13 +130,18 @@ That's it! We've just created a strongly consistent, fault-tolerant key-value st
 HTTP API in less than 25 lines of code!
 
 ```java
-public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore implements StateMachine {
+public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore extends AnnotatedStateMachine {
 
   public static void main(String[] args) {
+    // Create the local file log.
     Log log = new FileLog("key-value.log");
+
+    // Configure the cluster.
     ClusterConfig cluster = new StaticClusterConfig();
     cluster.setLocalMember("tcp://localhost:8080");
     cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
+
+    // Create and start a server at localhost:5000.
     new CopyCat("http://localhost:5000", new KeyValueStore(), log, cluster).start();
   }
 
