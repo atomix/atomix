@@ -16,7 +16,6 @@
 package net.kuujo.copycat.endpoint;
 
 import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.CopyCatContext;
 
 /**
  * CopyCat endpoint.<p>
@@ -37,13 +36,6 @@ import net.kuujo.copycat.CopyCatContext;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Endpoint {
-
-  /**
-   * Initializes the endpoint with the current CopyCat context.
-   *
-   * @param context The copycat context.
-   */
-  void init(CopyCatContext context);
 
   /**
    * Starts the endpoint.<p>

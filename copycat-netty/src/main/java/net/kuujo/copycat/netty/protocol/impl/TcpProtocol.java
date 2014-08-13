@@ -15,13 +15,10 @@
  */
 package net.kuujo.copycat.netty.protocol.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.uri.Optional;
 import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
 
 /**
@@ -48,15 +45,13 @@ public class TcpProtocol implements Protocol {
     this("localhost", 0);
   }
 
-  @UriInject
-  public TcpProtocol(@UriHost String host, @Optional @UriPort int port) {
+  public TcpProtocol(String host, int port) {
     this.host = host;
     this.port = port;
   }
 
-  @UriInject
-  public TcpProtocol(@UriHost String host) {
-    this(host, 0);
+  public TcpProtocol(int port) {
+    this("localhost", port);
   }
 
   /**
@@ -436,10 +431,6 @@ public class TcpProtocol implements Protocol {
   public TcpProtocol withConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
     return this;
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
   }
 
   @Override

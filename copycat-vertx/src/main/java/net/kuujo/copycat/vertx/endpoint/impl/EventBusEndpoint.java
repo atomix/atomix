@@ -17,21 +17,11 @@ package net.kuujo.copycat.vertx.endpoint.impl;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
-import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.uri.Optional;
-import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPath;
-import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.uri.UriQueryParam;
-import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -49,32 +39,21 @@ import org.vertx.java.core.json.JsonObject;
 public class EventBusEndpoint implements Endpoint {
   private String address;
   private CopyCatContext context;
+  private String host = "localhost";
+  private int port;
   private Vertx vertx;
 
-  public EventBusEndpoint(Vertx vertx) {
-    this.vertx = vertx;
+  public EventBusEndpoint() {
   }
 
-  @UriInject
-  public EventBusEndpoint(@UriQueryParam("vertx") Vertx vertx, @UriAuthority @UriSchemeSpecificPart String address) {
-    this.vertx = vertx;
+  public EventBusEndpoint(String host, int port, String address) {
+    this.host = host;
+    this.port = port;
     this.address = address;
   }
 
-  @UriInject
-  public EventBusEndpoint(@UriHost String host, @Optional @UriPort int port, @UriPath String address) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    vertx = new DefaultVertx(port >= 0 ? port : 0, host, new Handler<AsyncResult<Vertx>>() {
-      @Override
-      public void handle(AsyncResult<Vertx> result) {
-        latch.countDown();
-      }
-    });
-    try {
-      latch.await(10, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new ProtocolException(e);
-    }
+  public EventBusEndpoint(Vertx vertx, String address) {
+    this.vertx = vertx;
     this.address = address;
   }
 
@@ -104,9 +83,12 @@ public class EventBusEndpoint implements Endpoint {
     }
   };
 
-  @Override
-  public void init(CopyCatContext context) {
+  public void setContext(CopyCatContext context) {
     this.context = context;
+  }
+
+  public CopyCatContext getContext() {
+    return context;
   }
 
   /**
@@ -114,6 +96,7 @@ public class EventBusEndpoint implements Endpoint {
    *
    * @param address The event bus address.
    */
+  @UriPath
   public void setAddress(String address) {
     this.address = address;
   }
@@ -140,16 +123,34 @@ public class EventBusEndpoint implements Endpoint {
 
   @Override
   public void start(final AsyncCallback<Void> callback) {
-    vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
-        } else {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+    if (vertx == null) {
+      vertx = new DefaultVertx(port >= 0 ? port : 0, host, new Handler<AsyncResult<Vertx>>() {
+        @Override
+        public void handle(AsyncResult<Vertx> result) {
+          vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
+            @Override
+            public void handle(AsyncResult<Void> result) {
+              if (result.failed()) {
+                callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
+              } else {
+                callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+              }
+            }
+          });
         }
-      }
-    });
+      });
+    } else {
+      vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
+        @Override
+        public void handle(AsyncResult<Void> result) {
+          if (result.failed()) {
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
+          } else {
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+          }
+        }
+      });
+    }
   }
 
   @Override

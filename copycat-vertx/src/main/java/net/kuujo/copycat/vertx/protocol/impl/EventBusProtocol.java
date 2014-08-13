@@ -15,27 +15,12 @@
  */
 package net.kuujo.copycat.vertx.protocol.impl;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.uri.Optional;
-import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPath;
-import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.uri.UriQueryParam;
-import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.impl.DefaultVertx;
 
 /**
  * Vert.x event bus protocol implementation.
@@ -43,38 +28,23 @@ import org.vertx.java.core.impl.DefaultVertx;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EventBusProtocol implements Protocol {
+  private String host;
+  private int port;
   private Vertx vertx;
   private String address;
 
-  public EventBusProtocol(Vertx vertx) {
-    this.vertx = vertx;
+  public EventBusProtocol() {
   }
 
-  @UriInject
-  public EventBusProtocol(@UriQueryParam("vertx") Vertx vertx, @UriAuthority @UriSchemeSpecificPart String address) {
-    this.vertx = vertx;
+  public EventBusProtocol(String host, int port, String address) {
+    this.host = host;
+    this.port = port;
     this.address = address;
   }
 
-  @UriInject
-  public EventBusProtocol(@UriHost String host, @Optional @UriPort int port, @UriPath String address) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    vertx = new DefaultVertx(port >= 0 ? port : 0, host, new Handler<AsyncResult<Vertx>>() {
-      @Override
-      public void handle(AsyncResult<Vertx> result) {
-        latch.countDown();
-      }
-    });
-    try {
-      latch.await(10, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new ProtocolException(e);
-    }
+  public EventBusProtocol(Vertx vertx, String address) {
+    this.vertx = vertx;
     this.address = address;
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
   }
 
   /**
@@ -82,6 +52,7 @@ public class EventBusProtocol implements Protocol {
    *
    * @param address The event bus address.
    */
+  @UriPath
   public void setAddress(String address) {
     this.address = address;
   }
@@ -108,12 +79,20 @@ public class EventBusProtocol implements Protocol {
 
   @Override
   public ProtocolServer createServer() {
-    return new EventBusProtocolServer(address, vertx);
+    if (vertx != null) {
+      return new EventBusProtocolServer(address, vertx);
+    } else {
+      return new EventBusProtocolServer(address, host, port);
+    }
   }
 
   @Override
   public ProtocolClient createClient() {
-    return new EventBusProtocolClient(address, vertx);
+    if (vertx != null) {
+      return new EventBusProtocolClient(address, vertx);
+    } else {
+      return new EventBusProtocolClient(address, host, port);
+    }
   }
 
 }

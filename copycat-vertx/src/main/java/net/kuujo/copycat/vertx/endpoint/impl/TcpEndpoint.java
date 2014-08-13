@@ -21,11 +21,8 @@ import java.util.Map;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
-import net.kuujo.copycat.uri.Optional;
 import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.uri.UriQueryParam;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -44,7 +41,7 @@ import org.vertx.java.core.parsetools.RecordParser;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TcpEndpoint implements Endpoint {
-  private final Vertx vertx;
+  private Vertx vertx = new DefaultVertx();
   private CopyCatContext context;
   private NetServer server;
   private String host;
@@ -54,34 +51,13 @@ public class TcpEndpoint implements Endpoint {
     this.vertx = new DefaultVertx();
   }
 
-  @UriInject
-  public TcpEndpoint(@UriQueryParam("vertx") Vertx vertx) {
+  public TcpEndpoint(Vertx vertx) {
     this.vertx = vertx;
   }
 
-  @UriInject
-  public TcpEndpoint(@UriHost String host) {
-    this(host, 0);
-  }
-
-  @UriInject
-  public TcpEndpoint(@UriHost String host, @Optional @UriPort int port) {
+  public TcpEndpoint(String host, int port) {
     this.host = host;
     this.port = port;
-    this.vertx = new DefaultVertx();
-  }
-
-  @UriInject
-  public TcpEndpoint(@UriHost String host, @Optional @UriPort int port, @UriQueryParam("vertx") Vertx vertx) {
-    this.host = host;
-    this.port = port;
-    this.vertx = vertx;
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
-    this.server = vertx.createNetServer();
   }
 
   /**
@@ -146,6 +122,10 @@ public class TcpEndpoint implements Endpoint {
 
   @Override
   public void start(final AsyncCallback<Void> callback) {
+    if (server == null) {
+      server = vertx.createNetServer();
+    }
+
     server.connectHandler(new Handler<NetSocket>() {
       @Override
       public void handle(final NetSocket socket) {

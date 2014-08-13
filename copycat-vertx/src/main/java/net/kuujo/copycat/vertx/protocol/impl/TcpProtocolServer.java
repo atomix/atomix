@@ -37,6 +37,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetServer;
@@ -50,16 +51,47 @@ import org.vertx.java.core.parsetools.RecordParser;
  */
 public class TcpProtocolServer implements ProtocolServer {
   private static final Serializer serializer = SerializerFactory.getSerializer();
-  private final Vertx vertx;
+  private Vertx vertx;
   private final String host;
   private final int port;
+  private boolean clientAuthRequired;
+  private final TcpProtocol protocol;
   private NetServer server;
   private ProtocolHandler requestHandler;
 
-  public TcpProtocolServer(Vertx vertx, String host, int port) {
-    this.vertx = vertx;
+  public TcpProtocolServer(String host, int port, TcpProtocol protocol) {
     this.host = host;
     this.port = port;
+    this.protocol = protocol;
+  }
+
+  /**
+   * Sets whether client authentication is required.
+   *
+   * @param required Whether client authentication is required.
+   */
+  public void setClientAuthRequired(boolean required) {
+    this.clientAuthRequired = required;
+  }
+
+  /**
+   * Returns whether client authentication is required.
+   *
+   * @return Whether client authentication is required.
+   */
+  public boolean isClientAuthRequired() {
+    return clientAuthRequired;
+  }
+
+  /**
+   * Sets whether client authentication is required.
+   *
+   * @param required Whether client authentication is required.
+   * @return The TCP protocol.
+   */
+  public TcpProtocolServer withClientAuthRequired(boolean required) {
+    this.clientAuthRequired = required;
+    return this;
   }
 
   @Override
@@ -69,8 +101,25 @@ public class TcpProtocolServer implements ProtocolServer {
 
   @Override
   public void start(final AsyncCallback<Void> callback) {
+    if (vertx == null) {
+      vertx = new DefaultVertx();
+    }
+
     if (server == null) {
       server = vertx.createNetServer();
+      server.setTCPKeepAlive(true);
+      server.setTCPNoDelay(true);
+      server.setReuseAddress(true);
+      server.setAcceptBacklog(protocol.getAcceptBacklog());
+      server.setSendBufferSize(protocol.getSendBufferSize());
+      server.setReceiveBufferSize(protocol.getReceiveBufferSize());
+      server.setSSL(protocol.isSsl());
+      server.setKeyStorePath(protocol.getKeyStorePath());
+      server.setKeyStorePassword(protocol.getKeyStorePassword());
+      server.setTrustStorePath(protocol.getTrustStorePath());
+      server.setTrustStorePassword(protocol.getTrustStorePassword());
+      server.setClientAuthRequired(clientAuthRequired);
+      server.setUsePooledBuffers(true);
       server.connectHandler(new Handler<NetSocket>() {
         @Override
         public void handle(final NetSocket socket) {

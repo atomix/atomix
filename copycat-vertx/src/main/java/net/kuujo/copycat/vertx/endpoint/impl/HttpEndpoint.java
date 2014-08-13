@@ -21,11 +21,8 @@ import java.util.Map;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
-import net.kuujo.copycat.uri.Optional;
 import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.uri.UriQueryParam;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -54,64 +51,16 @@ public class HttpEndpoint implements Endpoint {
     this.vertx = new DefaultVertx();
   }
 
-  @UriInject
-  public HttpEndpoint(@UriQueryParam("vertx") Vertx vertx) {
-    this.vertx = vertx;
-  }
-
-  @UriInject
-  public HttpEndpoint(@UriHost String host) {
-    this(host, 0);
-  }
-
-  @UriInject
-  public HttpEndpoint(@UriHost String host, @Optional @UriPort int port) {
+  public HttpEndpoint(String host, int port) {
     this.host = host;
     this.port = port;
     this.vertx = new DefaultVertx();
   }
 
-  @UriInject
-  public HttpEndpoint(@UriHost String host, @Optional @UriPort int port, @UriQueryParam("vertx") Vertx vertx) {
+  public HttpEndpoint(String host, int port, Vertx vertx) {
     this.host = host;
     this.port = port;
     this.vertx = vertx;
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
-    this.server = vertx.createHttpServer();
-    RouteMatcher routeMatcher = new RouteMatcher();
-    routeMatcher.post("/:command", new Handler<HttpServerRequest>() {
-      @Override
-      public void handle(final HttpServerRequest request) {
-        request.bodyHandler(new Handler<Buffer>() {
-          @Override
-          public void handle(Buffer buffer) {
-            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new JsonObject(buffer.toString()).toMap(), new AsyncCallback<Object>() {
-              @Override
-              @SuppressWarnings({"unchecked", "rawtypes"})
-              public void call(net.kuujo.copycat.AsyncResult<Object> result) {
-                if (result.succeeded()) {
-                  request.response().setStatusCode(200);
-                  if (result instanceof Map) {
-                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result.value())).encode());                  
-                  } else if (result instanceof List) {
-                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result.value())).encode());
-                  } else {
-                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result.value()).encode());
-                  }
-                } else {
-                  request.response().setStatusCode(400);
-                }
-              }
-            });
-          }
-        });
-      }
-    });
-    server.requestHandler(routeMatcher);
   }
 
   /**
@@ -176,6 +125,40 @@ public class HttpEndpoint implements Endpoint {
 
   @Override
   public void start(final AsyncCallback<Void> callback) {
+    if (server == null) {
+      server = vertx.createHttpServer();
+    }
+
+    RouteMatcher routeMatcher = new RouteMatcher();
+    routeMatcher.post("/:command", new Handler<HttpServerRequest>() {
+      @Override
+      public void handle(final HttpServerRequest request) {
+        request.bodyHandler(new Handler<Buffer>() {
+          @Override
+          public void handle(Buffer buffer) {
+            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new JsonObject(buffer.toString()).toMap(), new AsyncCallback<Object>() {
+              @Override
+              @SuppressWarnings({"unchecked", "rawtypes"})
+              public void call(net.kuujo.copycat.AsyncResult<Object> result) {
+                if (result.succeeded()) {
+                  request.response().setStatusCode(200);
+                  if (result instanceof Map) {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result.value())).encode());                  
+                  } else if (result instanceof List) {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result.value())).encode());
+                  } else {
+                    request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result.value()).encode());
+                  }
+                } else {
+                  request.response().setStatusCode(400);
+                }
+              }
+            });
+          }
+        });
+      }
+    });
+    server.requestHandler(routeMatcher);
     server.listen(port, host, new Handler<AsyncResult<HttpServer>>() {
       @Override
       public void handle(AsyncResult<HttpServer> result) {
@@ -190,16 +173,20 @@ public class HttpEndpoint implements Endpoint {
 
   @Override
   public void stop(final AsyncCallback<Void> callback) {
-    server.close(new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
-        } else {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+    if (server != null) {
+      server.close(new Handler<AsyncResult<Void>>() {
+        @Override
+        public void handle(AsyncResult<Void> result) {
+          if (result.failed()) {
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
+          } else {
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+          }
         }
-      }
-    });
+      });
+    } else {
+      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+    }
   }
 
 }

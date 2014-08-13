@@ -28,6 +28,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -37,10 +38,20 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class EventBusProtocolClient implements ProtocolClient {
   private final String address;
-  private final Vertx vertx;
+  private final String host;
+  private final int port;
+  private Vertx vertx;
+
+  public EventBusProtocolClient(String address, String host, int port) {
+    this.address = address;
+    this.host = host;
+    this.port = port;
+  }
 
   public EventBusProtocolClient(String address, Vertx vertx) {
     this.address = address;
+    this.host = null;
+    this.port = 0;
     this.vertx = vertx;
   }
 
@@ -109,8 +120,21 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void connect(AsyncCallback<Void> callback) {
-    callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+  public void connect(final AsyncCallback<Void> callback) {
+    if (vertx == null) {
+      vertx = new DefaultVertx(port >= 0 ? port : 0, host, new Handler<AsyncResult<Vertx>>() {
+        @Override
+        public void handle(AsyncResult<Vertx> result) {
+          if (result.failed()) {
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
+          } else {
+            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+          }
+        }
+      });
+    } else {
+      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+    }
   }
 
   @Override

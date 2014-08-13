@@ -29,9 +29,7 @@ import net.kuujo.copycat.endpoint.Endpoint;
 public class LocalEndpoint implements Endpoint {
   private CopyCatContext context;
 
-  @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
+  public LocalEndpoint() {
   }
 
   @Override

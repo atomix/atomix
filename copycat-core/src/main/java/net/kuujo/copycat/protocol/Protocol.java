@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.CopyCatContext;
-
 /**
  * CopyCat protocol.<p>
  *
@@ -33,16 +31,9 @@ import net.kuujo.copycat.CopyCatContext;
 public interface Protocol {
 
   /**
-   * Initializes the protocol.
-   *
-   * @param address The protocol address.
-   * @param context The protocol context.
-   */
-  void init(CopyCatContext context);
-
-  /**
    * Creates a protocol server.
    *
+   * @param context The CopyCat context.
    * @return The protocol server.
    */
   ProtocolServer createServer();
@@ -50,6 +41,7 @@ public interface Protocol {
   /**
    * Creates a protocol client.
    *
+   * @param context The CopyCat context.
    * @return The protocol client.
    */
   ProtocolClient createClient();

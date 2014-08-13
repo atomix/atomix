@@ -36,6 +36,7 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
+import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
@@ -49,9 +50,11 @@ import org.vertx.java.core.parsetools.RecordParser;
  */
 public class TcpProtocolClient implements ProtocolClient {
   private static final Serializer serializer = SerializerFactory.getSerializer();
-  private final Vertx vertx;
+  private Vertx vertx;
   private final String host;
   private final int port;
+  private boolean trustAll;
+  private final TcpProtocol protocol;
   private NetClient client;
   private NetSocket socket;
   private final Map<Object, ResponseHolder> responses = new HashMap<>();
@@ -80,10 +83,39 @@ public class TcpProtocolClient implements ProtocolClient {
     SUBMIT;
   }
 
-  public TcpProtocolClient(Vertx vertx, String host, int port) {
-    this.vertx = vertx;
+  public TcpProtocolClient(String host, int port, TcpProtocol protocol) {
     this.host = host;
     this.port = port;
+    this.protocol = protocol;
+  }
+
+  /**
+   * Sets whether to trust all server certs.
+   *
+   * @param trustAll Whether to trust all server certs.
+   */
+  public void setTrustAll(boolean trustAll) {
+    this.trustAll = trustAll;
+  }
+
+  /**
+   * Returns whether to trust all server certs.
+   *
+   * @return Whether to trust all server certs.
+   */
+  public boolean isTrustAll() {
+    return trustAll;
+  }
+
+  /**
+   * Sets whether to trust all server certs, returning the protocol for method chaining.
+   *
+   * @param trustAll Whether to trust all server certs.
+   * @return The TCP protocol.
+   */
+  public TcpProtocolClient withTrustAll(boolean trustAll) {
+    this.trustAll = trustAll;
+    return this;
   }
 
   @Override
@@ -226,8 +258,23 @@ public class TcpProtocolClient implements ProtocolClient {
 
   @Override
   public void connect(final AsyncCallback<Void> callback) {
+    if (vertx == null) {
+      vertx = new DefaultVertx();
+    }
+
     if (client == null) {
       client = vertx.createNetClient();
+      client.setTCPKeepAlive(true);
+      client.setTCPNoDelay(true);
+      client.setSendBufferSize(protocol.getSendBufferSize());
+      client.setReceiveBufferSize(protocol.getReceiveBufferSize());
+      client.setSSL(protocol.isSsl());
+      client.setKeyStorePath(protocol.getKeyStorePath());
+      client.setKeyStorePassword(protocol.getKeyStorePassword());
+      client.setTrustStorePath(protocol.getTrustStorePath());
+      client.setTrustStorePassword(protocol.getTrustStorePassword());
+      client.setTrustAll(trustAll);
+      client.setUsePooledBuffers(true);
       client.connect(port, host, new Handler<AsyncResult<NetSocket>>() {
         @Override
         public void handle(AsyncResult<NetSocket> result) {

@@ -15,10 +15,13 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
+import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolInstance;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.protocol.ProtocolUri;
+import net.kuujo.copycat.uri.UriInjector;
 
 /**
  * Default protocol instance implementation.
@@ -26,18 +29,20 @@ import net.kuujo.copycat.protocol.ProtocolServer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultProtocolInstance implements ProtocolInstance {
+  private final UriInjector injector;
   private final Protocol protocol;
   private ProtocolClient client;
   private ProtocolServer server;
 
-  public DefaultProtocolInstance(Protocol protocol) {
-    this.protocol = protocol;
+  public DefaultProtocolInstance(ProtocolUri uri, CopyCatContext context) {
+    this.injector = new UriInjector(uri.getRawUri(), context);
+    this.protocol = injector.inject(uri.getProtocolClass());
   }
 
   @Override
   public ProtocolClient client() {
     if (client == null) {
-      client = protocol.createClient();
+      client = injector.inject(protocol.createClient());
     }
     return client;
   }
@@ -45,7 +50,7 @@ public class DefaultProtocolInstance implements ProtocolInstance {
   @Override
   public ProtocolServer server() {
     if (server == null) {
-      server = protocol.createServer();
+      server = injector.inject(protocol.createServer());
     }
     return server;
   }

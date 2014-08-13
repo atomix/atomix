@@ -20,7 +20,6 @@ import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriInject;
 import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
 /**
@@ -29,20 +28,10 @@ import net.kuujo.copycat.uri.UriSchemeSpecificPart;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocol implements Protocol {
-  private String address;
   private CopyCatContext context;
+  private String address;
 
   public LocalProtocol() {
-  }
-
-  @UriInject
-  public LocalProtocol(@UriAuthority @UriSchemeSpecificPart String address) {
-    this.address = address;
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
   }
 
   /**

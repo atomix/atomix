@@ -20,17 +20,12 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
 import java.net.URI;
 
-import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.registry.impl.BasicRegistry;
-import net.kuujo.copycat.uri.Optional;
-import net.kuujo.copycat.uri.UriException;
-import net.kuujo.copycat.uri.UriInject;
+import net.kuujo.copycat.CopyCatContext;
 
 /**
  * URI injector.
@@ -39,126 +34,91 @@ import net.kuujo.copycat.uri.UriInject;
  */
 public class UriInjector {
   private final URI uri;
-  private final Registry registry;
+  private final CopyCatContext context;
 
-  public UriInjector(URI uri) {
+  public UriInjector(URI uri, CopyCatContext context) {
     this.uri = uri;
-    this.registry = new BasicRegistry();
-  }
-
-  public UriInjector(URI uri, Registry registry) {
-    this.uri = uri;
-    this.registry = registry;
+    this.context = context;
   }
 
   /**
-   * Injects the given type with URI arguments.
+   * Injects the given class with URI arguments via annotated bean properties.
    *
    * @param type The type to inject.
    * @return The injected object.
    */
   public <T> T inject(Class<T> type) {
-    return injectSetters(injectConstructor(type));
-  }
-
-  /**
-   * Injects the object constructor.
-   */
-  @SuppressWarnings("unchecked")
-  private <T> T injectConstructor(Class<T> type) {
-    // Find the best matching constructor for the given URI. This is done by locating
-    // the first constructor with the most available arguments in the URI since ordering
-    // of constructors is unreliable.
-    Constructor<?> matchConstructor = null;
-    Object[] matchArgs = null;
-    Integer matchCount = null;
-    for (Constructor<?> constructor : type.getDeclaredConstructors()) {
-      if (constructor.isAnnotationPresent(UriInject.class)) {
-        constructor.setAccessible(true);
-
-        // Map parameter types to URI parameters by locating constructor parameter
-        // annotations and parsing the URI to inject URI values into the constructor.
-        Parameter[] params = constructor.getParameters();
-        Object[] args = new Object[params.length];
-
-        try {
-          for (int i = 0; i < params.length; i++) {
-            Parameter param = params[i];
-  
-            // Iterate through annotations in order and create annotation values by
-            // parsing the URI. Whichever annotation produces a non-null value first wins.
-            Object value = null;
-            for (Annotation annotation : param.getAnnotations()) {
-              UriInjectable injectable = annotation.annotationType().getAnnotation(UriInjectable.class);
-              if (injectable != null) {
-                injectable.value().getConstructor(new Class<?>[]{}).setAccessible(true);
-                try {
-                  Object result = injectable.value().newInstance().parse(uri, annotation, registry, param.getType());
-                  if (result != null) {
-                    value = result;
-                    break;
-                  }
-                } catch (ClassCastException e) {
-                  throw new UriException(e);
-                }
-              }
-            }
-  
-            // If no value was found for this parameter, check to see if the parameter
-            // is optional. Optional parameters will continue on with null values.
-            // Otherwise, an IllegalStateException will be thrown.
-            if (value == null && !param.isAnnotationPresent(Optional.class)) {
-              throw new IllegalStateException("Missing argument of type " + param.getType());
-            }
-  
-            args[i] = value;
-          }
-        } catch (SecurityException | NoSuchMethodException | InstantiationException | IllegalAccessException e) {
-          throw new UriException(e);
-        }
-
-        // Count the number of non-null arguments for the constructor.
-        int count = 0;
-        for (Object arg : args) {
-          if (arg != null) {
-            count++;
-          }
-        }
-
-        // If the number of non-null arguments is greater than that of the current
-        // best constructor, use this constructor as the best match.
-        if (matchCount == null || count > matchCount) {
-          matchConstructor = constructor;
-          matchArgs = args;
-          matchCount = count;
-        }
-      }
-    }
-
-    // Construct the object. If no matching URI injectable constructor was
-    // found then the class must declare a default constructor.
     try {
-      if (matchConstructor != null) {
-        return (T) matchConstructor.newInstance(matchArgs);
-      } else {
-        return type.newInstance();
-      }
-    } catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+      return inject(type.newInstance());
+    } catch (InstantiationException | IllegalAccessException e) {
       throw new UriException(e);
     }
   }
 
   /**
-   * Injects the object setters.
+   * Injects the given object with URI arguments via annotated bean properties.
+   *
+   * @param object The object to inject.
+   * @return The injected object.
    */
   @SuppressWarnings("unchecked")
-  private <T> T injectSetters(T object) {
+  public <T> T inject(T object) {
     try {
+      // Iterate through fields and attempt to locate annotated fields. This supports
+      // directly setting annotated field values without declaring setters.
+      Class<?> clazz = object.getClass();
+      while (clazz != Object.class) {
+        outer:
+          for (Field field : clazz.getDeclaredFields()) {
+            for (Annotation annotation : field.getAnnotations()) {
+              UriInjectable injectable = annotation.annotationType().getAnnotation(UriInjectable.class);
+              if (injectable != null) {
+                try {
+                  field.setAccessible(true);
+                  field.set(object, injectable.value().newInstance().parse(uri, annotation, context.registry(), field.getType()));
+                } catch (ClassCastException e) {
+                  throw new UriException(e);
+                }
+                continue outer;
+              }
+            }
+
+            // If the field is a CopyCatContext type field then set it.
+            if (field.getType() == CopyCatContext.class) {
+              field.setAccessible(true);
+              field.set(object, context);
+            }
+        }
+        clazz = clazz.getSuperclass();
+      }
+
+      // Beans can set properties of the context class.
+      Class<?> contextClass = context.getClass();
+
       // Search bean write methods for @UriInjectable annotations.
       BeanInfo info = Introspector.getBeanInfo(object.getClass());
-      for (PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
-        Method method = descriptor.getWriteMethod();
+
+      for (PropertyDescriptor property : info.getPropertyDescriptors()) {
+        Method method = property.getWriteMethod();
         if (method == null) continue;
+
+        // If the property type is CopyCatContext then just set the context.
+        if (property.getPropertyType() == CopyCatContext.class) {
+          method.invoke(object, context);
+        }
+
+        // Check to see if this bean property matches a getter on the context class.
+        try {
+          Method contextMethod = contextClass.getMethod(property.getName());
+          if (contextMethod != null && contextMethod.getReturnType() == property.getPropertyType()) {
+            method.setAccessible(true);
+            method.invoke(object, contextMethod.invoke(context));
+            continue; // If the setter was called successfully, continue to the next property.
+          }
+        } catch (IllegalStateException | IllegalAccessException | NoSuchMethodException
+            | IllegalArgumentException | InvocationTargetException e) {
+          // Let the process continue.
+        }
 
         // Iterate through the write method's annotations and search
         // for injectable annotations. The URI is parsed by injectable parsers
@@ -169,7 +129,7 @@ public class UriInjector {
           if (injectable != null) {
             injectable.value().getConstructor(new Class<?>[]{}).setAccessible(true);
             try {
-              Object result = injectable.value().newInstance().parse(uri, annotation, registry, descriptor.getPropertyType());
+              Object result = injectable.value().newInstance().parse(uri, annotation, context.registry(), property.getPropertyType());
               if (result != null) {
                 value = result;
                 break;
@@ -184,7 +144,7 @@ public class UriInjector {
         if (value == null) {
           UriParser<UriQueryParam, Object> parser = new UriQueryParam.Parser<Object>();
           try {
-            value = parser.parse(uri, new GenericUriQueryParam(descriptor.getName()), registry, (Class<Object>) descriptor.getPropertyType());
+            value = parser.parse(uri, new GenericUriQueryParam(property.getName()), context.registry(), (Class<Object>) property.getPropertyType());
           } catch (ClassCastException e) {
             throw new UriException(e);
           }

@@ -16,10 +16,9 @@
 package net.kuujo.copycat.protocol.impl;
 
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolFactory;
+import net.kuujo.copycat.protocol.ProtocolInstance;
 import net.kuujo.copycat.protocol.ProtocolUri;
-import net.kuujo.copycat.uri.UriInjector;
 
 /**
  * Protocol factory that injects URI arguments into the protocol instance.
@@ -34,13 +33,8 @@ public class DefaultProtocolFactory implements ProtocolFactory {
   }
 
   @Override
-  public Protocol createProtocol(String uri) {
-    ProtocolUri wrappedUri = new ProtocolUri(uri);
-    Class<? extends Protocol> protocolClass = wrappedUri.getProtocolClass();
-    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context.registry());
-    Protocol protocol = injector.inject(protocolClass);
-    protocol.init(context);
-    return protocol;
+  public ProtocolInstance createProtocol(String uri) {
+    return new DefaultProtocolInstance(new ProtocolUri(uri), context);
   }
 
 }

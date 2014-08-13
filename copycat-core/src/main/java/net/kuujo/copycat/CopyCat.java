@@ -43,28 +43,24 @@ public class CopyCat {
     this.context = new CopyCatContext(stateMachine, cluster);
     EndpointFactory factory = new DefaultEndpointFactory(context);
     this.endpoint = factory.createEndpoint(uri);
-    this.endpoint.init(context);
   }
 
   public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster) {
     this.context = new CopyCatContext(stateMachine, log, cluster);
     EndpointFactory factory = new DefaultEndpointFactory(context);
     this.endpoint = factory.createEndpoint(uri);
-    this.endpoint.init(context);
   }
 
   public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
     this.context = new CopyCatContext(stateMachine, log, cluster, config);
     EndpointFactory factory = new DefaultEndpointFactory(context);
     this.endpoint = factory.createEndpoint(uri);
-    this.endpoint.init(context);
   }
 
   public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
     this.context = new CopyCatContext(stateMachine, log, cluster, config, registry);
     EndpointFactory factory = new DefaultEndpointFactory(context);
     this.endpoint = factory.createEndpoint(uri);
-    this.endpoint.init(context);
   }
 
   /**
