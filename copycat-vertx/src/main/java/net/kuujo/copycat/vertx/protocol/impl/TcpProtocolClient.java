@@ -161,7 +161,7 @@ public class TcpProtocolClient implements ProtocolClient {
       socket.write(new JsonObject().putString("type", "submit")
           .putValue("id", request.id())
           .putString("command", request.command())
-          .putObject("args", new JsonObject(request.args()))
+          .putArray("args", new JsonArray(request.args()))
           .encode() + '\00');
       storeCallback(request.id(), ResponseType.SUBMIT, callback);
     } else {

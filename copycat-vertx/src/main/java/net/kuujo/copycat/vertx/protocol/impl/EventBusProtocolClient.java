@@ -29,6 +29,7 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -57,7 +58,12 @@ public class EventBusProtocolClient implements ProtocolClient {
 
   @Override
   public void appendEntries(final AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> callback) {
-    JsonObject message = new JsonObject();
+    JsonObject message = new JsonObject()
+        .putNumber("term", request.term())
+        .putString("leader", request.leader())
+        .putNumber("prevIndex", request.prevLogIndex())
+        .putNumber("prevTerm", request.prevLogTerm())
+        .putNumber("commit", request.commitIndex());
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -77,7 +83,11 @@ public class EventBusProtocolClient implements ProtocolClient {
 
   @Override
   public void requestVote(final RequestVoteRequest request, final AsyncCallback<RequestVoteResponse> callback) {
-    JsonObject message = new JsonObject();
+    JsonObject message = new JsonObject()
+        .putNumber("term", request.term())
+        .putString("candidate", request.candidate())
+        .putNumber("lastIndex", request.lastLogIndex())
+        .putNumber("lastTerm", request.lastLogTerm());
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -97,7 +107,10 @@ public class EventBusProtocolClient implements ProtocolClient {
 
   @Override
   public void submitCommand(final SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> callback) {
-    JsonObject message = new JsonObject();
+    JsonObject message = new JsonObject()
+        .putString("action", "requestVote")
+        .putString("command", request.command())
+        .putArray("args", new JsonArray(request.args()));
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -106,7 +119,7 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), result.result().body().getObject("result").toMap())));
+            callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), result.result().body().getValue("result"))));
           } else if (status.equals("error")) {
             callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), result.result().body().getString("message"))));
           }

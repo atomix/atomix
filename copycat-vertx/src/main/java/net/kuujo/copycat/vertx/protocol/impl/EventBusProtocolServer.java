@@ -59,14 +59,14 @@ public class EventBusProtocolServer implements ProtocolServer {
     public void handle(Message<JsonObject> message) {
       String action = message.body().getString("action");
       switch (action) {
-        case "sync":
-          doSync(message);
+        case "appendEntries":
+          doAppendEntries(message);
           break;
-        case "poll":
-          doPoll(message);
+        case "requestVote":
+          doRequestVote(message);
           break;
-        case "submit":
-          doSubmit(message);
+        case "submitCommand":
+          doSubmitCommand(message);
           break;
       }
     }
@@ -90,7 +90,7 @@ public class EventBusProtocolServer implements ProtocolServer {
     this.requestHandler = handler;
   }
 
-  private void doSync(final Message<JsonObject> message) {
+  private void doAppendEntries(final Message<JsonObject> message) {
     if (requestHandler != null) {
       List<Entry> entries = new ArrayList<>();
       JsonArray jsonEntries = message.body().getArray("entries");
@@ -119,7 +119,7 @@ public class EventBusProtocolServer implements ProtocolServer {
     }
   }
 
-  private void doPoll(final Message<JsonObject> message) {
+  private void doRequestVote(final Message<JsonObject> message) {
     if (requestHandler != null) {
       final Object id = message.body().getValue("id");
       RequestVoteRequest request = new RequestVoteRequest(id, message.body().getLong("term"), message.body().getString("candidate"), message.body().getLong("lastIndex"), message.body().getLong("lastTerm"));
@@ -141,13 +141,14 @@ public class EventBusProtocolServer implements ProtocolServer {
     }
   }
 
-  private void doSubmit(final Message<JsonObject> message) {
+  @SuppressWarnings("unchecked")
+  private void doSubmitCommand(final Message<JsonObject> message) {
     if (requestHandler != null) {
       final Object id = message.body().getValue("id");
-      SubmitCommandRequest request = new SubmitCommandRequest(id, message.body().getString("command"), message.body().getObject("args").toMap());
+      SubmitCommandRequest request = new SubmitCommandRequest(id, message.body().getString("command"), message.body().getArray("args").toList());
       requestHandler.submitCommand(request, new AsyncCallback<SubmitCommandResponse>() {
         @Override
-        @SuppressWarnings({"unchecked", "rawtypes"})
+        @SuppressWarnings({"rawtypes"})
         public void call(net.kuujo.copycat.AsyncResult<SubmitCommandResponse> result) {
           if (result.succeeded()) {
             SubmitCommandResponse response = result.value();

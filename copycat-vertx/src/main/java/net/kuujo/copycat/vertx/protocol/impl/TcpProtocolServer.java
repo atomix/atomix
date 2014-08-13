@@ -222,11 +222,12 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles a submit request.
    */
+  @SuppressWarnings("unchecked")
   private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
     if (requestHandler != null) {
       final Object id = request.getValue("id");
-      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), request.getObject("args").toMap()), new AsyncCallback<SubmitCommandResponse>() {
-        @SuppressWarnings({"unchecked", "rawtypes"})
+      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), request.getArray("args").toList()), new AsyncCallback<SubmitCommandResponse>() {
+        @SuppressWarnings("rawtypes")
         @Override
         public void call(net.kuujo.copycat.AsyncResult<SubmitCommandResponse> result) {
           if (result.succeeded()) {
