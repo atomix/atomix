@@ -261,18 +261,17 @@ class Leader extends BaseState implements Observer {
 
   @Override
   public void submitCommand(final SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> responseCallback) {
-    // Try to determine the type of command this request is executing. The command
+    // Determine the type of command this request is executing. The command
     // type is provided by a CommandProvider which provides CommandInfo for a
     // given command. If no CommandInfo is provided then all commands are assumed
     // to be READ_WRITE commands.
-    Command info = context.stateMachine instanceof CommandProvider
-        ? ((CommandProvider) context.stateMachine).getCommand(request.command()) : null;
+    Command command = context.stateMachineExecutor.getCommand(request.command());
 
     // Depending on the command type, read or write commands may or may not be replicated
     // to a quorum based on configuration  options. For write commands, if a quorum is
     // required then the command will be replicated. For read commands, if a quorum is
     // required then we simply ping a quorum of the cluster to ensure that data is not stale.
-    if (info != null && info.type().equals(Command.Type.READ)) {
+    if (command != null && command.type().equals(Command.Type.READ)) {
       // Users have the option of whether to allow stale data to be returned. By
       // default, read quorums are enabled. If read quorums are disabled then we
       // simply apply the command, otherwise we need to ping a quorum of the
@@ -284,7 +283,7 @@ class Leader extends BaseState implements Observer {
           public void call(Boolean succeeded) {
             if (succeeded) {
               try {
-                responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
+                responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args()))));
               } catch (Exception e) {
                 responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
               }
@@ -311,7 +310,7 @@ class Leader extends BaseState implements Observer {
         }
       } else {
         try {
-          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
+          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args()))));
         } catch (Exception e) {
           responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
         }
@@ -334,7 +333,7 @@ class Leader extends BaseState implements Observer {
             // Once the entry has been replicated we can apply it to the state
             // machine and respond with the command result.
             try {
-              responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
+              responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args()))));
             } catch (Exception e) {
               responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
             } finally {
@@ -349,7 +348,7 @@ class Leader extends BaseState implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachine.applyCommand(request.command(), request.args()))));
+          responseCallback.call(new AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args()))));
         } catch (Exception e) {
           responseCallback.call(new AsyncResult<SubmitCommandResponse>(e));
         } finally {
@@ -486,7 +485,7 @@ class Leader extends BaseState implements Observer {
       // then send snapshot entries individually.
       List<Entry> entries = new ArrayList<>();
       long lastIndex = nextIndex + 10 > context.log.lastIndex() ? context.log.lastIndex() : nextIndex + 10;
-      for (long i = nextIndex; i < lastIndex; i++) {
+      for (long i = nextIndex; i <= lastIndex; i++) {
         Entry entry = context.log.getEntry(i);
 
         // If we ran into a snapshot entry, immediately send all entries up to the
@@ -543,7 +542,7 @@ class Leader extends BaseState implements Observer {
                     logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster().getLocalMember(), commitIndex, member.uri()));
                   }
                 }
-  
+
                 // Update the next index to send and the last index known to be replicated.
                 if (!entries.isEmpty()) {
                   nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);

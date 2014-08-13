@@ -209,7 +209,7 @@ abstract class BaseState implements State {
    */
   protected void applyCommand(long index, CommandEntry entry) {
     try {
-      context.stateMachine.applyCommand(entry.command(), entry.args());
+      context.stateMachineExecutor.applyCommand(entry.command(), entry.args());
     } catch (Exception e) {
     } finally {
       context.setLastApplied(index);
@@ -289,7 +289,7 @@ abstract class BaseState implements State {
         .withChunks(entries.subList(1, entries.size() - 1, SnapshotChunkEntry.class))
         .withEnd(entries.get(entries.size() - 1, SnapshotEndEntry.class))
         .combine();
-      context.stateMachine.installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
+      context.stateMachineExecutor.installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
       context.log.removeBefore(lastIndex - entries.size() + 1);
     } catch (LogException | SerializationException e) {
     } finally {
@@ -304,7 +304,7 @@ abstract class BaseState implements State {
    */
   protected Entries<SnapshotEntry> createSnapshot() {
     Entries<SnapshotEntry> entries = new ArrayListEntries<>();
-    Map<String, Object> snapshot = context.stateMachine.takeSnapshot();
+    Map<String, Object> snapshot = context.stateMachineExecutor.takeSnapshot();
     long term = context.getCurrentTerm();
     entries.add(new SnapshotStartEntry(context.getCurrentTerm(), context.cluster.config().getMembers()));
     byte[] snapshotBytes = serializer.writeValue(snapshot);

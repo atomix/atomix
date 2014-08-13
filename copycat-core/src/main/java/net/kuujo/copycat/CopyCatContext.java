@@ -16,9 +16,9 @@
 package net.kuujo.copycat;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Cluster;
@@ -76,7 +76,8 @@ public class CopyCatContext {
   private final ClusterConfig internalConfig = new ClusterConfig();
   final Cluster cluster;
   final Log log;
-  final StateMachine stateMachine;
+  final StateMachineExecutor stateMachineExecutor;
+  private final StateMachine stateMachine;
   private State state;
   private AsyncCallback<String> startCallback;
   private CopyCatConfig config;
@@ -125,6 +126,7 @@ public class CopyCatContext {
     this.clusterConfig = cluster;
     this.cluster = new DefaultCluster(cluster, this);
     this.stateMachine = stateMachine;
+    this.stateMachineExecutor = new StateMachineExecutor(stateMachine);
   }
 
   /**
@@ -410,14 +412,190 @@ public class CopyCatContext {
   }
 
   /**
-   * Submits a command to the service.
+   * Submits a no-argument command to the cluster.
    *
-   * @param command The command to submit.
-   * @param args Command arguments.
+   * @param command The name of the command to submit.
    * @param callback An asynchronous callback to be called with the command result.
-   * @return The replica context.
+   * @return The CopyCat context.
    */
-  public <T> CopyCatContext submitCommand(final String command, Map<String, Object> args, final AsyncCallback<T> callback) {
+  public <T> CopyCatContext submitCommand(String command, AsyncCallback<T> callback) {
+    return submitCommand(command, new ArrayList<>(), callback);
+  }
+
+  /**
+   * Submits a one-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg The command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg), callback);
+  }
+
+  /**
+   * Submits a two-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1), callback);
+  }
+
+  /**
+   * Submits a three-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2), callback);
+  }
+
+  /**
+   * Submits a four-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param arg3 The fourth command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3), callback);
+  }
+
+  /**
+   * Submits a five-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param arg3 The fourth command argument.
+   * @param arg4 The fifth command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4), callback);
+  }
+
+  /**
+   * Submits a six-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param arg3 The fourth command argument.
+   * @param arg4 The fifth command argument.
+   * @param arg5 The sixth command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5), callback);
+  }
+
+  /**
+   * Submits a seven-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param arg3 The fourth command argument.
+   * @param arg4 The fifth command argument.
+   * @param arg5 The sixth command argument.
+   * @param arg6 The seventh command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6), callback);
+  }
+
+  /**
+   * Submits a eight-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param arg3 The fourth command argument.
+   * @param arg4 The fifth command argument.
+   * @param arg5 The sixth command argument.
+   * @param arg6 The seventh command argument.
+   * @param arg7 The eighth command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, Object arg7, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7), callback);
+  }
+
+  /**
+   * Submits a nine-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param arg3 The fourth command argument.
+   * @param arg4 The fifth command argument.
+   * @param arg5 The sixth command argument.
+   * @param arg6 The seventh command argument.
+   * @param arg7 The eighth command argument.
+   * @param arg8 The ninth command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, Object arg7, Object arg8, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8), callback);
+  }
+
+  /**
+   * Submits a ten-argument command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param arg0 The first command argument.
+   * @param arg1 The second command argument.
+   * @param arg2 The third command argument.
+   * @param arg3 The fourth command argument.
+   * @param arg4 The fifth command argument.
+   * @param arg5 The sixth command argument.
+   * @param arg6 The seventh command argument.
+   * @param arg7 The eighth command argument.
+   * @param arg8 The ninth command argument.
+   * @param arg9 The tenth command argument.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, Object arg7, Object arg8, Object arg9, AsyncCallback<T> callback) {
+    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9), callback);
+  }
+
+  /**
+   * Submits a command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param args An ordered list of command arguments.
+   * @param callback An asynchronous callback to be called with the command result.
+   * @return The CopyCat context.
+   */
+  public <T> CopyCatContext submitCommand(final String command, final List<Object> args, final AsyncCallback<T> callback) {
     if (currentLeader == null) {
       callback.call(new AsyncResult<T>(new CopyCatException("No leader available")));
     } else if (!leaderConnected) {
@@ -449,7 +627,7 @@ public class CopyCatContext {
         public void call(AsyncResult<SubmitCommandResponse> result) {
           if (result.succeeded()) {
             if (result.value().status().equals(Response.Status.OK)) {
-              callback.call(new AsyncResult<T>((T) result.value()));
+              callback.call(new AsyncResult<T>((T) result.value().result()));
             } else {
               callback.call(new AsyncResult<T>(result.value().error()));
             }

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
@@ -77,7 +77,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry());
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
     Assert.assertTrue(log.firstIndex() == 1);
     Assert.assertTrue(log.lastIndex() == 3);
@@ -93,7 +93,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry());
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
     Entry entry = log.firstEntry();
     Assert.assertTrue(entry instanceof NoOpEntry);
@@ -109,7 +109,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry());
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
     Assert.assertTrue(log.lastIndex() == 3);
     log.close();
@@ -124,7 +124,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry());
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
     Entry entry = log.lastEntry();
     Assert.assertTrue(entry instanceof CommandEntry);
@@ -140,13 +140,13 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry());
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 5);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 6);
 
     log.removeBefore(3);
@@ -164,13 +164,13 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry());
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 5);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 6);
 
     log.removeAfter(2);
@@ -190,13 +190,13 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry());
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 5);
-    index = log.appendEntry(new CommandEntry(1, "foo", new HashMap<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 6);
 
     Entry entry;

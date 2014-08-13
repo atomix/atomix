@@ -36,7 +36,6 @@ User Manual
    * [Creating a state machine](#creating-a-state-machine)
    * [Providing command types](#providing-command-types)
    * [Taking snapshots](#taking-snapshots)
-   * [Creating an annotated state machine](#creating-an-annotated-state-machine)
    * [Configuring the replica](#configuring-the-replica)
    * [Configuring the cluster](#configuring-the-cluster)
    * [Creating a dynamic cluster](#creating-a-dynamic-cluster)
@@ -70,22 +69,22 @@ over a variety of wire-level protocols. It sounds complicated, but the API is ac
 quite simple. Here's a quick example.
 
 ```java
-public class KeyValueStore extends AnnotatedStateMachine {
+public class KeyValueStore implements StateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 
-  @Command(name = "get", type = Command.Type.READ)
-  public Object get(@Argument("key") String key) {
+  @Command(type = Command.Type.READ)
+  public Object get(String key) {
     return data.get(key);
   }
 
-  @Command(name = "set", type = Command.Type.WRITE)
-  public void set(@Argument("key") String key, @Argument("value") Object value) {
+  @Command(type = Command.Type.WRITE)
+  public void set(String key, Object value) {
     data.put(key, value);
   }
 
-  @Command(name = "delete", type = Command.Type.WRITE)
-  public void delete(@Argument("key") String key) {
+  @Command(type = Command.Type.WRITE)
+  public void delete(String key) {
     data.remove(key);
   }
 
@@ -151,18 +150,18 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore exten
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 
-  @Command(name = "get", type = Command.Type.READ)
-  public Object get(@Argument("key") String key) {
+  @Command(type = Command.Type.READ)
+  public Object get(String key) {
     return data.get(key);
   }
 
-  @Command(name = "set", type = Command.Type.WRITE)
-  public void set(@Argument("key") String key, @Argument("value") Object value) {
+  @Command(type = Command.Type.WRITE)
+  public void set(String key, Object value) {
     data.put(key, value);
   }
 
-  @Command(name = "delete", type = Command.Type.WRITE)
-  public void delete(@Argument("key") String key) {
+  @Command(type = Command.Type.WRITE)
+  public void delete(String key) {
     data.remove(key);
   }
 
@@ -174,17 +173,12 @@ the HTTP interface.
 
 ```
 POST http://localhost:5000/set
-{
-  "key": "foo",
-  "value": "Hello world!"
-}
+["foo", "Hello world!"]
 
 200 OK
 
 POST http://localhost:5000/get
-{
-  "key": "foo"
-}
+["foo"]
 
 200 OK
 
@@ -193,9 +187,7 @@ POST http://localhost:5000/get
 }
 
 POST http://localhost:5000/delete
-{
-  "key": "foo"
-}
+["foo"]
 
 200 OK
 ```
@@ -316,25 +308,15 @@ interfaces (servers) for submitting [commands](#commands) to the CopyCat cluster
 
 ### Creating a [state machine](#state-machines)
 To create a state machine in CopyCat, simply implement the `StateMachine`
-interface. The state machine interface exposes three methods:
+interface.
 
 ```java
-public interface StateMachine {
-
-  Map<String, Object> takeSnapshot();
-
-  void installSnapshot(Map<String, Object> snapshot);
-
-  Object applyCommand(String command, Map<String, Object> args);
-
+public class MyStateMachine implements StateMachine {
 }
 ```
 
-The first two methods are for snapshot support, but more on that later. The most
-important method in the state machine is the `applyCommand` method. What's important
-to remember when writing a state machine is: the machine should always arrive at
-the same state and provide the same output given the same commands in the same order.
-This means your state machine should not rely on mutable data sources such as databases.
+The state machine interface is simply an identifier interface. *All public methods
+within a state machine* can be called as CopyCat commands. This is important to remember.
 
 ### Providing [command types](#commands)
 When a command is submitted to the CopyCat cluster, the command is first written
@@ -349,9 +331,8 @@ can simply ensure that the cluster is in sync, apply the command to the state ma
 and return the result. However, in order for it to do this it needs to have some
 additional information about each specific command.
 
-To provide command information to CopyCat, implement the `CommandProvider` interface.
-When a command is submitted to the cluster, CopyCat will check whether the state machine
-is a `CommandProvider`, and if so, use command info to determine how to handle the command.
+To provide command information to CopyCat, use the `@Command` annotation on a command
+method.
 
 Each command can have one of three types:
 * `READ`
@@ -366,28 +347,21 @@ a `READ` command never modify the machine state.*
 Let's look at an example of a command provider:
 
 ```java
-public class MyStateMachine implements StateMachine, CommandProvider {
-  private static final Command READ = new GenericCommand("read", Command.Type.READ);
-  private static final Command WRITE = new GenericCommand("write", Command.Type.WRITE);
-  private static final Command NONE = new GenericCommand("none", Command.Type.READ_WRITE);
+public class MyStateMachine implements StateMachine {
+  private final Map<String, Object> data = new HashMap<>();
 
-  @Override
-  public Command getCommand(String command) {
-    switch (command) {
-      case "read":
-        return READ;
-      case "write":
-        return WRITE;
-      default:
-        return NONE;
-    }
+  @Command(type = Command.Type.READ)
+  public Object read(String key) {
+    return data.get(key);
+  }
+
+  @Command(type = Command.Type.WRITE)
+  public void write(String key, Object value) {
+    data.put(key, value);
   }
 
 }
 ```
-
-Note that `Command` is actually an annotation, so CopyCat provides a helper class for
-constructing annotations call `GenericCommand`.
 
 ### Taking [snapshots](#snapshots)
 One of the issues with a [replicated log](#logs) is that over time it will only continue to grow.
@@ -400,88 +374,17 @@ of sync. Additionally, CopyCat guarantees that the first entry in any log will a
 a `SnapshotEntry`, again helping to ease the process of replicating snapshots to far
 out-of-date replicas.
 
-All snapshot serialization, storage, and loading is handled by CopyCat internally. Users
-need only create and install the data via the `takeSnapshot` and `installSnapshot` methods
-respectively. Once the log grows to a predetermined size (configurable in `CopyCatConfig`),
-CopyCat will take a snaphsot of the log and wipe all previous log entries.
-
-Snapshots are simply `Map<String, Object>` maps.
+All snapshot serialization, storage, and loading is handled by CopyCat internally. Users need
+only annotated stateful fields with the `@Stateful` annotation. Once the log grows to a
+predetermined size (configurable in `CopyCatConfig`), CopyCat will take a snaphsot of the log
+and wipe all previous log entries.
 
 ```java
 public class MyStateMachine implements StateMachine {
-  private Map<String, Object> data = new HashMap<>();
-
-  @Override
-  public Map<String, Object> takeSnapshot() {
-    return data;
-  }
-
-  @Override
-  public void installSnapshot(Map<String, Object> data) {
-    this.data = data;
-  }
-
-  @Override
-  public Object applyCommand(String command, Map<String, Object> args) {
-    switch (command) {
-      case "get":
-        return data.get(args.get("key"));
-      case "set":
-        args.put(args.get("key"), args.get("value"));
-        return null;
-      case "delete":
-        return args.remove(args.get("key"));
-      default:
-        throw new UnsupportedOperationException();
-    }
-  }
-
-}
-```
-
-### Creating an annotated [state machine](#state-machines)
-CopyCat provides a helpful base class which supports purely annotation based state
-machines. To create an annotated state machine, simply extend the `AnnotatedStateMachine`
-class. This is the recommended method for creating Java-based state machines.
-
-```java
-public class MyStateMachine extends AnnotatedStateMachine {
-}
-```
-
-The annotated state machine will introspect itself to find commands defined with the
-`@Command` annotation.
-
-```java
-public class MyStateMachine extends AnnotatedStateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
-
-  @Command(name = "get", type = Command.Type.READ)
-  public Object get(@Argument("key") String key) {
-    return data.get(key);
-  }
-
-  @Command(name = "set", type = Command.Type.WRITE)
-  public void set(@Argument("key") String key, @Argument("value") Object value) {
-    data.put(key, value);
-  }
-
-  @Command(name = "delete", type = Command.Type.READ_WRITE)
-  public Object delete(@Argument("key") String key) {
-    return data.remove(key);
-  }
-
 }
 ```
-
-The `AnnotatedStateMachine` is a `CommandProvider` which handles locating and
-providing command information based on annotations on the implementation. This
-removed the need for mapping command names to `Command` instances for command
-providers and `switch` statements for command application.
-
-Note also that the `@Stateful` annotation is used to indicate that the `data` field
-should be persisted whenever a snapshot is taken.
 
 ### Configuring the replica
 CopyCat exposes a configuration API that allows users to configure how CopyCat behaves
@@ -593,13 +496,31 @@ context.start();
 To submit commands to the CopyCat cluster, simply call the `submitCommand` method
 on any `CopyCatContext`.
 
+**Java 7**
 ```java
-Map<String, Object> args = new HashMap<>();
-args.put("key", "foo");
-context.submitCommand("read", args, result -> {
+context.submitCommand("get", "foo", new AsyncCallback<Object>() {
+  public void call(AsyncResult<Object> result) {
+    if (result.succeeded()) {
+      Object value = result.value();
+    }
+  }
+});
+```
+
+**Java 8**
+```java
+context.submitCommand("get", "foo", result -> {
   if (result.succeeded()) {
     Object value = result.value();
   }
+});
+```
+
+The `CopyCatContext` API is designed to support a variable number of positional arguments.
+
+```java
+context.submitCommand("set", "foo", "Hello world!", result -> {
+  // Do stuff with the result.
 });
 ```
 

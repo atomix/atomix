@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * Submit command request.<p>
@@ -29,13 +29,13 @@ import java.util.Map;
 public class SubmitCommandRequest extends Request {
   private static final long serialVersionUID = -8657438748181101192L;
   private String command;
-  private Map<String, Object> args;
+  private List<Object> args;
 
   public SubmitCommandRequest() {
     super(null);
   }
 
-  public SubmitCommandRequest(Object id, String command, Map<String, Object> args) {
+  public SubmitCommandRequest(Object id, String command, List<Object> args) {
     super(id);
     this.command = command;
     this.args = args;
@@ -55,7 +55,7 @@ public class SubmitCommandRequest extends Request {
    *
    * @return The arguments to apply to the command being submitted.
    */
-  public Map<String, Object> args() {
+  public List<Object> args() {
     return args;
   }
 
