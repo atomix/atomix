@@ -22,12 +22,12 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import net.kuujo.copycat.AnnotatedStateMachine;
 import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.Stateful;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.registry.Registry;
@@ -111,22 +111,22 @@ public class NettyTest {
     return instances;
   }
 
-  private static class TestStateMachine extends AnnotatedStateMachine {
+  private static class TestStateMachine implements StateMachine {
     @Stateful
     private final Map<String, Object> data = new HashMap<>();
 
     @Command(name="set", type=Command.Type.WRITE)
-    public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+    public void set(String key, Object value) {
       data.put(key, value);
     }
 
     @Command(name="get", type=Command.Type.READ)
-    public Object get(@Command.Argument("key") String key) {
+    public Object get(String key) {
       return data.get(key);
     }
 
     @Command(name="delete", type=Command.Type.WRITE)
-    public void delete(@Command.Argument("key") String key) {
+    public void delete(String key) {
       data.remove(key);
     }
 

@@ -132,7 +132,7 @@ That's it! We've just created a strongly consistent, fault-tolerant key-value st
 HTTP API in less than 25 lines of code!
 
 ```java
-public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore extends AnnotatedStateMachine {
+public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore implements StateMachine {
 
   public static void main(String[] args) {
     // Create the local file log.
