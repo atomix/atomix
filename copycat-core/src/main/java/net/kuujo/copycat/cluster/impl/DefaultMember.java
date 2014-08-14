@@ -17,10 +17,8 @@ package net.kuujo.copycat.cluster.impl;
 
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.protocol.ProtocolFactory;
 import net.kuujo.copycat.protocol.ProtocolInstance;
 import net.kuujo.copycat.protocol.impl.DefaultProtocolFactory;
-import net.kuujo.copycat.protocol.impl.DefaultProtocolInstance;
 
 /**
  * Default cluster member.
@@ -33,8 +31,7 @@ public class DefaultMember implements Member {
 
   public DefaultMember(String uri, CopyCatContext context) {
     this.uri = uri;
-    ProtocolFactory factory = new DefaultProtocolFactory(context);
-    this.protocol = new DefaultProtocolInstance(factory.createProtocol(uri));
+    this.protocol = new DefaultProtocolFactory(context).createProtocol(uri);
   }
 
   @Override

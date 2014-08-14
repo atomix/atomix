@@ -15,67 +15,22 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import java.util.Set;
-
 import net.kuujo.copycat.log.Entry;
 
 /**
- * State machine snapshot log entry.<p>
- *
- * The snapshot entry is a log entry containing a snapshot of the
- * local state machine's state at a given moment in time. Rather than
- * storing snapshots in a separate snapshot file, CopyCat logs snapshots
- * in order to more easily facilitate replication of snapshots to
- * replicas that are too far out of sync with the leader's log.
+ * Base entry for snapshot set entries.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SnapshotEntry extends Entry {
-  private static final long serialVersionUID = -5487522806426222419L;
-  private Set<String> cluster;
-  private byte[] data;
-  private boolean complete;
+public abstract class SnapshotEntry extends Entry {
+  private static final long serialVersionUID = 8932454717099975417L;
 
-  public SnapshotEntry() {
+  protected SnapshotEntry() {
     super();
   }
 
-  public SnapshotEntry(long term, Set<String> cluster, byte[] data, boolean complete) {
+  protected SnapshotEntry(long term) {
     super(term);
-    this.cluster = cluster;
-    this.data = data;
-  }
-
-  /**
-   * Returns the snapshot cluster configuration.
-   *
-   * @return The snapshot cluster configuration.
-   */
-  public Set<String> cluster() {
-    return cluster;
-  }
-
-  /**
-   * Returns the snapshot data.
-   *
-   * @return The snapshot data.
-   */
-  public byte[] data() {
-    return data;
-  }
-
-  /**
-   * Returns a boolean indicating whether the snapshot is complete.
-   *
-   * @return Indicates whether the snapshot is complete.
-   */
-  public boolean complete() {
-    return complete;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("Snapshot[%s]", data);
   }
 
 }

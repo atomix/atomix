@@ -16,6 +16,7 @@
 package net.kuujo.copycat.log.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -59,6 +60,54 @@ public class MemoryLog implements Log {
   }
 
   @Override
+  public synchronized List<Long> appendEntries(Entry... entries) {
+    List<Long> indices = new ArrayList<>();
+    for (Entry entry : entries) {
+      indices.add(appendEntry(entry));
+    }
+    return indices;
+  }
+
+  @Override
+  public synchronized List<Long> appendEntries(List<? extends Entry> entries) {
+    List<Long> indices = new ArrayList<>();
+    for (Entry entry : entries) {
+      indices.add(appendEntry(entry));
+    }
+    return indices;
+  }
+
+  @Override
+  public long setEntry(long index, Entry entry) {
+    log.put(index, entry);
+    return index;
+  }
+
+  @Override
+  public long prependEntry(Entry entry) {
+    long index = (!log.isEmpty() ? log.firstKey() : 0) - 1;
+    if (index < 1) {
+      throw new IndexOutOfBoundsException("Cannot prepend entry at index " + index);
+    }
+    log.put(index, entry);
+    return index;
+  }
+
+  @Override
+  public synchronized List<Long> prependEntries(Entry... entries) {
+    return prependEntries(Arrays.asList(entries));
+  }
+
+  @Override
+  public synchronized List<Long> prependEntries(List<? extends Entry> entries) {
+    List<Long> indices = new ArrayList<>();
+    for (int i = entries.size() - 1; i >= 0; i--) {
+      indices.add(prependEntry(entries.get(i)));
+    }
+    return indices;
+  }
+
+  @Override
   public boolean containsEntry(long index) {
     return log.containsKey(index);
   }
@@ -66,12 +115,6 @@ public class MemoryLog implements Log {
   @Override
   public Entry getEntry(long index) {
     return log.get(index);
-  }
-
-  @Override
-  public synchronized Log setEntry(long index, Entry entry) {
-    log.put(index, entry);
-    return this;
   }
 
   @Override

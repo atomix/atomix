@@ -21,28 +21,4 @@ package net.kuujo.copycat;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface StateMachine {
-
-  /**
-   * Returns a snapshot of the state machine state.
-   *
-   * @return The state machine snapshot.
-   */
-  Snapshot takeSnapshot();
-
-  /**
-   * Installs a snapshot of the state machine state.
-   *
-   * @param snapshot The snapshot to install.
-   */
-  void installSnapshot(Snapshot snapshot);
-
-  /**
-   * Exceutes a state machine command.
-   *
-   * @param name The name of the command to execute.
-   * @param args The command arguments.
-   * @return The command return value.
-   */
-  Object applyCommand(String name, Arguments args);
-
 }

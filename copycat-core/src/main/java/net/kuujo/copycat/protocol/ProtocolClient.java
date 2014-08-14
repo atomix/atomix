@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Protocol client.
@@ -25,59 +25,17 @@ import net.kuujo.copycat.AsyncCallback;
 public interface ProtocolClient extends ProtocolHandler {
 
   /**
-   * Sends a sync request.
-   *
-   * @param request The sync request.
-   * @param callback A callback to be called once the response is received.
-   */
-  void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback);
-
-  /**
-   * Sends an install request.
-   *
-   * @param request The install request.
-   * @param callback A callback to be called once the response is received.
-   */
-  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback);
-
-  /**
-   * Sends a poll request.
-   *
-   * @param request The poll request.
-   * @param callback A callback to be called once the response is received.
-   */
-  void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback);
-
-  /**
-   * Sends a submit command request.
-   *
-   * @param request The submit request.
-   * @param callback A callback to be called once the response is received.
-   */
-  void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback);
-
-  /**
-   * Connects the client.
-   */
-  void connect();
-
-  /**
    * Connects the client.
    *
-   * @param callback A callback to be called once connected.
+   * @return A completable future to be completed once the client has connected.
    */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
+  CompletableFuture<Void> connect();
 
   /**
    * Closes the client.
    *
-   * @param callback A callback to be called once closed.
+   * @return A completable future to be completed once the client has disconnected.
    */
-  void close(AsyncCallback<Void> callback);
+  CompletableFuture<Void> close();
 
 }

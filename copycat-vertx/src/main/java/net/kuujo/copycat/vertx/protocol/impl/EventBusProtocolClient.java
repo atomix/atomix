@@ -15,21 +15,22 @@
  */
 package net.kuujo.copycat.vertx.protocol.impl;
 
-import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.protocol.InstallSnapshotRequest;
-import net.kuujo.copycat.protocol.InstallSnapshotResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
+import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.RequestVoteRequest;
+import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.impl.DefaultVertx;
+import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -39,109 +40,121 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class EventBusProtocolClient implements ProtocolClient {
   private final String address;
-  private final Vertx vertx;
+  private final String host;
+  private final int port;
+  private Vertx vertx;
+
+  public EventBusProtocolClient(String address, String host, int port) {
+    this.address = address;
+    this.host = host;
+    this.port = port;
+  }
 
   public EventBusProtocolClient(String address, Vertx vertx) {
     this.address = address;
+    this.host = null;
+    this.port = 0;
     this.vertx = vertx;
   }
 
   @Override
-  public void appendEntries(final AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> callback) {
-    JsonObject message = new JsonObject();
+  public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
+    final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
+    JsonObject message = new JsonObject()
+        .putNumber("term", request.term())
+        .putString("leader", request.leader())
+        .putNumber("prevIndex", request.prevLogIndex())
+        .putNumber("prevTerm", request.prevLogTerm())
+        .putNumber("commit", request.commitIndex());
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(result.cause()));
+          future.completeExceptionally(result.cause());
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"))));
+            future.complete(new AppendEntriesResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
           } else if (status.equals("error")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(request.id(), result.result().body().getString("message"))));
+            future.complete(new AppendEntriesResponse(request.id(), result.result().body().getString("message")));
           }
         }
       }
     });
+    return future;
   }
 
   @Override
-  public void installSnapshot(final InstallSnapshotRequest request, final AsyncCallback<InstallSnapshotResponse> callback) {
-    JsonObject message = new JsonObject();
+  public CompletableFuture<RequestVoteResponse> requestVote(final RequestVoteRequest request) {
+    final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
+    JsonObject message = new JsonObject()
+        .putNumber("term", request.term())
+        .putString("candidate", request.candidate())
+        .putNumber("lastIndex", request.lastLogIndex())
+        .putNumber("lastTerm", request.lastLogTerm());
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(result.cause()));
+          future.completeExceptionally(result.cause());
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"))));
+            future.complete(new RequestVoteResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("voteGranted")));
           } else if (status.equals("error")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<InstallSnapshotResponse>(new InstallSnapshotResponse(request.id(), result.result().body().getString("message"))));
+            future.complete(new RequestVoteResponse(request.id(), result.result().body().getString("message")));
           }
         }
       }
     });
+    return future;
   }
 
   @Override
-  public void requestVote(final RequestVoteRequest request, final AsyncCallback<RequestVoteResponse> callback) {
-    JsonObject message = new JsonObject();
+  public CompletableFuture<SubmitCommandResponse> submitCommand(final SubmitCommandRequest request) {
+    final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
+    JsonObject message = new JsonObject()
+        .putString("action", "requestVote")
+        .putString("command", request.command())
+        .putArray("args", new JsonArray(request.args()));
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(result.cause()));
+          future.completeExceptionally(result.cause());
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("voteGranted"))));
+            future.complete(new SubmitCommandResponse(request.id(), result.result().body().getValue("result")));
           } else if (status.equals("error")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(request.id(), result.result().body().getString("message"))));
+            future.complete(new SubmitCommandResponse(request.id(), result.result().body().getString("message")));
           }
         }
       }
     });
+    return future;
   }
 
   @Override
-  public void submitCommand(final SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> callback) {
-    JsonObject message = new JsonObject();
-    vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
-      @Override
-      public void handle(AsyncResult<Message<JsonObject>> result) {
+  public CompletableFuture<Void> connect() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
+    if (vertx == null) {
+      vertx = new DefaultVertx(port >= 0 ? port : 0, host, (result) -> {
         if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(result.cause()));
+          future.completeExceptionally(result.cause());
         } else {
-          String status = result.result().body().getString("status");
-          if (status.equals("ok")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), result.result().body().getObject("result").toMap())));
-          } else if (status.equals("error")) {
-            callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(request.id(), result.result().body().getString("message"))));
-          }
+          future.complete(null);
         }
-      }
-    });
+      });
+    } else {
+      future.complete(null);
+    }
+    return future;
   }
 
   @Override
-  public void connect() {
-  }
-
-  @Override
-  public void connect(AsyncCallback<Void> callback) {
-    callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
-  }
-
-  @Override
-  public void close() {
-  }
-
-  @Override
-  public void close(AsyncCallback<Void> callback) {
-    callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+  public CompletableFuture<Void> close() {
+    return CompletableFuture.completedFuture(null);
   }
 
 }

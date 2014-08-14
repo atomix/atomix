@@ -16,6 +16,8 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.protocol.CorrelationStrategy;
+import net.kuujo.copycat.protocol.TimerStrategy;
+import net.kuujo.copycat.protocol.impl.ThreadTimerStrategy;
 import net.kuujo.copycat.protocol.impl.UuidCorrelationStrategy;
 
 /**
@@ -25,11 +27,12 @@ import net.kuujo.copycat.protocol.impl.UuidCorrelationStrategy;
  */
 public class CopyCatConfig {
   private long electionTimeout = 2000;
-  private long heartbeatInterval = 1000;
+  private long heartbeatInterval = 500;
   private boolean requireWriteQuorum = true;
   private boolean requireReadQuorum = true;
   private int maxLogSize = 32 * 1024^2;
   private CorrelationStrategy<?> correlationStrategy = new UuidCorrelationStrategy();
+  private TimerStrategy timerStrategy = new ThreadTimerStrategy();
 
   /**
    * Sets the replica election timeout.
@@ -37,6 +40,7 @@ public class CopyCatConfig {
    * @param timeout The election timeout.
    */
   public void setElectionTimeout(long timeout) {
+    if (timeout < 0) throw new IllegalArgumentException("Election timeout must be positive");
     this.electionTimeout = timeout;
   }
 
@@ -56,6 +60,7 @@ public class CopyCatConfig {
    * @return The copycat configuration.
    */
   public CopyCatConfig withElectionTimeout(long timeout) {
+    if (timeout < 0) throw new IllegalArgumentException("Election timeout must be positive");
     this.electionTimeout = timeout;
     return this;
   }
@@ -66,6 +71,7 @@ public class CopyCatConfig {
    * @param interval The interval at which the node should send heartbeat messages.
    */
   public void setHeartbeatInterval(long interval) {
+    if (interval < 0) throw new IllegalArgumentException("Heart beat interval must be positive");
     this.heartbeatInterval = interval;
   }
 
@@ -85,6 +91,7 @@ public class CopyCatConfig {
    * @return The replica configuration.
    */
   public CopyCatConfig withHeartbeatInterval(long interval) {
+    if (interval < 0) throw new IllegalArgumentException("Heart beat interval must be positive");
     this.heartbeatInterval = interval;
     return this;
   }
@@ -158,6 +165,7 @@ public class CopyCatConfig {
    * @param maxSize The maximum local log size.
    */
   public void setMaxLogSize(int maxSize) {
+    if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
     this.maxLogSize = maxSize;
   }
 
@@ -177,6 +185,7 @@ public class CopyCatConfig {
    * @return The replica configuration.
    */
   public CopyCatConfig withMaxLogSize(int maxSize) {
+    if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
     this.maxLogSize = maxSize;
     return this;
   }
@@ -187,6 +196,7 @@ public class CopyCatConfig {
    * @param strategy The message correlation strategy.
    */
   public void setCorrelationStrategy(CorrelationStrategy<?> strategy) {
+    if (strategy == null) throw new NullPointerException();
     this.correlationStrategy = strategy;
   }
 
@@ -206,7 +216,38 @@ public class CopyCatConfig {
    * @return The copycat configuration.
    */
   public CopyCatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
+    if (strategy == null) throw new NullPointerException();
     this.correlationStrategy = strategy;
+    return this;
+  }
+
+  /**
+   * Sets the timer strategy.
+   *
+   * @param strategy The timer strategy.
+   */
+  public void setTimerStrategy(TimerStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.timerStrategy = strategy;
+  }
+
+  /**
+   * Returns the timer strategy.
+   *
+   * @return The timer strategy.
+   */
+  public TimerStrategy getTimerStrategy() {
+    return timerStrategy;
+  }
+
+  /**
+   * Sets the timer strategy, returning the configuration for method chaining.
+   *
+   * @param strategy The timer strategy.
+   * @return The copycat configuration.
+   */
+  public CopyCatConfig withTimerStrategy(TimerStrategy strategy) {
+    this.timerStrategy = strategy;
     return this;
   }
 

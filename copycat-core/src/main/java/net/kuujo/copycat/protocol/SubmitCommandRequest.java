@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.Arguments;
+import java.util.List;
 
 /**
  * Submit command request.<p>
@@ -29,13 +29,13 @@ import net.kuujo.copycat.Arguments;
 public class SubmitCommandRequest extends Request {
   private static final long serialVersionUID = -8657438748181101192L;
   private String command;
-  private Arguments args;
+  private List<Object> args;
 
   public SubmitCommandRequest() {
     super(null);
   }
 
-  public SubmitCommandRequest(Object id, String command, Arguments args) {
+  public SubmitCommandRequest(Object id, String command, List<Object> args) {
     super(id);
     this.command = command;
     this.args = args;
@@ -55,7 +55,7 @@ public class SubmitCommandRequest extends Request {
    *
    * @return The arguments to apply to the command being submitted.
    */
-  public Arguments args() {
+  public List<Object> args() {
     return args;
   }
 

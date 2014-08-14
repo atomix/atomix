@@ -23,7 +23,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.impl.DynamicClusterConfig;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 
@@ -43,22 +42,13 @@ public class CopyCatTest {
       @Override
       public void run() throws Exception {
         Set<CopyCatContext> contexts = startCluster(3);
-        Arguments args = new Arguments().put("key", "foo").put("value", "bar");
         final CopyCatContext context = contexts.iterator().next();
-        context.submitCommand("set", args, new AsyncCallback<Void>() {
-          @Override
-          public void call(AsyncResult<Void> result) {
-            Assert.assertTrue(result.succeeded());
-            Arguments args = new Arguments().put("key", "foo");
-            context.submitCommand("get", args, new AsyncCallback<String>() {
-              @Override
-              public void call(AsyncResult<String> result) {
-                Assert.assertTrue(result.succeeded());
-                Assert.assertEquals("bar", result.value());
-                testComplete();
-              }
-            });
-          }
+        context.submitCommand("set", "foo", "bar").thenRun(() -> {
+          context.submitCommand("get", "foo").whenComplete((result, error) -> {
+            Assert.assertNull(error);
+            Assert.assertEquals("bar", result);
+            testComplete();
+          });
         });
       }
     }.start();
@@ -71,12 +61,9 @@ public class CopyCatTest {
     final CountDownLatch latch = new CountDownLatch(3);
     Set<CopyCatContext> contexts = createCluster(3);
     for (CopyCatContext context : contexts) {
-      context.start(new AsyncCallback<String>() {
-        @Override
-        public void call(AsyncResult<String> result) {
-          Assert.assertTrue(result.succeeded());
-          latch.countDown();
-        }
+      context.start().whenComplete((result, error) -> {
+        Assert.assertNull(error);
+        latch.countDown();
       });
     }
     latch.await(10, TimeUnit.SECONDS);
@@ -90,11 +77,11 @@ public class CopyCatTest {
     Registry registry = new ConcurrentRegistry();
     Set<CopyCatContext> instances = new HashSet<>();
     for (int i = 1; i <= numInstances; i++) {
-      ClusterConfig cluster = new DynamicClusterConfig();
-      cluster.setLocalMember(String.format("direct:%d", i));
+      ClusterConfig cluster = new ClusterConfig();
+      cluster.setLocalMember(String.format("local:%d", i));
       for (int j = 1; j <= numInstances; j++) {
         if (j != i) {
-          cluster.addRemoteMember(String.format("direct:%d", j));
+          cluster.addRemoteMember(String.format("local:%d", j));
         }
       }
       instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().withMaxLogSize(10), registry));
@@ -102,26 +89,26 @@ public class CopyCatTest {
     return instances;
   }
 
-  private static class TestStateMachine extends AnnotatedStateMachine {
+  private static class TestStateMachine implements StateMachine {
     @Stateful
     private final Map<String, Object> data = new HashMap<>();
 
-    @Command(name="set", type=Command.Type.WRITE)
-    public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
+    @Command(type=Command.Type.WRITE)
+    public void set(String key, Object value) {
       data.put(key, value);
     }
 
-    @Command(name="get", type=Command.Type.READ)
-    public Object get(@Command.Argument("key") String key) {
+    @Command(type=Command.Type.READ)
+    public Object get(String key) {
       return data.get(key);
     }
 
-    @Command(name="delete", type=Command.Type.WRITE)
-    public void delete(@Command.Argument("key") String key) {
+    @Command(type=Command.Type.WRITE)
+    public void delete(String key) {
       data.remove(key);
     }
 
-    @Command(name="clear", type=Command.Type.WRITE)
+    @Command(type=Command.Type.WRITE)
     public void clear() {
       data.clear();
     }

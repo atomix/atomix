@@ -15,8 +15,7 @@
  */
 package net.kuujo.copycat.endpoint;
 
-import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.CopyCatContext;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * CopyCat endpoint.<p>
@@ -39,13 +38,6 @@ import net.kuujo.copycat.CopyCatContext;
 public interface Endpoint {
 
   /**
-   * Initializes the endpoint with the current CopyCat context.
-   *
-   * @param context The copycat context.
-   */
-  void init(CopyCatContext context);
-
-  /**
    * Starts the endpoint.<p>
    *
    * CopyCat makes no assumptions about whether an endpoint is
@@ -53,17 +45,15 @@ public interface Endpoint {
    * or asynchronous. Both types of endpoints should call the
    * given callback once started.
    *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been started.
+   * @return A completable future to be completed once the service has been started.
    */
-  void start(AsyncCallback<Void> callback);
+  CompletableFuture<Void> start();
 
   /**
    * Stops the endpoint.
    *
-   * @param callback An asynchronous callback to be called once the endpoint has
-   *        been stopped.
+   * @return A completable future to be completed once the service has been stopped.
    */
-  void stop(AsyncCallback<Void> callback);
+  CompletableFuture<Void> stop();
 
 }

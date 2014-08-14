@@ -1,7 +1,7 @@
 CopyCat
 =======
 
-### [User Manual](#user-manual) | [Tutorials](#tutorials)
+### [User Manual](#user-manual)
 
 CopyCat is an extensible Java-based implementation of the
 [Raft consensus protocol](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
@@ -13,9 +13,15 @@ CopyCat's Raft implementation also supports advanced features of the Raft algori
 snapshotting and dynamic cluster configuration changes and provides additional optimizations
 for various scenarios such as failure detection and read-only state queries.
 
+CopyCat is a pluggable framework, providing protocol and endpoint implementations for
+various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
+
+*Note that this version requires Java 8. There is also a [Java 7 compatible version](https://github.com/kuujo/copycat/tree/java-1.7)*
+
 User Manual
 ===========
 
+1. [A Brief Introduction](#a-brief-introduction)
 1. [How it works](#how-it-works)
    * [State machines](#state-machines)
    * [Commands](#commands)
@@ -32,21 +38,22 @@ User Manual
    * [Creating a state machine](#creating-a-state-machine)
    * [Providing command types](#providing-command-types)
    * [Taking snapshots](#taking-snapshots)
-   * [Creating an annotated state machine](#creating-an-annotated-state-machine)
+   * [Configuring the replica](#configuring-the-replica)
    * [Configuring the cluster](#configuring-the-cluster)
    * [Creating a dynamic cluster](#creating-a-dynamic-cluster)
    * [Creating the CopyCatContext](#creating-the-copycatcontext)
    * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
+1. [Serialization](#serialization)
+   * [Providing custom log serializers](#providing-custom-log-serializers)
 1. [Protocols](#protocols-1)
    * [Writing a protocol server](#writing-a-protocol-server)
    * [Writing a protocol client](#writing-a-protocol-client)
    * [Injecting URI arguments into a protocol](#injecting-uri-arguments-into-a-protocol)
-   * [Using multiple URI annotations on a single parameter](#using-multiple-uri-annotations-on-a-single-parameter)
-   * [Making annotated URI parameters optional](#making-annotated-uri-parameters-optional)
    * [The complete protocol](#the-complete-protocol)
    * [Built-in protocols](#built-in-protocols)
-      * [Direct](#direct-protocol)
+      * [Local](#local-protocol)
+      * [Netty TCP](#netty-tcp-protocol)
       * [Vert.x Event Bus](#vertx-event-bus-protocol)
       * [Vert.x TCP](#vertx-tcp-protocol)
 1. [Endpoints](#endpoints-1)
@@ -56,6 +63,151 @@ User Manual
       * [Vert.x Event Bus](#vertx-event-bus-endpoint)
       * [Vert.x TCP](#vertx-tcp-endpoint)
       * [Vert.x HTTP](#vertx-http-endpoint)
+
+# A brief introduction
+CopyCat is a "protocol agnostic" implementation of the Raft consensus algorithm. It
+provides a framework for constructing a partition-tolerant replicated state machine
+over a variety of wire-level protocols. It sounds complicated, but the API is actually
+quite simple. Here's a quick example.
+
+```java
+public class KeyValueStore implements StateMachine {
+  @Stateful
+  private Map<String, Object> data = new HashMap<>();
+
+  @Command(type = Command.Type.READ)
+  public Object get(String key) {
+    return data.get(key);
+  }
+
+  @Command(type = Command.Type.WRITE)
+  public void set(String key, Object value) {
+    data.put(key, value);
+  }
+
+  @Command(type = Command.Type.WRITE)
+  public void delete(String key) {
+    data.remove(key);
+  }
+
+}
+```
+
+Here we've created a simple key value store. By deploying this state machine on several
+nodes in a cluster, CopyCat will ensure commands (i.e. `get`, `set`, and `delete`) are
+applied to the state machine in the order in which they're submitted to the cluster
+(log order). Internally, CopyCat uses a replicated log to order and replicate commands,
+and it uses leader election to coordinate log replication. When the replicated log grows
+too large, CopyCat will take a snapshot of the `@Stateful` state machine state and
+compact the log.
+
+```java
+Log log = new FileLog("key-value.log");
+```
+
+To configure the CopyCat cluster, we simply create a `ClusterConfig`.
+
+```java
+ClusterConfig cluster = new ClusterConfig();
+cluster.setLocalMember("tcp://localhost:8080");
+cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
+```
+
+Note that the cluster configuration identifies a particular protocol, `tcp`. These are
+the endpoints the nodes within the CopyCat cluster use to communicate with one another.
+CopyCat provides a number of different [protocol](#protocols) and [endpoint](#endpoints)
+implementations.
+
+Additionally, CopyCat cluster membership is dynamic, and the `ClusterConfig` is `Observable`.
+This means that if the `ClusterConfig` is changed while the cluster is running, CopyCat
+will pick up the membership change and replicate the cluster configuration in a safe manner.
+
+Now that the cluster has been set up, we simply create a `CopyCat` instance, specifying
+an [endpoint](#endpoints) through which the outside world can communicate with the cluster.
+
+```java
+CopyCat copycat = new CopyCat("http://localhost:5000", new KeyValueStore(), log, cluster);
+copycat.start();
+```
+
+That's it! We've just created a strongly consistent, fault-tolerant key-value store with an
+HTTP API in less than 25 lines of code!
+
+```java
+public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore implements StateMachine {
+
+  public static void main(String[] args) {
+    // Create the local file log.
+    Log log = new FileLog("key-value.log");
+
+    // Configure the cluster.
+    ClusterConfig cluster = new ClusterConfig();
+    cluster.setLocalMember("tcp://localhost:8080");
+    cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
+
+    // Create and start a server at localhost:5000.
+    new CopyCat("http://localhost:5000", new StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore(), log, cluster).start();
+  }
+
+  @Stateful
+  private Map<String, Object> data = new HashMap<>();
+
+  @Command(type = Command.Type.READ)
+  public Object get(String key) {
+    return data.get(key);
+  }
+
+  @Command(type = Command.Type.WRITE)
+  public void set(String key, Object value) {
+    data.put(key, value);
+  }
+
+  @Command(type = Command.Type.WRITE)
+  public void delete(String key) {
+    data.remove(key);
+  }
+
+}
+```
+
+We can now execute commands on the state machine by making `POST` requests to
+the HTTP interface.
+
+```
+POST http://localhost:5000/set
+["foo", "Hello world!"]
+
+200 OK
+
+POST http://localhost:5000/get
+["foo"]
+
+200 OK
+
+{
+  "result": "Hello world!"
+}
+
+POST http://localhost:5000/delete
+["foo"]
+
+200 OK
+```
+
+CopyCat doesn't require that commands be submitted via an endpoint. Rather than
+submitting commands via the HTTP endpoint, simply construct a `CopyCatContext`
+instance and submit commands directly to the cluster via the context.
+
+```java
+CopyCatContext context = new CopyCatContext(new KeyValueStore(), log, cluster);
+
+// Set a key in the key-value store.
+context.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
+  context.submitCommand("get", "foo").whenComplete((result, error) {
+    context.submitCommand("delete", "foo").thenRun(() -> System.out.println("Deleted 'foo'"));
+  });
+});
+```
 
 # How it works
 CopyCat uses a Raft-based consensus algorithm to perform leader election and state
@@ -99,9 +251,11 @@ CopyCat provides both in-memory logs for testing and file-based logs for product
 
 ### Snapshots
 In order to ensure [logs](#logs) do not grow too large for the disk, CopyCat replicas periodically
-take and persist snapshots of the [state machine](#state-machines) state. In CopyCat, when a
-snapshot is taken, the snapshot is appended to the local log, and all committed entries are
-subsequently removed from the log.
+take and persist snapshots of the [state machine](#state-machines) state. CopyCat manages snapshots
+using a method different than is described in the original Raft paper. Rather than persisting
+snapshots to separate snapshot files and replicating snapshots using an additional RCP method,
+CopyCat appends snapshots directly to the log. This allows CopyCat to minimize complexity by
+transfering snapshots as a normal part of log replication.
 
 Normally, when a node crashes and recovers, it restores its state using the latest snapshot
 and then rebuilds the rest of its state by reapplying committed [command](#commands) entries.
@@ -156,10 +310,10 @@ the result. The leader is also responsible for maintaining log consistency durin
 
 ### Protocols
 The `copycat-core` project is purely an implementation of the Raft consensus algorithm.
-It does not implement any specific transport aside from a `direct` transport for testing.
+It does not implement any specific transport aside from a `local` transport for testing.
 Instead, the CopyCat API is designed to allow users to implement the transport layer
 using the `Protocol` API. CopyCat does, however, provide some core protocol implementations
-in the `copycat-vertx` project.
+in the `copycat-netty` and `copycat-vertx` projects.
 
 ### Endpoints
 CopyCat provides a framework for building fault-tolerant [state machines](#state-machines) on
@@ -171,25 +325,15 @@ interfaces (servers) for submitting [commands](#commands) to the CopyCat cluster
 
 ### Creating a [state machine](#state-machines)
 To create a state machine in CopyCat, simply implement the `StateMachine`
-interface. The state machine interface exposes three methods:
+interface.
 
 ```java
-public interface StateMachine {
-
-  Snapshot takeSnapshot();
-
-  void installSnapshot(Snapshot snapshot);
-
-  Object applyCommand(String command, Arguments args);
-
+public class MyStateMachine implements StateMachine {
 }
 ```
 
-The first two methods are for snapshot support, but more on that later. The most
-important method in the state machine is the `applyCommand` method. What's important
-to remember when writing a state machine is: the machine should always arrive at
-the same state and provide the same output given the same commands in the same order.
-This means your state machine should not rely on mutable data sources such as databases.
+The state machine interface is simply an identifier interface. *All public methods
+within a state machine* can be called as CopyCat commands. This is important to remember.
 
 ### Providing [command types](#commands)
 When a command is submitted to the CopyCat cluster, the command is first written
@@ -204,9 +348,8 @@ can simply ensure that the cluster is in sync, apply the command to the state ma
 and return the result. However, in order for it to do this it needs to have some
 additional information about each specific command.
 
-To provide command information to CopyCat, implement the `CommandProvider` interface.
-When a command is submitted to the cluster, CopyCat will check whether the state machine
-is a `CommandProvider`, and if so, use command info to determine how to handle the command.
+To provide command information to CopyCat, use the `@Command` annotation on a command
+method.
 
 Each command can have one of three types:
 * `READ`
@@ -221,28 +364,21 @@ a `READ` command never modify the machine state.*
 Let's look at an example of a command provider:
 
 ```java
-public class MyStateMachine implements StateMachine, CommandProvider {
-  private static final Command READ = new GenericCommand("read", Command.Type.READ);
-  private static final Command WRITE = new GenericCommand("write", Command.Type.WRITE);
-  private static final Command NONE = new GenericCommand("none", Command.Type.READ_WRITE);
+public class MyStateMachine implements StateMachine {
+  private final Map<String, Object> data = new HashMap<>();
 
-  @Override
-  public Command getCommand(String command) {
-    switch (command) {
-      case "read":
-        return READ;
-      case "write":
-        return WRITE;
-      default:
-        return NONE;
-    }
+  @Command(type = Command.Type.READ)
+  public Object read(String key) {
+    return data.get(key);
+  }
+
+  @Command(type = Command.Type.WRITE)
+  public void write(String key, Object value) {
+    data.put(key, value);
   }
 
 }
 ```
-
-Note that `Command` is actually an annotation, so CopyCat provides a helper class for
-constructing annotations call `GenericCommand`.
 
 ### Taking [snapshots](#snapshots)
 One of the issues with a [replicated log](#logs) is that over time it will only continue to grow.
@@ -255,89 +391,55 @@ of sync. Additionally, CopyCat guarantees that the first entry in any log will a
 a `SnapshotEntry`, again helping to ease the process of replicating snapshots to far
 out-of-date replicas.
 
-All snapshot serialization, storage, and loading is handled by CopyCat internally. Users
-need only create and install the data via the `takeSnapshot` and `installSnapshot` methods
-respectively. Once the log grows to a predetermined size (configurable in `CopyCatConfig`),
-CopyCat will take a snaphsot of the log and wipe all previous log entries.
-
-Snapshots are stored in a special `Snapshot` class which is essentially just a wrapper for
-`Map<String, Object>`.
+All snapshot serialization, storage, and loading is handled by CopyCat internally. Users need
+only annotated stateful fields with the `@Stateful` annotation. Once the log grows to a
+predetermined size (configurable in `CopyCatConfig`), CopyCat will take a snaphsot of the log
+and wipe all previous log entries.
 
 ```java
 public class MyStateMachine implements StateMachine {
-  private Map<String, Object> data = new HashMap<>();
-
-  @Override
-  public Snapshot takeSnapshot() {
-    return new Snapshot(data);
-  }
-
-  @Override
-  public void installSnapshot(Snapshot data) {
-    this.data = data;
-  }
-
-  @Override
-  public Object applyCommand(String command, Arguments args) {
-    switch (command) {
-      case "get":
-        return data.get(args.get("key"));
-      case "set":
-        args.put(args.get("key"), args.get("value"));
-        return null;
-      case "delete":
-        return args.remove(args.get("key"));
-      default:
-        throw new UnsupportedOperationException();
-    }
-  }
-
-}
-```
-
-### Creating an annotated [state machine](#state-machines)
-CopyCat provides a helpful base class which supports purely annotation based state
-machines. To create an annotated state machine, simply extend the `AnnotatedStateMachine`
-class. This is the recommended method for creating Java-based state machines.
-
-```java
-public class MyStateMachine extends AnnotatedStateMachine {
-}
-```
-
-The annotated state machine will introspect itself to find commands defined with the
-`@Command` annotation.
-
-```java
-public class MyStateMachine extends AnnotatedStateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
-
-  @Command(name="get", type=Command.Type.READ)
-  public Object get(@Command.Argument("key") String key) {
-    return data.get(key);
-  }
-
-  @Command(name="set", type=Command.Type.WRITE)
-  public void set(@Command.Argument("key") String key, @Command.Argument("value") Object value) {
-    data.put(key, value);
-  }
-
-  @Command(name="delete", type=Command.Type.READ_WRITE)
-  public Object delete(@Command.Argument("key") String key) {
-    return data.remove(key);
-  }
-
 }
 ```
 
-The `AnnotatedStateMachine` is a `CommandProvider` which handles locating and
-providing command information based on annotations on the implementation. This
-removed the need for mapping command names to `Command` instances for command
-providers and `switch` statements for command application.
+### Configuring the replica
+CopyCat exposes a configuration API that allows users to configure how CopyCat behaves
+during elections and how it replicates commands. To configure a CopyCat replica, create
+a `CopyCatConfig` to pass to the `CopyCatContext` constructor.
 
-Note also that the `@Stateful` annotation is used to indicate that the `data` field
-should be persisted whenever a snapshot is taken.
+```java
+CopyCatConfig config = new CopyCatConfig();
+```
+
+The `CopyCatConfig` exposes the following configuration methods:
+* `setElectionTimeout`/`withElectionTimeout` - sets the timeout within which a [follower](#follower)
+must receive an `AppendEntries` request from the leader before starting a new election. This timeout
+is also used to calculate the election timeout during elections. Defaults to `2000` milliseconds
+* `setHeartbeatInterval`/`withHeartbeatInterval` - sets the interval at which the leader will send
+heartbeats (`AppendEntries` requests) to followers. Defaults to `500` milliseconds
+* `setRequireWriteQuorum`/`withRequireWriteQuorum` - sets whether to require a quorum during write
+operations. It is strongly recommended that this remain enabled for consistency. Defaults to `true` (enabled)
+* `setRequireReadQuorum`/`withRequireReadQuorum` - sets whether to require a quorum during read operations.
+Read quorums can optionally be disabled in order to improve performance at the risk of reading stale data.
+When read quorums are disabled, the leader will immediately respond to `READ` type commands by applying
+the command to its state machine and returning the result. Defaults to `true` (enabled)
+* `setMaxLogSize`/`withMaxLogSize` - sets the maximum log size before a snapshot should be taken. As
+entries are appended to the local log, replicas will monitor the size of the local log to determine
+whether a snapshot should be taken based on this value. Defaults to `32 * 1024^2`
+* `setCorrelationStrategy`/`withCorrelationStrategy` - CopyCat generates correlation identifiers
+for each request/response pair that it sends. This helps assist in correlating messages across
+various protocols. By default, CopyCat uses `UuidCorrelationStrategy` - a `UUID` based correlation ID
+generator, but depending on the protocol being used, the `MonotonicCorrelationStrategy` which generates
+monotonically increasing IDs may be safe to use (it's safe with all core CopyCat protocols).
+Defaults to `UuidCorrelationStrategy`
+* `setTimerStrategy`/`withTimerStrategy` - sets the replica timer strategy. This allows users to
+control how CopyCat's internal timers work. By default, replicas use a `ThreadTimerStrategy`
+which uses the Java `Timer` to schedule delays on a background thread. Users can implement their
+own `TimerStrategy` in order to, for example, implement an event loop based timer. Timers should
+return monotonically increasing timer IDs that never repeat. Note also that timers do not need
+to be multi-threaded since CopyCat only sets a timeout a couple time a second. Defaults to
+`ThreadTimerStrategy`
 
 ### Configuring the [cluster](#cluster-configurations)
 When a CopyCat cluster is first started, the [cluster configuration](#cluster-configurations)
@@ -349,7 +451,7 @@ and the user-defined configuration will be replaced by an internal configuration
 To configure the CopyCat cluster, create a `ClusterConfig`.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig();
+ClusterConfig cluster = new ClusterConfig();
 ```
 
 Each cluster configuration must contain a *local* member and a set of *remote* members.
@@ -372,19 +474,11 @@ cluster.addRemoteMember("tcp://localhost1236");
 ```
 
 ### Creating a [dynamic cluster](#cluster-configurations)
-Dynamic cluster membership changes are supported via any `ClusterConfig` that
-extends the `Observable` class. If a cluster configuration is `Observable`, the cluster
-leader will observe the configuration once it is elected. When the configuration changes,
-the leader will log and replicate the configuration change.
-
-CopyCat provides an `Observable` cluster configuration called `DynamicClusterConfig`:
-
-```java
-ClusterConfig cluster = new DynamicClusterConfig();
-```
+The CopyCat cluster configuration is `Observable`, and once the local node is elected
+leader, it will begin observing the configuration for changes.
 
 Once the local node has been started, simply adding or removing nodes from the observable
-`DynamicClusterConfig` may cause the replica's configuration to be updated. However,
+`ClusterConfig` may cause the replica's configuration to be updated. However,
 it's important to remember that as with commands, configuration changes must go through
 the cluster leader and be replicated to the rest of the cluster. This allows CopyCat
 to ensure that logs remain consistent while nodes are added or removed, but it also
@@ -420,29 +514,74 @@ To submit commands to the CopyCat cluster, simply call the `submitCommand` metho
 on any `CopyCatContext`.
 
 ```java
-Arguments args = new Arguments();
-args.put("key", "foo");
-context.submitCommand("read", args, new AsyncCallback<Object>() {
-  @Override
-  public void complete(Object result) {
-    // Command succeeded.
-  }
-  @Override
-  public void fail(Throwable t) {
-    // Command failed.
-  }
-});
+context.submitCommand("get", "foo").thenAccept((result) -> System.out.println(result));
 ```
 
-When a command is submitted to a `CopyCatContext`, the command will automatically
+The `CopyCatContext` API is supports an arbitrary number of positional arguments. When
+a command is submitted, the context will return a `CompletableFuture` which will be
+completed once the command result is received. The command will automatically
 be forwarded on to the current cluster [leader](#leaders). If the cluster does not have any
 currently [elected](#leader-election) leader (or the node to which the command is submitted
 doesn't know of any cluster leader) then the submission will fail.
 
+# Serialization
+CopyCat provides a pluggable serialization API that allows users to control how log
+entries are serialized to the log. CopyCat provides two serializer implementations, one
+using the core Java serialization mechanism, and one [Jackson](http://jackson.codehaus.org/)
+based serializer (the default). To configure the serializer in use, add a file to the classpath
+at `META-INF/services/net/kuujo/copycat/Serializer` containing the serializer factory class name:
+* `net.kuujo.copycat.setializer.impl.JacksonSerializerFactory` (default)
+* `net.kuujo.copycat.serializer.impl.JavaSerializerFactory`
+
+### Providing custom log serializers
+CopyCat locates log serializers via its custom service loader implementation. To provide
+a custom serializer to CopyCat, simply add a configuration file to your classpath at
+`META-INF/services/net/kuujo/copycat/Serializer` containing the `SerializerFactory`
+implementation class name.
+
+```java
+public class JacksonSerializerFactory extends SerializerFactory {
+
+  @Override
+  public Serializer createSerializer() {
+    return new JacksonSerializer();
+  }
+
+}
+```
+
+The serializer factory should return a `Serializer` instance via the `createSerializer` method.
+This is the basic default serializer used by CopyCat:
+
+```java
+public class JacksonSerializer implements Serializer {
+  private final ObjectMapper mapper = new ObjectMapper();
+
+  @Override
+  public byte[] writeValue(Object value) {
+    try {
+      return mapper.writeValueAsBytes(value);
+    } catch (JsonProcessingException e) {
+      throw new SerializationException(e.getMessage());
+    }
+  }
+
+  @Override
+  public <T> T readValue(byte[] bytes, Class<T> type) {
+    try {
+      return mapper.readValue(bytes, type);
+    } catch (IOException e) {
+      throw new SerializationException(e.getMessage());
+    }
+  }
+
+}
+```
+
 # Protocols
 CopyCat is an abstract API that can implement the Raft consensus algorithm over
 any conceivable protocol. To do this, CopyCat provides a flexible protocol plugin
-system. Protocols use special URIs - such as `direct:foo` or `tcp://localhost:5050` -
+system. Protocols use special URIs - such as `local:foo` or `tcp://localhost:5050` -
 and CopyCat uses a custom service loader similar to the Java service loader. Using
 URIs, a protocol can be constructed and started by CopyCat without the large amounts
 of boilerplate code that would otherwise be required.
@@ -463,8 +602,6 @@ The `Protocol` interface provides the following methods:
 
 ```java
 public interface Protocol {
-
-  void init(CopyCatContext context);
 
   ProtocolClient createClient();
 
@@ -510,13 +647,11 @@ callback methods.
 ```java
 public interface ProtocolClient {
 
-  void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback);
+  CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request);
 
-  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback);
+  CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request);
 
-  void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback);
-
-  void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback);
+  CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request);
 
 }
 ```
@@ -536,134 +671,95 @@ These are the available URI annotations:
 * `@UriAuthority`
 * `@UriPath`
 * `@UriQuery`
+* `@UriQueryParam`
 * `@UriFragment`
-* `@UriArgument`
 
 Each of these annotations mirrors a method on the `URI` interface except for the
-last one, `@UriArgument`. The `@UriArgument` annotation is a special annotation
+last one, `@UriQueryParam`. The `@UriQueryParam` annotation is a special annotation
 for referencing parsed named query arguments.
 
-URI annotations can be used either on protocol constructors or setter methods.
-In either case, constructors or methods *must first be annotated with the
-`@UriInject` annotation* in order to enable URI injection. Let's take a look
-at an example of constructor injection:
+URI arguments are injected into protocol instances via bean properties or annotated
+fields. Let's take a look at an example of setter injection:
 
 ```java
 public class HttpProtocol implements Protocol {
-  private final String host;
-  private final int port;
-  private final String path;
+  private String host;
 
-  @UriInject
-  public HttpProtocol(@UriHost String host, @UriPort int port @UriPath String path) {
+  @UriHost
+  public void setHost(String host) {
     this.host = host;
-    this.port = port;
-    this.path = path;
+  }
+
+  public String getHost() {
+    return host;
   }
 
 }
 ```
 
-When the protocol instance is first constructed, the CopyCat `UriInjector` will
-find any constructors with the `@UriInject` annotation and attempt to construct
-the object using that constructor. Note that if the construction fails, the injector
-will then try to fall back to a no-argument constructor. If a no argument constructor
-exists then a `ProtocolException` will be thrown.
-
-The CopyCat URI injector also supports multiple constructors. This can be useful
-for when there are several ways to construct the same object. For instance, we may
-be constructing a `HttpClient` instance within our `HttpProtocol` constructor. We
-can then create two constructors, one accepting a `host` and a `port` and one accepting
-a `client`.
+By default, if a bean property is not annotated with any URI annotation,
+the URI injector will attempt to inject a named query parameter into the setter.
 
 ```java
 public class HttpProtocol implements Protocol {
-  private final HttpClient client;
-  private final String path;
+  private String host;
 
-  @UriInject
-  public HttpProtocol(@UriArgument("client") HttpClient client, @UriPath String path) {
-    this.client = client;
-    this.path = path;
+  public void setHost(String host) {
+    this.host = host;
   }
 
-  @UriInject
-  public HttpProtocol(@UriHost String host, @UriPort int port @UriPath String path) {
-    this(new HttpClient(host, port), path);
+  public String getHost() {
+    return host;
   }
 
 }
 ```
 
-You may be interested in how CopyCat decides which constructor to use. Actually, it's
-quite simple: the URI injector simply iterates over `@UriInject` annotated constructors
-and attempts to construct the object from each one. If a given constructor cannot be
-used due to a missing argument (such as the named `@UriArgument("client")`), the constructor
-will be skipped. Once all constructors have been exhausted, the injector will again attempt
-to fall back to a no-argument constructor.
-
-Note also that the `@UriArgument("client")` annotation is referencing a `HttpClient` object
-which obviously can't exist within a raw URI string. Users can use a `Registry` instance
-to register named objects that can then be referenced in URIs using the `#` prefix. For
-instance:
+Obviously URI parameters are limiting in type. The CopyCat URI injector supports
+complex types via a `Registry` instance. Registry lookups can be performed by
+prefixing `@UriQueryParam` names with the `$` prefix.
 
 ```java
 Registry registry = new BasicRegistry();
 registry.bind("http_client", new HttpClient("localhost", 8080));
-String uri = "http://copycat?client=#http_client";
+String uri = "http://copycat?client=$http_client";
 ```
 
-The registry can then be passed to a `CopyCatContext` constructor.
-
-```java
-CopyCatContext context = new CopyCatContext(new MyStateMachine, cluster, registry);
-```
-
-When the URI query string is parsed, the parser will look for strings beginning with `#`
-and use those strings to look up referenced objects in the context's registry.
-
-### Using multiple URI annotations on a single parameter
-
-URI schemas can often be inflexible for this type of use case, and users may want to
-be able to back a parameter with multiple annotations. These two URIs will not parse
-in the same way:
-
-* `http:copycat`
-* `http://copycat`
-
-In the first example, the `copycat` path can be fetch via `URI.getSchemeSpecificPart()`,
-but the second example requires `URI.getAuthority()`. CopyCat supports multiple URI
-annotations on a single parameter. Annotations will be evaluated from left to right.
-So, if the first annotation is evaluated, and no matching (non-null) argument is found,
-the injector will look for another annotation. This can be used to create some order
-of importance. For instance, in the example above, we would want to use the
-`@UriAuthority` annotation first, since in either case the `@UriSchemeSpecificPart`
-will not be null.
-
-```java
-@UriInject
-public HttpProtocol(@UriAuthority @UriSchemeSpecificPart String path) {
-  this.path = path;
-}
-```
-
-### Making annotated URI parameters optional
-In order to allow for more control over the way CopyCat selects constructors, users
-can use the `@Optional` annotation to indicate that a `null` parameter can be ignored
-if necessary. This will prevent CopyCat from skipping otherwise successful constructors.
-For instance, in our `HttpProtocol` example, the constructor could certainly take a
-`host` without a `port`. Of course, we could simply create another constructor, but
-maybe we just don't wan to :-)
+The URI above can be used to inject an `HttpClient` into the `HttpProtocol` via
+the `Registry`.
 
 ```java
 public class HttpProtocol implements Protocol {
+  private HttpClient client;
 
-  @UriInject
-  public HttpProtocol(@UriHost String host, @Optional @UriPort int port) {
-    this.host = host;
-    this.port = port >= 0 ? port : 0;
+  public void setClient(HttpClient client) {
+    this.client = client;
   }
 
+  public HttpClient getClient() {
+    return client;
+  }
+
+}
+```
+
+The URI injector can also inject annotated fields directly.
+
+```java
+public class HttpProtocol implements Protocol {
+  @UriHost private String host;
+  @UriPort private int port;
+}
+```
+
+### Injecting the CopyCatContext
+The CopyCatContext is automatically injected into any `Protocol` implementation.
+When URI injection occurs, the URI injector searches fields for a `CopyCatContext`
+type field and automatically injects the context into that field.
+
+```java
+public class HttpProtocol implements Protocol {
+  private CopyCatContext context;
 }
 ```
 
@@ -672,36 +768,44 @@ Now that we have all that out of the way, here's the complete `Protocol` impleme
 
 ```java
 public class HttpProtocol implements Protocol {
-  private HttpClient client;
-  private HttpServer server;
+  private String host;
+  private int port;
   private String path;
 
-  @UriInject
-  public HttpProtocol(@UriArgument("client") HttpClient client, @UriArgument("server") HttpServer server @UriAuthority String path) {
-    this.client = client;
-    this.server = server;
+  public HttpProtocol() {
+  }
+
+  @UriHost
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  @UriPort
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  @UriPath
+  public void setPath(String path) {
     this.path = path;
   }
 
-  @UriInject
-  public HttpProtocol(@UriHost String host, @Optional @UriPort int port, @UriPath String path) {
-    this.client = new HttpClient(host, port);
-    this.server = new HttpServer(host, port);
-    this.path = path;
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
+  public String getPath() {
+    return path;
   }
 
   @Override
   public ProtocolClient createClient() {
-    return new HttpProtocolClient(client, path);
+    return new HttpProtocolClient(new HttpClient(host, port), path);
   }
 
   @Override
   public ProtocolServer createServer() {
-    return new HttpProtocolServer(server, path);
+    return new HttpProtocolServer(new HttpServer(host, port), path);
   }
 
 }
@@ -713,7 +817,7 @@ Let's take a look at an example of how to configure the CopyCat cluster when usi
 custom protocols.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("http://localhost:8080/copycat");
+ClusterConfig cluster = new ClusterConfig("http://localhost:8080/copycat");
 cluster.addRemoteMember("http://localhost:8081/copycat");
 cluster.addRemoteMember("http://localhost:8082/copycat");
 ```
@@ -726,20 +830,31 @@ replicas, each protocol instance's client is used to send messages to those repl
 
 ## Built-in protocols
 CopyCat maintains several built-in protocols, some of which are implemented on top
-of asynchronous frameworks like Vert.x.
+of asynchronous frameworks like [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
-### Direct Protocol
-The `direct` protocol is a simple protocol that communicates between contexts using
+### Local Protocol
+The `local` protocol is a simple protocol that communicates between contexts using
 direct method calls. This protocol is intended purely for testing.
 
 ```java
 Registry registry = new ConcurrentRegistry();
-ClusterConfig cluster = new StaticClusterConfig("direct:foo");
-cluster.setRemoteMembers("direct:bar", "direct:baz");
+ClusterConfig cluster = new ClusterConfig("local:foo");
+cluster.setRemoteMembers("local:bar", "local:baz");
 CopyCatContext context = new CopyCatContext(new MyStateMachine, cluster, registry);
 ```
 
-Note that you should use a `ConcurrentRegistry` when using the `direct` protocol.
+Note that you should use a `ConcurrentRegistry` when using the `local` protocol.
+
+### Netty TCP Protocol
+The netty `tcp` protocol communicates between replicas using Netty TCP channels.
+
+In order to use Netty protocols, you must add the `copycat-netty` project as a
+dependency. Once the `copycat-netty` library is available on your classpath,
+CopyCat will automatically find the Netty `tcp` protocol.
+
+```java
+ClusterConfig cluster = new ClusterConfig("tcp://localhost:1234");
+```
 
 ### Vert.x Event Bus Protocol
 The Vert.x `eventbus` protocol communicates between replicas on the Vert.x event
@@ -749,11 +864,11 @@ in an existing `Vertx` instance.
 In order to use Vert.x protocols, you must add the `copycat-vertx` project as a dependency.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("eventbus://localhost:1234/foo");
+ClusterConfig cluster = new ClusterConfig("eventbus://localhost:1234/foo");
 
 // or...
 
-ClusterConfig cluster = new StaticClusterConfig("eventbus://foo?vertx=#vertx");
+ClusterConfig cluster = new ClusterConfig("eventbus://foo?vertx=$vertx");
 Registry registry = new BasicRegistry();
 registry.bind("vertx", vertx);
 ```
@@ -766,7 +881,7 @@ simply use an ordinary TCP address.
 In order to use Vert.x protocols, you must add the `copycat-vertx` project as a dependency.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("tcp://localhost:1234");
+ClusterConfig cluster = new ClusterConfig("tcp://localhost:1234");
 cluster.setRemoteMembers("tcp://localhost:1235", "tcp://localhost:1236");
 ```
 
@@ -785,8 +900,6 @@ The `Endpoint` interface is very simple:
 
 ```java
 public interface Endpoint {
-
-  void init(CopyCatContext context);
 
   void start(AsyncCallback<Void> callback);
 
@@ -809,7 +922,7 @@ endpoint. To wrap a context, use the `CopyCat` class. The `CopyCat` constructor
 simply accepts a single additional argument which is the endpoint URI.
 
 ```java
-ClusterConfig cluster = new StaticClusterConfig("tcp://localhost:5555", "tcp://localhost:5556", "tcp://localhost:5557");
+ClusterConfig cluster = new ClusterConfig("tcp://localhost:5555", "tcp://localhost:5556", "tcp://localhost:5557");
 CopyCat copycat = new CopyCat("http://localhost:8080", new MyStateMachine(), cluster)
 copycat.start();
 ```
@@ -829,7 +942,7 @@ CopyCat copycat = new CopyCat("eventbus://localhost:8080/foo", new MyStateMachin
 
 Registry registry = new BasicRegistry();
 registry.bind("vertx", vertx);
-CopyCat copycat = new CopyCat("eventbus://foo?vertx=#vertx", new MyStateMachine(), cluster, registry);
+CopyCat copycat = new CopyCat("eventbus://foo?vertx=$vertx", new MyStateMachine(), cluster, registry);
 ```
 
 ### Vert.x TCP Endpoint
@@ -845,923 +958,4 @@ execute a `POST` request to the `/read` path using a JSON body containing comman
 
 ```java
 CopyCat copycat = new CopyCat("http://localhost:8080", new MyStateMachine(), cluster);
-```
-
-Tutorials
-=========
-
-1. [A simple fault-tolerant key-value store](#writing-a-simple-fault-tolerant-key-value-store)
-   * [Creating the state machine](#creating-the-state-machine)
-   * [Adding state machine commands](#adding-state-machine-commands)
-   * [Configuring the cluster](#configuring-the-cluster)
-   * [Setting up the log](#setting-up-the-log)
-   * [Starting the replica](#starting-the-replica)
-1. [Improving the key-value store with custom protocols and endpoints](#improving-the-key-value-store-with-custom-protocols-and-endpoints)
-   * [Creating the TCP protocol](#creating-the-tcp-protocol)
-      * [Creating URI-based constructors](#creating-uri-based-constructors)
-      * [Writing the protocol server](#writing-the-protocol-server)
-      * [Writing the protocol client](#writing-the-protocol-client)
-   * [Creating the HTTP endpoint](#creating-the-http-endpoint)
-      * [Creating URI-based constructors](#creating-uri-based-constructors)
-      * [Writing the HTTP server](#writing-the-http-server)
-   * [Running the key-value-store](#running-the-key-value-store)
-
-
-## A simple fault-tolerant key-value store
-The simplest example of a distributed, fault-tolerant database is a key-value
-store. While not necessarily efficient for the use case, CopyCat can be used
-to quickly write such a system in only a few lines of code.
-
-### Creating the state machine
-State machines are created by implementing the `StateMachine` interface. However,
-most users will find it useful to use the state machine helper - `AnnotatedStateMachine`.
-The `AnnotatedStateMachine` is an abstract class that supports annotation based
-state machine configurations.
-
-State machines are objects on which arbitrary commands can be called in the
-form of RPCs. Given the same commands in the same order, the state machine should
-always arrive at the same state with the same output. This is essential to maintaining
-consistency of state across the cluster. In general, this means state machine should
-not access external data sources that change over time.
-
-```java
-public class KeyValueStore extends AnnotatedStateMachine {
-
-  @Stateful
-  private final Map<String, Object> data = new HashMap<>();
-
-}
-```
-
-Note here that we use the `@Stateful` annotation. When replicates logs become too
-large, CopyCat will take and persist a snapshot of the state machine's state, allowing
-it to remove irrelevant entries from the log. The `@Stateful` annotation indicates
-to CopyCat that the annotated field should be included in the state machine snapshot
-whenever it is taken.
-
-### Adding state machine commands
-Commands on the `AnnotatedStateMachine` are defined by the `@Command` annotation. Each
-`@Command` should have a `name` assigned to it. The command's `name` is the name by
-which users executing commands on the state machine will reference the annotated method.
-
-Additionally, the `@Command` annotation supports an optional `type` argument. This
-argument indicates to CopyCat how the command should be handled internally. If the
-command is a `WRITE` or `READ_WRITE` command, CopyCat will log and replicate the command
-before applying it to the state machine. Alternatively, if the command is a `READ` command
-then CopyCat will skip logging the command since it has no effect on the state machine state.
-
-Each command can have any number of arguments annotated by the `@Argument` annotation. When
-a command is submitted to the CopyCat cluster, the user is allowed to provide arbitrary
-named `Arguments`. The `AnnotatedStateMachine` will automatically validate argument types
-against user provided arguments according to parameter annotations.
-
-```java
-public class KeyValueStore extends AnnotatedStateMachine {
-
-  @Stateful
-  private final Map<String, Object> data = new HashMap<>();
-
-  @Command(name="get", type=Command.Type.READ)
-  public Object get(@Argument("key") String key) {
-    return data.get(key);
-  }
-
-  @Command(name="set", type=Command.Type.WRITE)
-  public void set(@Argument("key") String key, @Argument("value") Object value) {
-    data.put(key, value);
-  }
-
-  @Command(name="delete", type=Command.Type.WRITE)
-  public void delete(@Argument("key") String key) {
-    data.remove(key);
-  }
-
-}
-```
-
-That's it. We've just implemented a fault-tolerant in-memory key-value store.
-Now let's see how to run it.
-
-### Configuring the cluster
-CopyCat requires explicitly defined cluster configurations in order to perform
-log replication. Nodes in CopyCat are defined by special URIs which reference the
-protocol over which the node communicates.
-
-```java
-ClusterConfig cluster = new StaticClusterConfig();
-cluster.setLocalMember("tcp://localhost:5555");
-cluster.setRemoteMembers("tcp://localhost:5556", "tcp://localhost:5557");
-```
-
-In this case, we're using a TCP-based protocol. Remember that CopyCat core does
-not implement any network-based protocols (it does provide a test `direct` protocol),
-but additional projects provide protocol implementations. See the section on
-[protocols](#protocols) for more info.
-
-### Setting up the log
-By default, CopyCat replicas use an in-memory log combined with snapshotting to
-log and replicate events. However, this behavior can be changed by contructing
-another `Log` type.
-
-```java
-Log log = new FileLog("key-value.log");
-```
-
-### Starting the replica
-Now that we've created our state machine and configured the cluster and log
-we can start the local replica.
-
-```java
-CopyCatContext context = new CopyCatContext(new KeyValueStore(), log, cluster);
-context.start();
-```
-
-Note that this example only demonstrates how to start a single node. In a
-real-world scenario this snippet would need to be run on several nodes in a cluster.
-
-Once the node has been started, we can begin submitting commands.
-
-```java
-String command = "set";
-Arguments args = new Arguments();
-args.put("key", "test");
-args.put("value", "Hello world!");
-
-context.submitCommand(command, args, new AsyncCallback<Void>() {
-  public void complete(Void result) {
-    // Command was successful.
-  }
-  public void fail(Throwable t) {
-    // Command failed.
-  }
-});
-```
-
-## Improving the key-value store with custom protocols and endpoints
-At its core, CopyCat is an implementation of the Raft consensus algorithm but
-without a transport. However, CopyCat does provide a pluggable API for users to
-implement their own transport layer. This section will demonstrate how to implement
-custom protocols and endpoints for CopyCat using the Vert.x platform as an example.
-
-Protocols and endpoints are two sides of the same coin. Both are simple communication
-channels, but they differ widely in their use.
-
-**Protocols** are used by CopyCat internally to communicate between replicas.
-The CopyCat `Protocol` API is essentially an implementation of RPCs from the
-Raft consensus protocol. While the protocol API can be user defined, it is only
-ever called from within CopyCat. This means that performance is critical over usability.
-
-**Endpoints** are user-facing servers for the replicated state machine. Whereas the
-previous tutorial demonstrated how to create and start a single node in a CopyCat cluster,
-endpoints can be used to access the cluster over the network. This means that usability
-can be important if the endpoint is implemented over HTTP, for instance.
-
-### Creating the TCP protocol
-Since performance is critical for protocol impelmentations, we're going to implement
-the key-value store protocol over TCP using Vert.x. We'll call the protocol `tcp`.
-
-To create a custom protocol, we first need to register the protocol class in the
-`META-INF/services/net/kuujo/copycat/protocol` directory.
-
-`META-INF/services/net/kuujo/copycat/protocol/tcp`
-
-```
-net.kuujo.copycat.protocol.impl.TcpProtocol
-```
-
-The class contained within the service file is a `Protocol` implementation.
-
-```java
-public class TcpProtocol implements Protocol {
-  private final String host;
-  private final int port;
-  private final Vertx vertx;
-
-  public TcpProtocol(String host, int port, Vertx vertx) {
-    this.host = host;
-    this.port = port;
-    this.vertx = vertx;
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
-  }
-
-  @Override
-  public ProtocolServer createServer() {
-    return new TcpProtocolServer(vertx, host, port);
-  }
-
-  @Override
-  public ProtocolClient createClient() {
-    return new TcpProtocolClient(vertx, host, port);
-  }
-
-}
-```
-
-The `Protocol` interface is really just a factory interface for protocol clients
-and servers. CopyCat will handle constructing clients and servers according to the
-needs of the given node. For instance, the local node will construct a server on
-which to receive messages from other nodes and a client for each replica to which
-is sends messages.
-
-#### Creating URI-based constructors
-CopyCat protocols are identified by URIs, and as such CopyCat provides facilities
-for injecting URI arguments into the `Protocol` implementation via cosntructors.
-
-```java
-public class TcpProtocol implements Protocol {
-  private final String host;
-  private final int port;
-  private final Vertx vertx;
-
-  @UriInject
-  public TcpProtocol(@UriHost String host, @UriPort int port) {
-    this.host = host;
-    this.port = port;
-    this.vertx = new DefaultVertx();
-  }
-
-}
-```
-
-When the `Protocol` instance is created, CopyCat will parse the protocol URI
-and pass the URI host and port as the appropriate constructor arguments. For more
-information on URI injection see
-[Injecting URI arguments into a protocol](#injecting-uri-arguments-into-a-protocol).
-
-#### Writing the protocol server
-Protocol servers will be constructed by the local node in order to receive messages
-from other nodes in the cluster. To create a protocol server, implement the `ProtocolServer`
-interface.
-
-```java
-public class TcpProtocolServer implements ProtocolServer {
-  private static final Serializer serializer = SerializerFactory.getSerializer();
-  private final Vertx vertx;
-  private final String host;
-  private final int port;
-  private NetServer server;
-  private ProtocolHandler requestHandler;
-
-  public TcpProtocolServer(Vertx vertx, String host, int port) {
-    this.vertx = vertx;
-    this.host = host;
-    this.port = port;
-  }
-
-  @Override
-  public void protocolHandler(ProtocolHandler handler) {
-    this.requestHandler = handler;
-  }
-
-  @Override
-  public void start(final AsyncCallback<Void> callback) {
-    if (server == null) {
-      server = vertx.createNetServer();
-      server.connectHandler(new Handler<NetSocket>() {
-        @Override
-        public void handle(final NetSocket socket) {
-          socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
-            @Override
-            public void handle(Buffer buffer) {
-              JsonObject request = new JsonObject(buffer.toString());
-              String type = request.getString("type");
-              if (type != null) {
-                switch (type) {
-                  case "append":
-                    handleAppendRequest(socket, request);
-                    break;
-                  case "install":
-                    handleInstallRequest(socket, request);
-                    break;
-                  case "vote":
-                    handleVoteRequest(socket, request);
-                    break;
-                  case "submit":
-                    handleSubmitRequest(socket, request);
-                    break;
-                  default:
-                    respond(socket, new JsonObject().putString("status", "error").putString("message", "Invalid request type"));
-                    break;
-                }
-              } else {
-                respond(socket, new JsonObject().putString("status", "error").putString("message", "Invalid request type"));
-              }
-            }
-          }));
-        }
-      }).listen(port, host, new Handler<AsyncResult<NetServer>>() {
-        @Override
-        public void handle(AsyncResult<NetServer> result) {
-          if (result.failed()) {
-            callback.fail(result.cause());
-          } else {
-            callback.complete(null);
-          }
-        }
-      });
-    } else {
-      callback.complete(null);
-    }
-  }
-
-  /**
-   * Handles an append entries request.
-   */
-  private void handleAppendRequest(final NetSocket socket, JsonObject request) {
-    if (requestHandler != null) {
-      final long id = request.getLong("id");
-      List<Entry> entries = new ArrayList<>();
-      JsonArray jsonEntries = request.getArray("entries");
-      if (jsonEntries != null) {
-        for (Object jsonEntry : jsonEntries) {
-          entries.add(serializer.readValue(jsonEntry.toString().getBytes(), Entry.class));
-        }
-      }
-      requestHandler.appendEntries(new AppendEntriesRequest(request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit")), new AsyncCallback<AppendEntriesResponse>() {
-        @Override
-        public void complete(AppendEntriesResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
-          }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
-        }
-      });
-    }
-  }
-
-  /**
-   * Handles an install request.
-   */
-  private void handleInstallRequest(final NetSocket socket, JsonObject request) {
-    if (requestHandler != null) {
-      final long id = request.getLong("id");
-      Set<String> cluster = new HashSet<>();
-      JsonArray jsonNodes = request.getArray("cluster");
-      if (jsonNodes != null) {
-        for (Object jsonNode : jsonNodes) {
-          cluster.add(jsonNode.toString());
-        }
-      }
-      requestHandler.installSnapshot(new InstallSnapshotRequest(request.getLong("term"), request.getString("leader"), request.getLong("snapshotIndex"), request.getLong("snapshotTerm"), cluster, request.getBinary("data"), request.getBoolean("complete")), new AsyncCallback<InstallSnapshotResponse>() {
-        @Override
-        public void complete(InstallSnapshotResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
-          }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
-        }
-      });
-    }
-  }
-
-  /**
-   * Handles a vote request.
-   */
-  private void handleVoteRequest(final NetSocket socket, JsonObject request) {
-    if (requestHandler != null) {
-      final long id = request.getLong("id");
-      requestHandler.requestVote(new RequestVoteRequest(request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm")), new AsyncCallback<RequestVoteResponse>() {
-        @Override
-        public void complete(RequestVoteResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
-          }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
-        }
-      });
-    }
-  }
-
-  /**
-   * Handles a submit request.
-   */
-  private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
-    if (requestHandler != null) {
-      final long id = request.getLong("id");
-      requestHandler.submitCommand(new SubmitCommandRequest(request.getString("command"), new Arguments(request.getObject("args").toMap())), new AsyncCallback<SubmitCommandResponse>() {
-        @SuppressWarnings({"unchecked", "rawtypes"})
-        @Override
-        public void complete(SubmitCommandResponse response) {
-          if (response.status().equals(Response.Status.OK)) {
-            if (response.result() instanceof Map) {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putObject("result", new JsonObject((Map) response.result())));
-            } else if (response.result() instanceof List) {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putArray("result", new JsonArray((List) response.result())));
-            } else {
-              respond(socket, new JsonObject().putString("status", "ok").putNumber("id", id).putValue("result", response.result()));
-            }
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", response.error().getMessage()));
-          }
-        }
-        @Override
-        public void fail(Throwable t) {
-          respond(socket, new JsonObject().putString("status", "error").putNumber("id", id).putString("message", t.getMessage()));
-        }
-      });
-    }
-  }
-
-  /**
-   * Responds to a request from the given socket.
-   */
-  private void respond(NetSocket socket, JsonObject response) {
-    socket.write(response.encode() + '\00');
-  }
-
-  @Override
-  public void stop(final AsyncCallback<Void> callback) {
-    if (server != null) {
-      server.close(new Handler<AsyncResult<Void>>() {
-        @Override
-        public void handle(AsyncResult<Void> result) {
-          if (result.failed()) {
-            callback.fail(result.cause());
-          } else {
-            callback.complete(null);
-          }
-        }
-      });
-    } else {
-      callback.complete(null);
-    }
-  }
-
-}
-```
-
-#### Writing the protocol client
-Protocol clients will be constructed by each node in order to send messages to
-remote nodes.
-
-```java
-public class TcpProtocolClient implements ProtocolClient {
-  private static final Serializer serializer = SerializerFactory.getSerializer();
-  private final Vertx vertx;
-  private final String host;
-  private final int port;
-  private NetClient client;
-  private NetSocket socket;
-  private long id;
-  private final Map<Long, ResponseHolder<?>> responses = new HashMap<>();
-
-  /**
-   * Holder for response handlers.
-   */
-  private static class ResponseHolder<T extends Response> {
-    private final AsyncCallback<T> callback;
-    private final ResponseType type;
-    private final long timer;
-    private ResponseHolder(long timerId, ResponseType type, AsyncCallback<T> callback) {
-      this.timer = timerId;
-      this.type = type;
-      this.callback = callback;
-    }
-  }
-
-  /**
-   * Indicates response types.
-   */
-  private static enum ResponseType {
-    APPEND,
-    INSTALL,
-    VOTE,
-    SUBMIT;
-  }
-
-  public TcpProtocolClient(Vertx vertx, String host, int port) {
-    this.vertx = vertx;
-    this.host = host;
-    this.port = port;
-  }
-
-  @Override
-  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
-    if (socket != null) {
-      long requestId = ++id;
-      JsonArray jsonEntries = new JsonArray();
-      for (Entry entry : request.entries()) {
-        jsonEntries.addString(new String(serializer.writeValue(entry)));
-      }
-      socket.write(new JsonObject().putString("type", "append")
-          .putNumber("id", requestId)
-          .putNumber("term", request.term())
-          .putString("leader", request.leader())
-          .putNumber("prevIndex", request.prevLogIndex())
-          .putNumber("prevTerm", request.prevLogTerm())
-          .putArray("entries", jsonEntries)
-          .putNumber("commit", request.commitIndex()).encode() + '\00');
-      storeCallback(requestId, ResponseType.APPEND, callback);
-    } else {
-      callback.fail(new ProtocolException("Client not connected"));
-    }
-  }
-
-  @Override
-  public void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> callback) {
-    if (socket != null) {
-      long requestId = ++id;
-      JsonArray jsonCluster = new JsonArray();
-      for (String member : request.cluster()) {
-        jsonCluster.addString(member);
-      }
-      socket.write(new JsonObject().putString("type", "install")
-          .putNumber("id", requestId)
-          .putNumber("term", request.term())
-          .putString("leader", request.leader())
-          .putArray("cluster", jsonCluster)
-          .putBinary("data", request.data())
-          .putBoolean("complete", request.complete())
-          .encode() + '\00');
-      storeCallback(requestId, ResponseType.INSTALL, callback);
-    } else {
-      callback.fail(new ProtocolException("Client not connected"));
-    }
-  }
-
-  @Override
-  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
-    if (socket != null) {
-      long requestId = ++id;
-      socket.write(new JsonObject().putString("type", "vote")
-          .putNumber("id", requestId)
-          .putNumber("term", request.term())
-          .putString("candidate", request.candidate())
-          .putNumber("lastIndex", request.lastLogIndex())
-          .putNumber("lastTerm", request.lastLogTerm())
-          .encode() + '\00');
-      storeCallback(requestId, ResponseType.VOTE, callback);
-    } else {
-      callback.fail(new ProtocolException("Client not connected"));
-    }
-  }
-
-  @Override
-  public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
-    if (socket != null) {
-      long requestId = ++id;
-      socket.write(new JsonObject().putString("type", "submit")
-          .putString("command", request.command())
-          .putObject("args", new JsonObject(request.args()))
-          .encode() + '\00');
-      storeCallback(requestId, ResponseType.SUBMIT, callback);
-    } else {
-      callback.fail(new ProtocolException("Client not connected"));
-    }
-  }
-
-  /**
-   * Handles an identifiable response.
-   */
-  @SuppressWarnings("unchecked")
-  private void handleResponse(long id, JsonObject response) {
-    ResponseHolder<?> holder = responses.remove(id);
-    if (holder != null) {
-      vertx.cancelTimer(holder.timer);
-      switch (holder.type) {
-        case APPEND:
-          handleAppendResponse(response, (AsyncCallback<AppendEntriesResponse>) holder.callback);
-          break;
-        case INSTALL:
-          handleInstallResponse(response, (AsyncCallback<InstallSnapshotResponse>) holder.callback);
-          break;
-        case VOTE:
-          handleVoteResponse(response, (AsyncCallback<RequestVoteResponse>) holder.callback);
-          break;
-        case SUBMIT:
-          handleSubmitResponse(response, (AsyncCallback<SubmitCommandResponse>) holder.callback);
-          break;
-      }
-    }
-  }
-
-  /**
-   * Handles an append entries response.
-   */
-  private void handleAppendResponse(JsonObject response, AsyncCallback<AppendEntriesResponse> callback) {
-    String status = response.getString("status");
-    if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      callback.complete(new AppendEntriesResponse(response.getLong("term"), response.getBoolean("succeeded")));
-    } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
-    }
-  }
-
-  /**
-   * Handles an install response.
-   */
-  private void handleInstallResponse(JsonObject response, AsyncCallback<InstallSnapshotResponse> callback) {
-    String status = response.getString("status");
-    if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      callback.complete(new InstallSnapshotResponse(response.getLong("term"), response.getBoolean("succeeded")));
-    } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
-    }
-  }
-
-  /**
-   * Handles a vote response.
-   */
-  private void handleVoteResponse(JsonObject response, AsyncCallback<RequestVoteResponse> callback) {
-    String status = response.getString("status");
-    if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      callback.complete(new RequestVoteResponse(response.getLong("term"), response.getBoolean("voteGranted")));
-    } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
-    }
-  }
-
-  /**
-   * Handles a submit response.
-   */
-  private void handleSubmitResponse(JsonObject response, AsyncCallback<SubmitCommandResponse> callback) {
-    String status = response.getString("status");
-    if (status == null) {
-      callback.fail(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      callback.complete(new SubmitCommandResponse(response.getObject("result").toMap()));
-    } else if (status.equals("error")) {
-      callback.fail(new ProtocolException(response.getString("message")));
-    }
-  }
-
-  /**
-   * Stores a response callback by ID.
-   */
-  private <T extends Response> void storeCallback(final long id, ResponseType responseType, AsyncCallback<T> callback) {
-    long timerId = vertx.setTimer(30000, new Handler<Long>() {
-      @Override
-      public void handle(Long timerID) {
-        ResponseHolder<?> holder = responses.remove(id);
-        if (holder != null) {
-          holder.callback.fail(new ProtocolException("Request timed out"));
-        }
-      }
-    });
-    ResponseHolder<T> holder = new ResponseHolder<T>(timerId, responseType, callback);
-    responses.put(id, holder);
-  }
-
-  @Override
-  public void connect() {
-    connect(null);
-  }
-
-  @Override
-  public void connect(final AsyncCallback<Void> callback) {
-    if (client == null) {
-      client = vertx.createNetClient();
-      client.connect(port, host, new Handler<AsyncResult<NetSocket>>() {
-        @Override
-        public void handle(AsyncResult<NetSocket> result) {
-          if (result.failed()) {
-            if (callback != null) {
-              callback.fail(result.cause());
-            }
-          } else {
-            socket = result.result();
-            socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
-              @Override
-              public void handle(Buffer buffer) {
-                JsonObject response = new JsonObject(buffer.toString());
-                long id = response.getLong("id");
-                handleResponse(id, response);
-              }
-            }));
-            if (callback != null) {
-              callback.complete(null);
-            }
-          }
-        }
-      });
-    } else if (callback != null) {
-      callback.complete(null);
-    }
-  }
-
-  @Override
-  public void close() {
-    close(null);
-  }
-
-  @Override
-  public void close(final AsyncCallback<Void> callback) {
-    if (client != null && socket != null) {
-      socket.closeHandler(new Handler<Void>() {
-        @Override
-        public void handle(Void event) {
-          socket = null;
-          client.close();
-          client = null;
-          if (callback != null) {
-            callback.complete(null);
-          }
-        }
-      }).close();
-    } else if (client != null) {
-      client.close();
-      client = null;
-      if (callback != null) {
-        callback.complete(null);
-      }
-    } else if (callback != null) {
-      callback.complete(null);
-    }
-  }
-
-}
-```
-
-### Creating the HTTP endpoint
-Endpoints are simply servers that listen for requests from the outside worl.
-When an endpoint receives a request, it should forward that request on to the
-CopyCat cluster by making a call to `submitCommand` on the local `CopyCatContext`.
-When a command is submitted to the cluster, CopyCat will handle routing the
-command to the current cluster leader internally.
-
-To create an endpoint, we again need to register the service by creating a
-file at `META-INF/services/net/kuujo/copycat/endpoint`.
-
-`META-INF/services/net/kuujo/copycat/endpoint/http`
-
-```
-net.kuujo.copycat.endpoint.impl.HttpEndpoint
-```
-
-The `HttpEndpoint` class that we registered is an implementation of the
-`Endpoint` interface.
-
-```java
-public class HttpEndpoint implements Endpoint {
-  private CopyCatContext context;
-
-  @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
-  }
-
-  @Override
-  public void start(AsyncCallback<Void> callback) {
-  }
-
-  @Override
-  public void stop(AsyncCallback<Void> callback) {
-  }
-
-}
-```
-
-Note that the only API calls are calls that CopyCat makes to initialize and
-start the endpoint. It is the responsibility of the endpoint to forward messages
-on to the CopyCat cluster via the `CopyCatContext`.
-
-#### Creating URI-based constructors
-As with protocols, endpoints can be constructed through URIs, and CopyCat's
-URI injection facilities can be used to inject URI arguments into the endpoint's
-constructors.
-
-```java
-public class HttpEndpoint implements Endpoint {
-  private final String host;
-  private final int port;
-  private final Vertx vertx;
-
-  @UriInject
-  public HttpEndpoint(@UriHost String host, @Optional @UriPort int port) {
-    this.host = host;
-    this.port = port;
-    this.vertx = new DefaultVertx();
-  }
-
-}
-```
-
-#### Writing the HTTP server
-A properly functioning endpoint will start a server and listen for commands
-to forward to the CopyCat cluster. This is done by simply parsing requests
-into a `command` and `Arguments` and calling `submitCommand` on the local
-`CopyCatContext`. CopyCat will internally handle routing of commands to the
-appropriate node for logging and replication.
-
-```java
-public class HttpEndpoint implements Endpoint {
-  private final Vertx vertx;
-  private CopyCatContext context;
-  private HttpServer server;
-  private final String host;
-  private final int port;
-
-  @UriInject
-  public HttpEndpoint(@UriHost String host, @Optional @UriPort int port) {
-    this.host = host;
-    this.port = port;
-    this.vertx = new DefaultVertx();
-  }
-
-  @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
-    this.server = vertx.createHttpServer();
-    RouteMatcher routeMatcher = new RouteMatcher();
-    routeMatcher.post("/:command", new Handler<HttpServerRequest>() {
-      @Override
-      public void handle(final HttpServerRequest request) {
-        request.bodyHandler(new Handler<Buffer>() {
-          @Override
-          public void handle(Buffer buffer) {
-            // Submit the command to the CopyCat cluster.
-            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new Arguments(new JsonObject(buffer.toString()).toMap()), new AsyncCallback<Object>() {
-              @Override
-              @SuppressWarnings({"unchecked", "rawtypes"})
-              public void complete(Object result) {
-                request.response().setStatusCode(200);
-                if (result instanceof Map) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result)).encode());                  
-                } else if (result instanceof List) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result)).encode());
-                } else {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result).encode());
-                }
-              }
-              @Override
-              public void fail(Throwable t) {
-                request.response().setStatusCode(400);
-              }
-            });
-          }
-        });
-      }
-    });
-    server.requestHandler(routeMatcher);
-  }
-
-  @Override
-  public void start(final AsyncCallback<Void> callback) {
-    server.listen(port, host, new Handler<AsyncResult<HttpServer>>() {
-      @Override
-      public void handle(AsyncResult<HttpServer> result) {
-        if (result.failed()) {
-          callback.fail(result.cause());
-        } else {
-          callback.complete(null);
-        }
-      }
-    });
-  }
-
-  @Override
-  public void stop(final AsyncCallback<Void> callback) {
-    server.close(new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          callback.fail(result.cause());
-        } else {
-          callback.complete(null);
-        }
-      }
-    });
-  }
-
-}
-```
-
-### Running the key-value store
-Finally, we have a complete fault-tolerant in-memory key-value store over
-a custom TCP protocol with a user-facing HTTP interface. To tie all this
-together, CopyCat provides a helper `CopyCat` class which handles binding
-an `Endpoint` to a `CopyCatContext`.
-
-```java
-ClusterConfig cluster = new StaticClusterConfig();
-cluster.setLocalMember("tcp://localhost:5005");
-cluster.addRemoteMember("tcp://localhost:5006");
-cluster.addRemoteMember("tcp://localhost:5007");
-
-CopyCat copycat = new CopyCat("http://locahost:8080", new KeyValueStore(), new FileLog("key-value.log"), cluster);
-copycat.start();
 ```

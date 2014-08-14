@@ -83,49 +83,4 @@ public @interface Command {
 
   }
 
-  /**
-   * Defines a set of arguments for a command.
-   *
-   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
-   */
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface Arguments {
-    Argument[] value();
-  }
-
-  /**
-   * Defines a single named argument for a command.
-   *
-   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
-   */
-  @Target(ElementType.PARAMETER)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface Argument {
-    String value() default "";
-    boolean required() default false;
-  }
-
-  /**
-   * Annotates a method to be run prior to a command or a set of commands.
-   *
-   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
-   */
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface Before {
-    String[] value();
-  }
-
-  /**
-   * Annotates a method to be run after to a command or a set of commands.
-   *
-   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
-   */
-  @Target(ElementType.METHOD)
-  @Retention(RetentionPolicy.RUNTIME)
-  public static @interface After {
-    String[] value();
-  }
-
 }

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Request handler for requests between CopyCat replicas.
@@ -28,32 +28,24 @@ public interface ProtocolHandler {
    * Sends or handles a protocol sync request.
    *
    * @param request The sync request.
-   * @param responseCallback A sync response callback.
+   * @return A sync response future.
    */
-  void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> responseCallback);
-
-  /**
-   * Sends or handles a protocol install request.
-   *
-   * @param request The install request.
-   * @param responseCallback A install response callback.
-   */
-  void installSnapshot(InstallSnapshotRequest request, AsyncCallback<InstallSnapshotResponse> responseCallback);
+  CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request);
 
   /**
    * Sends or handles a protocol poll request.
    *
    * @param request The poll request.
-   * @param responseCallback A poll response callback.
+   * @return A poll response future.
    */
-  void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> responseCallback);
+  CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request);
 
   /**
    * Sends or handles a protocol submit request.
    *
    * @param request The submit request.
-   * @param responseCallback A submit response callback.
+   * @return A submit response future.
    */
-  void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> responseCallback);
+  CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request);
 
 }

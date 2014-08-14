@@ -15,10 +15,14 @@
  */
 package net.kuujo.copycat;
 
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.endpoint.EndpointFactory;
 import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.registry.Registry;
 
 /**
  * Primary copycat API.<p>
@@ -41,52 +45,42 @@ public class CopyCat {
     this.context = new CopyCatContext(stateMachine, cluster);
     EndpointFactory factory = new DefaultEndpointFactory(context);
     this.endpoint = factory.createEndpoint(uri);
-    this.endpoint.init(context);
+  }
+
+  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster) {
+    this.context = new CopyCatContext(stateMachine, log, cluster);
+    EndpointFactory factory = new DefaultEndpointFactory(context);
+    this.endpoint = factory.createEndpoint(uri);
+  }
+
+  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
+    this.context = new CopyCatContext(stateMachine, log, cluster, config);
+    EndpointFactory factory = new DefaultEndpointFactory(context);
+    this.endpoint = factory.createEndpoint(uri);
+  }
+
+  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+    this.context = new CopyCatContext(stateMachine, log, cluster, config, registry);
+    EndpointFactory factory = new DefaultEndpointFactory(context);
+    this.endpoint = factory.createEndpoint(uri);
   }
 
   /**
    * Starts the replica.
    *
-   * @return The copycat instance.
+   * @return A completable future to be completed once the replica has started.
    */
-  public CopyCat start() {
-    return start(null);
-  }
-
-  /**
-   * Starts the replica.
-   *
-   * @param callback A callback to be called once the replica has been started.
-   * @return The copycat instance.
-   */
-  public CopyCat start(final AsyncCallback<Void> callback) {
-    context.start(new AsyncCallback<String>() {
-      @Override
-      public void call(AsyncResult<String> result) {
-        if (result.succeeded()) {
-          callback.call(new AsyncResult<Void>((Void) null));
-        } else {
-          callback.call(new AsyncResult<Void>(result.cause()));
-        }
-      }
-    });
-    return this;
-  }
-
-  /**
-   * Stops the replica.
-   */
-  public void stop() {
-    stop(null);
+  public CompletableFuture<Void> start() {
+    return context.start().thenRun(()->{});
   }
 
   /**
    * Stops the replica.
    *
-   * @param callback A callback to be called once the replica has been stopped.
+   * @return A completable future to be completed once the replica has stopped.
    */
-  public void stop(final AsyncCallback<Void> callback) {
-    endpoint.stop(callback);
+  public CompletableFuture<Void> stop() {
+    return endpoint.stop();
   }
 
 }

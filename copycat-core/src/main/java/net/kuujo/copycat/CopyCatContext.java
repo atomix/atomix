@@ -15,20 +15,25 @@
  */
 package net.kuujo.copycat;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.DefaultCluster;
-import net.kuujo.copycat.cluster.impl.DynamicClusterConfig;
-import net.kuujo.copycat.cluster.impl.StaticClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.MemoryLog;
+import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
+
 
 /**
  * CopyCat replica context.<p>
@@ -69,21 +74,26 @@ public class CopyCatContext {
   private static final Logger logger = Logger.getLogger(CopyCatContext.class.getCanonicalName());
   private final ClusterConfig clusterConfig;
   private final Registry registry;
-  private final DynamicClusterConfig internalConfig = new DynamicClusterConfig();
+  private final ClusterConfig internalConfig = new ClusterConfig();
   final Cluster cluster;
   final Log log;
-  final StateMachine stateMachine;
+  final StateMachineExecutor stateMachineExecutor;
+  private final StateMachine stateMachine;
   private State state;
-  private AsyncCallback<String> startCallback;
+  private CompletableFuture<String> startFuture;
   private CopyCatConfig config;
+  private String localUri;
   private String currentLeader;
+  private ProtocolClient leaderClient;
+  private final List<Runnable> leaderConnectCallbacks = new ArrayList<>();
+  private boolean leaderConnected;
   private long currentTerm;
   private String lastVotedFor;
   private long commitIndex = 0;
   private long lastApplied = 0;
 
   public CopyCatContext(StateMachine stateMachine) {
-    this(stateMachine, new MemoryLog(), new StaticClusterConfig(), new CopyCatConfig());
+    this(stateMachine, new MemoryLog(), new ClusterConfig(), new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster) {
@@ -99,7 +109,7 @@ public class CopyCatContext {
   }
 
   public CopyCatContext(StateMachine stateMachine, Log log) {
-    this(stateMachine, log, new StaticClusterConfig(), new CopyCatConfig());
+    this(stateMachine, log, new ClusterConfig(), new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster) {
@@ -117,6 +127,7 @@ public class CopyCatContext {
     this.clusterConfig = cluster;
     this.cluster = new DefaultCluster(cluster, this);
     this.stateMachine = stateMachine;
+    this.stateMachineExecutor = new StateMachineExecutor(stateMachine);
   }
 
   /**
@@ -184,73 +195,48 @@ public class CopyCatContext {
   /**
    * Starts the context.
    *
-   * @return The replica context.
+   * @return A completable future to be completed once the context has started.
    */
-  public CopyCatContext start() {
-    return start(null);
-  }
-
-  /**
-   * Starts the context.
-   *
-   * @param doneHandler An asynchronous handler to be called once the context
-   *        has been started.
-   * @return The replica context.
-   */
-  public CopyCatContext start(final AsyncCallback<String> callback) {
+  public CompletableFuture<String> start() {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
     internalConfig.setLocalMember(clusterConfig.getLocalMember());
     internalConfig.setRemoteMembers(clusterConfig.getRemoteMembers());
 
+    localUri = clusterConfig.getLocalMember();
+
+    CompletableFuture<String> future = new CompletableFuture<>();
     transition(None.class);
-    cluster.localMember().protocol().server().start(new AsyncCallback<Void>() {
-      @Override
-      public void call(AsyncResult<Void> result) {
-        if (result.succeeded()) {
-          startCallback = callback;
-          transition(Follower.class);
-        } else {
-          callback.call(new AsyncResult<String>(result.cause()));
-        }
+    cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
+      if (error != null) {
+        future.completeExceptionally(error);
+      } else {
+        startFuture = future;
+        transition(Follower.class);
       }
     });
-    return this;
+    return future;
   }
 
   /**
    * Checks whether the start handler needs to be called.
    */
   private void checkStart() {
-    if (currentLeader != null && startCallback != null) {
-      startCallback.call(new AsyncResult<String>(currentLeader));
-      startCallback = null;
+    if (currentLeader != null && startFuture != null) {
+      startFuture.complete(currentLeader);
+      startFuture = null;
     }
   }
 
   /**
    * Stops the context.
    *
-   * @return The replica context.
+   * @return A completable future that will be completed when the context has started.
    */
-  public void stop() {
-    stop(null);
-  }
-
-  /**
-   * Stops the context.
-   *
-   * @param callback An asynchronous callback to be called once the context
-   *        has been stopped.
-   * @return The replica context.
-   */
-  public void stop(final AsyncCallback<Void> callback) {
-    cluster.localMember().protocol().server().stop(new AsyncCallback<Void>() {
-      @Override
-      public void call(AsyncResult<Void> result) {
-        log.close();
-        transition(None.class);
-      }
+  public CompletableFuture<Void> stop() {
+    return cluster.localMember().protocol().server().stop().thenRunAsync(() -> {
+      log.close();
+      transition(None.class);
     });
   }
 
@@ -262,7 +248,7 @@ public class CopyCatContext {
   void transition(Class<? extends State> type) {
     if (this.state != null && type != null && type.isAssignableFrom(this.state.getClass()))
       return;
-    logger.info(cluster.config().getLocalMember() + " transitioning to " + type.toString());
+    logger.info(localUri + " transitioning to " + type.toString());
     final State oldState = state;
     try {
       state = type.newInstance();
@@ -292,7 +278,7 @@ public class CopyCatContext {
    * @return Indicates whether this node is the leader.
    */
   public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(cluster.localMember().uri());
+    return currentLeader != null && currentLeader.equals(localUri);
   }
 
 
@@ -305,7 +291,35 @@ public class CopyCatContext {
       logger.finer(String.format("Current cluster leader changed: %s", leader));
     }
     currentLeader = leader;
-    checkStart();
+
+    // When a new leader is elected, we create a client and connect to the leader.
+    // Once this node is connected to the leader we can begin submitting commands.
+    if (leader == null) {
+      leaderConnected = false;
+      leaderClient = null;
+    } else if (!isLeader()) {
+      leaderConnected = false;
+      leaderClient = cluster.member(currentLeader).protocol().client();
+      leaderClient.connect().thenRun(() -> {
+        leaderConnected = true;
+        Iterator<Runnable> iterator = leaderConnectCallbacks.iterator();
+        while (iterator.hasNext()) {
+          Runnable runnable = iterator.next();
+          iterator.remove();
+          runnable.run();
+        }
+        checkStart();
+      });
+    } else {
+      leaderConnected = true;
+      Iterator<Runnable> iterator = leaderConnectCallbacks.iterator();
+      while (iterator.hasNext()) {
+        Runnable runnable = iterator.next();
+        iterator.remove();
+        runnable.run();
+      }
+      checkStart();
+    }
     return this;
   }
 
@@ -357,34 +371,47 @@ public class CopyCatContext {
   }
 
   /**
-   * Submits a command to the service.
+   * Submits a command to the cluster.
    *
-   * @param command The command to submit.
-   * @param args Command arguments.
+   * @param command The name of the command to submit.
+   * @param args An ordered list of command arguments.
    * @param callback An asynchronous callback to be called with the command result.
-   * @return The replica context.
+   * @return The CopyCat context.
    */
-  public <T> CopyCatContext submitCommand(final String command, Arguments args, final AsyncCallback<T> callback) {
+  @SuppressWarnings("unchecked")
+  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
+    CompletableFuture<R> future = new CompletableFuture<>();
     if (currentLeader == null) {
-      callback.call(new AsyncResult<T>(new CopyCatException("No leader available")));
-    } else {
-      cluster.member(currentLeader).protocol().client().submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, args), new AsyncCallback<SubmitCommandResponse>() {
-        @Override
-        @SuppressWarnings("unchecked")
-        public void call(AsyncResult<SubmitCommandResponse> result) {
-          if (result.succeeded()) {
-            if (result.value().status().equals(Response.Status.OK)) {
-              callback.call(new AsyncResult<T>((T) result.value()));
-            } else {
-              callback.call(new AsyncResult<T>(result.value().error()));
-            }
+      future.completeExceptionally(new CopyCatException("No leader available"));
+    } else if (!leaderConnected) {
+      leaderConnectCallbacks.add(() -> {
+        leaderClient.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+          if (error != null) {
+            future.completeExceptionally(error);
           } else {
-            callback.call(new AsyncResult<T>(result.cause()));
+            if (result.status().equals(Response.Status.OK)) {
+              future.complete((R) result.result());
+            } else {
+              future.completeExceptionally(result.error());
+            }
+          }
+        });
+      });
+    } else {
+      ProtocolHandler handler = currentLeader.equals(localUri) ? state : leaderClient;
+      handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+        if (error != null) {
+          future.completeExceptionally(error);
+        } else {
+          if (result.status().equals(Response.Status.OK)) {
+            future.complete((R) result.result());
+          } else {
+            future.completeExceptionally(result.error());
           }
         }
       });
     }
-    return this;
+    return future;
   }
 
 }
