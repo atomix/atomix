@@ -15,12 +15,11 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
-import net.kuujo.copycat.Callback;
 import net.kuujo.copycat.protocol.TimerStrategy;
 
 /**
@@ -29,32 +28,12 @@ import net.kuujo.copycat.protocol.TimerStrategy;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ThreadTimerStrategy implements TimerStrategy {
-  private final Timer timer = new Timer();
-  private final Map<Long, TimerTask> tasks = new HashMap<>();
-  private long id;
+  private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(3);
 
   @Override
-  public long startTimer(long delay, final Callback<Long> callback) {
-    final long id = ++this.id;
-    TimerTask task = new TimerTask() {
-      @Override
-      public void run() {
-        tasks.remove(id);
-        callback.call(id);
-      }
-    };
-    tasks.put(id, task);
-    timer.schedule(task, delay);
-    return id;
-  }
-
-  @Override
-  public void cancelTimer(long id) {
-    TimerTask task = tasks.remove(id);
-    if (task != null) {
-      task.cancel();
-      timer.purge();
-    }
+  @SuppressWarnings("unchecked")
+  public ScheduledFuture<Void> schedule(Runnable task, long delay, TimeUnit unit) {
+    return (ScheduledFuture<Void>) scheduler.schedule(task, delay, unit);
   }
 
 }

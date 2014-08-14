@@ -16,6 +16,8 @@ for various scenarios such as failure detection and read-only state queries.
 CopyCat is a pluggable framework, providing protocol and endpoint implementations for
 various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
+*Note that this version requires Java 8. There is also a [Java 7 compatible version](https://github.com/kuujo/copycat/tree/java-1.7)*
+
 User Manual
 ===========
 
@@ -190,6 +192,21 @@ POST http://localhost:5000/delete
 ["foo"]
 
 200 OK
+```
+
+CopyCat doesn't require that commands be submitted via an endpoint. Rather than
+submitting commands via the HTTP endpoint, simply construct a `CopyCatContext`
+instance and submit commands directly to the cluster via the context.
+
+```java
+CopyCatContext context = new CopyCatContext(new KeyValueStore(), log, cluster);
+
+// Set a key in the key-value store.
+context.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
+  context.submitCommand("get", "foo").whenComplete((result, error) {
+    context.submitCommand("delete", "foo").thenRun(() -> System.out.println("Deleted 'foo'"));
+  });
+});
 ```
 
 # How it works
@@ -496,35 +513,13 @@ context.start();
 To submit commands to the CopyCat cluster, simply call the `submitCommand` method
 on any `CopyCatContext`.
 
-**Java 7**
 ```java
-context.submitCommand("get", "foo", new AsyncCallback<Object>() {
-  public void call(AsyncResult<Object> result) {
-    if (result.succeeded()) {
-      Object value = result.value();
-    }
-  }
-});
+context.submitCommand("get", "foo").thenAccept((result) -> System.out.println(result));
 ```
 
-**Java 8**
-```java
-context.submitCommand("get", "foo", result -> {
-  if (result.succeeded()) {
-    Object value = result.value();
-  }
-});
-```
-
-The `CopyCatContext` API is designed to support a variable number of positional arguments.
-
-```java
-context.submitCommand("set", "foo", "Hello world!", result -> {
-  // Do stuff with the result.
-});
-```
-
-When a command is submitted to a `CopyCatContext`, the command will automatically
+The `CopyCatContext` API is supports an arbitrary number of positional arguments. When
+a command is submitted, the context will return a `CompletableFuture` which will be
+completed once the command result is received. The command will automatically
 be forwarded on to the current cluster [leader](#leaders). If the cluster does not have any
 currently [elected](#leader-election) leader (or the node to which the command is submitted
 doesn't know of any cluster leader) then the submission will fail.
@@ -652,11 +647,11 @@ callback methods.
 ```java
 public interface ProtocolClient {
 
-  void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback);
+  CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request);
 
-  void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback);
+  CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request);
 
-  void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback);
+  CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request);
 
 }
 ```

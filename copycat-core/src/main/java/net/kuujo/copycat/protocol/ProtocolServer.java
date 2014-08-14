@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Protocol server.
@@ -34,15 +34,15 @@ public interface ProtocolServer {
   /**
    * Starts the server.
    *
-   * @param callback A callback to be called once complete.
+   * @return A callback to be called once complete.
    */
-  void start(AsyncCallback<Void> callback);
+  CompletableFuture<Void> start();
 
   /**
    * Starts the server.
    *
-   * @param callback A callback to be called once complete.
+   * @return A callback to be called once complete.
    */
-  void stop(AsyncCallback<Void> callback);
+  CompletableFuture<Void> stop();
 
 }

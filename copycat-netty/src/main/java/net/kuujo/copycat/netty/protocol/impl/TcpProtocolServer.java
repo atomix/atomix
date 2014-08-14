@@ -35,20 +35,16 @@ import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 
 import java.security.cert.CertificateException;
+import java.util.concurrent.CompletableFuture;
 
 import javax.net.ssl.SSLException;
 
-import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 /**
  * Netty TCP protocol server.
@@ -70,7 +66,9 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void start(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> start() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
+
     // TODO: Configure proper SSL trust store.
     final SslContext sslContext;
     if (protocol.isSsl()) {
@@ -78,10 +76,8 @@ public class TcpProtocolServer implements ProtocolServer {
         SelfSignedCertificate ssc = new SelfSignedCertificate();
         sslContext = SslContext.newServerContext(ssc.certificate(), ssc.privateKey());
       } catch (SSLException | CertificateException e) {
-        if (callback != null) {
-          callback.call(new AsyncResult<Void>(e));
-        }
-        return;
+        future.completeExceptionally(e);
+        return future;
       }
     } else {
       sslContext = null;
@@ -131,44 +127,43 @@ public class TcpProtocolServer implements ProtocolServer {
     // Bind and start to accept incoming connections.
     bootstrap.bind(protocol.getHost(), protocol.getPort()).addListener(new ChannelFutureListener() {
       @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
-        future.channel().closeFuture().addListener(new ChannelFutureListener() {
+      public void operationComplete(ChannelFuture channelFuture) throws Exception {
+        channelFuture.channel().closeFuture().addListener(new ChannelFutureListener() {
           @Override
           public void operationComplete(ChannelFuture future) throws Exception {
             workerGroup.shutdownGracefully();
           }
         });
 
-        if (future.isSuccess()) {
-          channel = future.channel();
-          if (callback != null) {
-            callback.call(new AsyncResult<Void>((Void) null));
-          }
-        } else if (future.cause() != null && callback != null) {
-          callback.call(new AsyncResult<Void>(future.cause()));
+        if (channelFuture.isSuccess()) {
+          channel = channelFuture.channel();
+          future.complete(null);
+        } else {
+          future.completeExceptionally(channelFuture.cause());
         }
       }
     });
+    return future;
   }
 
   @Override
-  public void stop(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> stop() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     if (channel != null) {
       channel.close().addListener(new ChannelFutureListener() {
         @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            if (callback != null) {
-              callback.call(new AsyncResult<Void>((Void) null));
-            }
-          } else if (future.cause() != null && callback != null) {
-            callback.call(new AsyncResult<Void>(future.cause()));
+        public void operationComplete(ChannelFuture channelFuture) throws Exception {
+          if (channelFuture.isSuccess()) {
+            future.complete(null);
+          } else {
+            future.completeExceptionally(channelFuture.cause());
           }
         }
       });
-    } else if (callback != null) {
-      callback.call(new AsyncResult<Void>((Void) null));
+    } else {
+      future.complete(null);
     }
+    return future;
   }
 
   /**
@@ -188,42 +183,21 @@ public class TcpProtocolServer implements ProtocolServer {
         context.channel().eventLoop().submit(new Runnable() {
           @Override
           public void run() {
-            server.handler.appendEntries((AppendEntriesRequest) request, new AsyncCallback<AppendEntriesResponse>() {
-              @Override
-              public void call(AsyncResult<AppendEntriesResponse> result) {
-                if (result.succeeded()) {
-                  context.writeAndFlush(result.value());
-                }
-              }
-            });
+            server.handler.appendEntries((AppendEntriesRequest) request).thenAccept((result) -> context.writeAndFlush(result));
           }
         });
       } else if (request instanceof RequestVoteRequest) {
         context.channel().eventLoop().submit(new Runnable() {
           @Override
           public void run() {
-            server.handler.requestVote((RequestVoteRequest) request, new AsyncCallback<RequestVoteResponse>() {
-              @Override
-              public void call(AsyncResult<RequestVoteResponse> result) {
-                if (result.succeeded()) {
-                  context.writeAndFlush(result.value());
-                }
-              }
-            });
+            server.handler.requestVote((RequestVoteRequest) request).thenAccept((result) -> context.writeAndFlush(result));
           }
         });
       } else if (request instanceof SubmitCommandRequest) {
         context.channel().eventLoop().submit(new Runnable() {
           @Override
           public void run() {
-            server.handler.submitCommand((SubmitCommandRequest) request, new AsyncCallback<SubmitCommandResponse>() {
-              @Override
-              public void call(AsyncResult<SubmitCommandResponse> result) {
-                if (result.succeeded()) {
-                  context.writeAndFlush(result.value());
-                }
-              }
-            });
+            server.handler.submitCommand((SubmitCommandRequest) request).thenAccept((result) -> context.writeAndFlush(result));
           }
         });
       }

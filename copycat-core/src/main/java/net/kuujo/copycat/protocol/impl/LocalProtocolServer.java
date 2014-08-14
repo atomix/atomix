@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.AsyncResult;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
@@ -26,6 +26,7 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.util.Args;
 
 /**
  * Local protocol server.
@@ -47,34 +48,31 @@ public class LocalProtocolServer implements ProtocolServer {
     this.requestHandler = handler;
   }
 
-  void sync(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
-    if (requestHandler != null) {
-      requestHandler.appendEntries(request, callback);
-    }
+  CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
+    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    return requestHandler.appendEntries(request);
   }
 
-  void poll(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
-    if (requestHandler != null) {
-      requestHandler.requestVote(request, callback);
-    }
+  CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
+    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    return requestHandler.requestVote(request);
   }
 
-  void submit(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
-    if (requestHandler != null) {
-      requestHandler.submitCommand(request, callback);
-    }
+  CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
+    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    return requestHandler.submitCommand(request);
   }
 
   @Override
-  public void start(AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> start() {
     context.registry().bind(address, this);
-    callback.call(new AsyncResult<Void>((Void) null));
+    return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override
-  public void stop(AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> stop() {
     context.registry().unbind(address);
-    callback.call(new AsyncResult<Void>((Void) null));
+    return CompletableFuture.completedFuture((Void) null);
   }
 
 }

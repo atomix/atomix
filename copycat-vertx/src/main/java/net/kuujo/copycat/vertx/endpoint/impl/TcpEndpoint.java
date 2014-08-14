@@ -17,8 +17,8 @@ package net.kuujo.copycat.vertx.endpoint.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.UriHost;
@@ -121,7 +121,9 @@ public class TcpEndpoint implements Endpoint {
   }
 
   @Override
-  public void start(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> start() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
+
     if (server == null) {
       server = vertx.createNetServer();
     }
@@ -131,23 +133,20 @@ public class TcpEndpoint implements Endpoint {
       public void handle(final NetSocket socket) {
         socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
           @Override
+          @SuppressWarnings({"unchecked", "rawtypes"})
           public void handle(Buffer buffer) {
             JsonObject json = new JsonObject(buffer.toString());
-            context.submitCommand(json.getString("command"), json.getObject("args").toMap(), new AsyncCallback<Object>() {
-              @Override
-              @SuppressWarnings({"unchecked", "rawtypes"})
-              public void call(net.kuujo.copycat.AsyncResult<Object> result) {
-                if (result.succeeded()) {
-                  if (result instanceof Map) {
-                    socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
-                  } else if (result instanceof List) {
-                    socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
-                  } else {
-                    socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result).encode() + '\00');
-                  }
+            context.submitCommand(json.getString("command"), json.getArray("args").toArray()).whenComplete((result, error) -> {
+              if (error == null) {
+                if (result instanceof Map) {
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
+                } else if (result instanceof List) {
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
                 } else {
-                  socket.write(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", result.cause().getMessage()).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result).encode() + '\00');
                 }
+              } else {
+                socket.write(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", error.getMessage()).encode() + '\00');
               }
             });
           }
@@ -157,26 +156,29 @@ public class TcpEndpoint implements Endpoint {
       @Override
       public void handle(AsyncResult<NetServer> result) {
         if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
+          future.completeExceptionally(result.cause());
         } else {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+          future.complete(null);
         }
       }
     });
+    return future;
   }
 
   @Override
-  public void stop(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> stop() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     server.close(new Handler<AsyncResult<Void>>() {
       @Override
       public void handle(AsyncResult<Void> result) {
         if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
+          future.completeExceptionally(result.cause());
         } else {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+          future.complete(null);
         }
       }
     });
+    return future;
   }
 
 }

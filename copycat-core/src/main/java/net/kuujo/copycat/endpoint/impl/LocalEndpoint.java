@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.endpoint.impl;
 
-import java.util.Map;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 
@@ -33,11 +33,13 @@ public class LocalEndpoint implements Endpoint {
   }
 
   @Override
-  public void start(AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> start() {
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public void stop(AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> stop() {
+    return CompletableFuture.completedFuture(null);
   }
 
   /**
@@ -48,9 +50,8 @@ public class LocalEndpoint implements Endpoint {
    * @param callback An asynchronous callback to be called once complete.
    * @return
    */
-  public LocalEndpoint submitCommand(String command, Map<String, Object> args, AsyncCallback<Object> callback) {
-    context.submitCommand(command, args, callback);
-    return this;
+  public <R> CompletableFuture<R> submitCommand(String command, List<Object> args) {
+    return context.submitCommand(command, args);
   }
 
 }

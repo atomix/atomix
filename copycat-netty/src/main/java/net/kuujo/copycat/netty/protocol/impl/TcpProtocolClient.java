@@ -36,11 +36,10 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import javax.net.ssl.SSLException;
 
-import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -59,78 +58,69 @@ import net.kuujo.copycat.protocol.SubmitCommandResponse;
 public class TcpProtocolClient implements ProtocolClient {
   private final TcpProtocol protocol;
   private Channel channel;
-  private final Map<Object, AsyncCallback<? extends Response>> responseHandlers = new HashMap<>();
+  private final Map<Object, CompletableFuture<? extends Response>> responseFutures = new HashMap<>();
 
   public TcpProtocolClient(TcpProtocol protocol) {
     this.protocol = protocol;
   }
 
   @Override
-  public void appendEntries(final AppendEntriesRequest request, final AsyncCallback<AppendEntriesResponse> callback) {
+  public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
+    final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
     if (channel != null) {
-      channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            responseHandlers.put(request.id(), callback);
-          } else {
-            callback.call(new AsyncResult<AppendEntriesResponse>(new ProtocolException(future.cause())));
-          }
+      channel.writeAndFlush(request).addListener((channelFuture) -> {
+        if (channelFuture.isSuccess()) {
+          responseFutures.put(request.id(), future);
+        } else {
+          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
         }
       });
     } else {
-      callback.call(new AsyncResult<AppendEntriesResponse>(new ProtocolException("Client not connected")));
+      future.completeExceptionally(new ProtocolException("Client not connected"));
     }
+    return future;
   }
 
   @Override
-  public void requestVote(final RequestVoteRequest request, final AsyncCallback<RequestVoteResponse> callback) {
+  public CompletableFuture<RequestVoteResponse> requestVote(final RequestVoteRequest request) {
+    final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
     if (channel != null) {
-      channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            responseHandlers.put(request.id(), callback);
-          } else {
-            callback.call(new AsyncResult<RequestVoteResponse>(new ProtocolException(future.cause())));
-          }
+      channel.writeAndFlush(request).addListener((channelFuture) -> {
+        if (channelFuture.isSuccess()) {
+          responseFutures.put(request.id(), future);
+        } else {
+          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
         }
       });
     } else {
-      callback.call(new AsyncResult<RequestVoteResponse>(new ProtocolException("Client not connected")));
+      future.completeExceptionally(new ProtocolException("Client not connected"));
     }
+    return future;
   }
 
   @Override
-  public void submitCommand(final SubmitCommandRequest request, final AsyncCallback<SubmitCommandResponse> callback) {
+  public CompletableFuture<SubmitCommandResponse> submitCommand(final SubmitCommandRequest request) {
+    final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
     if (channel != null) {
-      channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-          if (future.isSuccess()) {
-            responseHandlers.put(request.id(), callback);
-          } else {
-            callback.call(new AsyncResult<SubmitCommandResponse>(new ProtocolException(future.cause())));
-          }
+      channel.writeAndFlush(request).addListener((channelFuture) -> {
+        if (channelFuture.isSuccess()) {
+          responseFutures.put(request.id(), future);
+        } else {
+          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
         }
       });
     } else {
-      callback.call(new AsyncResult<SubmitCommandResponse>(new ProtocolException("Client not connected")));
+      future.completeExceptionally(new ProtocolException("Client not connected"));
     }
+    return future;
   }
 
   @Override
-  public void connect() {
-    connect(null);
-  }
-
-  @Override
-  public void connect(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> connect() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     if (channel != null) {
-      if (callback != null) {
-        callback.call(new AsyncResult<Void>((Void) null));
-      }
-      return;
+      future.complete(null);
+      return future;
     }
 
     final SslContext sslContext;
@@ -138,10 +128,8 @@ public class TcpProtocolClient implements ProtocolClient {
       try {
         sslContext = SslContext.newClientContext(InsecureTrustManagerFactory.INSTANCE);
       } catch (SSLException e) {
-        if (callback != null) {
-          callback.call(new AsyncResult<Void>(e));
-        }
-        return;
+        future.completeExceptionally(e);
+        return future;
       }
     } else {
       sslContext = null;
@@ -185,43 +173,37 @@ public class TcpProtocolClient implements ProtocolClient {
 
     bootstrap.connect(protocol.getHost(), protocol.getPort()).addListener(new ChannelFutureListener() {
       @Override
-      public void operationComplete(ChannelFuture future) throws Exception {
-        if (future.isSuccess()) {
-          channel = future.channel();
-          if (callback != null) {
-            callback.call(new AsyncResult<Void>((Void) null));
-          }
-        } else if (future.cause() != null && callback != null) {
-          callback.call(new AsyncResult<Void>(future.cause()));
+      public void operationComplete(ChannelFuture channelFuture) throws Exception {
+        if (channelFuture.isSuccess()) {
+          channel = channelFuture.channel();
+          future.complete(null);
+        } else  {
+          future.completeExceptionally(channelFuture.cause());
         }
       }
     });
+    return future;
   }
 
   @Override
-  public void close() {
-    close(null);
-  }
-
-  @Override
-  public void close(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> close() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     if (channel != null) {
       channel.close().addListener(new ChannelFutureListener() {
         @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
+        public void operationComplete(ChannelFuture channelFuture) throws Exception {
           channel = null;
-          if (future.isSuccess()) {
-            if (callback != null) {
-              callback.call(new AsyncResult<Void>((Void) null));
-            }
-          } else if (future.cause() != null && callback != null) {
-            callback.call(new AsyncResult<Void>(future.cause()));
+          if (channelFuture.isSuccess()) {
+            future.complete(null);
+          } else {
+            future.completeExceptionally(channelFuture.cause());
           }
         }
       });
-    } else if (callback != null) {
-      callback.call(new AsyncResult<Void>((Void) null));
+    } else {
+      future.complete(null);
     }
+    return future;
   }
 
   /**
@@ -238,9 +220,9 @@ public class TcpProtocolClient implements ProtocolClient {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void channelRead(final ChannelHandlerContext context, Object message) {
       Response response = (Response) message;
-      AsyncCallback<? extends Response> responseHandler = client.responseHandlers.remove(response.id());
-      if (responseHandler != null) {
-        responseHandler.call(new AsyncResult(response));
+      CompletableFuture responseFuture = client.responseFutures.remove(response.id());
+      if (responseFuture != null) {
+        responseFuture.complete(response);
       }
     }
   }

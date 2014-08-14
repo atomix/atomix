@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.AsyncCallback;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Protocol client.
@@ -26,26 +26,16 @@ public interface ProtocolClient extends ProtocolHandler {
 
   /**
    * Connects the client.
-   */
-  void connect();
-
-  /**
-   * Connects the client.
    *
-   * @param callback A callback to be called once connected.
+   * @return A completable future to be completed once the client has connected.
    */
-  void connect(AsyncCallback<Void> callback);
-
-  /**
-   * Closes the client.
-   */
-  void close();
+  CompletableFuture<Void> connect();
 
   /**
    * Closes the client.
    *
-   * @param callback A callback to be called once closed.
+   * @return A completable future to be completed once the client has disconnected.
    */
-  void close(AsyncCallback<Void> callback);
+  CompletableFuture<Void> close();
 
 }

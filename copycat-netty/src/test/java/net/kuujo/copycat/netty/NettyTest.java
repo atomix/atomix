@@ -22,8 +22,6 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.AsyncResult;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.CopyCatContext;
@@ -53,21 +51,12 @@ public class NettyTest {
         args.put("key", "foo");
         args.put("value", "bar");
         final CopyCatContext context = contexts.iterator().next();
-        context.submitCommand("set", args, new AsyncCallback<Void>() {
-          @Override
-          public void call(AsyncResult<Void> result) {
-            Assert.assertTrue(result.succeeded());
-            Map<String, Object> args = new HashMap<>();
-            args.put("key", "foo");
-            context.submitCommand("get", args, new AsyncCallback<String>() {
-              @Override
-              public void call(AsyncResult<String> result) {
-                Assert.assertTrue(result.succeeded());
-                Assert.assertEquals("bar", result.value());
-                testComplete();
-              }
-            });
-          }
+        context.submitCommand("set", "foo", "bar").thenRun(() -> {
+          context.submitCommand("get", "foo").whenComplete((result, error) -> {
+            Assert.assertNull(error);
+            Assert.assertEquals("bar", result);
+            testComplete();
+          });
         });
       }
     }.start();
@@ -80,12 +69,9 @@ public class NettyTest {
     final CountDownLatch latch = new CountDownLatch(3);
     Set<CopyCatContext> contexts = createCluster(3);
     for (CopyCatContext context : contexts) {
-      context.start(new AsyncCallback<String>() {
-        @Override
-        public void call(AsyncResult<String> result) {
-          Assert.assertTrue(result.succeeded());
-          latch.countDown();
-        }
+      context.start().whenComplete((result, error) -> {
+        Assert.assertNull(error);
+        latch.countDown();
       });
     }
     latch.await(10, TimeUnit.SECONDS);

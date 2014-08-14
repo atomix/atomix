@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.AsyncCallback;
-import net.kuujo.copycat.AsyncResult;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
@@ -26,6 +26,7 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.util.Args;
 
 /**
  * Local protocol client.
@@ -42,51 +43,40 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
+  public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
     LocalProtocolServer server = context.registry().lookup(address);
-    if (server != null) {
-      server.sync(request, callback);
-    } else {
-      callback.call(new AsyncResult<AppendEntriesResponse>(new ProtocolException("Invalid server address")));
-    }
+    Args.checkNotNull(server, () -> {
+      throw new ProtocolException("Invalid server address");
+    });
+    return server.appendEntries(request);
   }
 
   @Override
-  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
+  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
     LocalProtocolServer server = context.registry().lookup(address);
-    if (server != null) {
-      server.poll(request, callback);
-    } else {
-      callback.call(new AsyncResult<RequestVoteResponse>(new ProtocolException("Invalid server address")));
-    }
+    Args.checkNotNull(server, () -> {
+      throw new ProtocolException("Invalid server address");
+    });
+    return server.requestVote(request);
   }
 
   @Override
-  public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
+  public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
     LocalProtocolServer server = context.registry().lookup(address);
-    if (server != null) {
-      server.submit(request, callback);
-    } else {
-      callback.call(new AsyncResult<SubmitCommandResponse>(new ProtocolException("Invalid server address")));
-    }
+    Args.checkNotNull(server, () -> {
+      throw new ProtocolException("Invalid server address");
+    });
+    return server.submitCommand(request);
   }
 
   @Override
-  public void connect() {
+  public CompletableFuture<Void> connect() {
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public void connect(AsyncCallback<Void> callback) {
-    callback.call(new AsyncResult<Void>((Void) null));
-  }
-
-  @Override
-  public void close() {
-  }
-
-  @Override
-  public void close(AsyncCallback<Void> callback) {
-    callback.call(new AsyncResult<Void>((Void) null));
+  public CompletableFuture<Void> close() {
+    return CompletableFuture.completedFuture(null);
   }
 
 }

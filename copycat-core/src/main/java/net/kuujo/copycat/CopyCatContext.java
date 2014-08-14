@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Cluster;
@@ -30,9 +31,9 @@ import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
+
 
 /**
  * CopyCat replica context.<p>
@@ -79,12 +80,12 @@ public class CopyCatContext {
   final StateMachineExecutor stateMachineExecutor;
   private final StateMachine stateMachine;
   private State state;
-  private AsyncCallback<String> startCallback;
+  private CompletableFuture<String> startFuture;
   private CopyCatConfig config;
   private String localUri;
   private String currentLeader;
   private ProtocolClient leaderClient;
-  private final List<Callback<Void>> leaderConnectCallbacks = new ArrayList<>();
+  private final List<Runnable> leaderConnectCallbacks = new ArrayList<>();
   private boolean leaderConnected;
   private long currentTerm;
   private String lastVotedFor;
@@ -194,20 +195,9 @@ public class CopyCatContext {
   /**
    * Starts the context.
    *
-   * @return The replica context.
+   * @return A completable future to be completed once the context has started.
    */
-  public CopyCatContext start() {
-    return start(null);
-  }
-
-  /**
-   * Starts the context.
-   *
-   * @param doneHandler An asynchronous handler to be called once the context
-   *        has been started.
-   * @return The replica context.
-   */
-  public CopyCatContext start(final AsyncCallback<String> callback) {
+  public CompletableFuture<String> start() {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
     internalConfig.setLocalMember(clusterConfig.getLocalMember());
@@ -215,54 +205,38 @@ public class CopyCatContext {
 
     localUri = clusterConfig.getLocalMember();
 
+    CompletableFuture<String> future = new CompletableFuture<>();
     transition(None.class);
-    cluster.localMember().protocol().server().start(new AsyncCallback<Void>() {
-      @Override
-      public void call(AsyncResult<Void> result) {
-        if (result.succeeded()) {
-          startCallback = callback;
-          transition(Follower.class);
-        } else {
-          callback.call(new AsyncResult<String>(result.cause()));
-        }
+    cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
+      if (error != null) {
+        future.completeExceptionally(error);
+      } else {
+        startFuture = future;
+        transition(Follower.class);
       }
     });
-    return this;
+    return future;
   }
 
   /**
    * Checks whether the start handler needs to be called.
    */
   private void checkStart() {
-    if (currentLeader != null && startCallback != null) {
-      startCallback.call(new AsyncResult<String>(currentLeader));
-      startCallback = null;
+    if (currentLeader != null && startFuture != null) {
+      startFuture.complete(currentLeader);
+      startFuture = null;
     }
   }
 
   /**
    * Stops the context.
    *
-   * @return The replica context.
+   * @return A completable future that will be completed when the context has started.
    */
-  public void stop() {
-    stop(null);
-  }
-
-  /**
-   * Stops the context.
-   *
-   * @param callback An asynchronous callback to be called once the context
-   *        has been stopped.
-   * @return The replica context.
-   */
-  public void stop(final AsyncCallback<Void> callback) {
-    cluster.localMember().protocol().server().stop(new AsyncCallback<Void>() {
-      @Override
-      public void call(AsyncResult<Void> result) {
-        log.close();
-        transition(None.class);
-      }
+  public CompletableFuture<Void> stop() {
+    return cluster.localMember().protocol().server().stop().thenRunAsync(() -> {
+      log.close();
+      transition(None.class);
     });
   }
 
@@ -326,28 +300,23 @@ public class CopyCatContext {
     } else if (!isLeader()) {
       leaderConnected = false;
       leaderClient = cluster.member(currentLeader).protocol().client();
-      leaderClient.connect(new AsyncCallback<Void>() {
-        @Override
-        public void call(AsyncResult<Void> result) {
-          if (result.succeeded()) {
-            leaderConnected = true;
-            Iterator<Callback<Void>> iterator = leaderConnectCallbacks.iterator();
-            while (iterator.hasNext()) {
-              Callback<Void> callback = iterator.next();
-              iterator.remove();
-              callback.call((Void) null);
-            }
-            checkStart();
-          }
+      leaderClient.connect().thenRun(() -> {
+        leaderConnected = true;
+        Iterator<Runnable> iterator = leaderConnectCallbacks.iterator();
+        while (iterator.hasNext()) {
+          Runnable runnable = iterator.next();
+          iterator.remove();
+          runnable.run();
         }
+        checkStart();
       });
     } else {
       leaderConnected = true;
-      Iterator<Callback<Void>> iterator = leaderConnectCallbacks.iterator();
+      Iterator<Runnable> iterator = leaderConnectCallbacks.iterator();
       while (iterator.hasNext()) {
-        Callback<Void> callback = iterator.next();
+        Runnable runnable = iterator.next();
         iterator.remove();
-        callback.call((Void) null);
+        runnable.run();
       }
       checkStart();
     }
@@ -401,192 +370,6 @@ public class CopyCatContext {
     return config.getCorrelationStrategy().nextCorrelationId(this);
   }
 
-  long startTimer(long delay, Callback<Long> callback) {
-    return config.getTimerStrategy().startTimer(delay, callback);
-  }
-
-  void cancelTimer(long id) {
-    if (id > 0) {
-      config.getTimerStrategy().cancelTimer(id);
-    }
-  }
-
-  /**
-   * Submits a no-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, AsyncCallback<T> callback) {
-    return submitCommand(command, new ArrayList<>(), callback);
-  }
-
-  /**
-   * Submits a one-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg The command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg), callback);
-  }
-
-  /**
-   * Submits a two-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1), callback);
-  }
-
-  /**
-   * Submits a three-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2), callback);
-  }
-
-  /**
-   * Submits a four-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param arg3 The fourth command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3), callback);
-  }
-
-  /**
-   * Submits a five-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param arg3 The fourth command argument.
-   * @param arg4 The fifth command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4), callback);
-  }
-
-  /**
-   * Submits a six-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param arg3 The fourth command argument.
-   * @param arg4 The fifth command argument.
-   * @param arg5 The sixth command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5), callback);
-  }
-
-  /**
-   * Submits a seven-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param arg3 The fourth command argument.
-   * @param arg4 The fifth command argument.
-   * @param arg5 The sixth command argument.
-   * @param arg6 The seventh command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6), callback);
-  }
-
-  /**
-   * Submits a eight-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param arg3 The fourth command argument.
-   * @param arg4 The fifth command argument.
-   * @param arg5 The sixth command argument.
-   * @param arg6 The seventh command argument.
-   * @param arg7 The eighth command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, Object arg7, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7), callback);
-  }
-
-  /**
-   * Submits a nine-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param arg3 The fourth command argument.
-   * @param arg4 The fifth command argument.
-   * @param arg5 The sixth command argument.
-   * @param arg6 The seventh command argument.
-   * @param arg7 The eighth command argument.
-   * @param arg8 The ninth command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, Object arg7, Object arg8, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8), callback);
-  }
-
-  /**
-   * Submits a ten-argument command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param arg0 The first command argument.
-   * @param arg1 The second command argument.
-   * @param arg2 The third command argument.
-   * @param arg3 The fourth command argument.
-   * @param arg4 The fifth command argument.
-   * @param arg5 The sixth command argument.
-   * @param arg6 The seventh command argument.
-   * @param arg7 The eighth command argument.
-   * @param arg8 The ninth command argument.
-   * @param arg9 The tenth command argument.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
-   */
-  public <T> CopyCatContext submitCommand(String command, Object arg0, Object arg1, Object arg2, Object arg3, Object arg4, Object arg5, Object arg6, Object arg7, Object arg8, Object arg9, AsyncCallback<T> callback) {
-    return submitCommand(command, Arrays.asList(arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9), callback);
-  }
-
   /**
    * Submits a command to the cluster.
    *
@@ -595,49 +378,40 @@ public class CopyCatContext {
    * @param callback An asynchronous callback to be called with the command result.
    * @return The CopyCat context.
    */
-  public <T> CopyCatContext submitCommand(final String command, final List<Object> args, final AsyncCallback<T> callback) {
+  @SuppressWarnings("unchecked")
+  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
+    CompletableFuture<R> future = new CompletableFuture<>();
     if (currentLeader == null) {
-      callback.call(new AsyncResult<T>(new CopyCatException("No leader available")));
+      future.completeExceptionally(new CopyCatException("No leader available"));
     } else if (!leaderConnected) {
-      leaderConnectCallbacks.add(new Callback<Void>() {
-        @Override
-        public void call(Void result) {
-          leaderClient.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, args), new AsyncCallback<SubmitCommandResponse>() {
-            @Override
-            @SuppressWarnings("unchecked")
-            public void call(AsyncResult<SubmitCommandResponse> result) {
-              if (result.succeeded()) {
-                if (result.value().status().equals(Response.Status.OK)) {
-                  callback.call(new AsyncResult<T>((T) result.value()));
-                } else {
-                  callback.call(new AsyncResult<T>(result.value().error()));
-                }
-              } else {
-                callback.call(new AsyncResult<T>(result.cause()));
-              }
+      leaderConnectCallbacks.add(() -> {
+        leaderClient.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+          if (error != null) {
+            future.completeExceptionally(error);
+          } else {
+            if (result.status().equals(Response.Status.OK)) {
+              future.complete((R) result.result());
+            } else {
+              future.completeExceptionally(result.error());
             }
-          });
-        }
+          }
+        });
       });
     } else {
       ProtocolHandler handler = currentLeader.equals(localUri) ? state : leaderClient;
-      handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, args), new AsyncCallback<SubmitCommandResponse>() {
-        @Override
-        @SuppressWarnings("unchecked")
-        public void call(AsyncResult<SubmitCommandResponse> result) {
-          if (result.succeeded()) {
-            if (result.value().status().equals(Response.Status.OK)) {
-              callback.call(new AsyncResult<T>((T) result.value().result()));
-            } else {
-              callback.call(new AsyncResult<T>(result.value().error()));
-            }
+      handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+        if (error != null) {
+          future.completeExceptionally(error);
+        } else {
+          if (result.status().equals(Response.Status.OK)) {
+            future.complete((R) result.result());
           } else {
-            callback.call(new AsyncResult<T>(result.cause()));
+            future.completeExceptionally(result.error());
           }
         }
       });
     }
-    return this;
+    return future;
   }
 
 }

@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.Callback;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Timer strategy.
@@ -27,17 +28,11 @@ public interface TimerStrategy {
   /**
    * Starts a new timer.
    *
+   * @param task The task to trigger after the given delay.
    * @param delay The delay after which to trigger the callback.
-   * @param callback The callback to trigger.
+   * @param unit The time unit.
    * @return The unique timer ID.
    */
-  long startTimer(long delay, Callback<Long> callback);
-
-  /**
-   * Cancels a timer.
-   *
-   * @param id The timer ID.
-   */
-  void cancelTimer(long id);
+  ScheduledFuture<Void> schedule(Runnable task, long delay, TimeUnit unit);
 
 }

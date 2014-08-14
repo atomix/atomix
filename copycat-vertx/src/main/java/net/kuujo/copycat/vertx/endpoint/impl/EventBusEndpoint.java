@@ -17,13 +17,12 @@ package net.kuujo.copycat.vertx.endpoint.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.UriPath;
 
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
@@ -59,23 +58,19 @@ public class EventBusEndpoint implements Endpoint {
 
   private final Handler<Message<JsonObject>> messageHandler = new Handler<Message<JsonObject>>() {
     @Override
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public void handle(final Message<JsonObject> message) {
       String command = message.body().getString("command");
       if (command != null) {
-        Map<String, Object> args = message.body().toMap();
-        args.remove("command");
-        context.submitCommand(command, args, new AsyncCallback<Object>() {
-          @Override
-          @SuppressWarnings({"unchecked", "rawtypes"})
-          public void call(net.kuujo.copycat.AsyncResult<Object> result) {
-            if (result.succeeded()) {
-              if (result.value() instanceof Map) {
-                message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result.value())));
-              } else if (result instanceof List) {
-                message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result.value())));
-              } else {
-                message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result.value()));
-              }
+        JsonArray args = message.body().getArray("args");
+        context.submitCommand(command, args.toArray()).whenComplete((result, error) -> {
+          if (error == null) {
+            if (result instanceof Map) {
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)));
+            } else if (result instanceof List) {
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)));
+            } else {
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result));
             }
           }
         });
@@ -122,49 +117,45 @@ public class EventBusEndpoint implements Endpoint {
   }
 
   @Override
-  public void start(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> start() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     if (vertx == null) {
-      vertx = new DefaultVertx(port >= 0 ? port : 0, host, new Handler<AsyncResult<Vertx>>() {
-        @Override
-        public void handle(AsyncResult<Vertx> result) {
-          vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-            @Override
-            public void handle(AsyncResult<Void> result) {
-              if (result.failed()) {
-                callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
-              } else {
-                callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
-              }
+      vertx = new DefaultVertx(port >= 0 ? port : 0, host, (vertxResult) -> {
+        if (vertxResult.failed()) {
+          future.completeExceptionally(vertxResult.cause());
+        } else {
+          vertx.eventBus().registerHandler(address, messageHandler, (eventBusResult) -> {
+            if (eventBusResult.failed()) {
+              future.completeExceptionally(eventBusResult.cause());
+            } else {
+              future.complete(null);
             }
           });
         }
       });
     } else {
-      vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-        @Override
-        public void handle(AsyncResult<Void> result) {
-          if (result.failed()) {
-            callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
-          } else {
-            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
-          }
+      vertx.eventBus().registerHandler(address, messageHandler, (result) -> {
+        if (result.failed()) {
+          future.completeExceptionally(result.cause());
+        } else {
+          future.complete(null);
         }
       });
     }
+    return future;
   }
 
   @Override
-  public void stop(final AsyncCallback<Void> callback) {
-    vertx.eventBus().unregisterHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
-        } else {
-          callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
-        }
+  public CompletableFuture<Void> stop() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
+    vertx.eventBus().unregisterHandler(address, messageHandler, (result) -> {
+      if (result.failed()) {
+        future.completeExceptionally(result.cause());
+      } else {
+        future.complete(null);
       }
     });
+    return future;
   }
 
 }

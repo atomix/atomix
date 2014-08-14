@@ -17,8 +17,8 @@ package net.kuujo.copycat.vertx.protocol.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.AsyncCallback;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
@@ -64,13 +64,13 @@ public class TcpProtocolClient implements ProtocolClient {
    */
   @SuppressWarnings("rawtypes")
   private static class ResponseHolder {
-    private final AsyncCallback callback;
+    private final CompletableFuture future;
     private final ResponseType type;
     private final long timer;
-    private ResponseHolder(long timerId, ResponseType type, AsyncCallback callback) {
+    private ResponseHolder(long timerId, ResponseType type, CompletableFuture future) {
       this.timer = timerId;
       this.type = type;
-      this.callback = callback;
+      this.future = future;
     }
   }
 
@@ -119,7 +119,8 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public void appendEntries(AppendEntriesRequest request, AsyncCallback<AppendEntriesResponse> callback) {
+  public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
+    final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
     if (socket != null) {
       JsonArray jsonEntries = new JsonArray();
       for (Entry entry : request.entries()) {
@@ -133,14 +134,16 @@ public class TcpProtocolClient implements ProtocolClient {
           .putNumber("prevTerm", request.prevLogTerm())
           .putArray("entries", jsonEntries)
           .putNumber("commit", request.commitIndex()).encode() + '\00');
-      storeCallback(request.id(), ResponseType.APPEND, callback);
+      storeCallback(request.id(), ResponseType.APPEND, future);
     } else {
-      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException("Client not connected")));
+      future.completeExceptionally(new ProtocolException("Client not connected"));
     }
+    return future;
   }
 
   @Override
-  public void requestVote(RequestVoteRequest request, AsyncCallback<RequestVoteResponse> callback) {
+  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
+    final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
     if (socket != null) {
       socket.write(new JsonObject().putString("type", "vote")
           .putValue("id", request.id())
@@ -149,24 +152,27 @@ public class TcpProtocolClient implements ProtocolClient {
           .putNumber("lastIndex", request.lastLogIndex())
           .putNumber("lastTerm", request.lastLogTerm())
           .encode() + '\00');
-      storeCallback(request.id(), ResponseType.VOTE, callback);
+      storeCallback(request.id(), ResponseType.VOTE, future);
     } else {
-      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException("Client not connected")));
+      future.completeExceptionally(new ProtocolException("Client not connected"));
     }
+    return future;
   }
 
   @Override
-  public void submitCommand(SubmitCommandRequest request, AsyncCallback<SubmitCommandResponse> callback) {
+  public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
+    final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
     if (socket != null) {
       socket.write(new JsonObject().putString("type", "submit")
           .putValue("id", request.id())
           .putString("command", request.command())
           .putArray("args", new JsonArray(request.args()))
           .encode() + '\00');
-      storeCallback(request.id(), ResponseType.SUBMIT, callback);
+      storeCallback(request.id(), ResponseType.SUBMIT, future);
     } else {
-      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException("Client not connected")));
+      future.completeExceptionally(new ProtocolException("Client not connected"));
     }
+    return future;
   }
 
   /**
@@ -179,13 +185,13 @@ public class TcpProtocolClient implements ProtocolClient {
       vertx.cancelTimer(holder.timer);
       switch (holder.type) {
         case APPEND:
-          handleAppendResponse(response, (AsyncCallback<AppendEntriesResponse>) holder.callback);
+          handleAppendResponse(response, (CompletableFuture<AppendEntriesResponse>) holder.future);
           break;
         case VOTE:
-          handleVoteResponse(response, (AsyncCallback<RequestVoteResponse>) holder.callback);
+          handleVoteResponse(response, (CompletableFuture<RequestVoteResponse>) holder.future);
           break;
         case SUBMIT:
-          handleSubmitResponse(response, (AsyncCallback<SubmitCommandResponse>) holder.callback);
+          handleSubmitResponse(response, (CompletableFuture<SubmitCommandResponse>) holder.future);
           break;
       }
     }
@@ -194,70 +200,73 @@ public class TcpProtocolClient implements ProtocolClient {
   /**
    * Handles an append entries response.
    */
-  private void handleAppendResponse(JsonObject response, AsyncCallback<AppendEntriesResponse> callback) {
+  private void handleAppendResponse(JsonObject response, CompletableFuture<AppendEntriesResponse> future) {
     String status = response.getString("status");
     if (status == null) {
-      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException("Invalid response")));
+      future.completeExceptionally(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new AppendEntriesResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("succeeded"))));
+      future.complete(new AppendEntriesResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("succeeded")));
     } else if (status.equals("error")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<AppendEntriesResponse>(new ProtocolException(response.getString("message"))));
+      future.completeExceptionally(new ProtocolException(response.getString("message")));
     }
   }
 
   /**
    * Handles a vote response.
    */
-  private void handleVoteResponse(JsonObject response, AsyncCallback<RequestVoteResponse> callback) {
+  private void handleVoteResponse(JsonObject response, CompletableFuture<RequestVoteResponse> future) {
     String status = response.getString("status");
     if (status == null) {
-      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException("Invalid response")));
+      future.completeExceptionally(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new RequestVoteResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("voteGranted"))));
+      future.complete(new RequestVoteResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("voteGranted")));
     } else if (status.equals("error")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<RequestVoteResponse>(new ProtocolException(response.getString("message"))));
+      future.completeExceptionally(new ProtocolException(response.getString("message")));
     }
   }
 
   /**
    * Handles a submit response.
    */
-  private void handleSubmitResponse(JsonObject response, AsyncCallback<SubmitCommandResponse> callback) {
+  private void handleSubmitResponse(JsonObject response, CompletableFuture<SubmitCommandResponse> future) {
     String status = response.getString("status");
     if (status == null) {
-      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException("Invalid response")));
+      future.completeExceptionally(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new SubmitCommandResponse(response.getValue("id"), response.getObject("result").toMap())));
+      Object result = response.getValue("result");
+      if (result instanceof JsonArray) {
+        future.complete(new SubmitCommandResponse(response.getValue("id"), ((JsonArray) result).toList()));
+      } else if (result instanceof JsonObject) {
+        future.complete(new SubmitCommandResponse(response.getValue("id"), ((JsonObject) result).toMap()));
+      } else {
+        future.complete(new SubmitCommandResponse(response.getValue("id"), result));
+      }
     } else if (status.equals("error")) {
-      callback.call(new net.kuujo.copycat.AsyncResult<SubmitCommandResponse>(new ProtocolException(response.getString("message"))));
+      future.completeExceptionally(new ProtocolException(response.getString("message")));
     }
   }
 
   /**
    * Stores a response callback by ID.
    */
-  private <T extends Response> void storeCallback(final Object id, ResponseType responseType, AsyncCallback<T> callback) {
+  private <T extends Response> void storeCallback(final Object id, ResponseType responseType, CompletableFuture<T> future) {
     long timerId = vertx.setTimer(30000, new Handler<Long>() {
       @Override
-      @SuppressWarnings("unchecked")
       public void handle(Long timerID) {
         ResponseHolder holder = responses.remove(id);
         if (holder != null) {
-          holder.callback.call(new net.kuujo.copycat.AsyncResult<T>(new ProtocolException("Request timed out")));
+          holder.future.completeExceptionally(new ProtocolException("Request timed out"));
         }
       }
     });
-    ResponseHolder holder = new ResponseHolder(timerId, responseType, callback);
+    ResponseHolder holder = new ResponseHolder(timerId, responseType, future);
     responses.put(id, holder);
   }
 
   @Override
-  public void connect() {
-    connect(null);
-  }
+  public CompletableFuture<Void> connect() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
 
-  @Override
-  public void connect(final AsyncCallback<Void> callback) {
     if (vertx == null) {
       vertx = new DefaultVertx();
     }
@@ -279,9 +288,7 @@ public class TcpProtocolClient implements ProtocolClient {
         @Override
         public void handle(AsyncResult<NetSocket> result) {
           if (result.failed()) {
-            if (callback != null) {
-              callback.call(new net.kuujo.copycat.AsyncResult<Void>(result.cause()));
-            }
+            future.completeExceptionally(result.cause());
           } else {
             socket = result.result();
             socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
@@ -292,24 +299,19 @@ public class TcpProtocolClient implements ProtocolClient {
                 handleResponse(id, response);
               }
             }));
-            if (callback != null) {
-              callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
-            }
+            future.complete(null);
           }
         }
       });
-    } else if (callback != null) {
-      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+    } else {
+      future.complete(null);
     }
+    return future;
   }
 
   @Override
-  public void close() {
-    close(null);
-  }
-
-  @Override
-  public void close(final AsyncCallback<Void> callback) {
+  public CompletableFuture<Void> close() {
+    final CompletableFuture<Void> future = new CompletableFuture<>();
     if (client != null && socket != null) {
       socket.closeHandler(new Handler<Void>() {
         @Override
@@ -317,20 +319,17 @@ public class TcpProtocolClient implements ProtocolClient {
           socket = null;
           client.close();
           client = null;
-          if (callback != null) {
-            callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
-          }
+          future.complete(null);
         }
       }).close();
     } else if (client != null) {
       client.close();
       client = null;
-      if (callback != null) {
-        callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
-      }
-    } else if (callback != null) {
-      callback.call(new net.kuujo.copycat.AsyncResult<Void>((Void) null));
+      future.complete(null);
+    } else {
+      future.complete(null);
     }
+    return future;
   }
 
 }
