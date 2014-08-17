@@ -280,7 +280,12 @@ class Leader extends BaseState implements Observer {
       // simply apply the command, otherwise we need to ping a quorum of the
       // cluster to ensure that data is up-to-date before responding.
       if (context.config().isRequireReadQuorum()) {
-        final Quorum quorum = new Quorum(context.cluster.config().getQuorumSize(), (succeeded) -> {
+        Integer readQuorumSize = context.config().getReadQuorumSize();
+        if (readQuorumSize == null) {
+          readQuorumSize = context.cluster.config().getQuorumSize();
+        }
+
+        final Quorum quorum = new Quorum(readQuorumSize, (succeeded) -> {
           if (succeeded) {
             try {
               future.complete(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args())));
@@ -401,11 +406,21 @@ class Leader extends BaseState implements Observer {
       // the required quorum size to get the index of the replica with the least
       // possible quorum replication. That replica's match index is the commit index.
       int index = replicas.size() + 1 - context.cluster.config().getQuorumSize();
+
       if (index > 0) {
+
+        int writeIndex;
+        Integer writeQuorumSize = context.config().getWriteQuorumSize();
+        if (writeQuorumSize == null) {
+          writeIndex = index;
+        } else {
+          writeIndex = replicas.size() + 1 - writeQuorumSize;
+        }
+
         // Set the commit index. Once the commit index has been set we can run
         // all tasks up to the given commit.
         context.setCommitIndex(replicas.get(index).matchIndex);
-        runTasks(context.getCommitIndex());
+        runTasks(replicas.get(writeIndex).matchIndex);
       }
     }
   }

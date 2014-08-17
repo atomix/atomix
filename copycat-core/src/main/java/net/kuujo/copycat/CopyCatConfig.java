@@ -29,7 +29,9 @@ public class CopyCatConfig {
   private long electionTimeout = 2000;
   private long heartbeatInterval = 500;
   private boolean requireWriteQuorum = true;
+  private Integer writeQuorumSize;
   private boolean requireReadQuorum = true;
+  private Integer readQuorumSize;
   private int maxLogSize = 32 * 1024^2;
   private CorrelationStrategy<?> correlationStrategy = new UuidCorrelationStrategy();
   private TimerStrategy timerStrategy = new ThreadTimerStrategy();
@@ -127,6 +129,35 @@ public class CopyCatConfig {
   }
 
   /**
+   * Sets the required write quorum size.
+   *
+   * @param quorumSize The required write quorum size.
+   */
+  public void setWriteQuorumSize(Integer quorumSize) {
+    this.writeQuorumSize = quorumSize;
+  }
+
+  /**
+   * Returns the required write quorum size.
+   *
+   * @return The required write quorum size. Defaults to <code>null</code>
+   */
+  public Integer getWriteQuorumSize() {
+    return writeQuorumSize;
+  }
+
+  /**
+   * Sets the required write quorum size, returning the configuration for method chaining.
+   *
+   * @param quorumSize The required write quorum size.
+   * @return The copycat configuration.
+   */
+  public CopyCatConfig withWriteQuorumSize(Integer quorumSize) {
+    this.writeQuorumSize = quorumSize;
+    return this;
+  }
+
+  /**
    * Sets whether a quorum synchronization is required for read operations.
    * 
    * @param require Indicates whether a quorum synchronization should be required for read
@@ -156,6 +187,35 @@ public class CopyCatConfig {
    */
   public CopyCatConfig withRequireReadQuorum(boolean require) {
     this.requireReadQuorum = require;
+    return this;
+  }
+
+  /**
+   * Sets the required read quorum size.
+   *
+   * @param quorumSize The required read quorum size.
+   */
+  public void setReadQuorumSize(Integer quorumSize) {
+    this.readQuorumSize = quorumSize;
+  }
+
+  /**
+   * Returns the required read quorum size.
+   *
+   * @return The required read quorum size. Defaults to <code>null</code>
+   */
+  public Integer getReadQuorumSize() {
+    return readQuorumSize;
+  }
+
+  /**
+   * Sets the required read quorum size, returning the configuration for method chaining.
+   *
+   * @param quorumSize The required read quorum size.
+   * @return The copycat configuration.
+   */
+  public CopyCatConfig withReadQuorumSize(Integer quorumSize) {
+    this.readQuorumSize = quorumSize;
     return this;
   }
 
