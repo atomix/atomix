@@ -15,25 +15,25 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.protocol.ProtocolHandler;
-
 /**
- * Replica state.
+ * State change event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State extends ProtocolHandler {
+public class StateEvent {
+  private final State state;
+
+  public StateEvent(State state) {
+    this.state = state;
+  }
 
   /**
-   * Initializes the state.
+   * Returns the copycat state.
    *
-   * @param context The state context.
+   * @return The copycat state.
    */
-  void init(StateContext context);
-
-  /**
-   * Destroys the state.
-   */
-  void destroy();
+  public State state() {
+    return state;
+  }
 
 }

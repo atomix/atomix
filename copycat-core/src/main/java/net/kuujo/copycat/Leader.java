@@ -70,11 +70,11 @@ class Leader extends BaseState implements Observer {
   private final TreeMap<Long, Runnable> tasks = new TreeMap<>();
 
   @Override
-  public void init(CopyCatContext context) {
+  public void init(StateContext context) {
     super.init(context);
 
     // Set the current leader as this replica.
-    context.setCurrentLeader(context.cluster.localMember().uri());
+    state.setCurrentLeader(state.cluster.getLocalMember());
 
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
@@ -89,7 +89,7 @@ class Leader extends BaseState implements Observer {
     // first entry in their log, whether it be a local snapshot or a snapshot that
     // was replicated by the leader. This greatly simplifies snapshot management as
     // snapshots are simply replicated as a normal part of each node's log.
-    for (long i = context.getLastApplied(); i < context.log.lastIndex(); i++) {
+    for (long i = state.getLastApplied(); i < state.context.log.lastIndex(); i++) {
       applyEntry(i);
     }
 
@@ -97,32 +97,32 @@ class Leader extends BaseState implements Observer {
     // a new snapshot of the local state machine state, commit it to the local
     // log, and wipe the log of committed entries.
     Entries<SnapshotEntry> snapshotEntries = createSnapshot();
-    long index = context.log.lastIndex() + 1;
-    context.log.appendEntries(snapshotEntries);
-    context.log.removeBefore(index);
+    long index = state.context.log.lastIndex() + 1;
+    state.context.log.appendEntries(snapshotEntries);
+    state.context.log.removeBefore(index);
 
     // Next, the leader must write a no-op entry to the log and replicate the log
     // to all the nodes in the cluster. This ensures that other nodes are notified
     // of the leader's election and that their terms are updated with the leader's term.
-    context.log.appendEntry(new NoOpEntry(context.getCurrentTerm()));
+    state.context.log.appendEntry(new NoOpEntry(state.getCurrentTerm()));
 
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
-    Set<String> members = new HashSet<>(context.cluster.config().getMembers());
-    context.log.appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
+    Set<String> members = new HashSet<>(state.cluster.getMembers());
+    state.context.log.appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
-    context.cluster.config().addObserver(this);
+    state.context.cluster.config().addObserver(this);
 
     // Create a map and list of remote replicas. We create both a map and
     // list because the list is sortable, so we can use a little math
     // trick to determine the current cluster-wide log commit index.
-    for (String uri : context.cluster.config().getRemoteMembers()) {
+    for (String uri : state.context.cluster.config().getRemoteMembers()) {
       if (!replicaMap.containsKey(uri)) {
-        Member member = context.cluster.member(uri);
+        Member member = state.context.cluster.member(uri);
         if (member != null) {
           RemoteReplica replica = new RemoteReplica(member);
           replicaMap.put(uri, replica);
@@ -137,6 +137,11 @@ class Leader extends BaseState implements Observer {
     for (RemoteReplica replica : replicas) {
       replica.update();
     }
+
+    // Force the cluster configuration to match that of the local user configuration.
+    // This will ultimately cause a cluster change event and cause the cluster configuration
+    // to be applied to the log and replicated.
+    state.cluster.setRemoteMembers(state.context.cluster.config().getRemoteMembers());
   }
 
   @Override
@@ -174,26 +179,26 @@ class Leader extends BaseState implements Observer {
     // avoid this, we wait until all entries up to the current log index have been
     // committed before beginning the configuration change. This ensures that any
     // previous configuration changes have completed.
-    addTask(context.log.lastIndex(), new Runnable() {
+    addTask(state.context.log.lastIndex(), new Runnable() {
       @Override
       public void run() {
         // First we need to commit a combined old/new cluster configuration entry.
-        Set<String> combinedMembers = new HashSet<>(context.cluster.config().getMembers());
+        Set<String> combinedMembers = new HashSet<>(state.context.cluster.config().getMembers());
         combinedMembers.addAll(members);
-        Entry entry = new ConfigurationEntry(context.getCurrentTerm(), combinedMembers);
-        long index = context.log.appendEntry(entry);
+        Entry entry = new ConfigurationEntry(state.getCurrentTerm(), combinedMembers);
+        long index = state.context.log.appendEntry(entry);
 
         // Immediately after the entry is appended to the log, apply the combined
         // membership. Cluster membership changes do not wait for commitment.
         Set<String> combinedRemoteMembers = new HashSet<>(combinedMembers);
-        combinedRemoteMembers.remove(context.cluster.localMember().uri());
-        context.cluster.config().setRemoteMembers(combinedMembers);
+        combinedRemoteMembers.remove(state.cluster.getLocalMember());
+        state.cluster.setRemoteMembers(combinedMembers);
 
         // Whenever the local cluster membership changes, ensure we update the
         // local replicas.
         for (String uri : combinedRemoteMembers) {
           if (!replicaMap.containsKey(uri)) {
-            Member member = context.cluster.member(uri);
+            Member member = state.context.cluster.member(uri);
             if (member != null) {
               RemoteReplica replica = new RemoteReplica(member);
               replicaMap.put(uri, replica);
@@ -211,13 +216,13 @@ class Leader extends BaseState implements Observer {
           public void run() {
             // Append the new configuration entry to the log and force all replicas
             // to be synchronized.
-            context.log.appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
+            state.context.log.appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
 
             // Again, once we've appended the new configuration to the log, update
             // the local internal configuration.
             Set<String> remoteMembers = new HashSet<>(members);
-            remoteMembers.remove(context.cluster.localMember().uri());
-            context.cluster.config().setRemoteMembers(remoteMembers);
+            remoteMembers.remove(state.cluster.getLocalMember());
+            state.context.cluster.config().setRemoteMembers(remoteMembers);
 
             // Once the local internal configuration has been updated, remove
             // any replicas that are no longer in the cluster.
@@ -240,22 +245,22 @@ class Leader extends BaseState implements Observer {
    * Resets the ping timer.
    */
   private void setPingTimer() {
-    currentTimer = context.config().getTimerStrategy().schedule(() -> {
+    currentTimer = state.context.config().getTimerStrategy().schedule(() -> {
       for (RemoteReplica replica : replicas) {
         replica.update();
       }
       setPingTimer();
-    }, context.config().getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    }, state.context.config().getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   @Override
   public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
-    if (request.term() > context.getCurrentTerm()) {
+    if (request.term() > state.getCurrentTerm()) {
       return super.appendEntries(request);
-    } else if (request.term() < context.getCurrentTerm()) {
-      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false));
+    } else if (request.term() < state.getCurrentTerm()) {
+      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false));
     } else {
-      context.transition(Follower.class);
+      state.transition(Follower.class);
       return super.appendEntries(request);
     }
   }
@@ -268,7 +273,7 @@ class Leader extends BaseState implements Observer {
     // type is provided by a CommandProvider which provides CommandInfo for a
     // given command. If no CommandInfo is provided then all commands are assumed
     // to be READ_WRITE commands.
-    Command command = context.stateMachineExecutor.getCommand(request.command());
+    Command command = state.context.stateMachine.getCommand(request.command());
 
     // Depending on the command type, read or write commands may or may not be replicated
     // to a quorum based on configuration  options. For write commands, if a quorum is
@@ -279,16 +284,16 @@ class Leader extends BaseState implements Observer {
       // default, read quorums are enabled. If read quorums are disabled then we
       // simply apply the command, otherwise we need to ping a quorum of the
       // cluster to ensure that data is up-to-date before responding.
-      if (context.config().isRequireReadQuorum()) {
-        Integer readQuorumSize = context.config().getReadQuorumSize();
+      if (state.context.config().isRequireReadQuorum()) {
+        Integer readQuorumSize = state.context.config().getReadQuorumSize();
         if (readQuorumSize == null) {
-          readQuorumSize = context.cluster.config().getQuorumSize();
+          readQuorumSize = state.context.cluster.config().getQuorumSize();
         }
 
         final Quorum quorum = new Quorum(readQuorumSize, (succeeded) -> {
           if (succeeded) {
             try {
-              future.complete(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args())));
+              future.complete(new SubmitCommandResponse(request.id(), state.context.stateMachine.applyCommand(request.command(), request.args())));
             } catch (Exception e) {
               future.completeExceptionally(e);
             }
@@ -311,7 +316,7 @@ class Leader extends BaseState implements Observer {
         }
       } else {
         try {
-          future.complete(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args())));
+          future.complete(new SubmitCommandResponse(request.id(), state.context.stateMachine.applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           future.completeExceptionally(e);
         }
@@ -320,12 +325,12 @@ class Leader extends BaseState implements Observer {
       // For write commands or for commands for which the type is not known, an
       // entry must be logged, replicated, and committed prior to applying it
       // to the state machine and returning the result.
-      final long index = context.log.appendEntry(new CommandEntry(context.getCurrentTerm(), request.command(), request.args()));
+      final long index = state.context.log.appendEntry(new CommandEntry(state.getCurrentTerm(), request.command(), request.args()));
 
       // Write quorums are also optional to the user. The user can optionally
       // indicate that write commands should be immediately applied to the state
       // machine and the result returned.
-      if (context.config().isRequireWriteQuorum()) {
+      if (state.context.config().isRequireWriteQuorum()) {
         // If the replica requires write quorums, we simply set a task to be
         // executed once the entry has been replicated to a quorum of the cluster.
         addTask(index, new Runnable() {
@@ -334,11 +339,11 @@ class Leader extends BaseState implements Observer {
             // Once the entry has been replicated we can apply it to the state
             // machine and respond with the command result.
             try {
-              future.complete(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args())));
+              future.complete(new SubmitCommandResponse(request.id(), state.context.stateMachine.applyCommand(request.command(), request.args())));
             } catch (Exception e) {
               future.completeExceptionally(e);
             } finally {
-              context.setLastApplied(index);
+              state.setLastApplied(index);
               compactLog();
             }
           }
@@ -349,11 +354,11 @@ class Leader extends BaseState implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          future.complete(new SubmitCommandResponse(request.id(), context.stateMachineExecutor.applyCommand(request.command(), request.args())));
+          future.complete(new SubmitCommandResponse(request.id(), state.context.stateMachine.applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           future.completeExceptionally(e);
         } finally {
-          context.setLastApplied(index);
+          state.setLastApplied(index);
           compactLog();
         }
       }
@@ -405,12 +410,12 @@ class Leader extends BaseState implements Observer {
       // Since replicas is a list with zero based indexes, use the negation of
       // the required quorum size to get the index of the replica with the least
       // possible quorum replication. That replica's match index is the commit index.
-      int index = replicas.size() + 1 - context.cluster.config().getQuorumSize();
+      int index = replicas.size() + 1 - state.context.cluster.config().getQuorumSize();
 
       if (index > 0) {
 
         int writeIndex;
-        Integer writeQuorumSize = context.config().getWriteQuorumSize();
+        Integer writeQuorumSize = state.context.config().getWriteQuorumSize();
         if (writeQuorumSize == null) {
           writeIndex = index;
         } else {
@@ -419,7 +424,7 @@ class Leader extends BaseState implements Observer {
 
         // Set the commit index. Once the commit index has been set we can run
         // all tasks up to the given commit.
-        context.setCommitIndex(replicas.get(index).matchIndex);
+        state.setCommitIndex(replicas.get(index).matchIndex);
         runTasks(replicas.get(writeIndex).matchIndex);
       }
     }
@@ -431,7 +436,7 @@ class Leader extends BaseState implements Observer {
       currentTimer.cancel(true);
     }
     // Stop observing the observable cluster configuration.
-    context.cluster.config().deleteObserver(this);
+    state.context.cluster.config().deleteObserver(this);
   }
 
   /**
@@ -447,7 +452,7 @@ class Leader extends BaseState implements Observer {
 
     public RemoteReplica(Member member) {
       this.member = member;
-      this.nextIndex = context.log.lastIndex();
+      this.nextIndex = state.context.log.lastIndex();
     }
 
     /**
@@ -474,7 +479,7 @@ class Leader extends BaseState implements Observer {
      */
     private void update() {
       if (open && running.compareAndSet(false, true)) {
-        if (nextIndex <= context.log.lastIndex() || matchIndex < context.getCommitIndex()) {
+        if (nextIndex <= state.context.log.lastIndex() || matchIndex < state.getCommitIndex()) {
           doSync();
         } else {
           doPing();
@@ -487,16 +492,16 @@ class Leader extends BaseState implements Observer {
      */
     private void doSync() {
       final long prevIndex = nextIndex - 1;
-      final Entry prevEntry = context.log.getEntry(prevIndex);
+      final Entry prevEntry = state.context.log.getEntry(prevIndex);
 
       // Create a list of up to ten entries to send to the follower.
       // We can only send one snapshot entry in any given request. So, if any of
       // the entries are snapshot entries, send all entries up to the snapshot and
       // then send snapshot entries individually.
       List<Entry> entries = new ArrayList<>();
-      long lastIndex = nextIndex + 10 > context.log.lastIndex() ? context.log.lastIndex() : nextIndex + 10;
+      long lastIndex = nextIndex + 10 > state.context.log.lastIndex() ? state.context.log.lastIndex() : nextIndex + 10;
       for (long i = nextIndex; i <= lastIndex; i++) {
-        Entry entry = context.log.getEntry(i);
+        Entry entry = state.context.log.getEntry(i);
 
         // If we ran into a snapshot entry, immediately send all entries up to the
         // snapshot entry. If the snapshot entry is the first entry, send snapshot
@@ -520,20 +525,20 @@ class Leader extends BaseState implements Observer {
      * Sends an append entries request to the follower.
      */
     private void doAppendEntries(long prevIndex, Entry prevEntry, List<Entry> entries) {
-      final long commitIndex = context.getCommitIndex();
+      final long commitIndex = state.getCommitIndex();
       if (logger.isLoggable(Level.FINER)) {
         if (!entries.isEmpty()) {
           if (entries.size() > 1) {
-            logger.finer(String.format("%s replicating entries %d-%d to %s", context.cluster.localMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
+            logger.finer(String.format("%s replicating entries %d-%d to %s", state.cluster.getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
           } else {
-            logger.finer(String.format("%s replicating entry %d to %s", context.cluster.localMember(), prevIndex+1, member.uri()));
+            logger.finer(String.format("%s replicating entry %d to %s", state.cluster.getLocalMember(), prevIndex+1, member.uri()));
           }
         } else {
-          logger.finer(String.format("%s committing entry %d to %s", context.cluster.localMember(), commitIndex, member.uri()));
+          logger.finer(String.format("%s committing entry %d to %s", state.cluster.getLocalMember(), commitIndex, member.uri()));
         }
       }
 
-      AppendEntriesRequest request = new AppendEntriesRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster.localMember().uri(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster.getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
       member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
         if (error != null) {
           running.set(false);
@@ -545,12 +550,12 @@ class Leader extends BaseState implements Observer {
               if (logger.isLoggable(Level.FINER)) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.finer(String.format("%s successfully replicated entries %d-%d to %s", context.cluster.localMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
+                    logger.finer(String.format("%s successfully replicated entries %d-%d to %s", state.cluster.getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
                   } else {
-                    logger.finer(String.format("%s successfully replicated entry %d to %s", context.cluster.localMember(), prevIndex+1, member.uri()));
+                    logger.finer(String.format("%s successfully replicated entry %d to %s", state.cluster.getLocalMember(), prevIndex+1, member.uri()));
                   }
                 } else {
-                  logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster.localMember(), commitIndex, member.uri()));
+                  logger.finer(String.format("%s successfully committed entry %d to %s", state.cluster.getLocalMember(), commitIndex, member.uri()));
                 }
               }
 
@@ -567,12 +572,12 @@ class Leader extends BaseState implements Observer {
               if (logger.isLoggable(Level.FINER)) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.finer(String.format("%s failed to replicate entries %d-%d to %s", context.cluster.localMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
+                    logger.finer(String.format("%s failed to replicate entries %d-%d to %s", state.cluster.getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
                   } else {
-                    logger.finer(String.format("%s failed to replicate entry %d to %s", context.cluster.localMember(), prevIndex+1, member.uri()));
+                    logger.finer(String.format("%s failed to replicate entry %d to %s", state.cluster.getLocalMember(), prevIndex+1, member.uri()));
                   }
                 } else {
-                  logger.finer(String.format("%s failed to commit entry %d to %s", context.cluster.localMember(), commitIndex, member.uri()));
+                  logger.finer(String.format("%s failed to commit entry %d to %s", state.cluster.getLocalMember(), commitIndex, member.uri()));
                 }
               }
 
@@ -582,7 +587,7 @@ class Leader extends BaseState implements Observer {
               // a follower.
               if (nextIndex-1 == 0) {
                 running.set(false);
-                context.transition(Follower.class);
+                state.transition(Follower.class);
               } else {
                 // If we were attempting to replicate log entries and not just
                 // sending a commit index or if we didn't have any log entries
@@ -626,7 +631,7 @@ class Leader extends BaseState implements Observer {
      */
     private void doPing() {
       // The "ping" request is simply an empty synchronization request.
-      AppendEntriesRequest request = new AppendEntriesRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster.localMember().uri(), nextIndex-1, context.log.containsEntry(nextIndex-1) ? context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), context.getCommitIndex());
+      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster.getLocalMember(), nextIndex-1, state.context.log.containsEntry(nextIndex-1) ? state.context.log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
       member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
         if (error != null) {
           running.set(false);
@@ -634,10 +639,10 @@ class Leader extends BaseState implements Observer {
         } else {
           running.set(false);
           if (response.status().equals(Response.Status.OK)) {
-            if (response.term() > context.getCurrentTerm()) {
-              context.setCurrentTerm(response.term());
-              context.setCurrentLeader(null);
-              context.transition(Follower.class);
+            if (response.term() > state.getCurrentTerm()) {
+              state.setCurrentTerm(response.term());
+              state.setCurrentLeader(null);
+              state.transition(Follower.class);
               triggerFutures(new CopyCatException("Not the leader"));
             } else {
               triggerFutures();

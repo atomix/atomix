@@ -15,25 +15,32 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.protocol.ProtocolHandler;
-
 /**
- * Replica state.
+ * State machine listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State extends ProtocolHandler {
+public interface StateMachineListener extends EventListener {
 
   /**
-   * Initializes the state.
+   * Called when a command was applied to the state machine.
    *
-   * @param context The state context.
+   * @param event The command event.
    */
-  void init(StateContext context);
+  void commandApplied(CommandEvent event);
 
   /**
-   * Destroys the state.
+   * Called when a snapshot of the state machine state has been taken.
+   *
+   * @param event The snapshot event.
    */
-  void destroy();
+  void snapshotTaken(SnapshotEvent event);
+
+  /**
+   * Called when a snapshot of the state machine state has been installed.
+   *
+   * @param event The snapshot event.
+   */
+  void snapshotInstalled(SnapshotEvent event);
 
 }

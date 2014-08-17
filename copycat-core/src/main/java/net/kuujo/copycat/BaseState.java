@@ -54,15 +54,15 @@ import net.kuujo.copycat.serializer.SerializerFactory;
 abstract class BaseState implements State {
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private static final int SNAPSHOT_ENTRY_SIZE = 4096;
-  protected CopyCatContext context;
+  protected StateContext state;
   private final AtomicBoolean snapshotting = new AtomicBoolean();
   private final Executor executor = Executors.newSingleThreadExecutor();
   private final AtomicBoolean transition = new AtomicBoolean();
 
   @Override
-  public void init(CopyCatContext context) {
-    this.context = context;
-    context.cluster.localMember().protocol().server().protocolHandler(this);
+  public void init(StateContext context) {
+    this.state = context;
+    context.context.cluster.localMember().protocol().server().protocolHandler(this);
   }
 
   @Override
@@ -73,7 +73,7 @@ abstract class BaseState implements State {
       // If a transition is required then transition back to the follower state.
       // If the node is already a follower then the transition will be ignored.
       if (transition.get()) {
-        context.transition(Follower.class);
+        state.transition(Follower.class);
       }
     });
   }
@@ -84,17 +84,17 @@ abstract class BaseState implements State {
   private AppendEntriesResponse handleAppendEntries(AppendEntriesRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getCurrentTerm() || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(request.leader());
+    if (request.term() > state.getCurrentTerm() || (request.term() == state.getCurrentTerm() && state.getCurrentLeader() == null)) {
+      state.setCurrentTerm(request.term());
+      state.setCurrentLeader(request.leader());
       transition.set(true);
     }
 
     // If the request term is less than the current term then immediately
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
-    if (request.term() < context.getCurrentTerm()) {
-      return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false);
+    if (request.term() < state.getCurrentTerm()) {
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false);
     } else if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
       return doCheckPreviousEntry(request);
     } else {
@@ -112,9 +112,9 @@ abstract class BaseState implements State {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    Entry entry = context.log.getEntry(request.prevLogIndex());
+    Entry entry = state.context.log.getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
-      return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false);
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false);
     } else {
       return doAppendEntries(request);
     }
@@ -126,11 +126,11 @@ abstract class BaseState implements State {
   private AppendEntriesResponse doAppendEntries(AppendEntriesRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
-    if (context.log.lastIndex() > request.prevLogIndex()) {
-      context.log.removeAfter(request.prevLogIndex());
+    if (state.context.log.lastIndex() > request.prevLogIndex()) {
+      state.context.log.removeAfter(request.prevLogIndex());
     }
     // Once the log has been cleaned, append all request entries to the log.
-    context.log.appendEntries(request.entries());
+    state.context.log.appendEntries(request.entries());
     return doApplyCommits(request);
   }
 
@@ -144,17 +144,17 @@ abstract class BaseState implements State {
     // due to asynchronous communication errors, so alternatively check if the
     // local commit index is greater than last applied. If all the state machine
     // commands have not yet been applied then we want to re-attempt to apply them.
-    if (request.commitIndex() > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
+    if (request.commitIndex() > state.getCommitIndex() || state.getCommitIndex() > state.getLastApplied()) {
       // Update the local commit index with min(request commit, last log // index)
-      long lastIndex = context.log.lastIndex();
-      context.setCommitIndex(Math.min(Math.max(request.commitIndex(), context.getCommitIndex()), lastIndex));
+      long lastIndex = state.context.log.lastIndex();
+      state.setCommitIndex(Math.min(Math.max(request.commitIndex(), state.getCommitIndex()), lastIndex));
 
       // If the updated commit index indicates that commits remain to be
       // applied to the state machine, iterate entries and apply them.
-      if (context.getCommitIndex() > context.getLastApplied()) {
+      if (state.getCommitIndex() > state.getLastApplied()) {
         // Starting after the last applied entry, iterate through new entries
         // and apply them to the state machine up to the commit index.
-        for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
+        for (long i = state.getLastApplied() + 1; i <= Math.min(state.getCommitIndex(), lastIndex); i++) {
           // Apply the entry to the state machine.
           applyEntry(i);
         }
@@ -163,7 +163,7 @@ abstract class BaseState implements State {
         compactLog();
       }
     }
-    return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), true);
+    return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), true);
   }
 
   /**
@@ -172,7 +172,7 @@ abstract class BaseState implements State {
    * @param index The index of the entry to apply.
    */
   protected void applyEntry(long index) {
-    applyEntry(index, context.log.getEntry(index));
+    applyEntry(index, state.context.log.getEntry(index));
   }
 
   /**
@@ -183,7 +183,7 @@ abstract class BaseState implements State {
    */
   protected void applyEntry(long index, Entry entry) {
     // Validate that the entry being applied is the next entry in the log.
-    if (context.getLastApplied() != index-1) {
+    if (state.getLastApplied() != index-1) {
       throw new IllegalStateException("Entry cannot be applied out of order");
     }
 
@@ -206,7 +206,7 @@ abstract class BaseState implements State {
     }
     // If the entry is of another type, e.g. a no-op entry, simply set last applied.
     else {
-      context.setLastApplied(index);
+      state.setLastApplied(index);
     }
   }
 
@@ -218,10 +218,10 @@ abstract class BaseState implements State {
    */
   protected void applyCommand(long index, CommandEntry entry) {
     try {
-      context.stateMachineExecutor.applyCommand(entry.command(), entry.args());
+      state.context.stateMachine.applyCommand(entry.command(), entry.args());
     } catch (Exception e) {
     } finally {
-      context.setLastApplied(index);
+      state.setLastApplied(index);
     }
   }
 
@@ -234,11 +234,11 @@ abstract class BaseState implements State {
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
       Set<String> members = ((ConfigurationEntry) entry).members();
-      members.remove(context.cluster.config().getLocalMember());
-      context.cluster.config().setRemoteMembers(members);
+      members.remove(state.cluster.getLocalMember());
+      state.cluster.setRemoteMembers(members);
     } catch (Exception e) {
     } finally {
-      context.setLastApplied(index);
+      state.setLastApplied(index);
     }
   }
 
@@ -256,9 +256,9 @@ abstract class BaseState implements State {
       List<SnapshotChunkEntry> chunks = new ArrayList<>();
       SnapshotStartEntry start = null;
       long i = index;
-      while (start == null && i > context.log.firstIndex()) {
+      while (start == null && i > state.context.log.firstIndex()) {
         i--;
-        Entry previous = context.log.getEntry(i);
+        Entry previous = state.context.log.getEntry(i);
         if (previous == null) {
           break;
         } else if (previous instanceof SnapshotChunkEntry) {
@@ -277,10 +277,10 @@ abstract class BaseState implements State {
         entries.add(end);
         applySnapshot(index, entries);
       } else {
-        context.setLastApplied(index);
+        state.setLastApplied(index);
       }
     } else {
-      context.setLastApplied(index);
+      state.setLastApplied(index);
     }
   }
 
@@ -298,11 +298,11 @@ abstract class BaseState implements State {
         .withChunks(entries.subList(1, entries.size() - 1, SnapshotChunkEntry.class))
         .withEnd(entries.get(entries.size() - 1, SnapshotEndEntry.class))
         .combine();
-      context.stateMachineExecutor.installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
-      context.log.removeBefore(lastIndex - entries.size() + 1);
+      state.context.stateMachine.installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
+      state.context.log.removeBefore(lastIndex - entries.size() + 1);
     } catch (LogException | SerializationException e) {
     } finally {
-      context.setLastApplied(lastIndex);
+      state.setLastApplied(lastIndex);
     }
   }
 
@@ -313,9 +313,9 @@ abstract class BaseState implements State {
    */
   protected Entries<SnapshotEntry> createSnapshot() {
     Entries<SnapshotEntry> entries = new ArrayListEntries<>();
-    Map<String, Object> snapshot = context.stateMachineExecutor.takeSnapshot();
-    long term = context.getCurrentTerm();
-    entries.add(new SnapshotStartEntry(context.getCurrentTerm(), context.cluster.config().getMembers()));
+    Map<String, Object> snapshot = state.context.stateMachine.takeSnapshot();
+    long term = state.getCurrentTerm();
+    entries.add(new SnapshotStartEntry(state.getCurrentTerm(), state.cluster.getMembers()));
     byte[] snapshotBytes = serializer.writeValue(snapshot);
     for (int i = 0; i < snapshotBytes.length; i += SNAPSHOT_ENTRY_SIZE) {
       final int bytesLength = snapshotBytes.length - i > SNAPSHOT_ENTRY_SIZE ? SNAPSHOT_ENTRY_SIZE : snapshotBytes.length - i;
@@ -337,12 +337,12 @@ abstract class BaseState implements State {
     // background in order to allow new entries to continue being appended
     // to the log. The snapshot is stored as a log entry in order to simplify
     // replication of snapshots if the node becomes the leader.
-    if (context.log.size() > context.config().getMaxLogSize() && !snapshotting.compareAndSet(false, true)) {
+    if (state.context.log.size() > state.context.config().getMaxLogSize() && !snapshotting.compareAndSet(false, true)) {
       return CompletableFuture.runAsync(() -> {
-        synchronized (context.log) {
-          final long lastApplied = context.getLastApplied();
-          context.log.removeBefore(lastApplied);
-          context.log.prependEntries(createSnapshot());
+        synchronized (state.context.log) {
+          final long lastApplied = state.getLastApplied();
+          state.context.log.removeBefore(lastApplied);
+          state.context.log.prependEntries(createSnapshot());
         }
         snapshotting.set(false);
       }, executor);
@@ -363,54 +363,54 @@ abstract class BaseState implements State {
   private RequestVoteResponse handleRequestVote(RequestVoteRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(null);
-      context.setLastVotedFor(null);
+    if (request.term() > state.getCurrentTerm()) {
+      state.setCurrentTerm(request.term());
+      state.setCurrentLeader(null);
+      state.setLastVotedFor(null);
     }
 
     // If the request term is not as great as the current context term then don't
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
-    if (request.term() < context.getCurrentTerm()) {
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+    if (request.term() < state.getCurrentTerm()) {
+      return new RequestVoteResponse(request.id(), state.getCurrentTerm(), false);
     }
     // If the requesting candidate is ourself then always vote for ourself. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate().equals(context.cluster.config().getLocalMember())) {
-      context.setLastVotedFor(context.cluster.config().getLocalMember());
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
+    else if (request.candidate().equals(state.cluster.getLocalMember())) {
+      state.setLastVotedFor(state.cluster.getLocalMember());
+      return new RequestVoteResponse(request.id(), state.getCurrentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!context.cluster.config().getMembers().contains(request.candidate())) {
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+    else if (!state.cluster.getMembers().contains(request.candidate())) {
+      return new RequestVoteResponse(request.id(), state.getCurrentTerm(), false);
     }
     // If we've already voted for someone else then don't vote again.
-    else if (context.getLastVotedFor() == null || context.getLastVotedFor().equals(request.candidate())) {
+    else if (state.getLastVotedFor() == null || state.getLastVotedFor().equals(request.candidate())) {
       // If the log is empty then vote for the candidate.
-      if (context.log.isEmpty()) {
-        context.setLastVotedFor(request.candidate());
-        return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
+      if (state.context.log.isEmpty()) {
+        state.setLastVotedFor(request.candidate());
+        return new RequestVoteResponse(request.id(), state.getCurrentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
-        long lastIndex = context.log.lastIndex();
-        Entry entry = context.log.getEntry(lastIndex);
+        long lastIndex = state.context.log.lastIndex();
+        Entry entry = state.context.log.getEntry(lastIndex);
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-          context.setLastVotedFor(request.candidate());
-          return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
+          state.setLastVotedFor(request.candidate());
+          return new RequestVoteResponse(request.id(), state.getCurrentTerm(), true);
         } else {
-          context.setLastVotedFor(null);
-          return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+          state.setLastVotedFor(null);
+          return new RequestVoteResponse(request.id(), state.getCurrentTerm(), false);
         }
       }
     }
     // In this case, we've already voted for someone else.
     else {
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+      return new RequestVoteResponse(request.id(), state.getCurrentTerm(), false);
     }
   }
 
@@ -421,7 +421,7 @@ abstract class BaseState implements State {
 
   @Override
   public void destroy() {
-    context.cluster.localMember().protocol().server().protocolHandler(null);
+    state.context.cluster.localMember().protocol().server().protocolHandler(null);
   }
 
 }

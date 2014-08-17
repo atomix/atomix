@@ -15,25 +15,15 @@
  */
 package net.kuujo.copycat;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.DefaultCluster;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.MemoryLog;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
-
 
 /**
  * CopyCat replica context.<p>
@@ -71,23 +61,25 @@ import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopyCatContext {
-  private static final Logger logger = Logger.getLogger(CopyCatContext.class.getCanonicalName());
-  private final Registry registry;
+  final Registry registry;
   final Cluster cluster;
   final Log log;
-  final StateMachineExecutor stateMachineExecutor;
-  private final StateMachine stateMachine;
-  private State state;
+  final StateMachine stateMachine;
+  final ElectionContext election;
+  final StateContext state;
+  final CopyCatConfig config;
   private CompletableFuture<String> startFuture;
-  private CopyCatConfig config;
-  private String currentLeader;
-  private ProtocolClient leaderClient;
-  private final List<Runnable> leaderConnectCallbacks = new ArrayList<>();
-  private boolean leaderConnected;
-  private long currentTerm;
-  private String lastVotedFor;
-  private long commitIndex = 0;
-  private long lastApplied = 0;
+
+  private final ElectionListener electionListener = new ElectionListener() {
+    @Override
+    public void leaderElected(ElectionEvent event) {
+      if (startFuture != null) {
+        startFuture.complete(event.leader());
+        startFuture = null;
+        election.removeListener(this);
+      }
+    }
+  };
 
   public CopyCatContext(StateMachine stateMachine) {
     this(stateMachine, new MemoryLog(), new ClusterConfig(), new CopyCatConfig());
@@ -121,16 +113,17 @@ public class CopyCatContext {
     this.log = log;
     this.config = config;
     this.registry = registry;
-    this.cluster = new DefaultCluster(cluster, this);
+    this.state = new StateContext(this);
+    this.cluster = new DefaultCluster(cluster, state.cluster, this);
     this.stateMachine = stateMachine;
-    this.stateMachineExecutor = new StateMachineExecutor(stateMachine);
+    this.election = new ElectionContext(this);
   }
 
   /**
    * Kills the copycat instance.
    */
   void kill() {
-    transition(None.class);
+    state.transition(None.class);
   }
 
   /**
@@ -150,6 +143,24 @@ public class CopyCatContext {
    */
   public Cluster cluster() {
     return cluster;
+  }
+
+  /**
+   * Returns the election context.
+   *
+   * @return The election context.
+   */
+  public ElectionContext election() {
+    return election;
+  }
+
+  /**
+   * Returns the state context.
+   *
+   * @return The state context.
+   */
+  public StateContext state() {
+    return state;
   }
 
   /**
@@ -192,26 +203,17 @@ public class CopyCatContext {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
     CompletableFuture<String> future = new CompletableFuture<>();
-    transition(None.class);
+    state.transition(None.class);
     cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
       if (error != null) {
         future.completeExceptionally(error);
       } else {
         startFuture = future;
-        transition(Follower.class);
+        election.addListener(electionListener);
+        state.transition(Follower.class);
       }
     });
     return future;
-  }
-
-  /**
-   * Checks whether the start handler needs to be called.
-   */
-  private void checkStart() {
-    if (currentLeader != null && startFuture != null) {
-      startFuture.complete(currentLeader);
-      startFuture = null;
-    }
   }
 
   /**
@@ -222,138 +224,8 @@ public class CopyCatContext {
   public CompletableFuture<Void> stop() {
     return cluster.localMember().protocol().server().stop().thenRunAsync(() -> {
       log.close();
-      transition(None.class);
+      state.transition(None.class);
     });
-  }
-
-  /**
-   * Transitions the context to a new state.
-   *
-   * @param type The state to which to transition.
-   */
-  void transition(Class<? extends State> type) {
-    if (this.state != null && type != null && type.isAssignableFrom(this.state.getClass()))
-      return;
-    logger.info(cluster.localMember() + " transitioning to " + type.toString());
-    final State oldState = state;
-    try {
-      state = type.newInstance();
-    } catch (InstantiationException | IllegalAccessException e) {
-      // Log the exception.
-    }
-    if (oldState != null) {
-      oldState.destroy();
-      state.init(this);
-    } else {
-      state.init(this);
-    }
-  }
-
-  /**
-   * Returns the current cluster leader.
-   *
-   * @return The current cluster leader.
-   */
-  public String leader() {
-    return currentLeader;
-  }
-
-  /**
-   * Returns a boolean indicating whether this node is the leader.
-   *
-   * @return Indicates whether this node is the leader.
-   */
-  public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(cluster.localMember());
-  }
-
-
-  String getCurrentLeader() {
-    return currentLeader;
-  }
-
-  CopyCatContext setCurrentLeader(String leader) {
-    if (currentLeader == null || !currentLeader.equals(leader)) {
-      logger.finer(String.format("Current cluster leader changed: %s", leader));
-    }
-    currentLeader = leader;
-
-    // When a new leader is elected, we create a client and connect to the leader.
-    // Once this node is connected to the leader we can begin submitting commands.
-    if (leader == null) {
-      leaderConnected = false;
-      leaderClient = null;
-    } else if (!isLeader()) {
-      leaderConnected = false;
-      leaderClient = cluster.member(currentLeader).protocol().client();
-      leaderClient.connect().thenRun(() -> {
-        leaderConnected = true;
-        Iterator<Runnable> iterator = leaderConnectCallbacks.iterator();
-        while (iterator.hasNext()) {
-          Runnable runnable = iterator.next();
-          iterator.remove();
-          runnable.run();
-        }
-        checkStart();
-      });
-    } else {
-      leaderConnected = true;
-      Iterator<Runnable> iterator = leaderConnectCallbacks.iterator();
-      while (iterator.hasNext()) {
-        Runnable runnable = iterator.next();
-        iterator.remove();
-        runnable.run();
-      }
-      checkStart();
-    }
-    return this;
-  }
-
-  long getCurrentTerm() {
-    return currentTerm;
-  }
-
-  CopyCatContext setCurrentTerm(long term) {
-    if (term > currentTerm) {
-      currentTerm = term;
-      logger.finer(String.format("Updated current term %d", term));
-      lastVotedFor = null;
-    }
-    return this;
-  }
-
-  String getLastVotedFor() {
-    return lastVotedFor;
-  }
-
-  CopyCatContext setLastVotedFor(String candidate) {
-    if (lastVotedFor == null || !lastVotedFor.equals(candidate)) {
-      logger.finer(String.format("Voted for %s", candidate));
-    }
-    lastVotedFor = candidate;
-    return this;
-  }
-
-  long getCommitIndex() {
-    return commitIndex;
-  }
-
-  CopyCatContext setCommitIndex(long index) {
-    commitIndex = Math.max(commitIndex, index);
-    return this;
-  }
-
-  long getLastApplied() {
-    return lastApplied;
-  }
-
-  CopyCatContext setLastApplied(long index) {
-    lastApplied = index;
-    return this;
-  }
-
-  Object nextCorrelationId() {
-    return config.getCorrelationStrategy().nextCorrelationId(this);
   }
 
   /**
@@ -361,43 +233,10 @@ public class CopyCatContext {
    *
    * @param command The name of the command to submit.
    * @param args An ordered list of command arguments.
-   * @param callback An asynchronous callback to be called with the command result.
-   * @return The CopyCat context.
+   * @return A completable future to be completed once the result is received.
    */
-  @SuppressWarnings("unchecked")
   public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
-    CompletableFuture<R> future = new CompletableFuture<>();
-    if (currentLeader == null) {
-      future.completeExceptionally(new CopyCatException("No leader available"));
-    } else if (!leaderConnected) {
-      leaderConnectCallbacks.add(() -> {
-        leaderClient.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
-          if (error != null) {
-            future.completeExceptionally(error);
-          } else {
-            if (result.status().equals(Response.Status.OK)) {
-              future.complete((R) result.result());
-            } else {
-              future.completeExceptionally(result.error());
-            }
-          }
-        });
-      });
-    } else {
-      ProtocolHandler handler = currentLeader.equals(cluster.localMember()) ? state : leaderClient;
-      handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
-        if (error != null) {
-          future.completeExceptionally(error);
-        } else {
-          if (result.status().equals(Response.Status.OK)) {
-            future.complete((R) result.result());
-          } else {
-            future.completeExceptionally(result.error());
-          }
-        }
-      });
-    }
-    return future;
+    return state.submitCommand(command, args);
   }
 
 }

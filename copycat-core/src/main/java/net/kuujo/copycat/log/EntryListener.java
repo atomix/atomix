@@ -13,27 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.EventListener;
 
 /**
- * Replica state.
+ * Log entry listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State extends ProtocolHandler {
+public interface EntryListener extends EventListener {
 
   /**
-   * Initializes the state.
+   * Called when an entry has been added to the log.
    *
-   * @param context The state context.
+   * @param event The entry event.
    */
-  void init(StateContext context);
-
-  /**
-   * Destroys the state.
-   */
-  void destroy();
+  void entryAdded(EntryEvent event);
 
 }

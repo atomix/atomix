@@ -21,10 +21,14 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeMap;
 
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.EntryEvent;
+import net.kuujo.copycat.log.EntryListener;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogException;
 import net.kuujo.copycat.serializer.Serializer;
@@ -48,6 +52,7 @@ public class FileLog implements Log {
   private long lastIndex;
   private int bufferSize = 1000;
   private final TreeMap<Long, Entry> buffer = new TreeMap<>();
+  private final Set<EntryListener> listeners = new HashSet<>();
 
   public FileLog(String fileName) {
     this.f = new File(fileName);
@@ -84,6 +89,16 @@ public class FileLog implements Log {
   public FileLog withBufferSize(int bufferSize) {
     this.bufferSize = bufferSize;
     return this;
+  }
+
+  @Override
+  public void addListener(EntryListener listener) {
+    listeners.add(listener);
+  }
+
+  @Override
+  public void removeListener(EntryListener listener) {
+    listeners.remove(listener);
   }
 
   @Override
@@ -139,6 +154,15 @@ public class FileLog implements Log {
     return firstIndex == 0;
   }
 
+  private void triggerAddEvent(long index, Entry entry) {
+    if (!listeners.isEmpty()) {
+      EntryEvent event = new EntryEvent(index, entry);
+      for (EntryListener listener : listeners) {
+        listener.entryAdded(event);
+      }
+    }
+  }
+
   @Override
   public synchronized long appendEntry(Entry entry) {
     long index = lastIndex+1;
@@ -156,6 +180,7 @@ public class FileLog implements Log {
       }
       buffer.put(index, entry);
       cleanBuffer();
+      triggerAddEvent(index, entry);
       return index;
     } catch (IOException e) {
       throw new LogException(e);
@@ -168,30 +193,12 @@ public class FileLog implements Log {
   }
 
   @Override
-  public List<Long> appendEntries(List<? extends Entry> entries) {
-    long index = lastIndex+1;
+  public synchronized List<Long> appendEntries(List<? extends Entry> entries) {
     List<Long> indices = new ArrayList<>();
-    StringBuilder bytesBuilder = new StringBuilder();
     for (Entry entry : entries) {
-      bytesBuilder.append(index)
-        .append(DELIMITER)
-        .append(new String(serializer.writeValue(entry)))
-        .append(SEPARATOR);
-      buffer.put(index, entry);
-      indices.add(index++);
+      indices.add(appendEntry(entry));
     }
-
-    try {
-      file.writeBytes(bytesBuilder.toString());
-      if (firstIndex == 0) {
-        firstIndex = 1;
-      }
-      lastIndex += entries.size();
-      cleanBuffer();
-      return indices;
-    } catch (IOException e) {
-      throw new LogException(e);
-    }
+    return indices;
   }
 
   @Override

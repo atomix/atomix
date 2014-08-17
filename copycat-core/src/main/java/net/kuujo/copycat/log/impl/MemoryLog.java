@@ -17,12 +17,16 @@ package net.kuujo.copycat.log.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.TreeMap;
 
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.EntryEvent;
+import net.kuujo.copycat.log.EntryListener;
 import net.kuujo.copycat.log.Log;
 
 /**
@@ -37,6 +41,17 @@ import net.kuujo.copycat.log.Log;
  */
 public class MemoryLog implements Log {
   private TreeMap<Long, Entry> log = new TreeMap<>();
+  private final Set<EntryListener> listeners = new HashSet<>();
+
+  @Override
+  public void addListener(EntryListener listener) {
+    listeners.add(listener);
+  }
+
+  @Override
+  public void removeListener(EntryListener listener) {
+    listeners.remove(listener);
+  }
 
   @Override
   public void open() {
@@ -52,10 +67,20 @@ public class MemoryLog implements Log {
     return log.isEmpty();
   }
 
+  private void triggerAddEvent(long index, Entry entry) {
+    if (!listeners.isEmpty()) {
+      EntryEvent event = new EntryEvent(index, entry);
+      for (EntryListener listener : listeners) {
+        listener.entryAdded(event);
+      }
+    }
+  }
+
   @Override
   public synchronized long appendEntry(Entry entry) {
     long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
     log.put(index, entry);
+    triggerAddEvent(index, entry);
     return index;
   }
 

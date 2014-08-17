@@ -25,17 +25,17 @@ import org.junit.Test;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateMachineExecutorTest {
+public class StateMachineTest {
 
   @Test
   public void testGetCommandType() {
-    StateMachineExecutor stateMachine = new StateMachineExecutor(new TestGetCommandType());
+    StateMachine stateMachine = new TestGetCommandType();
     Command command = stateMachine.getCommand("foo");
     Assert.assertNotNull(command);
     Assert.assertEquals(Command.Type.READ, command.type());
   }
 
-  private static class TestGetCommandType implements StateMachine {
+  private static class TestGetCommandType extends StateMachine {
     @Command(type=Command.Type.READ)
     public String foo() {
       return "bar";
@@ -44,11 +44,11 @@ public class StateMachineExecutorTest {
 
   @Test
   public void testApplyUnnamedCommand() {
-    StateMachineExecutor stateMachine = new StateMachineExecutor(new TestApplyUnnamedCommand());
+    StateMachine stateMachine = new TestApplyUnnamedCommand();
     Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>()));
   }
 
-  private static class TestApplyUnnamedCommand implements StateMachine {
+  private static class TestApplyUnnamedCommand extends StateMachine {
     @Command
     public String foo() {
       return "bar";
@@ -57,11 +57,11 @@ public class StateMachineExecutorTest {
 
   @Test
   public void testApplyNamedCommand() {
-    StateMachineExecutor stateMachine = new StateMachineExecutor(new TestApplyNamedCommand());
+    StateMachine stateMachine = new TestApplyNamedCommand();
     Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>()));
   }
 
-  private static class TestApplyNamedCommand implements StateMachine {
+  private static class TestApplyNamedCommand extends StateMachine {
     @Command(name="foo")
     public String notFoo() {
       return "bar";

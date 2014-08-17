@@ -42,10 +42,9 @@ class Follower extends BaseState {
   private boolean shutdown = true;
 
   @Override
-  public synchronized void init(CopyCatContext context) {
+  public synchronized void init(StateContext context) {
     shutdown = false;
     super.init(context);
-    context.setCurrentLeader(null);
     resetTimer();
   }
 
@@ -60,20 +59,20 @@ class Follower extends BaseState {
       }
 
       // Reset the last voted for candidate.
-      context.setLastVotedFor(null);
+      state.setLastVotedFor(null);
 
       // Set the election timeout in a semi-random fashion with the random range
       // being somewhere between .75 * election timeout and 1.25 * election
       // timeout.
-      long delay = context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4)
-          + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2)));
-      currentTimer = context.config().getTimerStrategy().schedule(() -> {
+      long delay = state.context.config().getElectionTimeout() - (state.context.config().getElectionTimeout() / 4)
+          + (Math.round(Math.random() * (state.context.config().getElectionTimeout() / 2)));
+      currentTimer = state.context.config().getTimerStrategy().schedule(() -> {
         // If the node has not yet voted for anyone then transition to
         // candidate and start a new election.
         currentTimer = null;
-        if (context.getLastVotedFor() == null) {
+        if (state.getLastVotedFor() == null) {
           logger.info("Election timed out. Transitioning to candidate.");
-          context.transition(Candidate.class);
+          state.transition(Candidate.class);
         } else {
           // If the node voted for a candidate then reset the election timer.
           resetTimer();

@@ -45,9 +45,9 @@ class Candidate extends BaseState {
   private ScheduledFuture<Void> currentTimer;
 
   @Override
-  public void init(CopyCatContext context) {
+  public void init(StateContext context) {
     super.init(context);
-    logger.info(String.format("%s starting election", context.cluster.config().getLocalMember()));
+    logger.info(String.format("%s starting election", state.context.cluster.config().getLocalMember()));
     resetTimer();
   }
 
@@ -62,18 +62,18 @@ class Candidate extends BaseState {
 
     // When the election timer is reset, increment the current term and
     // restart the election.
-    context.setCurrentTerm(context.getCurrentTerm() + 1);
-    long delay = context.config().getElectionTimeout() - (context.config().getElectionTimeout() / 4) + (Math.round(Math.random() * (context.config().getElectionTimeout() / 2)));
-    currentTimer = context.config().getTimerStrategy().schedule(() -> {
+    state.setCurrentTerm(state.getCurrentTerm() + 1);
+    long delay = state.context.config().getElectionTimeout() - (state.context.config().getElectionTimeout() / 4) + (Math.round(Math.random() * (state.context.config().getElectionTimeout() / 2)));
+    currentTimer = state.context.config().getTimerStrategy().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      logger.info(String.format("%s election timed out", context.cluster.config().getLocalMember()));
+      logger.info(String.format("%s election timed out", state.context.cluster.config().getLocalMember()));
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       resetTimer();
-      logger.info(String.format("%s restarted election", context.cluster.config().getLocalMember()));
+      logger.info(String.format("%s restarted election", state.context.cluster.config().getLocalMember()));
     }, delay, TimeUnit.MILLISECONDS);
     pollMembers();
   }
@@ -87,20 +87,20 @@ class Candidate extends BaseState {
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
     if (quorum == null) {
-      final Set<Member> pollMembers = context.cluster.members();
-      quorum = new Quorum(context.cluster.config().getQuorumSize(), (succeeded) -> {
+      final Set<Member> pollMembers = state.context.cluster.members();
+      quorum = new Quorum(state.context.cluster.config().getQuorumSize(), (succeeded) -> {
         quorum = null;
         if (succeeded) {
-          context.transition(Leader.class);
+          state.transition(Leader.class);
         } else {
-          context.transition(Follower.class);
+          state.transition(Follower.class);
         }
       });
 
       // First, load the last log entry to get its term. We load the entry
       // by its index since the index is required by the protocol.
-      final long lastIndex = context.log.lastIndex();
-      Entry lastEntry = context.log.getEntry(lastIndex);
+      final long lastIndex = state.context.log.lastIndex();
+      Entry lastEntry = state.context.log.getEntry(lastIndex);
 
       // Once we got the last log term, iterate through each current member
       // of the cluster and poll each member for a vote.
@@ -111,7 +111,7 @@ class Candidate extends BaseState {
           if (error1 != null) {
             quorum.fail();
           } else {
-            client.requestVote(new RequestVoteRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster.config().getLocalMember(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
+            client.requestVote(new RequestVoteRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.context.cluster.config().getLocalMember(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
               client.close();
               if (quorum != null) {
                 if (error2 != null || !result2.voteGranted()) {
@@ -131,16 +131,16 @@ class Candidate extends BaseState {
   public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getCurrentTerm()) {
-      context.setCurrentTerm(request.term());
-      context.setCurrentLeader(null);
-      context.setLastVotedFor(null);
-      context.transition(Follower.class);
+    if (request.term() > state.getCurrentTerm()) {
+      state.setCurrentTerm(request.term());
+      state.setCurrentLeader(null);
+      state.setLastVotedFor(null);
+      state.transition(Follower.class);
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (!request.candidate().equals(context.cluster.config().getLocalMember())) {
-      return CompletableFuture.completedFuture(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false));
+    if (!request.candidate().equals(state.context.cluster.config().getLocalMember())) {
+      return CompletableFuture.completedFuture(new RequestVoteResponse(request.id(), state.getCurrentTerm(), false));
     } else {
       return super.requestVote(request);
     }

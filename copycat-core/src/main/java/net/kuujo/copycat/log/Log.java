@@ -17,6 +17,8 @@ package net.kuujo.copycat.log;
 
 import java.util.List;
 
+import net.kuujo.copycat.EventProvider;
+
 /**
  * Replicated event log.<p>
  *
@@ -28,7 +30,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Log {
+public interface Log extends EventProvider<EntryListener> {
 
   /**
    * Opens the log.

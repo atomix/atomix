@@ -13,27 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.EventListener;
 
 /**
- * Replica state.
+ * Cluster membership event listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State extends ProtocolHandler {
+public interface MembershipListener extends EventListener {
 
   /**
-   * Initializes the state.
+   * Called when a member has been added to the cluster.
    *
-   * @param context The state context.
+   * @param event The membership event.
    */
-  void init(StateContext context);
+  void memberAdded(MembershipEvent event);
 
   /**
-   * Destroys the state.
+   * Called when a member has been removed from the cluster.
+   *
+   * @param event The membership event.
    */
-  void destroy();
+  void memberRemoved(MembershipEvent event);
 
 }

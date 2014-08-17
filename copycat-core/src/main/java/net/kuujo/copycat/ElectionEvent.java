@@ -15,25 +15,36 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.protocol.ProtocolHandler;
-
 /**
- * Replica state.
+ * Election event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State extends ProtocolHandler {
+public class ElectionEvent implements Event {
+  private final long term;
+  private final String leader;
+
+  public ElectionEvent(long term, String leader) {
+    this.term = term;
+    this.leader = leader;
+  }
 
   /**
-   * Initializes the state.
+   * Returns the election term.
    *
-   * @param context The state context.
+   * @return The election term.
    */
-  void init(StateContext context);
+  public long term() {
+    return term;
+  }
 
   /**
-   * Destroys the state.
+   * Returns the election leader (if any).
+   *
+   * @return The election leader.
    */
-  void destroy();
+  public String leader() {
+    return leader;
+  }
 
 }

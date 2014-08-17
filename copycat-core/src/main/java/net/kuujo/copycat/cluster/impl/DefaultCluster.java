@@ -35,16 +35,20 @@ import net.kuujo.copycat.cluster.Member;
  */
 public class DefaultCluster implements Cluster, Observer {
   private final CopyCatContext context;
-  private final ClusterConfig config;
+  private final ClusterConfig userConfig;
+  private final ClusterConfig internalConfig;
   private final String localMember;
   private final Map<String, Member> members = new HashMap<>();
 
-  public DefaultCluster(ClusterConfig config, CopyCatContext context) {
+  public DefaultCluster(ClusterConfig userConfig, ClusterConfig internalConfig, CopyCatContext context) {
     this.context = context;
-    this.config = config;
-    this.config.addObserver(this);
-    this.localMember = config.getLocalMember();
-    clusterChanged(this.config);
+    this.userConfig = userConfig;
+    internalConfig.setLocalMember(userConfig.getLocalMember());
+    internalConfig.setRemoteMembers(userConfig.getRemoteMembers());
+    this.internalConfig = internalConfig;
+    this.internalConfig.addObserver(this);
+    this.localMember = internalConfig.getLocalMember();
+    clusterChanged(this.internalConfig);
   }
 
   @Override
@@ -76,7 +80,7 @@ public class DefaultCluster implements Cluster, Observer {
 
   @Override
   public ClusterConfig config() {
-    return config;
+    return userConfig;
   }
 
   @Override

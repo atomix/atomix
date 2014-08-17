@@ -71,7 +71,7 @@ over a variety of wire-level protocols. It sounds complicated, but the API is ac
 quite simple. Here's a quick example.
 
 ```java
-public class KeyValueStore implements StateMachine {
+public class KeyValueStore extends StateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 
@@ -134,7 +134,7 @@ That's it! We've just created a strongly consistent, fault-tolerant key-value st
 HTTP API in less than 25 lines of code!
 
 ```java
-public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore implements StateMachine {
+public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore extends StateMachine {
 
   public static void main(String[] args) {
     // Create the local file log.
@@ -226,7 +226,7 @@ by Diego Ongaro and John Ousterhout.*
 ### State Machines
 Each node in a CopyCat cluster contains a state machine to which the node applies
 [commands](#commands) sent to the cluster. State machines are simply classes that
-implement CopyCat's `StateMachine` interface, but there are a couple of very important
+extend CopyCat's `StateMachine` class, but there are a couple of very important
 aspects to note about state machines.
 * Given the same commands in the same order, state machines should always arrive at
   the same state with the same output.
@@ -324,11 +324,11 @@ interfaces (servers) for submitting [commands](#commands) to the CopyCat cluster
 # Getting Started
 
 ### Creating a [state machine](#state-machines)
-To create a state machine in CopyCat, simply implement the `StateMachine`
-interface.
+To create a state machine in CopyCat, simply extend the `StateMachine`
+class.
 
 ```java
-public class MyStateMachine implements StateMachine {
+public class MyStateMachine extends StateMachine {
 }
 ```
 
@@ -364,7 +364,7 @@ a `READ` command never modify the machine state.*
 Let's look at an example of a command provider:
 
 ```java
-public class MyStateMachine implements StateMachine {
+public class MyStateMachine extends StateMachine {
   private final Map<String, Object> data = new HashMap<>();
 
   @Command(type = Command.Type.READ)
@@ -397,7 +397,7 @@ predetermined size (configurable in `CopyCatConfig`), CopyCat will take a snaphs
 and wipe all previous log entries.
 
 ```java
-public class MyStateMachine implements StateMachine {
+public class MyStateMachine extends StateMachine {
   @Stateful
   private Map<String, Object> data = new HashMap<>();
 }

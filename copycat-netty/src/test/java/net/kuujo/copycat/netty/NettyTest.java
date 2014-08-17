@@ -97,7 +97,7 @@ public class NettyTest {
     return instances;
   }
 
-  private static class TestStateMachine implements StateMachine {
+  private static class TestStateMachine extends StateMachine {
     @Stateful
     private final Map<String, Object> data = new HashMap<>();
 

@@ -35,7 +35,7 @@ import net.kuujo.copycat.protocol.SubmitCommandResponse;
 class None extends BaseState {
 
   @Override
-  public void init(CopyCatContext context) {
+  public void init(StateContext context) {
     // Don't call super.init() here so that server handlers won't be registered.
     context.setCurrentLeader(null);
   }

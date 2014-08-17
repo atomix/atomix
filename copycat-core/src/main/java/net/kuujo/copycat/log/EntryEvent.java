@@ -13,27 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.Event;
 
 /**
- * Replica state.
+ * Log entry event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State extends ProtocolHandler {
+public class EntryEvent implements Event {
+  private final long index;
+  private final Entry entry;
+
+  public EntryEvent(long index, Entry entry) {
+    this.index = index;
+    this.entry = entry;
+  }
 
   /**
-   * Initializes the state.
+   * Returns the entry index.
    *
-   * @param context The state context.
+   * @return The entry index.
    */
-  void init(StateContext context);
+  public long index() {
+    return index;
+  }
 
   /**
-   * Destroys the state.
+   * Returns the log entry.
+   *
+   * @return The log entry.
    */
-  void destroy();
+  public Entry entry() {
+    return entry;
+  }
 
 }
