@@ -72,9 +72,7 @@ import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
  */
 public class CopyCatContext {
   private static final Logger logger = Logger.getLogger(CopyCatContext.class.getCanonicalName());
-  private final ClusterConfig clusterConfig;
   private final Registry registry;
-  private final ClusterConfig internalConfig = new ClusterConfig();
   final Cluster cluster;
   final Log log;
   final StateMachineExecutor stateMachineExecutor;
@@ -82,7 +80,6 @@ public class CopyCatContext {
   private State state;
   private CompletableFuture<String> startFuture;
   private CopyCatConfig config;
-  private String localUri;
   private String currentLeader;
   private ProtocolClient leaderClient;
   private final List<Runnable> leaderConnectCallbacks = new ArrayList<>();
@@ -124,7 +121,6 @@ public class CopyCatContext {
     this.log = log;
     this.config = config;
     this.registry = registry;
-    this.clusterConfig = cluster;
     this.cluster = new DefaultCluster(cluster, this);
     this.stateMachine = stateMachine;
     this.stateMachineExecutor = new StateMachineExecutor(stateMachine);
@@ -147,18 +143,13 @@ public class CopyCatContext {
   }
 
   /**
-   * Returns the user-defined cluster configuration.<p>
+   * Returns the internal CopyCat cluster. Note that this cluster's configuration
+   * may differ from the configuration passed by the user.
    *
-   * Note that because of the nature of CopyCat's dynamic cluster membership
-   * support, the user-defined cluster configuration may temporarily differ
-   * from the internal CopyCat cluster configuration. This is because when
-   * the cluster configuration changes, CopyCat needs to replicate the configuration
-   * change before officially committing the change in order to ensure log consistency.
-   *
-   * @return The user-defined cluster configuration.
+   * @return The internal CopyCat cluster.
    */
-  public ClusterConfig cluster() {
-    return clusterConfig;
+  public Cluster cluster() {
+    return cluster;
   }
 
   /**
@@ -200,11 +191,6 @@ public class CopyCatContext {
   public CompletableFuture<String> start() {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
-    internalConfig.setLocalMember(clusterConfig.getLocalMember());
-    internalConfig.setRemoteMembers(clusterConfig.getRemoteMembers());
-
-    localUri = clusterConfig.getLocalMember();
-
     CompletableFuture<String> future = new CompletableFuture<>();
     transition(None.class);
     cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
@@ -248,7 +234,7 @@ public class CopyCatContext {
   void transition(Class<? extends State> type) {
     if (this.state != null && type != null && type.isAssignableFrom(this.state.getClass()))
       return;
-    logger.info(localUri + " transitioning to " + type.toString());
+    logger.info(cluster.localMember() + " transitioning to " + type.toString());
     final State oldState = state;
     try {
       state = type.newInstance();
@@ -278,7 +264,7 @@ public class CopyCatContext {
    * @return Indicates whether this node is the leader.
    */
   public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(localUri);
+    return currentLeader != null && currentLeader.equals(cluster.localMember());
   }
 
 
@@ -398,7 +384,7 @@ public class CopyCatContext {
         });
       });
     } else {
-      ProtocolHandler handler = currentLeader.equals(localUri) ? state : leaderClient;
+      ProtocolHandler handler = currentLeader.equals(cluster.localMember()) ? state : leaderClient;
       handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
         if (error != null) {
           future.completeExceptionally(error);

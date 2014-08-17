@@ -115,7 +115,7 @@ class Leader extends BaseState implements Observer {
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
-    context.cluster().addObserver(this);
+    context.cluster.config().addObserver(this);
 
     // Create a map and list of remote replicas. We create both a map and
     // list because the list is sortable, so we can use a little math
@@ -416,7 +416,7 @@ class Leader extends BaseState implements Observer {
       currentTimer.cancel(true);
     }
     // Stop observing the observable cluster configuration.
-    context.cluster().deleteObserver(this);
+    context.cluster.config().deleteObserver(this);
   }
 
   /**
@@ -509,12 +509,12 @@ class Leader extends BaseState implements Observer {
       if (logger.isLoggable(Level.FINER)) {
         if (!entries.isEmpty()) {
           if (entries.size() > 1) {
-            logger.finer(String.format("%s replicating entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
+            logger.finer(String.format("%s replicating entries %d-%d to %s", context.cluster.localMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
           } else {
-            logger.finer(String.format("%s replicating entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, member.uri()));
+            logger.finer(String.format("%s replicating entry %d to %s", context.cluster.localMember(), prevIndex+1, member.uri()));
           }
         } else {
-          logger.finer(String.format("%s committing entry %d to %s", context.cluster().getLocalMember(), commitIndex, member.uri()));
+          logger.finer(String.format("%s committing entry %d to %s", context.cluster.localMember(), commitIndex, member.uri()));
         }
       }
 
@@ -530,12 +530,12 @@ class Leader extends BaseState implements Observer {
               if (logger.isLoggable(Level.FINER)) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.finer(String.format("%s successfully replicated entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
+                    logger.finer(String.format("%s successfully replicated entries %d-%d to %s", context.cluster.localMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
                   } else {
-                    logger.finer(String.format("%s successfully replicated entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, member.uri()));
+                    logger.finer(String.format("%s successfully replicated entry %d to %s", context.cluster.localMember(), prevIndex+1, member.uri()));
                   }
                 } else {
-                  logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster().getLocalMember(), commitIndex, member.uri()));
+                  logger.finer(String.format("%s successfully committed entry %d to %s", context.cluster.localMember(), commitIndex, member.uri()));
                 }
               }
 
@@ -552,12 +552,12 @@ class Leader extends BaseState implements Observer {
               if (logger.isLoggable(Level.FINER)) {
                 if (!entries.isEmpty()) {
                   if (entries.size() > 1) {
-                    logger.finer(String.format("%s failed to replicate entries %d-%d to %s", context.cluster().getLocalMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
+                    logger.finer(String.format("%s failed to replicate entries %d-%d to %s", context.cluster.localMember(), prevIndex+1, prevIndex+entries.size(), member.uri()));
                   } else {
-                    logger.finer(String.format("%s failed to replicate entry %d to %s", context.cluster().getLocalMember(), prevIndex+1, member.uri()));
+                    logger.finer(String.format("%s failed to replicate entry %d to %s", context.cluster.localMember(), prevIndex+1, member.uri()));
                   }
                 } else {
-                  logger.finer(String.format("%s failed to commit entry %d to %s", context.cluster().getLocalMember(), commitIndex, member.uri()));
+                  logger.finer(String.format("%s failed to commit entry %d to %s", context.cluster.localMember(), commitIndex, member.uri()));
                 }
               }
 
