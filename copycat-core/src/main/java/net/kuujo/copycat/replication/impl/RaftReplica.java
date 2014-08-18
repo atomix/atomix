@@ -45,7 +45,7 @@ public class RaftReplica implements Replica {
   private final RaftStateContext state;
   private final Log log;
   private volatile long nextIndex;
-  private volatile long matchIndex;
+  private volatile long matchIndex = 1;
   private volatile long nextSendIndex;
   private volatile long nextMatchIndex;
   private volatile boolean open;
@@ -57,6 +57,8 @@ public class RaftReplica implements Replica {
     this.member = member;
     this.state = state;
     this.log = state.context().log();
+    this.nextIndex = log.lastIndex();
+    this.nextSendIndex = nextIndex;
   }
 
   @Override
