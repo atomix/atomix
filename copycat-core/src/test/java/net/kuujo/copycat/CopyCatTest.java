@@ -27,58 +27,19 @@ import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 
 import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * CopyCat test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopyCatTest {
-
-  @Test
-  public void testCopyCat() throws Exception {
-    new RunnableTest() {
-      @Override
-      public void run() throws Exception {
-        Set<CopyCatContext> contexts = startCluster(3);
-        final CopyCatContext context = contexts.iterator().next();
-        context.submitCommand("set", "foo", "bar").thenRun(() -> {
-          context.submitCommand("get", "foo").whenComplete((result, error) -> {
-            Assert.assertNull(error);
-            Assert.assertEquals("bar", result);
-            testComplete();
-          });
-        });
-      }
-    }.start();
-  }
-
-  @Test
-  public void testSubmitManyCommands() throws Exception {
-    new RunnableTest() {
-      @Override
-      public void run() throws Exception {
-        Set<CopyCatContext> contexts = startCluster(3);
-        submitCommands(contexts.iterator().next(), 0, 100000, this::testComplete);
-      }
-    }.start();
-  }
-
-  private void submitCommands(CopyCatContext context, int count, int total, Runnable complete) {
-    if (count == total) {
-      complete.run();
-    } else {
-      context.submitCommand("set", "foo", "bar").thenRun(() -> submitCommands(context, count+1, total, complete));
-    }
-  }
+class CopyCatTest {
 
   /**
-   * Starts a cluster of uniquely named CopyCat contexts.
+   * Starts a cluster of contexts.
    */
-  private Set<CopyCatContext> startCluster(int numInstances) throws InterruptedException {
-    final CountDownLatch latch = new CountDownLatch(3);
-    Set<CopyCatContext> contexts = createCluster(3);
+  protected void startCluster(Set<CopyCatContext> contexts) throws InterruptedException {
+    final CountDownLatch latch = new CountDownLatch(contexts.size());
     for (CopyCatContext context : contexts) {
       context.start().whenComplete((result, error) -> {
         Assert.assertNull(error);
@@ -86,13 +47,21 @@ public class CopyCatTest {
       });
     }
     latch.await(10, TimeUnit.SECONDS);
+  }
+
+  /**
+   * Starts a cluster of uniquely named CopyCat contexts.
+   */
+  protected Set<CopyCatContext> startCluster(int numInstances) throws InterruptedException {
+    Set<CopyCatContext> contexts = createCluster(numInstances);
+    startCluster(contexts);
     return contexts;
   }
 
   /**
    * Creates a cluster of uniquely named CopyCat contexts.
    */
-  private Set<CopyCatContext> createCluster(int numInstances) {
+  protected Set<CopyCatContext> createCluster(int numInstances) {
     Registry registry = new ConcurrentRegistry();
     Set<CopyCatContext> instances = new HashSet<>();
     for (int i = 1; i <= numInstances; i++) {
@@ -108,7 +77,7 @@ public class CopyCatTest {
     return instances;
   }
 
-  private static class TestStateMachine extends StateMachine {
+  protected static class TestStateMachine extends StateMachine {
     @Stateful
     private final Map<String, Object> data = new HashMap<>();
 
@@ -137,16 +106,16 @@ public class CopyCatTest {
   /**
    * Runnable test.
    */
-  private static abstract class RunnableTest {
+  protected static abstract class RunnableTest {
     private final CountDownLatch latch = new CountDownLatch(1);;
     private final long timeout;
     private final TimeUnit unit;
 
-    private RunnableTest() {
+    protected RunnableTest() {
       this(30, TimeUnit.SECONDS);
     }
 
-    private RunnableTest(long timeout, TimeUnit unit) {
+    protected RunnableTest(long timeout, TimeUnit unit) {
       this.timeout = timeout;
       this.unit = unit;
     }
