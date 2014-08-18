@@ -62,14 +62,6 @@ public class Leader extends RaftState implements Observer {
       .withReadQuorum(state.context().config().getReadQuorumSize())
       .withWriteQuorum(state.context().config().getWriteQuorumSize());
 
-    // Set the current leader as this replica.
-    state.setCurrentLeader(state.cluster().getLocalMember());
-
-    // Set a timer that will be used to periodically synchronize with other nodes
-    // in the cluster. This timer acts as a heartbeat to ensure this node remains
-    // the leader.
-    setPingTimer();
-
     // When the leader is first elected, it needs to commit any pending commands
     // in its log to the state machine and then commit a snapshot to its log.
     // This methodology differs slightly from the standard Raft algorithm. Instead
@@ -124,6 +116,14 @@ public class Leader extends RaftState implements Observer {
     // This will ultimately cause a cluster change event and cause the cluster configuration
     // to be applied to the log and replicated.
     state.cluster().setRemoteMembers(state.context().cluster().config().getRemoteMembers());
+
+    // Set the current leader as this replica.
+    state.setCurrentLeader(state.cluster().getLocalMember());
+
+    // Set a timer that will be used to periodically synchronize with other nodes
+    // in the cluster. This timer acts as a heartbeat to ensure this node remains
+    // the leader.
+    setPingTimer();
   }
 
   @Override
