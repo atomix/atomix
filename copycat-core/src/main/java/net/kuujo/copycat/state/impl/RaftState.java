@@ -56,7 +56,6 @@ abstract class RaftState implements State<RaftStateContext> {
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private static final int SNAPSHOT_ENTRY_SIZE = 4096;
   protected RaftStateContext state;
-  private final AtomicBoolean snapshotting = new AtomicBoolean();
   private final Executor executor = Executors.newSingleThreadExecutor();
   private final AtomicBoolean transition = new AtomicBoolean();
 
@@ -336,15 +335,13 @@ abstract class RaftState implements State<RaftStateContext> {
     // background in order to allow new entries to continue being appended
     // to the log. The snapshot is stored as a log entry in order to simplify
     // replication of snapshots if the node becomes the leader.
-    if (state.context().log().size() > state.context().config().getMaxLogSize() && !snapshotting.compareAndSet(false, true)) {
-      return CompletableFuture.runAsync(() -> {
-        synchronized (state.context().log()) {
-          final long lastApplied = state.getLastApplied();
-          state.context().log().removeBefore(lastApplied);
-          state.context().log().prependEntries(createSnapshot());
-        }
-        snapshotting.set(false);
-      }, executor);
+    synchronized (state.context().log()) {
+      final long lastApplied = state.getLastApplied();
+      Entries<SnapshotEntry> entries = createSnapshot();
+      if (lastApplied - entries.size() > 0) {
+        state.context().log().removeBefore(lastApplied);
+        state.context().log().prependEntries(entries);
+      }
     }
     return CompletableFuture.completedFuture(null);
   }

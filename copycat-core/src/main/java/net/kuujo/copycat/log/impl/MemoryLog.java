@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -174,24 +173,12 @@ public class MemoryLog implements Log {
 
   @Override
   public synchronized void removeBefore(long index) {
-    try {
-      long firstKey;
-      while ((firstKey = log.firstKey()) < index) {
-        log.remove(firstKey);
-      }
-    } catch (NoSuchElementException e) {
-    }
+    log.headMap(index, false).clear();
   }
 
   @Override
   public synchronized void removeAfter(long index) {
-    try {
-      long lastKey;
-      while ((lastKey = log.lastKey()) > index) {
-        log.remove(lastKey);
-      }
-    } catch (NoSuchElementException e) {
-    }
+    log.tailMap(index, false).clear();
   }
 
   @Override

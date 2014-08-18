@@ -191,7 +191,7 @@ public class RaftReplica implements Replica {
 
     member.protocol().client().appendEntries(request).whenComplete((response, error) -> {
       if (error != null) {
-        triggerCommitFutures(prevIndex+1, prevIndex+entries.size());
+        triggerCommitFutures(prevIndex+1, prevIndex+entries.size(), error);
       } else {
         if (response.status().equals(Response.Status.OK)) {
           if (response.succeeded()) {
@@ -214,11 +214,9 @@ public class RaftReplica implements Replica {
               // sending a commit index or if we didn't have any log entries
               // to replicate then decrement the next index. The node we were
               // attempting to sync is not up to date.
-              if (!entries.isEmpty() || prevIndex == commitIndex) {
-                nextIndex--;
-                nextSendIndex = nextIndex;
-                doCommit();
-              }
+              nextIndex--;
+              nextSendIndex = nextIndex;
+              doCommit();
             }
           }
         } else {
