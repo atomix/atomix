@@ -1,19 +1,4 @@
-/*
- * Copyright 2014 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package net.kuujo.copycat;
+package net.kuujo.copycat.state.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,23 +9,30 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Logger;
 
+import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.election.ElectionContext;
+import net.kuujo.copycat.election.impl.RaftElectionContext;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.StateListener;
 
 /**
- * State context.
+ * Raft state context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateContext implements EventProvider<StateListener> {
+public class RaftStateContext implements StateContext {
   private static final Logger logger = Logger.getLogger(StateContext.class.getCanonicalName());
   private final Set<StateListener> listeners = new HashSet<>();
-  final CopyCatContext context;
-  final ClusterConfig cluster = new ClusterConfig();
-  private volatile State currentState;
+  private final CopyCatContext context;
+  private final ClusterConfig cluster = new ClusterConfig();
+  private final RaftElectionContext election = new RaftElectionContext();
+  private volatile RaftState currentState;
   private volatile String currentLeader;
   private ProtocolClient leaderClient;
   private final List<Runnable> leaderConnectCallbacks = new ArrayList<>();
@@ -50,7 +42,7 @@ public class StateContext implements EventProvider<StateListener> {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  StateContext(CopyCatContext context) {
+  public RaftStateContext(CopyCatContext context) {
     this.context = context;
   }
 
@@ -64,30 +56,67 @@ public class StateContext implements EventProvider<StateListener> {
     listeners.remove(listener);
   }
 
-  /**
-   * Returns a boolean indicating whether this node is the leader.
-   *
-   * @return Indicates whether this node is the leader.
-   */
+  @Override
+  public CopyCatContext context() {
+    return context;
+  }
+
+  @Override
+  public ClusterConfig cluster() {
+    return cluster;
+  }
+
+  @Override
+  public ElectionContext election() {
+    return election;
+  }
+
+  @Override
   public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(context.cluster.localMember());
+    return currentLeader != null && currentLeader.equals(context.cluster().localMember());
   }
 
   /**
-   * Transitions the context to a new state.
-   *
-   * @param type The state to which to transition.
+   * Starts the context.
    */
-  synchronized void transition(Class<? extends State> type) {
+  public CompletableFuture<Void> start() {
+    // Set the local the remote internal cluster members at startup. This may
+    // be overwritten by the logs once the replica has been started.
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    transition(None.class);
+    context.cluster().localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
+      if (error != null) {
+        future.completeExceptionally(error);
+      } else {
+        transition(Follower.class);
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Stops the context.
+   */
+  public CompletableFuture<Void> stop() {
+    return context.cluster().localMember().protocol().server().stop().thenRunAsync(() -> {
+      context.log().close();
+      transition(None.class);
+    });
+  }
+
+  /**
+   * Transitions to a new state.
+   */
+  public synchronized void transition(Class<? extends RaftState> type) {
     if (currentState == null) {
-      cluster.setLocalMember(context.cluster.config().getLocalMember());
-      cluster.setRemoteMembers(context.cluster.config().getRemoteMembers());
+      cluster.setLocalMember(context.cluster().config().getLocalMember());
+      cluster.setRemoteMembers(context.cluster().config().getRemoteMembers());
     } else if (type != null && type.isAssignableFrom(currentState.getClass())) {
       return;
     }
 
-    logger.info(context.cluster.localMember() + " transitioning to " + type.toString());
-    final State oldState = currentState;
+    logger.info(context.cluster().localMember() + " transitioning to " + type.toString());
+    final RaftState oldState = currentState;
     try {
       currentState = type.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
@@ -101,17 +130,22 @@ public class StateContext implements EventProvider<StateListener> {
     }
   }
 
-
-  String getCurrentLeader() {
+  /**
+   * Returns the current leader.
+   */
+  public String getCurrentLeader() {
     return currentLeader;
   }
 
-  StateContext setCurrentLeader(String leader) {
+  /**
+   * Sets the current leader.
+   */
+  public RaftStateContext setCurrentLeader(String leader) {
     if (currentLeader == null || !currentLeader.equals(leader)) {
       logger.finer(String.format("Current cluster leader changed: %s", leader));
     }
     currentLeader = leader;
-    context.election.setLeaderAndTerm(currentTerm, currentLeader);
+    election.setLeaderAndTerm(currentTerm, currentLeader);
 
     // When a new leader is elected, we create a client and connect to the leader.
     // Once this node is connected to the leader we can begin submitting commands.
@@ -120,7 +154,7 @@ public class StateContext implements EventProvider<StateListener> {
       leaderClient = null;
     } else if (!isLeader()) {
       leaderConnected = false;
-      leaderClient = context.cluster.member(currentLeader).protocol().client();
+      leaderClient = context.cluster().member(currentLeader).protocol().client();
       leaderClient.connect().thenRun(() -> {
         leaderConnected = true;
         runLeaderConnectCallbacks();
@@ -144,11 +178,17 @@ public class StateContext implements EventProvider<StateListener> {
     }
   }
 
-  long getCurrentTerm() {
+  /**
+   * Returns the current term.
+   */
+  public long getCurrentTerm() {
     return currentTerm;
   }
 
-  StateContext setCurrentTerm(long term) {
+  /**
+   * Sets the current term.
+   */
+  public RaftStateContext setCurrentTerm(long term) {
     if (term > currentTerm) {
       currentTerm = term;
       logger.finer(String.format("Updated current term %d", term));
@@ -157,11 +197,17 @@ public class StateContext implements EventProvider<StateListener> {
     return this;
   }
 
-  String getLastVotedFor() {
+  /**
+   * Returns the candidate last voted for.
+   */
+  public String getLastVotedFor() {
     return lastVotedFor;
   }
 
-  StateContext setLastVotedFor(String candidate) {
+  /**
+   * Sets the candidate last voted for.
+   */
+  public RaftStateContext setLastVotedFor(String candidate) {
     if (lastVotedFor == null || !lastVotedFor.equals(candidate)) {
       logger.finer(String.format("Voted for %s", candidate));
     }
@@ -169,26 +215,41 @@ public class StateContext implements EventProvider<StateListener> {
     return this;
   }
 
-  long getCommitIndex() {
+  /**
+   * Returns the commit index.
+   */
+  public long getCommitIndex() {
     return commitIndex;
   }
 
-  StateContext setCommitIndex(long index) {
+  /**
+   * Sets the commit index.
+   */
+  public RaftStateContext setCommitIndex(long index) {
     commitIndex = Math.max(commitIndex, index);
     return this;
   }
 
-  long getLastApplied() {
+  /**
+   * Returns the last applied index.
+   */
+  public long getLastApplied() {
     return lastApplied;
   }
 
-  StateContext setLastApplied(long index) {
+  /**
+   * Sets the last applied index.
+   */
+  public RaftStateContext setLastApplied(long index) {
     lastApplied = index;
     return this;
   }
 
-  Object nextCorrelationId() {
-    return context.config.getCorrelationStrategy().nextCorrelationId(context);
+  /**
+   * Returns the next correlation ID from the correlation ID generator.
+   */
+  public Object nextCorrelationId() {
+    return context.config().getCorrelationStrategy().nextCorrelationId(context);
   }
 
   /**
@@ -218,7 +279,7 @@ public class StateContext implements EventProvider<StateListener> {
         });
       });
     } else {
-      ProtocolHandler handler = context.election.currentLeader().equals(context.cluster.localMember()) ? currentState : leaderClient;
+      ProtocolHandler handler = context.election().currentLeader().equals(context.cluster().localMember()) ? currentState : leaderClient;
       handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
         if (error != null) {
           future.completeExceptionally(error);
@@ -233,5 +294,6 @@ public class StateContext implements EventProvider<StateListener> {
     }
     return future;
   }
+
 
 }

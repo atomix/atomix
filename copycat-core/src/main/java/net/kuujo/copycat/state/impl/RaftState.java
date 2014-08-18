@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.state.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,24 +45,25 @@ import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.serializer.SerializationException;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
+import net.kuujo.copycat.state.State;
 
 /**
  * Base replica state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class BaseState implements State {
+abstract class RaftState implements State<RaftStateContext> {
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private static final int SNAPSHOT_ENTRY_SIZE = 4096;
-  protected StateContext state;
+  protected RaftStateContext state;
   private final AtomicBoolean snapshotting = new AtomicBoolean();
   private final Executor executor = Executors.newSingleThreadExecutor();
   private final AtomicBoolean transition = new AtomicBoolean();
 
   @Override
-  public void init(StateContext context) {
+  public void init(RaftStateContext context) {
     this.state = context;
-    context.context.cluster.localMember().protocol().server().protocolHandler(this);
+    state.context().cluster().localMember().protocol().server().protocolHandler(this);
   }
 
   @Override
@@ -112,7 +113,7 @@ abstract class BaseState implements State {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    Entry entry = state.context.log.getEntry(request.prevLogIndex());
+    Entry entry = state.context().log().getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
       return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false);
     } else {
@@ -126,11 +127,11 @@ abstract class BaseState implements State {
   private AppendEntriesResponse doAppendEntries(AppendEntriesRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
-    if (state.context.log.lastIndex() > request.prevLogIndex()) {
-      state.context.log.removeAfter(request.prevLogIndex());
+    if (state.context().log().lastIndex() > request.prevLogIndex()) {
+      state.context().log().removeAfter(request.prevLogIndex());
     }
     // Once the log has been cleaned, append all request entries to the log.
-    state.context.log.appendEntries(request.entries());
+    state.context().log().appendEntries(request.entries());
     return doApplyCommits(request);
   }
 
@@ -146,7 +147,7 @@ abstract class BaseState implements State {
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (request.commitIndex() > state.getCommitIndex() || state.getCommitIndex() > state.getLastApplied()) {
       // Update the local commit index with min(request commit, last log // index)
-      long lastIndex = state.context.log.lastIndex();
+      long lastIndex = state.context().log().lastIndex();
       state.setCommitIndex(Math.min(Math.max(request.commitIndex(), state.getCommitIndex()), lastIndex));
 
       // If the updated commit index indicates that commits remain to be
@@ -172,7 +173,7 @@ abstract class BaseState implements State {
    * @param index The index of the entry to apply.
    */
   protected void applyEntry(long index) {
-    applyEntry(index, state.context.log.getEntry(index));
+    applyEntry(index, state.context().log().getEntry(index));
   }
 
   /**
@@ -218,7 +219,7 @@ abstract class BaseState implements State {
    */
   protected void applyCommand(long index, CommandEntry entry) {
     try {
-      state.context.stateMachine.applyCommand(entry.command(), entry.args());
+      state.context().stateMachine().applyCommand(entry.command(), entry.args());
     } catch (Exception e) {
     } finally {
       state.setLastApplied(index);
@@ -234,8 +235,8 @@ abstract class BaseState implements State {
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
       Set<String> members = ((ConfigurationEntry) entry).members();
-      members.remove(state.cluster.getLocalMember());
-      state.cluster.setRemoteMembers(members);
+      members.remove(state.cluster().getLocalMember());
+      state.cluster().setRemoteMembers(members);
     } catch (Exception e) {
     } finally {
       state.setLastApplied(index);
@@ -256,9 +257,9 @@ abstract class BaseState implements State {
       List<SnapshotChunkEntry> chunks = new ArrayList<>();
       SnapshotStartEntry start = null;
       long i = index;
-      while (start == null && i > state.context.log.firstIndex()) {
+      while (start == null && i > state.context().log().firstIndex()) {
         i--;
-        Entry previous = state.context.log.getEntry(i);
+        Entry previous = state.context().log().getEntry(i);
         if (previous == null) {
           break;
         } else if (previous instanceof SnapshotChunkEntry) {
@@ -298,8 +299,8 @@ abstract class BaseState implements State {
         .withChunks(entries.subList(1, entries.size() - 1, SnapshotChunkEntry.class))
         .withEnd(entries.get(entries.size() - 1, SnapshotEndEntry.class))
         .combine();
-      state.context.stateMachine.installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
-      state.context.log.removeBefore(lastIndex - entries.size() + 1);
+      state.context().stateMachine().installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
+      state.context().log().removeBefore(lastIndex - entries.size() + 1);
     } catch (LogException | SerializationException e) {
     } finally {
       state.setLastApplied(lastIndex);
@@ -313,9 +314,9 @@ abstract class BaseState implements State {
    */
   protected Entries<SnapshotEntry> createSnapshot() {
     Entries<SnapshotEntry> entries = new ArrayListEntries<>();
-    Map<String, Object> snapshot = state.context.stateMachine.takeSnapshot();
+    Map<String, Object> snapshot = state.context().stateMachine().takeSnapshot();
     long term = state.getCurrentTerm();
-    entries.add(new SnapshotStartEntry(state.getCurrentTerm(), state.cluster.getMembers()));
+    entries.add(new SnapshotStartEntry(state.getCurrentTerm(), state.cluster().getMembers()));
     byte[] snapshotBytes = serializer.writeValue(snapshot);
     for (int i = 0; i < snapshotBytes.length; i += SNAPSHOT_ENTRY_SIZE) {
       final int bytesLength = snapshotBytes.length - i > SNAPSHOT_ENTRY_SIZE ? SNAPSHOT_ENTRY_SIZE : snapshotBytes.length - i;
@@ -337,12 +338,12 @@ abstract class BaseState implements State {
     // background in order to allow new entries to continue being appended
     // to the log. The snapshot is stored as a log entry in order to simplify
     // replication of snapshots if the node becomes the leader.
-    if (state.context.log.size() > state.context.config().getMaxLogSize() && !snapshotting.compareAndSet(false, true)) {
+    if (state.context().log().size() > state.context().config().getMaxLogSize() && !snapshotting.compareAndSet(false, true)) {
       return CompletableFuture.runAsync(() -> {
-        synchronized (state.context.log) {
+        synchronized (state.context().log()) {
           final long lastApplied = state.getLastApplied();
-          state.context.log.removeBefore(lastApplied);
-          state.context.log.prependEntries(createSnapshot());
+          state.context().log().removeBefore(lastApplied);
+          state.context().log().prependEntries(createSnapshot());
         }
         snapshotting.set(false);
       }, executor);
@@ -378,26 +379,26 @@ abstract class BaseState implements State {
     // If the requesting candidate is ourself then always vote for ourself. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate().equals(state.cluster.getLocalMember())) {
-      state.setLastVotedFor(state.cluster.getLocalMember());
+    else if (request.candidate().equals(state.cluster().getLocalMember())) {
+      state.setLastVotedFor(state.cluster().getLocalMember());
       return new RequestVoteResponse(request.id(), state.getCurrentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!state.cluster.getMembers().contains(request.candidate())) {
+    else if (!state.cluster().getMembers().contains(request.candidate())) {
       return new RequestVoteResponse(request.id(), state.getCurrentTerm(), false);
     }
     // If we've already voted for someone else then don't vote again.
     else if (state.getLastVotedFor() == null || state.getLastVotedFor().equals(request.candidate())) {
       // If the log is empty then vote for the candidate.
-      if (state.context.log.isEmpty()) {
+      if (state.context().log().isEmpty()) {
         state.setLastVotedFor(request.candidate());
         return new RequestVoteResponse(request.id(), state.getCurrentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
-        long lastIndex = state.context.log.lastIndex();
-        Entry entry = state.context.log.getEntry(lastIndex);
+        long lastIndex = state.context().log().lastIndex();
+        Entry entry = state.context().log().getEntry(lastIndex);
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           state.setLastVotedFor(request.candidate());
@@ -421,7 +422,7 @@ abstract class BaseState implements State {
 
   @Override
   public void destroy() {
-    state.context.cluster.localMember().protocol().server().protocolHandler(null);
+    state.context().cluster().localMember().protocol().server().protocolHandler(null);
   }
 
 }

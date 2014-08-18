@@ -165,6 +165,7 @@ public class FileLog implements Log {
 
   @Override
   public synchronized long appendEntry(Entry entry) {
+    if (entry == null) throw new NullPointerException();
     long index = lastIndex+1;
     try {
       String bytes = new StringBuilder()

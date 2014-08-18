@@ -13,43 +13,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.election.impl;
 
 import java.util.HashSet;
 import java.util.Set;
 
+import net.kuujo.copycat.election.ElectionContext;
+import net.kuujo.copycat.election.ElectionEvent;
+import net.kuujo.copycat.election.ElectionListener;
+
 /**
- * Cluster election context.
+ * Raft election context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ElectionContext implements EventProvider<ElectionListener> {
+public class RaftElectionContext implements ElectionContext {
   private final Set<ElectionListener> listeners = new HashSet<>();
   private String currentLeader;
   private long currentTerm;
 
-  ElectionContext(CopyCatContext context) {
+  public RaftElectionContext() {
   }
 
-  /**
-   * Returns the current term.
-   *
-   * @return The current term.
-   */
+  @Override
   public long currentTerm() {
     return currentTerm;
   }
 
-  /**
-   * Returns the current leader.
-   *
-   * @return The current leader.
-   */
+  @Override
   public String currentLeader() {
     return currentLeader;
   }
 
-  void setLeaderAndTerm(long term, String leader) {
+  /**
+   * Sets the election leader and term.
+   */
+  public void setLeaderAndTerm(long term, String leader) {
     if (leader != null && (currentLeader == null || !currentLeader.equals(leader))) {
       this.currentTerm = term;
       this.currentLeader = leader;
@@ -70,7 +69,10 @@ public class ElectionContext implements EventProvider<ElectionListener> {
     listeners.remove(listener);
   }
 
-  void triggerLeaderElected(long term, String leader) {
+  /**
+   * Triggers a leader elected event.
+   */
+  private void triggerLeaderElected(long term, String leader) {
     if (!listeners.isEmpty()) {
       ElectionEvent event = new ElectionEvent(term, leader);
       for (ElectionListener listener : listeners) {

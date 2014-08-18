@@ -44,4 +44,21 @@ public class DefaultMember implements Member {
     return protocol;
   }
 
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Member && ((Member) object).uri().equals(uri);
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + uri.hashCode();
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    return uri;
+  }
+
 }

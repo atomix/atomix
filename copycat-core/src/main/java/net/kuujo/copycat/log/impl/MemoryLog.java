@@ -78,6 +78,7 @@ public class MemoryLog implements Log {
 
   @Override
   public synchronized long appendEntry(Entry entry) {
+    if (entry == null) throw new NullPointerException();
     long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
     log.put(index, entry);
     triggerAddEvent(index, entry);

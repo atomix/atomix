@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.state.impl;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -32,10 +32,10 @@ import net.kuujo.copycat.protocol.SubmitCommandResponse;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class None extends BaseState {
+public class None extends RaftState {
 
   @Override
-  public void init(StateContext context) {
+  public void init(RaftStateContext context) {
     // Don't call super.init() here so that server handlers won't be registered.
     context.setCurrentLeader(null);
   }

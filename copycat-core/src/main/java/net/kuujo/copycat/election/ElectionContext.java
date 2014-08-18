@@ -13,20 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.election;
+
+import net.kuujo.copycat.EventProvider;
 
 /**
- * State change event listener.
+ * Container for election information.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateListener extends EventListener {
+public interface ElectionContext extends EventProvider<ElectionListener> {
 
   /**
-   * Called when a state change has occurred.
+   * Returns the current term.
    *
-   * @param event The state change event.
+   * @return The current term.
    */
-  void stateChanged(StateEvent event);
+  long currentTerm();
+
+  /**
+   * Returns the current leader.
+   *
+   * @return The current leader.
+   */
+  String currentLeader();
 
 }

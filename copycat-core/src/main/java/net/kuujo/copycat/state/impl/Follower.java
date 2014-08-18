@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.state.impl;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
@@ -36,13 +36,13 @@ import net.kuujo.copycat.protocol.RequestVoteResponse;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class Follower extends BaseState {
+public class Follower extends RaftState {
   private static final Logger logger = Logger.getLogger(Follower.class.getCanonicalName());
   private ScheduledFuture<Void> currentTimer;
   private boolean shutdown = true;
 
   @Override
-  public synchronized void init(StateContext context) {
+  public synchronized void init(RaftStateContext context) {
     shutdown = false;
     super.init(context);
     resetTimer();
@@ -64,9 +64,9 @@ class Follower extends BaseState {
       // Set the election timeout in a semi-random fashion with the random range
       // being somewhere between .75 * election timeout and 1.25 * election
       // timeout.
-      long delay = state.context.config().getElectionTimeout() - (state.context.config().getElectionTimeout() / 4)
-          + (Math.round(Math.random() * (state.context.config().getElectionTimeout() / 2)));
-      currentTimer = state.context.config().getTimerStrategy().schedule(() -> {
+      long delay = state.context().config().getElectionTimeout() - (state.context().config().getElectionTimeout() / 4)
+          + (Math.round(Math.random() * (state.context().config().getElectionTimeout() / 2)));
+      currentTimer = state.context().config().getTimerStrategy().schedule(() -> {
         // If the node has not yet voted for anyone then transition to
         // candidate and start a new election.
         currentTimer = null;

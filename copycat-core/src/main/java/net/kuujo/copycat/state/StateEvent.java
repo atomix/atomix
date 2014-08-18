@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.state;
 
 /**
  * State change event.
@@ -21,9 +21,9 @@ package net.kuujo.copycat;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateEvent {
-  private final State state;
+  private final State<?> state;
 
-  public StateEvent(State state) {
+  public StateEvent(State<?> state) {
     this.state = state;
   }
 
@@ -32,7 +32,7 @@ public class StateEvent {
    *
    * @return The copycat state.
    */
-  public State state() {
+  public State<?> state() {
     return state;
   }
 

@@ -54,6 +54,25 @@ public class CopyCatTest {
     }.start();
   }
 
+  @Test
+  public void testSubmitManyCommands() throws Exception {
+    new RunnableTest() {
+      @Override
+      public void run() throws Exception {
+        Set<CopyCatContext> contexts = startCluster(3);
+        submitCommands(contexts.iterator().next(), 0, 100000, this::testComplete);
+      }
+    }.start();
+  }
+
+  private void submitCommands(CopyCatContext context, int count, int total, Runnable complete) {
+    if (count == total) {
+      complete.run();
+    } else {
+      context.submitCommand("set", "foo", "bar").thenRun(() -> submitCommands(context, count+1, total, complete));
+    }
+  }
+
   /**
    * Starts a cluster of uniquely named CopyCat contexts.
    */

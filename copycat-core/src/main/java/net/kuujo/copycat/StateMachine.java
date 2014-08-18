@@ -156,7 +156,7 @@ public class StateMachine implements EventProvider<StateMachineListener> {
    * @param name The name of the command for which to return info.
    * @return The command info.
    */
-  Command getCommand(String name) {
+  public Command getCommand(String name) {
     CommandHolder command = commands.get(name);
     return command != null ? command.info : null;
   }
@@ -166,7 +166,7 @@ public class StateMachine implements EventProvider<StateMachineListener> {
    *
    * @return The state machine snapshot.
    */
-  Map<String, Object> takeSnapshot() {
+  public Map<String, Object> takeSnapshot() {
     Map<String, Object> snapshot = new HashMap<>();
     for (Map.Entry<String, Field> entry : stateFields.entrySet()) {
       entry.getValue().setAccessible(true);
@@ -185,7 +185,7 @@ public class StateMachine implements EventProvider<StateMachineListener> {
    *
    * @param snapshot The snapshot to install.
    */
-  void installSnapshot(Map<String, Object> snapshot) {
+  public void installSnapshot(Map<String, Object> snapshot) {
     for (String key : snapshot.keySet()) {
       Field field = stateFields.get(key);
       if (field != null) {
@@ -207,7 +207,7 @@ public class StateMachine implements EventProvider<StateMachineListener> {
    * @param args The command arguments.
    * @return The command return value.
    */
-  Object applyCommand(String name, List<Object> args) {
+  public Object applyCommand(String name, List<Object> args) {
     CommandHolder command = commands.get(name);
     if (command != null) {
       Object result = command.call(args);

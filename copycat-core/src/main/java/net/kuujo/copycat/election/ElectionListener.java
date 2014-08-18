@@ -13,38 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.election;
+
+import net.kuujo.copycat.EventListener;
 
 /**
- * Election event.
+ * Election event listener.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ElectionEvent implements Event {
-  private final long term;
-  private final String leader;
-
-  public ElectionEvent(long term, String leader) {
-    this.term = term;
-    this.leader = leader;
-  }
+public interface ElectionListener extends EventListener {
 
   /**
-   * Returns the election term.
+   * Called when a leader has been elected.
    *
-   * @return The election term.
+   * @param event The leader election event.
    */
-  public long term() {
-    return term;
-  }
-
-  /**
-   * Returns the election leader (if any).
-   *
-   * @return The election leader.
-   */
-  public String leader() {
-    return leader;
-  }
+  void leaderElected(ElectionEvent event);
 
 }

@@ -98,4 +98,11 @@ public class DefaultCluster implements Cluster, Observer {
     return members.get(uri);
   }
 
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + members.hashCode();
+    return hashCode;
+  }
+
 }

@@ -20,10 +20,13 @@ import java.util.concurrent.CompletableFuture;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.DefaultCluster;
+import net.kuujo.copycat.election.ElectionContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.MemoryLog;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
+import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.impl.RaftStateContext;
 
 /**
  * CopyCat replica context.<p>
@@ -61,25 +64,13 @@ import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopyCatContext {
-  final Registry registry;
-  final Cluster cluster;
-  final Log log;
-  final StateMachine stateMachine;
-  final ElectionContext election;
-  final StateContext state;
-  final CopyCatConfig config;
-  private CompletableFuture<String> startFuture;
-
-  private final ElectionListener electionListener = new ElectionListener() {
-    @Override
-    public void leaderElected(ElectionEvent event) {
-      if (startFuture != null) {
-        startFuture.complete(event.leader());
-        startFuture = null;
-        election.removeListener(this);
-      }
-    }
-  };
+  private final Registry registry;
+  private final Cluster cluster;
+  private final Log log;
+  private final StateMachine stateMachine;
+  private final ElectionContext election;
+  private final RaftStateContext state;
+  private final CopyCatConfig config;
 
   public CopyCatContext(StateMachine stateMachine) {
     this(stateMachine, new MemoryLog(), new ClusterConfig(), new CopyCatConfig());
@@ -113,17 +104,10 @@ public class CopyCatContext {
     this.log = log;
     this.config = config;
     this.registry = registry;
-    this.state = new StateContext(this);
-    this.cluster = new DefaultCluster(cluster, state.cluster, this);
+    this.state = new RaftStateContext(this);
+    this.cluster = new DefaultCluster(cluster, state.cluster(), this);
     this.stateMachine = stateMachine;
-    this.election = new ElectionContext(this);
-  }
-
-  /**
-   * Kills the copycat instance.
-   */
-  void kill() {
-    state.transition(None.class);
+    this.election = this.state.election();
   }
 
   /**
@@ -199,21 +183,8 @@ public class CopyCatContext {
    *
    * @return A completable future to be completed once the context has started.
    */
-  public CompletableFuture<String> start() {
-    // Set the local the remote internal cluster members at startup. This may
-    // be overwritten by the logs once the replica has been started.
-    CompletableFuture<String> future = new CompletableFuture<>();
-    state.transition(None.class);
-    cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
-      if (error != null) {
-        future.completeExceptionally(error);
-      } else {
-        startFuture = future;
-        election.addListener(electionListener);
-        state.transition(Follower.class);
-      }
-    });
-    return future;
+  public CompletableFuture<Void> start() {
+    return state.start();
   }
 
   /**
@@ -222,10 +193,7 @@ public class CopyCatContext {
    * @return A completable future that will be completed when the context has started.
    */
   public CompletableFuture<Void> stop() {
-    return cluster.localMember().protocol().server().stop().thenRunAsync(() -> {
-      log.close();
-      state.transition(None.class);
-    });
+    return state.stop();
   }
 
   /**
