@@ -68,15 +68,13 @@ abstract class RaftState implements State<RaftStateContext> {
 
   @Override
   public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
-    return CompletableFuture.supplyAsync(() -> {
-      return handleAppendEntries(request);
-    }, executor).whenComplete((result, error) -> {
-      // If a transition is required then transition back to the follower state.
-      // If the node is already a follower then the transition will be ignored.
-      if (transition.get()) {
-        state.transition(Follower.class);
-      }
-    });
+    CompletableFuture<AppendEntriesResponse> future = CompletableFuture.completedFuture(handleAppendEntries(request));
+    // If a transition is required then transition back to the follower state.
+    // If the node is already a follower then the transition will be ignored.
+    if (transition.get()) {
+      state.transition(Follower.class);
+    }
+    return future;
   }
 
   /**
