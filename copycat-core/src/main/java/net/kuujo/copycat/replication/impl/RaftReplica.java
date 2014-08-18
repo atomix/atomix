@@ -47,7 +47,6 @@ public class RaftReplica implements Replica {
   private volatile long nextIndex;
   private volatile long matchIndex = 1;
   private volatile long nextSendIndex;
-  private volatile long nextMatchIndex;
   private volatile boolean open;
   private final AtomicBoolean pinging = new AtomicBoolean();
   private final List<CompletableFuture<Long>> pingFutures = new CopyOnWriteArrayList<>();
@@ -102,10 +101,6 @@ public class RaftReplica implements Replica {
       return future;
     }
 
-    if (index > matchIndex) {
-      return commit(index);
-    }
-
     CompletableFuture<Long> future = new CompletableFuture<>();
     if (pinging.compareAndSet(false, true)) {
       AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().getLocalMember(), nextIndex-1, state.context().log().containsEntry(nextIndex-1) ? state.context().log().getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
@@ -149,10 +144,16 @@ public class RaftReplica implements Replica {
     CompletableFuture<Long> future = new CompletableFuture<>();
     commitFutures.put(index, future);
 
-    if (index < nextSendIndex) {
-      return future;
+    if (index >= nextSendIndex) {
+      doCommit();
     }
+    return future;
+  }
 
+  /**
+   * Performs a commit operation.
+   */
+  private synchronized void doCommit() {
     final long prevIndex = nextSendIndex - 1;
     final Entry prevEntry = log.getEntry(prevIndex);
 
@@ -170,26 +171,23 @@ public class RaftReplica implements Replica {
         } else {
           doAppendEntries(prevIndex, prevEntry, entries);
         }
-        return future;
+        return;
       } else {
         entries.add(entry);
       }
     }
     doAppendEntries(prevIndex, prevEntry, entries);
-    return future;
   }
 
   /**
    * Sends an append entries request.
    */
-  private void doAppendEntries(final long prevIndex, final Entry prevEntry, final List<Entry> entries) {
+  private synchronized void doAppendEntries(final long prevIndex, final Entry prevEntry, final List<Entry> entries) {
     final long commitIndex = state.getCommitIndex();
 
     AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
 
-    final long originalMatchIndex = matchIndex;
     nextSendIndex = Math.max(nextSendIndex + 1, prevIndex + entries.size() + 1);
-    nextMatchIndex = Math.max(nextMatchIndex, prevIndex + entries.size());
 
     member.protocol().client().appendEntries(request).whenComplete((response, error) -> {
       if (error != null) {
@@ -202,7 +200,7 @@ public class RaftReplica implements Replica {
               nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
               matchIndex = Math.max(matchIndex, prevIndex + entries.size());
               triggerCommitFutures(prevIndex+1, prevIndex+entries.size());
-              commit(log.lastIndex());
+              doCommit();
             }
           } else {
             // If replication failed then decrement the next index and attempt to
@@ -219,8 +217,7 @@ public class RaftReplica implements Replica {
               if (!entries.isEmpty() || prevIndex == commitIndex) {
                 nextIndex--;
                 nextSendIndex = nextIndex;
-                nextMatchIndex = originalMatchIndex;
-                commit(log.lastIndex());
+                doCommit();
               }
             }
           }
@@ -229,6 +226,10 @@ public class RaftReplica implements Replica {
         }
       }
     });
+
+    if (nextSendIndex < log.lastIndex()) {
+      doCommit();
+    }
   }
 
   /**
