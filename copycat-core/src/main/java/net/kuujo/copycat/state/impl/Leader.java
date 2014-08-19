@@ -223,7 +223,7 @@ public class Leader extends RaftState implements Observer {
     if (request.term() > state.getCurrentTerm()) {
       return super.appendEntries(request);
     } else if (request.term() < state.getCurrentTerm()) {
-      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false));
+      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex()));
     } else {
       state.transition(Follower.class);
       return super.appendEntries(request);

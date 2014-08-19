@@ -203,21 +203,13 @@ public class RaftReplica implements Replica {
               doCommit();
             }
           } else {
-            // If replication failed then decrement the next index and attempt to
-            // retry replication. If decrementing the next index would result in
-            // a next index of 0 then something must have gone wrong. Revert to
-            // a follower.
-            if (nextIndex-1 == 0) {
-              state.transition(Follower.class);
-            } else {
-              // If we were attempting to replicate log entries and not just
-              // sending a commit index or if we didn't have any log entries
-              // to replicate then decrement the next index. The node we were
-              // attempting to sync is not up to date.
-              nextIndex--;
-              nextSendIndex = nextIndex;
-              doCommit();
-            }
+            // If replication failed then use the last log index indicated by
+            // the replica in the response to generate a new nextIndex. This allows
+            // us to skip repeatedly replicating one entry at a time if it's not
+            // necessary.
+            nextIndex = response.lastLogIndex() + 1;
+            nextSendIndex = nextIndex;
+            doCommit();
           }
         } else {
           triggerCommitFutures(prevIndex+1, prevIndex+entries.size(), response.error());

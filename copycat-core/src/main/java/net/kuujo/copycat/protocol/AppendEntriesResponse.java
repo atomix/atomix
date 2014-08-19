@@ -28,14 +28,16 @@ public class AppendEntriesResponse extends Response {
   private static final long serialVersionUID = 8897167973047662707L;
   private long term;
   private boolean succeeded;
+  private long lastLogIndex;
 
   public AppendEntriesResponse() {
   }
 
-  public AppendEntriesResponse(Object id, long term, boolean succeeded) {
+  public AppendEntriesResponse(Object id, long term, boolean succeeded, long lastLogIndex) {
     super(id, Status.OK);
     this.term = term;
     this.succeeded = succeeded;
+    this.lastLogIndex = lastLogIndex;
   }
 
   public AppendEntriesResponse(Object id, Throwable t) {
@@ -62,6 +64,15 @@ public class AppendEntriesResponse extends Response {
    */
   public boolean succeeded() {
     return succeeded;
+  }
+
+  /**
+   * Returns the last index of the replica's log.
+   *
+   * @return The last index of the responding replica's log.
+   */
+  public long lastLogIndex() {
+    return lastLogIndex;
   }
 
   @Override

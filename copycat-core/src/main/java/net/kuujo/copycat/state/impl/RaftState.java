@@ -92,7 +92,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < state.getCurrentTerm()) {
-      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false);
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex());
     } else if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
       return doCheckPreviousEntry(request);
     } else {
@@ -112,7 +112,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // can be overwritten.
     Entry entry = state.context().log().getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
-      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false);
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex());
     } else {
       return doAppendEntries(request);
     }
@@ -161,7 +161,7 @@ abstract class RaftState implements State<RaftStateContext> {
         compactLog();
       }
     }
-    return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), true);
+    return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), true, state.context().log().lastIndex());
   }
 
   /**
