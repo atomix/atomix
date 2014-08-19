@@ -290,4 +290,9 @@ public class RaftReplica implements Replica {
     return 37 + member.uri().hashCode() * 7;
   }
 
+  @Override
+  public String toString() {
+    return member.toString();
+  }
+
 }

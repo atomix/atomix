@@ -18,9 +18,11 @@ package net.kuujo.copycat.replication.impl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -37,6 +39,7 @@ import net.kuujo.copycat.util.Quorum;
  */
 public class RaftReplicator implements Replicator {
   private final RaftStateContext state;
+  private final Map<String, RaftReplica> replicaMap = new HashMap<>();
   private final List<RaftReplica> replicas = new ArrayList<>();
   private int quorumSize;
   private int quorumIndex;
@@ -77,47 +80,47 @@ public class RaftReplicator implements Replicator {
    * Recalculates quorum sizes.
    */
   private void resetQuorumSize() {
-    quorumSize = (int) Math.floor((replicas.size() + 1) / 2 + 1);
+    quorumSize = (int) Math.floor((replicaMap.size() + 1) / 2 + 1);
     quorumIndex = quorumSize > 0 ? quorumSize - 1 : 0;
   }
 
   @Override
   public synchronized Replicator addMember(Member member) {
-    if (!containsMember(member)) {
+    if (!replicaMap.containsKey(member.uri())) {
       RaftReplica replica = new RaftReplica(member, state);
+      replicaMap.put(member.uri(), replica);
       replicas.add(replica);
       replica.open();
+      resetQuorumSize();
     }
-    resetQuorumSize();
     return this;
   }
 
   @Override
   public synchronized Replicator removeMember(Member member) {
-    Iterator<RaftReplica> iterator = replicas.iterator();
-    while (iterator.hasNext()) {
-      if (iterator.next().member().uri().equals(member.uri())) {
-        iterator.remove();
+    RaftReplica replica = replicaMap.remove(member.uri());
+    if (replica != null) {
+      replica.close();
+      Iterator<RaftReplica> iterator = replicas.iterator();
+      while (iterator.hasNext()) {
+        if (iterator.next().member().uri().equals(member.uri())) {
+          iterator.remove();
+        }
       }
+      resetQuorumSize();
     }
-    resetQuorumSize();
     return this;
   }
 
   @Override
   public synchronized boolean containsMember(Member member) {
-    for (RaftReplica replica : replicas) {
-      if (replica.member().equals(member)) {
-        return true;
-      }
-    }
-    return false;
+    return replicaMap.containsKey(member.uri());
   }
 
   @Override
   public synchronized Set<Member> getMembers() {
     Set<Member> members = new HashSet<>();
-    for (RaftReplica replica : replicas) {
+    for (RaftReplica replica : replicaMap.values()) {
       members.add(replica.member());
     }
     return members;
@@ -139,7 +142,7 @@ public class RaftReplicator implements Replicator {
     });
 
     // Iterate through replicas and commit all entries up to the given index.
-    for (RaftReplica replica : replicas) {
+    for (RaftReplica replica : replicaMap.values()) {
       replica.commit(index).whenComplete((resultIndex, error) -> {
         // Once the commit succeeds, check the commit index of all replicas.
         if (error == null) {
@@ -174,7 +177,7 @@ public class RaftReplicator implements Replicator {
 
     // Iterate through replicas and ping each replica. Internally, this
     // should cause the replica to send any remaining entries if necessary.
-    for (RaftReplica replica : replicas) {
+    for (RaftReplica replica : replicaMap.values()) {
       replica.ping(index).whenComplete((resultIndex, error) -> {
         if (error == null) {
           quorum.succeed();
