@@ -59,6 +59,7 @@
     <module>copycat-core</module>
     <module>copycat-netty</module>
     <module>copycat-vertx</module>
+    <module>copycat-samples</module>
   </modules>
 
   <dependencies>
