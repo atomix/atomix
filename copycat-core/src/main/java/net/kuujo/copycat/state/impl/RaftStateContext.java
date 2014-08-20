@@ -22,6 +22,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.CopyCatContext;
@@ -43,6 +45,7 @@ import net.kuujo.copycat.state.StateListener;
  */
 public class RaftStateContext implements StateContext {
   private static final Logger logger = Logger.getLogger(StateContext.class.getCanonicalName());
+  private final Executor executor = Executors.newCachedThreadPool();
   private final Set<StateListener> listeners = new HashSet<>();
   private final CopyCatContext context;
   private final ClusterConfig cluster = new ClusterConfig();
@@ -289,21 +292,22 @@ public class RaftStateContext implements StateContext {
         });
       });
     } else {
-      ProtocolHandler handler = context.election().currentLeader().equals(context.cluster().localMember()) ? currentState : leaderClient;
-      handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
-        if (error != null) {
-          future.completeExceptionally(error);
-        } else {
-          if (result.status().equals(Response.Status.OK)) {
-            future.complete((R) result.result());
+      executor.execute(() -> {
+        ProtocolHandler handler = context.election().currentLeader().equals(context.cluster().localMember()) ? currentState : leaderClient;
+        handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+          if (error != null) {
+            future.completeExceptionally(error);
           } else {
-            future.completeExceptionally(result.error());
+            if (result.status().equals(Response.Status.OK)) {
+              future.complete((R) result.result());
+            } else {
+              future.completeExceptionally(result.error());
+            }
           }
-        }
+        });
       });
     }
     return future;
   }
-
 
 }
