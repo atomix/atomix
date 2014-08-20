@@ -179,6 +179,21 @@ public interface Log extends EventProvider<EntryListener> {
   void removeAfter(long index);
 
   /**
+   * Backs up the log, creating a separate backup file.
+   */
+  void backup();
+
+  /**
+   * Commits the log, removing the backup.
+   */
+  void commit();
+
+  /**
+   * Restores the log from a separate backup file.
+   */
+  void restore();
+
+  /**
    * Closes the log.
    */
   void close();

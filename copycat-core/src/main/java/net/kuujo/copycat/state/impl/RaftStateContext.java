@@ -103,6 +103,7 @@ public class RaftStateContext implements StateContext {
     transition(None.class);
     return context.cluster().localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
       context.log().open();
+      context.log().restore();
       transition(Follower.class);
     });
   }

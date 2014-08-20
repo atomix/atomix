@@ -17,11 +17,10 @@ package net.kuujo.copycat.log.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.EntryEvent;
@@ -40,7 +39,8 @@ import net.kuujo.copycat.log.Log;
  */
 public class MemoryLog implements Log {
   private TreeMap<Long, Entry> log = new TreeMap<>();
-  private final Set<EntryListener> listeners = new HashSet<>();
+  private long index;
+  private final List<EntryListener> listeners = new CopyOnWriteArrayList<>();
 
   @Override
   public void addListener(EntryListener listener) {
@@ -76,16 +76,16 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public synchronized long appendEntry(Entry entry) {
+  public long appendEntry(Entry entry) {
     if (entry == null) throw new NullPointerException();
-    long index = (!log.isEmpty() ? log.lastKey() : 0) + 1;
+    long index = ++this.index;
     log.put(index, entry);
     triggerAddEvent(index, entry);
     return index;
   }
 
   @Override
-  public synchronized List<Long> appendEntries(Entry... entries) {
+  public List<Long> appendEntries(Entry... entries) {
     List<Long> indices = new ArrayList<>();
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
@@ -94,7 +94,7 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public synchronized List<Long> appendEntries(List<? extends Entry> entries) {
+  public List<Long> appendEntries(List<? extends Entry> entries) {
     List<Long> indices = new ArrayList<>();
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
@@ -110,7 +110,7 @@ public class MemoryLog implements Log {
 
   @Override
   public long prependEntry(Entry entry) {
-    long index = (!log.isEmpty() ? log.firstKey() : 0) - 1;
+    long index = !log.isEmpty() ? log.firstKey() : this.index;
     if (index < 1) {
       throw new IndexOutOfBoundsException("Cannot prepend entry at index " + index);
     }
@@ -119,12 +119,12 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public synchronized List<Long> prependEntries(Entry... entries) {
+  public List<Long> prependEntries(Entry... entries) {
     return prependEntries(Arrays.asList(entries));
   }
 
   @Override
-  public synchronized List<Long> prependEntries(List<? extends Entry> entries) {
+  public List<Long> prependEntries(List<? extends Entry> entries) {
     List<Long> indices = new ArrayList<>();
     for (int i = entries.size() - 1; i >= 0; i--) {
       indices.add(prependEntry(entries.get(i)));
@@ -154,7 +154,7 @@ public class MemoryLog implements Log {
 
   @Override
   public long lastIndex() {
-    return !log.isEmpty() ? log.lastKey() : 0;
+    return index;
   }
 
   @Override
@@ -179,6 +179,18 @@ public class MemoryLog implements Log {
   @Override
   public synchronized void removeAfter(long index) {
     log.tailMap(index, false).clear();
+  }
+
+  @Override
+  public void backup() {
+  }
+
+  @Override
+  public void restore() {
+  }
+
+  @Override
+  public void commit() {
   }
 
   @Override

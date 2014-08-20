@@ -19,6 +19,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -471,6 +473,38 @@ public class FileLog implements Log {
     if (lastIndex % 100 == 0) {
       long lowIndex = lastIndex - bufferSize;
       buffer.headMap(lowIndex > firstIndex ? lowIndex : firstIndex).clear();
+    }
+  }
+
+  @Override
+  public synchronized void backup() {
+    File backupFile = new File(String.format("%s.history", f.getAbsolutePath()));
+    try {
+      Files.copy(f.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  @Override
+  public void commit() {
+    File backupFile = new File(String.format("%s.history", f.getAbsolutePath()));
+    if (backupFile.exists()) {
+      backupFile.delete();
+    }
+  }
+
+  @Override
+  public synchronized void restore() {
+    File backupFile = new File(String.format("%s.history", f.getAbsolutePath()));
+    if (backupFile.exists()) {
+      close();
+      try {
+        Files.copy(backupFile.toPath(), f.toPath(), StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException e) {
+        throw new LogException(e);
+      }
+      open();
     }
   }
 

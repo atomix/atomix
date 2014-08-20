@@ -161,7 +161,7 @@ public class RaftReplica implements Replica {
     // the entries are snapshot entries, send all entries up to the snapshot and
     // then send snapshot entries individually.
     List<Entry> entries = new ArrayList<>();
-    long lastIndex = nextIndex + BATCH_SIZE > log.lastIndex() ? log.lastIndex() : nextIndex + BATCH_SIZE;
+    long lastIndex = Math.min(nextIndex + BATCH_SIZE, log.lastIndex());
     for (long i = nextIndex; i <= lastIndex; i++) {
       Entry entry = log.getEntry(i);
       if (entry instanceof SnapshotEntry) {
@@ -175,7 +175,10 @@ public class RaftReplica implements Replica {
         entries.add(entry);
       }
     }
-    doAppendEntries(prevIndex, prevEntry, entries);
+
+    if (!entries.isEmpty()) {
+      doAppendEntries(prevIndex, prevEntry, entries);
+    }
   }
 
   /**
@@ -196,6 +199,7 @@ public class RaftReplica implements Replica {
             if (!entries.isEmpty()) {
               nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
               matchIndex = Math.max(matchIndex, prevIndex + entries.size());
+              System.out.println(member.uri() + ": " + matchIndex);
               triggerCommitFutures(prevIndex+1, prevIndex+entries.size());
               doCommit();
             }

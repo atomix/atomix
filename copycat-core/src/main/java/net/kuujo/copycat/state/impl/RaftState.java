@@ -335,12 +335,29 @@ abstract class RaftState implements State<RaftStateContext> {
     // background in order to allow new entries to continue being appended
     // to the log. The snapshot is stored as a log entry in order to simplify
     // replication of snapshots if the node becomes the leader.
-    synchronized (state.context().log()) {
-      final long lastApplied = state.getLastApplied();
-      Entries<SnapshotEntry> entries = createSnapshot();
-      if (lastApplied - entries.size() > 0) {
-        state.context().log().removeBefore(lastApplied);
-        state.context().log().prependEntries(entries);
+    if (state.context().log().size() > state.context().config().getMaxLogSize()) {
+      synchronized (state.context().log()) {
+        state.context().log().backup();
+        final long lastApplied = state.getLastApplied();
+        Entries<SnapshotEntry> entries = createSnapshot();
+        if (lastApplied - entries.size() > 0) {
+          try {
+            // Remote all entries from the last applied entry and before.
+            state.context().log().removeBefore(lastApplied + 1);
+
+            // Prepend the snapshot entries to the log. This replaces the applied
+            // entries with a set of snapshot entries which can be replicated.
+            state.context().log().prependEntries(entries);
+
+            // If the snapshot prepending was successful, commit the log. This will
+            // cause the log to remove its backup file.
+            state.context().log().commit();
+          } catch (Exception e) {
+            // If the snapshot failed then restore the log to its previous state
+            // and continue normal operation.
+            state.context().log().restore();
+          }
+        }
       }
     }
     return CompletableFuture.completedFuture(null);
