@@ -104,6 +104,10 @@ abstract class RaftState implements State<RaftStateContext> {
    * Checks the previous log entry for consistency.
    */
   private AppendEntriesResponse doCheckPreviousEntry(AppendEntriesRequest request) {
+    if (request.prevLogIndex() > state.context().log().lastIndex()) {
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex());
+    }
+
     // If the log entry exists then load the entry.
     // If the last log entry's term is not the same as the given
     // prevLogTerm then return false. This will cause the leader to
@@ -124,11 +128,18 @@ abstract class RaftState implements State<RaftStateContext> {
   private AppendEntriesResponse doAppendEntries(AppendEntriesRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
-    if (state.context().log().lastIndex() > request.prevLogIndex()) {
-      state.context().log().removeAfter(request.prevLogIndex());
+    if (state.context().log().lastIndex() > request.prevLogIndex() && !request.entries().isEmpty()) {
+      for (int i = 0; i < request.entries().size(); i++) {
+        Entry entry = request.entries().get(i);
+        Entry match = state.context().log().getEntry(request.prevLogIndex() + i + 1);
+        if (entry.term() != match.term()) {
+          state.context().log().removeAfter(request.prevLogIndex() + i);
+          state.context().log().appendEntries(request.entries().subList(i, request.entries().size()));
+        }
+      }
+    } else {
+      state.context().log().appendEntries(request.entries());
     }
-    // Once the log has been cleaned, append all request entries to the log.
-    state.context().log().appendEntries(request.entries());
     return doApplyCommits(request);
   }
 
