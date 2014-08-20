@@ -108,10 +108,6 @@ public class Leader extends RaftState implements Observer {
       }
     }
 
-    // Once the initialization entries have been logged and the cluster configuration
-    // has been updated, update all nodes in the cluster.
-    replicator.commitAll();
-
     // Force the cluster configuration to match that of the local user configuration.
     // This will ultimately cause a cluster change event and cause the cluster configuration
     // to be applied to the log and replicated.

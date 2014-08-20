@@ -46,7 +46,6 @@ public class RaftReplica implements Replica {
   private final Log log;
   private volatile long nextIndex;
   private volatile long matchIndex = 1;
-  private volatile long nextSendIndex;
   private volatile boolean open;
   private final AtomicBoolean pinging = new AtomicBoolean();
   private final List<CompletableFuture<Long>> pingFutures = new CopyOnWriteArrayList<>();
@@ -57,7 +56,6 @@ public class RaftReplica implements Replica {
     this.state = state;
     this.log = state.context().log();
     this.nextIndex = log.lastIndex();
-    this.nextSendIndex = nextIndex;
   }
 
   @Override
@@ -144,7 +142,7 @@ public class RaftReplica implements Replica {
     CompletableFuture<Long> future = new CompletableFuture<>();
     commitFutures.put(index, future);
 
-    if (index >= nextSendIndex) {
+    if (index >= nextIndex) {
       doCommit();
     }
     return future;
@@ -154,7 +152,7 @@ public class RaftReplica implements Replica {
    * Performs a commit operation.
    */
   private synchronized void doCommit() {
-    final long prevIndex = nextSendIndex - 1;
+    final long prevIndex = nextIndex - 1;
     final Entry prevEntry = log.getEntry(prevIndex);
 
     // Create a list of up to ten entries to send to the follower.
@@ -162,8 +160,8 @@ public class RaftReplica implements Replica {
     // the entries are snapshot entries, send all entries up to the snapshot and
     // then send snapshot entries individually.
     List<Entry> entries = new ArrayList<>();
-    long lastIndex = nextSendIndex + 10 > log.lastIndex() ? log.lastIndex() : nextSendIndex + 10;
-    for (long i = nextSendIndex; i <= lastIndex; i++) {
+    long lastIndex = nextIndex + 10 > log.lastIndex() ? log.lastIndex() : nextIndex + 10;
+    for (long i = nextIndex; i <= lastIndex; i++) {
       Entry entry = log.getEntry(i);
       if (entry instanceof SnapshotEntry) {
         if (entries.isEmpty()) {
@@ -182,12 +180,10 @@ public class RaftReplica implements Replica {
   /**
    * Sends an append entries request.
    */
-  private synchronized void doAppendEntries(final long prevIndex, final Entry prevEntry, final List<Entry> entries) {
+  private void doAppendEntries(final long prevIndex, final Entry prevEntry, final List<Entry> entries) {
     final long commitIndex = state.getCommitIndex();
 
     AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
-
-    nextSendIndex = Math.max(nextSendIndex + 1, prevIndex + entries.size() + 1);
 
     member.protocol().client().appendEntries(request).whenComplete((response, error) -> {
       if (error != null) {
@@ -198,7 +194,7 @@ public class RaftReplica implements Replica {
             // Update the next index to send and the last index known to be replicated.
             if (!entries.isEmpty()) {
               nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
-              matchIndex = Math.max(matchIndex, prevIndex + entries.size());
+              matchIndex = Math.max(matchIndex, prevIndex + entries.size());System.out.println(matchIndex);
               triggerCommitFutures(prevIndex+1, prevIndex+entries.size());
               doCommit();
             }
@@ -208,7 +204,6 @@ public class RaftReplica implements Replica {
             // us to skip repeatedly replicating one entry at a time if it's not
             // necessary.
             nextIndex = response.lastLogIndex() + 1;
-            nextSendIndex = nextIndex;
             doCommit();
           }
         } else {
@@ -216,10 +211,6 @@ public class RaftReplica implements Replica {
         }
       }
     });
-
-    if (nextSendIndex < log.lastIndex()) {
-      doCommit();
-    }
   }
 
   /**

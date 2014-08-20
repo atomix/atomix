@@ -44,6 +44,12 @@ User Manual
    * [Creating the CopyCatContext](#creating-the-copycatcontext)
    * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
+1. [Events](#events)
+   * [Election events](#election-events)
+   * [Cluster events](#cluster-events)
+   * [State events](#state-events)
+   * [Log events](#log-events)
+   * [State machine events](#state-machine-events)
 1. [Serialization](#serialization)
    * [Providing custom log serializers](#providing-custom-log-serializers)
 1. [Protocols](#protocols-1)
@@ -63,6 +69,21 @@ User Manual
       * [Vert.x Event Bus](#vertx-event-bus-endpoint)
       * [Vert.x TCP](#vertx-tcp-endpoint)
       * [Vert.x HTTP](#vertx-http-endpoint)
+
+## Events
+CopyCat provides an API that allows users to listen for various events that occur throughout
+the lifetime of a CopyCat cluster. To subscribe to an event, register an `EventListener` on
+
+
+### Election events
+
+### Cluster events
+
+### State events
+
+### Log events
+
+### State machine events
 
 # A brief introduction
 CopyCat is a "protocol agnostic" implementation of the Raft consensus algorithm. It

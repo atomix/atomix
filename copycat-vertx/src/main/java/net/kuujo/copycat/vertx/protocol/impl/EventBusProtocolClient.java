@@ -61,6 +61,7 @@ public class EventBusProtocolClient implements ProtocolClient {
   public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
     final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
     JsonObject message = new JsonObject()
+        .putString("action", "appendEntries")
         .putNumber("term", request.term())
         .putString("leader", request.leader())
         .putNumber("prevIndex", request.prevLogIndex())
@@ -74,7 +75,7 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            future.complete(new AppendEntriesResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded")));
+            future.complete(new AppendEntriesResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"), result.result().body().getLong("lastIndex")));
           } else if (status.equals("error")) {
             future.complete(new AppendEntriesResponse(request.id(), result.result().body().getString("message")));
           }
@@ -88,6 +89,7 @@ public class EventBusProtocolClient implements ProtocolClient {
   public CompletableFuture<RequestVoteResponse> requestVote(final RequestVoteRequest request) {
     final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
     JsonObject message = new JsonObject()
+        .putString("action", "requestVote")
         .putNumber("term", request.term())
         .putString("candidate", request.candidate())
         .putNumber("lastIndex", request.lastLogIndex())
@@ -114,7 +116,7 @@ public class EventBusProtocolClient implements ProtocolClient {
   public CompletableFuture<SubmitCommandResponse> submitCommand(final SubmitCommandRequest request) {
     final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
     JsonObject message = new JsonObject()
-        .putString("action", "requestVote")
+        .putString("action", "submitCommand")
         .putString("command", request.command())
         .putArray("args", new JsonArray(request.args()));
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
@@ -139,13 +141,18 @@ public class EventBusProtocolClient implements ProtocolClient {
   public CompletableFuture<Void> connect() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (vertx == null) {
-      vertx = new DefaultVertx(port >= 0 ? port : 0, host, (result) -> {
-        if (result.failed()) {
-          future.completeExceptionally(result.cause());
-        } else {
-          future.complete(null);
-        }
-      });
+      if (host != null) {
+        vertx = new DefaultVertx(port >= 0 ? port : 0, host, (result) -> {
+          if (result.failed()) {
+            future.completeExceptionally(result.cause());
+          } else {
+            future.complete(null);
+          }
+        });
+      } else {
+        vertx = new DefaultVertx();
+        future.complete(null);
+      }
     } else {
       future.complete(null);
     }

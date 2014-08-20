@@ -205,7 +205,7 @@ public class TcpProtocolClient implements ProtocolClient {
     if (status == null) {
       future.completeExceptionally(new ProtocolException("Invalid response"));
     } else if (status.equals("ok")) {
-      future.complete(new AppendEntriesResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("succeeded")));
+      future.complete(new AppendEntriesResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("succeeded"), response.getLong("lastIndex")));
     } else if (status.equals("error")) {
       future.completeExceptionally(new ProtocolException(response.getString("message")));
     }

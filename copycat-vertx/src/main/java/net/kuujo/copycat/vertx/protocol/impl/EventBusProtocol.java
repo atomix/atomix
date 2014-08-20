@@ -18,7 +18,10 @@ package net.kuujo.copycat.vertx.protocol.impl;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriPath;
+import net.kuujo.copycat.uri.UriPort;
+import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
 import org.vertx.java.core.Vertx;
 
@@ -53,6 +56,7 @@ public class EventBusProtocol implements Protocol {
    * @param address The event bus address.
    */
   @UriPath
+  @UriSchemeSpecificPart
   public void setAddress(String address) {
     this.address = address;
   }
@@ -74,6 +78,34 @@ public class EventBusProtocol implements Protocol {
    */
   public EventBusProtocol withAddress(String address) {
     this.address = address;
+    return this;
+  }
+
+  @UriHost
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  public String getHost() {
+    return host;
+  }
+
+  public EventBusProtocol withHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  @UriPort
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  public int getPort() {
+    return port;
+  }
+
+  public EventBusProtocol withPort(int port) {
+    this.port = port;
     return this;
   }
 

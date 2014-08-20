@@ -180,7 +180,7 @@ public class TcpProtocolServer implements ProtocolServer {
       requestHandler.appendEntries(new AppendEntriesRequest(id, request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit"))).whenComplete((response, error) -> {
         if (error == null) {
           if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()));
+            respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()).putNumber("lastIndex", response.lastLogIndex()));
           } else {
             respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
           }
