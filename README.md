@@ -6,6 +6,8 @@ CopyCat
 CopyCat is an extensible Java-based implementation of the
 [Raft consensus protocol](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
 
+*CopyCat is still considered experimental and is not currently recommended for production*
+
 The core of CopyCat is a framework designed to support a variety of protocols and
 transports. CopyCat provides a simple extensible API that can be used to build a
 strongly consistent, fault/partition tolerant state machine over any mode of communication.
@@ -70,21 +72,6 @@ User Manual
       * [Vert.x TCP](#vertx-tcp-endpoint)
       * [Vert.x HTTP](#vertx-http-endpoint)
 
-## Events
-CopyCat provides an API that allows users to listen for various events that occur throughout
-the lifetime of a CopyCat cluster. To subscribe to an event, register an `EventListener` on
-
-
-### Election events
-
-### Cluster events
-
-### State events
-
-### Log events
-
-### State machine events
-
 # A brief introduction
 CopyCat is a "protocol agnostic" implementation of the Raft consensus algorithm. It
 provides a framework for constructing a partition-tolerant replicated state machine
@@ -123,7 +110,7 @@ too large, CopyCat will take a snapshot of the `@Stateful` state machine state a
 compact the log.
 
 ```java
-Log log = new FileLog("key-value.log");
+LogFactory logFactory = new FileLogFactory();
 ```
 
 To configure the CopyCat cluster, we simply create a `ClusterConfig`.
@@ -147,7 +134,7 @@ Now that the cluster has been set up, we simply create a `CopyCat` instance, spe
 an [endpoint](#endpoints) through which the outside world can communicate with the cluster.
 
 ```java
-CopyCat copycat = new CopyCat("http://localhost:5000", new KeyValueStore(), log, cluster);
+CopyCat copycat = new CopyCat("http://localhost:5000", new KeyValueStore(), logFactory, cluster);
 copycat.start();
 ```
 
@@ -159,7 +146,7 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore exten
 
   public static void main(String[] args) {
     // Create the local file log.
-    Log log = new FileLog("key-value.log");
+    LogFactory logFactory = new FileLogFactory();
 
     // Configure the cluster.
     ClusterConfig cluster = new ClusterConfig();
@@ -167,7 +154,7 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore exten
     cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
 
     // Create and start a server at localhost:5000.
-    new CopyCat("http://localhost:5000", new StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore(), log, cluster).start();
+    new CopyCat("http://localhost:5000", new StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore(), logFactory, cluster).start();
   }
 
   @Stateful
@@ -519,14 +506,14 @@ context.start();
 ### Setting the [log](#logs) type
 By default, CopyCat uses an in-memory log for simplicity. However, in production
 users should use a disk-based log. CopyCat provides two `Log` implementations:
-* `MemoryLog` - an in-memory `TreeMap` based log
-* `FileLog` - a file-based log
+* `MemoryLogFactory` - an in-memory `TreeMap` based log factory
+* `FileLogFactory` - a `RandomAccessFile` based log factory
 
 To set the log to be used by a CopyCat replica, simply pass the log instance in
 the `CopyCatContext` constructor:
 
 ```java
-CopyCatContext context = new CopyCatContext(new MyStateMachine(), new FileLog("my.log"), cluster);
+CopyCatContext context = new CopyCatContext(new MyStateMachine(), new FileLogFactory(), cluster);
 context.start();
 ```
 
@@ -544,6 +531,73 @@ completed once the command result is received. The command will automatically
 be forwarded on to the current cluster [leader](#leaders). If the cluster does not have any
 currently [elected](#leader-election) leader (or the node to which the command is submitted
 doesn't know of any cluster leader) then the submission will fail.
+
+## Events
+CopyCat provides an API that allows users to listen for various events that occur throughout
+the lifetime of a CopyCat cluster. To subscribe to an event, register an `EventListener` on
+any `EventProvider`. Events can be registered for elections, logging, commands, state changes,
+and cluster membership changes.
+
+### Election events
+Election event listeners are registered on the `ElectionContext` instance.
+
+```java
+context.election().addListener((event) -> {
+  System.out.println(String.format("%s was elected for term %d", event.leader(), event.term()));
+});
+```
+
+### Cluster events
+Cluster event listeners are registered on the `Cluster` instance
+
+```java
+context.cluster().addListener(new MembershipListener() {
+  public void memberAdded(MembershipEvent event) {
+    System.out.println(String.format("%s joined the cluster", event.member().uri()));
+  }
+
+  public void memberRemoved(MembershipEvent event) {
+    System.out.println(String.format("%s left the cluster", event.member().uri()));
+  }
+});
+```
+
+### State events
+State event listeners are registered on the `StateContext` instance.
+
+```java
+context.state().addListener((event) -> {
+  System.out.println(String.format("State changed to %s", event.state()));
+});
+```
+
+### Log events
+Log events are registered on the `Log` instance.
+
+```java
+context.log().addListener((event) -> {
+  System.out.println(String.format("%s was appended to the log at %d", event.entry(), event.index()));
+});
+```
+
+### State machine events
+State machine events are registered on the `StateMachine` instance.
+
+```java
+context.stateMachine().addListener(new StateMachineListener() {
+  public void commandApplied(CommandEvent event) {
+  
+  }
+
+  public void snapshotTaken(SnapshotEvent event) {
+  
+  }
+
+  public void snapshotInstalled(SnapshotEvent event) {
+  
+  }
+});
+```
 
 # Serialization
 CopyCat provides a pluggable serialization API that allows users to control how log

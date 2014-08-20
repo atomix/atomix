@@ -21,6 +21,7 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.DefaultCluster;
 import net.kuujo.copycat.election.ElectionContext;
+import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.log.impl.FileLogFactory;
 import net.kuujo.copycat.registry.Registry;
@@ -125,6 +126,15 @@ public class CopyCatContext {
    */
   public Cluster cluster() {
     return cluster;
+  }
+
+  /**
+   * Returns the underlying log.
+   *
+   * @return The underlying log.
+   */
+  public Log log() {
+    return state.log();
   }
 
   /**
