@@ -41,6 +41,7 @@ import net.kuujo.copycat.state.impl.RaftStateContext;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftReplica implements Replica {
+  private static final int BATCH_SIZE = 100;
   private final Member member;
   private final RaftStateContext state;
   private final Log log;
@@ -160,7 +161,7 @@ public class RaftReplica implements Replica {
     // the entries are snapshot entries, send all entries up to the snapshot and
     // then send snapshot entries individually.
     List<Entry> entries = new ArrayList<>();
-    long lastIndex = nextIndex + 10 > log.lastIndex() ? log.lastIndex() : nextIndex + 10;
+    long lastIndex = nextIndex + BATCH_SIZE > log.lastIndex() ? log.lastIndex() : nextIndex + BATCH_SIZE;
     for (long i = nextIndex; i <= lastIndex; i++) {
       Entry entry = log.getEntry(i);
       if (entry instanceof SnapshotEntry) {
