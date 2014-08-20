@@ -50,6 +50,11 @@ public class EventBusProtocol implements Protocol {
     this.address = address;
   }
 
+  @Override
+  public String name() {
+    return address;
+  }
+
   /**
    * Sets the event bus address.
    *

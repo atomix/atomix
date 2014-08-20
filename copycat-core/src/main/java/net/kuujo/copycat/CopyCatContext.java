@@ -21,8 +21,8 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.DefaultCluster;
 import net.kuujo.copycat.election.ElectionContext;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.MemoryLog;
+import net.kuujo.copycat.log.LogFactory;
+import net.kuujo.copycat.log.impl.FileLogFactory;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 import net.kuujo.copycat.state.StateContext;
@@ -66,45 +66,43 @@ import net.kuujo.copycat.state.impl.RaftStateContext;
 public class CopyCatContext {
   private final Registry registry;
   private final Cluster cluster;
-  private final Log log;
   private final StateMachine stateMachine;
   private final ElectionContext election;
   private final RaftStateContext state;
   private final CopyCatConfig config;
 
   public CopyCatContext(StateMachine stateMachine) {
-    this(stateMachine, new MemoryLog(), new ClusterConfig(), new CopyCatConfig());
+    this(stateMachine, new FileLogFactory(), new ClusterConfig(), new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster) {
-    this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig());
+    this(stateMachine, new FileLogFactory(), cluster, new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, Registry registry) {
-    this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig(), registry);
+    this(stateMachine, new FileLogFactory(), cluster, new CopyCatConfig(), registry);
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this(stateMachine, new MemoryLog(), cluster, config, registry);
+    this(stateMachine, new FileLogFactory(), cluster, config, registry);
   }
 
-  public CopyCatContext(StateMachine stateMachine, Log log) {
-    this(stateMachine, log, new ClusterConfig(), new CopyCatConfig());
+  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory) {
+    this(stateMachine, logFactory, new ClusterConfig(), new CopyCatConfig());
   }
 
-  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster) {
-    this(stateMachine, log, cluster, new CopyCatConfig());
+  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster) {
+    this(stateMachine, logFactory, cluster, new CopyCatConfig());
   }
 
-  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
-    this(stateMachine, log, cluster, config, new ConcurrentRegistry());
+  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config) {
+    this(stateMachine, logFactory, cluster, config, new ConcurrentRegistry());
   }
 
-  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this.log = log;
+  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
     this.config = config;
     this.registry = registry;
-    this.state = new RaftStateContext(this);
+    this.state = new RaftStateContext(this, logFactory);
     this.cluster = new DefaultCluster(cluster, state.cluster(), this);
     this.stateMachine = stateMachine;
     this.election = this.state.election();
@@ -154,15 +152,6 @@ public class CopyCatContext {
    */
   public StateMachine stateMachine() {
     return stateMachine;
-  }
-
-  /**
-   * Returns the local log.
-   *
-   * @return The local log.
-   */
-  public Log log() {
-    return log;
   }
 
   /**

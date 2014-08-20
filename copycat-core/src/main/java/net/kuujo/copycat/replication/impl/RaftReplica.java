@@ -55,7 +55,7 @@ public class RaftReplica implements Replica {
   public RaftReplica(Member member, RaftStateContext state) {
     this.member = member;
     this.state = state;
-    this.log = state.context().log();
+    this.log = state.log();
     this.nextIndex = log.lastIndex();
   }
 
@@ -102,7 +102,7 @@ public class RaftReplica implements Replica {
 
     CompletableFuture<Long> future = new CompletableFuture<>();
     if (pinging.compareAndSet(false, true)) {
-      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().getLocalMember(), nextIndex-1, state.context().log().containsEntry(nextIndex-1) ? state.context().log().getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
+      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().getLocalMember(), nextIndex-1, log.containsEntry(nextIndex-1) ? log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
       member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
         pinging.set(false);
         if (error != null) {

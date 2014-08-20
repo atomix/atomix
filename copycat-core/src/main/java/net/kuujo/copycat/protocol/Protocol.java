@@ -31,6 +31,13 @@ package net.kuujo.copycat.protocol;
 public interface Protocol {
 
   /**
+   * Returns the protocol name.
+   *
+   * @return The protocol name.
+   */
+  String name();
+
+  /**
    * Creates a protocol server.
    *
    * @param context The CopyCat context.

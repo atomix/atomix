@@ -19,6 +19,7 @@ import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.EventProvider;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.election.ElectionContext;
+import net.kuujo.copycat.log.Log;
 
 /**
  * Container for replica state information.
@@ -40,6 +41,13 @@ public interface StateContext extends EventProvider<StateListener> {
    * @return The internal state cluster configuration.
    */
   ClusterConfig cluster();
+
+  /**
+   * Returns the state log.
+   *
+   * @return The state log.
+   */
+  Log log();
 
   /**
    * Returns the state election context.

@@ -92,7 +92,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < state.getCurrentTerm()) {
-      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex());
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.log().lastIndex());
     } else if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
       return doCheckPreviousEntry(request);
     } else {
@@ -104,8 +104,8 @@ abstract class RaftState implements State<RaftStateContext> {
    * Checks the previous log entry for consistency.
    */
   private AppendEntriesResponse doCheckPreviousEntry(AppendEntriesRequest request) {
-    if (request.prevLogIndex() > state.context().log().lastIndex()) {
-      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex());
+    if (request.prevLogIndex() > state.log().lastIndex()) {
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.log().lastIndex());
     }
 
     // If the log entry exists then load the entry.
@@ -114,9 +114,9 @@ abstract class RaftState implements State<RaftStateContext> {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    Entry entry = state.context().log().getEntry(request.prevLogIndex());
+    Entry entry = state.log().getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
-      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex());
+      return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.log().lastIndex());
     } else {
       return doAppendEntries(request);
     }
@@ -128,17 +128,17 @@ abstract class RaftState implements State<RaftStateContext> {
   private AppendEntriesResponse doAppendEntries(AppendEntriesRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
-    if (state.context().log().lastIndex() > request.prevLogIndex() && !request.entries().isEmpty()) {
+    if (state.log().lastIndex() > request.prevLogIndex() && !request.entries().isEmpty()) {
       for (int i = 0; i < request.entries().size(); i++) {
         Entry entry = request.entries().get(i);
-        Entry match = state.context().log().getEntry(request.prevLogIndex() + i + 1);
+        Entry match = state.log().getEntry(request.prevLogIndex() + i + 1);
         if (entry.term() != match.term()) {
-          state.context().log().removeAfter(request.prevLogIndex() + i);
-          state.context().log().appendEntries(request.entries().subList(i, request.entries().size()));
+          state.log().removeAfter(request.prevLogIndex() + i);
+          state.log().appendEntries(request.entries().subList(i, request.entries().size()));
         }
       }
     } else {
-      state.context().log().appendEntries(request.entries());
+      state.log().appendEntries(request.entries());
     }
     return doApplyCommits(request);
   }
@@ -155,7 +155,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (request.commitIndex() > state.getCommitIndex() || state.getCommitIndex() > state.getLastApplied()) {
       // Update the local commit index with min(request commit, last log // index)
-      long lastIndex = state.context().log().lastIndex();
+      long lastIndex = state.log().lastIndex();
       state.setCommitIndex(Math.min(Math.max(request.commitIndex(), state.getCommitIndex()), lastIndex));
 
       // If the updated commit index indicates that commits remain to be
@@ -172,7 +172,7 @@ abstract class RaftState implements State<RaftStateContext> {
         compactLog();
       }
     }
-    return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), true, state.context().log().lastIndex());
+    return new AppendEntriesResponse(request.id(), state.getCurrentTerm(), true, state.log().lastIndex());
   }
 
   /**
@@ -181,7 +181,7 @@ abstract class RaftState implements State<RaftStateContext> {
    * @param index The index of the entry to apply.
    */
   protected void applyEntry(long index) {
-    applyEntry(index, state.context().log().getEntry(index));
+    applyEntry(index, state.log().getEntry(index));
   }
 
   /**
@@ -265,9 +265,9 @@ abstract class RaftState implements State<RaftStateContext> {
       List<SnapshotChunkEntry> chunks = new ArrayList<>();
       SnapshotStartEntry start = null;
       long i = index;
-      while (start == null && i > state.context().log().firstIndex()) {
+      while (start == null && i > state.log().firstIndex()) {
         i--;
-        Entry previous = state.context().log().getEntry(i);
+        Entry previous = state.log().getEntry(i);
         if (previous == null) {
           break;
         } else if (previous instanceof SnapshotChunkEntry) {
@@ -313,7 +313,7 @@ abstract class RaftState implements State<RaftStateContext> {
       state.context().stateMachine().installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
 
       // Once the snapshot has been applied, remove all entries prior to the snapshot.
-      state.context().log().removeBefore(lastIndex - entries.size() + 1);
+      state.log().removeBefore(lastIndex - entries.size() + 1);
 
       // Set the local cluster configuration according to the snapshot cluster membership.
       Set<String> members = snapshot.cluster();
@@ -359,27 +359,27 @@ abstract class RaftState implements State<RaftStateContext> {
     // background in order to allow new entries to continue being appended
     // to the log. The snapshot is stored as a log entry in order to simplify
     // replication of snapshots if the node becomes the leader.
-    if (state.context().log().size() > state.context().config().getMaxLogSize()) {
-      synchronized (state.context().log()) {
-        state.context().log().backup();
+    if (state.log().size() > state.context().config().getMaxLogSize()) {
+      synchronized (state.log()) {
+        state.log().backup();
         final long lastApplied = state.getLastApplied();
         Entries<SnapshotEntry> entries = createSnapshot();
         if (lastApplied - entries.size() > 0) {
           try {
             // Remote all entries from the last applied entry and before.
-            state.context().log().removeBefore(lastApplied + 1);
+            state.log().removeBefore(lastApplied + 1);
 
             // Prepend the snapshot entries to the log. This replaces the applied
             // entries with a set of snapshot entries which can be replicated.
-            state.context().log().prependEntries(entries);
+            state.log().prependEntries(entries);
 
             // If the snapshot prepending was successful, commit the log. This will
             // cause the log to remove its backup file.
-            state.context().log().commit();
+            state.log().commit();
           } catch (Exception e) {
             // If the snapshot failed then restore the log to its previous state
             // and continue normal operation.
-            state.context().log().restore();
+            state.log().restore();
           }
         }
       }
@@ -427,14 +427,14 @@ abstract class RaftState implements State<RaftStateContext> {
     // If we've already voted for someone else then don't vote again.
     else if (state.getLastVotedFor() == null || state.getLastVotedFor().equals(request.candidate())) {
       // If the log is empty then vote for the candidate.
-      if (state.context().log().isEmpty()) {
+      if (state.log().isEmpty()) {
         state.setLastVotedFor(request.candidate());
         return new RequestVoteResponse(request.id(), state.getCurrentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
-        long lastIndex = state.context().log().lastIndex();
-        Entry entry = state.context().log().getEntry(lastIndex);
+        long lastIndex = state.log().lastIndex();
+        Entry entry = state.log().getEntry(lastIndex);
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           state.setLastVotedFor(request.candidate());

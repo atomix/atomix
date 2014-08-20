@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.log.impl.MemoryLogFactory;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 
@@ -72,7 +73,7 @@ class CopyCatTest {
           cluster.addRemoteMember(String.format("local:%d", j));
         }
       }
-      instances.add(new CopyCatContext(new TestStateMachine(), cluster, new CopyCatConfig().withMaxLogSize(1000), registry));
+      instances.add(new CopyCatContext(new TestStateMachine(), new MemoryLogFactory(), cluster, new CopyCatConfig().withMaxLogSize(1000), registry));
     }
     return instances;
   }

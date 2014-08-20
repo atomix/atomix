@@ -23,6 +23,13 @@ package net.kuujo.copycat.protocol;
 public interface ProtocolInstance {
 
   /**
+   * Returns the protocol name.
+   *
+   * @return The protocol name.
+   */
+  String name();
+
+  /**
    * Returns the instance client.
    *
    * @return The protocol client.

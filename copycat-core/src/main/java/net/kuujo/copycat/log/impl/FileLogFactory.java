@@ -13,36 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.log.impl;
 
-import net.kuujo.copycat.protocol.ProtocolInstance;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogFactory;
 
 /**
- * Cluster member info.
+ * File log factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Member {
+public class FileLogFactory implements LogFactory {
 
-  /**
-   * Returns the member name.
-   *
-   * @return The member name.
-   */
-  String name();
-
-  /**
-   * Returns the member uri.
-   *
-   * @return The member uri.
-   */
-  String uri();
-
-  /**
-   * Returns the member's protocol instance.
-   *
-   * @return The member's protocol instance.
-   */
-  ProtocolInstance protocol();
+  @Override
+  public Log createLog(String name) {
+    return new FileLog(name);
+  }
 
 }

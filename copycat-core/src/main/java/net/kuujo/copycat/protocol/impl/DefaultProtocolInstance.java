@@ -40,6 +40,11 @@ public class DefaultProtocolInstance implements ProtocolInstance {
   }
 
   @Override
+  public String name() {
+    return protocol.name();
+  }
+
+  @Override
   public ProtocolClient client() {
     if (client == null) {
       client = injector.inject(protocol.createClient());

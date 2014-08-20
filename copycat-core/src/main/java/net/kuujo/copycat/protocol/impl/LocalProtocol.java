@@ -34,6 +34,11 @@ public class LocalProtocol implements Protocol {
   public LocalProtocol() {
   }
 
+  @Override
+  public String name() {
+    return address;
+  }
+
   /**
    * Sets the protocol address.
    *

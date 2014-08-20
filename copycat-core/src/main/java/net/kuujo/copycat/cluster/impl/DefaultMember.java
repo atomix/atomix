@@ -35,6 +35,11 @@ public class DefaultMember implements Member {
   }
 
   @Override
+  public String name() {
+    return protocol.name();
+  }
+
+  @Override
   public String uri() {
     return uri;
   }

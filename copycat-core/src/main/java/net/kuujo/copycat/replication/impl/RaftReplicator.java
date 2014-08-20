@@ -158,7 +158,7 @@ public class RaftReplicator implements Replicator {
 
   @Override
   public CompletableFuture<Long> commitAll() {
-    return commit(state.context().log().lastIndex());
+    return commit(state.log().lastIndex());
   }
 
   @Override
@@ -191,7 +191,7 @@ public class RaftReplicator implements Replicator {
 
   @Override
   public CompletableFuture<Long> pingAll() {
-    return ping(state.context().log().lastIndex());
+    return ping(state.log().lastIndex());
   }
 
   /**

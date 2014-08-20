@@ -70,7 +70,7 @@ public class Leader extends RaftState implements Observer {
     // first entry in their log, whether it be a local snapshot or a snapshot that
     // was replicated by the leader. This greatly simplifies snapshot management as
     // snapshots are simply replicated as a normal part of each node's log.
-    for (long i = state.getLastApplied() + 1; i <= state.context().log().lastIndex(); i++) {
+    for (long i = state.getLastApplied() + 1; i <= state.log().lastIndex(); i++) {
       applyEntry(i);
     }
 
@@ -78,20 +78,20 @@ public class Leader extends RaftState implements Observer {
     // a new snapshot of the local state machine state, commit it to the local
     // log, and wipe the log of committed entries.
     Entries<SnapshotEntry> snapshotEntries = createSnapshot();
-    long index = state.context().log().lastIndex() + 1;
-    state.context().log().appendEntries(snapshotEntries);
-    state.context().log().removeBefore(index);
+    long index = state.log().lastIndex() + 1;
+    state.log().appendEntries(snapshotEntries);
+    state.log().removeBefore(index);
 
     // Next, the leader must write a no-op entry to the log and replicate the log
     // to all the nodes in the cluster. This ensures that other nodes are notified
     // of the leader's election and that their terms are updated with the leader's term.
-    state.context().log().appendEntry(new NoOpEntry(state.getCurrentTerm()));
+    state.log().appendEntry(new NoOpEntry(state.getCurrentTerm()));
 
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
     Set<String> members = new HashSet<>(state.cluster().getMembers());
-    state.context().log().appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
+    state.log().appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
@@ -162,7 +162,7 @@ public class Leader extends RaftState implements Observer {
       Set<String> combinedMembers = new HashSet<>(state.context().cluster().config().getMembers());
       combinedMembers.addAll(members);
       Entry entry = new ConfigurationEntry(state.getCurrentTerm(), combinedMembers);
-      long configIndex = state.context().log().appendEntry(entry);
+      long configIndex = state.log().appendEntry(entry);
 
       // Immediately after the entry is appended to the log, apply the combined
       // membership. Cluster membership changes do not wait for commitment.
@@ -182,7 +182,7 @@ public class Leader extends RaftState implements Observer {
       replicator.commit(configIndex).whenComplete((commitIndex2, commitError2) -> {
         // Append the new configuration entry to the log and force all replicas
         // to be synchronized.
-        state.context().log().appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
+        state.log().appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
 
         // Again, once we've appended the new configuration to the log, update
         // the local internal configuration.
@@ -219,7 +219,7 @@ public class Leader extends RaftState implements Observer {
     if (request.term() > state.getCurrentTerm()) {
       return super.appendEntries(request);
     } else if (request.term() < state.getCurrentTerm()) {
-      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.context().log().lastIndex()));
+      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.log().lastIndex()));
     } else {
       state.transition(Follower.class);
       return super.appendEntries(request);
@@ -246,7 +246,7 @@ public class Leader extends RaftState implements Observer {
       // simply apply the command, otherwise we need to ping a quorum of the
       // cluster to ensure that data is up-to-date before responding.
       if (state.context().config().isRequireReadQuorum()) {
-        replicator.ping(state.context().log().lastIndex()).whenComplete((index, error) -> {
+        replicator.ping(state.log().lastIndex()).whenComplete((index, error) -> {
           if (error == null) {
             try {
               future.complete(new SubmitCommandResponse(request.id(), state.context().stateMachine().applyCommand(request.command(), request.args())));
@@ -268,7 +268,7 @@ public class Leader extends RaftState implements Observer {
       // For write commands or for commands for which the type is not known, an
       // entry must be logged, replicated, and committed prior to applying it
       // to the state machine and returning the result.
-      final long index = state.context().log().appendEntry(new CommandEntry(state.getCurrentTerm(), request.command(), request.args()));
+      final long index = state.log().appendEntry(new CommandEntry(state.getCurrentTerm(), request.command(), request.args()));
 
       // Write quorums are also optional to the user. The user can optionally
       // indicate that write commands should be immediately applied to the state

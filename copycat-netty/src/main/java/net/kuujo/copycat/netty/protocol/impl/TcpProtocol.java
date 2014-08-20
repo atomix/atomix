@@ -54,6 +54,11 @@ public class TcpProtocol implements Protocol {
     this("localhost", port);
   }
 
+  @Override
+  public String name() {
+    return String.format("%s-%d", host, port);
+  }
+
   /**
    * Sets the protocol host.
    *

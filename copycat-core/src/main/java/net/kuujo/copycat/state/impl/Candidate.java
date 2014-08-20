@@ -99,8 +99,8 @@ public class Candidate extends RaftState {
 
       // First, load the last log entry to get its term. We load the entry
       // by its index since the index is required by the protocol.
-      final long lastIndex = state.context().log().lastIndex();
-      Entry lastEntry = state.context().log().getEntry(lastIndex);
+      final long lastIndex = state.log().lastIndex();
+      Entry lastEntry = state.log().getEntry(lastIndex);
 
       // Once we got the last log term, iterate through each current member
       // of the cluster and poll each member for a vote.
