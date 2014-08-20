@@ -199,7 +199,6 @@ public class RaftReplica implements Replica {
             if (!entries.isEmpty()) {
               nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
               matchIndex = Math.max(matchIndex, prevIndex + entries.size());
-              System.out.println(member.uri() + ": " + matchIndex);
               triggerCommitFutures(prevIndex+1, prevIndex+entries.size());
               doCommit();
             }
