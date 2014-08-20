@@ -302,13 +302,26 @@ abstract class RaftState implements State<RaftStateContext> {
   @SuppressWarnings("unchecked")
   protected void applySnapshot(long lastIndex, Entries<SnapshotEntry> entries) {
     try {
+      // Combine all the snapshot entries into a single object.
       CombinedSnapshot snapshot = new SnapshotCombiner()
         .withStart(entries.get(0, SnapshotStartEntry.class))
         .withChunks(entries.subList(1, entries.size() - 1, SnapshotChunkEntry.class))
         .withEnd(entries.get(entries.size() - 1, SnapshotEndEntry.class))
         .combine();
+
+      // Apply the snapshot to the local state machine.
       state.context().stateMachine().installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
+
+      // Once the snapshot has been applied, remove all entries prior to the snapshot.
       state.context().log().removeBefore(lastIndex - entries.size() + 1);
+
+      // Set the local cluster configuration according to the snapshot cluster membership.
+      Set<String> members = snapshot.cluster();
+      members.remove(state.cluster().getLocalMember());
+      state.cluster().setRemoteMembers(members);
+
+      // Finally, if necessary, increment the current term.
+      state.setCurrentTerm(Math.max(state.getCurrentTerm(), snapshot.term()));
     } catch (LogException | SerializationException e) {
     } finally {
       state.setLastApplied(lastIndex);
