@@ -173,12 +173,12 @@ public class MemoryLog implements Log {
 
   @Override
   public synchronized void removeBefore(long index) {
-    log.headMap(index, false).clear();
+    log.headMap(index).clear();
   }
 
   @Override
   public synchronized void removeAfter(long index) {
-    log.tailMap(index, false).clear();
+    log.tailMap(index).clear();
   }
 
   @Override
