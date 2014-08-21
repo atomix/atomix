@@ -29,10 +29,11 @@ public class Args {
    *
    * @param value The value to validate.
    */
-  public static void checkNull(Object value) {
+  public static <T> T checkNull(T value) {
     if (value != null) {
       throw new NullPointerException();
     }
+    return value;
   }
 
   /**
@@ -41,10 +42,11 @@ public class Args {
    * @param value The value to validate.
    * @param message The exception message.
    */
-  public static void checkNull(Object value, String message) {
+  public static <T> T checkNull(T value, String message) {
     if (value != null) {
       throw new NullPointerException(message);
     }
+    return value;
   }
 
   /**
@@ -53,10 +55,11 @@ public class Args {
    * @param value The value to validate.
    * @param callback A callback to call if the value is not null.
    */
-  public static void checkNull(Object value, Runnable callback) {
+  public static <T> T checkNull(T value, Runnable callback) {
     if (value != null) {
       callback.run();
     }
+    return value;
   }
 
   /**
@@ -64,10 +67,11 @@ public class Args {
    *
    * @param value The value to validate.
    */
-  public static void checkNotNull(Object value) {
+  public static <T> T checkNotNull(T value) {
     if (value == null) {
       throw new NullPointerException();
     }
+    return value;
   }
 
   /**
@@ -76,10 +80,11 @@ public class Args {
    * @param value The value to validate.
    * @param message The exception message.
    */
-  public static void checkNotNull(Object value, String message) {
+  public static <T> T checkNotNull(T value, String message) {
     if (value == null) {
       throw new NullPointerException(message);
     }
+    return value;
   }
 
   /**
@@ -88,10 +93,11 @@ public class Args {
    * @param value The value to validate.
    * @param callback A callback to call if the value is null.
    */
-  public static void checkNotNull(Object value, Runnable callback) {
+  public static <T> T checkNotNull(T value, Runnable callback) {
     if (value == null) {
       callback.run();
     }
+    return value;
   }
 
   /**
@@ -100,10 +106,11 @@ public class Args {
    * @param value The value to validate.
    * @param predicate The predicate with which to check the value.
    */
-  public static <T> void checkValue(T value, Predicate<T> predicate) {
+  public static <T> T checkValue(T value, Predicate<T> predicate) {
     if (!predicate.test(value)) {
       throw new IllegalArgumentException();
     }
+    return value;
   }
 
   /**
@@ -113,10 +120,11 @@ public class Args {
    * @param message The failure exception message.
    * @param predicate The predicate with which to check the value.
    */
-  public static <T> void checkValue(T value, String message, Predicate<T> predicate) {
+  public static <T> T checkValue(T value, String message, Predicate<T> predicate) {
     if (!predicate.test(value)) {
       throw new IllegalArgumentException(message);
     }
+    return value;
   }
 
 }
