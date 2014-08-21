@@ -34,7 +34,6 @@ import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
@@ -46,8 +45,6 @@ import org.vertx.java.core.json.JsonObject;
 public class EventBusProtocolServer implements ProtocolServer {
   private static final Serializer serializer = SerializerFactory.getSerializer();
   private final String address;
-  private final String host;
-  private final int port;
   private Vertx vertx;
   private ProtocolHandler requestHandler;
 
@@ -69,16 +66,8 @@ public class EventBusProtocolServer implements ProtocolServer {
     }
   };
 
-  public EventBusProtocolServer(String address, String host, int port) {
-    this.address = address;
-    this.host = host;
-    this.port = port;
-  }
-
   public EventBusProtocolServer(String address, Vertx vertx) {
     this.address = address;
-    this.host = null;
-    this.port = 0;
     this.vertx = vertx;
   }
 
@@ -158,48 +147,16 @@ public class EventBusProtocolServer implements ProtocolServer {
   @Override
   public CompletableFuture<Void> start() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    if (vertx == null) {
-      if (host != null) {
-        vertx = new DefaultVertx(port >= 0 ? port : 0, host, new Handler<AsyncResult<Vertx>>() {
-          @Override
-          public void handle(AsyncResult<Vertx> result) {
-            vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-              @Override
-              public void handle(AsyncResult<Void> result) {
-                if (result.failed()) {
-                  future.completeExceptionally(result.cause());
-                } else {
-                  future.complete(null);
-                }
-              }
-            });
-          }
-        });
-      } else {
-        vertx = new DefaultVertx();
-        vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-          @Override
-          public void handle(AsyncResult<Void> result) {
-            if (result.failed()) {
-              future.completeExceptionally(result.cause());
-            } else {
-              future.complete(null);
-            }
-          }
-        });
-      }
-    } else {
-      vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-        @Override
-        public void handle(AsyncResult<Void> result) {
-          if (result.failed()) {
-            future.completeExceptionally(result.cause());
-          } else {
-            future.complete(null);
-          }
+    vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          future.completeExceptionally(result.cause());
+        } else {
+          future.complete(null);
         }
-      });
-    }
+      }
+    });
     return future;
   }
 

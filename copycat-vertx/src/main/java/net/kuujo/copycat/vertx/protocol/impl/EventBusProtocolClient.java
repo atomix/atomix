@@ -24,12 +24,12 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.util.Args;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
@@ -40,21 +40,11 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class EventBusProtocolClient implements ProtocolClient {
   private final String address;
-  private final String host;
-  private final int port;
   private Vertx vertx;
 
-  public EventBusProtocolClient(String address, String host, int port) {
-    this.address = address;
-    this.host = host;
-    this.port = port;
-  }
-
   public EventBusProtocolClient(String address, Vertx vertx) {
-    this.address = address;
-    this.host = null;
-    this.port = 0;
-    this.vertx = vertx;
+    this.address = Args.checkNotNull(address, "Vert.x event bus address cannot be null");
+    this.vertx = Args.checkNotNull(vertx, "Vert.x instance cannot be null");
   }
 
   @Override
@@ -139,24 +129,7 @@ public class EventBusProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<Void> connect() {
-    final CompletableFuture<Void> future = new CompletableFuture<>();
-    if (vertx == null) {
-      if (host != null) {
-        vertx = new DefaultVertx(port >= 0 ? port : 0, host, (result) -> {
-          if (result.failed()) {
-            future.completeExceptionally(result.cause());
-          } else {
-            future.complete(null);
-          }
-        });
-      } else {
-        vertx = new DefaultVertx();
-        future.complete(null);
-      }
-    } else {
-      future.complete(null);
-    }
-    return future;
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override

@@ -15,15 +15,23 @@
  */
 package net.kuujo.copycat.vertx.protocol.impl;
 
+import java.util.concurrent.CountDownLatch;
+
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriPath;
 import net.kuujo.copycat.uri.UriPort;
+import net.kuujo.copycat.uri.UriQueryParam;
 import net.kuujo.copycat.uri.UriSchemeSpecificPart;
+import net.kuujo.copycat.util.Args;
 
+import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
+import org.vertx.java.core.impl.DefaultVertx;
 
 /**
  * Vert.x event bus protocol implementation.
@@ -86,49 +94,131 @@ public class EventBusProtocol implements Protocol {
     return this;
   }
 
+  /**
+   * Sets the Vert.x instance.
+   *
+   * @param vertx The Vert.x instance.
+   */
+  @UriQueryParam("vertx")
+  public void setVertx(Vertx vertx) {
+    this.vertx = vertx;
+  }
+
+  /**
+   * Returns the Vert.x instance.
+   *
+   * @return The Vert.x instance.
+   */
+  public Vertx getVertx() {
+    return vertx;
+  }
+
+  /**
+   * Sets the Vert.x instance, returning the protocol for method chaining.
+   *
+   * @param vertx The Vert.x instance.
+   * @return The event bus protocol.
+   */
+  public EventBusProtocol withVertx(Vertx vertx) {
+    this.vertx = vertx;
+    return this;
+  }
+
+  /**
+   * Sets the Vert.x host.
+   *
+   * @param host The Vert.x host.
+   */
   @UriHost
   public void setHost(String host) {
     this.host = host;
   }
 
+  /**
+   * Returns the Vert.x host.
+   *
+   * @return The Vert.x host.
+   */
   public String getHost() {
     return host;
   }
 
+  /**
+   * Sets the Vert.x host, returning the event bus protocol for method chaining.
+   *
+   * @param host The Vert.x host.
+   * @return The event bus protocol.
+   */
   public EventBusProtocol withHost(String host) {
     this.host = host;
     return this;
   }
 
+  /**
+   * Sets the Vert.x port.
+   *
+   * @param port The Vert.x port.
+   */
   @UriPort
   public void setPort(int port) {
     this.port = port;
   }
 
+  /**
+   * Returns the Vert.x port.
+   *
+   * @return The Vert.x port.
+   */
   public int getPort() {
     return port;
   }
 
+  /**
+   * Sets the Vert.x port, returning the protocol for method chaining.
+   *
+   * @param port The Vert.x port.
+   * @return The event bus protocol.
+   */
   public EventBusProtocol withPort(int port) {
     this.port = port;
     return this;
   }
 
+  /**
+   * Creates a Vert.x instance.
+   */
+  private Vertx createVertx() {
+    final CountDownLatch latch = new CountDownLatch(1);
+    new DefaultVertx(port > 0 ? port : 0, Args.checkNotNull(host, "Vert.x host cannot be null"), new Handler<AsyncResult<Vertx>>() {
+      @Override
+      public void handle(AsyncResult<Vertx> result) {
+        EventBusProtocol.this.vertx = result.result();
+        latch.countDown();
+      }
+    });
+    try {
+      latch.await();
+    } catch (InterruptedException e) {
+      throw new ProtocolException(e);
+    }
+    return vertx;
+  }
+
   @Override
-  public ProtocolServer createServer() {
+  public synchronized ProtocolServer createServer() {
     if (vertx != null) {
       return new EventBusProtocolServer(address, vertx);
     } else {
-      return new EventBusProtocolServer(address, host, port);
+      return new EventBusProtocolServer(address, createVertx());
     }
   }
 
   @Override
-  public ProtocolClient createClient() {
+  public synchronized ProtocolClient createClient() {
     if (vertx != null) {
       return new EventBusProtocolClient(address, vertx);
     } else {
-      return new EventBusProtocolClient(address, host, port);
+      return new EventBusProtocolClient(address, createVertx());
     }
   }
 
