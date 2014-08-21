@@ -113,9 +113,9 @@ public class TcpProtocolServer implements ProtocolServer {
       bootstrap.option(ChannelOption.SO_RCVBUF, protocol.getReceiveBufferSize());
     }
 
-    bootstrap.option(ChannelOption.TCP_NODELAY, protocol.isNoDelay());
-    bootstrap.option(ChannelOption.SO_REUSEADDR, protocol.isReuseAddress());
-    bootstrap.option(ChannelOption.SO_KEEPALIVE, protocol.isKeepAlive());
+    bootstrap.option(ChannelOption.TCP_NODELAY, true);
+    bootstrap.option(ChannelOption.SO_REUSEADDR, true);
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.SO_BACKLOG, protocol.getAcceptBacklog());
 
     if (protocol.getTrafficClass() > -1) {

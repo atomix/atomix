@@ -931,6 +931,21 @@ CopyCat will automatically find the Netty `tcp` protocol.
 ClusterConfig cluster = new ClusterConfig("tcp://localhost:1234");
 ```
 
+Additional named arguments can be passed as query arguments:
+
+```
+tcp://localhost:1234?sendBufferSize=5000&receiveBufferSize=5000
+```
+
+The Netty `tcp` protocol has several additional named options.
+* `threads`
+* `sendBufferSize`
+* `receiveBufferSize`
+* `soLinger`
+* `trafficClass`
+* `acceptBacklog`
+* `connectTimeout`
+
 ### Vert.x Event Bus Protocol
 The Vert.x `eventbus` protocol communicates between replicas on the Vert.x event
 bus. The event bus can either be created in a new `Vertx` instance or referenced
@@ -959,6 +974,23 @@ In order to use Vert.x protocols, you must add the `copycat-vertx` project as a 
 ClusterConfig cluster = new ClusterConfig("tcp://localhost:1234");
 cluster.setRemoteMembers("tcp://localhost:1235", "tcp://localhost:1236");
 ```
+
+Additional named arguments can be passed as query arguments:
+
+```
+tcp://localhost:1234?sendBufferSize=5000&receiveBufferSize=5000
+```
+
+The Vert.x `tcp` protocol has several additional named options.
+* `sendBufferSize`
+* `receiveBufferSize`
+* `ssl`
+* `keyStorePath`
+* `keyStorePassword`
+* `trustStorePath`
+* `trustStorePassword`
+* `acceptBacklog`
+* `connectTimeout`
 
 # Endpoints
 We've gone through developing custom protocols for communicating between

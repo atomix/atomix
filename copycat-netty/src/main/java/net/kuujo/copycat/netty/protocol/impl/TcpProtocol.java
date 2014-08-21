@@ -30,9 +30,6 @@ public class TcpProtocol implements Protocol {
   private String host = "localhost";
   private int port;
   private int threads = 1;
-  private boolean tcpKeepAlive = true;
-  private boolean tcpNoDelay;
-  private boolean reuseAddress;
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
   private boolean useSsl;
@@ -145,93 +142,6 @@ public class TcpProtocol implements Protocol {
    */
   public TcpProtocol withThreads(int numThreads) {
     this.threads = numThreads;
-    return this;
-  }
-
-  /**
-   * Sets whether to keep connections alive.
-   *
-   * @param keepAlive Whether to keep connections alive.
-   */
-  public void setKeepAlive(boolean keepAlive) {
-    this.tcpKeepAlive = keepAlive;
-  }
-
-  /**
-   * Returns a boolean indicating whether keepAlive is enabled.
-   *
-   * @return Whether keepAlive is enabled.
-   */
-  public boolean isKeepAlive() {
-    return tcpKeepAlive;
-  }
-
-  /**
-   * Sets whether to keep connections alive, returning the protocol for method chaining.
-   *
-   * @param keepAlive Whether to keep connections alive.
-   * @return The TCP protocol.
-   */
-  public TcpProtocol withKeepAlive(boolean keepAlive) {
-    this.tcpKeepAlive = keepAlive;
-    return this;
-  }
-
-  /**
-   * Sets the TCP no delay option.
-   *
-   * @param noDelay If <code>true</code>, turns of Nagle's algorithm.
-   */
-  public void setNoDelay(boolean noDelay) {
-    this.tcpNoDelay = noDelay;
-  }
-
-  /**
-   * Returns the TCP no delay option.
-   *
-   * @return Indicates whether Nagle's algorithm is disable.
-   */
-  public boolean isNoDelay() {
-    return tcpNoDelay;
-  }
-
-  /**
-   * Sets the TCP no delay option, returning the protocol for method chaining.
-   *
-   * @param noDelay If <code>true</code>, turns of Nagle's algorithm.
-   * @return The TCP protocol.
-   */
-  public TcpProtocol withNoDelay(boolean noDelay) {
-    this.tcpNoDelay = noDelay;
-    return this;
-  }
-
-  /**
-   * Sets the reuseAddres setting.
-   *
-   * @param reuseAddress Whether to reuseAddress.
-   */
-  public void setReuseAddress(boolean reuseAddress) {
-    this.reuseAddress = reuseAddress;
-  }
-
-  /**
-   * Returns the reuseAddress setting.
-   *
-   * @return Whether to reuseAddress.
-   */
-  public boolean isReuseAddress() {
-    return reuseAddress;
-  }
-
-  /**
-   * Sets the reuseAddress setting, returning the protocol for method chaining.
-   *
-   * @param reuseAddress Whether to reuseAddress.
-   * @return The TCP protocol.
-   */
-  public TcpProtocol withReuseAddress(boolean reuseAddress) {
-    this.reuseAddress = reuseAddress;
     return this;
   }
 

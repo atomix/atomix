@@ -166,9 +166,9 @@ public class TcpProtocolClient implements ProtocolClient {
       bootstrap.option(ChannelOption.IP_TOS, protocol.getTrafficClass());
     }
 
-    bootstrap.option(ChannelOption.TCP_NODELAY, protocol.isNoDelay());
+    bootstrap.option(ChannelOption.TCP_NODELAY, true);
     bootstrap.option(ChannelOption.SO_LINGER, protocol.getSoLinger());
-    bootstrap.option(ChannelOption.SO_KEEPALIVE, protocol.isKeepAlive());
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, protocol.getConnectTimeout());
 
     bootstrap.connect(protocol.getHost(), protocol.getPort()).addListener(new ChannelFutureListener() {
