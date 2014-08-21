@@ -21,11 +21,10 @@ import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.uri.UriAuthority;
 import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriPath;
 import net.kuujo.copycat.uri.UriPort;
 import net.kuujo.copycat.uri.UriQueryParam;
-import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 import net.kuujo.copycat.util.Args;
 
 import org.vertx.java.core.AsyncResult;
@@ -68,8 +67,7 @@ public class EventBusProtocol implements Protocol {
    *
    * @param address The event bus address.
    */
-  @UriPath
-  @UriSchemeSpecificPart
+  @UriAuthority
   public void setAddress(String address) {
     this.address = address;
   }
