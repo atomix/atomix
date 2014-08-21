@@ -21,7 +21,11 @@ import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
-import net.kuujo.copycat.uri.UriPath;
+import net.kuujo.copycat.uri.UriAuthority;
+import net.kuujo.copycat.uri.UriHost;
+import net.kuujo.copycat.uri.UriPort;
+import net.kuujo.copycat.uri.UriQueryParam;
+import net.kuujo.copycat.util.Args;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -91,9 +95,9 @@ public class EventBusEndpoint implements Endpoint {
    *
    * @param address The event bus address.
    */
-  @UriPath
+  @UriAuthority
   public void setAddress(String address) {
-    this.address = address;
+    this.address = address != null && !address.isEmpty() ? address : this.address;
   }
 
   /**
@@ -116,11 +120,101 @@ public class EventBusEndpoint implements Endpoint {
     return this;
   }
 
+  /**
+   * Sets the Vert.x instance.
+   *
+   * @param vertx The Vert.x instance.
+   */
+  @UriQueryParam("vertx")
+  public void setVertx(Vertx vertx) {
+    this.vertx = vertx;
+  }
+
+  /**
+   * Returns the Vert.x instance.
+   *
+   * @return The Vert.x instance.
+   */
+  public Vertx getVertx() {
+    return vertx;
+  }
+
+  /**
+   * Sets the Vert.x instance, returning the endpoint for method chaining.
+   *
+   * @param vertx The Vert.x instance.
+   * @return The event bus endpoint.
+   */
+  public EventBusEndpoint withVertx(Vertx vertx) {
+    this.vertx = vertx;
+    return this;
+  }
+
+  /**
+   * Sets the Vert.x host.
+   *
+   * @param host The Vert.x host.
+   */
+  @UriHost
+  public void setHost(String host) {
+    this.host = host;
+  }
+
+  /**
+   * Returns the Vert.x host.
+   *
+   * @return The Vert.x host.
+   */
+  public String getHost() {
+    return host;
+  }
+
+  /**
+   * Sets the Vert.x host, returning the event bus endpoint for method chaining.
+   *
+   * @param host The Vert.x host.
+   * @return The event bus endpoint.
+   */
+  public EventBusEndpoint withHost(String host) {
+    this.host = host;
+    return this;
+  }
+
+  /**
+   * Sets the Vert.x port.
+   *
+   * @param port The Vert.x port.
+   */
+  @UriPort
+  public void setPort(int port) {
+    this.port = port;
+  }
+
+  /**
+   * Returns the Vert.x port.
+   *
+   * @return The Vert.x port.
+   */
+  public int getPort() {
+    return port;
+  }
+
+  /**
+   * Sets the Vert.x port, returning the endpoint for method chaining.
+   *
+   * @param port The Vert.x port.
+   * @return The event bus endpoint.
+   */
+  public EventBusEndpoint withPort(int port) {
+    this.port = port;
+    return this;
+  }
+
   @Override
   public CompletableFuture<Void> start() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (vertx == null) {
-      vertx = new DefaultVertx(port >= 0 ? port : 0, host, (vertxResult) -> {
+      vertx = new DefaultVertx(port >= 0 ? port : 0, Args.checkNotNull(host), (vertxResult) -> {
         if (vertxResult.failed()) {
           future.completeExceptionally(vertxResult.cause());
         } else {
@@ -148,13 +242,17 @@ public class EventBusEndpoint implements Endpoint {
   @Override
   public CompletableFuture<Void> stop() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    vertx.eventBus().unregisterHandler(address, messageHandler, (result) -> {
-      if (result.failed()) {
-        future.completeExceptionally(result.cause());
-      } else {
-        future.complete(null);
-      }
-    });
+    if (vertx != null) {
+      vertx.eventBus().unregisterHandler(address, messageHandler, (result) -> {
+        if (result.failed()) {
+          future.completeExceptionally(result.cause());
+        } else {
+          future.complete(null);
+        }
+      });
+    } else {
+      future.complete(null);
+    }
     return future;
   }
 
