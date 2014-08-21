@@ -100,7 +100,7 @@ public abstract class Entry implements Serializable {
 
   @Override
   public String toString() {
-    return String.format("%s(%s)", getClass().getSimpleName(), term);
+    return String.format("%s[term=%s]", getClass().getSimpleName(), term);
   }
 
 }

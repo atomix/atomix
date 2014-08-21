@@ -44,4 +44,9 @@ public class SnapshotStartEntry extends SnapshotEntry {
     return cluster;
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[term=%d, cluster=%s]", term(), cluster);
+  }
+
 }

@@ -64,7 +64,7 @@ public class CommandEntry extends Entry {
 
   @Override
   public String toString() {
-    return String.format("Command[%s(%s)]", command, args);
+    return String.format("CommandEntry[term=%d, command=%s, args=%s]", term(), command, args);
   }
 
 }

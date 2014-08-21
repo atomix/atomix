@@ -52,7 +52,7 @@ public class ConfigurationEntry extends Entry {
 
   @Override
   public String toString() {
-    return String.format("Configuration%s", members);
+    return String.format("ConfigurationEntry[term=%d, members=%s]", term(), members);
   }
 
 }
