@@ -435,6 +435,11 @@ abstract class RaftState implements State<RaftStateContext> {
         // at least as up to date as the candidates entry and term.
         long lastIndex = state.log().lastIndex();
         Entry entry = state.log().getEntry(lastIndex);
+        if (entry == null) {
+          state.setLastVotedFor(request.candidate());
+          return new RequestVoteResponse(request.id(), state.getCurrentTerm(), true);
+        }
+
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           state.setLastVotedFor(request.candidate());
