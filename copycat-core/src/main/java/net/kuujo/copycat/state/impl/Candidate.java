@@ -106,23 +106,27 @@ public class Candidate extends RaftState {
       // of the cluster and poll each member for a vote.
       final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
       for (Member member : pollMembers) {
-        final ProtocolClient client = member.protocol().client();
-        client.connect().whenCompleteAsync((result1, error1) -> {
-          if (error1 != null) {
-            quorum.fail();
-          } else {
-            client.requestVote(new RequestVoteRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.context().cluster().config().getLocalMember(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
-              client.close();
-              if (quorum != null) {
-                if (error2 != null || !result2.voteGranted()) {
-                  quorum.fail();
-                } else {
-                  quorum.succeed();
+        if (member.equals(state.context().cluster().localMember())) {
+          quorum.succeed();
+        } else {
+          final ProtocolClient client = member.protocol().client();
+          client.connect().whenCompleteAsync((result1, error1) -> {
+            if (error1 != null) {
+              quorum.fail();
+            } else {
+              client.requestVote(new RequestVoteRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.context().cluster().config().getLocalMember(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
+                client.close();
+                if (quorum != null) {
+                  if (error2 != null || !result2.voteGranted()) {
+                    quorum.fail();
+                  } else {
+                    quorum.succeed();
+                  }
                 }
-              }
-            });
-          }
-        });
+              });
+            }
+          });
+        }
       }
     }
   }
