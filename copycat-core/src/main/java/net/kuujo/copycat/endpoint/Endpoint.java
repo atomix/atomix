@@ -17,6 +17,8 @@ package net.kuujo.copycat.endpoint;
 
 import java.util.concurrent.CompletableFuture;
 
+import net.kuujo.copycat.CopyCatContext;
+
 /**
  * CopyCat endpoint.<p>
  *
@@ -36,6 +38,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Endpoint {
+
+  /**
+   * Initializes the endpoint.
+   *
+   * @param context The copycat context.
+   */
+  void init(CopyCatContext context);
 
   /**
    * Starts the endpoint.<p>

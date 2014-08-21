@@ -33,6 +33,10 @@ public class LocalEndpoint implements Endpoint {
   }
 
   @Override
+  public void init(CopyCatContext context) {
+  }
+
+  @Override
   public CompletableFuture<Void> start() {
     return CompletableFuture.completedFuture(null);
   }

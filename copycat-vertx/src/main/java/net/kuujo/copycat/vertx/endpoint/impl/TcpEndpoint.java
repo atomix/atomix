@@ -60,6 +60,11 @@ public class TcpEndpoint implements Endpoint {
     this.port = port;
   }
 
+  @Override
+  public void init(CopyCatContext context) {
+    this.context = context;
+  }
+
   /**
    * Sets the endpoint host.
    *

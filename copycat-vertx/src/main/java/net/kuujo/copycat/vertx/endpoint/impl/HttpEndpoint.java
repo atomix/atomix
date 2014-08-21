@@ -63,6 +63,11 @@ public class HttpEndpoint implements Endpoint {
     this.vertx = vertx;
   }
 
+  @Override
+  public void init(CopyCatContext context) {
+    this.context = context;
+  }
+
   /**
    * Sets the endpoint host.
    *

@@ -82,12 +82,9 @@ public class EventBusEndpoint implements Endpoint {
     }
   };
 
-  public void setContext(CopyCatContext context) {
+  @Override
+  public void init(CopyCatContext context) {
     this.context = context;
-  }
-
-  public CopyCatContext getContext() {
-    return context;
   }
 
   /**
