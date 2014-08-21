@@ -26,12 +26,10 @@ import java.util.concurrent.TimeUnit;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.log.Entries;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.NoOpEntry;
-import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
@@ -74,13 +72,13 @@ public class Leader extends RaftState implements Observer {
       applyEntry(i);
     }
 
-    // Once all pending entries have been applied to the state machine, create
-    // a new snapshot of the local state machine state, commit it to the local
-    // log, and wipe the log of committed entries.
-    Entries<SnapshotEntry> snapshotEntries = createSnapshot();
-    long index = state.log().lastIndex() + 1;
-    state.log().appendEntries(snapshotEntries);
-    state.log().removeBefore(index);
+    // Once all pending entries have been applied to the state machine, check to
+    // see if the leader's log is empty. If the log is empty, immediately commit
+    // a snapshot as the first set of entries in the log. This guarantees that
+    // the first set of entries in any leader's log will always be a snapshot.
+    if (state.log().isEmpty()) {
+      state.log().appendEntries(createSnapshot());
+    }
 
     // Next, the leader must write a no-op entry to the log and replicate the log
     // to all the nodes in the cluster. This ensures that other nodes are notified
