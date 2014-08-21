@@ -1,24 +1,23 @@
-CopyCat
+Copycat
 =======
 
 ### [User Manual](#user-manual)
 
-CopyCat is an extensible Java-based implementation of the
+Copycat is an extensible Java-based implementation of the
 [Raft consensus protocol](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
 
-*CopyCat is still considered experimental and is not currently recommended for production*
-
-The core of CopyCat is a framework designed to support a variety of protocols and
-transports. CopyCat provides a simple extensible API that can be used to build a
+The core of Copycat is a framework designed to support a variety of asynchronous frameworks
+and protocols. Copycat provides a simple extensible API that can be used to build a
 strongly consistent, fault/partition tolerant state machine over any mode of communication.
-CopyCat's Raft implementation also supports advanced features of the Raft algorithm such as
+Copycat's Raft implementation also supports advanced features of the Raft algorithm such as
 snapshotting and dynamic cluster configuration changes and provides additional optimizations
 for various scenarios such as failure detection and read-only state queries.
 
-CopyCat is a pluggable framework, providing protocol and endpoint implementations for
+Copycat is a pluggable framework, providing protocol and endpoint implementations for
 various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
-*Note that this version requires Java 8. There is also a [Java 7 compatible version](https://github.com/kuujo/copycat/tree/java-1.7)*
+*Note that this version requires Java 8. There is also a [Java 7 compatible version](https://github.com/kuujo/copycat/tree/java-1.7),
+however, the Java 7 version may be significantly behind master at any given point*
 
 User Manual
 ===========
@@ -73,7 +72,7 @@ User Manual
       * [Vert.x HTTP](#vertx-http-endpoint)
 
 # A brief introduction
-CopyCat is a "protocol agnostic" implementation of the Raft consensus algorithm. It
+Copycat is a "protocol agnostic" implementation of the Raft consensus algorithm. It
 provides a framework for constructing a partition-tolerant replicated state machine
 over a variety of wire-level protocols. It sounds complicated, but the API is actually
 quite simple. Here's a quick example.
@@ -102,18 +101,18 @@ public class KeyValueStore extends StateMachine {
 ```
 
 Here we've created a simple key value store. By deploying this state machine on several
-nodes in a cluster, CopyCat will ensure commands (i.e. `get`, `set`, and `delete`) are
+nodes in a cluster, Copycat will ensure commands (i.e. `get`, `set`, and `delete`) are
 applied to the state machine in the order in which they're submitted to the cluster
-(log order). Internally, CopyCat uses a replicated log to order and replicate commands,
+(log order). Internally, Copycat uses a replicated log to order and replicate commands,
 and it uses leader election to coordinate log replication. When the replicated log grows
-too large, CopyCat will take a snapshot of the `@Stateful` state machine state and
+too large, Copycat will take a snapshot of the `@Stateful` state machine state and
 compact the log.
 
 ```java
 LogFactory logFactory = new FileLogFactory();
 ```
 
-To configure the CopyCat cluster, we simply create a `ClusterConfig`.
+To configure the Copycat cluster, we simply create a `ClusterConfig`.
 
 ```java
 ClusterConfig cluster = new ClusterConfig();
@@ -122,12 +121,12 @@ cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
 ```
 
 Note that the cluster configuration identifies a particular protocol, `tcp`. These are
-the endpoints the nodes within the CopyCat cluster use to communicate with one another.
-CopyCat provides a number of different [protocol](#protocols) and [endpoint](#endpoints)
+the endpoints the nodes within the Copycat cluster use to communicate with one another.
+Copycat provides a number of different [protocol](#protocols) and [endpoint](#endpoints)
 implementations.
 
-Additionally, CopyCat cluster membership is dynamic, and the `ClusterConfig` is `Observable`.
-This means that if the `ClusterConfig` is changed while the cluster is running, CopyCat
+Additionally, Copycat cluster membership is dynamic, and the `ClusterConfig` is `Observable`.
+This means that if the `ClusterConfig` is changed while the cluster is running, Copycat
 will pick up the membership change and replicate the cluster configuration in a safe manner.
 
 Now that the cluster has been set up, we simply create a `CopyCat` instance, specifying
@@ -202,7 +201,7 @@ POST http://localhost:5000/delete
 200 OK
 ```
 
-CopyCat doesn't require that commands be submitted via an endpoint. Rather than
+Copycat doesn't require that commands be submitted via an endpoint. Rather than
 submitting commands via the HTTP endpoint, simply construct a `CopyCatContext`
 instance and submit commands directly to the cluster via the context.
 
@@ -218,51 +217,51 @@ context.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
 ```
 
 # How it works
-CopyCat uses a Raft-based consensus algorithm to perform leader election and state
-replication. Each node in a CopyCat cluster may be in one of three states at any
+Copycat uses a Raft-based consensus algorithm to perform leader election and state
+replication. Each node in a Copycat cluster may be in one of three states at any
 given time - [follower](#followers), [candidate](#candidates), or [leader](#leaders).
 Each node in the cluster maintains an internal [log](#logs) of replicated commands.
-When a command is submitted to a CopyCat cluster, the command is forwarded to the
+When a command is submitted to a Copycat cluster, the command is forwarded to the
 cluster leader. The leader then logs the command and replicates it to a majority
 of the cluster. Once the command has been replicated, it applies the command to its
 local state machine and replies with the command result.
 
-*For the most in depth description of how CopyCat works, see
+*For the most in depth description of how Copycat works, see
 [In Search of an Understandable Consensus Algorithm](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf)
 by Diego Ongaro and John Ousterhout.*
 
 ### State Machines
-Each node in a CopyCat cluster contains a state machine to which the node applies
+Each node in a Copycat cluster contains a state machine to which the node applies
 [commands](#commands) sent to the cluster. State machines are simply classes that
-extend CopyCat's `StateMachine` class, but there are a couple of very important
+extend Copycat's `StateMachine` class, but there are a couple of very important
 aspects to note about state machines.
 * Given the same commands in the same order, state machines should always arrive at
   the same state with the same output.
 * Following from that rule, each node's state machine should be identical.
 
 ### Commands
-Commands are state change instructions that are submitted to the CopyCat cluster
+Commands are state change instructions that are submitted to the Copycat cluster
 and ultimately applied to the state machine. For instance, in a key-value store,
-a command could be something like `get` or `set`. CopyCat provides unique features
+a command could be something like `get` or `set`. Copycat provides unique features
 that allow it to optimize handling of certain command types. For instance, read-only
 commands which don't contribute to the system state will not be replicated, but commands
 that do alter the system state are eventually replicated to all the nodes in the cluster.
 
 ### Logs
-CopyCat nodes share state using a replicated log. When a command is submitted to the
-CopyCat cluster, the command is appended to the [leader's](#leader-election) log and
+Copycat nodes share state using a replicated log. When a command is submitted to the
+Copycat cluster, the command is appended to the [leader's](#leader-election) log and
 replicated to other nodes in the cluster. If a node dies and later restarts, the node
 will rebuild its internal state by reapplying logged commands to its state machine.
-The log is essential to the operation of the CopyCat cluster in that it both helps
+The log is essential to the operation of the Copycat cluster in that it both helps
 maintain consistency of state across nodes and assists in [leader election](#leader-election).
-CopyCat provides both in-memory logs for testing and file-based logs for production.
+Copycat provides both in-memory logs for testing and file-based logs for production.
 
 ### Snapshots
-In order to ensure [logs](#logs) do not grow too large for the disk, CopyCat replicas periodically
-take and persist snapshots of the [state machine](#state-machines) state. CopyCat manages snapshots
+In order to ensure [logs](#logs) do not grow too large for the disk, Copycat replicas periodically
+take and persist snapshots of the [state machine](#state-machines) state. Copycat manages snapshots
 using a method different than is described in the original Raft paper. Rather than persisting
 snapshots to separate snapshot files and replicating snapshots using an additional RCP method,
-CopyCat appends snapshots directly to the log. This allows CopyCat to minimize complexity by
+Copycat appends snapshots directly to the log. This allows Copycat to minimize complexity by
 transfering snapshots as a normal part of log replication.
 
 Normally, when a node crashes and recovers, it restores its state using the latest snapshot
@@ -272,14 +271,14 @@ written a new snapshot to its log. In that case, the [leader](#leader-election) 
 its latest snapshot to the recovering node, allowing it to start with the leader's snapshot.
 
 ### Cluster Configurations
-CopyCat replicas communicate with one another through a user-defined cluster configuration.
-The CopyCat cluster is very flexible, and the [protocol](#protocols) underlying the CopyCat
+Copycat replicas communicate with one another through a user-defined cluster configuration.
+The Copycat cluster is very flexible, and the [protocol](#protocols) underlying the Copycat
 cluster is pluggable. Additionally, for cases where cluster configuration may change over
-time, CopyCat supports runtime cluster configuration changes. As with other state changes,
+time, Copycat supports runtime cluster configuration changes. As with other state changes,
 all cluster configuration changes are performed through the cluster leader.
 
 ### Leader Election
-CopyCat clusters use leader election to maintain synchronization of nodes. In CopyCat,
+Copycat clusters use leader election to maintain synchronization of nodes. In Copycat,
 all state changes are performed via the leader. In other words, commands that are submitted
 to the cluster are *always* forwarded to the leader for processing. This leads to a much
 simpler implementation of single-copy consistency.
@@ -302,7 +301,7 @@ The candidate role occurs when a replica is announcing its candidacy to become t
 cluster leader. Candidacy occurs when a [follower](#followers) has not heard from the
 cluster leader for a configurable amount of time. When a replica becomes a candidate, it
 requests votes from each other member of the cluster. The voting algorithm is essential
-to the consistency of CopyCat logs. When a replica receives a vote request, it compares
+to the consistency of Copycat logs. When a replica receives a vote request, it compares
 the status of the requesting node's log to its own log and decides whether to vote
 for the candidate based on how up-to-date the candidates log is. This ensures that
 only replicas with the most up-to-date logs can become the cluster leader.
@@ -319,20 +318,20 @@ the result. The leader is also responsible for maintaining log consistency durin
 ### Protocols
 The `copycat-core` project is purely an implementation of the Raft consensus algorithm.
 It does not implement any specific transport aside from a `local` transport for testing.
-Instead, the CopyCat API is designed to allow users to implement the transport layer
-using the `Protocol` API. CopyCat does, however, provide some core protocol implementations
+Instead, the Copycat API is designed to allow users to implement the transport layer
+using the `Protocol` API. Copycat does, however, provide some core protocol implementations
 in the `copycat-netty` and `copycat-vertx` projects.
 
 ### Endpoints
-CopyCat provides a framework for building fault-tolerant [state machines](#state-machines) on
+Copycat provides a framework for building fault-tolerant [state machines](#state-machines) on
 the Raft consensus algorithm, but fault-tolerant distributed systems are of no use if they can't
-be accessed from the outside world. CopyCat's `Endpoint` API facilitates creating user-facing
-interfaces (servers) for submitting [commands](#commands) to the CopyCat cluster.
+be accessed from the outside world. Copycat's `Endpoint` API facilitates creating user-facing
+interfaces (servers) for submitting [commands](#commands) to the Copycat cluster.
 
 # Getting Started
 
 ### Creating a [state machine](#state-machines)
-To create a state machine in CopyCat, simply extend the `StateMachine`
+To create a state machine in Copycat, simply extend the `StateMachine`
 class.
 
 ```java
@@ -341,22 +340,22 @@ public class MyStateMachine extends StateMachine {
 ```
 
 The state machine interface is simply an identifier interface. *All public methods
-within a state machine* can be called as CopyCat commands. This is important to remember.
+within a state machine* can be called as Copycat commands. This is important to remember.
 
 ### Providing [command types](#commands)
-When a command is submitted to the CopyCat cluster, the command is first written
+When a command is submitted to the Copycat cluster, the command is first written
 to a [log](#logs) and replicated to other nodes in the cluster. Once the log entry has
 been replicated to a majority of the cluster, the command is applied to the leader's
 state machine and the response is returned.
 
-In many cases, CopyCat can avoid writing any data to the log at all. In particular,
-when a read-only command is submitted to the cluster, CopyCat does not need to log
-and replicate that command since it has no effect on the machine state. Instead, CopyCat
+In many cases, Copycat can avoid writing any data to the log at all. In particular,
+when a read-only command is submitted to the cluster, Copycat does not need to log
+and replicate that command since it has no effect on the machine state. Instead, Copycat
 can simply ensure that the cluster is in sync, apply the command to the state machine,
 and return the result. However, in order for it to do this it needs to have some
 additional information about each specific command.
 
-To provide command information to CopyCat, use the `@Command` annotation on a command
+To provide command information to Copycat, use the `@Command` annotation on a command
 method.
 
 Each command can have one of three types:
@@ -366,7 +365,7 @@ Each command can have one of three types:
 
 By default, all commands are of the type `READ_WRITE`. While there is no real difference
 between the `WRITE` and `READ_WRITE` types, the `READ` type is important in allowing
-CopyCat to identify read-only commands. *It is important that any command identified as
+Copycat to identify read-only commands. *It is important that any command identified as
 a `READ` command never modify the machine state.*
 
 Let's look at an example of a command provider:
@@ -390,18 +389,18 @@ public class MyStateMachine extends StateMachine {
 
 ### Taking [snapshots](#snapshots)
 One of the issues with a [replicated log](#logs) is that over time it will only continue to grow.
-There are a couple of ways to potentially handle this, and CopyCat uses the [snapshotting](#snapshots)
+There are a couple of ways to potentially handle this, and Copycat uses the [snapshotting](#snapshots)
 method that is recommended by the authors of the Raft algorithm. However, in favor of simplicity,
-the CopyCat snapshotting implementation does slightly differ from the one described in the Raft
-paper. Rather than storing snapshots in a separate snapshot file, CopyCat stores snapshots as
+the Copycat snapshotting implementation does slightly differ from the one described in the Raft
+paper. Rather than storing snapshots in a separate snapshot file, Copycat stores snapshots as
 normal log entries, making it easier to replicate snapshots when replicas fall too far out
-of sync. Additionally, CopyCat guarantees that the first entry in any log will always be
+of sync. Additionally, Copycat guarantees that the first entry in any log will always be
 a `SnapshotEntry`, again helping to ease the process of replicating snapshots to far
 out-of-date replicas.
 
-All snapshot serialization, storage, and loading is handled by CopyCat internally. Users need
+All snapshot serialization, storage, and loading is handled by Copycat internally. Users need
 only annotated stateful fields with the `@Stateful` annotation. Once the log grows to a
-predetermined size (configurable in `CopyCatConfig`), CopyCat will take a snaphsot of the log
+predetermined size (configurable in `CopyCatConfig`), Copycat will take a snaphsot of the log
 and wipe all previous log entries.
 
 ```java
@@ -412,8 +411,8 @@ public class MyStateMachine extends StateMachine {
 ```
 
 ### Configuring the replica
-CopyCat exposes a configuration API that allows users to configure how CopyCat behaves
-during elections and how it replicates commands. To configure a CopyCat replica, create
+Copycat exposes a configuration API that allows users to configure how Copycat behaves
+during elections and how it replicates commands. To configure a Copycat replica, create
 a `CopyCatConfig` to pass to the `CopyCatContext` constructor.
 
 ```java
@@ -435,28 +434,28 @@ the command to its state machine and returning the result. Defaults to `true` (e
 * `setMaxLogSize`/`withMaxLogSize` - sets the maximum log size before a snapshot should be taken. As
 entries are appended to the local log, replicas will monitor the size of the local log to determine
 whether a snapshot should be taken based on this value. Defaults to `32 * 1024^2`
-* `setCorrelationStrategy`/`withCorrelationStrategy` - CopyCat generates correlation identifiers
+* `setCorrelationStrategy`/`withCorrelationStrategy` - Copycat generates correlation identifiers
 for each request/response pair that it sends. This helps assist in correlating messages across
-various protocols. By default, CopyCat uses `UuidCorrelationStrategy` - a `UUID` based correlation ID
+various protocols. By default, Copycat uses `UuidCorrelationStrategy` - a `UUID` based correlation ID
 generator, but depending on the protocol being used, the `MonotonicCorrelationStrategy` which generates
-monotonically increasing IDs may be safe to use (it's safe with all core CopyCat protocols).
+monotonically increasing IDs may be safe to use (it's safe with all core Copycat protocols).
 Defaults to `UuidCorrelationStrategy`
 * `setTimerStrategy`/`withTimerStrategy` - sets the replica timer strategy. This allows users to
-control how CopyCat's internal timers work. By default, replicas use a `ThreadTimerStrategy`
+control how Copycat's internal timers work. By default, replicas use a `ThreadTimerStrategy`
 which uses the Java `Timer` to schedule delays on a background thread. Users can implement their
 own `TimerStrategy` in order to, for example, implement an event loop based timer. Timers should
 return monotonically increasing timer IDs that never repeat. Note also that timers do not need
-to be multi-threaded since CopyCat only sets a timeout a couple time a second. Defaults to
+to be multi-threaded since Copycat only sets a timeout a couple time a second. Defaults to
 `ThreadTimerStrategy`
 
 ### Configuring the [cluster](#cluster-configurations)
-When a CopyCat cluster is first started, the [cluster configuration](#cluster-configurations)
+When a Copycat cluster is first started, the [cluster configuration](#cluster-configurations)
 must be explicitly provided by the user. However, as the cluster runs, explicit cluster
 configurations may no longer be required. This is because once a cluster leader has been
 elected, the leader will replicate its cluster configuration to the rest of the cluster,
 and the user-defined configuration will be replaced by an internal configuration.
 
-To configure the CopyCat cluster, create a `ClusterConfig`.
+To configure the Copycat cluster, create a `ClusterConfig`.
 
 ```java
 ClusterConfig cluster = new ClusterConfig();
@@ -471,7 +470,7 @@ cluster.setLocalMember("tcp://localhost:1234");
 ```
 
 Note that the configuration uses URIs to identify nodes.
-[The protocol used by CopyCat is pluggable](#protocols), so member address formats may
+[The protocol used by Copycat is pluggable](#protocols), so member address formats may
 differ depending on the protocol you're using.
 
 To set remote cluster members, use the `setRemoteMembers` or `addRemoteMember` method:
@@ -482,19 +481,19 @@ cluster.addRemoteMember("tcp://localhost1236");
 ```
 
 ### Creating a [dynamic cluster](#cluster-configurations)
-The CopyCat cluster configuration is `Observable`, and once the local node is elected
+The Copycat cluster configuration is `Observable`, and once the local node is elected
 leader, it will begin observing the configuration for changes.
 
 Once the local node has been started, simply adding or removing nodes from the observable
 `ClusterConfig` may cause the replica's configuration to be updated. However,
 it's important to remember that as with commands, configuration changes must go through
-the cluster leader and be replicated to the rest of the cluster. This allows CopyCat
+the cluster leader and be replicated to the rest of the cluster. This allows Copycat
 to ensure that logs remain consistent while nodes are added or removed, but it also
 means that cluster configuration changes may not be propagated for some period of
 time after the `ClusterConfig` is updated.
 
 ### Creating the CopyCatContext
-CopyCat replicas are run via a `CopyCatContext`. The CopyCat context is a container
+Copycat replicas are run via a `CopyCatContext`. The Copycat context is a container
 for the replica's `Log`, `StateMachine`, and `ClusterConfig`. To start the replica,
 simply call the `start()` method.
 
@@ -504,12 +503,12 @@ context.start();
 ```
 
 ### Setting the [log](#logs) type
-By default, CopyCat uses an in-memory log for simplicity. However, in production
-users should use a disk-based log. CopyCat provides two `Log` implementations:
+By default, Copycat uses an in-memory log for simplicity. However, in production
+users should use a disk-based log. Copycat provides two `Log` implementations:
 * `MemoryLogFactory` - an in-memory `TreeMap` based log factory
 * `FileLogFactory` - a `RandomAccessFile` based log factory
 
-To set the log to be used by a CopyCat replica, simply pass the log instance in
+To set the log to be used by a Copycat replica, simply pass the log instance in
 the `CopyCatContext` constructor:
 
 ```java
@@ -518,7 +517,7 @@ context.start();
 ```
 
 ### Submitting [commands](#commands) to the cluster
-To submit commands to the CopyCat cluster, simply call the `submitCommand` method
+To submit commands to the Copycat cluster, simply call the `submitCommand` method
 on any `CopyCatContext`.
 
 ```java
@@ -533,8 +532,8 @@ currently [elected](#leader-election) leader (or the node to which the command i
 doesn't know of any cluster leader) then the submission will fail.
 
 ## Events
-CopyCat provides an API that allows users to listen for various events that occur throughout
-the lifetime of a CopyCat cluster. To subscribe to an event, register an `EventListener` on
+Copycat provides an API that allows users to listen for various events that occur throughout
+the lifetime of a Copycat cluster. To subscribe to an event, register an `EventListener` on
 any `EventProvider`. Events can be registered for elections, logging, commands, state changes,
 and cluster membership changes.
 
@@ -600,8 +599,8 @@ context.stateMachine().addListener(new StateMachineListener() {
 ```
 
 # Serialization
-CopyCat provides a pluggable serialization API that allows users to control how log
-entries are serialized to the log. CopyCat provides two serializer implementations, one
+Copycat provides a pluggable serialization API that allows users to control how log
+entries are serialized to the log. Copycat provides two serializer implementations, one
 using the core Java serialization mechanism, and one [Jackson](http://jackson.codehaus.org/)
 based serializer (the default). To configure the serializer in use, add a file to the classpath
 at `META-INF/services/net/kuujo/copycat/Serializer` containing the serializer factory class name:
@@ -609,8 +608,8 @@ at `META-INF/services/net/kuujo/copycat/Serializer` containing the serializer fa
 * `net.kuujo.copycat.serializer.impl.JavaSerializerFactory`
 
 ### Providing custom log serializers
-CopyCat locates log serializers via its custom service loader implementation. To provide
-a custom serializer to CopyCat, simply add a configuration file to your classpath at
+Copycat locates log serializers via its custom service loader implementation. To provide
+a custom serializer to Copycat, simply add a configuration file to your classpath at
 `META-INF/services/net/kuujo/copycat/Serializer` containing the `SerializerFactory`
 implementation class name.
 
@@ -626,7 +625,7 @@ public class JacksonSerializerFactory extends SerializerFactory {
 ```
 
 The serializer factory should return a `Serializer` instance via the `createSerializer` method.
-This is the basic default serializer used by CopyCat:
+This is the basic default serializer used by Copycat:
 
 ```java
 public class JacksonSerializer implements Serializer {
@@ -654,11 +653,11 @@ public class JacksonSerializer implements Serializer {
 ```
 
 # Protocols
-CopyCat is an abstract API that can implement the Raft consensus algorithm over
-any conceivable protocol. To do this, CopyCat provides a flexible protocol plugin
+Copycat is an abstract API that can implement the Raft consensus algorithm over
+any conceivable protocol. To do this, Copycat provides a flexible protocol plugin
 system. Protocols use special URIs - such as `local:foo` or `tcp://localhost:5050` -
-and CopyCat uses a custom service loader similar to the Java service loader. Using
-URIs, a protocol can be constructed and started by CopyCat without the large amounts
+and Copycat uses a custom service loader similar to the Java service loader. Using
+URIs, a protocol can be constructed and started by Copycat without the large amounts
 of boilerplate code that would otherwise be required.
 
 To define a new protocol, simply create a file in your project's
@@ -733,7 +732,7 @@ public interface ProtocolClient {
 
 ### Injecting URI arguments into a protocol
 You may be wondering how you can get URI arguments into your protocol implementation.
-CopyCat provides special annotations that can be used to inject specific URI parts
+Copycat provides special annotations that can be used to inject specific URI parts
 into your protocol. Each URI annotation directly mirrors a method on the Java `URI`
 interface, so users can extract any information necessary out of the protocol URI.
 
@@ -790,7 +789,7 @@ public class HttpProtocol implements Protocol {
 }
 ```
 
-Obviously URI parameters are limiting in type. The CopyCat URI injector supports
+Obviously URI parameters are limiting in type. The Copycat URI injector supports
 complex types via a `Registry` instance. Registry lookups can be performed by
 prefixing `@UriQueryParam` names with the `$` prefix.
 
@@ -888,7 +887,7 @@ public class HttpProtocol implements Protocol {
 
 ### Configuring the cluster with custom protocols
 
-Let's take a look at an example of how to configure the CopyCat cluster when using
+Let's take a look at an example of how to configure the Copycat cluster when using
 custom protocols.
 
 ```java
@@ -897,14 +896,14 @@ cluster.addRemoteMember("http://localhost:8081/copycat");
 cluster.addRemoteMember("http://localhost:8082/copycat");
 ```
 
-Note that CopyCat does not particularly care about the protocol of any given node
+Note that Copycat does not particularly care about the protocol of any given node
 in the cluster. Theoretically, different nodes could be connected together by any
 protocol they want (though I can't imagine why one would want to do such a thing).
 For the local replica, the protocol's server is used to receive messages. For remote
 replicas, each protocol instance's client is used to send messages to those replicas.
 
 ## Built-in protocols
-CopyCat maintains several built-in protocols, some of which are implemented on top
+Copycat maintains several built-in protocols, some of which are implemented on top
 of asynchronous frameworks like [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
 ### Local Protocol
@@ -925,7 +924,7 @@ The netty `tcp` protocol communicates between replicas using Netty TCP channels.
 
 In order to use Netty protocols, you must add the `copycat-netty` project as a
 dependency. Once the `copycat-netty` library is available on your classpath,
-CopyCat will automatically find the Netty `tcp` protocol.
+Copycat will automatically find the Netty `tcp` protocol.
 
 ```java
 ClusterConfig cluster = new ClusterConfig("tcp://localhost:1234");
@@ -994,9 +993,9 @@ The Vert.x `tcp` protocol has several additional named options.
 
 # Endpoints
 We've gone through developing custom protocols for communicating between
-nodes in CopyCat, but a replicated state machine isn't much good if you can't
+nodes in Copycat, but a replicated state machine isn't much good if you can't
 get much information into it. Nodes need some sort of API that can be exposed to
-the outside world. For this, CopyCat provides an *endpoints* API that behaves very
+the outside world. For this, Copycat provides an *endpoints* API that behaves very
 similarly to the *protocol* API.
 
 To register an endpoint, simply add a file to the `META-INF/services/net/kuujo/copycat/endpoints`
@@ -1024,7 +1023,7 @@ Endpoints support all the same URI annotations as do protocols. See the protocol
 for a tutorial on injecting arguments into custom endpoints.
 
 ### Wrapping the CopyCatContext in an endpoint service
-CopyCat provides a simple helper class for wrapping a `CopyCatContext in an
+Copycat provides a simple helper class for wrapping a `CopyCatContext in an
 endpoint. To wrap a context, use the `CopyCat` class. The `CopyCat` constructor
 simply accepts a single additional argument which is the endpoint URI.
 
@@ -1035,7 +1034,7 @@ copycat.start();
 ```
 
 ## Built-in endpoints
-CopyCat also provides a couple of built-in endpoints via the `copycat-vertx`
+Copycat also provides a couple of built-in endpoints via the `copycat-vertx`
 project. In order to use Vert.x endpoints, you must add the `copycat-vertx`
 project as a dependency.
 
