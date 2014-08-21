@@ -207,12 +207,17 @@ public class RaftReplica implements Replica {
               doCommit();
             }
           } else {
-            // If replication failed then use the last log index indicated by
-            // the replica in the response to generate a new nextIndex. This allows
-            // us to skip repeatedly replicating one entry at a time if it's not
-            // necessary.
-            nextIndex = sendIndex = response.lastLogIndex() + 1;
-            doCommit();
+            if (response.term() > state.getCurrentTerm()) {
+              triggerCommitFutures(prevIndex, prevIndex, new CopyCatException("Not the leader"));
+              state.transition(Follower.class);
+            } else {
+              // If replication failed then use the last log index indicated by
+              // the replica in the response to generate a new nextIndex. This allows
+              // us to skip repeatedly replicating one entry at a time if it's not
+              // necessary.
+              nextIndex = sendIndex = response.lastLogIndex() + 1;
+              doCommit();
+            }
           }
         } else {
           triggerCommitFutures(prevIndex+1, prevIndex+entries.size(), response.error());
