@@ -53,7 +53,7 @@ public class RaftStateContext implements StateContext {
   private final ClusterConfig cluster = new ClusterConfig();
   private final LogFactory logFactory;
   private Log log;
-  private final RaftElectionContext election = new RaftElectionContext();
+  private final RaftElectionContext election;
   private volatile RaftState currentState;
   private volatile String currentLeader;
   private ProtocolClient leaderClient;
@@ -66,6 +66,7 @@ public class RaftStateContext implements StateContext {
 
   public RaftStateContext(CopyCatContext context, LogFactory logFactory) {
     this.context = context;
+    this.election = new RaftElectionContext(this);
     this.logFactory = logFactory;
   }
 

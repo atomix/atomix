@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.election;
 
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.EventProvider;
 
 /**
@@ -37,5 +39,12 @@ public interface ElectionContext extends EventProvider<ElectionListener> {
    * @return The current leader.
    */
   String currentLeader();
+
+  /**
+   * Starts a new election.
+   *
+   * @return A completable future to be completed with the election result.
+   */
+  CompletableFuture<Boolean> start();
 
 }
