@@ -15,15 +15,12 @@
  */
 package net.kuujo.copycat.vertx.protocol.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
@@ -35,7 +32,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
@@ -48,6 +44,7 @@ import org.vertx.java.core.parsetools.RecordParser;
  */
 public class TcpProtocolServer implements ProtocolServer {
   private static final Serializer serializer = SerializerFactory.getSerializer();
+  private static final String DELIMITER = "\\x00";
   private Vertx vertx;
   private final String host;
   private final int port;
@@ -122,28 +119,22 @@ public class TcpProtocolServer implements ProtocolServer {
       server.connectHandler(new Handler<NetSocket>() {
         @Override
         public void handle(final NetSocket socket) {
-          socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
+          socket.dataHandler(RecordParser.newDelimited(DELIMITER, new Handler<Buffer>() {
             @Override
             public void handle(Buffer buffer) {
-              JsonObject request = new JsonObject(buffer.toString());
-              String type = request.getString("type");
-              if (type != null) {
-                switch (type) {
-                  case "append":
-                    handleAppendRequest(socket, request);
-                    break;
-                  case "vote":
-                    handleVoteRequest(socket, request);
-                    break;
-                  case "submit":
-                    handleSubmitRequest(socket, request);
-                    break;
-                  default:
-                    respond(socket, new JsonObject().putString("status", "error").putString("message", "Invalid request type"));
-                    break;
+              JsonObject json = new JsonObject(buffer.toString());
+              Object id = json.getValue("id");
+              try {
+                Request request = serializer.readValue(json.getBinary("request"), Request.class);
+                if (request instanceof AppendEntriesRequest) {
+                  handleAppendRequest(id, socket, (AppendEntriesRequest) request);
+                } else if (request instanceof RequestVoteRequest) {
+                  handleVoteRequest(id, socket, (RequestVoteRequest) request);
+                } else if (request instanceof SubmitCommandRequest) {
+                  handleSubmitRequest(id, socket, (SubmitCommandRequest) request);
                 }
-              } else {
-                respond(socket, new JsonObject().putString("status", "error").putString("message", "Invalid request type"));
+              } catch (Exception e) {
+                respond(socket, id, null, e);
               }
             }
           }));
@@ -167,26 +158,10 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles an append entries request.
    */
-  private void handleAppendRequest(final NetSocket socket, JsonObject request) {
+  private void handleAppendRequest(final Object id, final NetSocket socket, AppendEntriesRequest request) {
     if (requestHandler != null) {
-      final Object id = request.getValue("id");
-      List<Entry> entries = new ArrayList<>();
-      JsonArray jsonEntries = request.getArray("entries");
-      if (jsonEntries != null) {
-        for (Object jsonEntry : jsonEntries) {
-          entries.add(serializer.readValue(jsonEntry.toString().getBytes(), Entry.class));
-        }
-      }
-      requestHandler.appendEntries(new AppendEntriesRequest(id, request.getLong("term"), request.getString("leader"), request.getLong("prevIndex"), request.getLong("prevTerm"), entries, request.getLong("commit"))).whenComplete((response, error) -> {
-        if (error == null) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("succeeded", response.succeeded()).putNumber("lastIndex", response.lastLogIndex()));
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
-          }
-        } else {
-          respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", error.getMessage()));
-        }
+      requestHandler.appendEntries(request).whenComplete((response, error) -> {
+        respond(socket, id, response, error);
       });
     }
   }
@@ -194,19 +169,10 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles a vote request.
    */
-  private void handleVoteRequest(final NetSocket socket, JsonObject request) {
+  private void handleVoteRequest(final Object id, final NetSocket socket, RequestVoteRequest request) {
     if (requestHandler != null) {
-      final Object id = request.getValue("id");
-      requestHandler.requestVote(new RequestVoteRequest(id, request.getLong("term"), request.getString("candidate"), request.getLong("lastIndex"), request.getLong("lastTerm"))).whenComplete((response, error) -> {
-        if (error == null) {
-          if (response.status().equals(Response.Status.OK)) {
-            respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putNumber("term", response.term()).putBoolean("voteGranted", response.voteGranted()));
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
-          }
-        } else {
-          respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", error.getMessage()));
-        }
+      requestHandler.requestVote(request).whenComplete((response, error) -> {
+        respond(socket, id, response, error);
       });
     }
   }
@@ -214,26 +180,10 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles a submit request.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private void handleSubmitRequest(final NetSocket socket, JsonObject request) {
+  private void handleSubmitRequest(final Object id, final NetSocket socket, SubmitCommandRequest request) {
     if (requestHandler != null) {
-      final Object id = request.getValue("id");
-      requestHandler.submitCommand(new SubmitCommandRequest(id, request.getString("command"), request.getArray("args").toList())).whenComplete((response, error) -> {
-        if (error == null) {
-          if (response.status().equals(Response.Status.OK)) {
-            if (response.result() instanceof Map) {
-              respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putObject("result", new JsonObject((Map) response.result())));
-            } else if (response.result() instanceof List) {
-              respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putArray("result", new JsonArray((List) response.result())));
-            } else {
-              respond(socket, new JsonObject().putString("status", "ok").putValue("id", id).putValue("result", response.result()));
-            }
-          } else {
-            respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", response.error().getMessage()));
-          }
-        } else {
-          respond(socket, new JsonObject().putString("status", "error").putValue("id", id).putString("message", error.getMessage()));
-        }
+      requestHandler.submitCommand(request).whenComplete((response, error) -> {
+        respond(socket, id, response, error);
       });
     }
   }
@@ -241,8 +191,12 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Responds to a request from the given socket.
    */
-  private void respond(NetSocket socket, JsonObject response) {
-    socket.write(response.encode() + '\00');
+  private void respond(NetSocket socket, Object id, Response response, Throwable error) {
+    if (error != null) {
+      socket.write(new JsonObject().putString("status", "error").putValue("id", id).putString("message", error.getMessage()).encode() + DELIMITER);
+    } else {
+      socket.write(new JsonObject().putString("status", "ok").putValue("id", id).putBinary("response", serializer.writeValue(response)).encode() + DELIMITER);
+    }
   }
 
   @Override

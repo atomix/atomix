@@ -19,11 +19,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
+import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.Response;
@@ -37,7 +37,6 @@ import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
@@ -50,6 +49,7 @@ import org.vertx.java.core.parsetools.RecordParser;
  */
 public class TcpProtocolClient implements ProtocolClient {
   private static final Serializer serializer = SerializerFactory.getSerializer();
+  private static final String DELIMITER = "\\x00";
   private Vertx vertx;
   private final String host;
   private final int port;
@@ -65,22 +65,11 @@ public class TcpProtocolClient implements ProtocolClient {
   @SuppressWarnings("rawtypes")
   private static class ResponseHolder {
     private final CompletableFuture future;
-    private final ResponseType type;
     private final long timer;
-    private ResponseHolder(long timerId, ResponseType type, CompletableFuture future) {
+    private ResponseHolder(long timerId, CompletableFuture future) {
       this.timer = timerId;
-      this.type = type;
       this.future = future;
     }
-  }
-
-  /**
-   * Indicates response types.
-   */
-  private static enum ResponseType {
-    APPEND,
-    VOTE,
-    SUBMIT;
   }
 
   public TcpProtocolClient(String host, int port, TcpProtocol protocol) {
@@ -120,55 +109,29 @@ public class TcpProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
-    final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
-    if (socket != null) {
-      JsonArray jsonEntries = new JsonArray();
-      for (Entry entry : request.entries()) {
-        jsonEntries.addString(new String(serializer.writeValue(entry)));
-      }
-      socket.write(new JsonObject().putString("type", "append")
-          .putValue("id", request.id())
-          .putNumber("term", request.term())
-          .putString("leader", request.leader())
-          .putNumber("prevIndex", request.prevLogIndex())
-          .putNumber("prevTerm", request.prevLogTerm())
-          .putArray("entries", jsonEntries)
-          .putNumber("commit", request.commitIndex()).encode() + '\00');
-      storeCallback(request.id(), ResponseType.APPEND, future);
-    } else {
-      future.completeExceptionally(new ProtocolException("Client not connected"));
-    }
-    return future;
+    return sendRequest(request);
   }
 
   @Override
   public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
-    final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
-    if (socket != null) {
-      socket.write(new JsonObject().putString("type", "vote")
-          .putValue("id", request.id())
-          .putNumber("term", request.term())
-          .putString("candidate", request.candidate())
-          .putNumber("lastIndex", request.lastLogIndex())
-          .putNumber("lastTerm", request.lastLogTerm())
-          .encode() + '\00');
-      storeCallback(request.id(), ResponseType.VOTE, future);
-    } else {
-      future.completeExceptionally(new ProtocolException("Client not connected"));
-    }
-    return future;
+    return sendRequest(request);
   }
 
   @Override
   public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
-    final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
+    return sendRequest(request);
+  }
+
+  /**
+   * Sends a request.
+   */
+  private <T extends Response> CompletableFuture<T> sendRequest(Request request) {
+    CompletableFuture<T> future = new CompletableFuture<>();
     if (socket != null) {
-      socket.write(new JsonObject().putString("type", "submit")
-          .putValue("id", request.id())
-          .putString("command", request.command())
-          .putArray("args", new JsonArray(request.args()))
-          .encode() + '\00');
-      storeCallback(request.id(), ResponseType.SUBMIT, future);
+      socket.write(new JsonObject().putValue("id", request.id())
+          .putBinary("request", serializer.writeValue(request))
+          .encode() + DELIMITER);
+      storeFuture(request.id(), future);
     } else {
       future.completeExceptionally(new ProtocolException("Client not connected"));
     }
@@ -179,87 +142,36 @@ public class TcpProtocolClient implements ProtocolClient {
    * Handles an identifiable response.
    */
   @SuppressWarnings("unchecked")
-  private void handleResponse(Object id, JsonObject response) {
+  private void handleResponse(Object id, Response response) {
     ResponseHolder holder = responses.remove(id);
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
-      switch (holder.type) {
-        case APPEND:
-          handleAppendResponse(response, (CompletableFuture<AppendEntriesResponse>) holder.future);
-          break;
-        case VOTE:
-          handleVoteResponse(response, (CompletableFuture<RequestVoteResponse>) holder.future);
-          break;
-        case SUBMIT:
-          handleSubmitResponse(response, (CompletableFuture<SubmitCommandResponse>) holder.future);
-          break;
-      }
+      holder.future.complete(response);
     }
   }
 
   /**
-   * Handles an append entries response.
+   * Handles an identifiable error.
    */
-  private void handleAppendResponse(JsonObject response, CompletableFuture<AppendEntriesResponse> future) {
-    String status = response.getString("status");
-    if (status == null) {
-      future.completeExceptionally(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      future.complete(new AppendEntriesResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("succeeded"), response.getLong("lastIndex")));
-    } else if (status.equals("error")) {
-      future.completeExceptionally(new ProtocolException(response.getString("message")));
-    }
-  }
-
-  /**
-   * Handles a vote response.
-   */
-  private void handleVoteResponse(JsonObject response, CompletableFuture<RequestVoteResponse> future) {
-    String status = response.getString("status");
-    if (status == null) {
-      future.completeExceptionally(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      future.complete(new RequestVoteResponse(response.getValue("id"), response.getLong("term"), response.getBoolean("voteGranted")));
-    } else if (status.equals("error")) {
-      future.completeExceptionally(new ProtocolException(response.getString("message")));
-    }
-  }
-
-  /**
-   * Handles a submit response.
-   */
-  private void handleSubmitResponse(JsonObject response, CompletableFuture<SubmitCommandResponse> future) {
-    String status = response.getString("status");
-    if (status == null) {
-      future.completeExceptionally(new ProtocolException("Invalid response"));
-    } else if (status.equals("ok")) {
-      Object result = response.getValue("result");
-      if (result instanceof JsonArray) {
-        future.complete(new SubmitCommandResponse(response.getValue("id"), ((JsonArray) result).toList()));
-      } else if (result instanceof JsonObject) {
-        future.complete(new SubmitCommandResponse(response.getValue("id"), ((JsonObject) result).toMap()));
-      } else {
-        future.complete(new SubmitCommandResponse(response.getValue("id"), result));
-      }
-    } else if (status.equals("error")) {
-      future.completeExceptionally(new ProtocolException(response.getString("message")));
+  private void handleError(Object id, Throwable error) {
+    ResponseHolder holder = responses.remove(id);
+    if (holder != null) {
+      vertx.cancelTimer(holder.timer);
+      holder.future.completeExceptionally(error);
     }
   }
 
   /**
    * Stores a response callback by ID.
    */
-  private <T extends Response> void storeCallback(final Object id, ResponseType responseType, CompletableFuture<T> future) {
+  private <T extends Response> void storeFuture(final Object id, CompletableFuture<T> future) {
     long timerId = vertx.setTimer(30000, new Handler<Long>() {
       @Override
       public void handle(Long timerID) {
-        ResponseHolder holder = responses.remove(id);
-        if (holder != null) {
-          holder.future.completeExceptionally(new ProtocolException("Request timed out"));
-        }
+        handleError(id, new ProtocolException("Request timed out"));
       }
     });
-    ResponseHolder holder = new ResponseHolder(timerId, responseType, future);
+    ResponseHolder holder = new ResponseHolder(timerId, future);
     responses.put(id, holder);
   }
 
@@ -291,12 +203,16 @@ public class TcpProtocolClient implements ProtocolClient {
             future.completeExceptionally(result.cause());
           } else {
             socket = result.result();
-            socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
+            socket.dataHandler(RecordParser.newDelimited(DELIMITER, new Handler<Buffer>() {
               @Override
               public void handle(Buffer buffer) {
                 JsonObject response = new JsonObject(buffer.toString());
                 Object id = response.getValue("id");
-                handleResponse(id, response);
+                if (response.getString("status").equals("ok")) {
+                  handleResponse(id, serializer.readValue(response.getBinary("response"), Response.class));
+                } else {
+                  handleError(id, new ProtocolException(response.getString("message")));
+                }
               }
             }));
             future.complete(null);
