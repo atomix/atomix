@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat;
 
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.cluster.Cluster;
@@ -24,7 +25,10 @@ import net.kuujo.copycat.election.ElectionContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.log.impl.FileLogFactory;
+import net.kuujo.copycat.protocol.CorrelationStrategy;
+import net.kuujo.copycat.protocol.TimerStrategy;
 import net.kuujo.copycat.registry.Registry;
+import net.kuujo.copycat.registry.impl.BasicRegistry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
 import net.kuujo.copycat.state.StateContext;
 import net.kuujo.copycat.state.impl.RaftStateContext;
@@ -204,6 +208,221 @@ public class CopyCatContext {
    */
   public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
     return state.submitCommand(command, args);
+  }
+
+  /**
+   * CopyCat builder.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static class Builder {
+    private CopyCatConfig config = new CopyCatConfig();
+    private ClusterConfig cluster = new ClusterConfig();
+    private StateMachine stateMachine;
+    private LogFactory logFactory = new FileLogFactory();
+    private Registry registry = new BasicRegistry();
+
+    /**
+     * Sets the copycat log factory.
+     *
+     * @param uri The copycat log factory.
+     * @return The copycat builder.
+     */
+    public Builder withLogFactory(LogFactory factory) {
+      this.logFactory = factory;
+      return this;
+    }
+
+    /**
+     * Sets the copycat log.
+     *
+     * @param uri The copycat log.
+     * @return The copycat builder.
+     */
+    public Builder withLog(Log log) {
+      this.logFactory = new LogFactory() {
+        @Override
+        public Log createLog(String name) {
+          return log;
+        }
+      };
+      return this;
+    }
+
+    /**
+     * Sets the copycat configuration.
+     *
+     * @param uri The copycat configuration.
+     * @return The copycat builder.
+     */
+    public Builder withConfig(CopyCatConfig config) {
+      this.config = config;
+      return this;
+    }
+
+    /**
+     * Sets the copycat election timeout.
+     *
+     * @param uri The copycat election timeout.
+     * @return The copycat builder.
+     */
+    public Builder withElectionTimeout(long timeout) {
+      config.setElectionTimeout(timeout);
+      return this;
+    }
+
+    /**
+     * Sets the copycat heartbeat interval.
+     *
+     * @param uri The copycat heartbeat interval.
+     * @return The copycat builder.
+     */
+    public Builder withHeartbeatInterval(long interval) {
+      config.setHeartbeatInterval(interval);
+      return this;
+    }
+
+    /**
+     * Sets whether to require quorums during reads.
+     *
+     * @param requireQuorum Whether to require quorums during reads.
+     * @return The copycat builder.
+     */
+    public Builder withRequireReadQuorum(boolean requireQuorum) {
+      config.setRequireReadQuorum(requireQuorum);
+      return this;
+    }
+
+    /**
+     * Sets whether to require quorums during writes.
+     *
+     * @param requireQuorum Whether to require quorums during writes.
+     * @return The copycat builder.
+     */
+    public Builder withRequireWriteQuorum(boolean requireQuorum) {
+      config.setRequireWriteQuorum(requireQuorum);
+      return this;
+    }
+
+    /**
+     * Sets the read quorum size.
+     *
+     * @param quorumSize The read quorum size.
+     * @return The copycat builder.
+     */
+    public Builder withReadQuorumSize(int quorumSize) {
+      config.setReadQuorumSize(quorumSize);
+      return this;
+    }
+
+    /**
+     * Sets the max log size.
+     *
+     * @param maxSize The max log size.
+     * @return The copycat builder.
+     */
+    public Builder withMaxLogSize(int maxSize) {
+      config.setMaxLogSize(maxSize);
+      return this;
+    }
+
+    /**
+     * Sets the correlation strategy.
+     *
+     * @param strategy The correlation strategy.
+     * @return The copycat builder.
+     */
+    public Builder withCorrelationStrategy(CorrelationStrategy<?> strategy) {
+      config.setCorrelationStrategy(strategy);
+      return this;
+    }
+
+    /**
+     * Sets the timer strategy.
+     *
+     * @param strategy The timer strategy.
+     * @return The copycat builder.
+     */
+    public Builder withTimerStrategy(TimerStrategy strategy) {
+      config.setTimerStrategy(strategy);
+      return this;
+    }
+
+    /**
+     * Sets the cluster configuration.
+     *
+     * @param cluster The cluster configuration.
+     * @return The copycat builder.
+     */
+    public Builder withClusterConfig(ClusterConfig cluster) {
+      this.cluster = cluster;
+      return this;
+    }
+
+    /**
+     * Sets the local cluster member.
+     *
+     * @param uri The local cluster member URI.
+     * @return The copycat builder.
+     */
+    public Builder withLocalMember(String uri) {
+      this.cluster.setLocalMember(uri);
+      return this;
+    }
+
+    /**
+     * Sets the remote cluster members.
+     *
+     * @param uris The remote cluster member URIs.
+     * @return The copycat builder.
+     */
+    public Builder withRemoteMembers(String... uris) {
+      this.cluster.setRemoteMembers(uris);
+      return this;
+    }
+
+    /**
+     * Sets the remote cluster members.
+     *
+     * @param uris The remote cluster member URIs.
+     * @return The copycat builder.
+     */
+    public Builder withRemoteMembers(Set<String> uris) {
+      this.cluster.setRemoteMembers(uris);
+      return this;
+    }
+
+    /**
+     * Sets the copycat state machine.
+     *
+     * @param stateMachine The state machine.
+     * @return The copycat builder.
+     */
+    public Builder withStateMachine(StateMachine stateMachine) {
+      this.stateMachine = stateMachine;
+      return this;
+    }
+
+    /**
+     * Sets the copycat registry.
+     *
+     * @param registry The copycat registry.
+     * @return The copycat builder.
+     */
+    public Builder withRegistry(Registry registry) {
+      this.registry = registry;
+      return this;
+    }
+
+    /**
+     * Builds the copycat instance.
+     *
+     * @return The copycat instance.
+     */
+    public CopyCatContext build() {
+      return new CopyCatContext(stateMachine, logFactory, cluster, config, registry);
+    }
+
   }
 
 }

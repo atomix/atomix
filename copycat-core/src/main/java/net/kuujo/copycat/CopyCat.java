@@ -24,11 +24,9 @@ import net.kuujo.copycat.endpoint.EndpointFactory;
 import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
-import net.kuujo.copycat.log.impl.FileLogFactory;
 import net.kuujo.copycat.protocol.CorrelationStrategy;
 import net.kuujo.copycat.protocol.TimerStrategy;
 import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.registry.impl.BasicRegistry;
 
 /**
  * Primary copycat API.<p>
@@ -106,11 +104,7 @@ public class CopyCat {
   public static class Builder {
     private Endpoint endpoint;
     private String uri;
-    private CopyCatConfig config = new CopyCatConfig();
-    private ClusterConfig cluster = new ClusterConfig();
-    private StateMachine stateMachine;
-    private LogFactory logFactory = new FileLogFactory();
-    private Registry registry = new BasicRegistry();
+    private final CopyCatContext.Builder builder = new CopyCatContext.Builder();
 
     /**
      * Sets the copycat endpoint.
@@ -141,7 +135,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withLogFactory(LogFactory factory) {
-      this.logFactory = factory;
+      builder.withLogFactory(factory);
       return this;
     }
 
@@ -152,12 +146,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withLog(Log log) {
-      this.logFactory = new LogFactory() {
-        @Override
-        public Log createLog(String name) {
-          return log;
-        }
-      };
+      builder.withLog(log);
       return this;
     }
 
@@ -168,7 +157,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withConfig(CopyCatConfig config) {
-      this.config = config;
+      builder.withConfig(config);
       return this;
     }
 
@@ -179,7 +168,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withElectionTimeout(long timeout) {
-      config.setElectionTimeout(timeout);
+      builder.withElectionTimeout(timeout);
       return this;
     }
 
@@ -190,7 +179,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withHeartbeatInterval(long interval) {
-      config.setHeartbeatInterval(interval);
+      builder.withHeartbeatInterval(interval);
       return this;
     }
 
@@ -201,7 +190,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withRequireReadQuorum(boolean requireQuorum) {
-      config.setRequireReadQuorum(requireQuorum);
+      builder.withRequireReadQuorum(requireQuorum);
       return this;
     }
 
@@ -212,7 +201,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withRequireWriteQuorum(boolean requireQuorum) {
-      config.setRequireWriteQuorum(requireQuorum);
+      builder.withRequireWriteQuorum(requireQuorum);
       return this;
     }
 
@@ -223,7 +212,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withReadQuorumSize(int quorumSize) {
-      config.setReadQuorumSize(quorumSize);
+      builder.withReadQuorumSize(quorumSize);
       return this;
     }
 
@@ -234,7 +223,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withMaxLogSize(int maxSize) {
-      config.setMaxLogSize(maxSize);
+      builder.withMaxLogSize(maxSize);
       return this;
     }
 
@@ -244,8 +233,8 @@ public class CopyCat {
      * @param strategy The correlation strategy.
      * @return The copycat builder.
      */
-    public Builder setCorrelationStrategy(CorrelationStrategy<?> strategy) {
-      config.setCorrelationStrategy(strategy);
+    public Builder withCorrelationStrategy(CorrelationStrategy<?> strategy) {
+      builder.withCorrelationStrategy(strategy);
       return this;
     }
 
@@ -255,8 +244,8 @@ public class CopyCat {
      * @param strategy The timer strategy.
      * @return The copycat builder.
      */
-    public Builder setTimerStrategy(TimerStrategy strategy) {
-      config.setTimerStrategy(strategy);
+    public Builder withTimerStrategy(TimerStrategy strategy) {
+      builder.withTimerStrategy(strategy);
       return this;
     }
 
@@ -267,7 +256,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withClusterConfig(ClusterConfig cluster) {
-      this.cluster = cluster;
+      builder.withClusterConfig(cluster);
       return this;
     }
 
@@ -278,7 +267,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withLocalMember(String uri) {
-      this.cluster.setLocalMember(uri);
+      builder.withLocalMember(uri);
       return this;
     }
 
@@ -289,7 +278,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withRemoteMembers(String... uris) {
-      this.cluster.setRemoteMembers(uris);
+      builder.withRemoteMembers(uris);
       return this;
     }
 
@@ -300,7 +289,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withRemoteMembers(Set<String> uris) {
-      this.cluster.setRemoteMembers(uris);
+      builder.withRemoteMembers(uris);
       return this;
     }
 
@@ -311,7 +300,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withStateMachine(StateMachine stateMachine) {
-      this.stateMachine = stateMachine;
+      builder.withStateMachine(stateMachine);
       return this;
     }
 
@@ -322,7 +311,7 @@ public class CopyCat {
      * @return The copycat builder.
      */
     public Builder withRegistry(Registry registry) {
-      this.registry = registry;
+      builder.withRegistry(registry);
       return this;
     }
 
@@ -332,7 +321,7 @@ public class CopyCat {
      * @return The copycat instance.
      */
     public CopyCat build() {
-      CopyCatContext context = new CopyCatContext(stateMachine, logFactory, cluster, config, registry);
+      CopyCatContext context = builder.build();
       if (endpoint == null) {
         endpoint = new DefaultEndpointFactory(context).createEndpoint(uri);
       }
