@@ -20,7 +20,9 @@ import java.util.concurrent.CompletableFuture;
 import net.kuujo.copycat.cluster.Member;
 
 /**
- * Reference to a remote replica.
+ * Reference to a remote replica.<p>
+ *
+ * The replica handles replication of the log to a single remote replica.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

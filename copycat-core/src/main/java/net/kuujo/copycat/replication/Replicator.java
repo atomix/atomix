@@ -23,14 +23,22 @@ import net.kuujo.copycat.cluster.Member;
 /**
  * Log replicator.<p>
  *
- * The replicator controls replication to a set of remote replicas.
+ * The replicator controls replication to a set of remote replicas. All
+ * replication logic is contained within a replicator implementation.
+ * The leader simply specifies the log index to replicate, and the replicator
+ * notifies the leader once the entry has been replicated to a quorum of the
+ * cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Replicator {
 
   /**
-   * Sets the required read quorum for replication.
+   * Sets the required read quorum for replication.<p>
+   *
+   * This is the minimum number of nodes which must be contacted in order to
+   * ensure that the log is up-to-date. If strong consistency is enabled,
+   * the leader will ping a quorum of the cluster before returning read-only data.
    *
    * @param quorumSize The required number of replicas that must be up-to-date
    *        in order to perform reads.
@@ -39,7 +47,12 @@ public interface Replicator {
   Replicator withReadQuorum(Integer quorumSize);
 
   /**
-   * Sets the required write quorum for replication.
+   * Sets the required write quorum for replication.<p>
+   *
+   * This is the minimum number of nodes to which a command must be replicated
+   * before its output can be returned to the caller. Note that this may differ
+   * from considering an entry committed. In order for an entry to be considered
+   * committed, it must be successfully replicated to a majority of the cluster.
    *
    * @param quorumSize The required number of replicas that must have received and
    *        logged an entry in order to consider it replicated. Note that replicated
