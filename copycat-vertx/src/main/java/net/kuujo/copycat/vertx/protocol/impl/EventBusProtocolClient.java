@@ -20,17 +20,19 @@ import java.util.concurrent.CompletableFuture;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.serializer.Serializer;
+import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.util.Args;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
 /**
@@ -39,6 +41,7 @@ import org.vertx.java.core.json.JsonObject;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EventBusProtocolClient implements ProtocolClient {
+  private final Serializer serializer = SerializerFactory.getSerializer();
   private final String address;
   private Vertx vertx;
 
@@ -52,11 +55,7 @@ public class EventBusProtocolClient implements ProtocolClient {
     final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
     JsonObject message = new JsonObject()
         .putString("action", "appendEntries")
-        .putNumber("term", request.term())
-        .putString("leader", request.leader())
-        .putNumber("prevIndex", request.prevLogIndex())
-        .putNumber("prevTerm", request.prevLogTerm())
-        .putNumber("commit", request.commitIndex());
+        .putBinary("request", serializer.writeValue(request));
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -65,9 +64,9 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            future.complete(new AppendEntriesResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("succeeded"), result.result().body().getLong("lastIndex")));
+            future.complete(serializer.readValue(result.result().body().getBinary("response"), AppendEntriesResponse.class));
           } else if (status.equals("error")) {
-            future.complete(new AppendEntriesResponse(request.id(), result.result().body().getString("message")));
+            future.completeExceptionally(new ProtocolException(result.result().body().getString("message")));
           }
         }
       }
@@ -80,10 +79,7 @@ public class EventBusProtocolClient implements ProtocolClient {
     final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
     JsonObject message = new JsonObject()
         .putString("action", "requestVote")
-        .putNumber("term", request.term())
-        .putString("candidate", request.candidate())
-        .putNumber("lastIndex", request.lastLogIndex())
-        .putNumber("lastTerm", request.lastLogTerm());
+        .putBinary("request", serializer.writeValue(request));
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -92,9 +88,9 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            future.complete(new RequestVoteResponse(request.id(), result.result().body().getLong("term"), result.result().body().getBoolean("voteGranted")));
+            future.complete(serializer.readValue(result.result().body().getBinary("response"), RequestVoteResponse.class));
           } else if (status.equals("error")) {
-            future.complete(new RequestVoteResponse(request.id(), result.result().body().getString("message")));
+            future.completeExceptionally(new ProtocolException(result.result().body().getString("message")));
           }
         }
       }
@@ -107,8 +103,7 @@ public class EventBusProtocolClient implements ProtocolClient {
     final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
     JsonObject message = new JsonObject()
         .putString("action", "submitCommand")
-        .putString("command", request.command())
-        .putArray("args", new JsonArray(request.args()));
+        .putBinary("request", serializer.writeValue(request));
     vertx.eventBus().sendWithTimeout(address, message, 5000, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
@@ -117,9 +112,9 @@ public class EventBusProtocolClient implements ProtocolClient {
         } else {
           String status = result.result().body().getString("status");
           if (status.equals("ok")) {
-            future.complete(new SubmitCommandResponse(request.id(), result.result().body().getValue("result")));
+            future.complete(serializer.readValue(result.result().body().getBinary("response"), SubmitCommandResponse.class));
           } else if (status.equals("error")) {
-            future.complete(new SubmitCommandResponse(request.id(), result.result().body().getString("message")));
+            future.completeExceptionally(new ProtocolException(result.result().body().getString("message")));
           }
         }
       }
