@@ -11,8 +11,6 @@
   <name>CopyCat Netty</name>
 
   <properties>
-    <module.name>${project.groupId}~${project.artifactId}~${project.version}</module.name>
-
     <netty.version>4.0.21.Final</netty.version>
   </properties>
 
