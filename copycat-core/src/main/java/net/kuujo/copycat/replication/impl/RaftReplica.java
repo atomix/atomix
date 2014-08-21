@@ -211,8 +211,7 @@ public class RaftReplica implements Replica {
             // the replica in the response to generate a new nextIndex. This allows
             // us to skip repeatedly replicating one entry at a time if it's not
             // necessary.
-            nextIndex = response.lastLogIndex() + 1;
-            sendIndex = nextIndex;
+            nextIndex = sendIndex = response.lastLogIndex() + 1;
             doCommit();
           }
         } else {
