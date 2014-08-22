@@ -31,7 +31,6 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.replication.Replica;
 import net.kuujo.copycat.state.impl.Follower;
 import net.kuujo.copycat.state.impl.RaftStateContext;
 
@@ -40,7 +39,7 @@ import net.kuujo.copycat.state.impl.RaftStateContext;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftReplica implements Replica {
+class RaftReplica {
   private static final int BATCH_SIZE = 100;
   private final Member member;
   private final RaftStateContext state;
@@ -61,8 +60,12 @@ public class RaftReplica implements Replica {
     this.sendIndex = nextIndex;
   }
 
-  @Override
-  public Member member() {
+  /**
+   * Returns the replica member.
+   *
+   * @return The replica member.
+   */
+  Member member() {
     return member;
   }
 
@@ -94,8 +97,10 @@ public class RaftReplica implements Replica {
     return CompletableFuture.completedFuture(null);
   }
 
-  @Override
-  public CompletableFuture<Long> ping(long index) {
+  /**
+   * Pings the replica.
+   */
+  CompletableFuture<Long> ping(long index) {
     if (!open) {
       CompletableFuture<Long> future = new CompletableFuture<>();
       future.completeExceptionally(new CopyCatException("Connection not open"));
@@ -130,8 +135,10 @@ public class RaftReplica implements Replica {
     return future;
   }
 
-  @Override
-  public CompletableFuture<Long> commit(long index) {
+  /**
+   * Commits the given index to the replica.
+   */
+  CompletableFuture<Long> commit(long index) {
     if (!open) {
       CompletableFuture<Long> future = new CompletableFuture<>();
       future.completeExceptionally(new CopyCatException("Connection not open"));
