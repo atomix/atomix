@@ -17,7 +17,7 @@ package net.kuujo.copycat.log;
 
 import java.util.List;
 
-import net.kuujo.copycat.EventProvider;
+import net.kuujo.copycat.event.EventProvider;
 
 /**
  * Replicated event log.<p>

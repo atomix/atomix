@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.election;
 
-import net.kuujo.copycat.Event;
+import net.kuujo.copycat.event.Event;
 
 /**
  * Election event.

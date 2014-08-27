@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.event.EventListener;
 
 /**
  * Cluster membership event listener.

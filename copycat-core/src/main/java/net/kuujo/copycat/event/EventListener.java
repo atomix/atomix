@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.event;
 
 /**
- * Identifier type for events.
+ * Identifier type for event listeners.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Event {
+public interface EventListener {
 }

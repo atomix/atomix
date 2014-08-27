@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.event.EventListener;
 
 /**
  * State change event listener.

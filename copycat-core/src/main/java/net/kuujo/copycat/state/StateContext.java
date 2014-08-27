@@ -18,9 +18,9 @@ package net.kuujo.copycat.state;
 import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.CopyCatConfig;
-import net.kuujo.copycat.EventProvider;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.event.EventProvider;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.registry.Registry;
 

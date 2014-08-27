@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.Event;
+import net.kuujo.copycat.event.Event;
 
 /**
  * Log entry event.

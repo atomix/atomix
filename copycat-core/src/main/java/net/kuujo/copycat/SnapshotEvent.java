@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.event.Event;
+
 /**
  * Snapshot event.
  *
