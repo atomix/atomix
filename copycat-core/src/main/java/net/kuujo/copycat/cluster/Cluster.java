@@ -17,21 +17,12 @@ package net.kuujo.copycat.cluster;
 
 import java.util.Set;
 
-import net.kuujo.copycat.CopyCatContext;
-
 /**
  * CopyCat cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Cluster {
-
-  /**
-   * Returns the copycat context.
-   *
-   * @return The copycat context.
-   */
-  CopyCatContext context();
 
   /**
    * Returns the user-provided cluster configuration.

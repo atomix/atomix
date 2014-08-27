@@ -23,24 +23,24 @@ import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.state.impl.RaftStateContext;
 
 /**
  * Default cluster implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultCluster implements Cluster, Observer {
-  private final CopyCatContext context;
+public class RaftCluster implements Cluster, Observer {
+  private final RaftStateContext context;
   private final ClusterConfig userConfig;
   private final ClusterConfig internalConfig;
   private final String localMember;
   private final Map<String, Member> members = new HashMap<>();
 
-  public DefaultCluster(ClusterConfig userConfig, ClusterConfig internalConfig, CopyCatContext context) {
+  public RaftCluster(ClusterConfig userConfig, ClusterConfig internalConfig, RaftStateContext context) {
     this.context = context;
     this.userConfig = userConfig;
     internalConfig.setLocalMember(userConfig.getLocalMember());
@@ -62,7 +62,7 @@ public class DefaultCluster implements Cluster, Observer {
   private void clusterChanged(ClusterConfig config) {
     for (String member : config.getMembers()) {
       if (!members.containsKey(member)) {
-        members.put(member, new DefaultMember(member, context));
+        members.put(member, new RaftMember(member, context));
       }
     }
     Iterator<Map.Entry<String, Member>> iterator = members.entrySet().iterator();
@@ -71,11 +71,6 @@ public class DefaultCluster implements Cluster, Observer {
         iterator.remove();
       }
     }
-  }
-
-  @Override
-  public CopyCatContext context() {
-    return context;
   }
 
   @Override

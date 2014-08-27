@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.endpoint.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.endpoint.EndpointFactory;
 import net.kuujo.copycat.endpoint.EndpointUri;
+import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.uri.UriInjector;
 
 /**
@@ -27,16 +27,16 @@ import net.kuujo.copycat.uri.UriInjector;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultEndpointFactory implements EndpointFactory {
-  private final CopyCatContext context;
+  private final Registry registry;
 
-  public DefaultEndpointFactory(CopyCatContext context) {
-    this.context = context;
+  public DefaultEndpointFactory(Registry registry) {
+    this.registry = registry;
   }
 
   @Override
   public Endpoint createEndpoint(String uri) {
     EndpointUri wrappedUri = new EndpointUri(uri);
-    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), context);
+    UriInjector injector = new UriInjector(wrappedUri.getRawUri(), registry);
     Endpoint endpoint = injector.inject(wrappedUri.getEndpointClass());
     return endpoint;
   }

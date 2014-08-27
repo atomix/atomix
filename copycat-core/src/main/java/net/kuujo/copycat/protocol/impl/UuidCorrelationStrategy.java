@@ -17,7 +17,6 @@ package net.kuujo.copycat.protocol.impl;
 
 import java.util.UUID;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.CorrelationStrategy;
 
 /**
@@ -28,7 +27,7 @@ import net.kuujo.copycat.protocol.CorrelationStrategy;
 public class UuidCorrelationStrategy implements CorrelationStrategy<String> {
 
   @Override
-  public String nextCorrelationId(CopyCatContext context) {
+  public String nextCorrelationId() {
     return UUID.randomUUID().toString();
   }
 

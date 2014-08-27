@@ -25,7 +25,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 
-import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.registry.Registry;
 
 /**
  * URI injector.
@@ -34,11 +34,11 @@ import net.kuujo.copycat.CopyCatContext;
  */
 public class UriInjector {
   private final URI uri;
-  private final CopyCatContext context;
+  private final Registry registry;
 
-  public UriInjector(URI uri, CopyCatContext context) {
+  public UriInjector(URI uri, Registry registry) {
     this.uri = uri;
-    this.context = context;
+    this.registry = registry;
   }
 
   /**
@@ -75,7 +75,7 @@ public class UriInjector {
               if (injectable != null) {
                 try {
                   field.setAccessible(true);
-                  field.set(object, injectable.value().newInstance().parse(uri, annotation, context.registry(), field.getType()));
+                  field.set(object, injectable.value().newInstance().parse(uri, annotation, registry, field.getType()));
                 } catch (ClassCastException e) {
                   throw new UriException(e);
                 }
@@ -84,16 +84,13 @@ public class UriInjector {
             }
 
             // If the field is a CopyCatContext type field then set it.
-            if (field.getType() == CopyCatContext.class) {
+            if (field.getType() == Registry.class) {
               field.setAccessible(true);
-              field.set(object, context);
+              field.set(object, registry);
             }
         }
         clazz = clazz.getSuperclass();
       }
-
-      // Beans can set properties of the context class.
-      Class<?> contextClass = context.getClass();
 
       // Search bean write methods for @UriInjectable annotations.
       BeanInfo info = Introspector.getBeanInfo(object.getClass());
@@ -103,21 +100,8 @@ public class UriInjector {
         if (method == null) continue;
 
         // If the property type is CopyCatContext then just set the context.
-        if (property.getPropertyType() == CopyCatContext.class) {
-          method.invoke(object, context);
-        }
-
-        // Check to see if this bean property matches a getter on the context class.
-        try {
-          Method contextMethod = contextClass.getMethod(property.getName());
-          if (contextMethod != null && contextMethod.getReturnType() == property.getPropertyType()) {
-            method.setAccessible(true);
-            method.invoke(object, contextMethod.invoke(context));
-            continue; // If the setter was called successfully, continue to the next property.
-          }
-        } catch (IllegalStateException | IllegalAccessException | NoSuchMethodException
-            | IllegalArgumentException | InvocationTargetException e) {
-          // Let the process continue.
+        if (Registry.class.isAssignableFrom(property.getPropertyType())) {
+          method.invoke(object, registry);
         }
 
         // Iterate through the write method's annotations and search
@@ -129,7 +113,7 @@ public class UriInjector {
           if (injectable != null) {
             injectable.value().getConstructor(new Class<?>[]{}).setAccessible(true);
             try {
-              Object result = injectable.value().newInstance().parse(uri, annotation, context.registry(), property.getPropertyType());
+              Object result = injectable.value().newInstance().parse(uri, annotation, registry, property.getPropertyType());
               if (result != null) {
                 value = result;
                 break;
@@ -144,7 +128,7 @@ public class UriInjector {
         if (value == null) {
           UriParser<UriQueryParam, Object> parser = new UriQueryParam.Parser<Object>();
           try {
-            value = parser.parse(uri, new GenericUriQueryParam(property.getName()), context.registry(), (Class<Object>) property.getPropertyType());
+            value = parser.parse(uri, new GenericUriQueryParam(property.getName()), registry, (Class<Object>) property.getPropertyType());
           } catch (ClassCastException e) {
             throw new UriException(e);
           }

@@ -15,23 +15,23 @@
  */
 package net.kuujo.copycat.cluster.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.ProtocolInstance;
 import net.kuujo.copycat.protocol.impl.DefaultProtocolFactory;
+import net.kuujo.copycat.state.impl.RaftStateContext;
 
 /**
  * Default cluster member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultMember implements Member {
+public class RaftMember implements Member {
   private final String uri;
   private final ProtocolInstance protocol;
 
-  public DefaultMember(String uri, CopyCatContext context) {
+  public RaftMember(String uri, RaftStateContext context) {
     this.uri = uri;
-    this.protocol = new DefaultProtocolFactory(context).createProtocol(uri);
+    this.protocol = new DefaultProtocolFactory(context.registry()).createProtocol(uri);
   }
 
   @Override

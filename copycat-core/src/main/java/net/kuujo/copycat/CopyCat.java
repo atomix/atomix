@@ -46,28 +46,28 @@ public class CopyCat {
 
   public CopyCat(String uri, StateMachine stateMachine, ClusterConfig cluster) {
     this.context = new CopyCatContext(stateMachine, cluster);
-    EndpointFactory factory = new DefaultEndpointFactory(context);
+    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
     this.endpoint = factory.createEndpoint(uri);
     endpoint.init(context);
   }
 
   public CopyCat(String uri, StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster) {
     this.context = new CopyCatContext(stateMachine, logFactory, cluster);
-    EndpointFactory factory = new DefaultEndpointFactory(context);
+    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
     this.endpoint = factory.createEndpoint(uri);
     endpoint.init(context);
   }
 
   public CopyCat(String uri, StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config) {
     this.context = new CopyCatContext(stateMachine, logFactory, cluster, config);
-    EndpointFactory factory = new DefaultEndpointFactory(context);
+    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
     this.endpoint = factory.createEndpoint(uri);
     endpoint.init(context);
   }
 
   public CopyCat(String uri, StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
     this.context = new CopyCatContext(stateMachine, logFactory, cluster, config, registry);
-    EndpointFactory factory = new DefaultEndpointFactory(context);
+    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
     this.endpoint = factory.createEndpoint(uri);
     endpoint.init(context);
   }
@@ -323,7 +323,7 @@ public class CopyCat {
     public CopyCat build() {
       CopyCatContext context = builder.build();
       if (endpoint == null) {
-        endpoint = new DefaultEndpointFactory(context).createEndpoint(uri);
+        endpoint = new DefaultEndpointFactory(context.registry()).createEndpoint(uri);
       }
       return new CopyCat(endpoint, context);
     }

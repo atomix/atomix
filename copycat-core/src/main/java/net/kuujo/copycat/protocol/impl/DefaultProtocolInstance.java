@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolInstance;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.ProtocolUri;
+import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.uri.UriInjector;
 
 /**
@@ -34,8 +34,8 @@ public class DefaultProtocolInstance implements ProtocolInstance {
   private ProtocolClient client;
   private ProtocolServer server;
 
-  public DefaultProtocolInstance(ProtocolUri uri, CopyCatContext context) {
-    this.injector = new UriInjector(uri.getRawUri(), context);
+  public DefaultProtocolInstance(ProtocolUri uri, Registry registry) {
+    this.injector = new UriInjector(uri.getRawUri(), registry);
     this.protocol = injector.inject(uri.getProtocolClass());
   }
 

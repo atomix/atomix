@@ -109,7 +109,7 @@ class RaftReplica {
 
     CompletableFuture<Long> future = new CompletableFuture<>();
     if (pinging.compareAndSet(false, true)) {
-      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().getLocalMember(), nextIndex-1, log.containsEntry(nextIndex-1) ? log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
+      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), nextIndex-1, log.containsEntry(nextIndex-1) ? log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
       member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
         pinging.set(false);
         if (error != null) {
@@ -196,7 +196,7 @@ class RaftReplica {
   private void doAppendEntries(final long prevIndex, final Entry prevEntry, final List<Entry> entries) {
     final long commitIndex = state.getCommitIndex();
 
-    AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+    AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
 
     sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 

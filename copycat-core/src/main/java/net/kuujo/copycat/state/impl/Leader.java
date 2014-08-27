@@ -62,9 +62,9 @@ public class Leader extends RaftState implements Observer {
   public void init(RaftStateContext context) {
     super.init(context);
 
-    replicator = new RaftReplicator(state)
-      .withReadQuorum(state.context().config().getReadQuorumSize())
-      .withWriteQuorum(state.context().config().getWriteQuorumSize());
+    replicator = new RaftReplicator(context)
+      .withReadQuorum(context.config().getReadQuorumSize())
+      .withWriteQuorum(context.config().getWriteQuorumSize());
 
     // When the leader is first elected, it needs to commit any pending commands
     // in its log to the state machine and then commit a snapshot to its log.
@@ -74,7 +74,7 @@ public class Leader extends RaftState implements Observer {
     // first entry in their log, whether it be a local snapshot or a snapshot that
     // was replicated by the leader. This greatly simplifies snapshot management as
     // snapshots are simply replicated as a normal part of each node's log.
-    for (long i = state.getLastApplied() + 1; i <= state.log().lastIndex(); i++) {
+    for (long i = context.getLastApplied() + 1; i <= context.log().lastIndex(); i++) {
       applyEntry(i);
     }
 
@@ -82,43 +82,38 @@ public class Leader extends RaftState implements Observer {
     // see if the leader's log is empty. If the log is empty, immediately commit
     // a snapshot as the first set of entries in the log. This guarantees that
     // the first set of entries in any leader's log will always be a snapshot.
-    if (state.log().isEmpty()) {
-      state.log().appendEntries(createSnapshot());
+    if (context.log().isEmpty()) {
+      context.log().appendEntries(createSnapshot());
     }
 
     // Next, the leader must write a no-op entry to the log and replicate the log
     // to all the nodes in the cluster. This ensures that other nodes are notified
     // of the leader's election and that their terms are updated with the leader's term.
-    state.log().appendEntry(new NoOpEntry(state.getCurrentTerm()));
+    context.log().appendEntry(new NoOpEntry(context.getCurrentTerm()));
 
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
-    Set<String> members = new HashSet<>(state.cluster().getMembers());
-    state.log().appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
+    Set<String> members = new HashSet<>(context.clusterConfig().getMembers());
+    context.log().appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
-    state.context().cluster().config().addObserver(this);
+    context.cluster().config().addObserver(this);
 
     // Create a map and list of remote replicas. We create both a map and
     // list because the list is sortable, so we can use a little math
     // trick to determine the current cluster-wide log commit index.
-    for (String uri : state.context().cluster().config().getRemoteMembers()) {
-      Member member = state.context().cluster().member(uri);
+    for (String uri : context.cluster().config().getRemoteMembers()) {
+      Member member = context.cluster().member(uri);
       if (member != null && !replicator.containsMember(member)) {
         replicator.addMember(member);
       }
     }
 
-    // Force the cluster configuration to match that of the local user configuration.
-    // This will ultimately cause a cluster change event and cause the cluster configuration
-    // to be applied to the log and replicated.
-    state.cluster().setRemoteMembers(state.context().cluster().config().getRemoteMembers());
-
     // Set the current leader as this replica.
-    state.setCurrentLeader(state.cluster().getLocalMember());
+    context.setCurrentLeader(context.clusterConfig().getLocalMember());
 
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
@@ -163,21 +158,21 @@ public class Leader extends RaftState implements Observer {
     // previous configuration changes have completed.
     replicator.commitAll().whenComplete((commitIndex, commitError) -> {
       // First we need to commit a combined old/new cluster configuration entry.
-      Set<String> combinedMembers = new HashSet<>(state.context().cluster().config().getMembers());
+      Set<String> combinedMembers = new HashSet<>(context.cluster().config().getMembers());
       combinedMembers.addAll(members);
-      Entry entry = new ConfigurationEntry(state.getCurrentTerm(), combinedMembers);
-      long configIndex = state.log().appendEntry(entry);
+      Entry entry = new ConfigurationEntry(context.getCurrentTerm(), combinedMembers);
+      long configIndex = context.log().appendEntry(entry);
 
       // Immediately after the entry is appended to the log, apply the combined
       // membership. Cluster membership changes do not wait for commitment.
       Set<String> combinedRemoteMembers = new HashSet<>(combinedMembers);
-      combinedRemoteMembers.remove(state.cluster().getLocalMember());
-      state.cluster().setRemoteMembers(combinedMembers);
+      combinedRemoteMembers.remove(context.clusterConfig().getLocalMember());
+      context.clusterConfig().setRemoteMembers(combinedMembers);
 
       // Whenever the local cluster membership changes, ensure we update the
       // local replicas.
       for (String uri : combinedRemoteMembers) {
-        Member member = state.context().cluster().member(uri);
+        Member member = context.cluster().member(uri);
         if (member != null && !replicator.containsMember(member)) {
           replicator.addMember(member).commitAll();
         }
@@ -186,13 +181,13 @@ public class Leader extends RaftState implements Observer {
       replicator.commit(configIndex).whenComplete((commitIndex2, commitError2) -> {
         // Append the new configuration entry to the log and force all replicas
         // to be synchronized.
-        state.log().appendEntry(new ConfigurationEntry(state.getCurrentTerm(), members));
+        context.log().appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
 
         // Again, once we've appended the new configuration to the log, update
         // the local internal configuration.
         Set<String> remoteMembers = new HashSet<>(members);
-        remoteMembers.remove(state.cluster().getLocalMember());
-        state.context().cluster().config().setRemoteMembers(remoteMembers);
+        remoteMembers.remove(context.clusterConfig().getLocalMember());
+        context.clusterConfig().setRemoteMembers(remoteMembers);
 
         // Once the local internal configuration has been updated, remove
         // any replicas that are no longer in the cluster.
@@ -212,20 +207,20 @@ public class Leader extends RaftState implements Observer {
    * Resets the ping timer.
    */
   private void setPingTimer() {
-    currentTimer = state.context().config().getTimerStrategy().schedule(() -> {
+    currentTimer = context.config().getTimerStrategy().schedule(() -> {
       replicator.pingAll();
       setPingTimer();
-    }, state.context().config().getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    }, context.config().getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   @Override
   public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
-    if (request.term() > state.getCurrentTerm()) {
+    if (request.term() > context.getCurrentTerm()) {
       return super.appendEntries(request);
-    } else if (request.term() < state.getCurrentTerm()) {
-      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), state.getCurrentTerm(), false, state.log().lastIndex()));
+    } else if (request.term() < context.getCurrentTerm()) {
+      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex()));
     } else {
-      state.transition(Follower.class);
+      context.transition(Follower.class);
       return super.appendEntries(request);
     }
   }
@@ -238,7 +233,7 @@ public class Leader extends RaftState implements Observer {
     // type is provided by a CommandProvider which provides CommandInfo for a
     // given command. If no CommandInfo is provided then all commands are assumed
     // to be READ_WRITE commands.
-    Command command = state.context().stateMachine().getCommand(request.command());
+    Command command = context.stateMachine().getCommand(request.command());
 
     // Depending on the command type, read or write commands may or may not be replicated
     // to a quorum based on configuration  options. For write commands, if a quorum is
@@ -249,11 +244,11 @@ public class Leader extends RaftState implements Observer {
       // default, read quorums are enabled. If read quorums are disabled then we
       // simply apply the command, otherwise we need to ping a quorum of the
       // cluster to ensure that data is up-to-date before responding.
-      if (state.context().config().isRequireReadQuorum()) {
-        replicator.ping(state.log().lastIndex()).whenComplete((index, error) -> {
+      if (context.config().isRequireReadQuorum()) {
+        replicator.ping(context.log().lastIndex()).whenComplete((index, error) -> {
           if (error == null) {
             try {
-              future.complete(new SubmitCommandResponse(request.id(), state.context().stateMachine().applyCommand(request.command(), request.args())));
+              future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
             } catch (Exception e) {
               future.completeExceptionally(e);
             }
@@ -263,7 +258,7 @@ public class Leader extends RaftState implements Observer {
         });
       } else {
         try {
-          future.complete(new SubmitCommandResponse(request.id(), state.context().stateMachine().applyCommand(request.command(), request.args())));
+          future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           future.completeExceptionally(e);
         }
@@ -272,22 +267,22 @@ public class Leader extends RaftState implements Observer {
       // For write commands or for commands for which the type is not known, an
       // entry must be logged, replicated, and committed prior to applying it
       // to the state machine and returning the result.
-      final long index = state.log().appendEntry(new CommandEntry(state.getCurrentTerm(), request.command(), request.args()));
+      final long index = context.log().appendEntry(new CommandEntry(context.getCurrentTerm(), request.command(), request.args()));
 
       // Write quorums are also optional to the user. The user can optionally
       // indicate that write commands should be immediately applied to the state
       // machine and the result returned.
-      if (state.context().config().isRequireWriteQuorum()) {
+      if (context.config().isRequireWriteQuorum()) {
         // If the replica requires write quorums, we simply set a task to be
         // executed once the entry has been replicated to a quorum of the cluster.
         replicator.commit(index).whenComplete((resultIndex, error) -> {
           if (error == null) {
             try {
-              future.complete(new SubmitCommandResponse(request.id(), state.context().stateMachine().applyCommand(request.command(), request.args())));
+              future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
             } catch (Exception e) {
               future.completeExceptionally(e);
             } finally {
-              state.setLastApplied(index);
+              context.setLastApplied(index);
               compactLog();
             }
           } else {
@@ -300,11 +295,11 @@ public class Leader extends RaftState implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          future.complete(new SubmitCommandResponse(request.id(), state.context().stateMachine().applyCommand(request.command(), request.args())));
+          future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           future.completeExceptionally(e);
         } finally {
-          state.setLastApplied(index);
+          context.setLastApplied(index);
           compactLog();
         }
       }
@@ -318,7 +313,7 @@ public class Leader extends RaftState implements Observer {
       currentTimer.cancel(true);
     }
     // Stop observing the observable cluster configuration.
-    state.context().cluster().config().deleteObserver(this);
+    context.cluster().config().deleteObserver(this);
   }
 
 }

@@ -19,8 +19,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.impl.DefaultCluster;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.log.impl.FileLogFactory;
@@ -69,10 +67,9 @@ import net.kuujo.copycat.state.impl.RaftStateContext;
  */
 public class CopyCatContext {
   private final Registry registry;
-  private final Cluster cluster;
-  private final StateMachine stateMachine;
-  private final RaftStateContext state;
+  private final ClusterConfig cluster;
   private final CopyCatConfig config;
+  private final StateContext state;
 
   public CopyCatContext(StateMachine stateMachine) {
     this(stateMachine, new FileLogFactory(), new ClusterConfig(), new CopyCatConfig());
@@ -103,11 +100,10 @@ public class CopyCatContext {
   }
 
   public CopyCatContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this.config = config;
     this.registry = registry;
-    this.state = new RaftStateContext(this, logFactory);
-    this.cluster = new DefaultCluster(cluster, state.cluster(), this);
-    this.stateMachine = stateMachine;
+    this.cluster = cluster;
+    this.config = config;
+    this.state = new RaftStateContext(stateMachine, logFactory, cluster, config, registry);
   }
 
   /**
@@ -120,40 +116,12 @@ public class CopyCatContext {
   }
 
   /**
-   * Returns the internal CopyCat cluster. Note that this cluster's configuration
-   * may differ from the configuration passed by the user.
+   * Returns the cluster configuration.
    *
-   * @return The internal CopyCat cluster.
+   * @return The cluster configuration.
    */
-  public Cluster cluster() {
+  public ClusterConfig cluster() {
     return cluster;
-  }
-
-  /**
-   * Returns the underlying log.
-   *
-   * @return The underlying log.
-   */
-  public Log log() {
-    return state.log();
-  }
-
-  /**
-   * Returns the state context.
-   *
-   * @return The state context.
-   */
-  public StateContext state() {
-    return state;
-  }
-
-  /**
-   * Returns the underlying state machine.
-   *
-   * @return The underlying state machine.
-   */
-  public StateMachine stateMachine() {
-    return stateMachine;
   }
 
   /**

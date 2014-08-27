@@ -26,15 +26,19 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.CopyCatException;
+import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.impl.RaftCluster;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.state.StateContext;
 import net.kuujo.copycat.state.StateListener;
 
@@ -47,9 +51,12 @@ public class RaftStateContext implements StateContext {
   private static final Logger logger = Logger.getLogger(StateContext.class.getCanonicalName());
   private final Executor executor = Executors.newCachedThreadPool();
   private final Set<StateListener> listeners = new HashSet<>();
-  private final CopyCatContext context;
-  private final ClusterConfig cluster = new ClusterConfig();
+  private final StateMachine stateMachine;
+  private final Cluster cluster;
+  private final ClusterConfig clusterConfig = new ClusterConfig();
   private final LogFactory logFactory;
+  private final CopyCatConfig config;
+  private final Registry registry;
   private Log log;
   private volatile RaftState currentState;
   private volatile String currentLeader;
@@ -61,9 +68,12 @@ public class RaftStateContext implements StateContext {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  public RaftStateContext(CopyCatContext context, LogFactory logFactory) {
-    this.context = context;
+  public RaftStateContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+    this.stateMachine = stateMachine;
     this.logFactory = logFactory;
+    this.config = config;
+    this.registry = registry;
+    this.cluster = new RaftCluster(cluster, clusterConfig, this);
   }
 
   @Override
@@ -77,12 +87,26 @@ public class RaftStateContext implements StateContext {
   }
 
   @Override
-  public CopyCatContext context() {
-    return context;
+  public StateMachine stateMachine() {
+    return stateMachine;
   }
 
   @Override
-  public ClusterConfig cluster() {
+  public CopyCatConfig config() {
+    return config;
+  }
+
+  /**
+   * Returns the user-defined cluster configuration.
+   *
+   * @return The user-defined cluster configuration.
+   */
+  public ClusterConfig clusterConfig() {
+    return clusterConfig;
+  }
+
+  @Override
+  public Cluster cluster() {
     return cluster;
   }
 
@@ -92,30 +116,31 @@ public class RaftStateContext implements StateContext {
   }
 
   @Override
-  public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(context.cluster().localMember());
+  public Registry registry() {
+    return registry;
   }
 
-  /**
-   * Starts the context.
-   */
+  @Override
+  public boolean isLeader() {
+    return currentLeader != null && currentLeader.equals(cluster.localMember().uri());
+  }
+
+  @Override
   public CompletableFuture<Void> start() {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
     transition(None.class);
-    log = logFactory.createLog(String.format("%s.log", context.cluster().localMember().name()));
-    return context.cluster().localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
+    log = logFactory.createLog(String.format("%s.log", cluster.localMember().name()));
+    return cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
       log.open();
       log.restore();
       transition(Follower.class);
     });
   }
 
-  /**
-   * Stops the context.
-   */
+  @Override
   public CompletableFuture<Void> stop() {
-    return context.cluster().localMember().protocol().server().stop().whenCompleteAsync((result, error) -> {
+    return cluster.localMember().protocol().server().stop().whenCompleteAsync((result, error) -> {
       log.close();
       log = null;
       transition(None.class);
@@ -127,13 +152,13 @@ public class RaftStateContext implements StateContext {
    */
   public synchronized void transition(Class<? extends RaftState> type) {
     if (currentState == null) {
-      cluster.setLocalMember(context.cluster().config().getLocalMember());
-      cluster.setRemoteMembers(context.cluster().config().getRemoteMembers());
+      clusterConfig.setLocalMember(cluster.config().getLocalMember());
+      clusterConfig.setRemoteMembers(cluster.config().getRemoteMembers());
     } else if (type != null && type.isAssignableFrom(currentState.getClass())) {
       return;
     }
 
-    logger.info(context.cluster().localMember() + " transitioning to " + type.toString());
+    logger.info(cluster.localMember() + " transitioning to " + type.toString());
     final RaftState oldState = currentState;
     try {
       currentState = type.newInstance();
@@ -171,7 +196,7 @@ public class RaftStateContext implements StateContext {
       leaderClient = null;
     } else if (!isLeader()) {
       leaderConnected = false;
-      leaderClient = context.cluster().member(currentLeader).protocol().client();
+      leaderClient = cluster.member(currentLeader).protocol().client();
       leaderClient.connect().thenRun(() -> {
         leaderConnected = true;
         runLeaderConnectCallbacks();
@@ -266,16 +291,10 @@ public class RaftStateContext implements StateContext {
    * Returns the next correlation ID from the correlation ID generator.
    */
   public Object nextCorrelationId() {
-    return context.config().getCorrelationStrategy().nextCorrelationId(context);
+    return config.getCorrelationStrategy().nextCorrelationId();
   }
 
-  /**
-   * Submits a command to the cluster.
-   *
-   * @param command The name of the command to submit.
-   * @param args An ordered list of command arguments.
-   * @return A completable future to be completed once the result is received.
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
     CompletableFuture<R> future = new CompletableFuture<>();
@@ -297,7 +316,7 @@ public class RaftStateContext implements StateContext {
       });
     } else {
       executor.execute(() -> {
-        ProtocolHandler handler = currentLeader.equals(context.cluster().localMember()) ? currentState : leaderClient;
+        ProtocolHandler handler = currentLeader.equals(cluster.localMember().uri()) ? currentState : leaderClient;
         handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);

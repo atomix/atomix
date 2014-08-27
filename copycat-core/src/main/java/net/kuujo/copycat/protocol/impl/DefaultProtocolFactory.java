@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.ProtocolFactory;
 import net.kuujo.copycat.protocol.ProtocolInstance;
 import net.kuujo.copycat.protocol.ProtocolUri;
+import net.kuujo.copycat.registry.Registry;
 
 /**
  * Protocol factory that injects URI arguments into the protocol instance.
@@ -26,15 +26,15 @@ import net.kuujo.copycat.protocol.ProtocolUri;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultProtocolFactory implements ProtocolFactory {
-  private final CopyCatContext context;
+  private final Registry registry;
 
-  public DefaultProtocolFactory(CopyCatContext context) {
-    this.context = context;
+  public DefaultProtocolFactory(Registry registry) {
+    this.registry = registry;
   }
 
   @Override
   public ProtocolInstance createProtocol(String uri) {
-    return new DefaultProtocolInstance(new ProtocolUri(uri), context);
+    return new DefaultProtocolInstance(new ProtocolUri(uri), registry);
   }
 
 }

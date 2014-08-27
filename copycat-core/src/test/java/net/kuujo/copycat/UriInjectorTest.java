@@ -18,7 +18,6 @@ package net.kuujo.copycat;
 import java.net.URI;
 
 import junit.framework.Assert;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.BasicRegistry;
 import net.kuujo.copycat.uri.UriHost;
@@ -36,20 +35,20 @@ import org.junit.Test;
 public class UriInjectorTest {
 
   @Test
-  public void testInjectContext() throws Exception {
-    CopyCatContext context = new CopyCatContext(new StateMachine(){});
-    UriInjector injector = new UriInjector(new URI("http://localhost:8080"), context);
+  public void testInjectRegistry() throws Exception {
+    Registry registry = new BasicRegistry();
+    UriInjector injector = new UriInjector(new URI("http://localhost:8080"), registry);
     TestInjectContext object = injector.inject(TestInjectContext.class);
-    Assert.assertEquals(context, object.context);
+    Assert.assertEquals(registry, object.registry);
   }
 
   public static class TestInjectContext {
-    private CopyCatContext context;
+    private Registry registry;
   }
 
   @Test
   public void testInjectAnnotatedBean() throws Exception {
-    UriInjector injector = new UriInjector(new URI("http://localhost:8080"), new CopyCatContext(new StateMachine(){}));
+    UriInjector injector = new UriInjector(new URI("http://localhost:8080"), new BasicRegistry());
     TestInjectAnnotatedBean object = injector.inject(TestInjectAnnotatedBean.class);
     Assert.assertEquals("localhost", object.host);
     Assert.assertEquals(8080, object.port);
@@ -80,7 +79,7 @@ public class UriInjectorTest {
 
   @Test
   public void testInjectUnannotatedBean() throws Exception {
-    UriInjector injector = new UriInjector(new URI("http://localhost:8080?foo=baz&bar=1"), new CopyCatContext(new StateMachine(){}));
+    UriInjector injector = new UriInjector(new URI("http://localhost:8080?foo=baz&bar=1"), new BasicRegistry());
     TestInjectUnannotatedBean object = injector.inject(TestInjectUnannotatedBean.class);
     Assert.assertEquals("baz", object.foo);
     Assert.assertEquals(1, object.bar);
@@ -120,7 +119,7 @@ public class UriInjectorTest {
   public void testInjectAnnotatedBeanFromRegistry() throws Exception {
     Registry registry = new BasicRegistry();
     registry.bind("test", new TestObject("Hello world!", 1000));
-    UriInjector injector = new UriInjector(new URI("http://localhost:8080?registered=$test"), new CopyCatContext(new StateMachine(){}, new ClusterConfig(), registry));
+    UriInjector injector = new UriInjector(new URI("http://localhost:8080?registered=$test"), registry);
     TestInjectAnnotatedBeanFromRegistry object = injector.inject(TestInjectAnnotatedBeanFromRegistry.class);
     Assert.assertNotNull(object.registered);
     Assert.assertEquals("Hello world!", object.registered.foo);
@@ -144,7 +143,7 @@ public class UriInjectorTest {
   public void testInjectUnannotatedBeanFromRegistry() throws Exception {
     Registry registry = new BasicRegistry();
     registry.bind("test", new TestObject("Hello world!", 1000));
-    UriInjector injector = new UriInjector(new URI("http://localhost:8080?registered=$test"), new CopyCatContext(new StateMachine(){}, new ClusterConfig(), registry));
+    UriInjector injector = new UriInjector(new URI("http://localhost:8080?registered=$test"), registry);
     TestInjectUnannotatedBeanFromRegistry object = injector.inject(TestInjectUnannotatedBeanFromRegistry.class);
     Assert.assertNotNull(object.registered);
     Assert.assertEquals("Hello world!", object.registered.foo);

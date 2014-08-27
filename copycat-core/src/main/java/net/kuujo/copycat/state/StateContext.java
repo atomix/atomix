@@ -15,10 +15,14 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.CopyCatContext;
+import java.util.concurrent.CompletableFuture;
+
+import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.EventProvider;
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.registry.Registry;
 
 /**
  * Container for replica state information.
@@ -28,18 +32,18 @@ import net.kuujo.copycat.log.Log;
 public interface StateContext extends EventProvider<StateListener> {
 
   /**
-   * Returns the copycat context.
+   * Returns the internal state cluster.
    *
-   * @return The copycat context.
+   * @return The internal state cluster.
    */
-  CopyCatContext context();
+  Cluster cluster();
 
   /**
-   * Returns the internal state cluster configuration.
+   * Returns the copycat configuration.
    *
-   * @return The internal state cluster configuration.
+   * @return The copycat configuration.
    */
-  ClusterConfig cluster();
+  CopyCatConfig config();
 
   /**
    * Returns the state log.
@@ -49,10 +53,47 @@ public interface StateContext extends EventProvider<StateListener> {
   Log log();
 
   /**
+   * Returns the state machine.
+   *
+   * @return The state machine.
+   */
+  StateMachine stateMachine();
+
+  /**
+   * Returns the registry.
+   *
+   * @return The registry.
+   */
+  Registry registry();
+
+  /**
    * Returns a boolean indicating whether the state is leader.
    *
    * @return Indicates whether the current state is leader.
    */
   boolean isLeader();
+
+  /**
+   * Starts the context.
+   *
+   * @return A completable future to be completed once started.
+   */
+  CompletableFuture<Void> start();
+
+  /**
+   * Stops the context.
+   *
+   * @return A completable future to be completed once stopped.
+   */
+  CompletableFuture<Void> stop();
+
+  /**
+   * Submits a command to the context.
+   *
+   * @param command The command to submit.
+   * @param args The command arguments.
+   * @return A completable future to be completed with the command result.
+   */
+  <T> CompletableFuture<T> submitCommand(String command, Object... args);
 
 }

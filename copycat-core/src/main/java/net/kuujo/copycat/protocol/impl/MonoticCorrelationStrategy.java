@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.CorrelationStrategy;
 
 /**
@@ -27,7 +26,7 @@ public class MonoticCorrelationStrategy implements CorrelationStrategy<Long> {
   private long id;
 
   @Override
-  public Long nextCorrelationId(CopyCatContext context) {
+  public Long nextCorrelationId() {
     return ++id;
   }
 

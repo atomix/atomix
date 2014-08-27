@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.CopyCatContext;
-
 /**
  * Message correlation strategy.
  *
@@ -27,9 +25,8 @@ public interface CorrelationStrategy<T> {
   /**
    * Returns the next correlation ID for the given context.
    *
-   * @param context The copycat context.
    * @return The unique correlation ID.
    */
-  T nextCorrelationId(CopyCatContext context);
+  T nextCorrelationId();
 
 }
