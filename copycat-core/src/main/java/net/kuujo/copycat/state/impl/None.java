@@ -23,6 +23,7 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.state.State;
 
 /**
  * Non-existent state.<p>
@@ -33,6 +34,11 @@ import net.kuujo.copycat.protocol.SubmitCommandResponse;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class None extends RaftState {
+
+  @Override
+  public State.Type type() {
+    return State.Type.NONE;
+  }
 
   @Override
   public void init(RaftStateContext context) {

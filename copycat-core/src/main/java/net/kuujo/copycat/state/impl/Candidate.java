@@ -26,6 +26,7 @@ import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.util.Quorum;
 
 /**
@@ -43,6 +44,11 @@ public class Candidate extends RaftState {
   private static final Logger logger = Logger.getLogger(Candidate.class.getCanonicalName());
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;
+
+  @Override
+  public State.Type type() {
+    return State.Type.CANDIDATE;
+  }
 
   @Override
   public void init(RaftStateContext context) {

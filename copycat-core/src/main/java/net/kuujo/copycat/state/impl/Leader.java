@@ -36,6 +36,7 @@ import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
 import net.kuujo.copycat.replication.Replicator;
 import net.kuujo.copycat.replication.impl.RaftReplicator;
+import net.kuujo.copycat.state.State;
 
 /**
  * Leader state.<p>
@@ -51,6 +52,11 @@ import net.kuujo.copycat.replication.impl.RaftReplicator;
 public class Leader extends RaftState implements Observer {
   private ScheduledFuture<Void> currentTimer;
   private Replicator replicator;
+
+  @Override
+  public State.Type type() {
+    return State.Type.LEADER;
+  }
 
   @Override
   public void init(RaftStateContext context) {

@@ -21,9 +21,9 @@ package net.kuujo.copycat.state;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateEvent {
-  private final State<?> state;
+  private final State.Type state;
 
-  public StateEvent(State<?> state) {
+  public StateEvent(State.Type state) {
     this.state = state;
   }
 
@@ -32,7 +32,7 @@ public class StateEvent {
    *
    * @return The copycat state.
    */
-  public State<?> state() {
+  public State.Type state() {
     return state;
   }
 

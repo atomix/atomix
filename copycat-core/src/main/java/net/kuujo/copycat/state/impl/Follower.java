@@ -24,6 +24,7 @@ import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.state.State;
 
 /**
  * Follower state.<p>
@@ -40,6 +41,11 @@ public class Follower extends RaftState {
   private static final Logger logger = Logger.getLogger(Follower.class.getCanonicalName());
   private ScheduledFuture<Void> currentTimer;
   private boolean shutdown = true;
+
+  @Override
+  public State.Type type() {
+    return State.Type.FOLLOWER;
+  }
 
   @Override
   public synchronized void init(RaftStateContext context) {

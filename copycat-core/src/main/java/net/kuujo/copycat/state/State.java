@@ -25,6 +25,25 @@ import net.kuujo.copycat.protocol.ProtocolHandler;
 public interface State<T extends StateContext> extends ProtocolHandler {
 
   /**
+   * State type.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static enum Type {
+    NONE,
+    FOLLOWER,
+    CANDIDATE,
+    LEADER;
+  }
+
+  /**
+   * Returns the state type.
+   *
+   * @return The state type.
+   */
+  Type type();
+
+  /**
    * Initializes the state.
    *
    * @param context The state context.
