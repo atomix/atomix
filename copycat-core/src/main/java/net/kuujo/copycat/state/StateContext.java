@@ -18,7 +18,6 @@ package net.kuujo.copycat.state;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.EventProvider;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.election.ElectionContext;
 import net.kuujo.copycat.log.Log;
 
 /**
@@ -48,13 +47,6 @@ public interface StateContext extends EventProvider<StateListener> {
    * @return The state log.
    */
   Log log();
-
-  /**
-   * Returns the state election context.
-   *
-   * @return The state election context.
-   */
-  ElectionContext election();
 
   /**
    * Returns a boolean indicating whether the state is leader.

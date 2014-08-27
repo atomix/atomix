@@ -18,10 +18,9 @@ package net.kuujo.copycat;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.cluster.ClusterContext;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.ClusterContext;
 import net.kuujo.copycat.cluster.impl.DefaultCluster;
-import net.kuujo.copycat.election.ElectionContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.log.impl.FileLogFactory;
@@ -72,7 +71,6 @@ public class CopyCatContext {
   private final Registry registry;
   private final ClusterContext cluster;
   private final StateMachine stateMachine;
-  private final ElectionContext election;
   private final RaftStateContext state;
   private final CopyCatConfig config;
 
@@ -110,7 +108,6 @@ public class CopyCatContext {
     this.state = new RaftStateContext(this, logFactory);
     this.cluster = new DefaultCluster(cluster, state.cluster(), this);
     this.stateMachine = stateMachine;
-    this.election = this.state.election();
   }
 
   /**
@@ -139,15 +136,6 @@ public class CopyCatContext {
    */
   public Log log() {
     return state.log();
-  }
-
-  /**
-   * Returns the election context.
-   *
-   * @return The election context.
-   */
-  public ElectionContext election() {
-    return election;
   }
 
   /**

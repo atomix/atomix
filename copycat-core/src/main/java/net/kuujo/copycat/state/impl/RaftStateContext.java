@@ -29,8 +29,6 @@ import java.util.logging.Logger;
 import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.election.ElectionContext;
-import net.kuujo.copycat.election.impl.RaftElectionContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -53,7 +51,6 @@ public class RaftStateContext implements StateContext {
   private final ClusterConfig cluster = new ClusterConfig();
   private final LogFactory logFactory;
   private Log log;
-  private final RaftElectionContext election;
   private volatile RaftState currentState;
   private volatile String currentLeader;
   private ProtocolClient leaderClient;
@@ -66,7 +63,6 @@ public class RaftStateContext implements StateContext {
 
   public RaftStateContext(CopyCatContext context, LogFactory logFactory) {
     this.context = context;
-    this.election = new RaftElectionContext(this);
     this.logFactory = logFactory;
   }
 
@@ -93,11 +89,6 @@ public class RaftStateContext implements StateContext {
   @Override
   public Log log() {
     return log;
-  }
-
-  @Override
-  public ElectionContext election() {
-    return election;
   }
 
   @Override
@@ -172,7 +163,6 @@ public class RaftStateContext implements StateContext {
       logger.finer(String.format("Current cluster leader changed: %s", leader));
     }
     currentLeader = leader;
-    election.setLeaderAndTerm(currentTerm, currentLeader);
 
     // When a new leader is elected, we create a client and connect to the leader.
     // Once this node is connected to the leader we can begin submitting commands.
@@ -307,7 +297,7 @@ public class RaftStateContext implements StateContext {
       });
     } else {
       executor.execute(() -> {
-        ProtocolHandler handler = context.election().currentLeader().equals(context.cluster().localMember()) ? currentState : leaderClient;
+        ProtocolHandler handler = currentLeader.equals(context.cluster().localMember()) ? currentState : leaderClient;
         handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
