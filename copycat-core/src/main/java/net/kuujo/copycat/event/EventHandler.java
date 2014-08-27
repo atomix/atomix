@@ -16,9 +16,19 @@
 package net.kuujo.copycat.event;
 
 /**
- * Identifier type for event listeners.
+ * Event handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ *
+ * @param <E> The event type.
  */
-public interface EventListener {
+public interface EventHandler<E extends Event> {
+
+  /**
+   * Handles the event.
+   *
+   * @param event The event to handle.
+   */
+  void handle(E event);
+
 }

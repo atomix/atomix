@@ -21,20 +21,15 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-
-import net.kuujo.copycat.event.EventProvider;
 
 /**
  * State machine executor.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateMachine implements EventProvider<StateMachineListener> {
-  private final Set<StateMachineListener> listeners = new HashSet<>();
+public class StateMachine {
   private final Map<String, CommandHolder> commands = new HashMap<>();
   private final Map<String, Field> stateFields = new HashMap<>();
 
@@ -106,52 +101,6 @@ public class StateMachine implements EventProvider<StateMachineListener> {
     }
   }
 
-  @Override
-  public void addListener(StateMachineListener listener) {
-    listeners.add(listener);
-  }
-
-  @Override
-  public void removeListener(StateMachineListener listener) {
-    listeners.remove(listener);
-  }
-
-  /**
-   * Triggers a command event.
-   */
-  private void triggerCommandEvent(String command) {
-    if (!listeners.isEmpty()) {
-      CommandEvent event = new CommandEvent(command);
-      for (StateMachineListener listener : listeners) {
-        listener.commandApplied(event);
-      }
-    }
-  }
-
-  /**
-   * Triggers a take snapshot event.
-   */
-  private void triggerTakeSnapshotEvent() {
-    if (!listeners.isEmpty()) {
-      SnapshotEvent event = new SnapshotEvent();
-      for (StateMachineListener listener : listeners) {
-        listener.snapshotTaken(event);
-      }
-    }
-  }
-
-  /**
-   * Triggers an install snapshot event.
-   */
-  private void triggerInstallSnapshotEvent() {
-    if (!listeners.isEmpty()) {
-      SnapshotEvent event = new SnapshotEvent();
-      for (StateMachineListener listener : listeners) {
-        listener.snapshotInstalled(event);
-      }
-    }
-  }
-
   /**
    * Returns command info for a named command.
    *
@@ -178,7 +127,6 @@ public class StateMachine implements EventProvider<StateMachineListener> {
         throw new CopyCatException(e);
       }
     }
-    triggerTakeSnapshotEvent();
     return snapshot;
   }
 
@@ -199,7 +147,6 @@ public class StateMachine implements EventProvider<StateMachineListener> {
         }
       }
     }
-    triggerInstallSnapshotEvent();
   }
 
   /**
@@ -213,7 +160,6 @@ public class StateMachine implements EventProvider<StateMachineListener> {
     CommandHolder command = commands.get(name);
     if (command != null) {
       Object result = command.call(args);
-      triggerCommandEvent(name);
       return result;
     }
     return null;

@@ -26,6 +26,7 @@ import java.util.Set;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.event.MembershipChangeEvent;
 import net.kuujo.copycat.state.impl.RaftStateContext;
 
 /**
@@ -71,6 +72,8 @@ public class RaftCluster implements Cluster, Observer {
         iterator.remove();
       }
     }
+
+    context.events().membershipChange().run(new MembershipChangeEvent(new HashSet<>(config.getMembers())));
   }
 
   @Override

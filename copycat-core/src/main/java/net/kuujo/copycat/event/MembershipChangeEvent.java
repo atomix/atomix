@@ -13,40 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.event.Event;
+import java.util.Set;
 
 /**
- * Cluster membership event.
+ * Cluster membership change event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MembershipEvent implements Event {
-  private final Cluster cluster;
-  private final Member member;
+public class MembershipChangeEvent implements Event {
+  private final Set<String> members;
 
-  public MembershipEvent(Cluster cluster, Member member) {
-    this.cluster = cluster;
-    this.member = member;
+  public MembershipChangeEvent(Set<String> members) {
+    this.members = members;
   }
 
   /**
-   * Returns the cluster instance.
+   * Returns the changed cluster membership.
    *
-   * @return The cluster instance.
+   * @return The changed cluster membership.
    */
-  public Cluster cluster() {
-    return cluster;
-  }
-
-  /**
-   * Returns the member instance.
-   *
-   * @return The member instance.
-   */
-  public Member member() {
-    return member;
+  public Set<String> members() {
+    return members;
   }
 
 }

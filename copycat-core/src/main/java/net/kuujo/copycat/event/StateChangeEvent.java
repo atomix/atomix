@@ -13,22 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
+package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.event.EventListener;
+import net.kuujo.copycat.state.State;
 
 /**
- * State change event listener.
+ * State change event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateListener extends EventListener {
+public class StateChangeEvent implements Event {
+  private final State.Type state;
+
+  public StateChangeEvent(State.Type state) {
+    this.state = state;
+  }
 
   /**
-   * Called when a state change has occurred.
+   * Returns the state change state type.
    *
-   * @param event The state change event.
+   * @return The state change state type.
    */
-  void stateChanged(StateEvent event);
+  public State.Type state() {
+    return state;
+  }
 
 }

@@ -20,11 +20,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.EntryEvent;
-import net.kuujo.copycat.log.EntryListener;
 import net.kuujo.copycat.log.Log;
 
 /**
@@ -40,17 +37,6 @@ import net.kuujo.copycat.log.Log;
 public class MemoryLog implements Log {
   private TreeMap<Long, Entry> log = new TreeMap<>();
   private long index;
-  private final List<EntryListener> listeners = new CopyOnWriteArrayList<>();
-
-  @Override
-  public void addListener(EntryListener listener) {
-    listeners.add(listener);
-  }
-
-  @Override
-  public void removeListener(EntryListener listener) {
-    listeners.remove(listener);
-  }
 
   @Override
   public void open() {
@@ -66,21 +52,11 @@ public class MemoryLog implements Log {
     return log.isEmpty();
   }
 
-  private void triggerAddEvent(long index, Entry entry) {
-    if (!listeners.isEmpty()) {
-      EntryEvent event = new EntryEvent(index, entry);
-      for (EntryListener listener : listeners) {
-        listener.entryAdded(event);
-      }
-    }
-  }
-
   @Override
   public long appendEntry(Entry entry) {
     if (entry == null) throw new NullPointerException();
     long index = ++this.index;
     log.put(index, entry);
-    triggerAddEvent(index, entry);
     return index;
   }
 

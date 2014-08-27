@@ -17,10 +17,8 @@ package net.kuujo.copycat.state.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -32,6 +30,11 @@ import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.impl.RaftCluster;
+import net.kuujo.copycat.event.LeaderElectEvent;
+import net.kuujo.copycat.event.StartEvent;
+import net.kuujo.copycat.event.StateChangeEvent;
+import net.kuujo.copycat.event.StopEvent;
+import net.kuujo.copycat.event.impl.DefaultEvents;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -40,7 +43,6 @@ import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.state.StateContext;
-import net.kuujo.copycat.state.StateListener;
 
 /**
  * Raft state context.
@@ -50,13 +52,13 @@ import net.kuujo.copycat.state.StateListener;
 public class RaftStateContext implements StateContext {
   private static final Logger logger = Logger.getLogger(StateContext.class.getCanonicalName());
   private final Executor executor = Executors.newCachedThreadPool();
-  private final Set<StateListener> listeners = new HashSet<>();
   private final StateMachine stateMachine;
   private final Cluster cluster;
   private final ClusterConfig clusterConfig = new ClusterConfig();
   private final LogFactory logFactory;
   private final CopyCatConfig config;
   private final Registry registry;
+  private final DefaultEvents events = new DefaultEvents();
   private Log log;
   private volatile RaftState currentState;
   private volatile String currentLeader;
@@ -74,16 +76,6 @@ public class RaftStateContext implements StateContext {
     this.config = config;
     this.registry = registry;
     this.cluster = new RaftCluster(cluster, clusterConfig, this);
-  }
-
-  @Override
-  public void addListener(StateListener listener) {
-    listeners.add(listener);
-  }
-
-  @Override
-  public void removeListener(StateListener listener) {
-    listeners.remove(listener);
   }
 
   @Override
@@ -121,6 +113,11 @@ public class RaftStateContext implements StateContext {
   }
 
   @Override
+  public DefaultEvents events() {
+    return events;
+  }
+
+  @Override
   public boolean isLeader() {
     return currentLeader != null && currentLeader.equals(cluster.localMember().uri());
   }
@@ -135,6 +132,7 @@ public class RaftStateContext implements StateContext {
       log.open();
       log.restore();
       transition(Follower.class);
+      events.start().run(new StartEvent());
     });
   }
 
@@ -144,6 +142,7 @@ public class RaftStateContext implements StateContext {
       log.close();
       log = null;
       transition(None.class);
+      events.stop().run(new StopEvent());
     });
   }
 
@@ -171,6 +170,8 @@ public class RaftStateContext implements StateContext {
     } else {
       currentState.init(this);
     }
+
+    events.stateChange().run(new StateChangeEvent(currentState.type()));
   }
 
   /**
@@ -187,7 +188,16 @@ public class RaftStateContext implements StateContext {
     if (currentLeader == null || !currentLeader.equals(leader)) {
       logger.finer(String.format("Current cluster leader changed: %s", leader));
     }
-    currentLeader = leader;
+
+    if (currentLeader == null && leader != null) {
+      currentLeader = leader;
+      events.leaderElect().run(new LeaderElectEvent(currentTerm, currentLeader));
+    } else if (currentLeader != null && leader != null && !currentLeader.equals(leader)) {
+      currentLeader = leader;
+      events.leaderElect().run(new LeaderElectEvent(currentTerm, currentLeader));
+    } else {
+      currentLeader = leader;
+    }
 
     // When a new leader is elected, we create a client and connect to the leader.
     // Once this node is connected to the leader we can begin submitting commands.

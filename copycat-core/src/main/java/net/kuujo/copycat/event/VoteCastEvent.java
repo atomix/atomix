@@ -13,29 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
-
-import net.kuujo.copycat.event.Event;
+package net.kuujo.copycat.event;
 
 /**
- * Command event.
+ * Vote cast event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommandEvent implements Event {
-  private final String command;
+public class VoteCastEvent implements Event {
+  private final long term;
+  private final String candidate;
 
-  public CommandEvent(String command) {
-    this.command = command;
+  public VoteCastEvent(long term, String candidate) {
+    this.term = term;
+    this.candidate = candidate;
   }
 
   /**
-   * Returns the command name.
+   * Returns the term in which the vote was cast.
    *
-   * @return The command name.
+   * @return The term in which the vote was cast.
    */
-  public String command() {
-    return command;
+  public long term() {
+    return term;
+  }
+
+  /**
+   * Returns the candidate for which the vote was cast.
+   *
+   * @return The candidate for which the vote was cast.
+   */
+  public String candidate() {
+    return candidate;
   }
 
 }

@@ -19,6 +19,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.event.Event;
+import net.kuujo.copycat.event.EventContext;
+import net.kuujo.copycat.event.Events;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.log.impl.FileLogFactory;
@@ -135,6 +138,25 @@ public class CopyCatContext {
    */
   public Registry registry() {
     return registry;
+  }
+
+  /**
+   * Returns the context events.
+   *
+   * @return Context events.
+   */
+  public Events on() {
+    return state.events();
+  }
+
+  /**
+   * Returns the context for a specific event.
+   *
+   * @param event The event for which to return the context.
+   * @return The event context.
+   */
+  public <T extends Event> EventContext<T> on(Class<T> event) {
+    return state.events().<T>event(event);
   }
 
   /**

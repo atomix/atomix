@@ -13,27 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
+package net.kuujo.copycat.event;
 
 /**
- * State change event.
+ * Stop event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateEvent {
-  private final State.Type state;
-
-  public StateEvent(State.Type state) {
-    this.state = state;
-  }
-
-  /**
-   * Returns the copycat state.
-   *
-   * @return The copycat state.
-   */
-  public State.Type state() {
-    return state;
-  }
+public class StopEvent implements Event {
 
 }

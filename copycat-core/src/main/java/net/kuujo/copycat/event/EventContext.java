@@ -13,14 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
-
-import net.kuujo.copycat.event.Event;
+package net.kuujo.copycat.event;
 
 /**
- * Snapshot event.
+ * Event context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ *
+ * @param <T> The event type.
  */
-public class SnapshotEvent implements Event {
+public interface EventContext<T extends Event> {
+
+  /**
+   * Registers an event handler.
+   *
+   * @param handler The event handler to register.
+   * @return The event context.
+   */
+  EventContext<T> run(EventHandler<T> handler);
+
 }

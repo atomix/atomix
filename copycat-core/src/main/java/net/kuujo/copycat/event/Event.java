@@ -16,7 +16,7 @@
 package net.kuujo.copycat.event;
 
 /**
- * Identifier type for events.
+ * Base type for events.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

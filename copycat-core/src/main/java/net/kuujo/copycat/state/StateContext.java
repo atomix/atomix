@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.event.EventProvider;
+import net.kuujo.copycat.event.Events;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.registry.Registry;
 
@@ -29,7 +29,7 @@ import net.kuujo.copycat.registry.Registry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateContext extends EventProvider<StateListener> {
+public interface StateContext {
 
   /**
    * Returns the internal state cluster.
@@ -65,6 +65,13 @@ public interface StateContext extends EventProvider<StateListener> {
    * @return The registry.
    */
   Registry registry();
+
+  /**
+   * Returns the state context events.
+   *
+   * @return State context events.
+   */
+  Events events();
 
   /**
    * Returns a boolean indicating whether the state is leader.

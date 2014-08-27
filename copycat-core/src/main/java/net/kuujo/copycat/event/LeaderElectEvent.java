@@ -16,24 +16,35 @@
 package net.kuujo.copycat.event;
 
 /**
- * Event provider.
+ * Leader elcted event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventProvider<T extends EventListener> {
+public class LeaderElectEvent implements Event {
+  private final long term;
+  private final String leader;
+
+  public LeaderElectEvent(long term, String leader) {
+    this.term = term;
+    this.leader = leader;
+  }
 
   /**
-   * Adds an event listener.
+   * Returns the leader's term.
    *
-   * @param listener The event listener.
+   * @return The leader's term.
    */
-  void addListener(T listener);
+  public long term() {
+    return term;
+  }
 
   /**
-   * Removes an event listener.
+   * Returns the leader URI.
    *
-   * @param listener The event listener.
+   * @return The leader URI.
    */
-  void removeListener(T listener);
+  public String leader() {
+    return leader;
+  }
 
 }

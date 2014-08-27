@@ -13,22 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.election;
-
-import net.kuujo.copycat.event.EventListener;
+package net.kuujo.copycat.event;
 
 /**
- * Election event listener.
+ * Start event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ElectionListener extends EventListener {
-
-  /**
-   * Called when a leader has been elected.
-   *
-   * @param event The leader election event.
-   */
-  void leaderElected(ElectionEvent event);
-
+public class StartEvent implements Event {
 }
