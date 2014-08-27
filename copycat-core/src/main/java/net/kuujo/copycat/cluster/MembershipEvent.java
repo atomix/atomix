@@ -23,10 +23,10 @@ import net.kuujo.copycat.Event;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MembershipEvent implements Event {
-  private final ClusterContext cluster;
+  private final Cluster cluster;
   private final Member member;
 
-  public MembershipEvent(ClusterContext cluster, Member member) {
+  public MembershipEvent(Cluster cluster, Member member) {
     this.cluster = cluster;
     this.member = member;
   }
@@ -36,7 +36,7 @@ public class MembershipEvent implements Event {
    *
    * @return The cluster instance.
    */
-  public ClusterContext cluster() {
+  public Cluster cluster() {
     return cluster;
   }
 

@@ -24,7 +24,7 @@ import java.util.Observer;
 import java.util.Set;
 
 import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.cluster.ClusterContext;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 
@@ -33,7 +33,7 @@ import net.kuujo.copycat.cluster.Member;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultCluster implements ClusterContext, Observer {
+public class DefaultCluster implements Cluster, Observer {
   private final CopyCatContext context;
   private final ClusterConfig userConfig;
   private final ClusterConfig internalConfig;

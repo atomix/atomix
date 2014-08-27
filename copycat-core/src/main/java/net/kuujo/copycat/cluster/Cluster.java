@@ -24,7 +24,7 @@ import net.kuujo.copycat.CopyCatContext;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ClusterContext {
+public interface Cluster {
 
   /**
    * Returns the copycat context.
