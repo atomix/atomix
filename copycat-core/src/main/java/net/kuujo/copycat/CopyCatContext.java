@@ -31,6 +31,7 @@ import net.kuujo.copycat.protocol.TimerStrategy;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.BasicRegistry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
+import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.state.impl.RaftStateContext;
 
 /**
@@ -167,6 +168,33 @@ public class CopyCatContext {
    */
   public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
     return state.events().event(event);
+  }
+
+  /**
+   * Returns the current replica state.
+   *
+   * @return The current replica state.
+   */
+  public State.Type state() {
+    return state.state();
+  }
+
+  /**
+   * Returns the current leader URI.
+   *
+   * @return The current leader URI.
+   */
+  public String leader() {
+    return state.leader();
+  }
+
+  /**
+   * Returns a boolean indicating whether the node is the current leader.
+   *
+   * @return Indicates whether the node is the current leader.
+   */
+  public boolean isLeader() {
+    return state.isLeader();
   }
 
   /**

@@ -74,6 +74,20 @@ public interface StateContext {
   Events events();
 
   /**
+   * Returns the current state.
+   *
+   * @return The current state.
+   */
+  State.Type state();
+
+  /**
+   * Returns the current leader.
+   *
+   * @return The current leader.
+   */
+  String leader();
+
+  /**
    * Returns a boolean indicating whether the state is leader.
    *
    * @return Indicates whether the current state is leader.

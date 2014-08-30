@@ -42,6 +42,7 @@ import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.registry.Registry;
+import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.state.StateContext;
 
 /**
@@ -115,6 +116,16 @@ public class RaftStateContext implements StateContext {
   @Override
   public DefaultEvents events() {
     return events;
+  }
+
+  @Override
+  public State.Type state() {
+    return currentState.type();
+  }
+
+  @Override
+  public String leader() {
+    return currentLeader;
   }
 
   @Override
