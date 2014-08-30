@@ -144,14 +144,14 @@ public class TcpEndpoint implements Endpoint {
             context.submitCommand(json.getString("command"), json.getArray("args").toArray()).whenComplete((result, error) -> {
               if (error == null) {
                 if (result instanceof Map) {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.election().currentLeader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
                 } else if (result instanceof List) {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.election().currentLeader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
                 } else {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.election().currentLeader()).putValue("result", result).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result).encode() + '\00');
                 }
               } else {
-                socket.write(new JsonObject().putString("status", "error").putString("leader", context.election().currentLeader()).putString("message", error.getMessage()).encode() + '\00');
+                socket.write(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", error.getMessage()).encode() + '\00');
               }
             });
           }

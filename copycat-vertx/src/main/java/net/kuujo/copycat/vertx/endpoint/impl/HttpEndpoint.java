@@ -147,11 +147,11 @@ public class HttpEndpoint implements Endpoint {
               if (error == null) {
                 request.response().setStatusCode(200);
                 if (result instanceof Map) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.election().currentLeader()).putObject("result", new JsonObject((Map) result)).encode());                  
+                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result)).encode());                  
                 } else if (result instanceof List) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.election().currentLeader()).putArray("result", new JsonArray((List) result)).encode());
+                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result)).encode());
                 } else {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.election().currentLeader()).putValue("result", result).encode());
+                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result).encode());
                 }
               } else {
                 request.response().setStatusCode(400);
