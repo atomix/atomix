@@ -1,7 +1,21 @@
+/*
+ * Copyright 2014 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package net.kuujo.copycat.event.impl;
 
 import net.kuujo.copycat.event.Event;
-import net.kuujo.copycat.event.EventContext;
 import net.kuujo.copycat.event.Events;
 import net.kuujo.copycat.event.LeaderElectEvent;
 import net.kuujo.copycat.event.MembershipChangeEvent;
@@ -10,61 +24,66 @@ import net.kuujo.copycat.event.StateChangeEvent;
 import net.kuujo.copycat.event.StopEvent;
 import net.kuujo.copycat.event.VoteCastEvent;
 
+/**
+ * Default events API implementation.
+ *
+ * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ */
 public class DefaultEvents implements Events {
-  private final StartEventContext start = new StartEventContext();
-  private final StopEventContext stop = new StopEventContext();
-  private final VoteCastEventContext voteCast = new VoteCastEventContext();
-  private final LeaderElectEventContext leaderElect = new LeaderElectEventContext();
-  private final StateChangeEventContext stateChange = new StateChangeEventContext();
-  private final MembershipChangeEventContext membershipChange = new MembershipChangeEventContext();
+  private final DefaultEventContext<StartEvent> start = new DefaultEventContext<>();
+  private final DefaultEventContext<StopEvent> stop = new DefaultEventContext<>();
+  private final DefaultEventContext<VoteCastEvent> voteCast = new DefaultEventContext<>();
+  private final DefaultEventContext<LeaderElectEvent> leaderElect = new DefaultEventContext<>();
+  private final DefaultEventContext<StateChangeEvent> stateChange = new DefaultEventContext<>();
+  private final DefaultEventContext<MembershipChangeEvent> membershipChange = new DefaultEventContext<>();
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Event> EventContext<T> event(Class<T> event) {
+  public <T extends Event> DefaultEventContext<T> event(Class<T> event) {
     if (event == StartEvent.class) {
-      return (EventContext<T>) start();
+      return (DefaultEventContext<T>) start();
     } else if (event == StopEvent.class) {
-      return (EventContext<T>) stop();
+      return (DefaultEventContext<T>) stop();
     } else if (event == VoteCastEvent.class) {
-      return (EventContext<T>) voteCast();
+      return (DefaultEventContext<T>) voteCast();
     } else if (event == LeaderElectEvent.class) {
-      return (EventContext<T>) leaderElect();
+      return (DefaultEventContext<T>) leaderElect();
     } else if (event == StateChangeEvent.class) {
-      return (EventContext<T>) stateChange();
+      return (DefaultEventContext<T>) stateChange();
     } else if (event == MembershipChangeEvent.class) {
-      return (EventContext<T>) membershipChange();
+      return (DefaultEventContext<T>) membershipChange();
     } else {
       throw new UnsupportedOperationException("Unsupported event type");
     }
   }
 
   @Override
-  public StartEventContext start() {
+  public DefaultEventContext<StartEvent> start() {
     return start;
   }
 
   @Override
-  public StopEventContext stop() {
+  public DefaultEventContext<StopEvent> stop() {
     return stop;
   }
 
   @Override
-  public VoteCastEventContext voteCast() {
+  public DefaultEventContext<VoteCastEvent> voteCast() {
     return voteCast;
   }
 
   @Override
-  public LeaderElectEventContext leaderElect() {
+  public DefaultEventContext<LeaderElectEvent> leaderElect() {
     return leaderElect;
   }
 
   @Override
-  public StateChangeEventContext stateChange() {
+  public DefaultEventContext<StateChangeEvent> stateChange() {
     return stateChange;
   }
 
   @Override
-  public MembershipChangeEventContext membershipChange() {
+  public DefaultEventContext<MembershipChangeEvent> membershipChange() {
     return membershipChange;
   }
 

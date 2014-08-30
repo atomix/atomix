@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.Event;
 import net.kuujo.copycat.event.EventContext;
+import net.kuujo.copycat.event.EventHandlerRegistry;
 import net.kuujo.copycat.event.Events;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
@@ -30,7 +31,6 @@ import net.kuujo.copycat.protocol.TimerStrategy;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.BasicRegistry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
-import net.kuujo.copycat.state.StateContext;
 import net.kuujo.copycat.state.impl.RaftStateContext;
 
 /**
@@ -72,7 +72,7 @@ public class CopyCatContext {
   private final Registry registry;
   private final ClusterConfig cluster;
   private final CopyCatConfig config;
-  private final StateContext state;
+  private final RaftStateContext state;
 
   public CopyCatContext(StateMachine stateMachine) {
     this(stateMachine, new FileLogFactory(), new ClusterConfig(), new CopyCatConfig());
@@ -157,6 +157,16 @@ public class CopyCatContext {
    */
   public <T extends Event> EventContext<T> on(Class<T> event) {
     return state.events().<T>event(event);
+  }
+
+  /**
+   * Returns an event handler registry for a specific event.
+   *
+   * @param event The event for which to return the registry.
+   * @return
+   */
+  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
+    return state.events().event(event);
   }
 
   /**

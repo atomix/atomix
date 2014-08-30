@@ -24,6 +24,7 @@ import net.kuujo.copycat.endpoint.EndpointFactory;
 import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
 import net.kuujo.copycat.event.Event;
 import net.kuujo.copycat.event.EventContext;
+import net.kuujo.copycat.event.EventHandlerRegistry;
 import net.kuujo.copycat.event.Events;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
@@ -98,6 +99,16 @@ public class CopyCat {
    */
   public <T extends Event> EventContext<T> on(Class<T> event) {
     return context.on().<T>event(event);
+  }
+
+  /**
+   * Returns an event handler registry for a specific event.
+   *
+   * @param event The event for which to return the registry.
+   * @return
+   */
+  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
+    return context.event(event);
   }
 
   /**
