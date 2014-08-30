@@ -22,7 +22,9 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.Event;
 import net.kuujo.copycat.event.EventContext;
 import net.kuujo.copycat.event.EventHandlerRegistry;
-import net.kuujo.copycat.event.Events;
+import net.kuujo.copycat.event.EventHandlersRegistry;
+import net.kuujo.copycat.event.EventsContext;
+import net.kuujo.copycat.event.impl.DefaultEventsContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.log.impl.FileLogFactory;
@@ -74,6 +76,7 @@ public class CopyCatContext {
   private final ClusterConfig cluster;
   private final CopyCatConfig config;
   private final RaftStateContext state;
+  private final EventsContext events;
 
   public CopyCatContext(StateMachine stateMachine) {
     this(stateMachine, new FileLogFactory(), new ClusterConfig(), new CopyCatConfig());
@@ -108,6 +111,7 @@ public class CopyCatContext {
     this.cluster = cluster;
     this.config = config;
     this.state = new RaftStateContext(stateMachine, logFactory, cluster, config, registry);
+    this.events = new DefaultEventsContext(state.events());
   }
 
   /**
@@ -146,8 +150,8 @@ public class CopyCatContext {
    *
    * @return Context events.
    */
-  public Events on() {
-    return state.events();
+  public EventsContext on() {
+    return events;
   }
 
   /**
@@ -157,14 +161,23 @@ public class CopyCatContext {
    * @return The event context.
    */
   public <T extends Event> EventContext<T> on(Class<T> event) {
-    return state.events().<T>event(event);
+    return events.<T>event(event);
+  }
+
+  /**
+   * Returns the event handlers registry.
+   *
+   * @return The event handlers registry.
+   */
+  public EventHandlersRegistry events() {
+    return state.events();
   }
 
   /**
    * Returns an event handler registry for a specific event.
    *
    * @param event The event for which to return the registry.
-   * @return
+   * @return The event handler registry.
    */
   public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
     return state.events().event(event);

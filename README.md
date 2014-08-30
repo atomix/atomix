@@ -46,11 +46,10 @@ User Manual
    * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
 1. [Events](#events)
+   * [Start/stop events](#start-stop-events)
    * [Election events](#election-events)
    * [Cluster events](#cluster-events)
    * [State events](#state-events)
-   * [Log events](#log-events)
-   * [State machine events](#state-machine-events)
 1. [Serialization](#serialization)
    * [Providing custom log serializers](#providing-custom-log-serializers)
 1. [Protocols](#protocols-1)
@@ -533,68 +532,61 @@ doesn't know of any cluster leader) then the submission will fail.
 
 ## Events
 Copycat provides an API that allows users to listen for various events that occur throughout
-the lifetime of a Copycat cluster. To subscribe to an event, register an `EventListener` on
-any `EventProvider`. Events can be registered for elections, logging, commands, state changes,
+the lifetime of a Copycat cluster. To subscribe to an event, register an `EventHandler` on
+any `EventHandlerRegistry` or `EventContext`. Events can be registered for elections, state changes,
 and cluster membership changes.
 
-### Election events
-Election event listeners are registered on the `ElectionContext` instance.
+### Start/stop events
+Start/stop event handlers are registered using the `start()` and `stop()` event methods:
 
 ```java
-context.election().addListener((event) -> {
+context.on().start().runOnce((event) -> System.out.println("Context started"));
+```
+
+```java
+context.events().start().registerHandler((event) -> System.out.println("Context started"));
+```
+
+```java
+context.event(Events.START).registerHandler((event) -> System.out.println("Context started"));
+```
+
+### Election events
+Election event handlers are registered on the `ElectionContext` instance.
+
+```java
+context.on().voteCast().run((event) -> System.out.println(String.format("Vote cast for " + event.candidate())));
+```
+
+```java
+context.event(Events.VOTE_CAST).registerHandler((event) -> {
+  System.out.println(String.format("Vote cast for " + event.candidate()));
+});
+```
+
+context.on().leaderElect().run((event) -> System.out.println(String.format("Leader elected")));
+
+```java
+context.event(Events.LEADER_ELECT).registerHandler((event) -> {
   System.out.println(String.format("%s was elected for term %d", event.leader(), event.term()));
 });
 ```
 
 ### Cluster events
-Cluster event listeners are registered on the `Cluster` instance
+Cluster event handlers are registered using the `MEMBERSHIP_CHANGE` constant
 
 ```java
-context.cluster().addListener(new MembershipListener() {
-  public void memberAdded(MembershipEvent event) {
-    System.out.println(String.format("%s joined the cluster", event.member().uri()));
-  }
-
-  public void memberRemoved(MembershipEvent event) {
-    System.out.println(String.format("%s left the cluster", event.member().uri()));
-  }
+context.event(Events.STATE_CHANGE).registerHandler((event) -> {
+  System.out.println(String.format("%s members", event.members()));
 });
 ```
 
-### State events
-State event listeners are registered on the `StateContext` instance.
+### State change events
+State event handlers are registered using the `STATE_CHANGE` constant
 
 ```java
-context.state().addListener((event) -> {
+context.event(Events.STATE_CHANGE).registerHandler((event) -> {
   System.out.println(String.format("State changed to %s", event.state()));
-});
-```
-
-### Log events
-Log events are registered on the `Log` instance.
-
-```java
-context.log().addListener((event) -> {
-  System.out.println(String.format("%s was appended to the log at %d", event.entry(), event.index()));
-});
-```
-
-### State machine events
-State machine events are registered on the `StateMachine` instance.
-
-```java
-context.stateMachine().addListener(new StateMachineListener() {
-  public void commandApplied(CommandEvent event) {
-  
-  }
-
-  public void snapshotTaken(SnapshotEvent event) {
-  
-  }
-
-  public void snapshotInstalled(SnapshotEvent event) {
-  
-  }
 });
 ```
 

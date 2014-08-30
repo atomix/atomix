@@ -16,11 +16,11 @@
 package net.kuujo.copycat.event;
 
 /**
- * Events interface.
+ * Event constants.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Events {
+public final class Events {
 
   /**
    * Start event constant.
@@ -51,55 +51,5 @@ public interface Events {
    * Cluster membership change event constant.
    */
   public static Class<? extends Event> MEMBERSHIP_CHANGE = MembershipChangeEvent.class;
-
-  /**
-   * Returns an event context.
-   *
-   * @param event The event for which to return a context.
-   * @return The event context.
-   */
-  <T extends Event> EventContext<T> event(Class<T> event);
-
-  /**
-   * Returns a start event context.
-   *
-   * @return The start event context.
-   */
-  EventContext<StartEvent> start();
-
-  /**
-   * Returns a stop event context.
-   *
-   * @return The stop event context.
-   */
-  EventContext<StopEvent> stop();
-
-  /**
-   * Returns a vote cast event context.
-   *
-   * @return The vote cast event context.
-   */
-  EventContext<VoteCastEvent> voteCast();
-
-  /**
-   * Returns a leader elected event context.
-   *
-   * @return The leader elected event context.
-   */
-  EventContext<LeaderElectEvent> leaderElect();
-
-  /**
-   * Returns a state change event context.
-   *
-   * @return The state change event context.
-   */
-  EventContext<StateChangeEvent> stateChange();
-
-  /**
-   * Returns a membership change event context.
-   *
-   * @return The membership change event context.
-   */
-  EventContext<MembershipChangeEvent> membershipChange();
 
 }

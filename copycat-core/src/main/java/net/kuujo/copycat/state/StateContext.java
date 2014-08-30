@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.event.Events;
+import net.kuujo.copycat.event.EventHandlersRegistry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.registry.Registry;
 
@@ -71,7 +71,7 @@ public interface StateContext {
    *
    * @return State context events.
    */
-  Events events();
+  EventHandlersRegistry events();
 
   /**
    * Returns the current state.

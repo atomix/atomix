@@ -25,7 +25,8 @@ import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
 import net.kuujo.copycat.event.Event;
 import net.kuujo.copycat.event.EventContext;
 import net.kuujo.copycat.event.EventHandlerRegistry;
-import net.kuujo.copycat.event.Events;
+import net.kuujo.copycat.event.EventHandlersRegistry;
+import net.kuujo.copycat.event.EventsContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.protocol.CorrelationStrategy;
@@ -87,7 +88,7 @@ public class CopyCat {
    *
    * @return Context events.
    */
-  public Events on() {
+  public EventsContext on() {
     return context.on();
   }
 
@@ -99,6 +100,15 @@ public class CopyCat {
    */
   public <T extends Event> EventContext<T> on(Class<T> event) {
     return context.on().<T>event(event);
+  }
+
+  /**
+   * Returns the event handlers registry.
+   *
+   * @return The event handlers registry.
+   */
+  public EventHandlersRegistry events() {
+    return context.events();
   }
 
   /**

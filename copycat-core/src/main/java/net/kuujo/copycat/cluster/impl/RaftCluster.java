@@ -73,7 +73,7 @@ public class RaftCluster implements Cluster, Observer {
       }
     }
 
-    context.events().membershipChange().run(new MembershipChangeEvent(new HashSet<>(config.getMembers())));
+    context.events().membershipChange().handle(new MembershipChangeEvent(new HashSet<>(config.getMembers())));
   }
 
   @Override

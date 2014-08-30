@@ -34,7 +34,7 @@ import net.kuujo.copycat.event.LeaderElectEvent;
 import net.kuujo.copycat.event.StartEvent;
 import net.kuujo.copycat.event.StateChangeEvent;
 import net.kuujo.copycat.event.StopEvent;
-import net.kuujo.copycat.event.impl.DefaultEvents;
+import net.kuujo.copycat.event.impl.DefaultEventHandlersRegistry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -59,7 +59,7 @@ public class RaftStateContext implements StateContext {
   private final LogFactory logFactory;
   private final CopyCatConfig config;
   private final Registry registry;
-  private final DefaultEvents events = new DefaultEvents();
+  private final DefaultEventHandlersRegistry events = new DefaultEventHandlersRegistry();
   private Log log;
   private volatile RaftState currentState;
   private volatile String currentLeader;
@@ -114,7 +114,7 @@ public class RaftStateContext implements StateContext {
   }
 
   @Override
-  public DefaultEvents events() {
+  public DefaultEventHandlersRegistry events() {
     return events;
   }
 
@@ -143,7 +143,7 @@ public class RaftStateContext implements StateContext {
       log.open();
       log.restore();
       transition(Follower.class);
-      events.start().run(new StartEvent());
+      events.start().handle(new StartEvent());
     });
   }
 
@@ -153,7 +153,7 @@ public class RaftStateContext implements StateContext {
       log.close();
       log = null;
       transition(None.class);
-      events.stop().run(new StopEvent());
+      events.stop().handle(new StopEvent());
     });
   }
 
@@ -182,7 +182,7 @@ public class RaftStateContext implements StateContext {
       currentState.init(this);
     }
 
-    events.stateChange().run(new StateChangeEvent(currentState.type()));
+    events.stateChange().handle(new StateChangeEvent(currentState.type()));
   }
 
   /**
@@ -202,10 +202,10 @@ public class RaftStateContext implements StateContext {
 
     if (currentLeader == null && leader != null) {
       currentLeader = leader;
-      events.leaderElect().run(new LeaderElectEvent(currentTerm, currentLeader));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, currentLeader));
     } else if (currentLeader != null && leader != null && !currentLeader.equals(leader)) {
       currentLeader = leader;
-      events.leaderElect().run(new LeaderElectEvent(currentTerm, currentLeader));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, currentLeader));
     } else {
       currentLeader = leader;
     }

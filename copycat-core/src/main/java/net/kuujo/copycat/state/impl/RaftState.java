@@ -418,7 +418,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // doesn't make sense for a leader.
     else if (request.candidate().equals(context.clusterConfig().getLocalMember())) {
       context.setLastVotedFor(context.clusterConfig().getLocalMember());
-      context.events().voteCast().run(new VoteCastEvent(context.getCurrentTerm(), context.clusterConfig().getLocalMember()));
+      context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.clusterConfig().getLocalMember()));
       return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
@@ -431,7 +431,7 @@ abstract class RaftState implements State<RaftStateContext> {
       // If the log is empty then vote for the candidate.
       if (context.log().isEmpty()) {
         context.setLastVotedFor(request.candidate());
-        context.events().voteCast().run(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
+        context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
         return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
@@ -440,14 +440,14 @@ abstract class RaftState implements State<RaftStateContext> {
         Entry entry = context.log().getEntry(lastIndex);
         if (entry == null) {
           context.setLastVotedFor(request.candidate());
-          context.events().voteCast().run(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
+          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
           return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
         }
 
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           context.setLastVotedFor(request.candidate());
-          context.events().voteCast().run(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
+          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
           return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
         } else {
           context.setLastVotedFor(null);

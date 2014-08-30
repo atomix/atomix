@@ -20,16 +20,40 @@ package net.kuujo.copycat.event;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  *
- * @param <T> The event type.
+ * @param <E> The event type.
  */
-public interface EventContext<T extends Event> {
+public interface EventContext<E extends Event> {
 
   /**
-   * Registers an event handler.
+   * Runs an event handler when the event occurs.
    *
-   * @param handler The event handler to register.
+   * @param handler The event handler to run.
    * @return The event context.
    */
-  EventContext<T> run(EventHandler<T> handler);
+  EventContext<E> run(EventHandler<E> handler);
+
+  /**
+   * Asynchronously runs an event handler when the event occurs.
+   *
+   * @param handler The event handler to run.
+   * @return The event context.
+   */
+  EventContext<E> runAsync(EventHandler<E> handler);
+
+  /**
+   * Runs an event handler once when the event occurs.
+   *
+   * @param handler The event handler to run.
+   * @return The event context.
+   */
+  EventContext<E> runOnce(EventHandler<E> handler);
+
+  /**
+   * Asynchronously runs an event handler once when the event occurs.
+   *
+   * @param handler The event handler to run.
+   * @return The event context.
+   */
+  EventContext<E> runOnceAsync(EventHandler<E> handler);
 
 }
