@@ -42,6 +42,11 @@ public class ClusterConfig extends Observable {
     this.localMember = local;
   }
 
+  public ClusterConfig(String local, Set<String> remote) {
+    this.localMember = local;
+    this.remoteMembers.addAll(remote);
+  }
+
   /**
    * Returns the cluster quorum size.
    *
