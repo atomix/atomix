@@ -252,6 +252,15 @@ public class CopyCatContext {
     private Registry registry = new BasicRegistry();
 
     /**
+     * Returns a new context builder.
+     *
+     * @return A new context builder.
+     */
+    public static Builder newBuilder() {
+      return new Builder();
+    }
+
+    /**
      * Sets the copycat log factory.
      *
      * @param uri The copycat log factory.

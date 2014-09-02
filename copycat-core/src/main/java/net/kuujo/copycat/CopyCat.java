@@ -150,6 +150,15 @@ public class CopyCat {
     private final CopyCatContext.Builder builder = new CopyCatContext.Builder();
 
     /**
+     * Returns a new copycat builder.
+     *
+     * @return A new copycat builder.
+     */
+    public static Builder newBuilder() {
+      return new Builder();
+    }
+
+    /**
      * Sets the copycat endpoint.
      *
      * @param uri The copycat endpoint.
