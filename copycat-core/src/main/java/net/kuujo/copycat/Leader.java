@@ -509,7 +509,7 @@ class Leader extends BaseState implements Observer {
     /**
      * Sends an append entries request to the follower.
      */
-    private void doAppendEntries(long prevIndex, Entry prevEntry, List<Entry> entries) {
+    private void doAppendEntries(final long prevIndex, Entry prevEntry, final List<Entry> entries) {
       final long commitIndex = context.getCommitIndex();
       if (logger.isLoggable(Level.FINER)) {
         if (!entries.isEmpty()) {

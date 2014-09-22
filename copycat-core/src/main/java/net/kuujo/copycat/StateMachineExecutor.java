@@ -87,7 +87,7 @@ class StateMachineExecutor {
           }
           CommandHolder holder = commands.get(name);
           if (holder == null) {
-            holder = new CommandHolder(stateMachine, new GenericCommand(name, command.type()), new ArrayList<>());
+            holder = new CommandHolder(stateMachine, new GenericCommand(name, command.type()), new ArrayList<Method>());
             commands.put(name, holder);
           }
           holder.methods.add(method);
