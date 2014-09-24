@@ -41,11 +41,11 @@ import net.kuujo.copycat.serializer.SerializerFactory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileLog implements Log {
-  private static final Serializer serializer  = SerializerFactory.getSerializer();
   private static final String SEPARATOR = System.getProperty("line.separator");
   private static final Byte DELIMITER = '\0';
   private File f;
   private RandomAccessFile file;
+  private Serializer serializer  = SerializerFactory.getSerializer();
   private long firstIndex;
   private long lastIndex;
   private int bufferSize = 1000;
@@ -57,6 +57,22 @@ public class FileLog implements Log {
 
   public FileLog(File file) {
     this.f = file;
+  }
+
+  @Override
+  public void setSerializer(Serializer serializer) {
+    this.serializer = serializer;
+  }
+
+  @Override
+  public Serializer getSerializer() {
+    return serializer;
+  }
+
+  @Override
+  public Log withSerializer(Serializer serializer) {
+    this.serializer = serializer;
+    return this;
   }
 
   /**

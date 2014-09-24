@@ -23,6 +23,7 @@ import java.util.TreeMap;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.serializer.Serializer;
 
 /**
  * In-memory log implementation.<p>
@@ -37,6 +38,20 @@ import net.kuujo.copycat.log.Log;
 public class MemoryLog implements Log {
   private TreeMap<Long, Entry> log = new TreeMap<>();
   private long index;
+
+  @Override
+  public void setSerializer(Serializer serializer) {
+  }
+
+  @Override
+  public Serializer getSerializer() {
+    return null;
+  }
+
+  @Override
+  public Log withSerializer(Serializer serializer) {
+    return this;
+  }
 
   @Override
   public void open() {

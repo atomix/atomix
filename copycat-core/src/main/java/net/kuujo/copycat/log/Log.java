@@ -17,6 +17,8 @@ package net.kuujo.copycat.log;
 
 import java.util.List;
 
+import net.kuujo.copycat.serializer.Serializer;
+
 /**
  * Replicated event log.<p>
  *
@@ -29,6 +31,28 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Log {
+
+  /**
+   * Sets the log serializer.
+   *
+   * @param serializer The log serializer.
+   */
+  void setSerializer(Serializer serializer);
+
+  /**
+   * Returns the log serializer.
+   *
+   * @return The log serializer.
+   */
+  Serializer getSerializer();
+
+  /**
+   * Sets the log serializer, returning the log for method chaining.
+   *
+   * @param serializer The log serializer.
+   * @return The log instance.
+   */
+  Log withSerializer(Serializer serializer);
 
   /**
    * Opens the log.
