@@ -26,8 +26,7 @@ import net.kuujo.copycat.event.EventHandlersRegistry;
 import net.kuujo.copycat.event.EventsContext;
 import net.kuujo.copycat.event.impl.DefaultEventsContext;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.LogFactory;
-import net.kuujo.copycat.log.impl.FileLogFactory;
+import net.kuujo.copycat.log.impl.MemoryLog;
 import net.kuujo.copycat.protocol.CorrelationStrategy;
 import net.kuujo.copycat.protocol.TimerStrategy;
 import net.kuujo.copycat.registry.Registry;
@@ -79,38 +78,38 @@ public class CopyCatContext {
   private final EventsContext events;
 
   public CopyCatContext(StateMachine stateMachine) {
-    this(stateMachine, new FileLogFactory(), new ClusterConfig(), new CopyCatConfig());
+    this(stateMachine, new MemoryLog(), new ClusterConfig(), new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster) {
-    this(stateMachine, new FileLogFactory(), cluster, new CopyCatConfig());
+    this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, Registry registry) {
-    this(stateMachine, new FileLogFactory(), cluster, new CopyCatConfig(), registry);
+    this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig(), registry);
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this(stateMachine, new FileLogFactory(), cluster, config, registry);
+    this(stateMachine, new MemoryLog(), cluster, config, registry);
   }
 
-  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory) {
-    this(stateMachine, logFactory, new ClusterConfig(), new CopyCatConfig());
+  public CopyCatContext(StateMachine stateMachine, Log log) {
+    this(stateMachine, log, new ClusterConfig(), new CopyCatConfig());
   }
 
-  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster) {
-    this(stateMachine, logFactory, cluster, new CopyCatConfig());
+  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster) {
+    this(stateMachine, log, cluster, new CopyCatConfig());
   }
 
-  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config) {
-    this(stateMachine, logFactory, cluster, config, new ConcurrentRegistry());
+  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
+    this(stateMachine, log, cluster, config, new ConcurrentRegistry());
   }
 
-  public CopyCatContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
     this.registry = registry;
     this.cluster = cluster;
     this.config = config;
-    this.state = new RaftStateContext(stateMachine, logFactory, cluster, config, registry);
+    this.state = new RaftStateContext(stateMachine, log, cluster, config, registry);
     this.events = new DefaultEventsContext(state.events());
   }
 
@@ -248,7 +247,7 @@ public class CopyCatContext {
     private CopyCatConfig config = new CopyCatConfig();
     private ClusterConfig cluster = new ClusterConfig();
     private StateMachine stateMachine;
-    private LogFactory logFactory = new FileLogFactory();
+    private Log log = new MemoryLog();
     private Registry registry = new BasicRegistry();
 
     /**
@@ -261,29 +260,13 @@ public class CopyCatContext {
     }
 
     /**
-     * Sets the copycat log factory.
-     *
-     * @param uri The copycat log factory.
-     * @return The copycat builder.
-     */
-    public Builder withLogFactory(LogFactory factory) {
-      this.logFactory = factory;
-      return this;
-    }
-
-    /**
      * Sets the copycat log.
      *
      * @param uri The copycat log.
      * @return The copycat builder.
      */
     public Builder withLog(Log log) {
-      this.logFactory = new LogFactory() {
-        @Override
-        public Log createLog(String name) {
-          return log;
-        }
-      };
+      this.log = log;
       return this;
     }
 
@@ -458,7 +441,7 @@ public class CopyCatContext {
      * @return The copycat instance.
      */
     public CopyCatContext build() {
-      return new CopyCatContext(stateMachine, logFactory, cluster, config, registry);
+      return new CopyCatContext(stateMachine, log, cluster, config, registry);
     }
 
   }

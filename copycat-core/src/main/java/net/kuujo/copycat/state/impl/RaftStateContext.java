@@ -36,7 +36,6 @@ import net.kuujo.copycat.event.StateChangeEvent;
 import net.kuujo.copycat.event.StopEvent;
 import net.kuujo.copycat.event.impl.DefaultEventHandlersRegistry;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
@@ -56,11 +55,10 @@ public class RaftStateContext implements StateContext {
   private final StateMachine stateMachine;
   private final Cluster cluster;
   private final ClusterConfig clusterConfig = new ClusterConfig();
-  private final LogFactory logFactory;
+  private final Log log;
   private final CopyCatConfig config;
   private final Registry registry;
   private final DefaultEventHandlersRegistry events = new DefaultEventHandlersRegistry();
-  private Log log;
   private volatile RaftState currentState;
   private volatile String currentLeader;
   private ProtocolClient leaderClient;
@@ -71,9 +69,9 @@ public class RaftStateContext implements StateContext {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  public RaftStateContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+  public RaftStateContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
     this.stateMachine = stateMachine;
-    this.logFactory = logFactory;
+    this.log = log;
     this.config = config;
     this.registry = registry;
     this.cluster = new RaftCluster(cluster, clusterConfig, this);
@@ -138,7 +136,6 @@ public class RaftStateContext implements StateContext {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
     transition(None.class);
-    log = logFactory.createLog(String.format("%s.log", cluster.localMember().name()));
     return cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
       log.open();
       log.restore();
@@ -151,7 +148,6 @@ public class RaftStateContext implements StateContext {
   public CompletableFuture<Void> stop() {
     return cluster.localMember().protocol().server().stop().whenCompleteAsync((result, error) -> {
       log.close();
-      log = null;
       transition(None.class);
       events.stop().handle(new StopEvent());
     });

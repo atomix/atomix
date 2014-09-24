@@ -28,7 +28,6 @@ import net.kuujo.copycat.event.EventHandlerRegistry;
 import net.kuujo.copycat.event.EventHandlersRegistry;
 import net.kuujo.copycat.event.EventsContext;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.LogFactory;
 import net.kuujo.copycat.protocol.CorrelationStrategy;
 import net.kuujo.copycat.protocol.TimerStrategy;
 import net.kuujo.copycat.registry.Registry;
@@ -56,22 +55,22 @@ public class CopyCat {
     endpoint.init(context);
   }
 
-  public CopyCat(String uri, StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster) {
-    this.context = new CopyCatContext(stateMachine, logFactory, cluster);
+  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster) {
+    this.context = new CopyCatContext(stateMachine, log, cluster);
     EndpointFactory factory = new DefaultEndpointFactory(context.registry());
     this.endpoint = factory.createEndpoint(uri);
     endpoint.init(context);
   }
 
-  public CopyCat(String uri, StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config) {
-    this.context = new CopyCatContext(stateMachine, logFactory, cluster, config);
+  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
+    this.context = new CopyCatContext(stateMachine, log, cluster, config);
     EndpointFactory factory = new DefaultEndpointFactory(context.registry());
     this.endpoint = factory.createEndpoint(uri);
     endpoint.init(context);
   }
 
-  public CopyCat(String uri, StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this.context = new CopyCatContext(stateMachine, logFactory, cluster, config, registry);
+  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+    this.context = new CopyCatContext(stateMachine, log, cluster, config, registry);
     EndpointFactory factory = new DefaultEndpointFactory(context.registry());
     this.endpoint = factory.createEndpoint(uri);
     endpoint.init(context);
@@ -177,17 +176,6 @@ public class CopyCat {
      */
     public Builder withEndpoint(Endpoint endpoint) {
       this.endpoint = endpoint;
-      return this;
-    }
-
-    /**
-     * Sets the copycat log factory.
-     *
-     * @param uri The copycat log factory.
-     * @return The copycat builder.
-     */
-    public Builder withLogFactory(LogFactory factory) {
-      builder.withLogFactory(factory);
       return this;
     }
 
