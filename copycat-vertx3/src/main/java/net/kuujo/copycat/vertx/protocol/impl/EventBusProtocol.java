@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.vertx.protocol.impl;
 
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 
@@ -189,12 +187,9 @@ public class EventBusProtocol implements Protocol {
     VertxOptions options = VertxOptions.options();
     options.setClusterPort(port);
     options.setClusterHost(host);
-    Vertx.vertx(options, new Handler<AsyncResult<Vertx>>() {
-      @Override
-      public void handle(AsyncResult<Vertx> result) {
-        EventBusProtocol.this.vertx = result.result();
-        latch.countDown();
-      }
+    Vertx.vertxAsync(options, (result) -> {
+      vertx = result.result();
+      latch.countDown();
     });
     try {
       latch.await();

@@ -58,7 +58,7 @@ public class EventBusProtocolClient implements ProtocolClient {
         .putString("action", "appendEntries")
         .putBinary("request", serializer.writeValue(request));
     DeliveryOptions options = DeliveryOptions.options().setSendTimeout(5000);
-    vertx.eventBus().sendWithOptions(address, message, options, new Handler<AsyncResult<Message<JsonObject>>>() {
+    vertx.eventBus().send(address, message, options, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
@@ -83,7 +83,7 @@ public class EventBusProtocolClient implements ProtocolClient {
         .putString("action", "requestVote")
         .putBinary("request", serializer.writeValue(request));
     DeliveryOptions options = DeliveryOptions.options().setSendTimeout(5000);
-    vertx.eventBus().sendWithOptions(address, message, options, new Handler<AsyncResult<Message<JsonObject>>>() {
+    vertx.eventBus().send(address, message, options, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
@@ -108,7 +108,7 @@ public class EventBusProtocolClient implements ProtocolClient {
         .putString("action", "submitCommand")
         .putBinary("request", serializer.writeValue(request));
     DeliveryOptions options = DeliveryOptions.options().setSendTimeout(5000);
-    vertx.eventBus().sendWithOptions(address, message, options, new Handler<AsyncResult<Message<JsonObject>>>() {
+    vertx.eventBus().send(address, message, options, new Handler<AsyncResult<Message<JsonObject>>>() {
       @Override
       public void handle(AsyncResult<Message<JsonObject>> result) {
         if (result.failed()) {
