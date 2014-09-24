@@ -59,18 +59,31 @@ public class FileLog implements Log {
     this.f = file;
   }
 
-  @Override
+  /**
+   * Sets the log serializer.
+   *
+   * @param serializer The log serializer.
+   */
   public void setSerializer(Serializer serializer) {
     this.serializer = serializer;
   }
 
-  @Override
+  /**
+   * Returns the log serializer.
+   *
+   * @return The log serializer.
+   */
   public Serializer getSerializer() {
     return serializer;
   }
 
-  @Override
-  public Log withSerializer(Serializer serializer) {
+  /**
+   * Sets the log serializer, returning the log for method chaining.
+   *
+   * @param serializer The log serializer.
+   * @return The log instance.
+   */
+  public FileLog withSerializer(Serializer serializer) {
     this.serializer = serializer;
     return this;
   }

@@ -11,10 +11,16 @@
   <name>CopyCat Core</name>
 
   <properties>
+    <chronicle.version>3.2.2</chronicle.version>
     <jackson.version>2.4.1</jackson.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>net.openhft</groupId>
+      <artifactId>chronicle</artifactId>
+      <version>${chronicle.version}</version>
+    </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
