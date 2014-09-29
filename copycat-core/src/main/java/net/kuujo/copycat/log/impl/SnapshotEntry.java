@@ -39,6 +39,8 @@ public class SnapshotEntry extends RaftEntry {
 
   public SnapshotEntry(long term, Set<String> config, byte[] data) {
     super(term);
+    this.config = config;
+    this.data = data;
   }
 
   /**

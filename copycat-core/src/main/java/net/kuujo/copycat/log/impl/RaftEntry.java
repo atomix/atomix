@@ -26,7 +26,8 @@ import net.kuujo.copycat.log.EntryTypes;
 @EntryTypes({
   NoOpEntry.class,
   CommandEntry.class,
-  ConfigurationEntry.class
+  ConfigurationEntry.class,
+  SnapshotEntry.class
 })
 public class RaftEntry implements Entry {
   protected long term;

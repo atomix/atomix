@@ -155,7 +155,7 @@ public class PersistentLog extends AbstractLog implements Compactable {
 
   @Override
   public long size() {
-    return lastIndex - firstIndex;
+    return firstIndex > 0 ? lastIndex - firstIndex + 1 : 0;
   }
 
   @Override
@@ -336,7 +336,7 @@ public class PersistentLog extends AbstractLog implements Compactable {
       appender.finish();
   
       // Iterate through entries equal to or greater than the given index and copy them to the new chronicle.
-      long matchIndex = findAbsoluteIndex(index-1);
+      long matchIndex = findAbsoluteIndex(index);
       tailer.index(matchIndex);
       while (tailer.nextIndex()) {
         long entryIndex = tailer.readLong();
@@ -362,6 +362,7 @@ public class PersistentLog extends AbstractLog implements Compactable {
       this.appenderBuffer = appenderBuffer;
       this.tailer = chronicle.createTailer();
       this.tailerBuffer = new PersistentBuffer(tailer);
+      this.firstIndex = index;
   
       // Finally, delete the old log file.
       deleteLogFile(oldLogFile);
