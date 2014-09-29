@@ -58,7 +58,7 @@ public class MemoryLog extends AbstractLog implements Compactable {
   @Override
   @SuppressWarnings("unchecked")
   public long appendEntry(Entry entry) {
-    long index = log.lastKey() + 1;
+    long index = log.isEmpty() ? 1 : log.lastKey() + 1;
     MemoryBuffer buffer = new MemoryBuffer();
     byte entryType = getEntryType(entry.getClass());
     buffer.appendByte(entryType);
