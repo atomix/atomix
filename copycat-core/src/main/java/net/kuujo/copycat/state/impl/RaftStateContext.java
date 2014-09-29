@@ -137,8 +137,11 @@ public class RaftStateContext implements StateContext {
     // be overwritten by the logs once the replica has been started.
     transition(None.class);
     return cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
-      log.open();
-      log.restore();
+      try {
+        log.open();
+      } catch (Exception e) {
+        throw new CopyCatException(e);
+      }
       transition(Follower.class);
       events.start().handle(new StartEvent());
     });
@@ -147,7 +150,11 @@ public class RaftStateContext implements StateContext {
   @Override
   public CompletableFuture<Void> stop() {
     return cluster.localMember().protocol().server().stop().whenCompleteAsync((result, error) -> {
-      log.close();
+      try {
+        log.close();
+      } catch (Exception e) {
+        throw new CopyCatException(e);
+      }
       transition(None.class);
       events.stop().handle(new StopEvent());
     });

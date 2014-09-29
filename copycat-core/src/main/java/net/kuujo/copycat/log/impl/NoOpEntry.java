@@ -15,27 +15,41 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.Buffer;
+import net.kuujo.copycat.log.EntryReader;
+import net.kuujo.copycat.log.EntryType;
+import net.kuujo.copycat.log.EntryWriter;
 
 /**
- * No-op (empty) log entry.<p>
- *
- * This type of entry is used at the leader's discretion to commit
- * an empty entry to its log. The no-op entry can be used to log
- * and replicate the leader's current term and index in order to
- * ensure that other replicas are up-to-date.
+ * No-op entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NoOpEntry extends Entry {
-  private static final long serialVersionUID = 5240217873800235626L;
+@EntryType(id=0, reader=NoOpEntry.Reader.class, writer=NoOpEntry.Writer.class)
+public class NoOpEntry extends RaftEntry {
 
-  public NoOpEntry() {
+  private NoOpEntry() {
     super();
   }
 
   public NoOpEntry(long term) {
     super(term);
+  }
+
+  public static class Reader implements EntryReader<NoOpEntry> {
+    @Override
+    public NoOpEntry readEntry(Buffer buffer) {
+      NoOpEntry entry = new NoOpEntry();
+      entry.term = buffer.getLong();
+      return entry;
+    }
+  }
+
+  public static class Writer implements EntryWriter<NoOpEntry> {
+    @Override
+    public void writeEntry(NoOpEntry entry, Buffer buffer) {
+      buffer.appendLong(entry.term);
+    }
   }
 
 }

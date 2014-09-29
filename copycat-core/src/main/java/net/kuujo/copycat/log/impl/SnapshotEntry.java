@@ -15,22 +15,75 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import net.kuujo.copycat.log.Entry;
+import java.util.HashSet;
+import java.util.Set;
+
+import net.kuujo.copycat.log.Buffer;
+import net.kuujo.copycat.log.EntryReader;
+import net.kuujo.copycat.log.EntryType;
+import net.kuujo.copycat.log.EntryWriter;
 
 /**
- * Base entry for snapshot set entries.
+ * Snapshot log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class SnapshotEntry extends Entry {
-  private static final long serialVersionUID = 8932454717099975417L;
+@EntryType(id=3, reader=SnapshotEntry.Reader.class, writer=SnapshotEntry.Writer.class)
+public class SnapshotEntry extends RaftEntry {
+  private Set<String> config;
+  private byte[] data;
 
-  protected SnapshotEntry() {
+  private SnapshotEntry() {
     super();
   }
 
-  protected SnapshotEntry(long term) {
+  public SnapshotEntry(long term, Set<String> config, byte[] data) {
     super(term);
+  }
+
+  /**
+   * Returns the snapshot configuration.
+   *
+   * @return The snapshot configuration.
+   */
+  public Set<String> config() {
+    return config;
+  }
+
+  /**
+   * Returns the snapshot data.
+   *
+   * @return The snapshot data.
+   */
+  public byte[] data() {
+    return data;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[term=%d, config=%s, data=...]", term, config);
+  }
+
+  public static class Reader implements EntryReader<SnapshotEntry> {
+    @Override
+    public SnapshotEntry readEntry(Buffer buffer) {
+      SnapshotEntry entry = new SnapshotEntry();
+      entry.term = buffer.getLong();
+      entry.config = buffer.getCollection(new HashSet<String>(), String.class);
+      int length = buffer.getInt();
+      entry.data = buffer.getBytes(length);
+      return entry;
+    }
+  }
+
+  public static class Writer implements EntryWriter<SnapshotEntry> {
+    @Override
+    public void writeEntry(SnapshotEntry entry, Buffer buffer) {
+      buffer.appendLong(entry.term);
+      buffer.appendCollection(entry.config);
+      buffer.appendInt(entry.data.length);
+      buffer.appendBytes(entry.data);
+    }
   }
 
 }

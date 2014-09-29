@@ -16,6 +16,7 @@
 package net.kuujo.copycat;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
@@ -40,42 +41,42 @@ public abstract class LogTest {
   protected abstract Log createLog();
 
   @Test
-  public void testAppendEntry() {
+  public void testAppendEntry() throws Exception {
     Log log = createLog();
     log.open();
-    long index = log.appendEntry(new NoOpEntry());
+    long index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
     log.close();
   }
 
   @Test
-  public void testContainsEntry() {
+  public void testContainsEntry() throws Exception {
     Log log = createLog();
     log.open();
-    long index = log.appendEntry(new NoOpEntry());
+    long index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
     Assert.assertTrue(log.containsEntry(1));
     log.close();
   }
 
   @Test
-  public void testGetEntry() {
+  public void testGetEntry() throws Exception {
     Log log = createLog();
     log.open();
-    long index = log.appendEntry(new NoOpEntry());
+    long index = log.appendEntry(new NoOpEntry(1));
     Entry entry = log.getEntry(index);
     Assert.assertTrue(entry instanceof NoOpEntry);
     log.close();
   }
 
   @Test
-  public void testFirstIndex() {
+  public void testFirstIndex() throws Exception {
     Log log = createLog();
     log.open();
     long index;
-    index = log.appendEntry(new NoOpEntry());
+    index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry());
+    index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
@@ -85,13 +86,13 @@ public abstract class LogTest {
   }
 
   @Test
-  public void testFirstEntry() {
+  public void testFirstEntry() throws Exception {
     Log log = createLog();
     log.open();
     long index;
-    index = log.appendEntry(new NoOpEntry());
+    index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry());
+    index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
@@ -101,13 +102,13 @@ public abstract class LogTest {
   }
 
   @Test
-  public void testLastIndex() {
+  public void testLastIndex() throws Exception {
     Log log = createLog();
     log.open();
     long index;
-    index = log.appendEntry(new NoOpEntry());
+    index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry());
+    index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
@@ -116,13 +117,13 @@ public abstract class LogTest {
   }
 
   @Test
-  public void testLastEntry() {
+  public void testLastEntry() throws Exception {
     Log log = createLog();
     log.open();
     long index;
-    index = log.appendEntry(new NoOpEntry());
+    index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry());
+    index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
@@ -132,37 +133,13 @@ public abstract class LogTest {
   }
 
   @Test
-  public void testRemoveBefore() {
+  public void testRemoveAfter() throws Exception {
     Log log = createLog();
     log.open();
     long index;
-    index = log.appendEntry(new NoOpEntry());
+    index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry());
-    Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
-    Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
-    Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
-    Assert.assertTrue(index == 5);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
-    Assert.assertTrue(index == 6);
-
-    log.removeBefore(3);
-    Assert.assertTrue(log.firstIndex() == 3);
-    Assert.assertTrue(log.firstEntry() instanceof CommandEntry);
-    log.close();
-  }
-
-  @Test
-  public void testRemoveAfter() {
-    Log log = createLog();
-    log.open();
-    long index;
-    index = log.appendEntry(new NoOpEntry());
-    Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry());
+    index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
@@ -182,13 +159,13 @@ public abstract class LogTest {
   }
 
   @Test
-  public void testManyOperations() {
+  public void testManyOperations() throws Exception {
     Log log = createLog();
     log.open();
     long index;
-    index = log.appendEntry(new NoOpEntry());
+    index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry());
+    index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 3);
@@ -198,11 +175,6 @@ public abstract class LogTest {
     Assert.assertTrue(index == 5);
     index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
     Assert.assertTrue(index == 6);
-
-    Entry entry;
-    log.removeBefore(2);
-    entry = log.getEntry(1);
-    Assert.assertNull(entry);
     log.close();
   }
 

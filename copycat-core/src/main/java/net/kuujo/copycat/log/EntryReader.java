@@ -13,38 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
-
-import java.util.UUID;
-
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.FileLog;
-
-import org.junit.After;
-import org.junit.Before;
+package net.kuujo.copycat.log;
 
 /**
- * File log test.
+ * Log entry reader.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ *
+ * @param <T> The entry type.
  */
-public class FileLogTest extends LogTest {
-  private Log log;
+public interface EntryReader<T extends Entry> {
 
-  @Before
-  public void beforeClass() {
-    log = new FileLog(UUID.randomUUID().toString());
-  }
-
-  @Override
-  protected Log createLog() {
-    return log;
-  }
-
-  @After
-  public void afterClass() {
-    log.delete();
-    log = null;
-  }
+  /**
+   * Reads the entry from the buffer.
+   *
+   * @param buffer The buffer from which to read the entry.
+   * @return The read entry instance.
+   */
+  T readEntry(Buffer buffer);
 
 }

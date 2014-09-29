@@ -13,12 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat;
+
+import java.io.IOException;
+import java.util.UUID;
+
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.impl.PersistentLog;
+
+import org.junit.After;
+import org.junit.Before;
 
 /**
- * Log entry.
+ * File log test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Entry {
+public class PersistentLogTest extends LogTest {
+  private Log log;
+
+  @Before
+  public void beforeClass() {
+    log = new PersistentLog(UUID.randomUUID().toString());
+  }
+
+  @Override
+  protected Log createLog() {
+    return log;
+  }
+
+  @After
+  public void afterClass() throws IOException {
+    log.delete();
+    log = null;
+  }
+
 }

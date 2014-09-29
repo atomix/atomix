@@ -28,6 +28,7 @@ import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.Response;
@@ -109,7 +110,7 @@ class RaftReplica {
 
     CompletableFuture<Long> future = new CompletableFuture<>();
     if (pinging.compareAndSet(false, true)) {
-      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), nextIndex-1, log.containsEntry(nextIndex-1) ? log.getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
+      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), nextIndex-1, log.containsEntry(nextIndex-1) ? log.<RaftEntry>getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
       member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
         pinging.set(false);
         if (error != null) {
@@ -163,16 +164,16 @@ class RaftReplica {
    */
   private synchronized void doCommit() {
     final long prevIndex = sendIndex - 1;
-    final Entry prevEntry = log.getEntry(prevIndex);
+    final RaftEntry prevEntry = log.getEntry(prevIndex);
 
     // Create a list of up to ten entries to send to the follower.
     // We can only send one snapshot entry in any given request. So, if any of
     // the entries are snapshot entries, send all entries up to the snapshot and
     // then send snapshot entries individually.
-    List<Entry> entries = new ArrayList<>();
+    List<RaftEntry> entries = new ArrayList<>();
     long lastIndex = Math.min(sendIndex + BATCH_SIZE, log.lastIndex());
     for (long i = sendIndex; i <= lastIndex; i++) {
-      Entry entry = log.getEntry(i);
+      RaftEntry entry = log.getEntry(i);
       if (entry instanceof SnapshotEntry) {
         if (entries.isEmpty()) {
           doAppendEntries(prevIndex, prevEntry, Arrays.asList(entry));
@@ -193,7 +194,7 @@ class RaftReplica {
   /**
    * Sends an append entries request.
    */
-  private void doAppendEntries(final long prevIndex, final Entry prevEntry, final List<Entry> entries) {
+  private void doAppendEntries(final long prevIndex, final RaftEntry prevEntry, final List<RaftEntry> entries) {
     final long commitIndex = state.getCommitIndex();
 
     AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);

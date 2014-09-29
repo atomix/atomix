@@ -15,16 +15,11 @@
  */
 package net.kuujo.copycat.log;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
- * Replicated event log.<p>
- *
- * The log is at the core of CopyCat's replication system. Logs are
- * used to replicate cluster configuration information, leader state,
- * and state machine commands. Because CopyCat supports snapshotting
- * logs, the <code>Log</code> interface supports a wide variety of
- * methods for modifying the log size and structure.
+ * Log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -32,8 +27,10 @@ public interface Log {
 
   /**
    * Opens the log.
+   *
+   * @throws IOException If the log could not be opened.
    */
-  void open();
+  void open() throws IOException;
 
   /**
    * Returns the current size of the log.
@@ -51,154 +48,107 @@ public interface Log {
 
   /**
    * Appends an entry to the log.
-   * 
+   *
    * @param entry The entry to append.
-   * @return The index at which the entry was appended.
+   * @return The appended entry index.
    */
   long appendEntry(Entry entry);
 
   /**
    * Appends a list of entries to the log.
    *
-   * @param entries The entries to append.
-   * @return A list of indices for the appended entries.
+   * @param entries A list of entries to append to the log.
+   * @return A list of appended entry indices.
    */
   List<Long> appendEntries(Entry... entries);
 
   /**
    * Appends a list of entries to the log.
    *
-   * @param entries The entries to append.
-   * @return A list of indices for the appended entries.
+   * @param entries A list of entries to append to the log.
+   * @return A list of appended entry indices.
    */
-  List<Long> appendEntries(List<? extends Entry> entries);
+  List<Long> appendEntries(List<Entry> entries);
 
   /**
-   * Sets an entry in the log.
+   * Returns a boolean indicating whether the log contains an entry.
    *
-   * @param index The index of the entry to set.
-   * @param entry The entry to set.
-   * @return The entry index.
-   */
-  long setEntry(long index, Entry entry);
-
-  /**
-   * Prepends an entry to the log.
-   * 
-   * @param entry The entry to prepend.
-   * @return The index at which the entry was prepended.
-   */
-  long prependEntry(Entry entry);
-
-  /**
-   * Prepends a list of entries to the log.
-   *
-   * @param entries The entries to prepend.
-   * @return A list of indices for the prepended entries.
-   */
-  List<Long> prependEntries(Entry... entries);
-
-  /**
-   * Prepends a list of entries to the log.
-   *
-   * @param entries The entries to prepend.
-   * @return A list of indices for the prepended entries.
-   */
-  List<Long> prependEntries(List<? extends Entry> entries);
-
-  /**
-   * Returns a boolean indicating whether the log has an entry at the given
-   * index.
-   * 
-   * @param index The index to check.
-   * @return Indicates whether the log has an entry at the given index.
+   * @param index The index for which to search the log.
+   * @return Indicates whether the log contains an entry at the given index.
    */
   boolean containsEntry(long index);
 
   /**
-   * Returns the entry at the given index.
-   * 
-   * @param index The index from which to get the entry.
-   * @return A log entry.
-   */
-  Entry getEntry(long index);
-
-  /**
-   * Returns the first log index.
+   * Returns the first index in the log.
    *
-   * @return
-   *   The first log index.
+   * @return The first index in the log.
    */
   long firstIndex();
 
   /**
-   * Returns the first log entry.
+   * Returns the first entry in the log.
    *
-   * @return The first log entry.
+   * @return The first entry in the log.
    */
-  Entry firstEntry();
+  <T extends Entry> T firstEntry();
 
   /**
-   * Returns the last log index.
+   * Returns the last index in the log.
    *
-   * @return
-   *   The last log index.
+   * @return The last index in the log.
    */
   long lastIndex();
 
   /**
-   * Returns the last log entry.
+   * Returns the last entry in the log.
    *
-   * @return The last log entry.
+   * @return The last entry in the log.
    */
-  Entry lastEntry();
+  <T extends Entry> T lastEntry();
 
   /**
-   * Returns a list of log entries between two given indexes.
-   * 
-   * @param start The starting index.
-   * @param end The ending index.
-   * @return A list of entries between the two given indexes.
+   * Returns a log entry by index.
+   *
+   * @param index The index from which to retrieve the entry.
+   * @return The log entry.
    */
-  List<Entry> getEntries(long start, long end);
+  <T extends Entry> T getEntry(long index);
 
   /**
-   * Removes all entries before the given index.
-   * 
-   * @param index The index before which to remove entries.
+   * Returns a list of entries from the log.
+   *
+   * @param from The index at which to start.
+   * @param to The index at which to end.
+   * @return A list of log entries.
    */
-  void removeBefore(long index);
+  <T extends Entry> List<T> getEntries(long from, long to);
+
+  /**
+   * Removes the entry at the given index.
+   *
+   * @param index The index at which to remove the entry.
+   */
+  void removeEntry(long index);
 
   /**
    * Removes all entries after the given index.
-   * 
+   *
    * @param index The index after which to remove entries.
    */
   void removeAfter(long index);
 
   /**
-   * Backs up the log, creating a separate backup file.
-   */
-  void backup();
-
-  /**
-   * Commits the log, removing the backup.
-   */
-  void commit();
-
-  /**
-   * Restores the log from a separate backup file.
-   */
-  void restore();
-
-  /**
    * Closes the log.
+   *
+   * @throws IOException If the log file could not be closed.
    */
-  void close();
+  void close() throws IOException;
 
   /**
    * Deletes the log.
+   *
+   * @throws IOException If the log file could not be deleted.
    */
-  void delete();
+  void delete() throws IOException;
 
 }

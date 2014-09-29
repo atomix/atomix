@@ -13,40 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log.impl;
-
-import java.util.Set;
+package net.kuujo.copycat.log;
 
 /**
- * Entry indicating the start of a snapshot set.
+ * Log index out of bounds exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SnapshotStartEntry extends SnapshotEntry {
-  private static final long serialVersionUID = 2026796603990813501L;
-  private Set<String> cluster;
+@SuppressWarnings("serial")
+public class LogIndexOutOfBoundsException extends LogException {
 
-  public SnapshotStartEntry() {
-    super();
+  public LogIndexOutOfBoundsException(String message) {
+    super(message);
   }
 
-  public SnapshotStartEntry(long term, Set<String> cluster) {
-    super(term);
-    this.cluster = cluster;
+  public LogIndexOutOfBoundsException(String message, Throwable cause) {
+    super(message, cause);
   }
 
-  /**
-   * Returns the snapshot cluster configuration.
-   *
-   * @return The snapshot cluster configuration.
-   */
-  public Set<String> cluster() {
-    return cluster;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[term=%d, cluster=%s]", term(), cluster);
+  public LogIndexOutOfBoundsException(Throwable cause) {
+    super(cause);
   }
 
 }

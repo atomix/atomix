@@ -16,9 +16,20 @@
 package net.kuujo.copycat.log;
 
 /**
- * Log entry.
+ * Log entry writer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+ *
+ * @param <T> The entry type.
  */
-public interface Entry {
+public interface EntryWriter<T extends Entry> {
+
+  /**
+   * Writes an entry to a buffer.
+   *
+   * @param entry The entry to write.
+   * @param buffer The buffer to which to write the entry.
+   */
+  void writeEntry(T entry, Buffer buffer);
+
 }

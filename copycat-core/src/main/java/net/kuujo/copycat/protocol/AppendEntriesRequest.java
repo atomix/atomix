@@ -37,14 +37,14 @@ public class AppendEntriesRequest extends Request {
   private String leader;
   private long prevLogIndex;
   private long prevLogTerm;
-  private List<Entry> entries;
+  private List<? extends Entry> entries;
   private long commitIndex;
 
   public AppendEntriesRequest() {
     super(null);
   }
 
-  public AppendEntriesRequest(Object id, long term, String leader, long prevLogIndex, long prevLogTerm, List<Entry> entries, long commitIndex) {
+  public AppendEntriesRequest(Object id, long term, String leader, long prevLogIndex, long prevLogTerm, List<? extends Entry> entries, long commitIndex) {
     super(id);
     this.term = term;
     this.leader = leader;
@@ -95,8 +95,9 @@ public class AppendEntriesRequest extends Request {
    * 
    * @return A list of log entries.
    */
-  public List<Entry> entries() {
-    return entries;
+  @SuppressWarnings("unchecked")
+  public <T extends Entry> List<T> entries() {
+    return (List<T>) entries;
   }
 
   /**

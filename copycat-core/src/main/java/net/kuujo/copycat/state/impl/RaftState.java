@@ -15,8 +15,7 @@
  */
 package net.kuujo.copycat.state.impl;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -24,26 +23,20 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.event.VoteCastEvent;
-import net.kuujo.copycat.log.Entries;
+import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.LogException;
-import net.kuujo.copycat.log.impl.ArrayListEntries;
-import net.kuujo.copycat.log.impl.CombinedSnapshot;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
-import net.kuujo.copycat.log.impl.SnapshotChunkEntry;
-import net.kuujo.copycat.log.impl.SnapshotCombiner;
-import net.kuujo.copycat.log.impl.SnapshotEndEntry;
+import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
-import net.kuujo.copycat.log.impl.SnapshotStartEntry;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.serializer.SerializationException;
 import net.kuujo.copycat.serializer.Serializer;
 import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.state.State;
@@ -55,7 +48,6 @@ import net.kuujo.copycat.state.State;
  */
 abstract class RaftState implements State<RaftStateContext> {
   private static final Serializer serializer = SerializerFactory.getSerializer();
-  private static final int SNAPSHOT_ENTRY_SIZE = 4096;
   protected RaftStateContext context;
   private final Executor executor = Executors.newSingleThreadExecutor();
   private final AtomicBoolean transition = new AtomicBoolean();
@@ -115,7 +107,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    Entry entry = context.log().getEntry(request.prevLogIndex());
+    RaftEntry entry = context.log().getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
       return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
     } else {
@@ -131,8 +123,8 @@ abstract class RaftState implements State<RaftStateContext> {
     // then remove those entries to be replaced by the request entries.
     if (context.log().lastIndex() > request.prevLogIndex() && !request.entries().isEmpty()) {
       for (int i = 0; i < request.entries().size(); i++) {
-        Entry entry = request.entries().get(i);
-        Entry match = context.log().getEntry(request.prevLogIndex() + i + 1);
+        RaftEntry entry = request.<RaftEntry>entries().get(i);
+        RaftEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
         if (entry.term() != match.term()) {
           context.log().removeAfter(request.prevLogIndex() + i);
           context.log().appendEntries(request.entries().subList(i, request.entries().size()));
@@ -258,75 +250,28 @@ abstract class RaftState implements State<RaftStateContext> {
    * @param index The index of the entry to apply.
    * @param entry The entry to apply.
    */
-  protected void applySnapshot(long index, SnapshotEntry entry) {
-    // If the snapshot entry is a snapshot end entry, read the log
-    // backwards and build the complete snapshot.
-    if (entry instanceof SnapshotEndEntry) {
-      SnapshotEndEntry end = (SnapshotEndEntry) entry;
-      List<SnapshotChunkEntry> chunks = new ArrayList<>();
-      SnapshotStartEntry start = null;
-      long i = index;
-      while (start == null && i > context.log().firstIndex()) {
-        i--;
-        Entry previous = context.log().getEntry(i);
-        if (previous == null) {
-          break;
-        } else if (previous instanceof SnapshotChunkEntry) {
-          chunks.add((SnapshotChunkEntry) previous);
-        } else if (previous instanceof SnapshotStartEntry) {
-          start = (SnapshotStartEntry) previous;
-        } else {
-          break;
-        }
-      }
-
-      if (start != null) {
-        Entries<SnapshotEntry> entries = new ArrayListEntries<>();
-        entries.add(start);
-        entries.addAll(chunks);
-        entries.add(end);
-        applySnapshot(index, entries);
-      } else {
-        context.setLastApplied(index);
-      }
-    } else {
-      context.setLastApplied(index);
-    }
-  }
-
-  /**
-   * Applies a snapshot entry to the state machine.
-   *
-   * @param lastIndex The last index of the entry set being applied.
-   * @param entries A list of snapshot entries.
-   */
   @SuppressWarnings("unchecked")
-  protected void applySnapshot(long lastIndex, Entries<SnapshotEntry> entries) {
-    try {
-      // Combine all the snapshot entries into a single object.
-      CombinedSnapshot snapshot = new SnapshotCombiner()
-        .withStart(entries.get(0, SnapshotStartEntry.class))
-        .withChunks(entries.subList(1, entries.size() - 1, SnapshotChunkEntry.class))
-        .withEnd(entries.get(entries.size() - 1, SnapshotEndEntry.class))
-        .combine();
+  protected void applySnapshot(long index, SnapshotEntry entry) {
+    // Apply the snapshot to the local state machine.
+    context.stateMachine().installSnapshot(serializer.readValue(entry.data(), Map.class));
 
-      // Apply the snapshot to the local state machine.
-      context.stateMachine().installSnapshot(serializer.readValue(snapshot.bytes(), Map.class));
-
-      // Once the snapshot has been applied, remove all entries prior to the snapshot.
-      context.log().removeBefore(lastIndex - entries.size() + 1);
-
-      // Set the local cluster configuration according to the snapshot cluster membership.
-      Set<String> members = snapshot.cluster();
-      members.remove(context.clusterConfig().getLocalMember());
-      context.clusterConfig().setRemoteMembers(members);
-
-      // Finally, if necessary, increment the current term.
-      context.setCurrentTerm(Math.max(context.getCurrentTerm(), snapshot.term()));
-    } catch (LogException | SerializationException e) {
-    } finally {
-      context.setLastApplied(lastIndex);
+    // If the log is compactable then compact it at the snapshot index.
+    if (context.log() instanceof Compactable) {
+      try {
+        ((Compactable) context.log()).compact(index, entry);
+      } catch (IOException e) {
+        throw new CopyCatException("Failed to compact log.", e);
+      }
     }
+
+    // Set the local cluster configuration according to the snapshot cluster membership.
+    Set<String> members = entry.config();
+    members.remove(context.clusterConfig().getLocalMember());
+    context.clusterConfig().setRemoteMembers(members);
+
+    // Finally, if necessary, increment the current term.
+    context.setCurrentTerm(Math.max(context.getCurrentTerm(), entry.term()));
+    context.setLastApplied(index);
   }
 
   /**
@@ -334,20 +279,9 @@ abstract class RaftState implements State<RaftStateContext> {
    *
    * @return A snapshot of the state machine state.
    */
-  protected Entries<SnapshotEntry> createSnapshot() {
-    Entries<SnapshotEntry> entries = new ArrayListEntries<>();
+  protected SnapshotEntry createSnapshot() {
     Map<String, Object> snapshot = context.stateMachine().takeSnapshot();
-    long term = context.getCurrentTerm();
-    entries.add(new SnapshotStartEntry(context.getCurrentTerm(), context.clusterConfig().getMembers()));
-    byte[] snapshotBytes = serializer.writeValue(snapshot);
-    for (int i = 0; i < snapshotBytes.length; i += SNAPSHOT_ENTRY_SIZE) {
-      final int bytesLength = snapshotBytes.length - i > SNAPSHOT_ENTRY_SIZE ? SNAPSHOT_ENTRY_SIZE : snapshotBytes.length - i;
-      byte[] bytes = new byte[bytesLength];
-      System.arraycopy(snapshotBytes, i, bytes, 0, bytesLength);
-      entries.add(new SnapshotChunkEntry(term, bytes));
-    }
-    entries.add(new SnapshotEndEntry(term, snapshotBytes.length));
-    return entries;
+    return new SnapshotEntry(context.getCurrentTerm(), context.clusterConfig().getMembers(), serializer.writeValue(snapshot));
   }
 
   /**
@@ -355,33 +289,24 @@ abstract class RaftState implements State<RaftStateContext> {
    */
   protected CompletableFuture<Void> compactLog() {
     // If the log has now grown past the maximum local log size, create a
+    // snapshot of the current state machine state and compact the log
+    // using the state machine snapshot as the first entry.
+
+    // If the log has now grown past the maximum local log size, create a
     // snapshot of the current state machine state and replace the applied
     // entries with a single snapshot entry. This process is done in the
     // background in order to allow new entries to continue being appended
     // to the log. The snapshot is stored as a log entry in order to simplify
     // replication of snapshots if the node becomes the leader.
-    if (context.log().size() > context.config().getMaxLogSize()) {
+    if (context.log() instanceof Compactable && context.log().size() > context.config().getMaxLogSize()) {
       synchronized (context.log()) {
-        context.log().backup();
         final long lastApplied = context.getLastApplied();
-        Entries<SnapshotEntry> entries = createSnapshot();
-        if (lastApplied - entries.size() > 0) {
-          try {
-            // Remote all entries from the last applied entry and before.
-            context.log().removeBefore(lastApplied + 1);
-
-            // Prepend the snapshot entries to the log. This replaces the applied
-            // entries with a set of snapshot entries which can be replicated.
-            context.log().prependEntries(entries);
-
-            // If the snapshot prepending was successful, commit the log. This will
-            // cause the log to remove its backup file.
-            context.log().commit();
-          } catch (Exception e) {
-            // If the snapshot failed then restore the log to its previous state
-            // and continue normal operation.
-            context.log().restore();
-          }
+        final SnapshotEntry snapshot = createSnapshot();
+        Compactable log = (Compactable) context.log();
+        try {
+          log.compact(lastApplied, snapshot);
+        } catch (IOException e) {
+          throw new CopyCatException("Failed to compact log.", e);
         }
       }
     }
@@ -437,7 +362,7 @@ abstract class RaftState implements State<RaftStateContext> {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
         long lastIndex = context.log().lastIndex();
-        Entry entry = context.log().getEntry(lastIndex);
+        RaftEntry entry = context.log().getEntry(lastIndex);
         if (entry == null) {
           context.setLastVotedFor(request.candidate());
           context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));

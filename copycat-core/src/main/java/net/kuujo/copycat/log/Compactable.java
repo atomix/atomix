@@ -15,32 +15,22 @@
  */
 package net.kuujo.copycat.log;
 
-import java.util.List;
+import java.io.IOException;
 
 /**
- * An ordered list of log entries.
+ * Interface for compactable logs.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Entries<U extends Entry> extends List<U> {
+public interface Compactable {
 
   /**
-   * Returns a typed entry.
+   * Compacts the log.
    *
-   * @param index The index of the entry to return.
-   * @param type The type of the entry to return.
-   * @return The entry at the given index.
+   * @param index The index at which to compact the log.
+   * @param entry A snapshot entry to place at the start of the compacted log.
+   * @throws IOException If the snapshot persistence failed.
    */
-  <T extends U> T get(int index, Class<T> type);
-
-  /**
-   * Returns a sublist of the entries list as a given type.
-   *
-   * @param fromIndex The start index.
-   * @param toIndex The end index.
-   * @param type The type of entries expected.
-   * @return A sublist of entries of the given type.
-   */
-  <T extends U> List<T> subList(int fromIndex, int toIndex, Class<T> type);
+  void compact(long index, Entry entry) throws IOException;
 
 }

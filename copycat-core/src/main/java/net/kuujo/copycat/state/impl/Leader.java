@@ -78,14 +78,6 @@ public class Leader extends RaftState implements Observer {
       applyEntry(i);
     }
 
-    // Once all pending entries have been applied to the state machine, check to
-    // see if the leader's log is empty. If the log is empty, immediately commit
-    // a snapshot as the first set of entries in the log. This guarantees that
-    // the first set of entries in any leader's log will always be a snapshot.
-    if (context.log().isEmpty()) {
-      context.log().appendEntries(createSnapshot());
-    }
-
     // Next, the leader must write a no-op entry to the log and replicate the log
     // to all the nodes in the cluster. This ensures that other nodes are notified
     // of the leader's election and that their terms are updated with the leader's term.

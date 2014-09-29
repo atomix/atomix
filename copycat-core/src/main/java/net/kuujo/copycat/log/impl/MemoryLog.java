@@ -15,31 +15,34 @@
  */
 package net.kuujo.copycat.log.impl;
 
+import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeMap;
 
+import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.Log;
 
 /**
- * In-memory log implementation.<p>
- *
- * This log implementation uses an in-memory {@link TreeMap} to store
- * log entries in log order. While this log is intended for testing
- * purposes, it can be used in production in cases where snapshots
- * suffice to maintain a small memory footprint.
+ * Memory-based log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryLog implements Log {
-  private TreeMap<Long, Entry> log = new TreeMap<>();
-  private long index;
+public class MemoryLog extends AbstractLog implements Compactable {
+  private TreeMap<Long, ByteBuffer> log;
+
+  public MemoryLog() {
+    super(Entry.class);
+  }
+
+  public MemoryLog(Class<? extends Entry> entryType) {
+    super(entryType);
+  }
 
   @Override
-  public void open() {
+  public void open() throws IOException {
+    log = new TreeMap<>();
   }
 
   @Override
@@ -53,10 +56,14 @@ public class MemoryLog implements Log {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public long appendEntry(Entry entry) {
-    if (entry == null) throw new NullPointerException();
-    long index = ++this.index;
-    log.put(index, entry);
+    long index = log.lastKey() + 1;
+    MemoryBuffer buffer = new MemoryBuffer();
+    byte entryType = getEntryType(entry.getClass());
+    buffer.appendByte(entryType);
+    getWriter(entryType).writeEntry(entry, buffer);
+    log.put(index, buffer.toByteBuffer());
     return index;
   }
 
@@ -70,40 +77,10 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public List<Long> appendEntries(List<? extends Entry> entries) {
+  public List<Long> appendEntries(List<Entry> entries) {
     List<Long> indices = new ArrayList<>();
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
-    }
-    return indices;
-  }
-
-  @Override
-  public long setEntry(long index, Entry entry) {
-    log.put(index, entry);
-    return index;
-  }
-
-  @Override
-  public long prependEntry(Entry entry) {
-    long index = !log.isEmpty() ? log.firstKey() : this.index;
-    if (index < 1) {
-      throw new IndexOutOfBoundsException("Cannot prepend entry at index " + index);
-    }
-    log.put(index, entry);
-    return index;
-  }
-
-  @Override
-  public List<Long> prependEntries(Entry... entries) {
-    return prependEntries(Arrays.asList(entries));
-  }
-
-  @Override
-  public List<Long> prependEntries(List<? extends Entry> entries) {
-    List<Long> indices = new ArrayList<>();
-    for (int i = entries.size() - 1; i >= 0; i--) {
-      indices.add(prependEntry(entries.get(i)));
     }
     return indices;
   }
@@ -114,68 +91,88 @@ public class MemoryLog implements Log {
   }
 
   @Override
-  public Entry getEntry(long index) {
-    return log.get(index);
-  }
-
-  @Override
   public long firstIndex() {
-    return !log.isEmpty() ? log.firstKey() : 0;
+    return log.firstKey();
   }
 
   @Override
-  public Entry firstEntry() {
-    return !log.isEmpty() ? log.firstEntry().getValue() : null;
+  @SuppressWarnings("unchecked")
+  public <T extends Entry> T firstEntry() {
+    ByteBuffer byteBuffer = log.firstEntry().getValue();
+    if (byteBuffer != null) {
+      MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
+      byte entryType = buffer.getByte();
+      return (T) getReader(entryType).readEntry(buffer);
+    }
+    return null;
   }
 
   @Override
   public long lastIndex() {
-    return index;
+    return log.lastKey();
   }
 
   @Override
-  public Entry lastEntry() {
-    return !log.isEmpty() ? log.lastEntry().getValue() : null;
+  @SuppressWarnings("unchecked")
+  public <T extends Entry> T lastEntry() {
+    ByteBuffer byteBuffer = log.lastEntry().getValue();
+    if (byteBuffer != null) {
+      MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
+      byte entryType = buffer.getByte();
+      return (T) getReader(entryType).readEntry(buffer);
+    }
+    return null;
   }
 
   @Override
-  public synchronized List<Entry> getEntries(long start, long end) {
-    List<Entry> entries = new ArrayList<>();
-    for (Map.Entry<Long, Entry> entry : log.subMap(start, end+1).entrySet()) {
-      entries.add(entry.getValue());
+  @SuppressWarnings("unchecked")
+  public <T extends Entry> T getEntry(long index) {
+    ByteBuffer byteBuffer = log.get(index);
+    if (byteBuffer != null) {
+      MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
+      byte entryType = buffer.getByte();
+      return (T) getReader(entryType).readEntry(buffer);
+    }
+    return null;
+  }
+
+  @Override
+  public <T extends Entry> List<T> getEntries(long from, long to) {
+    List<T> entries = new ArrayList<>();
+    for (long i = from; i <= to; i++) {
+      entries.add(getEntry(i));
     }
     return entries;
   }
 
   @Override
-  public synchronized void removeBefore(long index) {
+  public void removeEntry(long index) {
+    log.remove(index);
+  }
+
+  @Override
+  public void removeAfter(long index) {
+    log.tailMap(index, false).clear();
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public void compact(long index, Entry entry) throws IOException {
+    MemoryBuffer buffer = new MemoryBuffer();
+    byte entryType = getEntryType(entry.getClass());
+    getWriter(entryType).writeEntry(entry, buffer);
     log.headMap(index).clear();
-  }
-
-  @Override
-  public synchronized void removeAfter(long index) {
-    log.tailMap(index).clear();
-  }
-
-  @Override
-  public void backup() {
-  }
-
-  @Override
-  public void restore() {
-  }
-
-  @Override
-  public void commit() {
+    log.put(index, buffer.toByteBuffer());
   }
 
   @Override
   public void close() {
+    log = null;
   }
 
   @Override
-  public synchronized void delete() {
-    log = new TreeMap<>();
+  public void delete() {
+    log = null;
   }
 
 }

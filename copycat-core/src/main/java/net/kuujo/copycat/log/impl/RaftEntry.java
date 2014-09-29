@@ -15,31 +15,46 @@
  */
 package net.kuujo.copycat.log.impl;
 
+import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.EntryTypes;
+
 /**
- * Snapshot chunk entry.
+ * Raft log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SnapshotChunkEntry extends SnapshotEntry {
-  private static final long serialVersionUID = 5312083721474985163L;
-  private byte[] data;
+@EntryTypes({
+  NoOpEntry.class,
+  CommandEntry.class,
+  ConfigurationEntry.class
+})
+public class RaftEntry implements Entry {
+  protected long term;
 
-  public SnapshotChunkEntry() {
-    super();
+  protected RaftEntry() {
   }
 
-  public SnapshotChunkEntry(long term, byte[] data) {
-    super(term);
-    this.data = data;
+  protected RaftEntry(long term) {
+    this.term = term;
   }
 
   /**
-   * Returns the entry's chunk of snapshot data.
-   *
-   * @return The entry's chunk of snapshot data.
+   * Returns the log entry term.
+   * 
+   * @return The log entry term.
    */
-  public byte[] data() {
-    return data;
+  public long term() {
+    return term;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return getClass().isAssignableFrom(object.getClass()) && ((RaftEntry) object).term() == term;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[term=%s]", getClass().getSimpleName(), term);
   }
 
 }

@@ -13,36 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log.impl;
-
-import java.util.Set;
+package net.kuujo.copycat.log;
 
 /**
- * Combination of all snapshot data.
+ * Entry type annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CombinedSnapshot {
-  private final long term;
-  private final Set<String> cluster;
-  private final byte[] bytes;
+@SuppressWarnings("rawtypes")
+public @interface EntryType {
 
-  CombinedSnapshot(long term, Set<String> cluster, byte[] bytes) {
-    this.term = term;
-    this.cluster = cluster;
-    this.bytes = bytes;
-  }
+  /**
+   * Indicates the unique entry type ID.
+   */
+  byte id();
 
-  public long term() {
-    return term;
-  }
+  /**
+   * The entry type reader implementation.
+   */
+  Class<? extends EntryReader> reader();
 
-  public Set<String> cluster() {
-    return cluster;
-  }
-
-  public byte[] bytes() {
-    return bytes;
-  }
+  /**
+   * The entry type writer implementation.
+   */
+  Class<? extends EntryWriter> writer();
 
 }

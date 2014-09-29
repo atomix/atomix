@@ -13,33 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log.impl;
+package net.kuujo.copycat.log;
 
 /**
- * Entry indicating the end of a snapshot entry set.
+ * Annotation for specifying entry types belonging to a base entry type group.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SnapshotEndEntry extends SnapshotEntry {
-  private static final long serialVersionUID = -7343120000478427483L;
-  private long length;
-
-  public SnapshotEndEntry() {
-    super();
-  }
-
-  public SnapshotEndEntry(long term, long length) {
-    super(term);
-    this.length = length;
-  }
+public @interface EntryTypes {
 
   /**
-   * Returns the total length of the snapshot.
-   *
-   * @return The total byte length of the snapshot.
+   * An array of entry type implementations.
    */
-  public long length() {
-    return length;
-  }
+  Class<? extends Entry>[] value();
 
 }

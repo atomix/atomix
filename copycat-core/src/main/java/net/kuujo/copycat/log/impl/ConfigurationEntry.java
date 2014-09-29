@@ -15,24 +15,24 @@
  */
 package net.kuujo.copycat.log.impl;
 
+import java.util.HashSet;
 import java.util.Set;
 
-import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.Buffer;
+import net.kuujo.copycat.log.EntryReader;
+import net.kuujo.copycat.log.EntryType;
+import net.kuujo.copycat.log.EntryWriter;
 
 /**
- * Cluster configuration log entry.<p>
- *
- * The configuration entry is used internally by CopyCat to replicate
- * cluster configuration information. Cluster membership changes are
- * supported through logging and replication of memberships.
+ * Cluster configuration entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationEntry extends Entry {
-  private static final long serialVersionUID = -3175332895044610666L;
+@EntryType(id=2, reader=ConfigurationEntry.Reader.class, writer=ConfigurationEntry.Writer.class)
+public class ConfigurationEntry extends RaftEntry {
   private Set<String> members;
 
-  public ConfigurationEntry() {
+  private ConfigurationEntry() {
     super();
   }
 
@@ -53,6 +53,24 @@ public class ConfigurationEntry extends Entry {
   @Override
   public String toString() {
     return String.format("ConfigurationEntry[term=%d, members=%s]", term(), members);
+  }
+
+  public static class Reader implements EntryReader<ConfigurationEntry> {
+    @Override
+    public ConfigurationEntry readEntry(Buffer buffer) {
+      ConfigurationEntry entry = new ConfigurationEntry();
+      entry.term = buffer.getLong();
+      entry.members = buffer.getCollection(new HashSet<String>(), String.class);
+      return entry;
+    }
+  }
+
+  public static class Writer implements EntryWriter<ConfigurationEntry> {
+    @Override
+    public void writeEntry(ConfigurationEntry entry, Buffer buffer) {
+      buffer.appendLong(entry.term);
+      buffer.appendCollection(entry.members);
+    }
   }
 
 }

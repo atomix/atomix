@@ -15,26 +15,25 @@
  */
 package net.kuujo.copycat.log.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.Buffer;
+import net.kuujo.copycat.log.EntryReader;
+import net.kuujo.copycat.log.EntryType;
+import net.kuujo.copycat.log.EntryWriter;
 
 /**
- * State machine command log entry.<p>
- *
- * This log entry stores information about a state machine command
- * that was submitted to the cluster. When a command entry is committed
- * to a replica's log, the replica should immediately apply the command
- * to its state machine.
+ * State machine command entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommandEntry extends Entry {
-  private static final long serialVersionUID = 3257184123473104135L;
+@EntryType(id=1, reader=CommandEntry.Reader.class, writer=CommandEntry.Writer.class)
+public class CommandEntry extends RaftEntry {
   private String command;
   private List<Object> args;
 
-  public CommandEntry() {
+  private CommandEntry() {
     super();
   }
 
@@ -64,7 +63,30 @@ public class CommandEntry extends Entry {
 
   @Override
   public String toString() {
-    return String.format("CommandEntry[term=%d, command=%s, args=%s]", term(), command, args);
+    return String.format("CommandEntry[term=%d, command=%s, args=%s]", term, command, args);
+  }
+
+  public static class Reader implements EntryReader<CommandEntry> {
+    @Override
+    public CommandEntry readEntry(Buffer buffer) {
+      CommandEntry entry = new CommandEntry();
+      entry.term = buffer.getLong();
+      int length = buffer.getInt();
+      byte[] bytes = buffer.getBytes(length);
+      entry.command = new String(bytes);
+      entry.args = buffer.getCollection(new ArrayList<Object>(), Object.class);
+      return entry;
+    }
+  }
+
+  public static class Writer implements EntryWriter<CommandEntry> {
+    @Override
+    public void writeEntry(CommandEntry entry, Buffer buffer) {
+      buffer.appendLong(entry.term);
+      buffer.appendInt(entry.command.length());
+      buffer.appendString(entry.command);
+      buffer.appendCollection(entry.args);
+    }
   }
 
 }

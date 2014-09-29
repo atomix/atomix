@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
@@ -100,7 +100,7 @@ public class Candidate extends RaftState {
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
     final long lastIndex = context.log().lastIndex();
-    Entry lastEntry = context.log().getEntry(lastIndex);
+    RaftEntry lastEntry = context.log().getEntry(lastIndex);
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.
