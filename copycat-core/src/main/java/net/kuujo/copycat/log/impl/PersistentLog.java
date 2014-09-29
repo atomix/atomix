@@ -279,13 +279,12 @@ public class PersistentLog extends AbstractLog implements Compactable {
     long matchIndex = findAbsoluteIndex(index);
     if (matchIndex > -1) {
       tailer.index(matchIndex);
-      tailer.skip(8);
-      tailer.writeByte(DELETED);
       while (tailer.nextIndex()) {
         tailer.skip(8);
         tailer.writeByte(DELETED);
       }
     }
+    lastIndex = index;
   }
 
   /**
