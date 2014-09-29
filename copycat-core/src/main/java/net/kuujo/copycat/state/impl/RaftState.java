@@ -16,7 +16,6 @@
 package net.kuujo.copycat.state.impl;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -37,8 +36,6 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
 import net.kuujo.copycat.state.State;
 
 /**
@@ -47,7 +44,6 @@ import net.kuujo.copycat.state.State;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class RaftState implements State<RaftStateContext> {
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   protected RaftStateContext context;
   private final Executor executor = Executors.newSingleThreadExecutor();
   private final AtomicBoolean transition = new AtomicBoolean();
@@ -210,6 +206,7 @@ abstract class RaftState implements State<RaftStateContext> {
     else {
       context.setLastApplied(index);
     }
+    compactLog();
   }
 
   /**
@@ -250,10 +247,9 @@ abstract class RaftState implements State<RaftStateContext> {
    * @param index The index of the entry to apply.
    * @param entry The entry to apply.
    */
-  @SuppressWarnings("unchecked")
   protected void applySnapshot(long index, SnapshotEntry entry) {
     // Apply the snapshot to the local state machine.
-    context.stateMachine().installSnapshot(serializer.readValue(entry.data(), Map.class));
+    context.stateMachine().installSnapshot(entry.data());
 
     // If the log is compactable then compact it at the snapshot index.
     if (context.log() instanceof Compactable) {
@@ -280,8 +276,11 @@ abstract class RaftState implements State<RaftStateContext> {
    * @return A snapshot of the state machine state.
    */
   protected SnapshotEntry createSnapshot() {
-    Map<String, Object> snapshot = context.stateMachine().takeSnapshot();
-    return new SnapshotEntry(context.getCurrentTerm(), context.clusterConfig().getMembers(), serializer.writeValue(snapshot));
+    byte[] snapshot = context.stateMachine().takeSnapshot();
+    if (snapshot != null) {
+      return new SnapshotEntry(context.getCurrentTerm(), context.clusterConfig().getMembers(), snapshot);
+    }
+    return null;
   }
 
   /**
@@ -302,11 +301,13 @@ abstract class RaftState implements State<RaftStateContext> {
       synchronized (context.log()) {
         final long lastApplied = context.getLastApplied();
         final SnapshotEntry snapshot = createSnapshot();
-        Compactable log = (Compactable) context.log();
-        try {
-          log.compact(lastApplied, snapshot);
-        } catch (IOException e) {
-          throw new CopyCatException("Failed to compact log.", e);
+        if (snapshot != null) {
+          Compactable log = (Compactable) context.log();
+          try {
+            log.compact(lastApplied, snapshot);
+          } catch (IOException e) {
+            throw new CopyCatException("Failed to compact log.", e);
+          }
         }
       }
     }

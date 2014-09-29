@@ -27,8 +27,6 @@ import java.util.Collection;
 import java.util.Map;
 
 import net.kuujo.copycat.log.Buffer;
-import net.kuujo.copycat.log.LogException;
-import net.kuujo.copycat.serializer.SerializationException;
 
 /**
  * Memory-based byte buffer.
@@ -384,7 +382,7 @@ public class MemoryBuffer implements Buffer {
       stream = new ObjectOutputStream(byteStream);
       stream.writeObject(object);
     } catch (IOException e) {
-      throw new LogException(e.getMessage());
+      throw new RuntimeException(e);
     } finally {
       if (stream != null) {
         try {
@@ -406,13 +404,13 @@ public class MemoryBuffer implements Buffer {
       stream = new ClassLoaderObjectInputStream(cl, new ByteArrayInputStream(bytes));
       return (T) stream.readObject();
     } catch (IOException | ClassNotFoundException e) {
-      throw new SerializationException(e.getMessage());
+      throw new RuntimeException(e);
     } finally {
       if (stream != null) {
         try {
           stream.close();
         } catch (IOException e) {
-          throw new SerializationException(e.getMessage());
+          throw new RuntimeException(e);
         }
       }
     }

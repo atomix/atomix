@@ -16,7 +16,6 @@
 package net.kuujo.copycat;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -29,9 +28,8 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateMachine {
+public abstract class StateMachine {
   private final Map<String, CommandHolder> commands = new HashMap<>();
-  private final Map<String, Field> stateFields = new HashMap<>();
 
   private static class CommandHolder {
     private final StateMachine stateMachine;
@@ -91,12 +89,6 @@ public class StateMachine {
           holder.methods.add(method);
         }
       }
-      for (Field field : clazz.getDeclaredFields()) {
-        Stateful stateful = field.getAnnotation(Stateful.class);
-        if (stateful != null && !stateFields.containsKey(field.getName())) {
-          stateFields.put(field.getName(), field);
-        }
-      }
       clazz = clazz.getSuperclass();
     }
   }
@@ -117,36 +109,16 @@ public class StateMachine {
    *
    * @return The state machine snapshot.
    */
-  public Map<String, Object> takeSnapshot() {
-    Map<String, Object> snapshot = new HashMap<>();
-    for (Map.Entry<String, Field> entry : stateFields.entrySet()) {
-      entry.getValue().setAccessible(true);
-      try {
-        snapshot.put(entry.getKey(), entry.getValue().get(this));
-      } catch (IllegalArgumentException | IllegalAccessException e) {
-        throw new CopyCatException(e);
-      }
-    }
-    return snapshot;
+  public byte[] takeSnapshot() {
+    return null;
   }
 
   /**
    * Installs a snapshot of the state machine state.
    *
-   * @param snapshot The snapshot to install.
+   * @param data The snapshot to install.
    */
-  public void installSnapshot(Map<String, Object> snapshot) {
-    for (String key : snapshot.keySet()) {
-      Field field = stateFields.get(key);
-      if (field != null) {
-        field.setAccessible(true);
-        try {
-          field.set(this, snapshot.get(key));
-        } catch (IllegalArgumentException | IllegalAccessException e) {
-          throw new CopyCatException(e);
-        }
-      }
-    }
+  public void installSnapshot(byte[] data) {
   }
 
   /**
