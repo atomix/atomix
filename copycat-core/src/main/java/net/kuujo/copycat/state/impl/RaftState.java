@@ -289,14 +289,9 @@ abstract class RaftState implements State<RaftStateContext> {
   protected CompletableFuture<Void> compactLog() {
     // If the log has now grown past the maximum local log size, create a
     // snapshot of the current state machine state and compact the log
-    // using the state machine snapshot as the first entry.
-
-    // If the log has now grown past the maximum local log size, create a
-    // snapshot of the current state machine state and replace the applied
-    // entries with a single snapshot entry. This process is done in the
-    // background in order to allow new entries to continue being appended
-    // to the log. The snapshot is stored as a log entry in order to simplify
-    // replication of snapshots if the node becomes the leader.
+    // using the state machine snapshot as the first entry. The snapshot
+    // is stored as a log entry in order to simplify replication to
+    // out-of-sync followers.
     if (context.log() instanceof Compactable && context.log().size() > context.config().getMaxLogSize()) {
       synchronized (context.log()) {
         final long lastApplied = context.getLastApplied();

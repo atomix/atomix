@@ -92,13 +92,13 @@ public class MemoryLog extends AbstractLog implements Compactable {
 
   @Override
   public long firstIndex() {
-    return log.firstKey();
+    return !log.isEmpty() ? log.firstKey() : 0;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Entry> T firstEntry() {
-    ByteBuffer byteBuffer = log.firstEntry().getValue();
+    ByteBuffer byteBuffer = !log.isEmpty() ? log.firstEntry().getValue() : null;
     if (byteBuffer != null) {
       MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
       byte entryType = buffer.getByte();
@@ -109,13 +109,13 @@ public class MemoryLog extends AbstractLog implements Compactable {
 
   @Override
   public long lastIndex() {
-    return log.lastKey();
+    return !log.isEmpty() ? log.lastKey() : 0;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Entry> T lastEntry() {
-    ByteBuffer byteBuffer = log.lastEntry().getValue();
+    ByteBuffer byteBuffer = !log.isEmpty() ? log.lastEntry().getValue() : null;
     if (byteBuffer != null) {
       MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
       byte entryType = buffer.getByte();
