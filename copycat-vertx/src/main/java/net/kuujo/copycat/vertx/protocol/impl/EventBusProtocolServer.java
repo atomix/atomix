@@ -19,17 +19,17 @@ import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.protocol.ProtocolReader;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.protocol.ProtocolWriter;
+import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
-import org.vertx.java.core.json.JsonObject;
 
 /**
  * Vert.x event bus protocol server.
@@ -37,25 +37,30 @@ import org.vertx.java.core.json.JsonObject;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EventBusProtocolServer implements ProtocolServer {
-  private final Serializer serializer = SerializerFactory.getSerializer();
+  private final ProtocolReader reader = new ProtocolReader();
+  private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
   private Vertx vertx;
   private ProtocolHandler requestHandler;
 
-  private final Handler<Message<JsonObject>> messageHandler = new Handler<Message<JsonObject>>() {
+  private final Handler<Message<byte[]>> messageHandler = new Handler<Message<byte[]>>() {
     @Override
-    public void handle(Message<JsonObject> message) {
-      String action = message.body().getString("action");
-      switch (action) {
-        case "appendEntries":
-          handleAppendEntries(message);
-          break;
-        case "requestVote":
-          handleRequestVote(message);
-          break;
-        case "submitCommand":
-          handleSubmitCommand(message);
-          break;
+    public void handle(Message<byte[]> message) {
+      if (requestHandler != null) {
+        Request request = reader.readRequest(message.body());
+        if (request instanceof AppendEntriesRequest) {
+          requestHandler.appendEntries((AppendEntriesRequest) request).whenComplete((response, error) -> {
+            message.reply(writer.writeResponse(response));
+          });
+        } else if (request instanceof RequestVoteRequest) {
+          requestHandler.requestVote((RequestVoteRequest) request).whenComplete((response, error) -> {
+            message.reply(writer.writeResponse(response));
+          });
+        } else if (request instanceof SubmitCommandRequest) {
+          requestHandler.submitCommand((SubmitCommandRequest) request).whenComplete((response, error) -> {
+            message.reply(writer.writeResponse(response));
+          });
+        }
       }
     }
   };
@@ -68,54 +73,6 @@ public class EventBusProtocolServer implements ProtocolServer {
   @Override
   public void protocolHandler(ProtocolHandler handler) {
     this.requestHandler = handler;
-  }
-
-  /**
-   * Handles an append entries request.
-   */
-  private void handleAppendEntries(final Message<JsonObject> message) {
-    if (requestHandler != null) {
-      AppendEntriesRequest request = serializer.readValue(message.body().getBinary("request"), AppendEntriesRequest.class);
-      requestHandler.appendEntries(request).whenComplete((response, error) -> {
-        if (error == null) {
-          message.reply(new JsonObject().putString("status", "ok").putBinary("response", serializer.writeValue(response)));
-        } else {
-          message.reply(new JsonObject().putString("status", "error").putString("message", error.getMessage()));
-        }
-      });
-    }
-  }
-
-  /**
-   * Handles a request vote request.
-   */
-  private void handleRequestVote(final Message<JsonObject> message) {
-    if (requestHandler != null) {
-      RequestVoteRequest request = serializer.readValue(message.body().getBinary("request"), RequestVoteRequest.class);
-      requestHandler.requestVote(request).whenComplete((response, error) -> {
-        if (error == null) {
-          message.reply(new JsonObject().putString("status", "ok").putBinary("response", serializer.writeValue(response)));
-        } else {
-          message.reply(new JsonObject().putString("status", "error").putString("message", error.getMessage()));
-        }
-      });
-    }
-  }
-
-  /**
-   * Handles a submit command request.
-   */
-  private void handleSubmitCommand(final Message<JsonObject> message) {
-    if (requestHandler != null) {
-      SubmitCommandRequest request = serializer.readValue(message.body().getBinary("request"), SubmitCommandRequest.class);
-      requestHandler.submitCommand(request).whenComplete((response, error) -> {
-        if (error == null) {
-          message.reply(new JsonObject().putString("status", "ok").putBinary("response", serializer.writeValue(response)));
-        } else {
-          message.reply(new JsonObject().putString("status", "error").putString("message", error.getMessage()));
-        }
-      });
-    }
   }
 
   @Override

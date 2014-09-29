@@ -17,36 +17,11 @@ package net.kuujo.copycat.protocol;
 
 import java.io.Serializable;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 /**
  * A request response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@JsonIgnoreProperties(ignoreUnknown=true)
-@JsonInclude(JsonInclude.Include.ALWAYS)
-@JsonAutoDetect(
-    creatorVisibility=JsonAutoDetect.Visibility.NONE,
-    fieldVisibility=JsonAutoDetect.Visibility.ANY,
-    getterVisibility=JsonAutoDetect.Visibility.NONE,
-    isGetterVisibility=JsonAutoDetect.Visibility.NONE,
-    setterVisibility=JsonAutoDetect.Visibility.NONE
-)
-@JsonTypeInfo(
-  use=JsonTypeInfo.Id.NAME,
-  include=JsonTypeInfo.As.PROPERTY,
-  property="type"
-)
-@JsonSubTypes({
-  @JsonSubTypes.Type(value=AppendEntriesResponse.class, name="appendEntries"),
-  @JsonSubTypes.Type(value=RequestVoteResponse.class, name="requestVote"),
-  @JsonSubTypes.Type(value=SubmitCommandResponse.class, name="submitCommand")
-})
 @SuppressWarnings("serial")
 public abstract class Response implements Serializable {
 

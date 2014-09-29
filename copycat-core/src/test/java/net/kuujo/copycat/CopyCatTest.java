@@ -79,7 +79,6 @@ class CopyCatTest {
   }
 
   protected static class TestStateMachine extends StateMachine {
-    @Stateful
     private final Map<String, Object> data = new HashMap<>();
 
     @Command(type=Command.Type.WRITE)

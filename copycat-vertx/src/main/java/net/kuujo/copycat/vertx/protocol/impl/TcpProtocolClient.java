@@ -23,14 +23,14 @@ import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
+import net.kuujo.copycat.protocol.ProtocolReader;
+import net.kuujo.copycat.protocol.ProtocolWriter;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -48,8 +48,9 @@ import org.vertx.java.core.parsetools.RecordParser;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TcpProtocolClient implements ProtocolClient {
-  private static final Serializer serializer = SerializerFactory.getSerializer();
   private static final String DELIMITER = "\\x00";
+  private final ProtocolReader reader = new ProtocolReader();
+  private final ProtocolWriter writer = new ProtocolWriter();
   private Vertx vertx;
   private final String host;
   private final int port;
@@ -129,7 +130,7 @@ public class TcpProtocolClient implements ProtocolClient {
     CompletableFuture<T> future = new CompletableFuture<>();
     if (socket != null) {
       socket.write(new JsonObject().putValue("id", request.id())
-          .putBinary("request", serializer.writeValue(request))
+          .putBinary("request", writer.writeRequest(request))
           .encode() + DELIMITER);
       storeFuture(request.id(), future);
     } else {
@@ -209,7 +210,7 @@ public class TcpProtocolClient implements ProtocolClient {
                 JsonObject response = new JsonObject(buffer.toString());
                 Object id = response.getValue("id");
                 if (response.getString("status").equals("ok")) {
-                  handleResponse(id, serializer.readValue(response.getBinary("response"), Response.class));
+                  handleResponse(id, reader.readResponse(response.getBinary("response")));
                 } else {
                   handleError(id, new ProtocolException(response.getString("message")));
                 }

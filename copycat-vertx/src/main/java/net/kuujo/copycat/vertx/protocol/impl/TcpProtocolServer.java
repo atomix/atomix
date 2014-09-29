@@ -19,13 +19,13 @@ import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.protocol.ProtocolReader;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.protocol.ProtocolWriter;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.serializer.Serializer;
-import net.kuujo.copycat.serializer.SerializerFactory;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -43,7 +43,8 @@ import org.vertx.java.core.parsetools.RecordParser;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TcpProtocolServer implements ProtocolServer {
-  private static final Serializer serializer = SerializerFactory.getSerializer();
+  private final ProtocolReader reader = new ProtocolReader();
+  private final ProtocolWriter writer = new ProtocolWriter();
   private static final String DELIMITER = "\\x00";
   private Vertx vertx;
   private final String host;
@@ -125,7 +126,7 @@ public class TcpProtocolServer implements ProtocolServer {
               JsonObject json = new JsonObject(buffer.toString());
               Object id = json.getValue("id");
               try {
-                Request request = serializer.readValue(json.getBinary("request"), Request.class);
+                Request request = reader.readRequest(json.getBinary("request"));
                 if (request instanceof AppendEntriesRequest) {
                   handleAppendRequest(id, socket, (AppendEntriesRequest) request);
                 } else if (request instanceof RequestVoteRequest) {
@@ -195,7 +196,7 @@ public class TcpProtocolServer implements ProtocolServer {
     if (error != null) {
       socket.write(new JsonObject().putString("status", "error").putValue("id", id).putString("message", error.getMessage()).encode() + DELIMITER);
     } else {
-      socket.write(new JsonObject().putString("status", "ok").putValue("id", id).putBinary("response", serializer.writeValue(response)).encode() + DELIMITER);
+      socket.write(new JsonObject().putString("status", "ok").putValue("id", id).putBinary("response", writer.writeResponse(response)).encode() + DELIMITER);
     }
   }
 
