@@ -83,7 +83,7 @@ public class UriInjector {
               }
             }
 
-            // If the field is a CopyCatContext type field then set it.
+            // If the field is a Registry type field then set it.
             if (field.getType() == Registry.class) {
               field.setAccessible(true);
               field.set(object, registry);
@@ -99,7 +99,7 @@ public class UriInjector {
         Method method = property.getWriteMethod();
         if (method == null) continue;
 
-        // If the property type is CopyCatContext then just set the context.
+        // If the property type is Registry then just set the registry.
         if (Registry.class.isAssignableFrom(property.getPropertyType())) {
           method.invoke(object, registry);
         }

@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.uri.UriAuthority;
 import net.kuujo.copycat.uri.UriSchemeSpecificPart;
 
@@ -28,7 +28,7 @@ import net.kuujo.copycat.uri.UriSchemeSpecificPart;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocol implements Protocol {
-  private CopyCatContext context;
+  private Registry registry;
   private String address;
 
   public LocalProtocol() {
@@ -37,6 +37,24 @@ public class LocalProtocol implements Protocol {
   @Override
   public String name() {
     return address;
+  }
+
+  /**
+   * Sets the protocol registry.
+   *
+   * @param registry The protocol registry.
+   */
+  public void setRegistry(Registry registry) {
+    this.registry = registry;
+  }
+
+  /**
+   * Returns the protocol registry.
+   *
+   * @return The protocol registry.
+   */
+  public Registry getRegistry() {
+    return registry;
   }
 
   /**
@@ -72,12 +90,12 @@ public class LocalProtocol implements Protocol {
 
   @Override
   public ProtocolServer createServer() {
-    return new LocalProtocolServer(address, context);
+    return new LocalProtocolServer(address, registry);
   }
 
   @Override
   public ProtocolClient createClient() {
-    return new LocalProtocolClient(address, context);
+    return new LocalProtocolClient(address, registry);
   }
 
 }

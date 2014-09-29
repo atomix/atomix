@@ -17,7 +17,6 @@ package net.kuujo.copycat.protocol.impl;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -26,6 +25,7 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.util.Args;
 
 /**
@@ -35,16 +35,16 @@ import net.kuujo.copycat.util.Args;
  */
 public class LocalProtocolClient implements ProtocolClient {
   private final String address;
-  private final CopyCatContext context;
+  private final Registry registry;
 
-  public LocalProtocolClient(String address, CopyCatContext context) {
+  public LocalProtocolClient(String address, Registry registry) {
     this.address = address;
-    this.context = context;
+    this.registry = registry;
   }
 
   @Override
   public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
-    LocalProtocolServer server = context.registry().lookup(address);
+    LocalProtocolServer server = registry.lookup(address);
     Args.checkNotNull(server, () -> {
       throw new ProtocolException("Invalid server address");
     });
@@ -53,7 +53,7 @@ public class LocalProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
-    LocalProtocolServer server = context.registry().lookup(address);
+    LocalProtocolServer server = registry.lookup(address);
     Args.checkNotNull(server, () -> {
       throw new ProtocolException("Invalid server address");
     });
@@ -62,7 +62,7 @@ public class LocalProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
-    LocalProtocolServer server = context.registry().lookup(address);
+    LocalProtocolServer server = registry.lookup(address);
     Args.checkNotNull(server, () -> {
       throw new ProtocolException("Invalid server address");
     });

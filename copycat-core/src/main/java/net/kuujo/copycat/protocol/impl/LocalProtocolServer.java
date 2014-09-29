@@ -17,7 +17,6 @@ package net.kuujo.copycat.protocol.impl;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.CopyCatContext;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.ProtocolHandler;
@@ -26,6 +25,7 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.util.Args;
 
 /**
@@ -35,12 +35,12 @@ import net.kuujo.copycat.util.Args;
  */
 public class LocalProtocolServer implements ProtocolServer {
   private final String address;
-  private final CopyCatContext context;
+  private final Registry registry;
   private ProtocolHandler requestHandler;
 
-  public LocalProtocolServer(String address, CopyCatContext context) {
+  public LocalProtocolServer(String address, Registry registry) {
     this.address = address;
-    this.context = context;
+    this.registry = registry;
   }
 
   @Override
@@ -65,13 +65,13 @@ public class LocalProtocolServer implements ProtocolServer {
 
   @Override
   public CompletableFuture<Void> start() {
-    context.registry().bind(address, this);
+    registry.bind(address, this);
     return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override
   public CompletableFuture<Void> stop() {
-    context.registry().unbind(address);
+    registry.unbind(address);
     return CompletableFuture.completedFuture((Void) null);
   }
 
