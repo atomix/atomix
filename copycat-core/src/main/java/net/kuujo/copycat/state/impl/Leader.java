@@ -110,6 +110,7 @@ public class Leader extends RaftState implements Observer {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
+    replicator.pingAll();
     setPingTimer();
   }
 

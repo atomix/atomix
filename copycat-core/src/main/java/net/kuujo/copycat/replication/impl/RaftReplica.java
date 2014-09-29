@@ -46,7 +46,7 @@ class RaftReplica {
   private final RaftStateContext state;
   private final Log log;
   private volatile long nextIndex;
-  private volatile long matchIndex = 1;
+  private volatile long matchIndex;
   private volatile long sendIndex;
   private volatile boolean open;
   private final AtomicBoolean pinging = new AtomicBoolean();
@@ -110,7 +110,7 @@ class RaftReplica {
 
     CompletableFuture<Long> future = new CompletableFuture<>();
     if (pinging.compareAndSet(false, true)) {
-      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), nextIndex-1, log.containsEntry(nextIndex-1) ? log.<RaftEntry>getEntry(nextIndex-1).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
+      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), matchIndex, log.containsEntry(matchIndex) ? log.<RaftEntry>getEntry(matchIndex).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
       member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
         pinging.set(false);
         if (error != null) {
