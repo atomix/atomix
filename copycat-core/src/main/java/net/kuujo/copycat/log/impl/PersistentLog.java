@@ -55,11 +55,11 @@ public class PersistentLog extends AbstractLog implements Compactable {
   private long lastIndex;
 
   public PersistentLog(String baseName) {
-    this(baseName, Entry.class);
+    this(baseName, RaftEntry.class);
   }
 
   public PersistentLog(File baseFile) {
-    this(baseFile, Entry.class);
+    this(baseFile, RaftEntry.class);
   }
 
   public PersistentLog(String baseName, Class<? extends Entry> entryType) {
@@ -100,15 +100,15 @@ public class PersistentLog extends AbstractLog implements Compactable {
    * Finds the most recent long file.
    */
   private File findLogFile() {
-    baseFile.getParentFile().mkdirs();
+    baseFile.getAbsoluteFile().getParentFile().mkdirs();
     File logFile = null;
     long logTime = 0;
-    for (File file : baseFile.getParentFile().listFiles(file -> file.isFile())) {
+    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(file -> file.isFile())) {
       if (file.getName().substring(0, file.getName().indexOf('.')).equals(baseFile.getName())) {
         try {
           long fileTime = fileNameFormat.parse(file.getName().substring(file.getName().indexOf('.') + 1, file.getName().indexOf('.', file.getName().indexOf('.') + 1))).getTime();
           if (fileTime > logTime) {
-            logFile = new File(file.getParentFile().getAbsolutePath(), file.getName().substring(0, file.getName().indexOf('.', file.getName().indexOf('.') + 1)));
+            logFile = new File(file.getAbsoluteFile().getParentFile().getAbsolutePath(), file.getName().substring(0, file.getName().indexOf('.', file.getName().indexOf('.') + 1)));
             logTime  = fileTime;
           }
         } catch (ParseException e) {
@@ -126,14 +126,14 @@ public class PersistentLog extends AbstractLog implements Compactable {
    * Creates a new log file.
    */
   private File createLogFile() {
-    return new File(baseFile.getParentFile().getAbsolutePath(), String.format("%s.%s", baseFile.getName(), fileNameFormat.format(new Date())));
+    return new File(baseFile.getAbsoluteFile().getParentFile().getAbsolutePath(), String.format("%s.%s", baseFile.getName(), fileNameFormat.format(new Date())));
   }
 
   /**
    * Deletes a log file.
    */
   private void deleteLogFile(File logFile) {
-    for (File file : baseFile.getParentFile().listFiles(file -> file.isFile())) {
+    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(file -> file.isFile())) {
       if (file.getName().startsWith(logFile.getName())) {
         file.delete();
       }

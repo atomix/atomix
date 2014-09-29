@@ -33,7 +33,7 @@ public class MemoryLog extends AbstractLog implements Compactable {
   private TreeMap<Long, ByteBuffer> log;
 
   public MemoryLog() {
-    super(Entry.class);
+    super(RaftEntry.class);
   }
 
   public MemoryLog(Class<? extends Entry> entryType) {

@@ -63,7 +63,7 @@ public abstract class AbstractLog implements Log {
    * Finds entry type mappings from the base entry type.
    */
   private EntryTypes findEntryTypes(Class<?> clazz) {
-    while (clazz != Object.class) {
+    while (clazz != Object.class && clazz != null) {
       EntryTypes types = clazz.getAnnotation(EntryTypes.class);
       if (types != null) {
         return types;
@@ -77,7 +77,7 @@ public abstract class AbstractLog implements Log {
    * Finds entry type info for a specific entry type.
    */
   private EntryType findEntryTypeInfo(Class<?> clazz) {
-    while (clazz != Object.class) {
+    while (clazz != Object.class && clazz != null) {
       EntryType info = clazz.getAnnotation(EntryType.class);
       if (info != null) {
         return info;

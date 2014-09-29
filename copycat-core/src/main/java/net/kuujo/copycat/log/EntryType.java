@@ -15,11 +15,18 @@
  */
 package net.kuujo.copycat.log;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * Entry type annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
 @SuppressWarnings("rawtypes")
 public @interface EntryType {
 
