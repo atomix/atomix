@@ -160,6 +160,7 @@ public class MemoryLog extends AbstractLog implements Compactable {
   public void compact(long index, Entry entry) throws IOException {
     MemoryBuffer buffer = new MemoryBuffer();
     byte entryType = getEntryType(entry.getClass());
+    buffer.appendByte(entryType);
     getWriter(entryType).writeEntry(entry, buffer);
     log.headMap(index).clear();
     log.put(index, buffer.toByteBuffer());

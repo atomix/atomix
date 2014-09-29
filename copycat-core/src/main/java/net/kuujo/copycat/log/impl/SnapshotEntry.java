@@ -63,7 +63,7 @@ public class SnapshotEntry extends RaftEntry {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, config=%s, data=...]", term, config);
+    return String.format("SnapshotEntry[term=%d, config=%s, data=...]", term, config);
   }
 
   public static class Reader implements EntryReader<SnapshotEntry> {
