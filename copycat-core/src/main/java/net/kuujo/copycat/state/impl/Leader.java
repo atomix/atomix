@@ -94,10 +94,8 @@ public class Leader extends RaftState implements Observer {
     // log and replicated according to the Raft specification.
     context.cluster().config().addObserver(this);
 
-    // Create a map and list of remote replicas. We create both a map and
-    // list because the list is sortable, so we can use a little math
-    // trick to determine the current cluster-wide log commit index.
-    for (String uri : context.cluster().config().getRemoteMembers()) {
+    // Create a replicator using the configured (internal) cluster configuration.
+    for (String uri : context.clusterConfig().getRemoteMembers()) {
       Member member = context.cluster().member(uri);
       if (member != null && !replicator.containsMember(member)) {
         replicator.addMember(member);
