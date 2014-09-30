@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 import net.kuujo.copycat.CopyCatConfig;
 import net.kuujo.copycat.CopyCatException;
@@ -45,13 +44,16 @@ import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.state.StateContext;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Raft state context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftStateContext implements StateContext {
-  private static final Logger logger = Logger.getLogger(StateContext.class.getCanonicalName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(StateContext.class);
   private final Executor executor = Executors.newCachedThreadPool();
   private final StateMachine stateMachine;
   private final Cluster cluster;
@@ -71,7 +73,8 @@ public class RaftStateContext implements StateContext {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  public RaftStateContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+  public RaftStateContext(StateMachine stateMachine, LogFactory logFactory, ClusterConfig cluster,
+      CopyCatConfig config, Registry registry) {
     this.stateMachine = stateMachine;
     this.logFactory = logFactory;
     this.config = config;
@@ -168,7 +171,7 @@ public class RaftStateContext implements StateContext {
       return;
     }
 
-    logger.info(cluster.localMember() + " transitioning to " + type.toString());
+    LOGGER.info("{} transitioning to {}", cluster.localMember(), type);
     final RaftState oldState = currentState;
     try {
       currentState = type.newInstance();
@@ -197,7 +200,7 @@ public class RaftStateContext implements StateContext {
    */
   public RaftStateContext setCurrentLeader(String leader) {
     if (currentLeader == null || !currentLeader.equals(leader)) {
-      logger.finer(String.format("Current cluster leader changed: %s", leader));
+      LOGGER.trace("Current cluster leader changed: {}", leader);
     }
 
     if (currentLeader == null && leader != null) {
@@ -254,7 +257,7 @@ public class RaftStateContext implements StateContext {
   public RaftStateContext setCurrentTerm(long term) {
     if (term > currentTerm) {
       currentTerm = term;
-      logger.finer(String.format("Updated current term %d", term));
+      LOGGER.trace("Updated current term {}", term);
       lastVotedFor = null;
     }
     return this;
@@ -272,7 +275,7 @@ public class RaftStateContext implements StateContext {
    */
   public RaftStateContext setLastVotedFor(String candidate) {
     if (lastVotedFor == null || !lastVotedFor.equals(candidate)) {
-      logger.finer(String.format("Voted for %s", candidate));
+      LOGGER.trace("Voted for {}", candidate);
     }
     lastVotedFor = candidate;
     return this;

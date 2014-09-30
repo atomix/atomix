@@ -18,13 +18,15 @@ package net.kuujo.copycat.state.impl;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.state.State;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Follower state.<p>
@@ -38,7 +40,7 @@ import net.kuujo.copycat.state.State;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Follower extends RaftState {
-  private static final Logger logger = Logger.getLogger(Follower.class.getCanonicalName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(Follower.class);
   private ScheduledFuture<Void> currentTimer;
   private boolean shutdown = true;
 
@@ -77,7 +79,7 @@ public class Follower extends RaftState {
         // candidate and start a new election.
         currentTimer = null;
         if (context.getLastVotedFor() == null) {
-          logger.info("Election timed out. Transitioning to candidate.");
+          LOGGER.info("Election timed out. Transitioning to candidate.");
           context.transition(Candidate.class);
         } else {
           // If the node voted for a candidate then reset the election timer.
