@@ -1,0 +1,12 @@
+<configuration debug="true" scan="true">
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%-5p [%d{ISO8601}] [%.18thread] %c: %m\n%ex
+      </pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>
