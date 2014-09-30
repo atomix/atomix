@@ -129,6 +129,7 @@ public class MemoryLog extends AbstractLog implements Compactable {
   public <T extends Entry> T getEntry(long index) {
     ByteBuffer byteBuffer = log.get(index);
     if (byteBuffer != null) {
+      byteBuffer.rewind();
       MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
       byte entryType = buffer.getByte();
       return (T) getReader(entryType).readEntry(buffer);
