@@ -141,7 +141,10 @@ public class MemoryLog extends AbstractLog implements Compactable {
   public <T extends Entry> List<T> getEntries(long from, long to) {
     List<T> entries = new ArrayList<>();
     for (long i = from; i <= to; i++) {
-      entries.add(getEntry(i));
+      T entry = getEntry(i);
+      if (entry != null) {
+        entries.add(entry);
+      }
     }
     return entries;
   }
