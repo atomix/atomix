@@ -109,6 +109,8 @@ class RaftReplica {
     }
 
     CompletableFuture<Long> future = new CompletableFuture<>();
+    pingFutures.add(future);
+
     if (pinging.compareAndSet(false, true)) {
       AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), matchIndex, log.containsEntry(matchIndex) ? log.<RaftEntry>getEntry(matchIndex).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
       member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
@@ -130,8 +132,6 @@ class RaftReplica {
           }
         }
       });
-    } else {
-      pingFutures.add(future);
     }
     return future;
   }
