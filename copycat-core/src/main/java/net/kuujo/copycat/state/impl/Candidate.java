@@ -19,7 +19,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
@@ -28,6 +27,9 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.util.Quorum;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Candidate state.<p>
@@ -41,7 +43,7 @@ import net.kuujo.copycat.util.Quorum;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Candidate extends RaftState {
-  private static final Logger logger = Logger.getLogger(Candidate.class.getCanonicalName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(Candidate.class);
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;
 
@@ -53,7 +55,7 @@ public class Candidate extends RaftState {
   @Override
   public void init(RaftStateContext context) {
     super.init(context);
-    logger.info(String.format("%s starting election", context.cluster().config().getLocalMember()));
+    LOGGER.info("{} starting election", context.cluster().config().getLocalMember());
     resetTimer();
   }
 
@@ -73,13 +75,13 @@ public class Candidate extends RaftState {
     currentTimer = context.config().getTimerStrategy().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      logger.info(String.format("%s election timed out", context.cluster().config().getLocalMember()));
+      LOGGER.info("{} election timed out", context.cluster().config().getLocalMember());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       resetTimer();
-      logger.info(String.format("%s restarted election", context.cluster().config().getLocalMember()));
+      LOGGER.info("{} restarted election", context.cluster().config().getLocalMember());
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
