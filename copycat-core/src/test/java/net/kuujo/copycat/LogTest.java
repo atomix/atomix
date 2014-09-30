@@ -15,8 +15,9 @@
  */
 package net.kuujo.copycat;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
 
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
@@ -80,7 +81,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
     Assert.assertTrue(log.firstIndex() == 1);
     Assert.assertTrue(log.lastIndex() == 3);
@@ -96,7 +97,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
     Entry entry = log.firstEntry();
     Assert.assertTrue(entry instanceof NoOpEntry);
@@ -112,7 +113,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
     Assert.assertTrue(log.lastIndex() == 3);
     log.close();
@@ -127,7 +128,7 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
     Entry entry = log.lastEntry();
     Assert.assertTrue(entry instanceof CommandEntry);
@@ -141,15 +142,18 @@ public abstract class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
+    Set<String> members = new HashSet<>();
+    members.add("foo");
+    members.add("bar");
+    index = log.appendEntry(new ConfigurationEntry(1, members));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 5);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 6);
 
     log.removeAfter(2);
@@ -169,11 +173,11 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "bar", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "bar", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "baz", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "baz", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 5);
     if (log instanceof Compactable) {
       ((Compactable) log).compact(3, new SnapshotEntry(1, new HashSet<>(), "Hello world!".getBytes()));
@@ -202,11 +206,11 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 5);
     if (log instanceof Compactable) {
       ((Compactable) log).compact(5, new SnapshotEntry(1, new HashSet<>(), "Hello world!".getBytes()));
@@ -229,13 +233,13 @@ public abstract class LogTest {
     Assert.assertTrue(index == 1);
     index = log.appendEntry(new ConfigurationEntry(1, new HashSet<>()));
     Assert.assertTrue(index == 2);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 4);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 5);
-    index = log.appendEntry(new CommandEntry(1, "foo", new ArrayList<>()));
+    index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 6);
     log.close();
   }

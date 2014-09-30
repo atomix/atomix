@@ -15,7 +15,13 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import java.util.ArrayList;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.ObjectStreamClass;
 import java.util.List;
 
 import net.kuujo.copycat.log.Buffer;
@@ -68,13 +74,30 @@ public class CommandEntry extends RaftEntry {
 
   public static class Reader implements EntryReader<CommandEntry> {
     @Override
+    @SuppressWarnings("unchecked")
     public CommandEntry readEntry(Buffer buffer) {
       CommandEntry entry = new CommandEntry();
       entry.term = buffer.getLong();
-      int length = buffer.getInt();
-      byte[] bytes = buffer.getBytes(length);
-      entry.command = new String(bytes);
-      entry.args = buffer.getCollection(new ArrayList<Object>(), Object.class);
+      int commandLength = buffer.getInt();
+      byte[] commandBytes = buffer.getBytes(commandLength);
+      entry.command = new String(commandBytes);
+      int argsLength = buffer.getInt();
+      byte[] argsBytes = buffer.getBytes(argsLength);
+      ObjectInputStream stream = null;
+      try {
+        stream = new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), new ByteArrayInputStream(argsBytes));
+        entry.args = (List<Object>) stream.readObject();
+      } catch (IOException | ClassNotFoundException e) {
+        throw new RuntimeException(e);
+      } finally {
+        if (stream != null) {
+          try {
+            stream.close();
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+        }
+      }
       return entry;
     }
   }
@@ -83,10 +106,50 @@ public class CommandEntry extends RaftEntry {
     @Override
     public void writeEntry(CommandEntry entry, Buffer buffer) {
       buffer.appendLong(entry.term);
-      buffer.appendInt(entry.command.length());
-      buffer.appendString(entry.command);
-      buffer.appendCollection(entry.args);
+      byte[] bytes = entry.command.getBytes();
+      buffer.appendInt(bytes.length);
+      buffer.appendBytes(bytes);
+      ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+      ObjectOutputStream stream = null;
+      try {
+        stream = new ObjectOutputStream(byteStream);
+        stream.writeObject(entry.args);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      } finally {
+        if (stream != null) {
+          try {
+            stream.close();
+          } catch (IOException e) {
+          }
+        }
+      }
+      byte[] argsBytes = byteStream.toByteArray();
+      buffer.appendInt(argsBytes.length);
+      buffer.appendBytes(argsBytes);
     }
+  }
+
+  /**
+   * Object input stream that loads the class from the current context class loader.
+   */
+  private static class ClassLoaderObjectInputStream extends ObjectInputStream {
+    private final ClassLoader cl;
+
+    public ClassLoaderObjectInputStream(ClassLoader cl, InputStream in) throws IOException {
+      super(in);
+      this.cl = cl;
+    }
+
+    @Override
+    public Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException, IOException {
+      try {
+        return cl.loadClass(desc.getName());
+      } catch (Exception e) {
+      }
+      return super.resolveClass(desc);
+    }
+
   }
 
 }
