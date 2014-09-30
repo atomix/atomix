@@ -211,7 +211,6 @@ class RaftReplica {
             if (!entries.isEmpty()) {
               nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
               matchIndex = Math.max(matchIndex, prevIndex + entries.size());
-              System.out.println(member.uri() + ": " + matchIndex);
               triggerCommitFutures(prevIndex+1, prevIndex+entries.size());
               doCommit();
             }
@@ -225,7 +224,6 @@ class RaftReplica {
               // us to skip repeatedly replicating one entry at a time if it's not
               // necessary.
               nextIndex = sendIndex = response.lastLogIndex() + 1;
-              System.out.println(member.uri() + ": " + matchIndex);
               doCommit();
             }
           }

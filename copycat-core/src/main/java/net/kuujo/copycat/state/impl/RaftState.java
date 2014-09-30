@@ -117,17 +117,19 @@ abstract class RaftState implements State<RaftStateContext> {
   private AppendEntriesResponse doAppendEntries(AppendEntriesRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
-    if (context.log().lastIndex() > request.prevLogIndex() && !request.entries().isEmpty()) {
-      for (int i = 0; i < request.entries().size(); i++) {
-        RaftEntry entry = request.<RaftEntry>entries().get(i);
-        RaftEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
-        if (entry.term() != match.term()) {
-          context.log().removeAfter(request.prevLogIndex() + i);
-          context.log().appendEntries(request.entries().subList(i, request.entries().size()));
+    if (!request.entries().isEmpty()) {
+      if (context.log().lastIndex() > request.prevLogIndex()) {
+        for (int i = 0; i < request.entries().size(); i++) {
+          RaftEntry entry = request.<RaftEntry>entries().get(i);
+          RaftEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
+          if (entry.term() != match.term()) {
+            context.log().removeAfter(request.prevLogIndex() + i);
+            context.log().appendEntries(request.entries().subList(i, request.entries().size()));
+          }
         }
+      } else {
+        context.log().appendEntries(request.entries());
       }
-    } else {
-      context.log().appendEntries(request.entries());
     }
     return doApplyCommits(request);
   }
