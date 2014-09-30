@@ -12,7 +12,6 @@
 
   <properties>
     <chronicle.version>3.2.2</chronicle.version>
-    <jackson.version>2.4.1</jackson.version>
   </properties>
 
   <dependencies>
@@ -20,16 +19,6 @@
       <groupId>net.openhft</groupId>
       <artifactId>chronicle</artifactId>
       <version>${chronicle.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
-      <version>${jackson.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <version>${jackson.version}</version>
     </dependency>
   </dependencies>
 </project>
