@@ -326,7 +326,8 @@ public class RaftStateContext implements StateContext {
       future.completeExceptionally(new CopyCatException("No leader available"));
     } else if (!leaderConnected) {
       leaderConnectCallbacks.add(() -> {
-        leaderClient.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+        ProtocolHandler handler = leaderClient != null ? leaderClient : currentState;
+        handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
           } else {
