@@ -183,32 +183,29 @@ abstract class RaftState implements State<RaftStateContext> {
    */
   protected void applyEntry(long index, Entry entry) {
     // Validate that the entry being applied is the next entry in the log.
-    if (context.getLastApplied() != index-1) {
-      throw new IllegalStateException("Entry cannot be applied out of order");
+    if (context.getLastApplied() == index-1) {
+      // Ensure that the entry exists.
+      if (entry == null) {
+        throw new IllegalStateException("null entry cannot be applied to state machine");
+      }
+  
+      // If the entry is a command entry, apply the command to the state machine.
+      if (entry instanceof CommandEntry) {
+        applyCommand(index, (CommandEntry) entry);
+      }
+      // If the entry is a configuration entry, update the local cluster configuration.
+      else if (entry instanceof ConfigurationEntry) {
+        applyConfig(index, (ConfigurationEntry) entry);
+      }
+      // If the entry is a snapshot entry, apply the snapshot to the local state machine.
+      else if (entry instanceof SnapshotEntry) {
+        applySnapshot(index, (SnapshotEntry) entry);
+      }
+      // If the entry is of another type, e.g. a no-op entry, simply set last applied.
+      else {
+        context.setLastApplied(index);
+      }
     }
-
-    // Ensure that the entry exists.
-    if (entry == null) {
-      throw new IllegalStateException("null entry cannot be applied to state machine");
-    }
-
-    // If the entry is a command entry, apply the command to the state machine.
-    if (entry instanceof CommandEntry) {
-      applyCommand(index, (CommandEntry) entry);
-    }
-    // If the entry is a configuration entry, update the local cluster configuration.
-    else if (entry instanceof ConfigurationEntry) {
-      applyConfig(index, (ConfigurationEntry) entry);
-    }
-    // If the entry is a snapshot entry, apply the snapshot to the local state machine.
-    else if (entry instanceof SnapshotEntry) {
-      applySnapshot(index, (SnapshotEntry) entry);
-    }
-    // If the entry is of another type, e.g. a no-op entry, simply set last applied.
-    else {
-      context.setLastApplied(index);
-    }
-    compactLog();
   }
 
   /**
