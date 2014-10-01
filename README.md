@@ -11,13 +11,15 @@ and protocols. Copycat provides a simple extensible API that can be used to buil
 strongly consistent, fault/partition tolerant state machine over any mode of communication.
 Copycat's Raft implementation also supports advanced features of the Raft algorithm such as
 snapshotting and dynamic cluster configuration changes and provides additional optimizations
-for various scenarios such as failure detection and read-only state queries.
+pipelining, fast serialization, and read-only state queries.
 
 Copycat is a pluggable framework, providing protocol and endpoint implementations for
 various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
-*Note that this version requires Java 8. There is also a [Java 7 compatible version](https://github.com/kuujo/copycat/tree/java-1.7),
-however, the Java 7 version may be significantly behind master at any given point*
+*Please note that Copycat is still undergoing heavy development, and until a beta release,
+the API is subject to change.*
+
+*Copycat requires Java 8*
 
 User Manual
 ===========
