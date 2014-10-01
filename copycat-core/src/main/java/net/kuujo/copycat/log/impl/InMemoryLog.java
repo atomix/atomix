@@ -47,7 +47,7 @@ public class InMemoryLog extends AbstractLog implements Compactable {
   }
 
   @Override
-  public void open() throws IOException {
+  public void open() {
     log = new TreeMap<>();
   }
 
