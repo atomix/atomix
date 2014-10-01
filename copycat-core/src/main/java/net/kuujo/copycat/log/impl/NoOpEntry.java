@@ -15,17 +15,18 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import net.kuujo.copycat.log.Buffer;
-import net.kuujo.copycat.log.EntryReader;
 import net.kuujo.copycat.log.EntryType;
-import net.kuujo.copycat.log.EntryWriter;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 /**
  * No-op entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@EntryType(id=0, reader=NoOpEntry.Reader.class, writer=NoOpEntry.Writer.class)
+@EntryType(id=2, serializer=NoOpEntry.Serializer.class)
 public class NoOpEntry extends RaftEntry {
 
   private NoOpEntry() {
@@ -36,19 +37,26 @@ public class NoOpEntry extends RaftEntry {
     super(term);
   }
 
-  public static class Reader implements EntryReader<NoOpEntry> {
-    @Override
-    public NoOpEntry readEntry(Buffer buffer) {
-      NoOpEntry entry = new NoOpEntry();
-      entry.term = buffer.getLong();
-      return entry;
-    }
+  @Override
+  public String toString() {
+    return String.format("NoOpEntry[term=%d]", term);
   }
 
-  public static class Writer implements EntryWriter<NoOpEntry> {
+  /**
+   * No-op entry serializer.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static class Serializer extends com.esotericsoftware.kryo.Serializer<NoOpEntry> {
     @Override
-    public void writeEntry(NoOpEntry entry, Buffer buffer) {
-      buffer.appendLong(entry.term);
+    public NoOpEntry read(Kryo kryo, Input input, Class<NoOpEntry> type) {
+      NoOpEntry entry = new NoOpEntry();
+      entry.term = input.readLong();
+      return entry;
+    }
+    @Override
+    public void write(Kryo kryo, Output output, NoOpEntry entry) {
+      output.writeLong(entry.term);
     }
   }
 

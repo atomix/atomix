@@ -12,6 +12,7 @@
 
   <properties>
     <chronicle.version>3.2.2</chronicle.version>
+    <kryo.version>2.24.0</kryo.version>
   </properties>
 
   <dependencies>
@@ -19,6 +20,11 @@
       <groupId>net.openhft</groupId>
       <artifactId>chronicle</artifactId>
       <version>${chronicle.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.esotericsoftware.kryo</groupId>
+      <artifactId>kryo</artifactId>
+      <version>${kryo.version}</version>
     </dependency>
   </dependencies>
 </project>

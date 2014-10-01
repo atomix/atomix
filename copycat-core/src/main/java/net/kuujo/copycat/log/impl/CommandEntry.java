@@ -15,32 +15,32 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamClass;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import net.kuujo.copycat.log.Buffer;
-import net.kuujo.copycat.log.EntryReader;
 import net.kuujo.copycat.log.EntryType;
-import net.kuujo.copycat.log.EntryWriter;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 /**
  * State machine command entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@EntryType(id=1, reader=CommandEntry.Reader.class, writer=CommandEntry.Writer.class)
+@EntryType(id=3, serializer=CommandEntry.Serializer.class)
 public class CommandEntry extends RaftEntry {
   private String command;
   private List<Object> args;
 
   private CommandEntry() {
     super();
+  }
+
+  public CommandEntry(long term, String command, Object... args) {
+    this(term, command, Arrays.asList(args));
   }
 
   public CommandEntry(long term, String command, List<Object> args) {
@@ -72,84 +72,32 @@ public class CommandEntry extends RaftEntry {
     return String.format("CommandEntry[term=%d, command=%s, args=%s]", term, command, args);
   }
 
-  public static class Reader implements EntryReader<CommandEntry> {
+  /**
+   * Command entry serializer.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static class Serializer extends com.esotericsoftware.kryo.Serializer<CommandEntry> {
     @Override
     @SuppressWarnings("unchecked")
-    public CommandEntry readEntry(Buffer buffer) {
+    public CommandEntry read(Kryo kryo, Input input, Class<CommandEntry> type) {
       CommandEntry entry = new CommandEntry();
-      entry.term = buffer.getLong();
-      int commandLength = buffer.getInt();
-      byte[] commandBytes = buffer.getBytes(commandLength);
+      entry.term = input.readLong();
+      int commandLength = input.readInt();
+      byte[] commandBytes = new byte[commandLength];
+      input.readBytes(commandBytes);
       entry.command = new String(commandBytes);
-      int argsLength = buffer.getInt();
-      byte[] argsBytes = buffer.getBytes(argsLength);
-      ObjectInputStream stream = null;
-      try {
-        stream = new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), new ByteArrayInputStream(argsBytes));
-        entry.args = (List<Object>) stream.readObject();
-      } catch (IOException | ClassNotFoundException e) {
-        throw new RuntimeException(e);
-      } finally {
-        if (stream != null) {
-          try {
-            stream.close();
-          } catch (IOException e) {
-            throw new RuntimeException(e);
-          }
-        }
-      }
+      entry.args = kryo.readObject(input, ArrayList.class);
       return entry;
     }
-  }
-
-  public static class Writer implements EntryWriter<CommandEntry> {
     @Override
-    public void writeEntry(CommandEntry entry, Buffer buffer) {
-      buffer.appendLong(entry.term);
-      byte[] bytes = entry.command.getBytes();
-      buffer.appendInt(bytes.length);
-      buffer.appendBytes(bytes);
-      ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-      ObjectOutputStream stream = null;
-      try {
-        stream = new ObjectOutputStream(byteStream);
-        stream.writeObject(entry.args);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      } finally {
-        if (stream != null) {
-          try {
-            stream.close();
-          } catch (IOException e) {
-          }
-        }
-      }
-      byte[] argsBytes = byteStream.toByteArray();
-      buffer.appendInt(argsBytes.length);
-      buffer.appendBytes(argsBytes);
+    public void write(Kryo kryo, Output output, CommandEntry entry) {
+      output.writeLong(entry.term);
+      byte[] commandBytes = entry.command.getBytes();
+      output.writeInt(commandBytes.length);
+      output.writeBytes(commandBytes);
+      kryo.writeObject(output, entry.args);
     }
-  }
-
-  /**
-   * Object input stream that loads the class from the current context class loader.
-   */
-  private static class ClassLoaderObjectInputStream extends ObjectInputStream {
-    private final ClassLoader cl;
-
-    public ClassLoaderObjectInputStream(ClassLoader cl, InputStream in) throws IOException {
-      super(in);
-      this.cl = cl;
-    }
-
-    @Override
-    public Class<?> resolveClass(ObjectStreamClass desc) throws ClassNotFoundException, IOException {
-      try {
-        return cl.loadClass(desc.getName());
-      } catch (Exception e) {
-      }
-      return super.resolveClass(desc);
-    }
-
   }
 
 }

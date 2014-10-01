@@ -20,6 +20,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.esotericsoftware.kryo.Serializer;
+
 /**
  * Entry type annotation.
  *
@@ -33,16 +35,11 @@ public @interface EntryType {
   /**
    * Indicates the unique entry type ID.
    */
-  byte id();
+  int id();
 
   /**
-   * The entry type reader implementation.
+   * The entry type serializer implementation.
    */
-  Class<? extends EntryReader> reader();
-
-  /**
-   * The entry type writer implementation.
-   */
-  Class<? extends EntryWriter> writer();
+  Class<? extends Serializer> serializer();
 
 }

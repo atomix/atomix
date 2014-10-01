@@ -19,27 +19,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.EntryReader;
 import net.kuujo.copycat.log.EntryType;
 import net.kuujo.copycat.log.EntryTypes;
-import net.kuujo.copycat.log.EntryWriter;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogException;
+
+import com.esotericsoftware.kryo.Kryo;
 
 /**
  * Abstract base log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SuppressWarnings("rawtypes")
 public abstract class AbstractLog implements Log {
   private final Class<? extends Entry> entryType;
-  private final Map<Class<? extends Entry>, Byte> entryTypeMappings = new HashMap<>();
-  private final Map<Byte, EntryReader> readerMappings = new HashMap<>();
-  private final Map<Byte, EntryWriter> writerMappings = new HashMap<>();
+  private final Map<Class<? extends Entry>, Integer> entryTypeMappings = new HashMap<>();
+  private final Map<Integer, Class<? extends Entry>> entryClassMappings = new HashMap<>();
+  protected final Kryo kryo;
 
   protected AbstractLog(Class<? extends Entry> entryType) {
     this.entryType = entryType;
+    this.kryo = new Kryo();
     init();
   }
 
@@ -50,9 +50,9 @@ public abstract class AbstractLog implements Log {
     for (Class<? extends Entry> type : findEntryTypes(entryType).value()) {
       EntryType info = findEntryTypeInfo(type);
       entryTypeMappings.put(type, info.id());
+      entryClassMappings.put(info.id(), type);
       try {
-        readerMappings.put(info.id(), info.reader().newInstance());
-        writerMappings.put(info.id(), info.writer().newInstance());
+        kryo.register(type, info.serializer().newInstance(), info.id());
       } catch (InstantiationException | IllegalAccessException e) {
         throw new LogException(e);
       }
@@ -85,27 +85,6 @@ public abstract class AbstractLog implements Log {
       clazz = clazz.getSuperclass();
     }
     throw new LogException("Invalid entry type. No type info found.");
-  }
-
-  /**
-   * Returns the entry type identifier for an entry class.
-   */
-  protected byte getEntryType(Class<? extends Entry> entryClass) {
-    return entryTypeMappings.get(entryClass);
-  }
-
-  /**
-   * Returns an entry reader for the given entry type.
-   */
-  protected EntryReader getReader(byte entryType) {
-    return readerMappings.get(entryType);
-  }
-
-  /**
-   * Returns an entry writer for the given entry type.
-   */
-  protected EntryWriter getWriter(byte entryType) {
-    return writerMappings.get(entryType);
   }
 
 }

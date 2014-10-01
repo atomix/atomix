@@ -15,12 +15,14 @@
  */
 package net.kuujo.copycat;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.EntryType;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
@@ -30,18 +32,90 @@ import net.kuujo.copycat.log.impl.SnapshotEntry;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.Serializer;
+import com.esotericsoftware.kryo.io.ByteBufferInput;
+import com.esotericsoftware.kryo.io.ByteBufferOutput;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 
 /**
  * Base log test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class LogTest {
+public class LogTest {
 
   /**
    * Creates a test log instance.
    */
-  protected abstract Log createLog();
+  protected Log createLog() {
+    return null;
+  }
+
+  @Test
+  public void testSerializeNoOpEntry() throws Exception {
+    testSerializeEntry(NoOpEntry.class, new NoOpEntry(1));
+  }
+
+  @Test
+  public void testDeserializeNoOpEntry() throws Exception {
+    testDeserializeEntry(NoOpEntry.class, new NoOpEntry(1));
+  }
+
+  @Test
+  public void testSerializeCommandEntry() throws Exception {
+    testSerializeEntry(CommandEntry.class, new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
+  }
+
+  @Test
+  public void testDeserializeCommandEntry() throws Exception {
+    testDeserializeEntry(CommandEntry.class, new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
+  }
+
+  @Test
+  public void testSerializeConfigurationEntry() throws Exception {
+    testSerializeEntry(ConfigurationEntry.class, new ConfigurationEntry(1, new HashSet<String>(Arrays.asList("foo", "bar"))));
+  }
+
+  @Test
+  public void testDeserializeConfigurationEntry() throws Exception {
+    testDeserializeEntry(ConfigurationEntry.class, new ConfigurationEntry(1, new HashSet<String>(Arrays.asList("foo", "bar"))));
+  }
+
+  @Test
+  public void testSerializeSnapshotEntry() throws Exception {
+    testSerializeEntry(SnapshotEntry.class, new SnapshotEntry(1, new HashSet<String>(Arrays.asList("foo", "bar")), new byte[]{1, 2, 3}));
+  }
+
+  @Test
+  public void testDeserializeSnapshotEntry() throws Exception {
+    testSerializeEntry(SnapshotEntry.class, new SnapshotEntry(1, new HashSet<String>(Arrays.asList("foo", "bar")), new byte[]{1, 2, 3}));
+  }
+
+  @SuppressWarnings("rawtypes")
+  private <T extends Entry> void testSerializeEntry(Class<T> entryType, T entry) throws Exception {
+    Kryo kryo = new Kryo();
+    ByteBuffer buffer = ByteBuffer.allocate(4096);
+    Output output = new ByteBufferOutput(buffer);
+    Class<? extends Serializer> serializer = entryType.getAnnotation(EntryType.class).serializer();
+    kryo.register(entryType, serializer.newInstance(), entryType.getAnnotation(EntryType.class).id());
+    kryo.writeClassAndObject(output, entry);
+  }
+
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private <T extends Entry> void testDeserializeEntry(Class<T> entryType, T entry) throws Exception {
+    Kryo kryo = new Kryo();
+    ByteBuffer buffer = ByteBuffer.allocate(4096);
+    Output output = new ByteBufferOutput(buffer);
+    Input input = new ByteBufferInput(buffer);
+    Class<? extends Serializer> serializer = entryType.getAnnotation(EntryType.class).serializer();
+    kryo.register(entryType, serializer.newInstance(), entryType.getAnnotation(EntryType.class).id());
+    kryo.writeClassAndObject(output, entry);
+    T result = (T) kryo.readClassAndObject(input);
+    Assert.assertEquals(entry, result);
+  }
 
   @Test
   public void testAppendEntry() throws Exception {
@@ -158,8 +232,8 @@ public abstract class LogTest {
 
     log.removeAfter(2);
     Assert.assertTrue(log.firstIndex() == 1);
-    Assert.assertTrue(log.lastIndex() == 2);
     Assert.assertTrue(log.firstEntry() instanceof NoOpEntry);
+    Assert.assertTrue(log.lastIndex() == 2);
     Assert.assertTrue(log.lastEntry() instanceof ConfigurationEntry);
     log.close();
   }

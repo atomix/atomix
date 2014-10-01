@@ -231,7 +231,7 @@ abstract class RaftState implements State<RaftStateContext> {
    */
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
-      Set<String> members = ((ConfigurationEntry) entry).members();
+      Set<String> members = ((ConfigurationEntry) entry).cluster();
       members.remove(context.clusterConfig().getLocalMember());
       context.clusterConfig().setRemoteMembers(members);
     } catch (Exception e) {
@@ -260,7 +260,7 @@ abstract class RaftState implements State<RaftStateContext> {
     }
 
     // Set the local cluster configuration according to the snapshot cluster membership.
-    Set<String> members = entry.config();
+    Set<String> members = entry.cluster();
     members.remove(context.clusterConfig().getLocalMember());
     context.clusterConfig().setRemoteMembers(members);
 

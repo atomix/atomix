@@ -18,27 +18,28 @@ package net.kuujo.copycat.log.impl;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.kuujo.copycat.log.Buffer;
-import net.kuujo.copycat.log.EntryReader;
 import net.kuujo.copycat.log.EntryType;
-import net.kuujo.copycat.log.EntryWriter;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 /**
  * Cluster configuration entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@EntryType(id=2, reader=ConfigurationEntry.Reader.class, writer=ConfigurationEntry.Writer.class)
+@EntryType(id=4, serializer=ConfigurationEntry.Serializer.class)
 public class ConfigurationEntry extends RaftEntry {
-  private Set<String> members;
+  private Set<String> cluster;
 
   private ConfigurationEntry() {
     super();
   }
 
-  public ConfigurationEntry(long term, Set<String> members) {
+  public ConfigurationEntry(long term, Set<String> cluster) {
     super(term);
-    this.members = members;
+    this.cluster = cluster;
   }
 
   /**
@@ -46,30 +47,33 @@ public class ConfigurationEntry extends RaftEntry {
    * 
    * @return A set of cluster member addresses.
    */
-  public Set<String> members() {
-    return members;
+  public Set<String> cluster() {
+    return cluster;
   }
 
   @Override
   public String toString() {
-    return String.format("ConfigurationEntry[term=%d, members=%s]", term(), members);
+    return String.format("ConfigurationEntry[term=%d, cluster=%s]", term(), cluster);
   }
 
-  public static class Reader implements EntryReader<ConfigurationEntry> {
+  /**
+   * Configuration entry serializer.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static class Serializer extends com.esotericsoftware.kryo.Serializer<ConfigurationEntry> {
     @Override
-    public ConfigurationEntry readEntry(Buffer buffer) {
+    @SuppressWarnings("unchecked")
+    public ConfigurationEntry read(Kryo kryo, Input input, Class<ConfigurationEntry> type) {
       ConfigurationEntry entry = new ConfigurationEntry();
-      entry.term = buffer.getLong();
-      entry.members = buffer.getCollection(new HashSet<String>(), String.class);
+      entry.term = input.readLong();
+      entry.cluster = kryo.readObject(input, HashSet.class);
       return entry;
     }
-  }
-
-  public static class Writer implements EntryWriter<ConfigurationEntry> {
     @Override
-    public void writeEntry(ConfigurationEntry entry, Buffer buffer) {
-      buffer.appendLong(entry.term);
-      buffer.appendCollection(entry.members);
+    public void write(Kryo kryo, Output output, ConfigurationEntry entry) {
+      output.writeLong(entry.term);
+      kryo.writeObject(output, entry.cluster);
     }
   }
 

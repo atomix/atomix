@@ -17,13 +17,13 @@ package net.kuujo.copycat.log.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import net.kuujo.copycat.log.Buffer;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.LogIndexOutOfBoundsException;
@@ -32,6 +32,9 @@ import net.openhft.chronicle.Excerpt;
 import net.openhft.chronicle.ExcerptAppender;
 import net.openhft.chronicle.ExcerptTailer;
 import net.openhft.chronicle.IndexedChronicle;
+
+import com.esotericsoftware.kryo.io.ByteBufferInput;
+import com.esotericsoftware.kryo.io.ByteBufferOutput;
 
 /**
  * Java chronicle based log implementation.
@@ -42,15 +45,15 @@ public class PersistentLog extends AbstractLog implements Compactable {
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
   private static final SimpleDateFormat fileNameFormat = new SimpleDateFormat("yyyyMMddhhmmssSSS");
+  private final ByteBuffer buffer = ByteBuffer.allocate(4096);
+  private final ByteBufferOutput output = new ByteBufferOutput(buffer);
+  private final ByteBufferInput input = new ByteBufferInput(buffer);
   private final File baseFile;
   private File logFile;
   private Chronicle chronicle;
   private Excerpt excerpt;
-  private Buffer excerptBuffer;
   private ExcerptAppender appender;
-  private Buffer appenderBuffer;
   private ExcerptTailer tailer;
-  private Buffer tailerBuffer;
   private long firstIndex;
   private long lastIndex;
 
@@ -77,11 +80,8 @@ public class PersistentLog extends AbstractLog implements Compactable {
     chronicle = new IndexedChronicle(logFile.getAbsolutePath());
 
     excerpt = chronicle.createExcerpt();
-    excerptBuffer = new PersistentBuffer(excerpt);
     appender = chronicle.createAppender();
-    appenderBuffer = new PersistentBuffer(appender);
     tailer = chronicle.createTailer();
-    tailerBuffer = new PersistentBuffer(tailer);
 
     tailer.toStart();
     while (tailer.nextIndex()) {
@@ -164,15 +164,16 @@ public class PersistentLog extends AbstractLog implements Compactable {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public long appendEntry(Entry entry) {
     long index = nextIndex();
     appender.startExcerpt();
     appender.writeLong(index);
     appender.writeByte(ACTIVE);
-    byte entryType = getEntryType(entry.getClass());
-    appender.writeByte(entryType);
-    getWriter(entryType).writeEntry(entry, appenderBuffer);
+    kryo.writeClassAndObject(output, entry);
+    byte[] bytes = output.toBytes();
+    appender.writeInt(bytes.length);
+    appender.write(bytes);
+    output.clear();
     appender.finish();
     return index;
   }
@@ -226,8 +227,15 @@ public class PersistentLog extends AbstractLog implements Compactable {
     long matchIndex = findAbsoluteIndex(index);
     excerpt.index(matchIndex);
     excerpt.skip(9);
-    byte entryType = excerpt.readByte();
-    return (T) getReader(entryType).readEntry(excerptBuffer);
+    int length = excerpt.readInt();
+    byte[] bytes = new byte[length];
+    excerpt.read(bytes);
+    buffer.put(bytes);
+    buffer.rewind();
+    input.setBuffer(buffer);
+    T entry = (T) kryo.readClassAndObject(input);
+    buffer.clear();
+    return entry;
   }
 
   @Override
@@ -243,18 +251,19 @@ public class PersistentLog extends AbstractLog implements Compactable {
     List<T> entries = new ArrayList<>();
     long matchIndex = findAbsoluteIndex(from);
     tailer.index(matchIndex);
-    tailer.skip(9);
-    byte entryType = tailer.readByte();
-    entries.add((T) getReader(entryType).readEntry(tailerBuffer));
-    while (tailer.nextIndex() && matchIndex < to) {
+    do {
       long index = tailer.readLong();
       byte status = tailer.readByte();
       if (status == ACTIVE) {
-        entryType = tailer.readByte();
-        entries.add((T) getReader(entryType).readEntry(tailerBuffer));
+        int length = tailer.readInt();
+        byte[] bytes = new byte[length];
+        tailer.read(bytes);
+        buffer.put(bytes);
+        entries.add((T) kryo.readClassAndObject(input));
+        buffer.clear();
         matchIndex = index;
       }
-    }
+    } while (tailer.nextIndex() && matchIndex <= to);
     return entries;
   }
 
@@ -316,7 +325,6 @@ public class PersistentLog extends AbstractLog implements Compactable {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void compact(long index, Entry snapshot) throws IOException {
     if (index > firstIndex) {
       // Create a new log file using the most recent timestamp.
@@ -326,13 +334,14 @@ public class PersistentLog extends AbstractLog implements Compactable {
       // Create a new chronicle for the new log file.
       Chronicle chronicle = new IndexedChronicle(newLogFile.getAbsolutePath());
       ExcerptAppender appender = chronicle.createAppender();
-      Buffer appenderBuffer = new PersistentBuffer(appender);
       appender.startExcerpt();
       appender.writeLong(index);
       appender.writeByte(ACTIVE);
-      byte type = getEntryType(snapshot.getClass());
-      appender.writeByte(type);
-      getWriter(type).writeEntry(snapshot, appenderBuffer);
+      kryo.writeClassAndObject(output, snapshot);
+      byte[] snapshotBytes = output.toBytes();
+      appender.writeInt(snapshotBytes.length);
+      appender.write(snapshotBytes);
+      output.clear();
       appender.finish();
   
       // Iterate through entries equal to or greater than the given index and copy them to the new chronicle.
@@ -342,13 +351,14 @@ public class PersistentLog extends AbstractLog implements Compactable {
         long entryIndex = tailer.readLong();
         byte entryStatus = tailer.readByte();
         if (entryStatus == ACTIVE) {
-          byte entryType = tailer.readByte();
-          Entry entry = getReader(entryType).readEntry(tailerBuffer);
+          int length = tailer.readInt();
+          byte[] bytes = new byte[length];
+          tailer.read(bytes);
           appender.startExcerpt();
           appender.writeLong(entryIndex);
           appender.writeByte(entryStatus);
-          appender.writeByte(entryType);
-          getWriter(entryType).writeEntry(entry, appenderBuffer);
+          appender.writeInt(length);
+          appender.write(bytes);
           appender.finish();
         }
       }
@@ -357,11 +367,8 @@ public class PersistentLog extends AbstractLog implements Compactable {
       this.logFile = newLogFile;
       this.chronicle = chronicle;
       this.excerpt = chronicle.createExcerpt();
-      this.excerptBuffer = new PersistentBuffer(excerpt);
       this.appender = appender;
-      this.appenderBuffer = appenderBuffer;
       this.tailer = chronicle.createTailer();
-      this.tailerBuffer = new PersistentBuffer(tailer);
       this.firstIndex = index;
   
       // Finally, delete the old log file.
@@ -378,7 +385,9 @@ public class PersistentLog extends AbstractLog implements Compactable {
 
   @Override
   public void delete() {
-    chronicle.clear();
+    if (chronicle != null) {
+      chronicle.clear();
+    }
   }
 
 }

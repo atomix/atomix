@@ -18,38 +18,39 @@ package net.kuujo.copycat.log.impl;
 import java.util.HashSet;
 import java.util.Set;
 
-import net.kuujo.copycat.log.Buffer;
-import net.kuujo.copycat.log.EntryReader;
 import net.kuujo.copycat.log.EntryType;
-import net.kuujo.copycat.log.EntryWriter;
+
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 
 /**
  * Snapshot log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@EntryType(id=3, reader=SnapshotEntry.Reader.class, writer=SnapshotEntry.Writer.class)
+@EntryType(id=5, serializer=SnapshotEntry.Serializer.class)
 public class SnapshotEntry extends RaftEntry {
-  private Set<String> config;
+  private Set<String> cluster;
   private byte[] data;
 
   private SnapshotEntry() {
     super();
   }
 
-  public SnapshotEntry(long term, Set<String> config, byte[] data) {
+  public SnapshotEntry(long term, Set<String> cluster, byte[] data) {
     super(term);
-    this.config = config;
+    this.cluster = cluster;
     this.data = data;
   }
 
   /**
-   * Returns the snapshot configuration.
+   * Returns the snapshot cluster configuration.
    *
-   * @return The snapshot configuration.
+   * @return The snapshot cluster configuration.
    */
-  public Set<String> config() {
-    return config;
+  public Set<String> cluster() {
+    return cluster;
   }
 
   /**
@@ -63,28 +64,32 @@ public class SnapshotEntry extends RaftEntry {
 
   @Override
   public String toString() {
-    return String.format("SnapshotEntry[term=%d, config=%s, data=...]", term, config);
+    return String.format("SnapshotEntry[term=%d, config=%s, data=...]", term, cluster);
   }
 
-  public static class Reader implements EntryReader<SnapshotEntry> {
+  /**
+   * Snapshot entry serializer.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  public static class Serializer extends com.esotericsoftware.kryo.Serializer<SnapshotEntry> {
     @Override
-    public SnapshotEntry readEntry(Buffer buffer) {
+    @SuppressWarnings("unchecked")
+    public SnapshotEntry read(Kryo kryo, Input input, Class<SnapshotEntry> type) {
       SnapshotEntry entry = new SnapshotEntry();
-      entry.term = buffer.getLong();
-      entry.config = buffer.getCollection(new HashSet<String>(), String.class);
-      int length = buffer.getInt();
-      entry.data = buffer.getBytes(length);
+      entry.term = input.readLong();
+      entry.cluster = kryo.readObject(input, HashSet.class);
+      int length = input.readInt();
+      entry.data = new byte[length];
+      input.readBytes(entry.data);
       return entry;
     }
-  }
-
-  public static class Writer implements EntryWriter<SnapshotEntry> {
     @Override
-    public void writeEntry(SnapshotEntry entry, Buffer buffer) {
-      buffer.appendLong(entry.term);
-      buffer.appendCollection(entry.config);
-      buffer.appendInt(entry.data.length);
-      buffer.appendBytes(entry.data);
+    public void write(Kryo kryo, Output output, SnapshotEntry entry) {
+      output.writeLong(entry.term);
+      kryo.writeObject(output, entry.cluster);
+      output.writeInt(entry.data.length);
+      output.writeBytes(entry.data);
     }
   }
 

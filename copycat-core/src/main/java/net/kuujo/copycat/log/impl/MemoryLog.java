@@ -24,13 +24,19 @@ import java.util.TreeMap;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
 
+import com.esotericsoftware.kryo.io.ByteBufferInput;
+import com.esotericsoftware.kryo.io.ByteBufferOutput;
+
 /**
  * Memory-based log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemoryLog extends AbstractLog implements Compactable {
-  private TreeMap<Long, ByteBuffer> log;
+  private TreeMap<Long, byte[]> log;
+  private final ByteBuffer buffer = ByteBuffer.allocate(4096);
+  private final ByteBufferOutput output = new ByteBufferOutput(buffer);
+  private final ByteBufferInput input = new ByteBufferInput(buffer);
 
   public MemoryLog() {
     super(RaftEntry.class);
@@ -56,14 +62,12 @@ public class MemoryLog extends AbstractLog implements Compactable {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public long appendEntry(Entry entry) {
     long index = log.isEmpty() ? 1 : log.lastKey() + 1;
-    MemoryBuffer buffer = new MemoryBuffer();
-    byte entryType = getEntryType(entry.getClass());
-    buffer.appendByte(entryType);
-    getWriter(entryType).writeEntry(entry, buffer);
-    log.put(index, buffer.toByteBuffer());
+    kryo.writeClassAndObject(output, entry);
+    byte[] bytes = output.toBytes();
+    log.put(index, bytes);
+    output.clear();
     return index;
   }
 
@@ -96,15 +100,8 @@ public class MemoryLog extends AbstractLog implements Compactable {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T extends Entry> T firstEntry() {
-    ByteBuffer byteBuffer = !log.isEmpty() ? log.firstEntry().getValue() : null;
-    if (byteBuffer != null) {
-      MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
-      byte entryType = buffer.getByte();
-      return (T) getReader(entryType).readEntry(buffer);
-    }
-    return null;
+    return !log.isEmpty() ? getEntry(log.firstKey()) : null;
   }
 
   @Override
@@ -113,26 +110,21 @@ public class MemoryLog extends AbstractLog implements Compactable {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T extends Entry> T lastEntry() {
-    ByteBuffer byteBuffer = !log.isEmpty() ? log.lastEntry().getValue() : null;
-    if (byteBuffer != null) {
-      MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
-      byte entryType = buffer.getByte();
-      return (T) getReader(entryType).readEntry(buffer);
-    }
-    return null;
+    return !log.isEmpty() ? getEntry(log.lastKey()) : null;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public <T extends Entry> T getEntry(long index) {
-    ByteBuffer byteBuffer = log.get(index);
-    if (byteBuffer != null) {
-      byteBuffer.rewind();
-      MemoryBuffer buffer = new MemoryBuffer(byteBuffer);
-      byte entryType = buffer.getByte();
-      return (T) getReader(entryType).readEntry(buffer);
+    byte[] bytes = log.get(index);
+    if (bytes != null) {
+      buffer.put(bytes);
+      buffer.rewind();
+      input.setBuffer(buffer);
+      T entry = (T) kryo.readClassAndObject(input);
+      buffer.clear();
+      return entry;
     }
     return null;
   }
@@ -160,14 +152,12 @@ public class MemoryLog extends AbstractLog implements Compactable {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public void compact(long index, Entry entry) throws IOException {
-    MemoryBuffer buffer = new MemoryBuffer();
-    byte entryType = getEntryType(entry.getClass());
-    buffer.appendByte(entryType);
-    getWriter(entryType).writeEntry(entry, buffer);
+    kryo.writeClassAndObject(output, entry);
+    byte[] bytes = output.toBytes();
+    output.clear();
     log.headMap(index).clear();
-    log.put(index, buffer.toByteBuffer());
+    log.put(index, bytes);
   }
 
   @Override
