@@ -32,17 +32,17 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryLog extends AbstractLog implements Compactable {
+public class InMemoryLog extends AbstractLog implements Compactable {
   private TreeMap<Long, byte[]> log;
   private final ByteBuffer buffer = ByteBuffer.allocate(4096);
   private final ByteBufferOutput output = new ByteBufferOutput(buffer);
   private final ByteBufferInput input = new ByteBufferInput(buffer);
 
-  public MemoryLog() {
+  public InMemoryLog() {
     super(RaftEntry.class);
   }
 
-  public MemoryLog(Class<? extends Entry> entryType) {
+  public InMemoryLog(Class<? extends Entry> entryType) {
     super(entryType);
   }
 

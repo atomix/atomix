@@ -26,7 +26,7 @@ import net.kuujo.copycat.event.EventHandlersRegistry;
 import net.kuujo.copycat.event.EventsContext;
 import net.kuujo.copycat.event.impl.DefaultEventsContext;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.MemoryLog;
+import net.kuujo.copycat.log.impl.InMemoryLog;
 import net.kuujo.copycat.protocol.CorrelationStrategy;
 import net.kuujo.copycat.protocol.TimerStrategy;
 import net.kuujo.copycat.registry.Registry;
@@ -78,19 +78,19 @@ public class CopyCatContext {
   private final EventsContext events;
 
   public CopyCatContext(StateMachine stateMachine) {
-    this(stateMachine, new MemoryLog(), new ClusterConfig(), new CopyCatConfig());
+    this(stateMachine, new InMemoryLog(), new ClusterConfig(), new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster) {
-    this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig());
+    this(stateMachine, new InMemoryLog(), cluster, new CopyCatConfig());
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, Registry registry) {
-    this(stateMachine, new MemoryLog(), cluster, new CopyCatConfig(), registry);
+    this(stateMachine, new InMemoryLog(), cluster, new CopyCatConfig(), registry);
   }
 
   public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this(stateMachine, new MemoryLog(), cluster, config, registry);
+    this(stateMachine, new InMemoryLog(), cluster, config, registry);
   }
 
   public CopyCatContext(StateMachine stateMachine, Log log) {
@@ -247,7 +247,7 @@ public class CopyCatContext {
     private CopyCatConfig config = new CopyCatConfig();
     private ClusterConfig cluster = new ClusterConfig();
     private StateMachine stateMachine;
-    private Log log = new MemoryLog();
+    private Log log = new InMemoryLog();
     private Registry registry = new BasicRegistry();
 
     /**

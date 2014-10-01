@@ -16,18 +16,18 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.MemoryLog;
+import net.kuujo.copycat.log.impl.InMemoryLog;
 
 /**
  * Memory log test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryLogTest extends LogTest {
+public class InMemoryLogTest extends LogTest {
 
   @Override
   protected Log createLog() {
-    return new MemoryLog();
+    return new InMemoryLog();
   }
 
 }
