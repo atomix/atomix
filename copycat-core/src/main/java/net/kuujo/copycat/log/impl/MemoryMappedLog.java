@@ -18,10 +18,7 @@ package net.kuujo.copycat.log.impl;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import net.kuujo.copycat.log.Compactable;
@@ -41,14 +38,12 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PersistentLog extends AbstractLog implements Compactable {
+public class MemoryMappedLog extends AbstractFileLog implements Compactable {
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
-  private static final SimpleDateFormat fileNameFormat = new SimpleDateFormat("yyyyMMddhhmmssSSS");
   private final ByteBuffer buffer = ByteBuffer.allocate(4096);
   private final ByteBufferOutput output = new ByteBufferOutput(buffer);
   private final ByteBufferInput input = new ByteBufferInput(buffer);
-  private final File baseFile;
   private File logFile;
   private Chronicle chronicle;
   private Excerpt excerpt;
@@ -57,21 +52,20 @@ public class PersistentLog extends AbstractLog implements Compactable {
   private long firstIndex;
   private long lastIndex;
 
-  public PersistentLog(String baseName) {
+  public MemoryMappedLog(String baseName) {
     this(baseName, RaftEntry.class);
   }
 
-  public PersistentLog(File baseFile) {
+  public MemoryMappedLog(File baseFile) {
     this(baseFile, RaftEntry.class);
   }
 
-  public PersistentLog(String baseName, Class<? extends Entry> entryType) {
+  public MemoryMappedLog(String baseName, Class<? extends Entry> entryType) {
     this(new File(baseName), entryType);
   }
 
-  public PersistentLog(File baseFile, Class<? extends Entry> entryType) {
-    super(entryType);
-    this.baseFile = baseFile;
+  public MemoryMappedLog(File baseFile, Class<? extends Entry> entryType) {
+    super(baseFile, entryType);
   }
 
   @Override
@@ -92,50 +86,6 @@ public class PersistentLog extends AbstractLog implements Compactable {
           firstIndex = index;
         }
         lastIndex = index;
-      }
-    }
-  }
-
-  /**
-   * Finds the most recent long file.
-   */
-  private File findLogFile() {
-    baseFile.getAbsoluteFile().getParentFile().mkdirs();
-    File logFile = null;
-    long logTime = 0;
-    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(file -> file.isFile())) {
-      if (file.getName().substring(0, file.getName().indexOf('.')).equals(baseFile.getName())) {
-        try {
-          long fileTime = fileNameFormat.parse(file.getName().substring(file.getName().indexOf('.') + 1, file.getName().indexOf('.', file.getName().indexOf('.') + 1))).getTime();
-          if (fileTime > logTime) {
-            logFile = new File(file.getAbsoluteFile().getParentFile().getAbsolutePath(), file.getName().substring(0, file.getName().indexOf('.', file.getName().indexOf('.') + 1)));
-            logTime  = fileTime;
-          }
-        } catch (ParseException e) {
-        }
-      }
-    }
-
-    if (logFile == null) {
-      logFile = createLogFile();
-    }
-    return logFile;
-  }
-
-  /**
-   * Creates a new log file.
-   */
-  private File createLogFile() {
-    return new File(baseFile.getAbsoluteFile().getParentFile().getAbsolutePath(), String.format("%s.%s", baseFile.getName(), fileNameFormat.format(new Date())));
-  }
-
-  /**
-   * Deletes a log file.
-   */
-  private void deleteLogFile(File logFile) {
-    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(file -> file.isFile())) {
-      if (file.getName().startsWith(logFile.getName())) {
-        file.delete();
       }
     }
   }

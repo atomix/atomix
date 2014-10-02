@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.PersistentLog;
+import net.kuujo.copycat.log.impl.MemoryMappedLog;
 
 import org.junit.After;
 import org.junit.Before;
@@ -34,7 +34,7 @@ public class PersistentLogTest extends LogTest {
 
   @Before
   public void beforeClass() {
-    log = new PersistentLog(UUID.randomUUID().toString());
+    log = new MemoryMappedLog(UUID.randomUUID().toString());
   }
 
   @Override
