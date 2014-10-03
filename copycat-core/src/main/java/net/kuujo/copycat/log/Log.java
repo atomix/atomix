@@ -138,6 +138,13 @@ public interface Log {
   void removeAfter(long index);
 
   /**
+   * Forces the log to sync to disk (if the log is persistent).
+   *
+   * @throws IOException If the log file could not be synced.
+   */
+  void sync() throws IOException;
+
+  /**
    * Closes the log.
    *
    * @throws IOException If the log file could not be closed.

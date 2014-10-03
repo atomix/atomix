@@ -161,6 +161,10 @@ public class InMemoryLog extends AbstractLog implements Compactable {
   }
 
   @Override
+  public void sync() {
+  }
+
+  @Override
   public void close() {
     log = null;
   }

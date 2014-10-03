@@ -327,6 +327,11 @@ public class MemoryMappedFileLog extends AbstractFileLog implements Compactable 
   }
 
   @Override
+  public void sync() {
+    appender.nextSynchronous(true);
+  }
+
+  @Override
   public void close() throws IOException {
     chronicle.close();
     firstIndex = 0;
