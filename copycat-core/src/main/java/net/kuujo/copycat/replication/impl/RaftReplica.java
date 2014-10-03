@@ -109,6 +109,10 @@ class RaftReplica {
       return future;
     }
 
+    if (index > matchIndex) {
+      return commit(index);
+    }
+
     CompletableFuture<Long> future = new CompletableFuture<>();
     if (!pingFutures.isEmpty() && pingFutures.lastKey() >= index) {
       return pingFutures.lastEntry().getValue();
@@ -154,7 +158,12 @@ class RaftReplica {
       return CompletableFuture.completedFuture(index);
     }
 
-    CompletableFuture<Long> future = new CompletableFuture<>();
+    CompletableFuture<Long> future = commitFutures.get(index);
+    if (future != null) {
+      return future;
+    }
+
+    future = new CompletableFuture<>();
     commitFutures.put(index, future);
 
     if (index >= sendIndex) {
