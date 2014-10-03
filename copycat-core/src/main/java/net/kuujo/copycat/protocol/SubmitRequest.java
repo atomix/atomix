@@ -26,16 +26,16 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitCommandRequest extends Request {
+public class SubmitRequest extends Request {
   private static final long serialVersionUID = -8657438748181101192L;
   private String command;
   private List<Object> args;
 
-  public SubmitCommandRequest() {
+  public SubmitRequest() {
     super(null);
   }
 
-  public SubmitCommandRequest(Object id, String command, List<Object> args) {
+  public SubmitRequest(Object id, String command, List<Object> args) {
     super(id);
     this.command = command;
     this.args = args;

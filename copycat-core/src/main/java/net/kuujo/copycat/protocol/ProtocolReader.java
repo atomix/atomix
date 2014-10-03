@@ -62,7 +62,7 @@ public class ProtocolReader {
   /**
    * Reads an append entries request.
    */
-  private AppendEntriesRequest appendEntriesRequest(ByteBuffer buffer) {
+  private SyncRequest appendEntriesRequest(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -79,13 +79,13 @@ public class ProtocolReader {
     buffer.get(entriesBytes);
     List<Entry> entries = deserializeObject(entriesBytes);
     long commitIndex = buffer.getLong();
-    return new AppendEntriesRequest(id, term, leader, prevLogIndex, prevLogTerm, entries, commitIndex);
+    return new SyncRequest(id, term, leader, prevLogIndex, prevLogTerm, entries, commitIndex);
   }
 
   /**
    * Reads a request vote request.
    */
-  private RequestVoteRequest requestVoteRequest(ByteBuffer buffer) {
+  private PollRequest requestVoteRequest(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -97,13 +97,13 @@ public class ProtocolReader {
     String candidate = new String(candidateBytes);
     long lastLogIndex = buffer.getLong();
     long lastLogTerm = buffer.getLong();
-    return new RequestVoteRequest(id, term, candidate, lastLogIndex, lastLogTerm);
+    return new PollRequest(id, term, candidate, lastLogIndex, lastLogTerm);
   }
 
   /**
    * Reads a submit command request.
    */
-  private SubmitCommandRequest submitCommandRequest(ByteBuffer buffer) {
+  private SubmitRequest submitCommandRequest(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -116,7 +116,7 @@ public class ProtocolReader {
     byte[] argsBytes = new byte[argsLength];
     buffer.get(argsBytes);
     List<Object> args = deserializeObject(argsBytes);
-    return new SubmitCommandRequest(id, command, args);
+    return new SubmitRequest(id, command, args);
   }
 
   /**
@@ -143,7 +143,7 @@ public class ProtocolReader {
   /**
    * Reads an append entries response.
    */
-  private AppendEntriesResponse appendEntriesResponse(ByteBuffer buffer) {
+  private SyncResponse appendEntriesResponse(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -151,26 +151,26 @@ public class ProtocolReader {
     long term = buffer.getLong();
     boolean succeeded = buffer.getInt() == 1;
     long lastLogIndex = buffer.getLong();
-    return new AppendEntriesResponse(id, term, succeeded, lastLogIndex);
+    return new SyncResponse(id, term, succeeded, lastLogIndex);
   }
 
   /**
    * Reads a request vote response.
    */
-  private RequestVoteResponse requestVoteResponse(ByteBuffer buffer) {
+  private PollResponse requestVoteResponse(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
     Object id = deserializeObject(idBytes);
     long term = buffer.getLong();
     boolean voteGranted = buffer.getInt() == 1;
-    return new RequestVoteResponse(id, term, voteGranted);
+    return new PollResponse(id, term, voteGranted);
   }
 
   /**
    * Reads a submit command response.
    */
-  private SubmitCommandResponse submitCommandResponse(ByteBuffer buffer) {
+  private SubmitResponse submitCommandResponse(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -179,7 +179,7 @@ public class ProtocolReader {
     byte[] resultBytes = new byte[resultLength];
     buffer.get(resultBytes);
     Object result = deserializeObject(resultBytes);
-    return new SubmitCommandResponse(id, result);
+    return new SubmitResponse(id, result);
   }
 
   /**

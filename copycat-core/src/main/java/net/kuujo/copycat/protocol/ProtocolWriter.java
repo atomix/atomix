@@ -40,12 +40,12 @@ public class ProtocolWriter {
    * @return The written request.
    */
   public byte[] writeRequest(Request request) {
-    if (request instanceof AppendEntriesRequest) {
-      return appendEntriesRequest((AppendEntriesRequest) request);
-    } else if (request instanceof RequestVoteRequest) {
-      return requestVoteRequest((RequestVoteRequest) request);
-    } else if (request instanceof SubmitCommandRequest) {
-      return submitCommandRequest((SubmitCommandRequest) request);
+    if (request instanceof SyncRequest) {
+      return appendEntriesRequest((SyncRequest) request);
+    } else if (request instanceof PollRequest) {
+      return requestVoteRequest((PollRequest) request);
+    } else if (request instanceof SubmitRequest) {
+      return submitCommandRequest((SubmitRequest) request);
     }
     throw new RuntimeException("Invalid request type");
   }
@@ -53,7 +53,7 @@ public class ProtocolWriter {
   /**
    * Writes an append entries request.
    */
-  private byte[] appendEntriesRequest(AppendEntriesRequest request) {
+  private byte[] appendEntriesRequest(SyncRequest request) {
     byte[] idBytes = serializeObject(request.id());
     byte[] leaderBytes = request.leader().getBytes();
     byte[] entriesBytes = serializeObject(request.entries());
@@ -74,7 +74,7 @@ public class ProtocolWriter {
   /**
    * Writes a request vote request.
    */
-  private byte[] requestVoteRequest(RequestVoteRequest request) {
+  private byte[] requestVoteRequest(PollRequest request) {
     byte[] idBytes = serializeObject(request.id());
     byte[] candidateBytes = request.candidate().getBytes();
     ByteBuffer buffer = ByteBuffer.allocate(1 + 8 * 3 + 4 * 2 + idBytes.length + candidateBytes.length);
@@ -91,7 +91,7 @@ public class ProtocolWriter {
   /**
    * Writes a submit command request.
    */
-  private byte[] submitCommandRequest(SubmitCommandRequest request) {
+  private byte[] submitCommandRequest(SubmitRequest request) {
     byte[] idBytes = serializeObject(request.id());
     byte[] commandBytes = request.command().getBytes();
     byte[] argsBytes = serializeObject(request.args());
@@ -113,12 +113,12 @@ public class ProtocolWriter {
    * @return The response as a byte array.
    */
   public byte[] writeResponse(Response response) {
-    if (response instanceof AppendEntriesResponse) {
-      return appendEntriesResponse((AppendEntriesResponse) response);
-    } else if (response instanceof RequestVoteResponse) {
-      return requestVoteResponse((RequestVoteResponse) response);
-    } else if (response instanceof SubmitCommandResponse) {
-      return submitCommandResponse((SubmitCommandResponse) response);
+    if (response instanceof SyncResponse) {
+      return appendEntriesResponse((SyncResponse) response);
+    } else if (response instanceof PollResponse) {
+      return requestVoteResponse((PollResponse) response);
+    } else if (response instanceof SubmitResponse) {
+      return submitCommandResponse((SubmitResponse) response);
     }
     throw new RuntimeException("Invalid response type");
   }
@@ -126,7 +126,7 @@ public class ProtocolWriter {
   /**
    * Writes an append entries response.
    */
-  private byte[] appendEntriesResponse(AppendEntriesResponse response) {
+  private byte[] appendEntriesResponse(SyncResponse response) {
     byte[] idBytes = serializeObject(response.id());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 8 * 2 + 4 * 2 + idBytes.length);
     buffer.put(APPEND_ENTRIES_RESPONSE);
@@ -141,7 +141,7 @@ public class ProtocolWriter {
   /**
    * Writes a request vote response.
    */
-  private byte[] requestVoteResponse(RequestVoteResponse response) {
+  private byte[] requestVoteResponse(PollResponse response) {
     byte[] idBytes = serializeObject(response.id());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 8 + 4 * 2 + idBytes.length);
     buffer.put(REQUEST_VOTE_RESPONSE);
@@ -155,7 +155,7 @@ public class ProtocolWriter {
   /**
    * Writes a submit command response.
    */
-  private byte[] submitCommandResponse(SubmitCommandResponse response) {
+  private byte[] submitCommandResponse(SubmitResponse response) {
     byte[] idBytes = serializeObject(response.id());
     byte[] resultBytes = serializeObject(response.result());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 4 * 2 + idBytes.length + resultBytes.length);

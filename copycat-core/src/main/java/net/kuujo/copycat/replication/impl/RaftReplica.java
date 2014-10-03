@@ -30,7 +30,7 @@ import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
+import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.state.impl.Follower;
 import net.kuujo.copycat.state.impl.RaftStateContext;
@@ -112,8 +112,8 @@ class RaftReplica {
     pingFutures.add(future);
 
     if (pinging.compareAndSet(false, true)) {
-      AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), matchIndex, log.containsEntry(matchIndex) ? log.<RaftEntry>getEntry(matchIndex).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
-      member.protocol().client().appendEntries(request).whenCompleteAsync((response, error) -> {
+      SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), matchIndex, log.containsEntry(matchIndex) ? log.<RaftEntry>getEntry(matchIndex).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
+      member.protocol().client().sync(request).whenCompleteAsync((response, error) -> {
         pinging.set(false);
         if (error != null) {
           triggerPingFutures(error);
@@ -197,11 +197,11 @@ class RaftReplica {
   private void doAppendEntries(final long prevIndex, final RaftEntry prevEntry, final List<RaftEntry> entries) {
     final long commitIndex = state.getCommitIndex();
 
-    AppendEntriesRequest request = new AppendEntriesRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+    SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
 
     sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 
-    member.protocol().client().appendEntries(request).whenComplete((response, error) -> {
+    member.protocol().client().sync(request).whenComplete((response, error) -> {
       if (error != null) {
         triggerCommitFutures(prevIndex+1, prevIndex+entries.size(), error);
       } else {

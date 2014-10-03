@@ -23,23 +23,23 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitCommandResponse extends Response {
+public class SubmitResponse extends Response {
   private static final long serialVersionUID = -2137570252386650195L;
   private Object result;
 
-  public SubmitCommandResponse() {
+  public SubmitResponse() {
   }
 
-  public SubmitCommandResponse(Object id, Object result) {
+  public SubmitResponse(Object id, Object result) {
     super(id, Status.OK);
     this.result = result;
   }
 
-  public SubmitCommandResponse(Object id, Throwable t) {
+  public SubmitResponse(Object id, Throwable t) {
     super(id, Status.ERROR, t);
   }
 
-  public SubmitCommandResponse(Object id, String message) {
+  public SubmitResponse(Object id, String message) {
     super(id, Status.ERROR, message);
   }
 

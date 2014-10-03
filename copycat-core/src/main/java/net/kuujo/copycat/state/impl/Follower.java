@@ -20,10 +20,10 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.state.State;
 
 /**
@@ -88,15 +88,15 @@ public class Follower extends RaftState {
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
     resetTimer();
-    return super.appendEntries(request);
+    return super.sync(request);
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
     resetTimer();
-    return super.requestVote(request);
+    return super.poll(request);
   }
 
   @Override

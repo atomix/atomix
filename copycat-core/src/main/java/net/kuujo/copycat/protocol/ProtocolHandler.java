@@ -30,7 +30,7 @@ public interface ProtocolHandler {
    * @param request The sync request.
    * @return A sync response future.
    */
-  CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request);
+  CompletableFuture<SyncResponse> sync(SyncRequest request);
 
   /**
    * Sends or handles a protocol poll request.
@@ -38,7 +38,7 @@ public interface ProtocolHandler {
    * @param request The poll request.
    * @return A poll response future.
    */
-  CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request);
+  CompletableFuture<PollResponse> poll(PollRequest request);
 
   /**
    * Sends or handles a protocol submit request.
@@ -46,6 +46,6 @@ public interface ProtocolHandler {
    * @param request The submit request.
    * @return A submit response future.
    */
-  CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request);
+  CompletableFuture<SubmitResponse> submit(SubmitRequest request);
 
 }

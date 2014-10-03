@@ -39,7 +39,7 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.state.StateContext;
@@ -327,7 +327,7 @@ public class RaftStateContext implements StateContext {
     } else if (!leaderConnected) {
       leaderConnectCallbacks.add(() -> {
         ProtocolHandler handler = leaderClient != null ? leaderClient : currentState;
-        handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+        handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
           } else {
@@ -342,7 +342,7 @@ public class RaftStateContext implements StateContext {
     } else {
       executor.execute(() -> {
         ProtocolHandler handler = currentLeader.equals(cluster.localMember().uri()) ? currentState : leaderClient;
-        handler.submitCommand(new SubmitCommandRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
+        handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
           } else {

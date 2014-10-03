@@ -20,9 +20,9 @@ import java.util.List;
 import net.kuujo.copycat.log.Entry;
 
 /**
- * Append entries request.<p>
+ * Sync request.<p>
  *
- * Append entries requests are at the core of Raft's state machine replication
+ * Sync requests are at the core of Raft's state machine replication
  * algorithm. Whenever a new command is applied to the leader's state
  * machine, the leader will replicate the command to other nodes in the
  * cluster using the sync request. Additionally, sync requests are sent
@@ -31,7 +31,7 @@ import net.kuujo.copycat.log.Entry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AppendEntriesRequest extends Request {
+public class SyncRequest extends Request {
   private static final long serialVersionUID = 8870779945535041744L;
   private long term;
   private String leader;
@@ -40,11 +40,11 @@ public class AppendEntriesRequest extends Request {
   private List<? extends Entry> entries;
   private long commitIndex;
 
-  public AppendEntriesRequest() {
+  public SyncRequest() {
     super(null);
   }
 
-  public AppendEntriesRequest(Object id, long term, String leader, long prevLogIndex, long prevLogTerm, List<? extends Entry> entries, long commitIndex) {
+  public SyncRequest(Object id, long term, String leader, long prevLogIndex, long prevLogTerm, List<? extends Entry> entries, long commitIndex) {
     super(id);
     this.term = term;
     this.leader = leader;

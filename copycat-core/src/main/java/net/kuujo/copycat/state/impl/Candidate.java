@@ -24,8 +24,8 @@ import java.util.logging.Logger;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.util.Quorum;
 
@@ -114,7 +114,7 @@ public class Candidate extends RaftState {
           if (error1 != null) {
             quorum.fail();
           } else {
-            client.requestVote(new RequestVoteRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster().config().getLocalMember(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
+            client.poll(new PollRequest(context.nextCorrelationId(), context.getCurrentTerm(), context.cluster().config().getLocalMember(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
               client.close();
               if (!complete.get()) {
                 if (error2 != null || !result2.voteGranted()) {
@@ -131,7 +131,7 @@ public class Candidate extends RaftState {
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getCurrentTerm()) {
@@ -143,9 +143,9 @@ public class Candidate extends RaftState {
 
     // If the vote request is not for this candidate then reject the vote.
     if (!request.candidate().equals(context.cluster().config().getLocalMember())) {
-      return CompletableFuture.completedFuture(new RequestVoteResponse(request.id(), context.getCurrentTerm(), false));
+      return CompletableFuture.completedFuture(new PollResponse(request.id(), context.getCurrentTerm(), false));
     } else {
-      return super.requestVote(request);
+      return super.poll(request);
     }
   }
 

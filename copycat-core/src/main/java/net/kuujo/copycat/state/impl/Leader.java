@@ -30,10 +30,10 @@ import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.NoOpEntry;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.replication.Replicator;
 import net.kuujo.copycat.replication.impl.RaftReplicator;
 import net.kuujo.copycat.state.State;
@@ -205,20 +205,20 @@ public class Leader extends RaftState implements Observer {
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
+  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
     if (request.term() > context.getCurrentTerm()) {
-      return super.appendEntries(request);
+      return super.sync(request);
     } else if (request.term() < context.getCurrentTerm()) {
-      return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex()));
+      return CompletableFuture.completedFuture(new SyncResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex()));
     } else {
       context.transition(Follower.class);
-      return super.appendEntries(request);
+      return super.sync(request);
     }
   }
 
   @Override
-  public CompletableFuture<SubmitCommandResponse> submitCommand(final SubmitCommandRequest request) {
-    CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
+  public CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
+    CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
 
     // Determine the type of command this request is executing. The command
     // type is provided by a CommandProvider which provides CommandInfo for a
@@ -239,7 +239,7 @@ public class Leader extends RaftState implements Observer {
         replicator.ping(context.log().lastIndex()).whenComplete((index, error) -> {
           if (error == null) {
             try {
-              future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+              future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
             } catch (Exception e) {
               future.completeExceptionally(e);
             }
@@ -249,7 +249,7 @@ public class Leader extends RaftState implements Observer {
         });
       } else {
         try {
-          future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+          future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           future.completeExceptionally(e);
         }
@@ -269,7 +269,7 @@ public class Leader extends RaftState implements Observer {
         replicator.commit(index).whenComplete((resultIndex, error) -> {
           if (error == null) {
             try {
-              future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+              future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
             } catch (Exception e) {
               future.completeExceptionally(e);
             } finally {
@@ -286,7 +286,7 @@ public class Leader extends RaftState implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          future.complete(new SubmitCommandResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+          future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
         } catch (Exception e) {
           future.completeExceptionally(e);
         } finally {

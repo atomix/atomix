@@ -30,12 +30,12 @@ import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.state.State;
 
 /**
@@ -55,8 +55,8 @@ abstract class RaftState implements State<RaftStateContext> {
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
-    CompletableFuture<AppendEntriesResponse> future = CompletableFuture.completedFuture(handleAppendEntries(request));
+  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
+    CompletableFuture<SyncResponse> future = CompletableFuture.completedFuture(handleSync(request));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
     if (transition.get()) {
@@ -66,9 +66,9 @@ abstract class RaftState implements State<RaftStateContext> {
   }
 
   /**
-   * Starts the append entries process.
+   * Starts the sync process.
    */
-  private AppendEntriesResponse handleAppendEntries(AppendEntriesRequest request) {
+  private SyncResponse handleSync(SyncRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getCurrentTerm() || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
@@ -81,7 +81,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getCurrentTerm()) {
-      return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
+      return new SyncResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
     } else if (request.prevLogIndex() > 0 && request.prevLogTerm() > 0) {
       return doCheckPreviousEntry(request);
     } else {
@@ -92,9 +92,9 @@ abstract class RaftState implements State<RaftStateContext> {
   /**
    * Checks the previous log entry for consistency.
    */
-  private AppendEntriesResponse doCheckPreviousEntry(AppendEntriesRequest request) {
+  private SyncResponse doCheckPreviousEntry(SyncRequest request) {
     if (request.prevLogIndex() > context.log().lastIndex()) {
-      return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
+      return new SyncResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
     }
 
     // If the log entry exists then load the entry.
@@ -105,7 +105,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // can be overwritten.
     RaftEntry entry = context.log().getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
-      return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
+      return new SyncResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
     } else {
       return doAppendEntries(request);
     }
@@ -114,7 +114,7 @@ abstract class RaftState implements State<RaftStateContext> {
   /**
    * Appends entries to the local log.
    */
-  private AppendEntriesResponse doAppendEntries(AppendEntriesRequest request) {
+  private SyncResponse doAppendEntries(SyncRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
@@ -137,7 +137,7 @@ abstract class RaftState implements State<RaftStateContext> {
   /**
    * Applies commits to the local state machine.
    */
-  private AppendEntriesResponse doApplyCommits(AppendEntriesRequest request) {
+  private SyncResponse doApplyCommits(SyncRequest request) {
     // If the synced commit index is greater than the local commit index then
     // apply commits to the local state machine.
     // Also, it's possible that one of the previous command applications failed
@@ -163,7 +163,7 @@ abstract class RaftState implements State<RaftStateContext> {
         compactLog();
       }
     }
-    return new AppendEntriesResponse(request.id(), context.getCurrentTerm(), true, context.log().lastIndex());
+    return new SyncResponse(request.id(), context.getCurrentTerm(), true, context.log().lastIndex());
   }
 
   /**
@@ -309,16 +309,16 @@ abstract class RaftState implements State<RaftStateContext> {
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
     return CompletableFuture.supplyAsync(() -> {
-      return handleRequestVote(request);
+      return handlePoll(request);
     }, executor);
   }
 
   /**
-   * Handles a request vote request.
+   * Handles a vote request.
    */
-  private RequestVoteResponse handleRequestVote(RequestVoteRequest request) {
+  private PollResponse handlePoll(PollRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getCurrentTerm()) {
@@ -331,7 +331,7 @@ abstract class RaftState implements State<RaftStateContext> {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getCurrentTerm()) {
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+      return new PollResponse(request.id(), context.getCurrentTerm(), false);
     }
     // If the requesting candidate is ourself then always vote for ourself. Votes
     // for self are done by calling the local node. Note that this obviously
@@ -339,12 +339,12 @@ abstract class RaftState implements State<RaftStateContext> {
     else if (request.candidate().equals(context.clusterConfig().getLocalMember())) {
       context.setLastVotedFor(context.clusterConfig().getLocalMember());
       context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.clusterConfig().getLocalMember()));
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
+      return new PollResponse(request.id(), context.getCurrentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.clusterConfig().getMembers().contains(request.candidate())) {
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+      return new PollResponse(request.id(), context.getCurrentTerm(), false);
     }
     // If we've already voted for someone else then don't vote again.
     else if (context.getLastVotedFor() == null || context.getLastVotedFor().equals(request.candidate())) {
@@ -352,7 +352,7 @@ abstract class RaftState implements State<RaftStateContext> {
       if (context.log().isEmpty()) {
         context.setLastVotedFor(request.candidate());
         context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
-        return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
+        return new PollResponse(request.id(), context.getCurrentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
@@ -361,29 +361,29 @@ abstract class RaftState implements State<RaftStateContext> {
         if (entry == null) {
           context.setLastVotedFor(request.candidate());
           context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
-          return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
+          return new PollResponse(request.id(), context.getCurrentTerm(), true);
         }
 
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           context.setLastVotedFor(request.candidate());
           context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
-          return new RequestVoteResponse(request.id(), context.getCurrentTerm(), true);
+          return new PollResponse(request.id(), context.getCurrentTerm(), true);
         } else {
           context.setLastVotedFor(null);
-          return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+          return new PollResponse(request.id(), context.getCurrentTerm(), false);
         }
       }
     }
     // In this case, we've already voted for someone else.
     else {
-      return new RequestVoteResponse(request.id(), context.getCurrentTerm(), false);
+      return new PollResponse(request.id(), context.getCurrentTerm(), false);
     }
   }
 
   @Override
-  public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
-    return CompletableFuture.completedFuture(new SubmitCommandResponse(request.id(), "Not the leader"));
+  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
+    return CompletableFuture.completedFuture(new SubmitResponse(request.id(), "Not the leader"));
   }
 
   @Override

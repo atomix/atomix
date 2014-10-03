@@ -17,14 +17,14 @@ package net.kuujo.copycat.protocol.impl;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.registry.Registry;
 
 /**
@@ -42,10 +42,10 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
     LocalProtocolServer server = registry.lookup(address);
     if (server == null) {
-      CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
+      CompletableFuture<SyncResponse> future = new CompletableFuture<>();
       future.completeExceptionally(new ProtocolException("Invalid server address"));
       return future;
     }
@@ -53,10 +53,10 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
     LocalProtocolServer server = registry.lookup(address);
     if (server == null) {
-      CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
+      CompletableFuture<PollResponse> future = new CompletableFuture<>();
       future.completeExceptionally(new ProtocolException("Invalid server address"));
       return future;
     }
@@ -64,10 +64,10 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
+  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     LocalProtocolServer server = registry.lookup(address);
     if (server == null) {
-      CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
+      CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
       future.completeExceptionally(new ProtocolException("Invalid server address"));
       return future;
     }

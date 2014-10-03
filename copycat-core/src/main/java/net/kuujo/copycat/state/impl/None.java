@@ -17,12 +17,12 @@ package net.kuujo.copycat.state.impl;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.state.State;
 
 /**
@@ -47,18 +47,18 @@ public class None extends RaftState {
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
-    return CompletableFuture.completedFuture(new AppendEntriesResponse(request.id(), "Replica is not alive"));
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    return CompletableFuture.completedFuture(new SyncResponse(request.id(), "Replica is not alive"));
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
-    return CompletableFuture.completedFuture(new RequestVoteResponse(request.id(), "Replica is not alive"));
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
+    return CompletableFuture.completedFuture(new PollResponse(request.id(), "Replica is not alive"));
   }
 
   @Override
-  public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
-    return CompletableFuture.completedFuture(new SubmitCommandResponse(request.id(), "Replica is not alive"));
+  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
+    return CompletableFuture.completedFuture(new SubmitResponse(request.id(), "Replica is not alive"));
   }
 
   @Override
