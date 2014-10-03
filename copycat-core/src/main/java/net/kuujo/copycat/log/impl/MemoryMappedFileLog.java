@@ -38,7 +38,7 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryMappedLog extends AbstractFileLog implements Compactable {
+public class MemoryMappedFileLog extends AbstractFileLog implements Compactable {
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
   private final ByteBuffer buffer = ByteBuffer.allocate(4096);
@@ -52,19 +52,19 @@ public class MemoryMappedLog extends AbstractFileLog implements Compactable {
   private long firstIndex;
   private long lastIndex;
 
-  public MemoryMappedLog(String baseName) {
+  public MemoryMappedFileLog(String baseName) {
     this(baseName, RaftEntry.class);
   }
 
-  public MemoryMappedLog(File baseFile) {
+  public MemoryMappedFileLog(File baseFile) {
     this(baseFile, RaftEntry.class);
   }
 
-  public MemoryMappedLog(String baseName, Class<? extends Entry> entryType) {
+  public MemoryMappedFileLog(String baseName, Class<? extends Entry> entryType) {
     this(new File(baseName), entryType);
   }
 
-  public MemoryMappedLog(File baseFile, Class<? extends Entry> entryType) {
+  public MemoryMappedFileLog(File baseFile, Class<? extends Entry> entryType) {
     super(baseFile, entryType);
   }
 
