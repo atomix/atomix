@@ -19,19 +19,20 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.kuujo.copycat.CopyCatException;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
-import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.Response;
+import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.state.impl.Follower;
 import net.kuujo.copycat.state.impl.RaftStateContext;
 
@@ -49,8 +50,7 @@ class RaftReplica {
   private volatile long matchIndex;
   private volatile long sendIndex;
   private volatile boolean open;
-  private final AtomicBoolean pinging = new AtomicBoolean();
-  private final List<CompletableFuture<Long>> pingFutures = new CopyOnWriteArrayList<>();
+  private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
   private final Map<Long, CompletableFuture<Long>> commitFutures = new ConcurrentHashMap<>();
 
   public RaftReplica(Member member, RaftStateContext state) {
@@ -98,10 +98,11 @@ class RaftReplica {
     return CompletableFuture.completedFuture(null);
   }
 
+
   /**
    * Pings the replica.
    */
-  CompletableFuture<Long> ping(long index) {
+  synchronized CompletableFuture<Long> ping(long index) {
     if (!open) {
       CompletableFuture<Long> future = new CompletableFuture<>();
       future.completeExceptionally(new CopyCatException("Connection not open"));
@@ -109,30 +110,33 @@ class RaftReplica {
     }
 
     CompletableFuture<Long> future = new CompletableFuture<>();
-    pingFutures.add(future);
-
-    if (pinging.compareAndSet(false, true)) {
-      SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), matchIndex, log.containsEntry(matchIndex) ? log.<RaftEntry>getEntry(matchIndex).term() : 0, new ArrayList<Entry>(), state.getCommitIndex());
-      member.protocol().client().sync(request).whenCompleteAsync((response, error) -> {
-        pinging.set(false);
-        if (error != null) {
-          triggerPingFutures(error);
-        } else {
-          if (response.status().equals(Response.Status.OK)) {
-            if (response.term() > state.getCurrentTerm()) {
-              state.setCurrentTerm(response.term());
-              state.setCurrentLeader(null);
-              state.transition(Follower.class);
-              triggerPingFutures(new CopyCatException("Not the leader"));
-            } else {
-              triggerPingFutures();
-            }
-          } else {
-            triggerPingFutures(response.error());
-          }
-        }
-      });
+    if (!pingFutures.isEmpty() && pingFutures.lastKey() >= index) {
+      return pingFutures.lastEntry().getValue();
     }
+
+    pingFutures.put(index, future);
+
+    PingRequest request = new PingRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), index, log.containsEntry(index) ? log.<RaftEntry>getEntry(index).term() : 0, state.getCommitIndex());
+    member.protocol().client().ping(request).whenCompleteAsync((response, error) -> {
+      if (error != null) {
+        triggerPingFutures(index, error);
+      } else {
+        if (response.status().equals(Response.Status.OK)) {
+          if (response.term() > state.getCurrentTerm()) {
+            state.setCurrentTerm(response.term());
+            state.setCurrentLeader(null);
+            state.transition(Follower.class);
+            triggerPingFutures(index, new CopyCatException("Not the leader"));
+          } else if (!response.succeeded()) {
+            triggerPingFutures(index, new ProtocolException("Replica not in sync"));
+          } else {
+            triggerPingFutures(index);
+          }
+        } else {
+          triggerPingFutures(index, response.error());
+        }
+      }
+    });
     return future;
   }
 
@@ -176,9 +180,9 @@ class RaftReplica {
       RaftEntry entry = log.getEntry(i);
       if (entry instanceof SnapshotEntry) {
         if (entries.isEmpty()) {
-          doAppendEntries(prevIndex, prevEntry, Arrays.asList(entry));
+          doSync(prevIndex, prevEntry, Arrays.asList(entry));
         } else {
-          doAppendEntries(prevIndex, prevEntry, entries);
+          doSync(prevIndex, prevEntry, entries);
         }
         return;
       } else {
@@ -187,14 +191,14 @@ class RaftReplica {
     }
 
     if (!entries.isEmpty()) {
-      doAppendEntries(prevIndex, prevEntry, entries);
+      doSync(prevIndex, prevEntry, entries);
     }
   }
 
   /**
-   * Sends an append entries request.
+   * Sends a sync request.
    */
-  private void doAppendEntries(final long prevIndex, final RaftEntry prevEntry, final List<RaftEntry> entries) {
+  private void doSync(final long prevIndex, final RaftEntry prevEntry, final List<RaftEntry> entries) {
     final long commitIndex = state.getCommitIndex();
 
     SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
@@ -237,21 +241,22 @@ class RaftReplica {
   /**
    * Triggers ping futures with a completion result.
    */
-  private void triggerPingFutures() {
-    for (CompletableFuture<Long> future : pingFutures) {
-      future.complete(matchIndex);
+  private synchronized void triggerPingFutures(long index) {
+    NavigableMap<Long, CompletableFuture<Long>> matchFutures = pingFutures.headMap(index, true);
+    for (Map.Entry<Long, CompletableFuture<Long>> entry : matchFutures.entrySet()) {
+      entry.getValue().complete(index);
     }
-    pingFutures.clear();
+    matchFutures.clear();
   }
 
   /**
    * Triggers response futures with an error result.
    */
-  private void triggerPingFutures(Throwable t) {
-    for (CompletableFuture<Long> future : pingFutures) {
+  private synchronized void triggerPingFutures(long index, Throwable t) {
+    CompletableFuture<Long> future = pingFutures.remove(index);
+    if (future != null) {
       future.completeExceptionally(t);
     }
-    pingFutures.clear();
   }
 
   /**

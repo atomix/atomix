@@ -26,12 +26,14 @@ import java.nio.ByteBuffer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ProtocolWriter {
-  private static final byte APPEND_ENTRIES_REQUEST = 0;
-  private static final byte APPEND_ENTRIES_RESPONSE = 1;
-  private static final byte REQUEST_VOTE_REQUEST = 2;
-  private static final byte REQUEST_VOTE_RESPONSE = 3;
-  private static final byte SUBMIT_COMMAND_REQUEST = 4;
-  private static final byte SUBMIT_COMMAND_RESPONSE = 5;
+  private static final byte PING_REQUEST = 0;
+  private static final byte PING_RESPONSE = 1;
+  private static final byte SYNC_REQUEST = 2;
+  private static final byte SYNC_RESPONSE = 3;
+  private static final byte POLL_REQUEST = 4;
+  private static final byte POLL_RESPONSE = 5;
+  private static final byte SUBMIT_REQUEST = 6;
+  private static final byte SUBMIT_RESPONSE = 7;
 
   /**
    * Writes a request as a byte array.
@@ -40,25 +42,45 @@ public class ProtocolWriter {
    * @return The written request.
    */
   public byte[] writeRequest(Request request) {
-    if (request instanceof SyncRequest) {
-      return appendEntriesRequest((SyncRequest) request);
+    if (request instanceof PingRequest) {
+      return pingRequest((PingRequest) request);
+    } else if (request instanceof SyncRequest) {
+      return syncRequest((SyncRequest) request);
     } else if (request instanceof PollRequest) {
-      return requestVoteRequest((PollRequest) request);
+      return pollRequest((PollRequest) request);
     } else if (request instanceof SubmitRequest) {
-      return submitCommandRequest((SubmitRequest) request);
+      return submitRequest((SubmitRequest) request);
     }
     throw new RuntimeException("Invalid request type");
   }
 
   /**
-   * Writes an append entries request.
+   * Writes a ping request.
    */
-  private byte[] appendEntriesRequest(SyncRequest request) {
+  private byte[] pingRequest(PingRequest request) {
+    byte[] idBytes = serializeObject(request.id());
+    byte[] leaderBytes = request.leader().getBytes();
+    ByteBuffer buffer = ByteBuffer.allocate(1 + 8 * 4 + 4 * 3 + idBytes.length + leaderBytes.length);
+    buffer.put(PING_REQUEST);
+    buffer.putInt(idBytes.length);
+    buffer.put(idBytes);
+    buffer.putInt(leaderBytes.length);
+    buffer.put(leaderBytes);
+    buffer.putLong(request.logIndex());
+    buffer.putLong(request.logTerm());
+    buffer.putLong(request.commitIndex());
+    return buffer.array();
+  }
+
+  /**
+   * Writes a sync request.
+   */
+  private byte[] syncRequest(SyncRequest request) {
     byte[] idBytes = serializeObject(request.id());
     byte[] leaderBytes = request.leader().getBytes();
     byte[] entriesBytes = serializeObject(request.entries());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 8 * 4 + 4 * 3 + idBytes.length + leaderBytes.length + entriesBytes.length);
-    buffer.put(APPEND_ENTRIES_REQUEST);
+    buffer.put(SYNC_REQUEST);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
     buffer.putInt(leaderBytes.length);
@@ -74,11 +96,11 @@ public class ProtocolWriter {
   /**
    * Writes a request vote request.
    */
-  private byte[] requestVoteRequest(PollRequest request) {
+  private byte[] pollRequest(PollRequest request) {
     byte[] idBytes = serializeObject(request.id());
     byte[] candidateBytes = request.candidate().getBytes();
     ByteBuffer buffer = ByteBuffer.allocate(1 + 8 * 3 + 4 * 2 + idBytes.length + candidateBytes.length);
-    buffer.put(REQUEST_VOTE_REQUEST);
+    buffer.put(POLL_REQUEST);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
     buffer.putInt(candidateBytes.length);
@@ -91,12 +113,12 @@ public class ProtocolWriter {
   /**
    * Writes a submit command request.
    */
-  private byte[] submitCommandRequest(SubmitRequest request) {
+  private byte[] submitRequest(SubmitRequest request) {
     byte[] idBytes = serializeObject(request.id());
     byte[] commandBytes = request.command().getBytes();
     byte[] argsBytes = serializeObject(request.args());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 4 * 3 + idBytes.length + commandBytes.length + argsBytes.length);
-    buffer.put(SUBMIT_COMMAND_REQUEST);
+    buffer.put(SUBMIT_REQUEST);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
     buffer.putInt(commandBytes.length);
@@ -113,23 +135,39 @@ public class ProtocolWriter {
    * @return The response as a byte array.
    */
   public byte[] writeResponse(Response response) {
-    if (response instanceof SyncResponse) {
-      return appendEntriesResponse((SyncResponse) response);
+    if (response instanceof PingResponse) {
+      return pingResponse((PingResponse) response);
+    } else if (response instanceof SyncResponse) {
+      return syncResponse((SyncResponse) response);
     } else if (response instanceof PollResponse) {
-      return requestVoteResponse((PollResponse) response);
+      return pollResponse((PollResponse) response);
     } else if (response instanceof SubmitResponse) {
-      return submitCommandResponse((SubmitResponse) response);
+      return submitResponse((SubmitResponse) response);
     }
     throw new RuntimeException("Invalid response type");
   }
 
   /**
-   * Writes an append entries response.
+   * Writes a ping response.
    */
-  private byte[] appendEntriesResponse(SyncResponse response) {
+  private byte[] pingResponse(PingResponse response) {
     byte[] idBytes = serializeObject(response.id());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 8 * 2 + 4 * 2 + idBytes.length);
-    buffer.put(APPEND_ENTRIES_RESPONSE);
+    buffer.put(PING_RESPONSE);
+    buffer.putInt(idBytes.length);
+    buffer.put(idBytes);
+    buffer.putLong(response.term());
+    buffer.putInt(response.succeeded() ? 1 : 0);
+    return buffer.array();
+  }
+
+  /**
+   * Writes a sync response.
+   */
+  private byte[] syncResponse(SyncResponse response) {
+    byte[] idBytes = serializeObject(response.id());
+    ByteBuffer buffer = ByteBuffer.allocate(1 + 8 * 2 + 4 * 2 + idBytes.length);
+    buffer.put(SYNC_RESPONSE);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
     buffer.putLong(response.term());
@@ -141,10 +179,10 @@ public class ProtocolWriter {
   /**
    * Writes a request vote response.
    */
-  private byte[] requestVoteResponse(PollResponse response) {
+  private byte[] pollResponse(PollResponse response) {
     byte[] idBytes = serializeObject(response.id());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 8 + 4 * 2 + idBytes.length);
-    buffer.put(REQUEST_VOTE_RESPONSE);
+    buffer.put(POLL_RESPONSE);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
     buffer.putLong(response.term());
@@ -155,11 +193,11 @@ public class ProtocolWriter {
   /**
    * Writes a submit command response.
    */
-  private byte[] submitCommandResponse(SubmitResponse response) {
+  private byte[] submitResponse(SubmitResponse response) {
     byte[] idBytes = serializeObject(response.id());
     byte[] resultBytes = serializeObject(response.result());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 4 * 2 + idBytes.length + resultBytes.length);
-    buffer.put(SUBMIT_COMMAND_RESPONSE);
+    buffer.put(SUBMIT_RESPONSE);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
     buffer.putInt(resultBytes.length);

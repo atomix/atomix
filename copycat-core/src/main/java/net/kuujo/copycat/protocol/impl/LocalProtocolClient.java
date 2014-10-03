@@ -17,14 +17,16 @@ package net.kuujo.copycat.protocol.impl;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolException;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.registry.Registry;
 
 /**
@@ -42,6 +44,17 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
+  public CompletableFuture<PingResponse> ping(PingRequest request) {
+    LocalProtocolServer server = registry.lookup(address);
+    if (server == null) {
+      CompletableFuture<PingResponse> future = new CompletableFuture<>();
+      future.completeExceptionally(new ProtocolException("Invalid server address"));
+      return future;
+    }
+    return server.ping(request);
+  }
+
+  @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
     LocalProtocolServer server = registry.lookup(address);
     if (server == null) {
@@ -49,7 +62,7 @@ public class LocalProtocolClient implements ProtocolClient {
       future.completeExceptionally(new ProtocolException("Invalid server address"));
       return future;
     }
-    return server.appendEntries(request);
+    return server.sync(request);
   }
 
   @Override
@@ -60,7 +73,7 @@ public class LocalProtocolClient implements ProtocolClient {
       future.completeExceptionally(new ProtocolException("Invalid server address"));
       return future;
     }
-    return server.requestVote(request);
+    return server.poll(request);
   }
 
   @Override
@@ -71,7 +84,7 @@ public class LocalProtocolClient implements ProtocolClient {
       future.completeExceptionally(new ProtocolException("Invalid server address"));
       return future;
     }
-    return server.submitCommand(request);
+    return server.submit(request);
   }
 
   @Override

@@ -17,14 +17,16 @@ package net.kuujo.copycat.protocol.impl;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.util.Args;
 
@@ -48,17 +50,22 @@ public class LocalProtocolServer implements ProtocolServer {
     this.requestHandler = handler;
   }
 
-  CompletableFuture<SyncResponse> appendEntries(SyncRequest request) {
+  CompletableFuture<PingResponse> ping(PingRequest request) {
+    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    return requestHandler.ping(request);
+  }
+
+  CompletableFuture<SyncResponse> sync(SyncRequest request) {
     Args.checkNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.sync(request);
   }
 
-  CompletableFuture<PollResponse> requestVote(PollRequest request) {
+  CompletableFuture<PollResponse> poll(PollRequest request) {
     Args.checkNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.poll(request);
   }
 
-  CompletableFuture<SubmitResponse> submitCommand(SubmitRequest request) {
+  CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     Args.checkNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.submit(request);
   }

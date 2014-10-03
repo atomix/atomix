@@ -30,12 +30,14 @@ import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.state.State;
 
 /**
@@ -52,6 +54,62 @@ abstract class RaftState implements State<RaftStateContext> {
   public void init(RaftStateContext context) {
     this.context = context;
     context.cluster().localMember().protocol().server().protocolHandler(this);
+  }
+
+  @Override
+  public CompletableFuture<PingResponse> ping(final PingRequest request) {
+    CompletableFuture<PingResponse> future = CompletableFuture.completedFuture(handlePing(request));
+    // If a transition is required then transition back to the follower state.
+    // If the node is already a follower then the transition will be ignored.
+    if (transition.get()) {
+      context.transition(Follower.class);
+    }
+    return future;
+  }
+
+  /**
+   * Handles a ping request.
+   */
+  private PingResponse handlePing(PingRequest request) {
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as leader.
+    if (request.term() > context.getCurrentTerm() || (request.term() == context.getCurrentTerm() && context.getCurrentLeader() == null)) {
+      context.setCurrentTerm(request.term());
+      context.setCurrentLeader(request.leader());
+      transition.set(true);
+    }
+
+    // If the request term is less than the current term then immediately
+    // reply false and return our current term. The leader will receive
+    // the updated term and step down.
+    if (request.term() < context.getCurrentTerm()) {
+      return new PingResponse(request.id(), context.getCurrentTerm(), false);
+    } else if (request.logIndex() > 0 && request.logTerm() > 0) {
+      return doCheckPingEntry(request);
+    }
+    return new PingResponse(request.id(), context.getCurrentTerm(), true);
+  }
+
+  /**
+   * Checks the ping log entry for consistency.
+   */
+  private PingResponse doCheckPingEntry(PingRequest request) {
+    if (request.logIndex() > context.log().lastIndex()) {
+      return new PingResponse(request.id(), context.getCurrentTerm(), false);
+    }
+
+    // If the log entry exists then load the entry.
+    // If the last log entry's term is not the same as the given
+    // prevLogTerm then return false. This will cause the leader to
+    // decrement this node's nextIndex and ultimately retry with the
+    // leader's previous log entry so that the inconsistent entry
+    // can be overwritten.
+    RaftEntry entry = context.log().getEntry(request.logIndex());
+    if (entry == null || entry.term() != request.logTerm()) {
+      return new PingResponse(request.id(), context.getCurrentTerm(), false);
+    } else {
+      return new PingResponse(request.id(), context.getCurrentTerm(), true);
+    }
   }
 
   @Override

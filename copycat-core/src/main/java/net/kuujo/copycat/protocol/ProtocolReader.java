@@ -31,12 +31,14 @@ import net.kuujo.copycat.log.Entry;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ProtocolReader {
-  private static final byte APPEND_ENTRIES_REQUEST = 0;
-  private static final byte APPEND_ENTRIES_RESPONSE = 1;
-  private static final byte REQUEST_VOTE_REQUEST = 2;
-  private static final byte REQUEST_VOTE_RESPONSE = 3;
-  private static final byte SUBMIT_COMMAND_REQUEST = 4;
-  private static final byte SUBMIT_COMMAND_RESPONSE = 5;
+  private static final byte PING_REQUEST = 0;
+  private static final byte PING_RESPONSE = 1;
+  private static final byte SYNC_REQUEST = 2;
+  private static final byte SYNC_RESPONSE = 3;
+  private static final byte POLL_REQUEST = 4;
+  private static final byte POLL_RESPONSE = 5;
+  private static final byte SUBMIT_REQUEST = 6;
+  private static final byte SUBMIT_RESPONSE = 7;
 
   /**
    * Reads a request from a byte array.
@@ -49,20 +51,41 @@ public class ProtocolReader {
     ByteBuffer buffer = ByteBuffer.wrap(bytes);
     byte type = buffer.get();
     switch (type) {
-      case APPEND_ENTRIES_REQUEST:
-        return (T) appendEntriesRequest(buffer);
-      case REQUEST_VOTE_REQUEST:
-        return (T) requestVoteRequest(buffer);
-      case SUBMIT_COMMAND_REQUEST:
-        return (T) submitCommandRequest(buffer);
+      case PING_REQUEST:
+        return (T) pingRequest(buffer);
+      case SYNC_REQUEST:
+        return (T) syncRequest(buffer);
+      case POLL_REQUEST:
+        return (T) pollRequest(buffer);
+      case SUBMIT_REQUEST:
+        return (T) submitRequest(buffer);
     }
     throw new RuntimeException("Invalid request type");
   }
 
   /**
+   * Reads an ping request.
+   */
+  private PingRequest pingRequest(ByteBuffer buffer) {
+    int idLength = buffer.getInt();
+    byte[] idBytes = new byte[idLength];
+    buffer.get(idBytes);
+    Object id = deserializeObject(idBytes);
+    long term = buffer.getLong();
+    int leaderLength = buffer.getInt();
+    byte[] leaderBytes = new byte[leaderLength];
+    buffer.get(leaderBytes);
+    String leader = new String(leaderBytes);
+    long logIndex = buffer.getLong();
+    long logTerm = buffer.getLong();
+    long commitIndex = buffer.getLong();
+    return new PingRequest(id, term, leader, logIndex, logTerm, commitIndex);
+  }
+
+  /**
    * Reads an append entries request.
    */
-  private SyncRequest appendEntriesRequest(ByteBuffer buffer) {
+  private SyncRequest syncRequest(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -85,7 +108,7 @@ public class ProtocolReader {
   /**
    * Reads a request vote request.
    */
-  private PollRequest requestVoteRequest(ByteBuffer buffer) {
+  private PollRequest pollRequest(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -103,7 +126,7 @@ public class ProtocolReader {
   /**
    * Reads a submit command request.
    */
-  private SubmitRequest submitCommandRequest(ByteBuffer buffer) {
+  private SubmitRequest submitRequest(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -130,20 +153,35 @@ public class ProtocolReader {
     ByteBuffer buffer = ByteBuffer.wrap(bytes);
     byte type = buffer.get();
     switch (type) {
-      case APPEND_ENTRIES_RESPONSE:
-        return (T) appendEntriesResponse(buffer);
-      case REQUEST_VOTE_RESPONSE:
-        return (T) requestVoteResponse(buffer);
-      case SUBMIT_COMMAND_RESPONSE:
-        return (T) submitCommandResponse(buffer);
+      case PING_RESPONSE:
+        return (T) pingResponse(buffer);
+      case SYNC_RESPONSE:
+        return (T) syncResponse(buffer);
+      case POLL_RESPONSE:
+        return (T) pollResponse(buffer);
+      case SUBMIT_RESPONSE:
+        return (T) submitResponse(buffer);
     }
     throw new RuntimeException("Invalid response type");
   }
 
   /**
-   * Reads an append entries response.
+   * Reads a ping response.
    */
-  private SyncResponse appendEntriesResponse(ByteBuffer buffer) {
+  private PingResponse pingResponse(ByteBuffer buffer) {
+    int idLength = buffer.getInt();
+    byte[] idBytes = new byte[idLength];
+    buffer.get(idBytes);
+    Object id = deserializeObject(idBytes);
+    long term = buffer.getLong();
+    boolean succeeded = buffer.getInt() == 1;
+    return new PingResponse(id, term, succeeded);
+  }
+
+  /**
+   * Reads a sync response.
+   */
+  private SyncResponse syncResponse(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -157,7 +195,7 @@ public class ProtocolReader {
   /**
    * Reads a request vote response.
    */
-  private PollResponse requestVoteResponse(ByteBuffer buffer) {
+  private PollResponse pollResponse(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);
@@ -170,7 +208,7 @@ public class ProtocolReader {
   /**
    * Reads a submit command response.
    */
-  private SubmitResponse submitCommandResponse(ByteBuffer buffer) {
+  private SubmitResponse submitResponse(ByteBuffer buffer) {
     int idLength = buffer.getInt();
     byte[] idBytes = new byte[idLength];
     buffer.get(idBytes);

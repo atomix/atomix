@@ -25,6 +25,14 @@ import java.util.concurrent.CompletableFuture;
 public interface ProtocolHandler {
 
   /**
+   * Snds or handles a protocol ping request.
+   *
+   * @param request The ping request.
+   * @return A ping response future.
+   */
+  CompletableFuture<PingResponse> ping(PingRequest request);
+
+  /**
    * Sends or handles a protocol sync request.
    *
    * @param request The sync request.
