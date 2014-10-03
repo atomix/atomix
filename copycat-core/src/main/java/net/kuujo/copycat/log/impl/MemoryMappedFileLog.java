@@ -20,6 +20,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
@@ -39,6 +43,7 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemoryMappedFileLog extends AbstractFileLog implements Compactable {
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
   private final ByteBuffer buffer = ByteBuffer.allocate(4096);
@@ -51,6 +56,8 @@ public class MemoryMappedFileLog extends AbstractFileLog implements Compactable 
   private ExcerptTailer tailer;
   private long firstIndex;
   private long lastIndex;
+  private long syncInterval = 0;
+  private ScheduledFuture<Void> syncFuture;
 
   public MemoryMappedFileLog(String baseName) {
     this(baseName, RaftEntry.class);
@@ -68,7 +75,37 @@ public class MemoryMappedFileLog extends AbstractFileLog implements Compactable 
     super(baseFile, entryType);
   }
 
+  /**
+   * Sets the interval at which to sync the log to disk.
+   *
+   * @param interval The interval at which to sync the log to disk.
+   */
+  public void setSyncInterval(long interval) {
+    this.syncInterval = interval;
+  }
+
+  /**
+   * Returns the interval at which to sync the log to disk.
+   *
+   * @return The interval at which to sync the log to disk.
+   */
+  public long getSyncInterval() {
+    return syncInterval;
+  }
+
+  /**
+   * Sets the interval at which to sync the log to disk, returning the log for method chaining.
+   *
+   * @param interval The interval at which to sync the log to disk.
+   * @return The memory mapped file log for method chaining.
+   */
+  public MemoryMappedFileLog withSyncInterval(long interval) {
+    this.syncInterval = interval;
+    return this;
+  }
+
   @Override
+  @SuppressWarnings("unchecked")
   public void open() throws IOException {
     logFile = findLogFile();
     chronicle = new IndexedChronicle(logFile.getAbsolutePath());
@@ -87,6 +124,10 @@ public class MemoryMappedFileLog extends AbstractFileLog implements Compactable 
         }
         lastIndex = index;
       }
+    }
+
+    if (syncInterval > 0 && syncFuture == null) {
+      syncFuture = (ScheduledFuture<Void>) scheduler.scheduleAtFixedRate(() -> sync(), syncInterval, syncInterval, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -336,6 +377,9 @@ public class MemoryMappedFileLog extends AbstractFileLog implements Compactable 
     chronicle.close();
     firstIndex = 0;
     lastIndex = 0;
+    if (syncFuture != null) {
+      syncFuture.cancel(false);
+    }
   }
 
   @Override
