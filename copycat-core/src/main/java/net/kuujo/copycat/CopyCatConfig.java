@@ -15,17 +15,14 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.protocol.CorrelationStrategy;
-import net.kuujo.copycat.protocol.TimerStrategy;
-import net.kuujo.copycat.protocol.impl.ThreadTimerStrategy;
-import net.kuujo.copycat.protocol.impl.UuidCorrelationStrategy;
+import net.kuujo.copycat.spi.*;
 
 /**
  * Replica configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopyCatConfig {
+public class CopycatConfig {
   private long electionTimeout = 2000;
   private long heartbeatInterval = 500;
   private boolean requireWriteQuorum = true;
@@ -33,6 +30,7 @@ public class CopyCatConfig {
   private boolean requireReadQuorum = true;
   private Integer readQuorumSize;
   private int maxLogSize = 32 * 1024^2;
+  private QuorumStrategy quorumStrategy = new MajorityQuorumStrategy();
   private CorrelationStrategy<?> correlationStrategy = new UuidCorrelationStrategy();
   private TimerStrategy timerStrategy = new ThreadTimerStrategy();
 
@@ -61,7 +59,7 @@ public class CopyCatConfig {
    * @param timeout The election timeout.
    * @return The copycat configuration.
    */
-  public CopyCatConfig withElectionTimeout(long timeout) {
+  public CopycatConfig withElectionTimeout(long timeout) {
     if (timeout < 0) throw new IllegalArgumentException("Election timeout must be positive");
     this.electionTimeout = timeout;
     return this;
@@ -92,7 +90,7 @@ public class CopyCatConfig {
    * @param interval The interval at which the node should send heartbeat messages.
    * @return The replica configuration.
    */
-  public CopyCatConfig withHeartbeatInterval(long interval) {
+  public CopycatConfig withHeartbeatInterval(long interval) {
     if (interval < 0) throw new IllegalArgumentException("Heart beat interval must be positive");
     this.heartbeatInterval = interval;
     return this;
@@ -123,7 +121,7 @@ public class CopyCatConfig {
    * @param require Indicates whether a quorum replication should be required for writes.
    * @return The replica configuration.
    */
-  public CopyCatConfig withRequireWriteQuorum(boolean require) {
+  public CopycatConfig withRequireWriteQuorum(boolean require) {
     this.requireWriteQuorum = require;
     return this;
   }
@@ -152,7 +150,7 @@ public class CopyCatConfig {
    * @param quorumSize The required write quorum size.
    * @return The copycat configuration.
    */
-  public CopyCatConfig withWriteQuorumSize(Integer quorumSize) {
+  public CopycatConfig withWriteQuorumSize(Integer quorumSize) {
     this.writeQuorumSize = quorumSize;
     return this;
   }
@@ -185,7 +183,7 @@ public class CopyCatConfig {
    *          operations.
    * @return The replica configuration.
    */
-  public CopyCatConfig withRequireReadQuorum(boolean require) {
+  public CopycatConfig withRequireReadQuorum(boolean require) {
     this.requireReadQuorum = require;
     return this;
   }
@@ -214,7 +212,7 @@ public class CopyCatConfig {
    * @param quorumSize The required read quorum size.
    * @return The copycat configuration.
    */
-  public CopyCatConfig withReadQuorumSize(Integer quorumSize) {
+  public CopycatConfig withReadQuorumSize(Integer quorumSize) {
     this.readQuorumSize = quorumSize;
     return this;
   }
@@ -244,9 +242,40 @@ public class CopyCatConfig {
    * @param maxSize The maximum local log size.
    * @return The replica configuration.
    */
-  public CopyCatConfig withMaxLogSize(int maxSize) {
+  public CopycatConfig withMaxLogSize(int maxSize) {
     if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
     this.maxLogSize = maxSize;
+    return this;
+  }
+
+  /**
+   * Sets the cluster quorum strategy.
+   *
+   * @param strategy The cluster quorum calculation strategy.
+   */
+  public void setQuorumStrategy(QuorumStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.quorumStrategy = strategy;
+  }
+
+  /**
+   * Returns the cluster quorum strategy.
+   *
+   * @return The cluster quorum calculation strategy.
+   */
+  public QuorumStrategy getQuorumStrategy() {
+    return quorumStrategy;
+  }
+
+  /**
+   * Sets the cluster quorum strategy, returning the configuration for method chaining.
+   *
+   * @param strategy The cluster quorum calculation strategy.
+   * @return The copycat configuration.
+   */
+  public CopycatConfig withQuorumStrategy(QuorumStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.quorumStrategy = strategy;
     return this;
   }
 
@@ -275,7 +304,7 @@ public class CopyCatConfig {
    * @param strategy The message correlation strategy.
    * @return The copycat configuration.
    */
-  public CopyCatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
+  public CopycatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
     if (strategy == null) throw new NullPointerException();
     this.correlationStrategy = strategy;
     return this;
@@ -306,7 +335,7 @@ public class CopyCatConfig {
    * @param strategy The timer strategy.
    * @return The copycat configuration.
    */
-  public CopyCatConfig withTimerStrategy(TimerStrategy strategy) {
+  public CopycatConfig withTimerStrategy(TimerStrategy strategy) {
     this.timerStrategy = strategy;
     return this;
   }
