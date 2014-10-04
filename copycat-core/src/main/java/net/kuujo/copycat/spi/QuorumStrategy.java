@@ -21,6 +21,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@FunctionalInterface
 public interface QuorumStrategy {
 
   /**

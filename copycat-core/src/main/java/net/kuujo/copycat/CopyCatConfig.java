@@ -26,11 +26,12 @@ public class CopycatConfig {
   private long electionTimeout = 2000;
   private long heartbeatInterval = 500;
   private boolean requireWriteQuorum = true;
-  private Integer writeQuorumSize;
   private boolean requireReadQuorum = true;
-  private Integer readQuorumSize;
+  private int readQuorumSize = -1;
+  private QuorumStrategy readQuorumStrategy = new MajorityQuorumStrategy();
+  private int writeQuorumSize = -1;
+  private QuorumStrategy writeQuorumStrategy = new MajorityQuorumStrategy();
   private int maxLogSize = 32 * 1024^2;
-  private QuorumStrategy quorumStrategy = new MajorityQuorumStrategy();
   private CorrelationStrategy<?> correlationStrategy = new UuidCorrelationStrategy();
   private TimerStrategy timerStrategy = new ThreadTimerStrategy();
 
@@ -132,7 +133,9 @@ public class CopycatConfig {
    * @param quorumSize The required write quorum size.
    */
   public void setWriteQuorumSize(Integer quorumSize) {
+    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
     this.writeQuorumSize = quorumSize;
+    this.writeQuorumStrategy = (config) -> writeQuorumSize;
   }
 
   /**
@@ -151,7 +154,9 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withWriteQuorumSize(Integer quorumSize) {
+    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
     this.writeQuorumSize = quorumSize;
+    this.writeQuorumStrategy = (config) -> writeQuorumSize;
     return this;
   }
 
@@ -189,12 +194,45 @@ public class CopycatConfig {
   }
 
   /**
+   * Sets the cluster write quorum strategy.
+   *
+   * @param strategy The cluster write quorum calculation strategy.
+   */
+  public void setWriteQuorumStrategy(QuorumStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.writeQuorumStrategy = strategy;
+  }
+
+  /**
+   * Returns the cluster write quorum strategy.
+   *
+   * @return The cluster write quorum calculation strategy.
+   */
+  public QuorumStrategy getWriteQuorumStrategy() {
+    return writeQuorumStrategy;
+  }
+
+  /**
+   * Sets the cluster write quorum strategy, returning the configuration for method chaining.
+   *
+   * @param strategy The cluster write quorum calculation strategy.
+   * @return The copycat configuration.
+   */
+  public CopycatConfig withWriteQuorumStrategy(QuorumStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.writeQuorumStrategy = strategy;
+    return this;
+  }
+
+  /**
    * Sets the required read quorum size.
    *
    * @param quorumSize The required read quorum size.
    */
   public void setReadQuorumSize(Integer quorumSize) {
+    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
     this.readQuorumSize = quorumSize;
+    this.readQuorumStrategy = (config) -> readQuorumSize;
   }
 
   /**
@@ -213,7 +251,40 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withReadQuorumSize(Integer quorumSize) {
+    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
     this.readQuorumSize = quorumSize;
+    this.readQuorumStrategy = (config) -> readQuorumSize;
+    return this;
+  }
+
+  /**
+   * Sets the cluster read quorum strategy.
+   *
+   * @param strategy The cluster read quorum calculation strategy.
+   */
+  public void setReadQuorumStrategy(QuorumStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.readQuorumStrategy = strategy;
+  }
+
+  /**
+   * Returns the cluster read quorum strategy.
+   *
+   * @return The cluster read quorum calculation strategy.
+   */
+  public QuorumStrategy getReadQuorumStrategy() {
+    return readQuorumStrategy;
+  }
+
+  /**
+   * Sets the cluster read quorum strategy, returning the configuration for method chaining.
+   *
+   * @param strategy The cluster read quorum calculation strategy.
+   * @return The copycat configuration.
+   */
+  public CopycatConfig withReadQuorumStrategy(QuorumStrategy strategy) {
+    if (strategy == null) throw new NullPointerException();
+    this.readQuorumStrategy = strategy;
     return this;
   }
 
@@ -245,37 +316,6 @@ public class CopycatConfig {
   public CopycatConfig withMaxLogSize(int maxSize) {
     if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
     this.maxLogSize = maxSize;
-    return this;
-  }
-
-  /**
-   * Sets the cluster quorum strategy.
-   *
-   * @param strategy The cluster quorum calculation strategy.
-   */
-  public void setQuorumStrategy(QuorumStrategy strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.quorumStrategy = strategy;
-  }
-
-  /**
-   * Returns the cluster quorum strategy.
-   *
-   * @return The cluster quorum calculation strategy.
-   */
-  public QuorumStrategy getQuorumStrategy() {
-    return quorumStrategy;
-  }
-
-  /**
-   * Sets the cluster quorum strategy, returning the configuration for method chaining.
-   *
-   * @param strategy The cluster quorum calculation strategy.
-   * @return The copycat configuration.
-   */
-  public CopycatConfig withQuorumStrategy(QuorumStrategy strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.quorumStrategy = strategy;
     return this;
   }
 
