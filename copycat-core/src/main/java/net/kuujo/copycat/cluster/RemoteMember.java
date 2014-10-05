@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.state.State;
+import net.kuujo.copycat.CopycatState;
 
 /**
  * State change event.
@@ -23,9 +23,9 @@ import net.kuujo.copycat.state.State;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateChangeEvent implements Event {
-  private final State.Type state;
+  private final CopycatState state;
 
-  public StateChangeEvent(State.Type state) {
+  public StateChangeEvent(CopycatState state) {
     this.state = state;
   }
 
@@ -34,7 +34,7 @@ public class StateChangeEvent implements Event {
    *
    * @return The state change state type.
    */
-  public State.Type state() {
+  public CopycatState state() {
     return state;
   }
 

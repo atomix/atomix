@@ -16,7 +16,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.InMemoryLog;
+import net.kuujo.copycat.log.InMemoryLog;
 
 /**
  * Memory log test.

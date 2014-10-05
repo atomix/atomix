@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
 import java.util.*;
 

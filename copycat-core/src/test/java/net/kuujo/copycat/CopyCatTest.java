@@ -17,9 +17,9 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MemberConfig;
-import net.kuujo.copycat.impl.DefaultCopycatContext;
-import net.kuujo.copycat.log.impl.InMemoryLog;
-import net.kuujo.copycat.protocol.impl.LocalProtocol;
+import net.kuujo.copycat.internal.DefaultCopycatContext;
+import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.protocol.LocalProtocol;
 import org.junit.Assert;
 
 import java.util.HashMap;

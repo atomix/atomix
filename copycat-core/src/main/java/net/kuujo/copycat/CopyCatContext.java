@@ -17,14 +17,13 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.impl.DefaultCopycatContext;
+import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.InMemoryLog;
-import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
-import net.kuujo.copycat.state.State;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -93,7 +92,7 @@ public interface CopycatContext {
    *
    * @return The current replica state.
    */
-  State.Type state();
+  CopycatState state();
 
   /**
    * Returns the current leader URI.

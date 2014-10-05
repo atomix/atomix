@@ -20,10 +20,10 @@ import io.vertx.core.VertxOptions;
 
 import java.util.concurrent.CountDownLatch;
 
-import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import net.kuujo.copycat.uri.UriAuthority;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriPort;

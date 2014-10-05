@@ -16,11 +16,11 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MemberConfig;
-import net.kuujo.copycat.endpoint.Endpoint;
+import net.kuujo.copycat.spi.endpoint.Endpoint;
 import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.impl.DefaultCopycat;
+import net.kuujo.copycat.internal.DefaultCopycat;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;

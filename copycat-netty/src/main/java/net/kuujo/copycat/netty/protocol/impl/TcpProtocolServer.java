@@ -41,7 +41,7 @@ import javax.net.ssl.SSLException;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.RequestHandler;
-import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;

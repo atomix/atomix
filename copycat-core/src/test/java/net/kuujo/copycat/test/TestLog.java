@@ -23,11 +23,11 @@ import java.util.Set;
 import java.util.function.BiFunction;
 
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.impl.CommandEntry;
-import net.kuujo.copycat.log.impl.ConfigurationEntry;
-import net.kuujo.copycat.log.impl.InMemoryLog;
-import net.kuujo.copycat.log.impl.NoOpEntry;
-import net.kuujo.copycat.log.impl.SnapshotEntry;
+import net.kuujo.copycat.log.internal.CommandEntry;
+import net.kuujo.copycat.log.internal.ConfigurationEntry;
+import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.internal.NoOpEntry;
+import net.kuujo.copycat.log.internal.SnapshotEntry;
 
 /**
  * Test log.

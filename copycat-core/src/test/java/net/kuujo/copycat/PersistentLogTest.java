@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.MemoryMappedFileLog;
+import net.kuujo.copycat.log.MemoryMappedFileLog;
 
 import org.junit.After;
 import org.junit.Before;

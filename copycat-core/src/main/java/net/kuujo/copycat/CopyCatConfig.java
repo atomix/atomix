@@ -18,23 +18,30 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.spi.*;
 import net.kuujo.copycat.util.Args;
 
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+
 /**
  * Replica configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatConfig {
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private long electionTimeout = 2000;
   private long heartbeatInterval = 500;
   private boolean requireWriteQuorum = true;
   private boolean requireReadQuorum = true;
   private int readQuorumSize = -1;
-  private QuorumStrategy readQuorumStrategy = new MajorityQuorumStrategy();
+  private QuorumStrategy readQuorumStrategy = (cluster) -> (int) Math.floor(cluster.getMembers().size()) + 1;
   private int writeQuorumSize = -1;
-  private QuorumStrategy writeQuorumStrategy = new MajorityQuorumStrategy();
+  private QuorumStrategy writeQuorumStrategy = (cluster) -> (int) Math.floor(cluster.getMembers().size()) + 1;
   private int maxLogSize = 32 * 1024^2;
-  private CorrelationStrategy<?> correlationStrategy = new UuidCorrelationStrategy();
-  private TimerStrategy timerStrategy = new ThreadTimerStrategy();
+  private CorrelationStrategy<?> correlationStrategy = () -> UUID.randomUUID().toString();
+  @SuppressWarnings("unchecked")
+  private TimerStrategy timerStrategy = (task, delay, unit) -> (ScheduledFuture<Void>) scheduler.schedule(task, delay, unit);
 
   /**
    * Sets the replica election timeout.

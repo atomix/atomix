@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolReader;
 import net.kuujo.copycat.protocol.ProtocolWriter;
 import net.kuujo.copycat.protocol.RequestVoteRequest;

@@ -19,8 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.impl.DefaultCopycatContext;
-import net.kuujo.copycat.endpoint.Endpoint;
+import net.kuujo.copycat.internal.DefaultCopycatContext;
+import net.kuujo.copycat.spi.endpoint.Endpoint;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriPort;
 

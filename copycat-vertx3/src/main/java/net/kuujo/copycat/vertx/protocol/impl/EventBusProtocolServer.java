@@ -26,6 +26,7 @@ import net.kuujo.copycat.protocol.AppendEntriesRequest;
 import net.kuujo.copycat.protocol.RequestHandler;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 /**
  * Vert.x event bus protocol server.
