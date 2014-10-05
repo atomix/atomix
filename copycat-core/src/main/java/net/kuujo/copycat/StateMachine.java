@@ -29,7 +29,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class StateMachine {
-  private final Map<String, CommandHolder> commands = new HashMap<>();
+  private final Map<String, CommandHolder> commands = new HashMap<>(50);
 
   private static class CommandHolder {
     private final StateMachine stateMachine;
@@ -64,7 +64,7 @@ public abstract class StateMachine {
     }
   }
 
-  public StateMachine() {
+  protected StateMachine() {
     init();
   }
 
@@ -83,7 +83,7 @@ public abstract class StateMachine {
           }
           CommandHolder holder = commands.get(name);
           if (holder == null) {
-            holder = new CommandHolder(this, new GenericCommand(name, command.type()), new ArrayList<>());
+            holder = new CommandHolder(this, new GenericCommand(name, command.type()), new ArrayList<>(10));
             commands.put(name, holder);
           }
           holder.methods.add(method);
@@ -131,8 +131,7 @@ public abstract class StateMachine {
   public Object applyCommand(String name, List<Object> args) {
     CommandHolder command = commands.get(name);
     if (command != null) {
-      Object result = command.call(args);
-      return result;
+      return command.call(args);
     }
     return null;
   }

@@ -100,6 +100,7 @@ public class Leader extends CopycatState implements Observer {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public void update(Observable o, Object arg) {
     clusterChanged((ClusterConfig) o);
   }
@@ -108,7 +109,7 @@ public class Leader extends CopycatState implements Observer {
    * Called when the cluster configuration has changed.
    */
   @SuppressWarnings("unchecked")
-  private synchronized void clusterChanged(final ClusterConfig cluster) {
+  private synchronized void clusterChanged(@SuppressWarnings("rawtypes") final ClusterConfig cluster) {
     // All cluster configuration changes must go through the leader. In order to
     // perform cluster configuration changes, the leader observes the local cluster
     // configuration if it is indeed observable. We have to be very careful about

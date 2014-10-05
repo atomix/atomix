@@ -66,4 +66,9 @@ public class None extends CopycatState {
     // Do nothing.
   }
 
+  @Override
+  public String toString() {
+    return "None[context=null]";
+  }
+
 }

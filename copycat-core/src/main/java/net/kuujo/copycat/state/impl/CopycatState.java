@@ -15,31 +15,23 @@
  */
 package net.kuujo.copycat.state.impl;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.VoteCastEvent;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
-import net.kuujo.copycat.log.impl.RaftEntry;
+import net.kuujo.copycat.log.impl.CopycatEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.state.State;
+
+import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Base replica state.
@@ -105,7 +97,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    RaftEntry entry = context.log().getEntry(request.logIndex());
+    CopycatEntry entry = context.log().getEntry(request.logIndex());
     if (entry == null || entry.term() != request.logTerm()) {
       return new PingResponse(request.id(), context.getCurrentTerm(), false);
     } else {
@@ -162,7 +154,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    RaftEntry entry = context.log().getEntry(request.prevLogIndex());
+    CopycatEntry entry = context.log().getEntry(request.prevLogIndex());
     if (entry == null || entry.term() != request.prevLogTerm()) {
       return new SyncResponse(request.id(), context.getCurrentTerm(), false, context.log().lastIndex());
     } else {
@@ -179,8 +171,8 @@ abstract class CopycatState implements State<CopycatStateContext> {
     if (!request.entries().isEmpty()) {
       if (context.log().lastIndex() > request.prevLogIndex()) {
         for (int i = 0; i < request.entries().size(); i++) {
-          RaftEntry entry = request.<RaftEntry>entries().get(i);
-          RaftEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
+          CopycatEntry entry = request.<CopycatEntry>entries().get(i);
+          CopycatEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
           if (entry.term() != match.term()) {
             context.log().removeAfter(request.prevLogIndex() + i);
             context.log().appendEntries(request.entries().subList(i, request.entries().size()));
@@ -291,9 +283,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
   @SuppressWarnings("unchecked")
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
-      Set<MemberConfig> members = ((ConfigurationEntry) entry).cluster();
-      members.remove(context.clusterConfig().getLocalMember());
-      context.clusterConfig().setRemoteMembers(members);
+      context.cluster().update(entry.cluster(), null);
     } catch (Exception e) {
     } finally {
       context.setLastApplied(index);
@@ -321,9 +311,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
     }
 
     // Set the local cluster configuration according to the snapshot cluster membership.
-    Set<MemberConfig> members = entry.cluster();
-    members.remove(context.clusterConfig().getLocalMember());
-    context.clusterConfig().setRemoteMembers(members);
+    context.cluster().update(entry.cluster(), null);
 
     // Finally, if necessary, increment the current term.
     context.setCurrentTerm(Math.max(context.getCurrentTerm(), entry.term()));
@@ -339,7 +327,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
   protected SnapshotEntry createSnapshot() {
     byte[] snapshot = context.stateMachine().takeSnapshot();
     if (snapshot != null) {
-      return new SnapshotEntry(context.getCurrentTerm(), context.clusterConfig().getMembers(), snapshot);
+      return new SnapshotEntry(context.getCurrentTerm(), new ClusterConfig(context.cluster()), snapshot);
     }
     return null;
   }
@@ -398,14 +386,14 @@ abstract class CopycatState implements State<CopycatStateContext> {
     // If the requesting candidate is ourself then always vote for ourself. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate().equals(context.clusterConfig().getLocalMember())) {
+    else if (request.candidate().equals(context.cluster().localMember().id())) {
       context.setLastVotedFor(context.cluster().localMember().id());
       context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().localMember()));
       return new PollResponse(request.id(), context.getCurrentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!context.clusterConfig().getMembers().contains(request.candidate())) {
+    else if (context.cluster().member(request.candidate()) == null) {
       return new PollResponse(request.id(), context.getCurrentTerm(), false);
     }
     // If we've already voted for someone else then don't vote again.
@@ -419,7 +407,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
         long lastIndex = context.log().lastIndex();
-        RaftEntry entry = context.log().getEntry(lastIndex);
+        CopycatEntry entry = context.log().getEntry(lastIndex);
         if (entry == null) {
           context.setLastVotedFor(request.candidate());
           context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request

@@ -14,7 +14,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.io.Serializable;
 import java.util.Observable;
 
 /**

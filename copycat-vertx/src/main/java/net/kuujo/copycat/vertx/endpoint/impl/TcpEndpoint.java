@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.impl.DefaultCopycatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriPort;
@@ -42,7 +42,7 @@ import org.vertx.java.core.parsetools.RecordParser;
  */
 public class TcpEndpoint implements Endpoint {
   private Vertx vertx = new DefaultVertx();
-  private CopyCatContext context;
+  private DefaultCopycatContext context;
   private NetServer server;
   private String host;
   private int port;
@@ -61,7 +61,7 @@ public class TcpEndpoint implements Endpoint {
   }
 
   @Override
-  public void init(CopyCatContext context) {
+  public void init(DefaultCopycatContext context) {
     this.context = context;
   }
 

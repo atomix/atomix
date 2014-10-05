@@ -107,4 +107,9 @@ public class Follower extends CopycatState {
     shutdown = true;
   }
 
+  @Override
+  public String toString() {
+    return String.format("Follower[context=%s]", context);
+  }
+
 }

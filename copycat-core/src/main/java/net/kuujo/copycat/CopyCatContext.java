@@ -20,7 +20,9 @@ import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.impl.DefaultCopycatContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.InMemoryLog;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.state.State;
 
@@ -135,9 +137,11 @@ public interface CopycatContext {
    *
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
+  @SuppressWarnings("rawtypes")
   public static class Builder {
     private CopycatConfig config = new CopycatConfig();
     private ClusterConfig cluster;
+    private Protocol protocol;
     private StateMachine stateMachine;
     private Log log = new InMemoryLog();
 
@@ -200,6 +204,28 @@ public interface CopycatContext {
     }
 
     /**
+     * Sets the read quorum size.
+     *
+     * @param quorumSize The read quorum size.
+     * @return The copycat builder.
+     */
+    public Builder withReadQuorumSize(int quorumSize) {
+      config.setReadQuorumSize(quorumSize);
+      return this;
+    }
+
+    /**
+     * Sets the read quorum strategy.
+     *
+     * @param quorumStrategy The read quorum strategy.
+     * @return The copycat builder.
+     */
+    public Builder withReadQuorumStrategy(QuorumStrategy quorumStrategy) {
+      config.setReadQuorumStrategy(quorumStrategy);
+      return this;
+    }
+
+    /**
      * Sets whether to require quorums during writes.
      *
      * @param requireQuorum Whether to require quorums during writes.
@@ -211,13 +237,24 @@ public interface CopycatContext {
     }
 
     /**
-     * Sets the read quorum size.
+     * Sets the write quorum size.
      *
-     * @param quorumSize The read quorum size.
+     * @param quorumSize The write quorum size.
      * @return The copycat builder.
      */
-    public Builder withReadQuorumSize(int quorumSize) {
-      config.setReadQuorumSize(quorumSize);
+    public Builder withWriteQuorumSize(int quorumSize) {
+      config.setWriteQuorumSize(quorumSize);
+      return this;
+    }
+
+    /**
+     * Sets the write quorum strategy.
+     *
+     * @param quorumStrategy The write quorum strategy.
+     * @return The copycat builder.
+     */
+    public Builder withWriteQuorumStrategy(QuorumStrategy quorumStrategy) {
+      config.setWriteQuorumStrategy(quorumStrategy);
       return this;
     }
 
@@ -251,6 +288,17 @@ public interface CopycatContext {
      */
     public Builder withTimerStrategy(TimerStrategy strategy) {
       config.setTimerStrategy(strategy);
+      return this;
+    }
+
+    /**
+     * Sets the cluster protocol.
+     *
+     * @param protocol The cluster protocol.
+     * @return The copycat builder.
+     */
+    public Builder withProtocol(Protocol<?> protocol) {
+      this.protocol = protocol;
       return this;
     }
 
@@ -318,7 +366,12 @@ public interface CopycatContext {
      * @return The copycat instance.
      */
     public CopycatContext build() {
-      return new DefaultCopycatContext(stateMachine, log, cluster, config);
+      return new DefaultCopycatContext(stateMachine, log, cluster, protocol, config);
+    }
+
+    @Override
+    public String toString() {
+      return getClass().getSimpleName();
     }
 
   }

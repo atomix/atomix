@@ -88,4 +88,9 @@ public class DefaultEventHandlersRegistry implements EventHandlersRegistry {
     return stateChange;
   }
 
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
+
 }

@@ -33,8 +33,6 @@ import com.esotericsoftware.kryo.Kryo;
  */
 public abstract class BaseLog implements Log {
   private final Class<? extends Entry> entryType;
-  private final Map<Class<? extends Entry>, Integer> entryTypeMappings = new HashMap<>();
-  private final Map<Integer, Class<? extends Entry>> entryClassMappings = new HashMap<>();
   protected final Kryo kryo;
 
   protected BaseLog(Class<? extends Entry> entryType) {
@@ -49,8 +47,6 @@ public abstract class BaseLog implements Log {
   private void init() {
     for (Class<? extends Entry> type : findEntryTypes(entryType).value()) {
       EntryType info = findEntryTypeInfo(type);
-      entryTypeMappings.put(type, info.id());
-      entryClassMappings.put(info.id(), type);
       try {
         kryo.register(type, info.serializer().newInstance(), info.id());
       } catch (InstantiationException | IllegalAccessException e) {

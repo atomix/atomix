@@ -99,4 +99,9 @@ public class DefaultEventsContext implements EventsContext {
     return stateChange;
   }
 
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
+
 }

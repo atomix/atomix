@@ -73,7 +73,7 @@ public class ClusterReplicator implements Replicator, Observer {
    * Called when the replicator cluster configuration has changed.
    */
   private synchronized void clusterChanged(Cluster<?, ?> cluster) {
-    for (RemoteMember<? extends MemberConfig> member : cluster.remoteMembers()) {
+    cluster.remoteMembers().forEach(member -> {
       if (!replicaMap.containsKey(member.id())) {
         ClusterReplica replica = new ClusterReplica(member, state);
         replicaMap.put(member.id(), replica);
@@ -81,7 +81,7 @@ public class ClusterReplicator implements Replicator, Observer {
         replica.open();
         recalculateQuorumSize();
       }
-    }
+    });
 
     Iterator<ClusterReplica> iterator = replicas.iterator();
     while (iterator.hasNext()) {
@@ -183,12 +183,7 @@ public class ClusterReplicator implements Replicator, Observer {
       // Sort the list of replicas, order by the last index that was replicated
       // to the replica. This will allow us to determine the median index
       // for all known replicated entries across all cluster members.
-      Collections.sort(replicas, new Comparator<ClusterReplica>() {
-        @Override
-        public int compare(ClusterReplica o1, ClusterReplica o2) {
-          return Long.compare(o1.matchIndex(), o2.matchIndex());
-        }
-      });
+      Collections.sort(replicas, (o1, o2) -> Long.compare(o1.matchIndex(), o2.matchIndex()));
 
       // Set the current commit index as the median replicated index.
       // Since replicas is a list with zero based indexes, use the negation of

@@ -20,7 +20,9 @@ import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.impl.DefaultCopycat;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
 
 import java.util.Collection;
@@ -161,6 +163,28 @@ public interface Copycat {
     }
 
     /**
+     * Sets the read quorum size.
+     *
+     * @param quorumSize The read quorum size.
+     * @return The copycat builder.
+     */
+    public Builder withReadQuorumSize(int quorumSize) {
+      builder.withReadQuorumSize(quorumSize);
+      return this;
+    }
+
+    /**
+     * Sets the read quorum strategy.
+     *
+     * @param quorumStrategy The read quorum strategy.
+     * @return The copycat builder.
+     */
+    public Builder withReadQuorumStrategy(QuorumStrategy quorumStrategy) {
+      builder.withReadQuorumStrategy(quorumStrategy);
+      return this;
+    }
+
+    /**
      * Sets whether to require quorums during writes.
      *
      * @param requireQuorum Whether to require quorums during writes.
@@ -172,13 +196,24 @@ public interface Copycat {
     }
 
     /**
-     * Sets the read quorum size.
+     * Sets the write quorum size.
      *
-     * @param quorumSize The read quorum size.
+     * @param quorumSize The write quorum size.
      * @return The copycat builder.
      */
-    public Builder withReadQuorumSize(int quorumSize) {
-      builder.withReadQuorumSize(quorumSize);
+    public Builder withWriteQuorumSize(int quorumSize) {
+      builder.withWriteQuorumSize(quorumSize);
+      return this;
+    }
+
+    /**
+     * Sets the write quorum strategy.
+     *
+     * @param quorumStrategy The write quorum strategy.
+     * @return The copycat builder.
+     */
+    public Builder withWriteQuorumStrategy(QuorumStrategy quorumStrategy) {
+      builder.withWriteQuorumStrategy(quorumStrategy);
       return this;
     }
 
@@ -212,6 +247,17 @@ public interface Copycat {
      */
     public Builder withTimerStrategy(TimerStrategy strategy) {
       builder.withTimerStrategy(strategy);
+      return this;
+    }
+
+    /**
+     * Sets the cluster protocol.
+     *
+     * @param protocol The cluster protocol.
+     * @return The copycat builder.
+     */
+    public Builder withProtocol(Protocol<?> protocol) {
+      builder.withProtocol(protocol);
       return this;
     }
 
@@ -281,6 +327,11 @@ public interface Copycat {
     public Copycat build() {
       CopycatContext context = builder.build();
       return new DefaultCopycat(endpoint, context);
+    }
+
+    @Override
+    public String toString() {
+      return getClass().getSimpleName();
     }
 
   }

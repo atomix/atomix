@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.replication;
 
-import net.kuujo.copycat.spi.QuorumStrategy;
-
 import java.util.concurrent.CompletableFuture;
 
 /**

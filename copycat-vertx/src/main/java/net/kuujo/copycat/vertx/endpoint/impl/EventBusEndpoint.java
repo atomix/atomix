@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.impl.DefaultCopycatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.UriAuthority;
 import net.kuujo.copycat.uri.UriHost;
@@ -41,7 +41,7 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class EventBusEndpoint implements Endpoint {
   private String address;
-  private CopyCatContext context;
+  private DefaultCopycatContext context;
   private String host = "localhost";
   private int port;
   private Vertx vertx;
@@ -83,7 +83,7 @@ public class EventBusEndpoint implements Endpoint {
   };
 
   @Override
-  public void init(CopyCatContext context) {
+  public void init(DefaultCopycatContext context) {
     this.context = context;
   }
 

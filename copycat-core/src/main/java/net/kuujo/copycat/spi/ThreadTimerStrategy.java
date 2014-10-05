@@ -36,4 +36,9 @@ public class ThreadTimerStrategy implements TimerStrategy {
     return (ScheduledFuture<Void>) scheduler.schedule(task, delay, unit);
   }
 
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
+
 }

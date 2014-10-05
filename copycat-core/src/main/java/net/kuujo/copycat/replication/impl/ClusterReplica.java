@@ -18,7 +18,7 @@ package net.kuujo.copycat.replication.impl;
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.RemoteMember;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.impl.RaftEntry;
+import net.kuujo.copycat.log.impl.CopycatEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.ProtocolException;
@@ -115,7 +115,7 @@ class ClusterReplica {
 
     pingFutures.put(index, future);
 
-    PingRequest request = new PingRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().localMember().id(), index, log.containsEntry(index) ? log.<RaftEntry>getEntry(index).term() : 0, state.getCommitIndex());
+    PingRequest request = new PingRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().localMember().id(), index, log.containsEntry(index) ? log.<CopycatEntry>getEntry(index).term() : 0, state.getCommitIndex());
     member.client().ping(request).whenCompleteAsync((response, error) -> {
       if (error != null) {
         triggerPingFutures(index, error);
@@ -172,19 +172,19 @@ class ClusterReplica {
    */
   private synchronized void replicate() {
     final long prevIndex = sendIndex - 1;
-    final RaftEntry prevEntry = log.getEntry(prevIndex);
+    final CopycatEntry prevEntry = log.getEntry(prevIndex);
 
     // Create a list of up to ten entries to send to the follower.
     // We can only send one snapshot entry in any given request. So, if any of
     // the entries are snapshot entries, send all entries up to the snapshot and
     // then send snapshot entries individually.
-    List<RaftEntry> entries = new ArrayList<>();
-    long lastIndex = Math.min(sendIndex + BATCH_SIZE, log.lastIndex());
+    List<CopycatEntry> entries = new ArrayList<>(BATCH_SIZE);
+    long lastIndex = Math.min(sendIndex + BATCH_SIZE - 1, log.lastIndex());
     for (long i = sendIndex; i <= lastIndex; i++) {
-      RaftEntry entry = log.getEntry(i);
+      CopycatEntry entry = log.getEntry(i);
       if (entry instanceof SnapshotEntry) {
         if (entries.isEmpty()) {
-          doSync(prevIndex, prevEntry, Arrays.asList(entry));
+          doSync(prevIndex, prevEntry, Collections.singletonList(entry));
         } else {
           doSync(prevIndex, prevEntry, entries);
         }
@@ -202,7 +202,7 @@ class ClusterReplica {
   /**
    * Sends a sync request.
    */
-  private void doSync(final long prevIndex, final RaftEntry prevEntry, final List<RaftEntry> entries) {
+  private void doSync(final long prevIndex, final CopycatEntry prevEntry, final List<CopycatEntry> entries) {
     final long commitIndex = state.getCommitIndex();
 
     SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().localMember().id(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);

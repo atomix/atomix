@@ -33,7 +33,7 @@ public interface State<T extends StateContext> extends ProtocolHandler {
     NONE,
     FOLLOWER,
     CANDIDATE,
-    LEADER;
+    LEADER
   }
 
   /**

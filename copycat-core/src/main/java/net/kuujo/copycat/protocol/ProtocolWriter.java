@@ -227,4 +227,9 @@ public class ProtocolWriter {
     return byteStream.toByteArray();
   }
 
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
+
 }

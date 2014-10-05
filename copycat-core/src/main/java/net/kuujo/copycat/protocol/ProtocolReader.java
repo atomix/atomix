@@ -236,10 +236,14 @@ public class ProtocolReader {
         try {
           stream.close();
         } catch (IOException e) {
-          throw new RuntimeException(e);
         }
       }
     }
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
   }
 
   /**

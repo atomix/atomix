@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.CopyCatContext;
+import net.kuujo.copycat.impl.DefaultCopycatContext;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriPort;
@@ -42,7 +42,7 @@ import org.vertx.java.core.json.JsonObject;
  */
 public class HttpEndpoint implements Endpoint {
   private final Vertx vertx;
-  private CopyCatContext context;
+  private DefaultCopycatContext context;
   private HttpServer server;
   private String host;
   private int port;
@@ -64,7 +64,7 @@ public class HttpEndpoint implements Endpoint {
   }
 
   @Override
-  public void init(CopyCatContext context) {
+  public void init(DefaultCopycatContext context) {
     this.context = context;
   }
 

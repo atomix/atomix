@@ -24,6 +24,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
@@ -171,7 +172,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   public List<Long> appendEntries(Entry... entries) {
-    List<Long> indices = new ArrayList<>();
+    List<Long> indices = new ArrayList<>(entries.length);
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
     }
@@ -180,7 +181,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   public List<Long> appendEntries(List<Entry> entries) {
-    List<Long> indices = new ArrayList<>();
+    List<Long> indices = new ArrayList<>(entries.size());
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
     }
@@ -239,7 +240,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
       throw new LogIndexOutOfBoundsException("To index out of bounds.");
     }
 
-    List<T> entries = new ArrayList<>();
+    List<T> entries = new ArrayList<>((int)(to - from + 1));
     long matchIndex = findAbsoluteIndex(from);
     tailer.index(matchIndex);
     do {
@@ -387,6 +388,11 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     if (chronicle != null) {
       chronicle.clear();
     }
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[size=%d]", getClass().getSimpleName(), size());
   }
 
 }

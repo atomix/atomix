@@ -47,13 +47,13 @@ public class Cluster<P extends Protocol<M>, M extends MemberConfig> extends Obse
    * Called when the cluster configuration has changed.
    */
   private synchronized void clusterChanged(ClusterConfig<M> cluster) {
-    for (M config : cluster.getRemoteMembers()) {
+    cluster.getRemoteMembers().forEach(config -> {
       if (!members.containsKey(config.getId())) {
         RemoteMember<M> member = new RemoteMember<>(protocol.createClient(config), config);
         remoteMembers.add(member);
         members.put(member.id(), member);
       }
-    }
+    });
 
     Iterator<RemoteMember<M>> iterator = remoteMembers.iterator();
     while (iterator.hasNext()) {

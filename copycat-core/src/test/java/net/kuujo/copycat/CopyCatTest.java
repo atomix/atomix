@@ -15,19 +15,18 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.impl.DefaultCopycatContext;
+import net.kuujo.copycat.log.impl.InMemoryLog;
+import net.kuujo.copycat.registry.Registry;
+import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
+import org.junit.Assert;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import net.kuujo.copycat.impl.DefaultCopycatContext;
-import net.kuujo.copycat.log.impl.InMemoryLog;
-import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
-
-import org.junit.Assert;
 
 /**
  * CopyCat test.
@@ -117,7 +116,7 @@ class CopyCatTest {
    * Runnable test.
    */
   protected static abstract class RunnableTest {
-    private final CountDownLatch latch = new CountDownLatch(1);;
+    private final CountDownLatch latch = new CountDownLatch(1);
     private final long timeout;
     private final TimeUnit unit;
 

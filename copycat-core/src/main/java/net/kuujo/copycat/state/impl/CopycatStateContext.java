@@ -31,6 +31,7 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.util.Args;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -147,6 +148,7 @@ public class CopycatStateContext implements StateContext {
    * Transitions to a new state.
    */
   public synchronized void transition(Class<? extends CopycatState> type) {
+    Args.checkNotNull(type);
     if (currentState == null) {
       cluster.update(cluster.config(), null);
     } else if (type != null && type.isAssignableFrom(currentState.getClass())) {
@@ -342,7 +344,23 @@ public class CopycatStateContext implements StateContext {
 
   @Override
   public String toString() {
-    return String.format("RaftStateContext[term=%d, leader=%s]", currentTerm, currentLeader);
+    String value = "CopycatConfig";
+    value += "[\n";
+    value += String.format("memberId=%s", cluster.localMember().id());
+    value += ",\n";
+    value += String.format("state=%s", currentState);
+    value += ",\n";
+    value += String.format("term=%d", currentTerm);
+    value += ",\n";
+    value += String.format("leader=%s", currentLeader);
+    value += ",\n";
+    value += String.format("lastVotedFor=%s", lastVotedFor);
+    value += ",\n";
+    value += String.format("commitIndex=%s", commitIndex);
+    value += ",\n";
+    value += String.format("lastApplied=%s", lastApplied);
+    value += "\n]";
+    return value;
   }
 
 }

@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
@@ -73,7 +74,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
 
   @Override
   public List<Long> appendEntries(Entry... entries) {
-    List<Long> indices = new ArrayList<>();
+    List<Long> indices = new ArrayList<>(entries.length);
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
     }
@@ -82,7 +83,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
 
   @Override
   public List<Long> appendEntries(List<Entry> entries) {
-    List<Long> indices = new ArrayList<>();
+    List<Long> indices = new ArrayList<>(entries.size());
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
     }
@@ -131,7 +132,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
 
   @Override
   public <T extends Entry> List<T> getEntries(long from, long to) {
-    List<T> entries = new ArrayList<>();
+    List<T> entries = new ArrayList<>((int)(to - from + 1));
     for (long i = from; i <= to; i++) {
       T entry = getEntry(i);
       if (entry != null) {
@@ -172,6 +173,11 @@ public class InMemoryLog extends BaseLog implements Compactable {
   @Override
   public void delete() {
     log = null;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Follower[size=%d]", size());
   }
 
 }

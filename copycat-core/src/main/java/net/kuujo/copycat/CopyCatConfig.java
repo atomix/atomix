@@ -380,4 +380,33 @@ public class CopycatConfig {
     return this;
   }
 
+  @Override
+  public String toString() {
+    String value = "CopycatConfig";
+    value += "[\n";
+    value += String.format("electionTimeout=%d", electionTimeout);
+    value += ",\n";
+    value += String.format("heartbeatInterval=%d", heartbeatInterval);
+    value += ",\n";
+    value += String.format("requireReadQuorum=%s", requireReadQuorum);
+    value += ",\n";
+    value += String.format("readQuorumSize=%d", readQuorumSize);
+    value += ",\n";
+    value += String.format("readQuorumStrategy=%s", readQuorumStrategy);
+    value += ",\n";
+    value += String.format("requireWriteQuorum=%s", requireWriteQuorum);
+    value += ",\n";
+    value += String.format("requireWriteQuorum=%s", requireWriteQuorum);
+    value += ",\n";
+    value += String.format("writeQuorumStrategy=%s", writeQuorumStrategy);
+    value += ",\n";
+    value += String.format("maxLogSize=%d", maxLogSize);
+    value += ",\n";
+    value += String.format("correlationStrategy=%s", correlationStrategy);
+    value += ",\n";
+    value += String.format("timerStrategy=%s", timerStrategy);
+    value += "\n]";
+    return value;
+  }
+
 }

@@ -30,4 +30,9 @@ public class MonoticCorrelationStrategy implements CorrelationStrategy<Long> {
     return ++id;
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[currentId=%d]", getClass().getSimpleName(), id);
+  }
+
 }

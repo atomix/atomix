@@ -93,4 +93,9 @@ public class DefaultEventContext<E extends Event> implements EventContext<E>, Ev
     return this;
   }
 
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
+
 }

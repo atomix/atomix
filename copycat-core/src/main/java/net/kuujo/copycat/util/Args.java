@@ -41,10 +41,11 @@ public class Args {
    *
    * @param value The value to validate.
    * @param message The exception message.
+   * @param args A list of message string formatting arguments.
    */
-  public static <T> T checkNull(T value, String message) {
+  public static <T> T checkNull(T value, String message, Object... args) {
     if (value != null) {
-      throw new NullPointerException(message);
+      throw new NullPointerException(String.format(message, args));
     }
     return value;
   }
@@ -79,10 +80,11 @@ public class Args {
    *
    * @param value The value to validate.
    * @param message The exception message.
+   * @param args A list of message string formatting arguments.
    */
-  public static <T> T checkNotNull(T value, String message) {
+  public static <T> T checkNotNull(T value, String message, Object... args) {
     if (value == null) {
-      throw new NullPointerException(message);
+      throw new NullPointerException(String.format(message, args));
     }
     return value;
   }
@@ -117,12 +119,13 @@ public class Args {
    * Validates that a value meets a predicate.
    *
    * @param value The value to validate.
-   * @param message The failure exception message.
    * @param predicate The predicate with which to check the value.
+   * @param message The failure exception message.
+   * @param args A list of message string formatting arguments.
    */
-  public static <T> T checkValue(T value, String message, Predicate<T> predicate) {
+  public static <T> T checkValue(T value, Predicate<T> predicate, String message, Object... args) {
     if (!predicate.test(value)) {
-      throw new IllegalArgumentException(message);
+      throw new IllegalArgumentException(String.format(message, args));
     }
     return value;
   }

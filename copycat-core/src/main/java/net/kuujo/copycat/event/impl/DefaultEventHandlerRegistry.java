@@ -30,7 +30,7 @@ import net.kuujo.copycat.event.EventHandlerRegistry;
  * @param <E> The event type.
  */
 public class DefaultEventHandlerRegistry<E extends Event> implements EventHandlerRegistry<E>, EventHandler<E> {
-  private final Set<EventHandler<E>> handlers = new HashSet<>();
+  private final Set<EventHandler<E>> handlers = new HashSet<>(10);
 
   @Override
   public EventHandlerRegistry<E> registerHandler(EventHandler<E> handler) {
@@ -49,6 +49,11 @@ public class DefaultEventHandlerRegistry<E extends Event> implements EventHandle
     for (EventHandler<E> handler : handlers) {
       handler.handle(event);
     }
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[handlers=%s]", getClass().getSimpleName(), handlers);
   }
 
 }

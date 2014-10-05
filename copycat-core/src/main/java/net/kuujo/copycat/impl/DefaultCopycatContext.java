@@ -107,7 +107,7 @@ public class DefaultCopycatContext implements CopycatContext {
 
   @Override
   public <T extends Event> EventContext<T> on(Class<T> event) {
-    return events.<T>event(event);
+    return events.event(event);
   }
 
   @Override

@@ -16,6 +16,7 @@ package net.kuujo.copycat.cluster;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Cluster configuration.
@@ -38,9 +39,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    */
   public ClusterConfig(Cluster<?, M> cluster) {
     localMember = cluster.localMember().config();
-    for (RemoteMember<M> remoteMember : cluster.remoteMembers()) {
-      remoteMembers.add(remoteMember.config());
-    }
+    remoteMembers.addAll(cluster.remoteMembers().stream().<M>map(member -> member.config()).collect(Collectors.toList()));
   }
 
   /**
