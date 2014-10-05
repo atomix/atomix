@@ -15,11 +15,12 @@
  */
 package net.kuujo.copycat.endpoint.impl;
 
+import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.endpoint.Endpoint;
+import net.kuujo.copycat.impl.DefaultCopycatContext;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.CopyCatContext;
-import net.kuujo.copycat.endpoint.Endpoint;
 
 /**
  * Direct endpoint implementation.
@@ -27,13 +28,13 @@ import net.kuujo.copycat.endpoint.Endpoint;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalEndpoint implements Endpoint {
-  private CopyCatContext context;
+  private DefaultCopycatContext context;
 
   public LocalEndpoint() {
   }
 
   @Override
-  public void init(CopyCatContext context) {
+  public void init(CopycatContext context) {
   }
 
   @Override
@@ -51,11 +52,15 @@ public class LocalEndpoint implements Endpoint {
    *
    * @param command The command to submit.
    * @param args The command arguments.
-   * @param callback An asynchronous callback to be called once complete.
-   * @return
+   * @return A completable future to be completed once the result is received.
    */
   public <R> CompletableFuture<R> submitCommand(String command, List<Object> args) {
     return context.submitCommand(command, args);
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
   }
 
 }
