@@ -55,12 +55,12 @@ public abstract class StateMachine {
             try {
               return method.invoke(stateMachine, args.toArray());
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-              throw new CopyCatException(e);
+              throw new CopycatException(e);
             }
           }
         }
 
-      throw new CopyCatException("Invalid command");
+      throw new CopycatException("Invalid command");
     }
   }
 
@@ -169,6 +169,11 @@ public abstract class StateMachine {
     public Class<? extends Annotation> annotationType() {
       return Command.class;
     }
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
   }
 
 }
