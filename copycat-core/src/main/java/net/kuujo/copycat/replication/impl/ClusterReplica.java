@@ -15,17 +15,8 @@
  */
 package net.kuujo.copycat.replication.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-
-import net.kuujo.copycat.CopyCatException;
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.cluster.RemoteMember;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.log.impl.SnapshotEntry;
@@ -33,27 +24,31 @@ import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.state.impl.CopycatStateContext;
 import net.kuujo.copycat.state.impl.Follower;
-import net.kuujo.copycat.state.impl.RaftStateContext;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Raft-based replica implementation.
+ * Cluster replica implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class RaftReplica {
+class ClusterReplica {
   private static final int BATCH_SIZE = 100;
-  private final Member member;
-  private final RaftStateContext state;
+  private final RemoteMember<?> member;
+  private final CopycatStateContext state;
   private final Log log;
   private volatile long nextIndex;
   private volatile long matchIndex;
   private volatile long sendIndex;
   private volatile boolean open;
   private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
-  private final Map<Long, CompletableFuture<Long>> commitFutures = new ConcurrentHashMap<>();
+  private final Map<Long, CompletableFuture<Long>> replicateFutures = new ConcurrentHashMap<>(1024);
 
-  public RaftReplica(Member member, RaftStateContext state) {
+  public ClusterReplica(RemoteMember<?> member, CopycatStateContext state) {
     this.member = member;
     this.state = state;
     this.log = state.log();
@@ -66,7 +61,7 @@ class RaftReplica {
    *
    * @return The replica member.
    */
-  Member member() {
+  RemoteMember<?> member() {
     return member;
   }
 
@@ -88,8 +83,8 @@ class RaftReplica {
    * Opens the connection to the replica.
    */
   CompletableFuture<Void> open() {
-    if (open == false) {
-      return member.protocol().client().connect().whenComplete((result, error) -> {
+    if (!open) {
+      return member.client().connect().whenComplete((result, error) -> {
         if (error == null) {
           open = true;
         }
@@ -105,12 +100,12 @@ class RaftReplica {
   synchronized CompletableFuture<Long> ping(long index) {
     if (!open) {
       CompletableFuture<Long> future = new CompletableFuture<>();
-      future.completeExceptionally(new CopyCatException("Connection not open"));
+      future.completeExceptionally(new CopycatException("Connection not open"));
       return future;
     }
 
     if (index > matchIndex) {
-      return commit(index);
+      return replicate(index);
     }
 
     CompletableFuture<Long> future = new CompletableFuture<>();
@@ -120,8 +115,8 @@ class RaftReplica {
 
     pingFutures.put(index, future);
 
-    PingRequest request = new PingRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), index, log.containsEntry(index) ? log.<RaftEntry>getEntry(index).term() : 0, state.getCommitIndex());
-    member.protocol().client().ping(request).whenCompleteAsync((response, error) -> {
+    PingRequest request = new PingRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().localMember().id(), index, log.containsEntry(index) ? log.<RaftEntry>getEntry(index).term() : 0, state.getCommitIndex());
+    member.client().ping(request).whenCompleteAsync((response, error) -> {
       if (error != null) {
         triggerPingFutures(index, error);
       } else {
@@ -130,7 +125,7 @@ class RaftReplica {
             state.setCurrentTerm(response.term());
             state.setCurrentLeader(null);
             state.transition(Follower.class);
-            triggerPingFutures(index, new CopyCatException("Not the leader"));
+            triggerPingFutures(index, new CopycatException("Not the leader"));
           } else if (!response.succeeded()) {
             triggerPingFutures(index, new ProtocolException("Replica not in sync"));
           } else {
@@ -147,10 +142,10 @@ class RaftReplica {
   /**
    * Commits the given index to the replica.
    */
-  CompletableFuture<Long> commit(long index) {
+  CompletableFuture<Long> replicate(long index) {
     if (!open) {
       CompletableFuture<Long> future = new CompletableFuture<>();
-      future.completeExceptionally(new CopyCatException("Connection not open"));
+      future.completeExceptionally(new CopycatException("Connection not open"));
       return future;
     }
 
@@ -158,16 +153,16 @@ class RaftReplica {
       return CompletableFuture.completedFuture(index);
     }
 
-    CompletableFuture<Long> future = commitFutures.get(index);
+    CompletableFuture<Long> future = replicateFutures.get(index);
     if (future != null) {
       return future;
     }
 
     future = new CompletableFuture<>();
-    commitFutures.put(index, future);
+    replicateFutures.put(index, future);
 
     if (index >= sendIndex) {
-      doCommit();
+      replicate();
     }
     return future;
   }
@@ -175,7 +170,7 @@ class RaftReplica {
   /**
    * Performs a commit operation.
    */
-  private synchronized void doCommit() {
+  private synchronized void replicate() {
     final long prevIndex = sendIndex - 1;
     final RaftEntry prevEntry = log.getEntry(prevIndex);
 
@@ -210,13 +205,13 @@ class RaftReplica {
   private void doSync(final long prevIndex, final RaftEntry prevEntry, final List<RaftEntry> entries) {
     final long commitIndex = state.getCommitIndex();
 
-    SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.clusterConfig().getLocalMember(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+    SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.getCurrentTerm(), state.cluster().localMember().id(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
 
     sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 
-    member.protocol().client().sync(request).whenComplete((response, error) -> {
+    member.client().sync(request).whenComplete((response, error) -> {
       if (error != null) {
-        triggerCommitFutures(prevIndex+1, prevIndex+entries.size(), error);
+        triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), error);
       } else {
         if (response.status().equals(Response.Status.OK)) {
           if (response.succeeded()) {
@@ -224,12 +219,12 @@ class RaftReplica {
             if (!entries.isEmpty()) {
               nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
               matchIndex = Math.max(matchIndex, prevIndex + entries.size());
-              triggerCommitFutures(prevIndex+1, prevIndex+entries.size());
-              doCommit();
+              triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size());
+              replicate();
             }
           } else {
             if (response.term() > state.getCurrentTerm()) {
-              triggerCommitFutures(prevIndex, prevIndex, new CopyCatException("Not the leader"));
+              triggerReplicateFutures(prevIndex, prevIndex, new CopycatException("Not the leader"));
               state.transition(Follower.class);
             } else {
               // If replication failed then use the last log index indicated by
@@ -237,11 +232,11 @@ class RaftReplica {
               // us to skip repeatedly replicating one entry at a time if it's not
               // necessary.
               nextIndex = sendIndex = response.lastLogIndex() + 1;
-              doCommit();
+              replicate();
             }
           }
         } else {
-          triggerCommitFutures(prevIndex+1, prevIndex+entries.size(), response.error());
+          triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), response.error());
         }
       }
     });
@@ -269,12 +264,12 @@ class RaftReplica {
   }
 
   /**
-   * Triggers commit futures with an error result.
+   * Triggers replicate futures with an error result.
    */
-  private void triggerCommitFutures(long startIndex, long endIndex, Throwable t) {
+  private void triggerReplicateFutures(long startIndex, long endIndex, Throwable t) {
     if (endIndex >= startIndex) {
       for (long i = startIndex; i <= endIndex; i++) {
-        CompletableFuture<Long> future = commitFutures.remove(i);
+        CompletableFuture<Long> future = replicateFutures.remove(i);
         if (future != null) {
           future.completeExceptionally(t);
         }
@@ -283,12 +278,12 @@ class RaftReplica {
   }
 
   /**
-   * Triggers commit futures with a completion result
+   * Triggers replicate futures with a completion result
    */
-  private void triggerCommitFutures(long startIndex, long endIndex) {
+  private void triggerReplicateFutures(long startIndex, long endIndex) {
     if (endIndex >= startIndex) {
       for (long i = startIndex; i <= endIndex; i++) {
-        CompletableFuture<Long> future = commitFutures.remove(i);
+        CompletableFuture<Long> future = replicateFutures.remove(i);
         if (future != null) {
           future.complete(i);
         }
@@ -300,12 +295,17 @@ class RaftReplica {
    * Closes the replica.
    */
   CompletableFuture<Void> close() {
-    return member.protocol().client().close().whenComplete((result, error) -> open = false);
+    return member.client().close().whenComplete((result, error) -> open = false);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof ClusterReplica && ((ClusterReplica) object).member.equals(member);
   }
 
   @Override
   public int hashCode() {
-    return 37 + member.uri().hashCode() * 7;
+    return 37 + member.id().hashCode() * 7;
   }
 
   @Override

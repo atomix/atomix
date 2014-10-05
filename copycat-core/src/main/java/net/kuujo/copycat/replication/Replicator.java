@@ -15,10 +15,9 @@
  */
 package net.kuujo.copycat.replication;
 
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.spi.QuorumStrategy;
 
-import net.kuujo.copycat.cluster.Member;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Log replicator.<p>
@@ -34,79 +33,40 @@ import net.kuujo.copycat.cluster.Member;
 public interface Replicator {
 
   /**
-   * Sets the required read quorum for replication.<p>
+   * Replicates all entries up to the given index to a quorum of the cluster.<p>
    *
-   * This is the minimum number of nodes which must be contacted in order to
-   * ensure that the log is up-to-date. If strong consistency is enabled,
-   * the leader will ping a quorum of the cluster before returning read-only data.
-   *
-   * @param quorumSize The required number of replicas that must be up-to-date
-   *        in order to perform reads.
-   * @return The replicator instance.
-   */
-  Replicator withReadQuorum(Integer quorumSize);
-
-  /**
-   * Sets the required write quorum for replication.<p>
-   *
-   * This is the minimum number of nodes to which a command must be replicated
-   * before its output can be returned to the caller. Note that this may differ
-   * from considering an entry committed. In order for an entry to be considered
-   * committed, it must be successfully replicated to a majority of the cluster.
-   *
-   * @param quorumSize The required number of replicas that must have received and
-   *        logged an entry in order to consider it replicated. Note that replicated
-   *        does not mean the same thing as committed.
-   * @return The replicator instance.
-   */
-  Replicator withWriteQuorum(Integer quorumSize);
-
-  /**
-   * Adds a cluster member to the replica set.
-   *
-   * @param member The cluster member to add.
-   * @return The replicator instance.
-   */
-  Replicator addMember(Member member);
-
-  /**
-   * Removes a cluster member from the replica set.
-   *
-   * @param member The cluster member to remove.
-   * @return The replicator instance.
-   */
-  Replicator removeMember(Member member);
-
-  /**
-   * Returns a boolean indicating whether a cluster member is contained within
-   * the replicator's replica set.
-   *
-   * @param member The cluster member to check.
-   * @return Indicates whether the given member is a part of the replicator's replica set.
-   */
-  boolean containsMember(Member member);
-
-  /**
-   * Returns a set of cluster members in the replicator's replica set.
-   *
-   * @return A set of cluster members in the replicator's replica set.
-   */
-  Set<Member> getMembers();
-
-  /**
-   * Replicates all entries up to the given index to a quorum of the cluster.
+   * This method's behavior depends on the write quorum strategy. Once the entry
+   * at the given index has been successfully replicated to the number of replicas
+   * defined by the write quorum strategy, the returned future will succeed.
    *
    * @param index The index up to which to replicate entries.
    * @return A completable future to be called once entries have been replicated
    *         to a write quorum of the cluster up to the given index.
    */
-  CompletableFuture<Long> commit(long index);
+  CompletableFuture<Long> replicate(long index);
 
   /**
-   * Commits all log entries to a quorum of the cluster.
+   * Replicates all log entries to a quorum of the cluster.
    *
    * @return A completable future to be called once all entries have been replicated
    *         to a write quorum of the cluster.
+   */
+  CompletableFuture<Long> replicateAll();
+
+  /**
+   * Commits all entries up to the given index to a majority of the cluster.
+   *
+   * @param index The index up to which to replicate entries.
+   * @return A completable future to be called once entries have been replicated
+   *         to and committed on a majority of the cluster up to the given index.
+   */
+  CompletableFuture<Long> commit(long index);
+
+  /**
+   * Commits all log entries to a majority of the cluster.
+   *
+   * @return A completable future to be called once all entries have been replicated
+   *         to a and committed on a majority of the cluster.
    */
   CompletableFuture<Long> commitAll();
 
