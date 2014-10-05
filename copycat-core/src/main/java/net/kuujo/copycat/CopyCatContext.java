@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,102 +14,32 @@
  */
 package net.kuujo.copycat;
 
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.event.Event;
-import net.kuujo.copycat.event.EventContext;
-import net.kuujo.copycat.event.EventHandlerRegistry;
-import net.kuujo.copycat.event.EventHandlersRegistry;
-import net.kuujo.copycat.event.EventsContext;
-import net.kuujo.copycat.event.impl.DefaultEventsContext;
+import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.event.*;
+import net.kuujo.copycat.impl.DefaultCopycatContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.InMemoryLog;
-import net.kuujo.copycat.protocol.CorrelationStrategy;
-import net.kuujo.copycat.protocol.TimerStrategy;
-import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.registry.impl.BasicRegistry;
-import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
+import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.state.State;
-import net.kuujo.copycat.state.impl.RaftStateContext;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * CopyCat replica context.<p>
- *
- * The <code>CopyCatContext</code> is the primary API for creating
- * and running a CopyCat replica. Given a state machine, a cluster
- * configuration, and a log, the context will communicate with other
- * nodes in the cluster, applying and replicating state machine commands.<p>
- *
- * CopyCat uses a Raft-based consensus algorithm to perform leader election
- * and state machine replication. In CopyCat, all state changes are made
- * through the cluster leader. When a cluster is started, nodes will
- * communicate with one another to elect a leader. When a command is submitted
- * to any node in the cluster, the command will be forwarded to the leader.
- * When the leader receives a command submission, it will first replicate
- * the command to its followers before applying the command to its state
- * machine and returning the result.<p>
- *
- * In order to prevent logs from growing too large, CopyCat uses snapshotting
- * to periodically compact logs. In CopyCat, snapshots are simply log
- * entries before which all previous entries are cleared. When a node first
- * becomes the cluster leader, it will first commit a snapshot of its current
- * state to its log. This snapshot can be used to get any new nodes up to date.<p>
- *
- * CopyCat supports dynamic cluster membership changes. If the {@link ClusterConfig}
- * provided to the CopyCat context is {@link java.util.Observable}, the cluster
- * leader will observe the configuration for changes. Note that cluster membership
- * changes can only occur on the leader's cluster configuration. This is because,
- * as with all state changes, cluster membership changes must go through the leader.
- * When cluster membership changes occur, the cluster leader will log and replicate
- * the configuration change just like any other state change, and it will ensure
- * that the membership change occurs in a manner that prevents a dual-majority
- * in the cluster.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopyCatContext {
-  private final Registry registry;
-  private final ClusterConfig cluster;
-  private final CopyCatConfig config;
-  private final RaftStateContext state;
-  private final EventsContext events;
+public interface CopycatContext {
 
-  public CopyCatContext(StateMachine stateMachine) {
-    this(stateMachine, new InMemoryLog(), new ClusterConfig(), new CopyCatConfig());
-  }
-
-  public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster) {
-    this(stateMachine, new InMemoryLog(), cluster, new CopyCatConfig());
-  }
-
-  public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, Registry registry) {
-    this(stateMachine, new InMemoryLog(), cluster, new CopyCatConfig(), registry);
-  }
-
-  public CopyCatContext(StateMachine stateMachine, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this(stateMachine, new InMemoryLog(), cluster, config, registry);
-  }
-
-  public CopyCatContext(StateMachine stateMachine, Log log) {
-    this(stateMachine, log, new ClusterConfig(), new CopyCatConfig());
-  }
-
-  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster) {
-    this(stateMachine, log, cluster, new CopyCatConfig());
-  }
-
-  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
-    this(stateMachine, log, cluster, config, new ConcurrentRegistry());
-  }
-
-  public CopyCatContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this.registry = registry;
-    this.cluster = cluster;
-    this.config = config;
-    this.state = new RaftStateContext(stateMachine, log, cluster, config, registry);
-    this.events = new DefaultEventsContext(state.events());
+  /**
+   * Returns a new context builder.
+   *
+   * @return A new copycat context builder.
+   */
+  static Builder builder() {
+    return new Builder();
   }
 
   /**
@@ -118,40 +47,21 @@ public class CopyCatContext {
    *
    * @return The replica configuration.
    */
-  public CopyCatConfig config() {
-    return config;
-  }
+  public CopycatConfig config();
 
   /**
    * Returns the cluster configuration.
    *
    * @return The cluster configuration.
    */
-  public ClusterConfig cluster() {
-    return cluster;
-  }
-
-  /**
-   * Returns the context registry.<p>
-   *
-   * The registry can be used to register objects that can be accessed
-   * by {@link net.kuujo.copycat.protocol.Protocol} and
-   * {@link net.kuujo.copycat.endpoint.Endpoint} implementations.
-   *
-   * @return The context registry.
-   */
-  public Registry registry() {
-    return registry;
-  }
+  public ClusterConfig<?> cluster();
 
   /**
    * Returns the context events.
    *
    * @return Context events.
    */
-  public EventsContext on() {
-    return events;
-  }
+  public EventsContext on();
 
   /**
    * Returns the context for a specific event.
@@ -159,18 +69,14 @@ public class CopyCatContext {
    * @param event The event for which to return the context.
    * @return The event context.
    */
-  public <T extends Event> EventContext<T> on(Class<T> event) {
-    return events.<T>event(event);
-  }
+  public <T extends Event> EventContext<T> on(Class<T> event);
 
   /**
    * Returns the event handlers registry.
    *
    * @return The event handlers registry.
    */
-  public EventHandlersRegistry events() {
-    return state.events();
-  }
+  public EventHandlersRegistry events();
 
   /**
    * Returns an event handler registry for a specific event.
@@ -178,54 +84,42 @@ public class CopyCatContext {
    * @param event The event for which to return the registry.
    * @return The event handler registry.
    */
-  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
-    return state.events().event(event);
-  }
+  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event);
 
   /**
    * Returns the current replica state.
    *
    * @return The current replica state.
    */
-  public State.Type state() {
-    return state.state();
-  }
+  public State.Type state();
 
   /**
    * Returns the current leader URI.
    *
    * @return The current leader URI.
    */
-  public String leader() {
-    return state.leader();
-  }
+  public String leader();
 
   /**
    * Returns a boolean indicating whether the node is the current leader.
    *
    * @return Indicates whether the node is the current leader.
    */
-  public boolean isLeader() {
-    return state.isLeader();
-  }
+  public boolean isLeader();
 
   /**
    * Starts the context.
    *
    * @return A completable future to be completed once the context has started.
    */
-  public CompletableFuture<Void> start() {
-    return state.start();
-  }
+  public CompletableFuture<Void> start();
 
   /**
    * Stops the context.
    *
    * @return A completable future that will be completed when the context has started.
    */
-  public CompletableFuture<Void> stop() {
-    return state.stop();
-  }
+  public CompletableFuture<Void> stop();
 
   /**
    * Submits a command to the cluster.
@@ -234,35 +128,26 @@ public class CopyCatContext {
    * @param args An ordered list of command arguments.
    * @return A completable future to be completed once the result is received.
    */
-  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
-    return state.submitCommand(command, args);
-  }
+  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args);
 
   /**
-   * CopyCat builder.
+   * Copycat context builder.
    *
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
   public static class Builder {
-    private CopyCatConfig config = new CopyCatConfig();
-    private ClusterConfig cluster = new ClusterConfig();
+    private CopycatConfig config = new CopycatConfig();
+    private ClusterConfig cluster;
     private StateMachine stateMachine;
     private Log log = new InMemoryLog();
-    private Registry registry = new BasicRegistry();
 
-    /**
-     * Returns a new context builder.
-     *
-     * @return A new context builder.
-     */
-    public static Builder newBuilder() {
-      return new Builder();
+    private Builder() {
     }
 
     /**
      * Sets the copycat log.
      *
-     * @param uri The copycat log.
+     * @param log The copycat log.
      * @return The copycat builder.
      */
     public Builder withLog(Log log) {
@@ -273,10 +158,10 @@ public class CopyCatContext {
     /**
      * Sets the copycat configuration.
      *
-     * @param uri The copycat configuration.
+     * @param config The copycat configuration.
      * @return The copycat builder.
      */
-    public Builder withConfig(CopyCatConfig config) {
+    public Builder withConfig(CopycatConfig config) {
       this.config = config;
       return this;
     }
@@ -284,7 +169,7 @@ public class CopyCatContext {
     /**
      * Sets the copycat election timeout.
      *
-     * @param uri The copycat election timeout.
+     * @param timeout The copycat election timeout.
      * @return The copycat builder.
      */
     public Builder withElectionTimeout(long timeout) {
@@ -295,7 +180,7 @@ public class CopyCatContext {
     /**
      * Sets the copycat heartbeat interval.
      *
-     * @param uri The copycat heartbeat interval.
+     * @param interval The copycat heartbeat interval.
      * @return The copycat builder.
      */
     public Builder withHeartbeatInterval(long interval) {
@@ -375,7 +260,7 @@ public class CopyCatContext {
      * @param cluster The cluster configuration.
      * @return The copycat builder.
      */
-    public Builder withClusterConfig(ClusterConfig cluster) {
+    public Builder withClusterConfig(ClusterConfig<?> cluster) {
       this.cluster = cluster;
       return this;
     }
@@ -383,33 +268,36 @@ public class CopyCatContext {
     /**
      * Sets the local cluster member.
      *
-     * @param uri The local cluster member URI.
+     * @param member The local cluster member configuration.
      * @return The copycat builder.
      */
-    public Builder withLocalMember(String uri) {
-      this.cluster.setLocalMember(uri);
+    @SuppressWarnings("unchecked")
+    public Builder withLocalMember(MemberConfig member) {
+      this.cluster.setLocalMember(member);
       return this;
     }
 
     /**
      * Sets the remote cluster members.
      *
-     * @param uris The remote cluster member URIs.
+     * @param members The remote cluster member configurations.
      * @return The copycat builder.
      */
-    public Builder withRemoteMembers(String... uris) {
-      this.cluster.setRemoteMembers(uris);
+    @SuppressWarnings("unchecked")
+    public Builder withRemoteMembers(MemberConfig... members) {
+      this.cluster.setRemoteMembers(Arrays.asList(members));
       return this;
     }
 
     /**
      * Sets the remote cluster members.
      *
-     * @param uris The remote cluster member URIs.
+     * @param members The remote cluster member configurations.
      * @return The copycat builder.
      */
-    public Builder withRemoteMembers(Set<String> uris) {
-      this.cluster.setRemoteMembers(uris);
+    @SuppressWarnings("unchecked")
+    public Builder withRemoteMembers(Collection<MemberConfig> members) {
+      this.cluster.setRemoteMembers(members);
       return this;
     }
 
@@ -425,23 +313,12 @@ public class CopyCatContext {
     }
 
     /**
-     * Sets the copycat registry.
-     *
-     * @param registry The copycat registry.
-     * @return The copycat builder.
-     */
-    public Builder withRegistry(Registry registry) {
-      this.registry = registry;
-      return this;
-    }
-
-    /**
      * Builds the copycat instance.
      *
      * @return The copycat instance.
      */
-    public CopyCatContext build() {
-      return new CopyCatContext(stateMachine, log, cluster, config, registry);
+    public CopycatContext build() {
+      return new DefaultCopycatContext(stateMachine, log, cluster, config);
     }
 
   }
