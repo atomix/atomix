@@ -41,7 +41,7 @@ public class DefaultCopycat implements Copycat {
   private final Endpoint endpoint;
   private final CopycatContext context;
 
-  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycat(Endpoint endpoint, StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
+  public <M extends MemberConfig> DefaultCopycat(Endpoint endpoint, StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
     this.context = new DefaultCopycatContext(stateMachine, log, cluster, protocol, config);
     this.endpoint = endpoint;
     this.endpoint.submitHandler(new SubmitHandler() {

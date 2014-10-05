@@ -23,14 +23,14 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Cluster<P extends Protocol<M>, M extends MemberConfig> extends Observable implements Observer {
+public class Cluster<M extends MemberConfig> extends Observable implements Observer {
   private final Protocol<M> protocol;
   private final ClusterConfig<M> config;
   private final LocalMember<M> localMember;
   private final Set<RemoteMember<M>> remoteMembers = new HashSet<>(10);
   private final Map<String, Member<M>> members = new HashMap<>(10);
 
-  public Cluster(P protocol, ClusterConfig<M> config) {
+  public Cluster(Protocol<M> protocol, ClusterConfig<M> config) {
     this.protocol = protocol;
     this.config = config;
     this.localMember = new LocalMember<>(protocol.createServer(config.getLocalMember()), config.getLocalMember());

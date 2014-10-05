@@ -68,12 +68,11 @@ public final class StateContext {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public <P extends Protocol<M>, M extends MemberConfig> StateContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
+  public <M extends MemberConfig> StateContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
     this.stateMachine = stateMachine;
     this.log = log;
     this.config = config;
-    this.cluster = new Cluster(protocol, cluster);
+    this.cluster = new Cluster<M>(protocol, cluster);
   }
 
   /**

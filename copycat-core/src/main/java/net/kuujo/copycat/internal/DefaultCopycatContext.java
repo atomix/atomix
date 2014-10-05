@@ -71,19 +71,19 @@ public class DefaultCopycatContext implements CopycatContext {
   private final StateContext state;
   private final EventsContext events;
 
-  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, P protocol) {
+  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, Protocol<M> protocol) {
     this(stateMachine, new InMemoryLog(), cluster, protocol, new CopycatConfig());
   }
 
-  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
+  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
     this(stateMachine, new InMemoryLog(), cluster, protocol, config);
   }
 
-  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol) {
+  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol) {
     this(stateMachine, log, cluster, protocol, new CopycatConfig());
   }
 
-  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
+  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
     this.cluster = cluster;
     this.config = config;
     this.state = new StateContext(stateMachine, log, cluster, protocol, config);

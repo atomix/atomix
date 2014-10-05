@@ -42,7 +42,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    *
    * @param cluster The cluster from which to construct the configuration.
    */
-  public ClusterConfig(Cluster<?, M> cluster) {
+  public ClusterConfig(Cluster<M> cluster) {
     localMember = Args.checkNotNull(cluster).localMember().config();
     remoteMembers.addAll(cluster.remoteMembers().stream().<M>map(member -> member.config()).collect(Collectors.toList()));
   }

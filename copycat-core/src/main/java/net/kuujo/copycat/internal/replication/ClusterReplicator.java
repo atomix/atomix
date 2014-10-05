@@ -66,13 +66,13 @@ public class ClusterReplicator implements Replicator, Observer {
 
   @Override
   public void update(Observable o, Object arg) {
-    clusterChanged((Cluster<?, ?>) o);
+    clusterChanged((Cluster<?>) o);
   }
 
   /**
    * Called when the replicator cluster configuration has changed.
    */
-  private synchronized void clusterChanged(Cluster<?, ?> cluster) {
+  private synchronized void clusterChanged(Cluster<?> cluster) {
     cluster.remoteMembers().forEach(member -> {
       if (!replicaMap.containsKey(member.id())) {
         ClusterReplica replica = new ClusterReplica(member, state);
