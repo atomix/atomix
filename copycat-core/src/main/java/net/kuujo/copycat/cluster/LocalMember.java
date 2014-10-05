@@ -14,50 +14,44 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.util.Observable;
-import java.util.Observer;
+import net.kuujo.copycat.protocol.ProtocolServer;
 
 /**
- * Cluster member.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Member<M extends MemberConfig> extends Observable implements Observer {
-  private final String id;
-  private final M config;
+public class LocalMember<M extends MemberConfig> extends Member<M> {
+  private final ProtocolServer server;
 
-  protected Member(M config) {
-    this.id = config.getId();
-    this.config = config;
-    config.addObserver(this);
+  public LocalMember(ProtocolServer server, M config) {
+    super(config);
+    this.server = server;
+  }
+
+  /**
+   * Returns the local member server.
+   *
+   * @return The local member server.
+   */
+  public ProtocolServer server() {
+    return server;
   }
 
   @Override
-  public void update(Observable o, Object arg) {
-    notifyObservers();
+  public boolean equals(Object object) {
+    return object instanceof LocalMember && ((Member<?>) object).config().equals(config());
   }
 
-  /**
-   * Returns the unique member ID.
-   *
-   * @return The unique member ID.
-   */
-  public final String id() {
-    return id;
-  }
-
-  /**
-   * Returns the member configuration.
-   *
-   * @return The member configuration.
-   */
-  public final M config() {
-    return config;
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + config().hashCode();
+    hashCode = 37 * hashCode + server.hashCode();
+    return hashCode;
   }
 
   @Override
   public String toString() {
-    return String.format("Member[config=%s]", config);
+    return String.format("LocalMember[config=%s]", config());
   }
 
 }
