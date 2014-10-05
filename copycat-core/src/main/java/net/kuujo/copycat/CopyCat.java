@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,71 +14,30 @@
  */
 package net.kuujo.copycat;
 
-import java.util.Set;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.endpoint.Endpoint;
+import net.kuujo.copycat.event.*;
+import net.kuujo.copycat.impl.DefaultCopycat;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.TimerStrategy;
+
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.endpoint.Endpoint;
-import net.kuujo.copycat.endpoint.EndpointFactory;
-import net.kuujo.copycat.endpoint.impl.DefaultEndpointFactory;
-import net.kuujo.copycat.event.Event;
-import net.kuujo.copycat.event.EventContext;
-import net.kuujo.copycat.event.EventHandlerRegistry;
-import net.kuujo.copycat.event.EventHandlersRegistry;
-import net.kuujo.copycat.event.EventsContext;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.CorrelationStrategy;
-import net.kuujo.copycat.protocol.TimerStrategy;
-import net.kuujo.copycat.registry.Registry;
-
 /**
- * Primary copycat API.<p>
- *
- * The <code>CopyCat</code> class provides a fluent API for
- * combining the {@link CopyCatContext} with an {@link Endpoint}.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopyCat {
-  private final Endpoint endpoint;
-  private final CopyCatContext context;
+public interface Copycat {
 
-  public CopyCat(Endpoint endpoint, StateMachine stateMachine, ClusterConfig cluster) {
-    this(endpoint, new CopyCatContext(stateMachine, cluster));
-  }
-
-  public CopyCat(String uri, StateMachine stateMachine, ClusterConfig cluster) {
-    this.context = new CopyCatContext(stateMachine, cluster);
-    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
-    this.endpoint = factory.createEndpoint(uri);
-    endpoint.init(context);
-  }
-
-  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster) {
-    this.context = new CopyCatContext(stateMachine, log, cluster);
-    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
-    this.endpoint = factory.createEndpoint(uri);
-    endpoint.init(context);
-  }
-
-  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config) {
-    this.context = new CopyCatContext(stateMachine, log, cluster, config);
-    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
-    this.endpoint = factory.createEndpoint(uri);
-    endpoint.init(context);
-  }
-
-  public CopyCat(String uri, StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
-    this.context = new CopyCatContext(stateMachine, log, cluster, config, registry);
-    EndpointFactory factory = new DefaultEndpointFactory(context.registry());
-    this.endpoint = factory.createEndpoint(uri);
-    endpoint.init(context);
-  }
-
-  private CopyCat(Endpoint endpoint, CopyCatContext context) {
-    this.endpoint = endpoint;
-    this.context = context;
-    endpoint.init(context);
+  /**
+   * Returns a new copycat builder.
+   *
+   * @return A new copycat builder.
+   */
+  static Builder builder() {
+    return new Builder();
   }
 
   /**
@@ -87,9 +45,7 @@ public class CopyCat {
    *
    * @return Context events.
    */
-  public EventsContext on() {
-    return context.on();
-  }
+  public EventsContext on();
 
   /**
    * Returns the context for a specific event.
@@ -97,81 +53,51 @@ public class CopyCat {
    * @param event The event for which to return the context.
    * @return The event context.
    */
-  public <T extends Event> EventContext<T> on(Class<T> event) {
-    return context.on().<T>event(event);
-  }
+  public <T extends Event> EventContext<T> on(Class<T> event);
 
   /**
    * Returns the event handlers registry.
    *
    * @return The event handlers registry.
    */
-  public EventHandlersRegistry events() {
-    return context.events();
-  }
+  public EventHandlersRegistry events();
 
   /**
    * Returns an event handler registry for a specific event.
    *
    * @param event The event for which to return the registry.
-   * @return
+   * @return An event handler registry.
    */
-  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
-    return context.event(event);
-  }
+  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event);
 
   /**
    * Starts the replica.
    *
    * @return A completable future to be completed once the replica has started.
    */
-  public CompletableFuture<Void> start() {
-    return context.start().thenRun(()->{});
-  }
+  public CompletableFuture<Void> start();
 
   /**
    * Stops the replica.
    *
    * @return A completable future to be completed once the replica has stopped.
    */
-  public CompletableFuture<Void> stop() {
-    return endpoint.stop();
-  }
+  public CompletableFuture<Void> stop();
 
   /**
-   * CopyCat builder.
-   *
-   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   * Copycat builder.
    */
   public static class Builder {
     private Endpoint endpoint;
-    private String uri;
-    private final CopyCatContext.Builder builder = new CopyCatContext.Builder();
+    private final CopycatContext.Builder builder = CopycatContext.builder();
 
-    /**
-     * Returns a new copycat builder.
-     *
-     * @return A new copycat builder.
-     */
-    public static Builder newBuilder() {
-      return new Builder();
+    private Builder() {
     }
 
     /**
      * Sets the copycat endpoint.
      *
-     * @param uri The copycat endpoint.
-     * @return The copycat builder.
-     */
-    public Builder withEndpoint(String uri) {
-      this.uri = uri;
-      return this;
-    }
-
-    /**
-     * Sets the copycat endpoint.
-     *
-     * @param uri The copycat endpoint.
+     * @param endpoint The copycat endpoint.
      * @return The copycat builder.
      */
     public Builder withEndpoint(Endpoint endpoint) {
@@ -182,7 +108,7 @@ public class CopyCat {
     /**
      * Sets the copycat log.
      *
-     * @param uri The copycat log.
+     * @param log The copycat log.
      * @return The copycat builder.
      */
     public Builder withLog(Log log) {
@@ -193,10 +119,10 @@ public class CopyCat {
     /**
      * Sets the copycat configuration.
      *
-     * @param uri The copycat configuration.
+     * @param config The copycat configuration.
      * @return The copycat builder.
      */
-    public Builder withConfig(CopyCatConfig config) {
+    public Builder withConfig(CopycatConfig config) {
       builder.withConfig(config);
       return this;
     }
@@ -204,7 +130,7 @@ public class CopyCat {
     /**
      * Sets the copycat election timeout.
      *
-     * @param uri The copycat election timeout.
+     * @param timeout The copycat election timeout.
      * @return The copycat builder.
      */
     public Builder withElectionTimeout(long timeout) {
@@ -215,7 +141,7 @@ public class CopyCat {
     /**
      * Sets the copycat heartbeat interval.
      *
-     * @param uri The copycat heartbeat interval.
+     * @param interval The copycat heartbeat interval.
      * @return The copycat builder.
      */
     public Builder withHeartbeatInterval(long interval) {
@@ -295,7 +221,7 @@ public class CopyCat {
      * @param cluster The cluster configuration.
      * @return The copycat builder.
      */
-    public Builder withClusterConfig(ClusterConfig cluster) {
+    public Builder withClusterConfig(ClusterConfig<?> cluster) {
       builder.withClusterConfig(cluster);
       return this;
     }
@@ -303,33 +229,36 @@ public class CopyCat {
     /**
      * Sets the local cluster member.
      *
-     * @param uri The local cluster member URI.
+     * @param member The local cluster member configuration.
      * @return The copycat builder.
      */
-    public Builder withLocalMember(String uri) {
-      builder.withLocalMember(uri);
+    @SuppressWarnings("unchecked")
+    public Builder withLocalMember(MemberConfig member) {
+      builder.withLocalMember(member);
       return this;
     }
 
     /**
      * Sets the remote cluster members.
      *
-     * @param uris The remote cluster member URIs.
+     * @param members The remote cluster member configurations.
      * @return The copycat builder.
      */
-    public Builder withRemoteMembers(String... uris) {
-      builder.withRemoteMembers(uris);
+    @SuppressWarnings("unchecked")
+    public Builder withRemoteMembers(MemberConfig... members) {
+      builder.withRemoteMembers(members);
       return this;
     }
 
     /**
      * Sets the remote cluster members.
      *
-     * @param uris The remote cluster member URIs.
+     * @param members The remote cluster member configurations.
      * @return The copycat builder.
      */
-    public Builder withRemoteMembers(Set<String> uris) {
-      builder.withRemoteMembers(uris);
+    @SuppressWarnings("unchecked")
+    public Builder withRemoteMembers(Collection<MemberConfig> members) {
+      builder.withRemoteMembers(members);
       return this;
     }
 
@@ -345,27 +274,13 @@ public class CopyCat {
     }
 
     /**
-     * Sets the copycat registry.
-     *
-     * @param registry The copycat registry.
-     * @return The copycat builder.
-     */
-    public Builder withRegistry(Registry registry) {
-      builder.withRegistry(registry);
-      return this;
-    }
-
-    /**
      * Builds the copycat instance.
      *
      * @return The copycat instance.
      */
-    public CopyCat build() {
-      CopyCatContext context = builder.build();
-      if (endpoint == null) {
-        endpoint = new DefaultEndpointFactory(context.registry()).createEndpoint(uri);
-      }
-      return new CopyCat(endpoint, context);
+    public Copycat build() {
+      CopycatContext context = builder.build();
+      return new DefaultCopycat(endpoint, context);
     }
 
   }
