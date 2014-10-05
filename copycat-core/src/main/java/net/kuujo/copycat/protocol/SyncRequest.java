@@ -110,8 +110,36 @@ public class SyncRequest extends Request {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof SyncRequest) {
+      SyncRequest request = (SyncRequest) object;
+      return request.id().equals(id())
+        && request.term == term
+        && request.leader.equals(leader)
+        && request.prevLogIndex == prevLogIndex
+        && request.prevLogTerm == prevLogTerm
+        && request.entries.equals(entries)
+        && request.commitIndex == commitIndex;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + leader.hashCode();
+    hashCode = 37 * hashCode + (int)(prevLogIndex ^ (prevLogIndex >>> 32));
+    hashCode = 37 * hashCode + (int)(prevLogTerm ^ (prevLogTerm >>> 32));
+    hashCode = 37 * hashCode + entries.hashCode();
+    hashCode = 37 * hashCode + (int)(commitIndex ^ (commitIndex >>> 32));
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%s, prevLogIndex=%d, prevLogTerm=%d, commitIndex=%d, entries=%s]", getClass().getSimpleName(), term, leader, prevLogIndex, prevLogTerm, commitIndex, entries);
+    return String.format("%s[id=%s, term=%d, leader=%s, prevLogIndex=%d, prevLogTerm=%d, commitIndex=%d, entries=%s]", getClass().getSimpleName(), id(), term, leader, prevLogIndex, prevLogTerm, commitIndex, entries);
   }
 
 }

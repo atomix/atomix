@@ -76,8 +76,28 @@ public class SyncResponse extends Response {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof SyncResponse) {
+      SyncResponse response = (SyncResponse) object;
+      return response.id().equals(id()) && response.status().equals(status()) && response.term == term && response.succeeded == succeeded && response.lastLogIndex == lastLogIndex;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + status().hashCode();
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + (succeeded ? 1 : 0);
+    hashCode = 37 * hashCode + (int)(lastLogIndex ^ (lastLogIndex >>> 32));
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[term=%d, succeeded=%b]", getClass().getSimpleName(), term, succeeded);
+    return String.format("%s[id=%s, term=%d, succeeded=%b]", getClass().getSimpleName(), id(), term, succeeded);
   }
 
 }

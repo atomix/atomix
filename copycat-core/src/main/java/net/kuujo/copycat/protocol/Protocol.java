@@ -18,15 +18,11 @@ package net.kuujo.copycat.protocol;
 import net.kuujo.copycat.cluster.MemberConfig;
 
 /**
- * CopyCat protocol.<p>
+ * Copycat protocol.<p>
  *
- * Protocols are used by CopyCat to communicate between replicas.
- * CopyCat's protocol implementation is pluggable, meaning users can
+ * Protocols are used by Copycat to communicate between replicas.
+ * Copycat's protocol implementation is pluggable, meaning users can
  * use any protocol they wish to facilitate communication between nodes.
- * To register a protocol, simply create a file at
- * <code>META-INF/services/net/kuujo/copycat/protocol</code>. Name the
- * file the same name as the protocol, e.g. <code>tcp</code>. CopyCat
- * will use the protocol based on URIs used in cluster configurations.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -35,7 +31,6 @@ public interface Protocol<M extends MemberConfig> {
   /**
    * Creates a protocol server.
    *
-   * @param cluster The cluster configuration.
    * @param member The member configuration.
    * @return The protocol server.
    */
@@ -44,7 +39,6 @@ public interface Protocol<M extends MemberConfig> {
   /**
    * Creates a protocol client.
    *
-   * @param cluster The cluster configuration.
    * @param member The member configuration.
    * @return The protocol client.
    */

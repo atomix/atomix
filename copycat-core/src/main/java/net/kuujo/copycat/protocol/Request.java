@@ -26,7 +26,7 @@ import java.io.Serializable;
 public abstract class Request implements Serializable {
   private final Object id;
 
-  public Request(Object id) {
+  protected Request(Object id) {
     this.id = id;
   }
 
@@ -37,6 +37,11 @@ public abstract class Request implements Serializable {
    */
   public Object id() {
     return id;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Request[id=%s]", id);
   }
 
 }

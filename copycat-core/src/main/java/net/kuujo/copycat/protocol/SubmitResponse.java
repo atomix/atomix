@@ -53,8 +53,26 @@ public class SubmitResponse extends Response {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof SubmitResponse) {
+      SubmitResponse response = (SubmitResponse) object;
+      return response.id().equals(id()) && response.status().equals(status()) && response.result.equals(result);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + status().hashCode();
+    hashCode = 37 * hashCode + result.hashCode();
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[result=%s]", getClass().getSimpleName(), result);
+    return String.format("%s[id=%s, result=%s]", getClass().getSimpleName(), id(), result);
   }
 
 }

@@ -60,8 +60,26 @@ public class SubmitRequest extends Request {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof SubmitRequest) {
+      SubmitRequest request = (SubmitRequest) object;
+      return request.id().equals(id()) && request.command.equals(command) && request.args.equals(args);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + command.hashCode();
+    hashCode = 37 * hashCode + args.hashCode();
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[command=%s, args=%s]", getClass().getSimpleName(), command, args);
+    return String.format("%s[id=%s, command=%s, args=%s]", getClass().getSimpleName(), id(), command, args);
   }
 
 }

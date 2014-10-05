@@ -82,8 +82,26 @@ public class PollRequest extends Request {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof PollRequest) {
+      PollRequest request = (PollRequest) object;
+      return request.id().equals(id()) && request.term == term && request.candidate.equals(candidate);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + candidate.hashCode();
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[term=%d, candidate=%s, lastLogIndex=%d, lastLogTerm=%d]", getClass().getSimpleName(), term, candidate, lastLogIndex, lastLogTerm);
+    return String.format("%s[id=%s, term=%d, candidate=%s, lastLogIndex=%d, lastLogTerm=%d]", getClass().getSimpleName(), id(), term, candidate, lastLogIndex, lastLogTerm);
   }
 
 }

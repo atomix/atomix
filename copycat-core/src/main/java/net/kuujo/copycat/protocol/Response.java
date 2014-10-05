@@ -40,7 +40,7 @@ public abstract class Response implements Serializable {
     /**
      * Indicates a response containing an error.
      */
-    ERROR;
+    ERROR
 
   }
 
@@ -97,6 +97,11 @@ public abstract class Response implements Serializable {
    */
   public Throwable error() {
     return error != null ? new ResponseException(error) : null;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Response[id=%s, status=%s]", id, status);
   }
 
 }

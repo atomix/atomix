@@ -64,8 +64,27 @@ public class PingResponse extends Response {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof PingResponse) {
+      PingResponse response = (PingResponse) object;
+      return response.id().equals(id()) && response.status().equals(status()) && response.term == term && response.succeeded == succeeded;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + status().hashCode();
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + (succeeded ? 1 : 0);
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[term=%d, succeeded=%b]", getClass().getSimpleName(), term, succeeded);
+    return String.format("%s[id=%s, term=%d, succeeded=%b]", getClass().getSimpleName(), id(), term, succeeded);
   }
 
 }
