@@ -22,7 +22,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.impl.DefaultCopycatContext;
 import net.kuujo.copycat.log.impl.InMemoryLog;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
@@ -39,9 +39,9 @@ class CopyCatTest {
   /**
    * Starts a cluster of contexts.
    */
-  protected void startCluster(Set<CopyCatContext> contexts) throws InterruptedException {
+  protected void startCluster(Set<DefaultCopycatContext> contexts) throws InterruptedException {
     final CountDownLatch latch = new CountDownLatch(contexts.size());
-    for (CopyCatContext context : contexts) {
+    for (DefaultCopycatContext context : contexts) {
       context.start().whenComplete((result, error) -> {
         Assert.assertNull(error);
         latch.countDown();
@@ -53,8 +53,8 @@ class CopyCatTest {
   /**
    * Starts a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<CopyCatContext> startCluster(int numInstances) throws InterruptedException {
-    Set<CopyCatContext> contexts = createCluster(numInstances);
+  protected Set<DefaultCopycatContext> startCluster(int numInstances) throws InterruptedException {
+    Set<DefaultCopycatContext> contexts = createCluster(numInstances);
     startCluster(contexts);
     return contexts;
   }
@@ -62,9 +62,9 @@ class CopyCatTest {
   /**
    * Creates a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<CopyCatContext> createCluster(int numInstances) {
+  protected Set<DefaultCopycatContext> createCluster(int numInstances) {
     Registry registry = new ConcurrentRegistry();
-    Set<CopyCatContext> instances = new HashSet<>();
+    Set<DefaultCopycatContext> instances = new HashSet<>();
     for (int i = 1; i <= numInstances; i++) {
       ClusterConfig cluster = new ClusterConfig();
       cluster.setLocalMember(String.format("local:%d", i));
@@ -73,7 +73,7 @@ class CopyCatTest {
           cluster.addRemoteMember(String.format("local:%d", j));
         }
       }
-      instances.add(new CopyCatContext(new TestStateMachine(), new InMemoryLog(), cluster, new CopyCatConfig().withMaxLogSize(1000), registry));
+      instances.add(new DefaultCopycatContext(new TestStateMachine(), new InMemoryLog(), cluster, new CopycatConfig().withMaxLogSize(1000), registry));
     }
     return instances;
   }

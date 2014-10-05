@@ -18,15 +18,11 @@ package net.kuujo.copycat.test;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import net.kuujo.copycat.CopyCatConfig;
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.state.State;
-import net.kuujo.copycat.state.impl.Candidate;
-import net.kuujo.copycat.state.impl.Follower;
-import net.kuujo.copycat.state.impl.Leader;
-import net.kuujo.copycat.state.impl.None;
-import net.kuujo.copycat.state.impl.RaftStateContext;
+import net.kuujo.copycat.state.impl.*;
+import net.kuujo.copycat.state.impl.CopycatStateContext;
 
 /**
  * Test node.
@@ -35,7 +31,7 @@ import net.kuujo.copycat.state.impl.RaftStateContext;
  */
 public class TestNode {
   private final TestNodeEvents events;
-  private RaftStateContext context;
+  private CopycatStateContext context;
   private String uri;
   private State.Type state;
   private TestStateMachine stateMachine;
@@ -172,7 +168,7 @@ public class TestNode {
   /**
    * Returns the node context.
    */
-  public RaftStateContext instance() {
+  public CopycatStateContext instance() {
     return context;
   }
 
@@ -183,7 +179,7 @@ public class TestNode {
    * @param registry The cluster-wide registry.
    */
   public void start(ClusterConfig cluster, Registry registry) {
-    context = new RaftStateContext(stateMachine, log, cluster, new CopyCatConfig(), registry);
+    context = new CopycatStateContext(stateMachine, log, cluster, new CopycatConfig(), registry);
     context.setCurrentLeader(leader);
     context.setCurrentTerm(term);
     context.setLastVotedFor(votedFor);

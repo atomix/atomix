@@ -18,7 +18,6 @@ package net.kuujo.copycat.test;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.registry.impl.BasicRegistry;
 
