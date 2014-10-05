@@ -27,7 +27,7 @@ import com.esotericsoftware.kryo.io.Output;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @EntryType(id=2, serializer=NoOpEntry.Serializer.class)
-public class NoOpEntry extends RaftEntry {
+public class NoOpEntry extends CopycatEntry {
 
   private NoOpEntry() {
     super();

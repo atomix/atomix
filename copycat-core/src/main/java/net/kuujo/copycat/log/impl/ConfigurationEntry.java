@@ -27,7 +27,7 @@ import net.kuujo.copycat.log.EntryType;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @EntryType(id=4, serializer=ConfigurationEntry.Serializer.class)
-public class ConfigurationEntry extends RaftEntry {
+public class ConfigurationEntry extends CopycatEntry {
   private ClusterConfig<?> cluster;
 
   private ConfigurationEntry() {

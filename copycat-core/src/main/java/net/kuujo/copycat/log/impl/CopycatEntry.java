@@ -19,7 +19,7 @@ import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.EntryTypes;
 
 /**
- * Raft log entry.
+ * Copycat log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -29,13 +29,13 @@ import net.kuujo.copycat.log.EntryTypes;
   ConfigurationEntry.class,
   SnapshotEntry.class
 })
-public class RaftEntry implements Entry {
+public class CopycatEntry implements Entry {
   protected long term;
 
-  protected RaftEntry() {
+  protected CopycatEntry() {
   }
 
-  protected RaftEntry(long term) {
+  protected CopycatEntry(long term) {
     this.term = term;
   }
 
@@ -50,7 +50,7 @@ public class RaftEntry implements Entry {
 
   @Override
   public boolean equals(Object object) {
-    return getClass().isAssignableFrom(object.getClass()) && ((RaftEntry) object).term() == term;
+    return getClass().isAssignableFrom(object.getClass()) && ((CopycatEntry) object).term() == term;
   }
 
   @Override

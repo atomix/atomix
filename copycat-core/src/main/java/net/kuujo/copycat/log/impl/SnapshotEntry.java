@@ -22,7 +22,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.EntryType;
 
 import java.util.Arrays;
-import java.util.HashSet;
 
 /**
  * Snapshot log entry.
@@ -30,7 +29,7 @@ import java.util.HashSet;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @EntryType(id=5, serializer=SnapshotEntry.Serializer.class)
-public class SnapshotEntry extends RaftEntry {
+public class SnapshotEntry extends CopycatEntry {
   private ClusterConfig<?> cluster;
   private byte[] data;
 

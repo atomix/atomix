@@ -39,7 +39,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
   private final ByteBufferInput input = new ByteBufferInput(buffer);
 
   public InMemoryLog() {
-    super(RaftEntry.class);
+    super(CopycatEntry.class);
   }
 
   public InMemoryLog(Class<? extends Entry> entryType) {

@@ -30,7 +30,7 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @EntryType(id=3, serializer=CommandEntry.Serializer.class)
-public class CommandEntry extends RaftEntry {
+public class CommandEntry extends CopycatEntry {
   private String command;
   private List<Object> args;
 

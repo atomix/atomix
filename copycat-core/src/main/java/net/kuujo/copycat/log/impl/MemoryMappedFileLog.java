@@ -60,11 +60,11 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   private ScheduledFuture<Void> syncFuture;
 
   public MemoryMappedFileLog(String baseName) {
-    this(baseName, RaftEntry.class);
+    this(baseName, CopycatEntry.class);
   }
 
   public MemoryMappedFileLog(File baseFile) {
-    this(baseFile, RaftEntry.class);
+    this(baseFile, CopycatEntry.class);
   }
 
   public MemoryMappedFileLog(String baseName, Class<? extends Entry> entryType) {
