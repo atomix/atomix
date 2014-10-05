@@ -15,28 +15,25 @@
  */
 package net.kuujo.copycat.state.impl;
 
-import java.util.HashSet;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.impl.CommandEntry;
 import net.kuujo.copycat.log.impl.ConfigurationEntry;
 import net.kuujo.copycat.log.impl.NoOpEntry;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.replication.Replicator;
-import net.kuujo.copycat.replication.impl.RaftReplicator;
+import net.kuujo.copycat.replication.impl.ClusterReplicator;
 import net.kuujo.copycat.state.State;
+
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Leader state.<p>
@@ -49,7 +46,7 @@ import net.kuujo.copycat.state.State;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Leader extends RaftState implements Observer {
+public class Leader extends CopycatState implements Observer {
   private ScheduledFuture<Void> currentTimer;
   private Replicator replicator;
 
@@ -59,12 +56,11 @@ public class Leader extends RaftState implements Observer {
   }
 
   @Override
-  public void init(RaftStateContext context) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public void init(CopycatStateContext context) {
     super.init(context);
 
-    replicator = new RaftReplicator(context)
-      .withReadQuorum(context.config().getReadQuorumSize())
-      .withWriteQuorum(context.config().getWriteQuorumSize());
+    replicator = new ClusterReplicator(context);
 
     // When the leader is first elected, it needs to commit any pending commands
     // in its log to the state machine and then commit a snapshot to its log.
@@ -86,24 +82,15 @@ public class Leader extends RaftState implements Observer {
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
-    Set<String> members = new HashSet<>(context.clusterConfig().getMembers());
-    context.log().appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
+    context.log().appendEntry(new ConfigurationEntry(context.getCurrentTerm(), new ClusterConfig(context.cluster())));
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
     context.cluster().config().addObserver(this);
 
-    // Create a replicator using the configured (internal) cluster configuration.
-    for (String uri : context.clusterConfig().getRemoteMembers()) {
-      Member member = context.cluster().member(uri);
-      if (member != null && !replicator.containsMember(member)) {
-        replicator.addMember(member);
-      }
-    }
-
     // Set the current leader as this replica.
-    context.setCurrentLeader(context.clusterConfig().getLocalMember());
+    context.setCurrentLeader(context.cluster().localMember().id());
 
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
@@ -120,7 +107,8 @@ public class Leader extends RaftState implements Observer {
   /**
    * Called when the cluster configuration has changed.
    */
-  private void clusterChanged(final ClusterConfig cluster) {
+  @SuppressWarnings("unchecked")
+  private synchronized void clusterChanged(final ClusterConfig cluster) {
     // All cluster configuration changes must go through the leader. In order to
     // perform cluster configuration changes, the leader observes the local cluster
     // configuration if it is indeed observable. We have to be very careful about
@@ -138,9 +126,9 @@ public class Leader extends RaftState implements Observer {
     // This two-step process ensures log consistency by ensuring that two majorities
     // cannot result from adding and removing too many nodes at once.
 
-    // First, store the set of new members in a final local variable. We don't want
-    // to be calling getMembers() at a later time after it has changed again.
-    final Set<String> members = cluster.getMembers();
+    // First, store a copy of the configuration in a final local variable. This ensures
+    // that the configuration does not change during the reconfiguration process.
+    final ClusterConfig<?> config = new ClusterConfig(cluster);
 
     // If another cluster configuration change is occurring right now, it's possible
     // that the two configuration changes could overlap one another. In order to
@@ -149,46 +137,32 @@ public class Leader extends RaftState implements Observer {
     // previous configuration changes have completed.
     replicator.commitAll().whenComplete((commitIndex, commitError) -> {
       // First we need to commit a combined old/new cluster configuration entry.
-      Set<String> combinedMembers = new HashSet<>(context.cluster().config().getMembers());
-      combinedMembers.addAll(members);
-      Entry entry = new ConfigurationEntry(context.getCurrentTerm(), combinedMembers);
+      final ClusterConfig<?> combinedConfig = new ClusterConfig(context.cluster()).addRemoteMembers(config);
+      Entry entry = new ConfigurationEntry(context.getCurrentTerm(), combinedConfig);
       long configIndex = context.log().appendEntry(entry);
 
       // Immediately after the entry is appended to the log, apply the combined
       // membership. Cluster membership changes do not wait for commitment.
-      Set<String> combinedRemoteMembers = new HashSet<>(combinedMembers);
-      combinedRemoteMembers.remove(context.clusterConfig().getLocalMember());
-      context.clusterConfig().setRemoteMembers(combinedMembers);
+      context.cluster().update(combinedConfig, null);
 
-      // Whenever the local cluster membership changes, ensure we update the
-      // local replicas.
-      for (String uri : combinedRemoteMembers) {
-        Member member = context.cluster().member(uri);
-        if (member != null && !replicator.containsMember(member)) {
-          replicator.addMember(member).commitAll();
-        }
-      }
-
+      // Once the cluster is updated, the replicator will be notified and update its
+      // internal connections. Then we commit the combined configuration and allow
+      // it to be replicated to *all* the nodes in the combined cluster.
       replicator.commit(configIndex).whenComplete((commitIndex2, commitError2) -> {
+        // Now that we've gotten to this point, we know that the combined cluster
+        // membership has been replicated to a majority of the cluster.
         // Append the new configuration entry to the log and force all replicas
         // to be synchronized.
-        context.log().appendEntry(new ConfigurationEntry(context.getCurrentTerm(), members));
+        context.log().appendEntry(new ConfigurationEntry(context.getCurrentTerm(), config));
 
         // Again, once we've appended the new configuration to the log, update
         // the local internal configuration.
-        Set<String> remoteMembers = new HashSet<>(members);
-        remoteMembers.remove(context.clusterConfig().getLocalMember());
-        context.clusterConfig().setRemoteMembers(remoteMembers);
+        context.cluster().update(config, null);
 
-        // Once the local internal configuration has been updated, remove
-        // any replicas that are no longer in the cluster.
-        for (Member member : replicator.getMembers()) {
-          if (!remoteMembers.contains(member.uri())) {
-            replicator.removeMember(member);
-          }
-        }
-
-        // Force all replicas to be synchronized.
+        // Note again that when the cluster membership changes, the replicator will
+        // be notified and remove any replicas that are no longer a part of the cluster.
+        // Now that the cluster and replicator have been updated, we can commit the
+        // new configuration.
         replicator.commitAll();
       });
     });
@@ -305,6 +279,23 @@ public class Leader extends RaftState implements Observer {
     }
     // Stop observing the observable cluster configuration.
     context.cluster().config().deleteObserver(this);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Leader && ((CopycatState) object).context.equals(context);
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + context.hashCode();
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Leader[context=%s]", context);
   }
 
 }

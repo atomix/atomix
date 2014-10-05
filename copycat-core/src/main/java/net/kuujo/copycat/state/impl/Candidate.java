@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.impl.RaftEntry;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.PollRequest;
@@ -40,7 +39,7 @@ import net.kuujo.copycat.util.Quorum;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Candidate extends RaftState {
+public class Candidate extends CopycatState {
   private static final Logger logger = Logger.getLogger(Candidate.class.getCanonicalName());
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;
@@ -51,7 +50,7 @@ public class Candidate extends RaftState {
   }
 
   @Override
-  public void init(RaftStateContext context) {
+  public void init(CopycatStateContext context) {
     super.init(context);
     logger.info(String.format("%s starting election", context.cluster().config().getLocalMember()));
     resetTimer();

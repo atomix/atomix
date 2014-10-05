@@ -17,12 +17,11 @@ package net.kuujo.copycat.state;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.CopyCatConfig;
+import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.event.EventHandlersRegistry;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.registry.Registry;
 
 /**
  * Container for replica state information.
@@ -36,14 +35,14 @@ public interface StateContext {
    *
    * @return The internal state cluster.
    */
-  Cluster cluster();
+  Cluster<?, ?> cluster();
 
   /**
    * Returns the copycat configuration.
    *
    * @return The copycat configuration.
    */
-  CopyCatConfig config();
+  CopycatConfig config();
 
   /**
    * Returns the state log.
@@ -58,13 +57,6 @@ public interface StateContext {
    * @return The state machine.
    */
   StateMachine stateMachine();
-
-  /**
-   * Returns the registry.
-   *
-   * @return The registry.
-   */
-  Registry registry();
 
   /**
    * Returns the state context events.

@@ -33,7 +33,7 @@ import net.kuujo.copycat.state.State;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class None extends RaftState {
+public class None extends CopycatState {
 
   @Override
   public State.Type type() {
@@ -41,7 +41,7 @@ public class None extends RaftState {
   }
 
   @Override
-  public void init(RaftStateContext context) {
+  public void init(CopycatStateContext context) {
     // Don't call super.init() here so that server handlers won't be registered.
     context.setCurrentLeader(null);
   }

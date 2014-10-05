@@ -37,7 +37,7 @@ import net.kuujo.copycat.state.State;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Follower extends RaftState {
+public class Follower extends CopycatState {
   private static final Logger logger = Logger.getLogger(Follower.class.getCanonicalName());
   private ScheduledFuture<Void> currentTimer;
   private boolean shutdown = true;
@@ -48,7 +48,7 @@ public class Follower extends RaftState {
   }
 
   @Override
-  public synchronized void init(RaftStateContext context) {
+  public synchronized void init(CopycatStateContext context) {
     shutdown = false;
     super.init(context);
     resetTimer();

@@ -15,6 +15,23 @@
  */
 package net.kuujo.copycat.state.impl;
 
+import net.kuujo.copycat.CopycatConfig;
+import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.RemoteMember;
+import net.kuujo.copycat.event.LeaderElectEvent;
+import net.kuujo.copycat.event.StartEvent;
+import net.kuujo.copycat.event.StateChangeEvent;
+import net.kuujo.copycat.event.StopEvent;
+import net.kuujo.copycat.event.impl.DefaultEventHandlersRegistry;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.state.State;
+import net.kuujo.copycat.state.StateContext;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -24,57 +41,36 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 
-import net.kuujo.copycat.CopyCatConfig;
-import net.kuujo.copycat.CopyCatException;
-import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.impl.RaftCluster;
-import net.kuujo.copycat.event.LeaderElectEvent;
-import net.kuujo.copycat.event.StartEvent;
-import net.kuujo.copycat.event.StateChangeEvent;
-import net.kuujo.copycat.event.StopEvent;
-import net.kuujo.copycat.event.impl.DefaultEventHandlersRegistry;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.state.State;
-import net.kuujo.copycat.state.StateContext;
-
 /**
  * Raft state context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftStateContext implements StateContext {
+public class CopycatStateContext implements StateContext {
   private static final Logger logger = Logger.getLogger(StateContext.class.getCanonicalName());
   private final Executor executor = Executors.newCachedThreadPool();
   private final StateMachine stateMachine;
+  @SuppressWarnings("rawtypes")
   private final Cluster cluster;
-  private final ClusterConfig clusterConfig = new ClusterConfig();
   private final Log log;
-  private final CopyCatConfig config;
-  private final Registry registry;
+  private final CopycatConfig config;
   private final DefaultEventHandlersRegistry events = new DefaultEventHandlersRegistry();
-  private volatile RaftState currentState;
+  private volatile CopycatState currentState;
   private volatile String currentLeader;
   private ProtocolClient leaderClient;
-  private final List<Runnable> leaderConnectCallbacks = new ArrayList<>();
+  private final List<Runnable> leaderConnectCallbacks = new ArrayList<>(50);
   private boolean leaderConnected;
   private volatile long currentTerm;
   private volatile String lastVotedFor;
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  public RaftStateContext(StateMachine stateMachine, Log log, ClusterConfig cluster, CopyCatConfig config, Registry registry) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <P extends Protocol<M>, M extends MemberConfig> CopycatStateContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
     this.stateMachine = stateMachine;
     this.log = log;
     this.config = config;
-    this.registry = registry;
-    this.cluster = new RaftCluster(cluster, clusterConfig, this);
+    this.cluster = new Cluster(protocol, cluster);
   }
 
   @Override
@@ -83,20 +79,12 @@ public class RaftStateContext implements StateContext {
   }
 
   @Override
-  public CopyCatConfig config() {
+  public CopycatConfig config() {
     return config;
   }
 
-  /**
-   * Returns the user-defined cluster configuration.
-   *
-   * @return The user-defined cluster configuration.
-   */
-  public ClusterConfig clusterConfig() {
-    return clusterConfig;
-  }
-
   @Override
+  @SuppressWarnings("rawtypes")
   public Cluster cluster() {
     return cluster;
   }
@@ -104,11 +92,6 @@ public class RaftStateContext implements StateContext {
   @Override
   public Log log() {
     return log;
-  }
-
-  @Override
-  public Registry registry() {
-    return registry;
   }
 
   @Override
@@ -128,7 +111,7 @@ public class RaftStateContext implements StateContext {
 
   @Override
   public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(cluster.localMember().uri());
+    return currentLeader != null && currentLeader.equals(cluster.localMember().id());
   }
 
   @Override
@@ -136,11 +119,11 @@ public class RaftStateContext implements StateContext {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
     transition(None.class);
-    return cluster.localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
+    return cluster.localMember().server().start().whenCompleteAsync((result, error) -> {
       try {
         log.open();
       } catch (Exception e) {
-        throw new CopyCatException(e);
+        throw new CopycatException(e);
       }
       transition(Follower.class);
       events.start().handle(new StartEvent());
@@ -149,11 +132,11 @@ public class RaftStateContext implements StateContext {
 
   @Override
   public CompletableFuture<Void> stop() {
-    return cluster.localMember().protocol().server().stop().whenCompleteAsync((result, error) -> {
+    return cluster.localMember().server().stop().whenCompleteAsync((result, error) -> {
       try {
         log.close();
       } catch (Exception e) {
-        throw new CopyCatException(e);
+        throw new CopycatException(e);
       }
       transition(None.class);
       events.stop().handle(new StopEvent());
@@ -163,16 +146,15 @@ public class RaftStateContext implements StateContext {
   /**
    * Transitions to a new state.
    */
-  public synchronized void transition(Class<? extends RaftState> type) {
+  public synchronized void transition(Class<? extends CopycatState> type) {
     if (currentState == null) {
-      clusterConfig.setLocalMember(cluster.config().getLocalMember());
-      clusterConfig.setRemoteMembers(cluster.config().getRemoteMembers());
+      cluster.update(cluster.config(), null);
     } else if (type != null && type.isAssignableFrom(currentState.getClass())) {
       return;
     }
 
     logger.info(cluster.localMember() + " transitioning to " + type.toString());
-    final RaftState oldState = currentState;
+    final CopycatState oldState = currentState;
     try {
       currentState = type.newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
@@ -198,17 +180,17 @@ public class RaftStateContext implements StateContext {
   /**
    * Sets the current leader.
    */
-  public RaftStateContext setCurrentLeader(String leader) {
+  public CopycatStateContext setCurrentLeader(String leader) {
     if (currentLeader == null || !currentLeader.equals(leader)) {
       logger.finer(String.format("Current cluster leader changed: %s", leader));
     }
 
     if (currentLeader == null && leader != null) {
       currentLeader = leader;
-      events.leaderElect().handle(new LeaderElectEvent(currentTerm, currentLeader));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, cluster.member(currentLeader)));
     } else if (currentLeader != null && leader != null && !currentLeader.equals(leader)) {
       currentLeader = leader;
-      events.leaderElect().handle(new LeaderElectEvent(currentTerm, currentLeader));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, cluster.member(currentLeader)));
     } else {
       currentLeader = leader;
     }
@@ -220,7 +202,7 @@ public class RaftStateContext implements StateContext {
       leaderClient = null;
     } else if (!isLeader()) {
       leaderConnected = false;
-      leaderClient = cluster.member(currentLeader).protocol().client();
+      leaderClient = cluster.<RemoteMember<?>>member(currentLeader).client();
       leaderClient.connect().thenRun(() -> {
         leaderConnected = true;
         runLeaderConnectCallbacks();
@@ -254,7 +236,7 @@ public class RaftStateContext implements StateContext {
   /**
    * Sets the current term.
    */
-  public RaftStateContext setCurrentTerm(long term) {
+  public CopycatStateContext setCurrentTerm(long term) {
     if (term > currentTerm) {
       currentTerm = term;
       logger.finer(String.format("Updated current term %d", term));
@@ -273,7 +255,7 @@ public class RaftStateContext implements StateContext {
   /**
    * Sets the candidate last voted for.
    */
-  public RaftStateContext setLastVotedFor(String candidate) {
+  public CopycatStateContext setLastVotedFor(String candidate) {
     if (lastVotedFor == null || !lastVotedFor.equals(candidate)) {
       logger.finer(String.format("Voted for %s", candidate));
     }
@@ -291,7 +273,7 @@ public class RaftStateContext implements StateContext {
   /**
    * Sets the commit index.
    */
-  public RaftStateContext setCommitIndex(long index) {
+  public CopycatStateContext setCommitIndex(long index) {
     commitIndex = Math.max(commitIndex, index);
     return this;
   }
@@ -306,7 +288,7 @@ public class RaftStateContext implements StateContext {
   /**
    * Sets the last applied index.
    */
-  public RaftStateContext setLastApplied(long index) {
+  public CopycatStateContext setLastApplied(long index) {
     lastApplied = index;
     return this;
   }
@@ -323,7 +305,7 @@ public class RaftStateContext implements StateContext {
   public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
     CompletableFuture<R> future = new CompletableFuture<>();
     if (currentLeader == null) {
-      future.completeExceptionally(new CopyCatException("No leader available"));
+      future.completeExceptionally(new CopycatException("No leader available"));
     } else if (!leaderConnected) {
       leaderConnectCallbacks.add(() -> {
         ProtocolHandler handler = leaderClient != null ? leaderClient : currentState;
@@ -341,7 +323,7 @@ public class RaftStateContext implements StateContext {
       });
     } else {
       executor.execute(() -> {
-        ProtocolHandler handler = currentLeader.equals(cluster.localMember().uri()) ? currentState : leaderClient;
+        ProtocolHandler handler = currentLeader.equals(cluster.localMember().id()) ? currentState : leaderClient;
         handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
@@ -356,6 +338,11 @@ public class RaftStateContext implements StateContext {
       });
     }
     return future;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("RaftStateContext[term=%d, leader=%s]", currentTerm, currentLeader);
   }
 
 }

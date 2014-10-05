@@ -22,7 +22,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import net.kuujo.copycat.CopyCatException;
+import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.event.VoteCastEvent;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
@@ -45,15 +46,15 @@ import net.kuujo.copycat.state.State;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class RaftState implements State<RaftStateContext> {
-  protected RaftStateContext context;
+abstract class CopycatState implements State<CopycatStateContext> {
+  protected CopycatStateContext context;
   private final Executor executor = Executors.newSingleThreadExecutor();
   private final AtomicBoolean transition = new AtomicBoolean();
 
   @Override
-  public void init(RaftStateContext context) {
+  public void init(CopycatStateContext context) {
     this.context = context;
-    context.cluster().localMember().protocol().server().protocolHandler(this);
+    context.cluster().localMember().server().protocolHandler(this);
   }
 
   @Override
@@ -287,9 +288,10 @@ abstract class RaftState implements State<RaftStateContext> {
    * @param index The index of the entry being applied.
    * @param entry The entry to apply.
    */
+  @SuppressWarnings("unchecked")
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
-      Set<String> members = ((ConfigurationEntry) entry).cluster();
+      Set<MemberConfig> members = ((ConfigurationEntry) entry).cluster();
       members.remove(context.clusterConfig().getLocalMember());
       context.clusterConfig().setRemoteMembers(members);
     } catch (Exception e) {
@@ -304,6 +306,7 @@ abstract class RaftState implements State<RaftStateContext> {
    * @param index The index of the entry to apply.
    * @param entry The entry to apply.
    */
+  @SuppressWarnings("unchecked")
   protected void applySnapshot(long index, SnapshotEntry entry) {
     // Apply the snapshot to the local state machine.
     context.stateMachine().installSnapshot(entry.data());
@@ -313,12 +316,12 @@ abstract class RaftState implements State<RaftStateContext> {
       try {
         ((Compactable) context.log()).compact(index, entry);
       } catch (IOException e) {
-        throw new CopyCatException("Failed to compact log.", e);
+        throw new CopycatException("Failed to compact log.", e);
       }
     }
 
     // Set the local cluster configuration according to the snapshot cluster membership.
-    Set<String> members = entry.cluster();
+    Set<MemberConfig> members = entry.cluster();
     members.remove(context.clusterConfig().getLocalMember());
     context.clusterConfig().setRemoteMembers(members);
 
@@ -332,6 +335,7 @@ abstract class RaftState implements State<RaftStateContext> {
    *
    * @return A snapshot of the state machine state.
    */
+  @SuppressWarnings("unchecked")
   protected SnapshotEntry createSnapshot() {
     byte[] snapshot = context.stateMachine().takeSnapshot();
     if (snapshot != null) {
@@ -358,7 +362,7 @@ abstract class RaftState implements State<RaftStateContext> {
           try {
             log.compact(lastApplied, snapshot);
           } catch (IOException e) {
-            throw new CopyCatException("Failed to compact log.", e);
+            throw new CopycatException("Failed to compact log.", e);
           }
         }
       }
@@ -395,8 +399,8 @@ abstract class RaftState implements State<RaftStateContext> {
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
     else if (request.candidate().equals(context.clusterConfig().getLocalMember())) {
-      context.setLastVotedFor(context.clusterConfig().getLocalMember());
-      context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.clusterConfig().getLocalMember()));
+      context.setLastVotedFor(context.cluster().localMember().id());
+      context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().localMember()));
       return new PollResponse(request.id(), context.getCurrentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
@@ -409,7 +413,7 @@ abstract class RaftState implements State<RaftStateContext> {
       // If the log is empty then vote for the candidate.
       if (context.log().isEmpty()) {
         context.setLastVotedFor(request.candidate());
-        context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
+        context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request.candidate())));
         return new PollResponse(request.id(), context.getCurrentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
@@ -418,14 +422,16 @@ abstract class RaftState implements State<RaftStateContext> {
         RaftEntry entry = context.log().getEntry(lastIndex);
         if (entry == null) {
           context.setLastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
+          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request
+            .candidate())));
           return new PollResponse(request.id(), context.getCurrentTerm(), true);
         }
 
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           context.setLastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), request.candidate()));
+          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request
+            .candidate())));
           return new PollResponse(request.id(), context.getCurrentTerm(), true);
         } else {
           context.setLastVotedFor(null);
@@ -446,7 +452,7 @@ abstract class RaftState implements State<RaftStateContext> {
 
   @Override
   public void destroy() {
-    context.cluster().localMember().protocol().server().protocolHandler(null);
+    context.cluster().localMember().server().protocolHandler(null);
   }
 
 }
