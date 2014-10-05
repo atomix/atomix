@@ -16,6 +16,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.spi.*;
+import net.kuujo.copycat.util.Args;
 
 /**
  * Replica configuration.
@@ -41,8 +42,7 @@ public class CopycatConfig {
    * @param timeout The election timeout.
    */
   public void setElectionTimeout(long timeout) {
-    if (timeout < 0) throw new IllegalArgumentException("Election timeout must be positive");
-    this.electionTimeout = timeout;
+    this.electionTimeout = Args.checkValue(timeout, value -> value > 0, "Election timeout must be positive");
   }
 
   /**
@@ -61,8 +61,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withElectionTimeout(long timeout) {
-    if (timeout < 0) throw new IllegalArgumentException("Election timeout must be positive");
-    this.electionTimeout = timeout;
+    this.electionTimeout = Args.checkValue(timeout, value -> value > 0, "Election timeout must be positive");
     return this;
   }
 
@@ -72,8 +71,7 @@ public class CopycatConfig {
    * @param interval The interval at which the node should send heartbeat messages.
    */
   public void setHeartbeatInterval(long interval) {
-    if (interval < 0) throw new IllegalArgumentException("Heart beat interval must be positive");
-    this.heartbeatInterval = interval;
+    this.heartbeatInterval = Args.checkValue(interval, value -> value > 0, "Heart beat interval must be positive");
   }
 
   /**
@@ -92,8 +90,7 @@ public class CopycatConfig {
    * @return The replica configuration.
    */
   public CopycatConfig withHeartbeatInterval(long interval) {
-    if (interval < 0) throw new IllegalArgumentException("Heart beat interval must be positive");
-    this.heartbeatInterval = interval;
+    this.heartbeatInterval = Args.checkValue(interval, value -> value > 0, "Heart beat interval must be positive");
     return this;
   }
 
@@ -133,8 +130,7 @@ public class CopycatConfig {
    * @param quorumSize The required write quorum size.
    */
   public void setWriteQuorumSize(Integer quorumSize) {
-    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
-    this.writeQuorumSize = quorumSize;
+    this.writeQuorumSize = Args.checkValue(quorumSize, value -> value > -1, "Quorum size must be -1 or greater");
     this.writeQuorumStrategy = (config) -> writeQuorumSize;
   }
 
@@ -154,8 +150,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withWriteQuorumSize(Integer quorumSize) {
-    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
-    this.writeQuorumSize = quorumSize;
+    this.writeQuorumSize = Args.checkValue(quorumSize, value -> value > -1, "Quorum size must be -1 or greater");
     this.writeQuorumStrategy = (config) -> writeQuorumSize;
     return this;
   }
@@ -199,8 +194,7 @@ public class CopycatConfig {
    * @param strategy The cluster write quorum calculation strategy.
    */
   public void setWriteQuorumStrategy(QuorumStrategy strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.writeQuorumStrategy = strategy;
+    this.writeQuorumStrategy = Args.checkNotNull(strategy);
   }
 
   /**
@@ -219,8 +213,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withWriteQuorumStrategy(QuorumStrategy strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.writeQuorumStrategy = strategy;
+    this.writeQuorumStrategy = Args.checkNotNull(strategy);
     return this;
   }
 
@@ -230,8 +223,7 @@ public class CopycatConfig {
    * @param quorumSize The required read quorum size.
    */
   public void setReadQuorumSize(Integer quorumSize) {
-    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
-    this.readQuorumSize = quorumSize;
+    this.readQuorumSize = Args.checkValue(quorumSize, value -> value > -1, "Quorum size must be -1 or greater");
     this.readQuorumStrategy = (config) -> readQuorumSize;
   }
 
@@ -251,8 +243,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withReadQuorumSize(Integer quorumSize) {
-    if (quorumSize < -1) throw new IllegalArgumentException("Quorum size must be -1 or greater");
-    this.readQuorumSize = quorumSize;
+    this.readQuorumSize = Args.checkValue(quorumSize, value -> value > -1, "Quorum size must be -1 or greater");
     this.readQuorumStrategy = (config) -> readQuorumSize;
     return this;
   }
@@ -263,8 +254,7 @@ public class CopycatConfig {
    * @param strategy The cluster read quorum calculation strategy.
    */
   public void setReadQuorumStrategy(QuorumStrategy strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.readQuorumStrategy = strategy;
+    this.readQuorumStrategy = Args.checkNotNull(strategy);
   }
 
   /**
@@ -283,8 +273,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withReadQuorumStrategy(QuorumStrategy strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.readQuorumStrategy = strategy;
+    this.readQuorumStrategy = Args.checkNotNull(strategy);
     return this;
   }
 
@@ -294,8 +283,7 @@ public class CopycatConfig {
    * @param maxSize The maximum local log size.
    */
   public void setMaxLogSize(int maxSize) {
-    if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
-    this.maxLogSize = maxSize;
+    this.maxLogSize = Args.checkValue(maxSize, value -> value > 0, "Max log size must be positive");
   }
 
   /**
@@ -314,8 +302,7 @@ public class CopycatConfig {
    * @return The replica configuration.
    */
   public CopycatConfig withMaxLogSize(int maxSize) {
-    if (maxSize < 0) throw new IllegalArgumentException("Log max size must be positive");
-    this.maxLogSize = maxSize;
+    this.maxLogSize = Args.checkValue(maxSize, value -> value > 0, "Max log size must be positive");
     return this;
   }
 
@@ -325,8 +312,7 @@ public class CopycatConfig {
    * @param strategy The message correlation strategy.
    */
   public void setCorrelationStrategy(CorrelationStrategy<?> strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.correlationStrategy = strategy;
+    this.correlationStrategy = Args.checkNotNull(strategy);
   }
 
   /**
@@ -345,8 +331,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.correlationStrategy = strategy;
+    this.correlationStrategy = Args.checkNotNull(strategy);
     return this;
   }
 
@@ -356,8 +341,7 @@ public class CopycatConfig {
    * @param strategy The timer strategy.
    */
   public void setTimerStrategy(TimerStrategy strategy) {
-    if (strategy == null) throw new NullPointerException();
-    this.timerStrategy = strategy;
+    this.timerStrategy = Args.checkNotNull(strategy);
   }
 
   /**
@@ -376,7 +360,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    */
   public CopycatConfig withTimerStrategy(TimerStrategy strategy) {
-    this.timerStrategy = strategy;
+    this.timerStrategy = Args.checkNotNull(strategy);
     return this;
   }
 

@@ -49,21 +49,21 @@ public interface CopycatContext {
    *
    * @return The replica configuration.
    */
-  public CopycatConfig config();
+  CopycatConfig config();
 
   /**
    * Returns the cluster configuration.
    *
    * @return The cluster configuration.
    */
-  public ClusterConfig<?> cluster();
+  ClusterConfig<?> cluster();
 
   /**
    * Returns the context events.
    *
    * @return Context events.
    */
-  public EventsContext on();
+  EventsContext on();
 
   /**
    * Returns the context for a specific event.
@@ -71,14 +71,14 @@ public interface CopycatContext {
    * @param event The event for which to return the context.
    * @return The event context.
    */
-  public <T extends Event> EventContext<T> on(Class<T> event);
+  <T extends Event> EventContext<T> on(Class<T> event);
 
   /**
    * Returns the event handlers registry.
    *
    * @return The event handlers registry.
    */
-  public EventHandlersRegistry events();
+  EventHandlersRegistry events();
 
   /**
    * Returns an event handler registry for a specific event.
@@ -86,42 +86,42 @@ public interface CopycatContext {
    * @param event The event for which to return the registry.
    * @return The event handler registry.
    */
-  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event);
+  <T extends Event> EventHandlerRegistry<T> event(Class<T> event);
 
   /**
    * Returns the current replica state.
    *
    * @return The current replica state.
    */
-  public State.Type state();
+  State.Type state();
 
   /**
    * Returns the current leader URI.
    *
    * @return The current leader URI.
    */
-  public String leader();
+  String leader();
 
   /**
    * Returns a boolean indicating whether the node is the current leader.
    *
    * @return Indicates whether the node is the current leader.
    */
-  public boolean isLeader();
+  boolean isLeader();
 
   /**
    * Starts the context.
    *
    * @return A completable future to be completed once the context has started.
    */
-  public CompletableFuture<Void> start();
+  CompletableFuture<Void> start();
 
   /**
    * Stops the context.
    *
    * @return A completable future that will be completed when the context has started.
    */
-  public CompletableFuture<Void> stop();
+  CompletableFuture<Void> stop();
 
   /**
    * Submits a command to the cluster.
@@ -130,7 +130,7 @@ public interface CopycatContext {
    * @param args An ordered list of command arguments.
    * @return A completable future to be completed once the result is received.
    */
-  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args);
+  <R> CompletableFuture<R> submitCommand(final String command, final Object... args);
 
   /**
    * Copycat context builder.

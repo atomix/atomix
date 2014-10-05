@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.util.Args;
+
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -28,7 +30,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
   private Set<M> remoteMembers = new HashSet<>(6);
 
   public ClusterConfig(ClusterConfig<M> cluster) {
-    localMember = cluster.localMember;
+    localMember = Args.checkNotNull(cluster).localMember;
     remoteMembers = new HashSet<>(cluster.remoteMembers);
   }
 
@@ -38,7 +40,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @param cluster The cluster from which to construct the configuration.
    */
   public ClusterConfig(Cluster<?, M> cluster) {
-    localMember = cluster.localMember().config();
+    localMember = Args.checkNotNull(cluster).localMember().config();
     remoteMembers.addAll(cluster.remoteMembers().stream().<M>map(member -> member.config()).collect(Collectors.toList()));
   }
 
@@ -48,7 +50,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @param member The local cluster member.
    */
   public final void setLocalMember(M member) {
-    localMember = member;
+    localMember = Args.checkNotNull(member);
   }
 
   /**
@@ -67,7 +69,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @return The cluster configuration.
    */
   public final ClusterConfig<M> withLocalMember(M member) {
-    localMember = member;
+    localMember = Args.checkNotNull(member);
     return this;
   }
 
@@ -78,7 +80,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    */
   @SafeVarargs
   public final void setRemoteMembers(M... members) {
-    remoteMembers = new HashSet<>(Arrays.asList(members));
+    remoteMembers = new HashSet<>(Arrays.asList(Args.checkNotNull(members)));
     notifyObservers();
   }
 
@@ -88,7 +90,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @param members A collection of remote cluster member configurations.
    */
   public final void setRemoteMembers(Collection<M> members) {
-    remoteMembers = new HashSet<>(members);
+    remoteMembers = new HashSet<>(Args.checkNotNull(members));
     notifyObservers();
   }
 
@@ -99,7 +101,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @return The updated configuration.
    */
   public final ClusterConfig<M> addRemoteMember(M member) {
-    remoteMembers.add(member);
+    remoteMembers.add(Args.checkNotNull(member));
     notifyObservers();
     return this;
   }
@@ -112,7 +114,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    */
   @SafeVarargs
   public final ClusterConfig<M> addRemoteMembers(M... members) {
-    remoteMembers.addAll(Arrays.asList(members));
+    remoteMembers.addAll(Arrays.asList(Args.checkNotNull(members)));
     notifyObservers();
     return this;
   }
@@ -124,7 +126,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @return The updated configuration.
    */
   public final ClusterConfig<M> addRemoteMembers(Collection<M> members) {
-    remoteMembers.addAll(members);
+    remoteMembers.addAll(Args.checkNotNull(members));
     notifyObservers();
     return this;
   }
@@ -148,7 +150,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @return The updated configuration.
    */
   public final ClusterConfig<M> removeRemoteMember(M member) {
-    remoteMembers.remove(member);
+    remoteMembers.remove(Args.checkNotNull(member));
     notifyObservers();
     return this;
   }
@@ -161,7 +163,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    */
   @SafeVarargs
   public final ClusterConfig<M> removeRemoteMembers(M... members) {
-    remoteMembers.removeAll(Arrays.asList(members));
+    remoteMembers.removeAll(Arrays.asList(Args.checkNotNull(members)));
     notifyObservers();
     return this;
   }
@@ -173,7 +175,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @return The updated configuration.
    */
   public final ClusterConfig<M> removeRemoteMembers(Collection<M> members) {
-    remoteMembers.removeAll(members);
+    remoteMembers.removeAll(Args.checkNotNull(members));
     notifyObservers();
     return this;
   }
@@ -207,7 +209,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    */
   @SafeVarargs
   public final ClusterConfig<M> withRemoteMembers(M... members) {
-    this.remoteMembers = new HashSet<>(Arrays.asList(members));
+    this.remoteMembers = new HashSet<>(Arrays.asList(Args.checkNotNull(members)));
     notifyObservers();
     return this;
   }
@@ -219,7 +221,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
    * @return The cluster configuration.
    */
   public final ClusterConfig<M> withRemoteMembers(Collection<M> members) {
-    this.remoteMembers = new HashSet<>(members);
+    this.remoteMembers = new HashSet<>(Args.checkNotNull(members));
     notifyObservers();
     return this;
   }

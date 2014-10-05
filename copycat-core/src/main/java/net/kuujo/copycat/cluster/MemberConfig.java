@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.util.Args;
+
 import java.util.Observable;
 
 /**
@@ -37,7 +39,7 @@ public class MemberConfig extends Observable {
    * @param id The member's unique ID.
    */
   public void setId(String id) {
-    this.id = id;
+    this.id = Args.checkNotNull(id);
     notifyObservers();
   }
 
@@ -57,7 +59,7 @@ public class MemberConfig extends Observable {
    * @return The member configuration.
    */
   public MemberConfig withId(String id) {
-    this.id = id;
+    this.id = Args.checkNotNull(id);
     notifyObservers();
     return this;
   }
