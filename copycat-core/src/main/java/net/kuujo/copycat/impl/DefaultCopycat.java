@@ -20,9 +20,11 @@ import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.protocol.Protocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -38,8 +40,8 @@ public class DefaultCopycat implements Copycat {
   private final Endpoint endpoint;
   private final CopycatContext context;
 
-  public DefaultCopycat(Endpoint endpoint, StateMachine stateMachine, Log log, ClusterConfig<?> cluster, CopycatConfig config) {
-    this.context = new DefaultCopycatContext(stateMachine, log, cluster, config);
+  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycat(Endpoint endpoint, StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
+    this.context = new DefaultCopycatContext(stateMachine, log, cluster, protocol, config);
     this.endpoint = endpoint;
     endpoint.init(context);
   }

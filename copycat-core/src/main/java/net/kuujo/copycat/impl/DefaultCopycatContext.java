@@ -19,12 +19,14 @@ import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.event.impl.DefaultEventsContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.impl.InMemoryLog;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.state.State;
-import net.kuujo.copycat.state.impl.RaftStateContext;
+import net.kuujo.copycat.state.impl.CopycatStateContext;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -66,25 +68,25 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultCopycatContext implements CopycatContext {
   private final ClusterConfig<?> cluster;
   private final CopycatConfig config;
-  private final RaftStateContext state;
+  private final CopycatStateContext state;
   private final EventsContext events;
 
-  public DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<?> cluster) {
-    this(stateMachine, new InMemoryLog(), cluster, new CopycatConfig());
+  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, P protocol) {
+    this(stateMachine, new InMemoryLog(), cluster, protocol, new CopycatConfig());
   }
 
-  public DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<?> cluster, CopycatConfig config) {
-    this(stateMachine, new InMemoryLog(), cluster, config);
+  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
+    this(stateMachine, new InMemoryLog(), cluster, protocol, config);
   }
 
-  public DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<?> cluster) {
-    this(stateMachine, log, cluster, new CopycatConfig());
+  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol) {
+    this(stateMachine, log, cluster, protocol, new CopycatConfig());
   }
 
-  public DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<?> cluster, CopycatConfig config) {
+  public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
     this.cluster = cluster;
     this.config = config;
-    this.state = new RaftStateContext(stateMachine, log, cluster, config);
+    this.state = new CopycatStateContext(stateMachine, log, cluster, protocol, config);
     this.events = new DefaultEventsContext(state.events());
   }
 
