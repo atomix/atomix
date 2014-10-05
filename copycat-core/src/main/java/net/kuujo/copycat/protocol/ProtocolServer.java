@@ -25,11 +25,11 @@ import java.util.concurrent.CompletableFuture;
 public interface ProtocolServer {
 
   /**
-   * Initializes the server with a protocol handler.
+   * Registers a server request handler.
    *
    * @param handler A request handler to handle requests received by the server.
    */
-  void protocolHandler(ProtocolHandler handler);
+  void requestHandler(RequestHandler handler);
 
   /**
    * Starts the server.

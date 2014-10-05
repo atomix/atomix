@@ -310,7 +310,7 @@ public class CopycatStateContext implements StateContext {
       future.completeExceptionally(new CopycatException("No leader available"));
     } else if (!leaderConnected) {
       leaderConnectCallbacks.add(() -> {
-        ProtocolHandler handler = leaderClient != null ? leaderClient : currentState;
+        RequestHandler handler = leaderClient != null ? leaderClient : currentState;
         handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
@@ -325,7 +325,7 @@ public class CopycatStateContext implements StateContext {
       });
     } else {
       executor.execute(() -> {
-        ProtocolHandler handler = currentLeader.equals(cluster.localMember().id()) ? currentState : leaderClient;
+        RequestHandler handler = currentLeader.equals(cluster.localMember().id()) ? currentState : leaderClient;
         handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);

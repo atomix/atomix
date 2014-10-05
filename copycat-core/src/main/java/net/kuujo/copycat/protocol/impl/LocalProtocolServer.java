@@ -18,16 +18,8 @@ package net.kuujo.copycat.protocol.impl;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.protocol.RequestHandler;
 import net.kuujo.copycat.util.Args;
 
 /**
@@ -38,7 +30,7 @@ import net.kuujo.copycat.util.Args;
 public class LocalProtocolServer implements ProtocolServer {
   private final String id;
   private final Map<String, LocalProtocolServer> registry;
-  private ProtocolHandler requestHandler;
+  private RequestHandler requestHandler;
 
   public LocalProtocolServer(String id, Map<String, LocalProtocolServer> registry) {
     this.id = id;
@@ -46,7 +38,7 @@ public class LocalProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void protocolHandler(ProtocolHandler handler) {
+  public void requestHandler(RequestHandler handler) {
     this.requestHandler = handler;
   }
 

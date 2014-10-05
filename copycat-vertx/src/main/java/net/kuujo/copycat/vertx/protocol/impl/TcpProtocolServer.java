@@ -17,14 +17,10 @@ package net.kuujo.copycat.vertx.protocol.impl;
 
 import java.util.concurrent.CompletableFuture;
 
+import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.ProtocolReader;
-import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.ProtocolWriter;
-import net.kuujo.copycat.protocol.Request;
+import net.kuujo.copycat.protocol.RequestHandler;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 
 import org.vertx.java.core.AsyncResult;
@@ -52,7 +48,7 @@ public class TcpProtocolServer implements ProtocolServer {
   private boolean clientAuthRequired;
   private final TcpProtocol protocol;
   private NetServer server;
-  private ProtocolHandler requestHandler;
+  private RequestHandler requestHandler;
 
   public TcpProtocolServer(String host, int port, TcpProtocol protocol) {
     this.host = host;
@@ -90,7 +86,7 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void protocolHandler(ProtocolHandler handler) {
+  public void requestHandler(RequestHandler handler) {
     this.requestHandler = handler;
   }
 

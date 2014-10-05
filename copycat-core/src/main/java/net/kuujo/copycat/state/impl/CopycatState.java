@@ -46,7 +46,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
   @Override
   public void init(CopycatStateContext context) {
     this.context = context;
-    context.cluster().localMember().server().protocolHandler(this);
+    context.cluster().localMember().server().requestHandler(this);
   }
 
   @Override
@@ -438,7 +438,7 @@ abstract class CopycatState implements State<CopycatStateContext> {
 
   @Override
   public void destroy() {
-    context.cluster().localMember().server().protocolHandler(null);
+    context.cluster().localMember().server().requestHandler(null);
   }
 
   @Override

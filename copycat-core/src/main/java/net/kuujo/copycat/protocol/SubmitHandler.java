@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,24 +17,20 @@ package net.kuujo.copycat.protocol;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Protocol client.
+ * Protocol submit handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends RequestHandler {
+public interface SubmitHandler {
 
   /**
-   * Connects the client.
+   * Submits a command.
    *
-   * @return A completable future to be completed once the client has connected.
+   * @param command The command to submit.
+   * @param args A list of command arguments.
+   * @param <T> The return type.
+   * @return A completable future to be called once the result is received.
    */
-  CompletableFuture<Void> connect();
-
-  /**
-   * Closes the client.
-   *
-   * @return A completable future to be completed once the client has disconnected.
-   */
-  CompletableFuture<Void> close();
+  <T> CompletableFuture<T> submit(String command, Object... args);
 
 }

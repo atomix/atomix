@@ -40,7 +40,7 @@ import java.util.concurrent.CompletableFuture;
 import javax.net.ssl.SSLException;
 
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.protocol.RequestHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
@@ -53,7 +53,7 @@ import net.kuujo.copycat.protocol.SubmitCommandRequest;
  */
 public class TcpProtocolServer implements ProtocolServer {
   private final TcpProtocol protocol;
-  private ProtocolHandler handler;
+  private RequestHandler handler;
   private Channel channel;
 
   public TcpProtocolServer(TcpProtocol protocol) {
@@ -61,7 +61,7 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void protocolHandler(ProtocolHandler handler) {
+  public void requestHandler(RequestHandler handler) {
     this.handler = handler;
   }
 

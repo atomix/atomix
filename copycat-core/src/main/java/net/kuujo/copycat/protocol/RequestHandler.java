@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolHandler {
+public interface RequestHandler {
 
   /**
    * Sends or handles a protocol ping request.

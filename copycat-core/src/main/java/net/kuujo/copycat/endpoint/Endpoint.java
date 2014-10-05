@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.endpoint;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.protocol.SubmitHandler;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -40,11 +40,11 @@ import java.util.concurrent.CompletableFuture;
 public interface Endpoint {
 
   /**
-   * Initializes the endpoint.
+   * Registers a submit handler on the endpoint.
    *
-   * @param context The copycat context.
+   * @param handler A submit request handler.
    */
-  void init(CopycatContext context);
+  void submitHandler(SubmitHandler handler);
 
   /**
    * Starts the endpoint.<p>

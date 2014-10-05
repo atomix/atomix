@@ -17,12 +17,9 @@ package net.kuujo.copycat.vertx.protocol.impl;
 
 import java.util.concurrent.CompletableFuture;
 
+import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.ProtocolReader;
-import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.ProtocolWriter;
-import net.kuujo.copycat.protocol.Request;
+import net.kuujo.copycat.protocol.RequestHandler;
 import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 
@@ -41,7 +38,7 @@ public class EventBusProtocolServer implements ProtocolServer {
   private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
   private Vertx vertx;
-  private ProtocolHandler requestHandler;
+  private RequestHandler requestHandler;
 
   private final Handler<Message<byte[]>> messageHandler = new Handler<Message<byte[]>>() {
     @Override
@@ -71,7 +68,7 @@ public class EventBusProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void protocolHandler(ProtocolHandler handler) {
+  public void requestHandler(RequestHandler handler) {
     this.requestHandler = handler;
   }
 

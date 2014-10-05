@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.protocol.RequestHandler;
 
 /**
  * Replica state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State<T extends StateContext> extends ProtocolHandler {
+public interface State<T extends StateContext> extends RequestHandler {
 
   /**
    * State type.

@@ -25,6 +25,7 @@ import net.kuujo.copycat.endpoint.Endpoint;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.protocol.SubmitHandler;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -43,13 +44,17 @@ public class DefaultCopycat implements Copycat {
   public <P extends Protocol<M>, M extends MemberConfig> DefaultCopycat(Endpoint endpoint, StateMachine stateMachine, Log log, ClusterConfig<M> cluster, P protocol, CopycatConfig config) {
     this.context = new DefaultCopycatContext(stateMachine, log, cluster, protocol, config);
     this.endpoint = endpoint;
-    endpoint.init(context);
+    this.endpoint.submitHandler(new SubmitHandler() {
+      @Override
+      public <T> CompletableFuture<T> submit(String command, Object... args) {
+        return context.submitCommand(command, args);
+      }
+    });
   }
 
   public DefaultCopycat(Endpoint endpoint, CopycatContext context) {
     this.endpoint = endpoint;
     this.context = context;
-    endpoint.init(context);
   }
 
   @Override
