@@ -21,17 +21,17 @@ package net.kuujo.copycat;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("serial")
-public class CopyCatException extends RuntimeException {
+public class CopycatException extends RuntimeException {
 
-  public CopyCatException(String message) {
+  public CopycatException(String message) {
     super(message);
   }
 
-  public CopyCatException(String message, Throwable cause) {
+  public CopycatException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public CopyCatException(Throwable cause) {
+  public CopycatException(Throwable cause) {
     super(cause);
   }
 
