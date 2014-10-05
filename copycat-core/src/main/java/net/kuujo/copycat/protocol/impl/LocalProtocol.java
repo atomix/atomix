@@ -29,49 +29,24 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocol implements Protocol<MemberConfig> {
-  private String address;
-  private final Map<String, LocalProtocolServer> registry = new HashMap<>();
+  private final Map<String, LocalProtocolServer> registry = new HashMap<>(10);
 
   public LocalProtocol() {
   }
 
-  /**
-   * Sets the protocol address.
-   *
-   * @param address The protocol address.
-   */
-  public void setAddress(String address) {
-    this.address = address;
-  }
-
-  /**
-   * Returns the protocol address.
-   *
-   * @return The protocol address.
-   */
-  public String getAddress() {
-    return address;
-  }
-
-  /**
-   * Sets the protocol address, returning the protocol for method chaining.
-   *
-   * @param address The protocol address.
-   * @return The protocol instance.
-   */
-  public LocalProtocol withAddress(String address) {
-    this.address = address;
-    return this;
-  }
-
   @Override
   public ProtocolServer createServer(MemberConfig member) {
-    return new LocalProtocolServer(address, registry);
+    return new LocalProtocolServer(member.getId(), registry);
   }
 
   @Override
   public ProtocolClient createClient(MemberConfig member) {
-    return new LocalProtocolClient(address, registry);
+    return new LocalProtocolClient(member.getId(), registry);
+  }
+
+  @Override
+  public String toString() {
+    return "LocalProtocol";
   }
 
 }

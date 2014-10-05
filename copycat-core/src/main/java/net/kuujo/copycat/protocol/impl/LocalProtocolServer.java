@@ -36,12 +36,12 @@ import net.kuujo.copycat.util.Args;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocolServer implements ProtocolServer {
-  private final String address;
+  private final String id;
   private final Map<String, LocalProtocolServer> registry;
   private ProtocolHandler requestHandler;
 
-  public LocalProtocolServer(String address, Map<String, LocalProtocolServer> registry) {
-    this.address = address;
+  public LocalProtocolServer(String id, Map<String, LocalProtocolServer> registry) {
+    this.id = id;
     this.registry = registry;
   }
 
@@ -72,14 +72,19 @@ public class LocalProtocolServer implements ProtocolServer {
 
   @Override
   public CompletableFuture<Void> start() {
-    registry.put(address, this);
+    registry.put(id, this);
     return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override
   public CompletableFuture<Void> stop() {
-    registry.remove(address);
+    registry.remove(id);
     return CompletableFuture.completedFuture((Void) null);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("LocalProtocolServer[id=%s]", id);
   }
 
 }
