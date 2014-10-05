@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.CopyCatException;
+import net.kuujo.copycat.CopycatException;
 
 /**
  * A log exception.
@@ -23,7 +23,7 @@ import net.kuujo.copycat.CopyCatException;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("serial")
-public class LogException extends CopyCatException {
+public class LogException extends CopycatException {
 
   public LogException(String message) {
     super(message);

@@ -54,6 +54,13 @@ public class RaftEntry implements Entry {
   }
 
   @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[term=%s]", getClass().getSimpleName(), term);
   }

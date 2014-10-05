@@ -15,14 +15,11 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import net.kuujo.copycat.log.EntryType;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.log.EntryType;
 
 /**
  * Cluster configuration entry.
@@ -31,13 +28,13 @@ import com.esotericsoftware.kryo.io.Output;
  */
 @EntryType(id=4, serializer=ConfigurationEntry.Serializer.class)
 public class ConfigurationEntry extends RaftEntry {
-  private Set<String> cluster;
+  private ClusterConfig<?> cluster;
 
   private ConfigurationEntry() {
     super();
   }
 
-  public ConfigurationEntry(long term, Set<String> cluster) {
+  public ConfigurationEntry(long term, ClusterConfig<?> cluster) {
     super(term);
     this.cluster = cluster;
   }
@@ -47,8 +44,25 @@ public class ConfigurationEntry extends RaftEntry {
    * 
    * @return A set of cluster member addresses.
    */
-  public Set<String> cluster() {
+  public ClusterConfig<?> cluster() {
     return cluster;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof ConfigurationEntry) {
+      ConfigurationEntry entry = (ConfigurationEntry) object;
+      return term == entry.term && cluster.equals(entry.cluster);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + cluster.hashCode();
+    return hashCode;
   }
 
   @Override
@@ -67,7 +81,7 @@ public class ConfigurationEntry extends RaftEntry {
     public ConfigurationEntry read(Kryo kryo, Input input, Class<ConfigurationEntry> type) {
       ConfigurationEntry entry = new ConfigurationEntry();
       entry.term = input.readLong();
-      entry.cluster = kryo.readObject(input, HashSet.class);
+      entry.cluster = kryo.readObject(input, ClusterConfig.class);
       return entry;
     }
     @Override

@@ -15,15 +15,14 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import net.kuujo.copycat.log.EntryType;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import net.kuujo.copycat.log.EntryType;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * State machine command entry.
@@ -65,6 +64,24 @@ public class CommandEntry extends RaftEntry {
    */
   public List<Object> args() {
     return args;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof CommandEntry) {
+      CommandEntry entry = (CommandEntry) object;
+      return term == entry.term && command.equals(entry.command) && args.equals(entry.args);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + command.hashCode();
+    hashCode = 37 * hashCode + args.hashCode();
+    return hashCode;
   }
 
   @Override

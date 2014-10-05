@@ -31,13 +31,13 @@ import com.esotericsoftware.kryo.Kryo;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractLog implements Log {
+public abstract class BaseLog implements Log {
   private final Class<? extends Entry> entryType;
   private final Map<Class<? extends Entry>, Integer> entryTypeMappings = new HashMap<>();
   private final Map<Integer, Class<? extends Entry>> entryClassMappings = new HashMap<>();
   protected final Kryo kryo;
 
-  protected AbstractLog(Class<? extends Entry> entryType) {
+  protected BaseLog(Class<? extends Entry> entryType) {
     this.entryType = entryType;
     this.kryo = new Kryo();
     init();
@@ -85,6 +85,11 @@ public abstract class AbstractLog implements Log {
       clazz = clazz.getSuperclass();
     }
     throw new LogException("Invalid entry type. No type info found.");
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[size=%d]", getClass().getSimpleName(), size());
   }
 
 }

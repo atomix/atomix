@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.log.impl;
 
-import java.util.HashSet;
-import java.util.Set;
-
-import net.kuujo.copycat.log.EntryType;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.log.EntryType;
+
+import java.util.Arrays;
+import java.util.HashSet;
 
 /**
  * Snapshot log entry.
@@ -31,14 +31,14 @@ import com.esotericsoftware.kryo.io.Output;
  */
 @EntryType(id=5, serializer=SnapshotEntry.Serializer.class)
 public class SnapshotEntry extends RaftEntry {
-  private Set<String> cluster;
+  private ClusterConfig<?> cluster;
   private byte[] data;
 
   private SnapshotEntry() {
     super();
   }
 
-  public SnapshotEntry(long term, Set<String> cluster, byte[] data) {
+  public SnapshotEntry(long term, ClusterConfig<?> cluster, byte[] data) {
     super(term);
     this.cluster = cluster;
     this.data = data;
@@ -49,7 +49,7 @@ public class SnapshotEntry extends RaftEntry {
    *
    * @return The snapshot cluster configuration.
    */
-  public Set<String> cluster() {
+  public ClusterConfig<?> cluster() {
     return cluster;
   }
 
@@ -60,6 +60,24 @@ public class SnapshotEntry extends RaftEntry {
    */
   public byte[] data() {
     return data;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof SnapshotEntry) {
+      SnapshotEntry entry = (SnapshotEntry) object;
+      return term == entry.term && cluster.equals(entry.cluster) && Arrays.equals(data, entry.data);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + cluster.hashCode();
+    hashCode = 37 * hashCode + Arrays.hashCode(data);
+    return hashCode;
   }
 
   @Override
@@ -78,7 +96,7 @@ public class SnapshotEntry extends RaftEntry {
     public SnapshotEntry read(Kryo kryo, Input input, Class<SnapshotEntry> type) {
       SnapshotEntry entry = new SnapshotEntry();
       entry.term = input.readLong();
-      entry.cluster = kryo.readObject(input, HashSet.class);
+      entry.cluster = kryo.readObject(input, ClusterConfig.class);
       int length = input.readInt();
       entry.data = new byte[length];
       input.readBytes(entry.data);

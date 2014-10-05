@@ -42,7 +42,7 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryMappedFileLog extends AbstractFileLog implements Compactable {
+public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;

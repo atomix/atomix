@@ -27,11 +27,11 @@ import net.kuujo.copycat.log.Entry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractFileLog extends AbstractLog {
+public abstract class BaseFileLog extends BaseLog {
   private static final SimpleDateFormat fileNameFormat = new SimpleDateFormat("yyyyMMddhhmmssSSS");
   private final File baseFile;
 
-  protected AbstractFileLog(File baseFile, Class<? extends Entry> entryType) {
+  protected BaseFileLog(File baseFile, Class<? extends Entry> entryType) {
     super(entryType);
     this.baseFile = baseFile;
   }
@@ -43,7 +43,7 @@ public abstract class AbstractFileLog extends AbstractLog {
     baseFile.getAbsoluteFile().getParentFile().mkdirs();
     File logFile = null;
     long logTime = 0;
-    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(file -> file.isFile())) {
+    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(File::isFile)) {
       if (file.getName().substring(0, file.getName().indexOf('.')).equals(baseFile.getName())) {
         try {
           long fileTime = fileNameFormat.parse(file.getName().substring(file.getName().indexOf('.') + 1, file.getName().indexOf('.', file.getName().indexOf('.') + 1))).getTime();
@@ -73,7 +73,7 @@ public abstract class AbstractFileLog extends AbstractLog {
    * Deletes a log file.
    */
   protected final void deleteLogFile(File logFile) {
-    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(file -> file.isFile())) {
+    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(File::isFile)) {
       if (file.getName().startsWith(logFile.getName())) {
         file.delete();
       }
