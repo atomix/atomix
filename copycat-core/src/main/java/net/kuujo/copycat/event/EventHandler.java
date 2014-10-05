@@ -22,6 +22,7 @@ package net.kuujo.copycat.event;
  *
  * @param <E> The event type.
  */
+@FunctionalInterface
 public interface EventHandler<E extends Event> {
 
   /**

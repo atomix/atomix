@@ -15,16 +15,20 @@
  */
 package net.kuujo.copycat.event;
 
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.MemberConfig;
+
 /**
  * Vote cast event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SuppressWarnings("rawtypes")
 public class VoteCastEvent implements Event {
   private final long term;
-  private final String candidate;
+  private final Member candidate;
 
-  public VoteCastEvent(long term, String candidate) {
+  public VoteCastEvent(long term, Member candidate) {
     this.term = term;
     this.candidate = candidate;
   }
@@ -43,8 +47,14 @@ public class VoteCastEvent implements Event {
    *
    * @return The candidate for which the vote was cast.
    */
-  public String candidate() {
+  @SuppressWarnings("unchecked")
+  public <M extends MemberConfig> Member<M> candidate() {
     return candidate;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("VoteCastEvent[term=%d, candidate=%s]", term, candidate);
   }
 
 }

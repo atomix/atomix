@@ -22,4 +22,9 @@ package net.kuujo.copycat.event;
  */
 public class StopEvent implements Event {
 
+  @Override
+  public String toString() {
+    return "StopEvent";
+  }
+
 }

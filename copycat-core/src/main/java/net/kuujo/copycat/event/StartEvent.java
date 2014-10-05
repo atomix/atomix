@@ -21,4 +21,10 @@ package net.kuujo.copycat.event;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StartEvent implements Event {
+
+  @Override
+  public String toString() {
+    return "StartEvent";
+  }
+
 }

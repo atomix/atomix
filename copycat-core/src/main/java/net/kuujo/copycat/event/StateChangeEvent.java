@@ -38,4 +38,9 @@ public class StateChangeEvent implements Event {
     return state;
   }
 
+  @Override
+  public String toString() {
+    return String.format("StateChangeEvent[state=%s]", state);
+  }
+
 }

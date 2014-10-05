@@ -25,31 +25,31 @@ public final class Events {
   /**
    * Start event constant.
    */
-  public static Class<? extends Event> START = StartEvent.class;
+  public static final Class<? extends Event> START = StartEvent.class;
 
   /**
    * Stop event constant.
    */
-  public static Class<? extends Event> STOP = StopEvent.class;
+  public static final Class<? extends Event> STOP = StopEvent.class;
 
   /**
    * Vote cast event constant.
    */
-  public static Class<? extends Event> VOTE_CAST = VoteCastEvent.class;
+  public static final Class<? extends Event> VOTE_CAST = VoteCastEvent.class;
 
   /**
    * Leader elected event constant.
    */
-  public static Class<? extends Event> LEADER_ELECT = LeaderElectEvent.class;
+  public static final Class<? extends Event> LEADER_ELECT = LeaderElectEvent.class;
 
   /**
    * State change event constant.
    */
-  public static Class<? extends Event> STATE_CHANGE = StateChangeEvent.class;
+  public static final Class<? extends Event> STATE_CHANGE = StateChangeEvent.class;
 
   /**
    * Cluster membership change event constant.
    */
-  public static Class<? extends Event> MEMBERSHIP_CHANGE = MembershipChangeEvent.class;
+  public static final Class<? extends Event> MEMBERSHIP_CHANGE = MembershipChangeEvent.class;
 
 }
