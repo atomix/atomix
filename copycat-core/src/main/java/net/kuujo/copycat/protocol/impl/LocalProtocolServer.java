@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.protocol.PingRequest;
@@ -27,7 +28,6 @@ import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
-import net.kuujo.copycat.registry.Registry;
 import net.kuujo.copycat.util.Args;
 
 /**
@@ -37,10 +37,10 @@ import net.kuujo.copycat.util.Args;
  */
 public class LocalProtocolServer implements ProtocolServer {
   private final String address;
-  private final Registry registry;
+  private final Map<String, LocalProtocolServer> registry;
   private ProtocolHandler requestHandler;
 
-  public LocalProtocolServer(String address, Registry registry) {
+  public LocalProtocolServer(String address, Map<String, LocalProtocolServer> registry) {
     this.address = address;
     this.registry = registry;
   }
@@ -72,13 +72,13 @@ public class LocalProtocolServer implements ProtocolServer {
 
   @Override
   public CompletableFuture<Void> start() {
-    registry.bind(address, this);
+    registry.put(address, this);
     return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override
   public CompletableFuture<Void> stop() {
-    registry.unbind(address);
+    registry.remove(address);
     return CompletableFuture.completedFuture((Void) null);
   }
 

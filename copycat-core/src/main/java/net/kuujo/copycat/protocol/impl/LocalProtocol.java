@@ -15,46 +15,24 @@
  */
 package net.kuujo.copycat.protocol.impl;
 
+import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriSchemeSpecificPart;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Local protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocol implements Protocol {
-  private Registry registry;
+public class LocalProtocol implements Protocol<MemberConfig> {
   private String address;
+  private final Map<String, LocalProtocolServer> registry = new HashMap<>();
 
   public LocalProtocol() {
-  }
-
-  @Override
-  public String name() {
-    return address;
-  }
-
-  /**
-   * Sets the protocol registry.
-   *
-   * @param registry The protocol registry.
-   */
-  public void setRegistry(Registry registry) {
-    this.registry = registry;
-  }
-
-  /**
-   * Returns the protocol registry.
-   *
-   * @return The protocol registry.
-   */
-  public Registry getRegistry() {
-    return registry;
   }
 
   /**
@@ -62,8 +40,6 @@ public class LocalProtocol implements Protocol {
    *
    * @param address The protocol address.
    */
-  @UriAuthority
-  @UriSchemeSpecificPart
   public void setAddress(String address) {
     this.address = address;
   }
@@ -89,12 +65,12 @@ public class LocalProtocol implements Protocol {
   }
 
   @Override
-  public ProtocolServer createServer() {
+  public ProtocolServer createServer(MemberConfig member) {
     return new LocalProtocolServer(address, registry);
   }
 
   @Override
-  public ProtocolClient createClient() {
+  public ProtocolClient createClient(MemberConfig member) {
     return new LocalProtocolClient(address, registry);
   }
 

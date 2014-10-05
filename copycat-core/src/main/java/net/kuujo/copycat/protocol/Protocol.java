@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.cluster.MemberConfig;
+
 /**
  * CopyCat protocol.<p>
  *
@@ -28,29 +30,24 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol {
-
-  /**
-   * Returns the protocol name.
-   *
-   * @return The protocol name.
-   */
-  String name();
+public interface Protocol<M extends MemberConfig> {
 
   /**
    * Creates a protocol server.
    *
-   * @param context The CopyCat context.
+   * @param cluster The cluster configuration.
+   * @param member The member configuration.
    * @return The protocol server.
    */
-  ProtocolServer createServer();
+  ProtocolServer createServer(M member);
 
   /**
    * Creates a protocol client.
    *
-   * @param context The CopyCat context.
+   * @param cluster The cluster configuration.
+   * @param member The member configuration.
    * @return The protocol client.
    */
-  ProtocolClient createClient();
+  ProtocolClient createClient(M member);
 
 }

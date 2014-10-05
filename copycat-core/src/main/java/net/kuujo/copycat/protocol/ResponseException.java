@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.CopyCatException;
+import net.kuujo.copycat.CopycatException;
 
 /**
  * A response exception.
@@ -23,7 +23,7 @@ import net.kuujo.copycat.CopyCatException;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("serial")
-public class ResponseException extends CopyCatException {
+public class ResponseException extends CopycatException {
 
   public ResponseException(String message) {
     super(message);
