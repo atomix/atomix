@@ -17,6 +17,7 @@ package net.kuujo.copycat.endpoint;
 
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.internal.DefaultCopycatContext;
+import net.kuujo.copycat.protocol.SubmitHandler;
 import net.kuujo.copycat.spi.endpoint.Endpoint;
 
 import java.util.List;
@@ -28,13 +29,14 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalEndpoint implements Endpoint {
-  private DefaultCopycatContext context;
+  private SubmitHandler submitHandler;
 
   public LocalEndpoint() {
   }
 
   @Override
-  public void init(CopycatContext context) {
+  public void submitHandler(SubmitHandler handler) {
+    this.submitHandler = handler;
   }
 
   @Override
@@ -55,7 +57,7 @@ public class LocalEndpoint implements Endpoint {
    * @return A completable future to be completed once the result is received.
    */
   public <R> CompletableFuture<R> submitCommand(String command, List<Object> args) {
-    return context.submitCommand(command, args);
+    return submitHandler.submit(command, args);
   }
 
   @Override
