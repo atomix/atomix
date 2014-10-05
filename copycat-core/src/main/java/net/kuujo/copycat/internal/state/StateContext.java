@@ -33,7 +33,7 @@ import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.util.Args;
+import net.kuujo.copycat.internal.util.Args;
 
 import java.util.ArrayList;
 import java.util.Arrays;

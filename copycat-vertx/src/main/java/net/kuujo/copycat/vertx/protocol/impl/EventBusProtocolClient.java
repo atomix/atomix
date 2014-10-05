@@ -26,7 +26,7 @@ import net.kuujo.copycat.protocol.RequestVoteRequest;
 import net.kuujo.copycat.protocol.RequestVoteResponse;
 import net.kuujo.copycat.protocol.SubmitCommandRequest;
 import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.util.Args;
+import net.kuujo.copycat.internal.util.Args;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;

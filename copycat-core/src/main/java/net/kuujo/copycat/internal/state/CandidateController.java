@@ -20,7 +20,7 @@ import net.kuujo.copycat.log.internal.CopycatEntry;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.util.Quorum;
+import net.kuujo.copycat.internal.util.Quorum;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;

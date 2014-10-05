@@ -25,7 +25,7 @@ import net.kuujo.copycat.uri.UriAuthority;
 import net.kuujo.copycat.uri.UriHost;
 import net.kuujo.copycat.uri.UriPort;
 import net.kuujo.copycat.uri.UriQueryParam;
-import net.kuujo.copycat.util.Args;
+import net.kuujo.copycat.internal.util.Args;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;

@@ -19,7 +19,7 @@ import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.state.StateContext;
-import net.kuujo.copycat.util.Quorum;
+import net.kuujo.copycat.internal.util.Quorum;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;

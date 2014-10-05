@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.Args;
+import net.kuujo.copycat.internal.util.Args;
 
 import java.io.Serializable;
 import java.util.*;

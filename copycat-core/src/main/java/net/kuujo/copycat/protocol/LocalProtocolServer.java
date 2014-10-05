@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
-import net.kuujo.copycat.util.Args;
+import net.kuujo.copycat.internal.util.Args;
 
 /**
  * Local protocol server.

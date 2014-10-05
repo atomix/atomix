@@ -187,7 +187,7 @@
             <version>${maven.javadoc.plugin.version}</version>
             <configuration>
               <show>public</show>
-              <excludePackageNames>net.kuujo.copycat.util:*.impl.*</excludePackageNames>
+              <excludePackageNames>net.kuujo.copycat.internal.util:*.impl.*</excludePackageNames>
               <reportOutputDirectory>docs</reportOutputDirectory>
               <destDir>java</destDir>
             </configuration>

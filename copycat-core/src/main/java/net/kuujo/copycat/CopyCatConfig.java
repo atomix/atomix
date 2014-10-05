@@ -16,7 +16,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.spi.*;
-import net.kuujo.copycat.util.Args;
+import net.kuujo.copycat.internal.util.Args;
 
 import java.util.UUID;
 import java.util.concurrent.Executors;
