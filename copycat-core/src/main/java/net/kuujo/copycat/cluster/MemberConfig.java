@@ -16,6 +16,7 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.internal.util.Args;
 
+import java.io.Serializable;
 import java.util.Observable;
 
 /**
@@ -23,7 +24,7 @@ import java.util.Observable;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemberConfig extends Observable {
+public class MemberConfig extends Observable implements Serializable {
   private String id;
 
   public MemberConfig() {
