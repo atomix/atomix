@@ -410,16 +410,14 @@ abstract class CopycatState implements State<CopycatStateContext> {
         CopycatEntry entry = context.log().getEntry(lastIndex);
         if (entry == null) {
           context.setLastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request
-            .candidate())));
+          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request.candidate())));
           return new PollResponse(request.id(), context.getCurrentTerm(), true);
         }
 
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           context.setLastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request
-            .candidate())));
+          context.events().voteCast().handle(new VoteCastEvent(context.getCurrentTerm(), context.cluster().member(request.candidate())));
           return new PollResponse(request.id(), context.getCurrentTerm(), true);
         } else {
           context.setLastVotedFor(null);
@@ -441,6 +439,11 @@ abstract class CopycatState implements State<CopycatStateContext> {
   @Override
   public void destroy() {
     context.cluster().localMember().server().protocolHandler(null);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[context=%s]", getClass().getSimpleName(), context);
   }
 
 }
