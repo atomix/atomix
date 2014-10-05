@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.impl.DefaultCopycatContext;
 import net.kuujo.copycat.log.impl.InMemoryLog;
-import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.registry.impl.ConcurrentRegistry;
+import net.kuujo.copycat.protocol.impl.LocalProtocol;
 import org.junit.Assert;
 
 import java.util.HashMap;
@@ -62,17 +63,17 @@ class CopyCatTest {
    * Creates a cluster of uniquely named CopyCat contexts.
    */
   protected Set<DefaultCopycatContext> createCluster(int numInstances) {
-    Registry registry = new ConcurrentRegistry();
-    Set<DefaultCopycatContext> instances = new HashSet<>();
+    LocalProtocol protocol = new LocalProtocol();
+    Set<DefaultCopycatContext> instances = new HashSet<>(numInstances);
     for (int i = 1; i <= numInstances; i++) {
-      ClusterConfig cluster = new ClusterConfig();
-      cluster.setLocalMember(String.format("local:%d", i));
+      ClusterConfig<MemberConfig> cluster = new ClusterConfig<>();
+      cluster.setLocalMember(new MemberConfig(String.valueOf(i)));
       for (int j = 1; j <= numInstances; j++) {
         if (j != i) {
-          cluster.addRemoteMember(String.format("local:%d", j));
+          cluster.addRemoteMember(new MemberConfig(String.valueOf(i)));
         }
       }
-      instances.add(new DefaultCopycatContext(new TestStateMachine(), new InMemoryLog(), cluster, new CopycatConfig().withMaxLogSize(1000), registry));
+      instances.add(new DefaultCopycatContext(new TestStateMachine(), new InMemoryLog(), cluster, protocol, new CopycatConfig().withMaxLogSize(1000)));
     }
     return instances;
   }

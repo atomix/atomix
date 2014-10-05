@@ -38,7 +38,7 @@ public class TestStateMachineEvents {
    */
   public TestStateMachineEvents commandApplied(String command) {
     final CountDownLatch latch = new CountDownLatch(1);
-    stateMachine.addCommandListener(command, () -> latch.countDown());
+    stateMachine.addCommandListener(command, latch::countDown);
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {

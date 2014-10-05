@@ -29,6 +29,9 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
   private M localMember;
   private Set<M> remoteMembers = new HashSet<>(6);
 
+  public ClusterConfig() {
+  }
+
   public ClusterConfig(ClusterConfig<M> cluster) {
     localMember = Args.checkNotNull(cluster).localMember;
     remoteMembers = new HashSet<>(cluster.remoteMembers);

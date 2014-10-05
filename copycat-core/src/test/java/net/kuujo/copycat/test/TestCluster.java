@@ -15,11 +15,13 @@
  */
 package net.kuujo.copycat.test;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.protocol.impl.LocalProtocol;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import net.kuujo.copycat.registry.Registry;
-import net.kuujo.copycat.registry.impl.BasicRegistry;
 
 /**
  * Test cluster.
@@ -55,16 +57,16 @@ public class TestCluster {
    * Synchronously starts the test cluster.
    */
   public void start() {
-    Registry registry = new BasicRegistry();
+    Protocol<MemberConfig> protocol = new LocalProtocol();
     for (TestNode node : nodes) {
-      ClusterConfig cluster = new ClusterConfig();
-      cluster.setLocalMember(node.uri());
+      ClusterConfig<MemberConfig> cluster = new ClusterConfig<>();
+      cluster.setLocalMember(node.config());
       for (TestNode n : nodes) {
-        if (!n.uri().equals(node.uri())) {
-          cluster.addRemoteMember(n.uri());
+        if (!n.id().equals(node.id())) {
+          cluster.addRemoteMember(node.config());
         }
       }
-      node.start(cluster, registry);
+      node.start(cluster, protocol);
     }
   }
 

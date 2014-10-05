@@ -15,14 +15,15 @@
  */
 package net.kuujo.copycat.test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import net.kuujo.copycat.CopycatConfig;
-import net.kuujo.copycat.registry.Registry;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.state.State;
 import net.kuujo.copycat.state.impl.*;
-import net.kuujo.copycat.state.impl.CopycatStateContext;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Test node.
@@ -32,7 +33,8 @@ import net.kuujo.copycat.state.impl.CopycatStateContext;
 public class TestNode {
   private final TestNodeEvents events;
   private CopycatStateContext context;
-  private String uri;
+  private String id;
+  private MemberConfig config;
   private State.Type state;
   private TestStateMachine stateMachine;
   private TestLog log;
@@ -42,18 +44,28 @@ public class TestNode {
   private long commitIndex;
   private long lastApplied;
 
-  public TestNode(String uri) {
-    this.uri = uri;
+  public TestNode(String id) {
+    this.id = id;
+    this.config = new MemberConfig(id);
     this.events = new TestNodeEvents(this);
   }
 
   /**
-   * Returns the node URI.
+   * Returns the node id.
    *
-   * @return The node URI.
+   * @return The node id.
    */
-  public String uri() {
-    return uri;
+  public String id() {
+    return id;
+  }
+
+  /**
+   * Returns the node configuration.
+   *
+   * @return The node configuration.
+   */
+  public MemberConfig config() {
+    return config;
   }
 
   /**
@@ -176,10 +188,10 @@ public class TestNode {
    * Starts the node.
    *
    * @param cluster The cluster configuration.
-   * @param registry The cluster-wide registry.
+   * @param protocol The cluster protocol.
    */
-  public void start(ClusterConfig cluster, Registry registry) {
-    context = new CopycatStateContext(stateMachine, log, cluster, new CopycatConfig(), registry);
+  public <M extends MemberConfig> void start(ClusterConfig<M> cluster, Protocol<M> protocol) {
+    context = new CopycatStateContext(stateMachine, log, cluster, protocol, new CopycatConfig());
     context.setCurrentLeader(leader);
     context.setCurrentTerm(term);
     context.setLastVotedFor(votedFor);
@@ -201,7 +213,7 @@ public class TestNode {
     }
 
     final CountDownLatch latch = new CountDownLatch(1);
-    context.cluster().localMember().protocol().server().start().whenCompleteAsync((result, error) -> {
+    context.cluster().localMember().server().start().whenCompleteAsync((result, error) -> {
       latch.countDown();
     });
     try {

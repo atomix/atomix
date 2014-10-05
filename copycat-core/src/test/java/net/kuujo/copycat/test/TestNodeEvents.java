@@ -67,7 +67,7 @@ public class TestNodeEvents {
     node.instance().events().leaderElect().registerHandler(new EventHandler<LeaderElectEvent>() {
       @Override
       public void handle(LeaderElectEvent event) {
-        if (event.leader().equals(node.uri())) {
+        if (event.leader().equals(node.config())) {
           node.instance().events().leaderElect().unregisterHandler(this);
           latch.countDown();
         }

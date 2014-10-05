@@ -40,7 +40,7 @@ public class TestLogEvents {
    */
   public TestLogEvents appendedEntry(Entry entry) {
     final CountDownLatch latch = new CountDownLatch(1);
-    log.addEntryListener((i, e) -> e.equals(entry), () -> latch.countDown());
+    log.addEntryListener((i, e) -> e.equals(entry), latch::countDown);
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
@@ -57,7 +57,7 @@ public class TestLogEvents {
    */
   public TestLogEvents appendedEntry(long index) {
     final CountDownLatch latch = new CountDownLatch(1);
-    log.addEntryListener((i, e) -> i == index, () -> latch.countDown());
+    log.addEntryListener((i, e) -> i == index, latch::countDown);
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
@@ -74,7 +74,7 @@ public class TestLogEvents {
    */
   public TestLogEvents appendedEntry(Class<? extends Entry> entryType) {
     final CountDownLatch latch = new CountDownLatch(1);
-    log.addEntryListener((i, e) -> entryType.isAssignableFrom(e.getClass()), () -> latch.countDown());
+    log.addEntryListener((i, e) -> entryType.isAssignableFrom(e.getClass()), latch::countDown);
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
@@ -90,7 +90,7 @@ public class TestLogEvents {
    */
   public TestLogEvents compacted() {
     final CountDownLatch latch = new CountDownLatch(1);
-    log.addCompactListener(() -> latch.countDown());
+    log.addCompactListener(latch::countDown);
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {

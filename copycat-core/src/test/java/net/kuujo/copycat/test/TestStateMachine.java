@@ -28,7 +28,7 @@ import net.kuujo.copycat.StateMachine;
  */
 public class TestStateMachine extends StateMachine {
   private final TestStateMachineEvents events;
-  private final Map<String, Runnable> commandListeners = new HashMap<>();
+  private final Map<String, Runnable> commandListeners = new HashMap<>(10);
 
   public TestStateMachine() {
     events = new TestStateMachineEvents(this);

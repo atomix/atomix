@@ -45,7 +45,7 @@ public class StateMachineTest {
   @Test
   public void testApplyUnnamedCommand() {
     StateMachine stateMachine = new TestApplyUnnamedCommand();
-    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>()));
+    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>(0)));
   }
 
   private static class TestApplyUnnamedCommand extends StateMachine {
@@ -58,7 +58,7 @@ public class StateMachineTest {
   @Test
   public void testApplyNamedCommand() {
     StateMachine stateMachine = new TestApplyNamedCommand();
-    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>()));
+    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>(0)));
   }
 
   private static class TestApplyNamedCommand extends StateMachine {
