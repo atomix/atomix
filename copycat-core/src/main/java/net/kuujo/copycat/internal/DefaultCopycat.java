@@ -23,7 +23,6 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.SubmitHandler;
 import net.kuujo.copycat.spi.service.Service;
 
 import java.util.concurrent.CompletableFuture;
@@ -43,17 +42,13 @@ public class DefaultCopycat implements Copycat {
   public <M extends Member> DefaultCopycat(Service service, StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
     this.context = new DefaultCopycatContext(stateMachine, log, cluster, config);
     this.service = service;
-    this.service.submitHandler(new SubmitHandler() {
-      @Override
-      public <T> CompletableFuture<T> submit(String command, Object... args) {
-        return context.submitCommand(command, args);
-      }
-    });
+    this.service.init(context);
   }
 
   public DefaultCopycat(Service service, CopycatContext context) {
     this.service = service;
     this.context = context;
+    this.service.init(context);
   }
 
   @Override

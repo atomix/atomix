@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.spi.service;
 
+import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.protocol.SubmitHandler;
 
 import java.util.concurrent.CompletableFuture;
@@ -40,11 +41,11 @@ import java.util.concurrent.CompletableFuture;
 public interface Service {
 
   /**
-   * Registers a submit handler on the service.
+   * Initializes the service.
    *
-   * @param handler A submit request handler.
+   * @param context The copycat context.
    */
-  void submitHandler(SubmitHandler handler);
+  void init(CopycatContext context);
 
   /**
    * Starts the service.<p>

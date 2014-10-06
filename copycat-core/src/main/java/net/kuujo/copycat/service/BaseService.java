@@ -12,25 +12,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.service;
+
+import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.spi.service.Service;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Protocol submit handler.
+ * Base service implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface SubmitHandler {
+abstract class BaseService implements Service {
+  protected CopycatContext context;
+
+  @Override
+  public void init(CopycatContext context) {
+    this.context = context;
+  }
 
   /**
-   * Submits a command.
-   *
-   * @param command The command to submit.
-   * @param args A list of command arguments.
-   * @param <T> The return type.
-   * @return A completable future to be called once the result is received.
+   * Handles a command submission.
    */
-  <T> CompletableFuture<T> submit(String command, Object... args);
+  protected <T> CompletableFuture<T> submit(String command, Object... args) {
+    if (context == null) {
+      CompletableFuture<T> future = new CompletableFuture<>();
+      future.completeExceptionally(new ServiceException("No submit handlers registered"));
+      return future;
+    }
+    return context.submitCommand(command, args);
+  }
 
 }

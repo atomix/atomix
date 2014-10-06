@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.protocol.SubmitHandler;
-import net.kuujo.copycat.spi.service.Service;
-
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -26,15 +23,9 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalService implements Service {
-  private SubmitHandler submitHandler;
+public class LocalService extends BaseService {
 
   public LocalService() {
-  }
-
-  @Override
-  public void submitHandler(SubmitHandler handler) {
-    this.submitHandler = handler;
   }
 
   @Override
@@ -55,7 +46,7 @@ public class LocalService implements Service {
    * @return A completable future to be completed once the result is received.
    */
   public <R> CompletableFuture<R> submitCommand(String command, List<Object> args) {
-    return submitHandler.submit(command, args);
+    return submit(command, args);
   }
 
   @Override
