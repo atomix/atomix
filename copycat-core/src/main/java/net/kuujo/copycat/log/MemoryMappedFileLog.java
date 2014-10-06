@@ -125,7 +125,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     }
 
     if (syncInterval > 0 && syncFuture == null) {
-      syncFuture = (ScheduledFuture<Void>) scheduler.scheduleAtFixedRate(() -> sync(), syncInterval, syncInterval, TimeUnit.MILLISECONDS);
+      syncFuture = (ScheduledFuture<Void>) scheduler.scheduleAtFixedRate(this::sync, syncInterval, syncInterval, TimeUnit.MILLISECONDS);
     }
   }
 

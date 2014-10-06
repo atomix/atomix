@@ -184,7 +184,7 @@ public interface Copycat {
      * @param quorumStrategy The read quorum strategy.
      * @return The copycat builder.
      */
-    public Builder withReadQuorumStrategy(QuorumStrategy quorumStrategy) {
+    public Builder withReadQuorumStrategy(QuorumStrategy<?> quorumStrategy) {
       builder.withReadQuorumStrategy(quorumStrategy);
       return this;
     }
@@ -217,7 +217,7 @@ public interface Copycat {
      * @param quorumStrategy The write quorum strategy.
      * @return The copycat builder.
      */
-    public Builder withWriteQuorumStrategy(QuorumStrategy quorumStrategy) {
+    public Builder withWriteQuorumStrategy(QuorumStrategy<?> quorumStrategy) {
       builder.withWriteQuorumStrategy(quorumStrategy);
       return this;
     }

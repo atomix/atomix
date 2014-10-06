@@ -54,6 +54,24 @@ public class HttpMember extends Member {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof HttpMember) {
+      HttpMember member = (HttpMember) object;
+      return member.host.equals(host) && member.port == port;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 43;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + host.hashCode();
+    hashCode = 37 * hashCode + port;
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[host=%s, port=%d]", getClass().getSimpleName(), host, port);
   }

@@ -18,7 +18,7 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.cluster.Member;
 
 /**
- * Leader elcted event.
+ * Leader elected event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

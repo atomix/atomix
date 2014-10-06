@@ -42,6 +42,19 @@ public class EventBusMember extends Member {
   }
 
   @Override
+  public boolean equals(Object object) {
+    return object instanceof EventBusMember && ((EventBusMember) object).address.equals(address);
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + address.hashCode();
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[address=%s]", getClass().getSimpleName(), address);
   }

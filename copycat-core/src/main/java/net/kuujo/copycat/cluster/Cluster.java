@@ -165,6 +165,23 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (getClass().isInstance(object)) {
+      Cluster<?> config = (Cluster<?>) object;
+      return config.localMember().equals(localMember) && config.remoteMembers().equals(remoteMembers);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + localMember.hashCode();
+    hashCode = 37 * hashCode + remoteMembers.hashCode();
+    return hashCode;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[protocol=%s, config=%s]", getClass().getSimpleName(), protocol, config);
   }

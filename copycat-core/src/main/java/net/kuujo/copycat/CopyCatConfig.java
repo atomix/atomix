@@ -15,8 +15,11 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.spi.*;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.QuorumStrategy;
+import net.kuujo.copycat.spi.TimerStrategy;
 
 import java.util.UUID;
 import java.util.concurrent.Executors;
@@ -35,9 +38,11 @@ public class CopycatConfig {
   private boolean requireWriteQuorum = true;
   private boolean requireReadQuorum = true;
   private int readQuorumSize = -1;
-  private QuorumStrategy readQuorumStrategy = (cluster) -> (int) Math.floor(cluster.getMembers().size()) + 1;
+  @SuppressWarnings("rawtypes")
+  private QuorumStrategy readQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size()) + 1;
   private int writeQuorumSize = -1;
-  private QuorumStrategy writeQuorumStrategy = (cluster) -> (int) Math.floor(cluster.getMembers().size()) + 1;
+  @SuppressWarnings("rawtypes")
+  private QuorumStrategy writeQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size()) + 1;
   private int maxLogSize = 32 * 1024^2;
   private CorrelationStrategy<?> correlationStrategy = () -> UUID.randomUUID().toString();
   @SuppressWarnings("unchecked")
@@ -200,7 +205,7 @@ public class CopycatConfig {
    *
    * @param strategy The cluster write quorum calculation strategy.
    */
-  public void setWriteQuorumStrategy(QuorumStrategy strategy) {
+  public void setWriteQuorumStrategy(QuorumStrategy<?> strategy) {
     this.writeQuorumStrategy = Args.checkNotNull(strategy);
   }
 
@@ -209,7 +214,8 @@ public class CopycatConfig {
    *
    * @return The cluster write quorum calculation strategy.
    */
-  public QuorumStrategy getWriteQuorumStrategy() {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <C extends Cluster> QuorumStrategy<C> getWriteQuorumStrategy() {
     return writeQuorumStrategy;
   }
 
@@ -219,7 +225,7 @@ public class CopycatConfig {
    * @param strategy The cluster write quorum calculation strategy.
    * @return The copycat configuration.
    */
-  public CopycatConfig withWriteQuorumStrategy(QuorumStrategy strategy) {
+  public CopycatConfig withWriteQuorumStrategy(QuorumStrategy<?> strategy) {
     this.writeQuorumStrategy = Args.checkNotNull(strategy);
     return this;
   }
@@ -260,7 +266,7 @@ public class CopycatConfig {
    *
    * @param strategy The cluster read quorum calculation strategy.
    */
-  public void setReadQuorumStrategy(QuorumStrategy strategy) {
+  public void setReadQuorumStrategy(QuorumStrategy<?> strategy) {
     this.readQuorumStrategy = Args.checkNotNull(strategy);
   }
 
@@ -269,7 +275,8 @@ public class CopycatConfig {
    *
    * @return The cluster read quorum calculation strategy.
    */
-  public QuorumStrategy getReadQuorumStrategy() {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public <C extends Cluster> QuorumStrategy<C> getReadQuorumStrategy() {
     return readQuorumStrategy;
   }
 
@@ -279,7 +286,7 @@ public class CopycatConfig {
    * @param strategy The cluster read quorum calculation strategy.
    * @return The copycat configuration.
    */
-  public CopycatConfig withReadQuorumStrategy(QuorumStrategy strategy) {
+  public CopycatConfig withReadQuorumStrategy(QuorumStrategy<?> strategy) {
     this.readQuorumStrategy = Args.checkNotNull(strategy);
     return this;
   }

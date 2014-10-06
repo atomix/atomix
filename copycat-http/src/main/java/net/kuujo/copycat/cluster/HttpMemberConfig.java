@@ -31,30 +31,80 @@ public class HttpMemberConfig extends MemberConfig {
     this.port = port;
   }
 
+  /**
+   * Sets the member host.
+   *
+   * @param host The member host.
+   */
   public void setHost(String host) {
     this.host = host;
   }
 
+  /**
+   * Returns the member host.
+   *
+   * @return The member host.
+   */
   public String getHost() {
     return host;
   }
 
+  /**
+   * Sets the member host, returning the configuration for method chaining.
+   *
+   * @param host The member host.
+   * @return The member configuration.
+   */
   public HttpMemberConfig withHost(String host) {
     this.host = host;
     return this;
   }
 
+  /**
+   * Sets the member port.
+   *
+   * @param port The member port.
+   */
   public void setPort(int port) {
     this.port = port;
   }
 
+  /**
+   * Returns the member port.
+   *
+   * @return The member port.
+   */
   public int getPort() {
     return port;
   }
 
+  /**
+   * Sets the member port, returning the configuration for method chaining.
+   *
+   * @param port The member port.
+   * @return The member configuration.
+   */
   public HttpMemberConfig withPort(int port) {
     this.port = port;
     return this;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof HttpMemberConfig) {
+      HttpMemberConfig member = (HttpMemberConfig) object;
+      return member.host.equals(host) && member.port == port;
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 13;
+    hashCode = 37 * hashCode + getId().hashCode();
+    hashCode = 37 * hashCode + host.hashCode();
+    hashCode = 37 * hashCode + port;
+    return hashCode;
   }
 
   @Override

@@ -369,9 +369,7 @@ abstract class StateController implements RequestHandler {
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    return CompletableFuture.supplyAsync(() -> {
-      return handlePoll(request);
-    }, executor);
+    return CompletableFuture.supplyAsync(() ->  handlePoll(request), executor);
   }
 
   /**

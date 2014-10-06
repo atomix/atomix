@@ -46,7 +46,7 @@ public class TcpProtocolClient implements ProtocolClient {
   private final TcpProtocol protocol;
   private NetClient client;
   private NetSocket socket;
-  private final Map<Object, ResponseHolder> responses = new HashMap<>();
+  private final Map<Object, ResponseHolder> responses = new HashMap<>(1000);
 
   /**
    * Holder for response handlers.

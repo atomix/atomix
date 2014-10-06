@@ -25,7 +25,7 @@ import java.util.Date;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class BaseFileLog extends BaseLog {
+abstract class BaseFileLog extends BaseLog {
   private static final SimpleDateFormat fileNameFormat = new SimpleDateFormat("yyyyMMddhhmmssSSS");
   private final File baseFile;
 

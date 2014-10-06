@@ -42,7 +42,7 @@ public class NettyTcpProtocolClient implements ProtocolClient {
   private final NettyTcpProtocol protocol;
   private final TcpMember member;
   private Channel channel;
-  private final Map<Object, CompletableFuture<? extends Response>> responseFutures = new HashMap<>();
+  private final Map<Object, CompletableFuture<? extends Response>> responseFutures = new HashMap<>(1000);
 
   public NettyTcpProtocolClient(NettyTcpProtocol protocol, TcpMember member) {
     this.protocol = protocol;

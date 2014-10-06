@@ -15,15 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.EntryType;
-import net.kuujo.copycat.log.EntryTypes;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.LogException;
-
 import com.esotericsoftware.kryo.Kryo;
 
 /**
@@ -31,7 +22,7 @@ import com.esotericsoftware.kryo.Kryo;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class BaseLog implements Log {
+abstract class BaseLog implements Log {
   private final Class<? extends Entry> entryType;
   protected final Kryo kryo;
 

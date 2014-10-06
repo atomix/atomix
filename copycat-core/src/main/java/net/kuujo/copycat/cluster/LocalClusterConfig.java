@@ -74,7 +74,7 @@ public class LocalClusterConfig extends ClusterConfig<Member> {
    * @param ids A list of remote member IDs.
    */
   public void setRemoteMembers(String... ids) {
-    super.setRemoteMembers(Arrays.asList(ids).stream().map(id -> new Member(id)).collect(Collectors.toList()));
+    super.setRemoteMembers(Arrays.asList(ids).stream().map(Member::new).collect(Collectors.toList()));
   }
 
   /**

@@ -122,7 +122,7 @@ public abstract class StateMachine {
   }
 
   /**
-   * Exceutes a state machine command.
+   * Executes a state machine command.
    *
    * @param name The name of the command to execute.
    * @param args The command arguments.

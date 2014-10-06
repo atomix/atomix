@@ -154,9 +154,7 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handlePingRequest(final Object id, final NetSocket socket, PingRequest request) {
     if (requestHandler != null) {
-      requestHandler.ping(request).whenComplete((response, error) -> {
-        respond(socket, id, response, error);
-      });
+      requestHandler.ping(request).whenComplete((response, error) -> respond(socket, id, response, error));
     }
   }
 
@@ -165,9 +163,7 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleSyncRequest(final Object id, final NetSocket socket, SyncRequest request) {
     if (requestHandler != null) {
-      requestHandler.sync(request).whenComplete((response, error) -> {
-        respond(socket, id, response, error);
-      });
+      requestHandler.sync(request).whenComplete((response, error) -> respond(socket, id, response, error));
     }
   }
 
@@ -176,9 +172,7 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handlePollRequest(final Object id, final NetSocket socket, PollRequest request) {
     if (requestHandler != null) {
-      requestHandler.poll(request).whenComplete((response, error) -> {
-        respond(socket, id, response, error);
-      });
+      requestHandler.poll(request).whenComplete((response, error) -> respond(socket, id, response, error));
     }
   }
 
@@ -187,9 +181,7 @@ public class TcpProtocolServer implements ProtocolServer {
    */
   private void handleSubmitRequest(final Object id, final NetSocket socket, SubmitRequest request) {
     if (requestHandler != null) {
-      requestHandler.submit(request).whenComplete((response, error) -> {
-        respond(socket, id, response, error);
-      });
+      requestHandler.submit(request).whenComplete((response, error) -> respond(socket, id, response, error));
     }
   }
 

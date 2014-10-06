@@ -55,4 +55,22 @@ public class EventBusMemberConfig extends MemberConfig {
     return this;
   }
 
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof EventBusMemberConfig && ((EventBusMemberConfig) object).getAddress().equals(getAddress());
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 23;
+    hashCode = 37 * hashCode + getId().hashCode();
+    hashCode = 37 * hashCode + getAddress().hashCode();
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[address=%s]", getClass().getSimpleName(), getAddress());
+  }
+
 }

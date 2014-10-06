@@ -16,7 +16,6 @@
 package net.kuujo.copycat.spi.service;
 
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.protocol.SubmitHandler;
 
 import java.util.concurrent.CompletableFuture;
 

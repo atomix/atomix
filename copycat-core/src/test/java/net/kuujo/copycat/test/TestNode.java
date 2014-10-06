@@ -211,9 +211,7 @@ public class TestNode {
     }
 
     final CountDownLatch latch = new CountDownLatch(1);
-    context.cluster().localMember().server().start().whenCompleteAsync((result, error) -> {
-      latch.countDown();
-    });
+    context.cluster().localMember().server().start().whenCompleteAsync((result, error) -> latch.countDown());
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {

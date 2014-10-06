@@ -74,7 +74,7 @@ public final class StateContext {
     this.log = log;
     this.config = config;
     this.cluster = cluster;
-    this.clusterManager = new ClusterManager<M>(cluster);
+    this.clusterManager = new ClusterManager<>(cluster);
   }
 
   /**
@@ -100,6 +100,7 @@ public final class StateContext {
    *
    * @return The copycat cluster.
    */
+  @SuppressWarnings("rawtypes")
   public Cluster cluster() {
     return cluster;
   }
