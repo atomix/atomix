@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.netty.protocol.impl;
+package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.cluster.TcpMember;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriPort;
 
 /**
  * Netty TCP protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocol implements Protocol {
-  private String host = "localhost";
-  private int port;
+public class NettyTcpProtocol implements Protocol<TcpMember> {
   private int threads = 1;
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
@@ -37,84 +34,6 @@ public class TcpProtocol implements Protocol {
   private int trafficClass = -1;
   private int acceptBacklog = 1024;
   private int connectTimeout = 60000;
-
-  public TcpProtocol() {
-    this("localhost", 0);
-  }
-
-  public TcpProtocol(String host, int port) {
-    this.host = host;
-    this.port = port;
-  }
-
-  public TcpProtocol(int port) {
-    this("localhost", port);
-  }
-
-  @Override
-  public String name() {
-    return String.format("%s-%d", host, port);
-  }
-
-  /**
-   * Sets the protocol host.
-   *
-   * @param host The TCP host.
-   */
-  @UriHost
-  public void setHost(String host) {
-    this.host = host;
-  }
-
-  /**
-   * Returns the protocol host.
-   *
-   * @return The protocol host.
-   */
-  public String getHost() {
-    return host;
-  }
-
-  /**
-   * Sets the protocol host, returning the protocol for method chaining.
-   *
-   * @param host The TCP host.
-   * @return The TCP protocol.
-   */
-  public TcpProtocol withHost(String host) {
-    this.host = host;
-    return this;
-  }
-
-  /**
-   * Sets the protocol port.
-   *
-   * @param port The TCP port.
-   */
-  @UriPort
-  public void setPort(int port) {
-    this.port = port;
-  }
-
-  /**
-   * Returns the protocol port.
-   *
-   * @return The TCP port.
-   */
-  public int getPort() {
-    return port;
-  }
-
-  /**
-   * Sets the protocol port, returning the protocol for method chaining.
-   *
-   * @param port The TCP port.
-   * @return The TCP protocol.
-   */
-  public TcpProtocol withPort(int port) {
-    this.port = port;
-    return this;
-  }
 
   /**
    * Sets the number of server threads to run.
@@ -140,7 +59,7 @@ public class TcpProtocol implements Protocol {
    * @param numThreads The number of server threads to run.
    * @return The TCP protocol.
    */
-  public TcpProtocol withThreads(int numThreads) {
+  public NettyTcpProtocol withThreads(int numThreads) {
     this.threads = numThreads;
     return this;
   }
@@ -169,7 +88,7 @@ public class TcpProtocol implements Protocol {
    * @param bufferSize The send buffer size.
    * @return The TCP protocol.
    */
-  public TcpProtocol withSendBufferSize(int bufferSize) {
+  public NettyTcpProtocol withSendBufferSize(int bufferSize) {
     this.sendBufferSize = bufferSize;
     return this;
   }
@@ -198,7 +117,7 @@ public class TcpProtocol implements Protocol {
    * @param bufferSize The receive buffer size.
    * @return The TCP protocol.
    */
-  public TcpProtocol withReceiveBufferSize(int bufferSize) {
+  public NettyTcpProtocol withReceiveBufferSize(int bufferSize) {
     this.receiveBufferSize = bufferSize;
     return this;
   }
@@ -227,7 +146,7 @@ public class TcpProtocol implements Protocol {
    * @param useSsl Whether to use SSL encryption.
    * @return The TCP protocol.
    */
-  public TcpProtocol withSsl(boolean useSsl) {
+  public NettyTcpProtocol withSsl(boolean useSsl) {
     this.useSsl = useSsl;
     return this;
   }
@@ -256,7 +175,7 @@ public class TcpProtocol implements Protocol {
    * @param soLinger TCP soLinger settings for connections.
    * @return The TCP protocol.
    */
-  public TcpProtocol withSoLinger(int soLinger) {
+  public NettyTcpProtocol withSoLinger(int soLinger) {
     this.soLinger = soLinger;
     return this;
   }
@@ -285,7 +204,7 @@ public class TcpProtocol implements Protocol {
    * @param trafficClass The traffic class.
    * @return The TCP protocol.
    */
-  public TcpProtocol withTrafficClass(int trafficClass) {
+  public NettyTcpProtocol withTrafficClass(int trafficClass) {
     this.trafficClass = trafficClass;
     return this;
   }
@@ -314,7 +233,7 @@ public class TcpProtocol implements Protocol {
    * @param backlog The accept backlog.
    * @return The TCP protocol.
    */
-  public TcpProtocol withAcceptBacklog(int backlog) {
+  public NettyTcpProtocol withAcceptBacklog(int backlog) {
     this.acceptBacklog = backlog;
     return this;
   }
@@ -343,19 +262,24 @@ public class TcpProtocol implements Protocol {
    * @param connectTimeout The connection timeout.
    * @return The TCP protocol.
    */
-  public TcpProtocol withConnectTimeout(int connectTimeout) {
+  public NettyTcpProtocol withConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
     return this;
   }
 
   @Override
-  public ProtocolServer createServer() {
-    return new TcpProtocolServer(this);
+  public ProtocolServer createServer(TcpMember member) {
+    return new NettyTcpProtocolServer(this, member);
   }
 
   @Override
-  public ProtocolClient createClient() {
-    return new TcpProtocolClient(this);
+  public ProtocolClient createClient(TcpMember member) {
+    return new NettyTcpProtocolClient(this, member);
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
   }
 
 }

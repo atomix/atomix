@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.netty.protocol.impl;
+package net.kuujo.copycat.protocol;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
@@ -33,40 +25,33 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import net.kuujo.copycat.cluster.TcpMember;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
+import javax.net.ssl.SSLException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-
-import javax.net.ssl.SSLException;
-
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
 
 /**
  * Netty TCP protocol client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocolClient implements ProtocolClient {
-  private final TcpProtocol protocol;
+public class NettyTcpProtocolClient implements ProtocolClient {
+  private final NettyTcpProtocol protocol;
+  private final TcpMember member;
   private Channel channel;
   private final Map<Object, CompletableFuture<? extends Response>> responseFutures = new HashMap<>();
 
-  public TcpProtocolClient(TcpProtocol protocol) {
+  public NettyTcpProtocolClient(NettyTcpProtocol protocol, TcpMember member) {
     this.protocol = protocol;
+    this.member = member;
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
-    final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
+  public CompletableFuture<PingResponse> ping(final PingRequest request) {
+    final CompletableFuture<PingResponse> future = new CompletableFuture<>();
     if (channel != null) {
       channel.writeAndFlush(request).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
@@ -82,8 +67,8 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(final RequestVoteRequest request) {
-    final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
+  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
+    final CompletableFuture<SyncResponse> future = new CompletableFuture<>();
     if (channel != null) {
       channel.writeAndFlush(request).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
@@ -99,8 +84,25 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<SubmitCommandResponse> submitCommand(final SubmitCommandRequest request) {
-    final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
+  public CompletableFuture<PollResponse> poll(final PollRequest request) {
+    final CompletableFuture<PollResponse> future = new CompletableFuture<>();
+    if (channel != null) {
+      channel.writeAndFlush(request).addListener((channelFuture) -> {
+        if (channelFuture.isSuccess()) {
+          responseFutures.put(request.id(), future);
+        } else {
+          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
+        }
+      });
+    } else {
+      future.completeExceptionally(new ProtocolException("Client not connected"));
+    }
+    return future;
+  }
+
+  @Override
+  public CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
+    final CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
     if (channel != null) {
       channel.writeAndFlush(request).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
@@ -144,12 +146,12 @@ public class TcpProtocolClient implements ProtocolClient {
         protected void initChannel(SocketChannel channel) throws Exception {
           ChannelPipeline pipeline = channel.pipeline();
           if (sslContext != null) {
-            pipeline.addLast(sslContext.newHandler(channel.alloc(), protocol.getHost(), protocol.getPort()));
+            pipeline.addLast(sslContext.newHandler(channel.alloc(), member.host(), member.port()));
           }
           pipeline.addLast(
               new ObjectEncoder(),
               new ObjectDecoder(ClassResolvers.softCachingConcurrentResolver(getClass().getClassLoader())),
-              new TcpProtocolClientHandler(TcpProtocolClient.this)
+              new TcpProtocolClientHandler(NettyTcpProtocolClient.this)
           );
         }
       });
@@ -171,7 +173,7 @@ public class TcpProtocolClient implements ProtocolClient {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, protocol.getConnectTimeout());
 
-    bootstrap.connect(protocol.getHost(), protocol.getPort()).addListener(new ChannelFutureListener() {
+    bootstrap.connect(member.host(), member.port()).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
@@ -210,9 +212,9 @@ public class TcpProtocolClient implements ProtocolClient {
    * Client response handler.
    */
   private static class TcpProtocolClientHandler extends ChannelInboundHandlerAdapter {
-    private final TcpProtocolClient client;
+    private final NettyTcpProtocolClient client;
 
-    private TcpProtocolClientHandler(TcpProtocolClient client) {
+    private TcpProtocolClientHandler(NettyTcpProtocolClient client) {
       this.client = client;
     }
 

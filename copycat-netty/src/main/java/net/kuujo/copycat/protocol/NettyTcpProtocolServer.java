@@ -13,18 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.netty.protocol.impl;
+package net.kuujo.copycat.protocol;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -33,31 +25,27 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-
-import java.security.cert.CertificateException;
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.cluster.TcpMember;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 import javax.net.ssl.SSLException;
-
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.RequestHandler;
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.Request;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
+import java.security.cert.CertificateException;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Netty TCP protocol server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocolServer implements ProtocolServer {
-  private final TcpProtocol protocol;
+public class NettyTcpProtocolServer implements ProtocolServer {
+  private final NettyTcpProtocol protocol;
+  private final TcpMember member;
   private RequestHandler handler;
   private Channel channel;
 
-  public TcpProtocolServer(TcpProtocol protocol) {
+  public NettyTcpProtocolServer(NettyTcpProtocol protocol, TcpMember member) {
     this.protocol = protocol;
+    this.member = member;
   }
 
   @Override
@@ -66,7 +54,7 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public CompletableFuture<Void> start() {
+  public CompletableFuture<Void> listen() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
 
     // TODO: Configure proper SSL trust store.
@@ -99,7 +87,7 @@ public class TcpProtocolServer implements ProtocolServer {
         pipeline.addLast(
             new ObjectEncoder(),
             new ObjectDecoder(ClassResolvers.softCachingConcurrentResolver(getClass().getClassLoader())),
-            new TcpProtocolServerHandler(TcpProtocolServer.this)
+            new TcpProtocolServerHandler(NettyTcpProtocolServer.this)
         );
       }
     })
@@ -125,7 +113,7 @@ public class TcpProtocolServer implements ProtocolServer {
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
     // Bind and start to accept incoming connections.
-    bootstrap.bind(protocol.getHost(), protocol.getPort()).addListener(new ChannelFutureListener() {
+    bootstrap.bind(member.host(), member.port()).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         channelFuture.channel().closeFuture().addListener(new ChannelFutureListener() {
@@ -147,7 +135,7 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public CompletableFuture<Void> stop() {
+  public CompletableFuture<Void> close() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (channel != null) {
       channel.close().addListener(new ChannelFutureListener() {
@@ -170,36 +158,23 @@ public class TcpProtocolServer implements ProtocolServer {
    * Server request handler.
    */
   private static class TcpProtocolServerHandler extends ChannelInboundHandlerAdapter {
-    private final TcpProtocolServer server;
+    private final NettyTcpProtocolServer server;
 
-    private TcpProtocolServerHandler(TcpProtocolServer server) {
+    private TcpProtocolServerHandler(NettyTcpProtocolServer server) {
       this.server = server;
     }
 
     @Override
     public void channelRead(final ChannelHandlerContext context, Object message) {
       final Request request = (Request) message;
-      if (request instanceof AppendEntriesRequest) {
-        context.channel().eventLoop().submit(new Runnable() {
-          @Override
-          public void run() {
-            server.handler.appendEntries((AppendEntriesRequest) request).thenAccept((result) -> context.writeAndFlush(result));
-          }
-        });
-      } else if (request instanceof RequestVoteRequest) {
-        context.channel().eventLoop().submit(new Runnable() {
-          @Override
-          public void run() {
-            server.handler.requestVote((RequestVoteRequest) request).thenAccept((result) -> context.writeAndFlush(result));
-          }
-        });
-      } else if (request instanceof SubmitCommandRequest) {
-        context.channel().eventLoop().submit(new Runnable() {
-          @Override
-          public void run() {
-            server.handler.submitCommand((SubmitCommandRequest) request).thenAccept((result) -> context.writeAndFlush(result));
-          }
-        });
+      if (request instanceof PingRequest) {
+        context.channel().eventLoop().submit(() -> server.handler.ping((PingRequest) request).thenAccept(context::writeAndFlush));
+      } else if (request instanceof SyncRequest) {
+        context.channel().eventLoop().submit(() -> server.handler.sync((SyncRequest) request).thenAccept(context::writeAndFlush));
+      } else if (request instanceof PollRequest) {
+        context.channel().eventLoop().submit(() -> server.handler.poll((PollRequest) request).thenAccept(context::writeAndFlush));
+      } else if (request instanceof SubmitRequest) {
+        context.channel().eventLoop().submit(() -> server.handler.submit((SubmitRequest) request).thenAccept(context::writeAndFlush));
       }
     }
 
