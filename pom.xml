@@ -68,6 +68,8 @@
 
   <modules>
     <module>copycat-core</module>
+    <module>copycat-tcp</module>
+    <module>copycat-http</module>
     <module>copycat-netty</module>
     <module>copycat-vertx</module>
     <module>copycat-vertx3</module>
