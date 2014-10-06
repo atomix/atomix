@@ -13,26 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.protocol.impl;
+package net.kuujo.copycat.protocol;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
+import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
 import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolReader;
-import net.kuujo.copycat.protocol.ProtocolWriter;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
-import net.kuujo.copycat.internal.util.Args;
 
 /**
  * Vert.x event bus protocol client.
@@ -51,9 +42,9 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(final AppendEntriesRequest request) {
-    final CompletableFuture<AppendEntriesResponse> future = new CompletableFuture<>();
-    DeliveryOptions options = DeliveryOptions.options().setSendTimeout(5000);
+  public CompletableFuture<PingResponse> ping(final PingRequest request) {
+    final CompletableFuture<PingResponse> future = new CompletableFuture<>();
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
     vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
       public void handle(AsyncResult<Message<byte[]>> result) {
@@ -68,9 +59,9 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(final RequestVoteRequest request) {
-    final CompletableFuture<RequestVoteResponse> future = new CompletableFuture<>();
-    DeliveryOptions options = DeliveryOptions.options().setSendTimeout(5000);
+  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
+    final CompletableFuture<SyncResponse> future = new CompletableFuture<>();
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
     vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
       public void handle(AsyncResult<Message<byte[]>> result) {
@@ -85,9 +76,26 @@ public class EventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<SubmitCommandResponse> submitCommand(final SubmitCommandRequest request) {
-    final CompletableFuture<SubmitCommandResponse> future = new CompletableFuture<>();
-    DeliveryOptions options = DeliveryOptions.options().setSendTimeout(5000);
+  public CompletableFuture<PollResponse> poll(final PollRequest request) {
+    final CompletableFuture<PollResponse> future = new CompletableFuture<>();
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
+    vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
+      @Override
+      public void handle(AsyncResult<Message<byte[]>> result) {
+        if (result.failed()) {
+          future.completeExceptionally(result.cause());
+        } else {
+          future.complete(reader.readResponse(result.result().body()));
+        }
+      }
+    });
+    return future;
+  }
+
+  @Override
+  public CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
+    final CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
     vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
       public void handle(AsyncResult<Message<byte[]>> result) {
