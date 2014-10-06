@@ -16,13 +16,13 @@ package net.kuujo.copycat.internal.state;
 
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.replication.ClusterReplicator;
 import net.kuujo.copycat.internal.replication.Replicator;
-import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.internal.CommandEntry;
-import net.kuujo.copycat.log.internal.ConfigurationEntry;
-import net.kuujo.copycat.log.internal.NoOpEntry;
+import net.kuujo.copycat.internal.log.CommandEntry;
+import net.kuujo.copycat.internal.log.ConfigurationEntry;
+import net.kuujo.copycat.internal.log.NoOpEntry;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
@@ -81,15 +81,15 @@ public class LeaderController extends StateController implements Observer {
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
-    context.log().appendEntry(new ConfigurationEntry(context.currentTerm(), new ClusterConfig(context.cluster())));
+    context.log().appendEntry(new ConfigurationEntry(context.currentTerm(), new ClusterConfig(context.clusterManager().cluster().config())));
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
-    context.cluster().config().addObserver(this);
+    context.cluster().addObserver(this);
 
     // Set the current leader as this replica.
-    context.currentLeader(context.cluster().localMember().id());
+    context.currentLeader(context.clusterManager().localNode().member().id());
 
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
@@ -101,34 +101,38 @@ public class LeaderController extends StateController implements Observer {
   @Override
   @SuppressWarnings("rawtypes")
   public void update(Observable o, Object arg) {
-    clusterChanged((ClusterConfig) o);
+    clusterChanged(((Cluster) o).config());
   }
 
   /**
    * Called when the cluster configuration has changed.
    */
-  @SuppressWarnings("unchecked")
-  private synchronized void clusterChanged(@SuppressWarnings("rawtypes") final ClusterConfig cluster) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private synchronized void clusterChanged(final ClusterConfig cluster) {
     // All cluster configuration changes must go through the leader. In order to
     // perform cluster configuration changes, the leader observes the local cluster
     // configuration if it is indeed observable. We have to be very careful about
     // the order in which cluster configuration changes occur. If two configuration
     // changes are taking place at the same time, one can overwrite the other.
     // Additionally, if a new cluster configuration immediately overwrites an old
-    // configuration without first replicating a combined old/new configuration,
+    // configuration without first replicating a joint old/new configuration,
     // a dual-majority can result, meaning logs will ultimately become out of sync.
     // In order to avoid this, we need to perform a two-step configuration change:
     // - First log the combined current cluster configuration and new cluster
     // configuration. For instance, if a node was added to the cluster, log the
     // new configuration. If a node was removed, log the old configuration.
-    // - Once the combined cluster configuration has been replicated, log and
+    // - Once the joint cluster configuration has been replicated, log and
     // sync the new configuration.
     // This two-step process ensures log consistency by ensuring that two majorities
     // cannot result from adding and removing too many nodes at once.
 
-    // First, store a copy of the configuration in a final local variable. This ensures
-    // that the configuration does not change during the reconfiguration process.
-    final ClusterConfig<?> config = new ClusterConfig(cluster);
+    // First, store a copy of both the current internal cluster configuration and
+    // the user defined cluster configuration. This ensures that mutable configurations
+    // are not changed during the reconfiguration process which can be asynchronous.
+    // Note also that we create a copy of the configuration in order to ensure that
+    // polymorphic types are properly reconstructed.
+    final ClusterConfig userConfig = cluster.copy();
+    final ClusterConfig internalConfig = context.clusterManager().cluster().config().copy();
 
     // If another cluster configuration change is occurring right now, it's possible
     // that the two configuration changes could overlap one another. In order to
@@ -136,28 +140,33 @@ public class LeaderController extends StateController implements Observer {
     // committed before beginning the configuration change. This ensures that any
     // previous configuration changes have completed.
     replicator.commitAll().whenComplete((commitIndex, commitError) -> {
-      // First we need to commit a combined old/new cluster configuration entry.
-      final ClusterConfig<?> combinedConfig = new ClusterConfig(context.cluster()).addRemoteMembers(config);
-      Entry entry = new ConfigurationEntry(context.currentTerm(), combinedConfig);
-      long configIndex = context.log().appendEntry(entry);
+      // First we need to create a joint old/new cluster configuration entry.
+      // We copy the internal configuration again for safety from modifications.
+      final ClusterConfig jointConfig = internalConfig.copy().addRemoteMembers(userConfig.getRemoteMembers());
 
-      // Immediately after the entry is appended to the log, apply the combined
-      // membership. Cluster membership changes do not wait for commitment.
-      context.cluster().update(combinedConfig, null);
+      // Append the joint configuration to the log. This will be replicated to
+      // followers and applied to their internal cluster managers.
+      long configIndex = context.log().appendEntry(new ConfigurationEntry(context.currentTerm(), jointConfig));
+
+      // Immediately after the entry is appended to the log, apply the joint
+      // configuration. Cluster membership changes do not wait for commitment.
+      // Since we're using a joint consensus, it's safe to work with all members
+      // of both the old and new configuration without causing split elections.
+      context.clusterManager().cluster().update(jointConfig, null);
 
       // Once the cluster is updated, the replicator will be notified and update its
-      // internal connections. Then we commit the combined configuration and allow
-      // it to be replicated to *all* the nodes in the combined cluster.
+      // internal connections. Then we commit the joint configuration and allow
+      // it to be replicated to all the nodes in the updated cluster.
       replicator.commit(configIndex).whenComplete((commitIndex2, commitError2) -> {
         // Now that we've gotten to this point, we know that the combined cluster
         // membership has been replicated to a majority of the cluster.
-        // Append the new configuration entry to the log and force all replicas
+        // Append the new user configuration to the log and force all replicas
         // to be synchronized.
-        context.log().appendEntry(new ConfigurationEntry(context.currentTerm(), config));
+        context.log().appendEntry(new ConfigurationEntry(context.currentTerm(), userConfig));
 
         // Again, once we've appended the new configuration to the log, update
         // the local internal configuration.
-        context.cluster().update(config, null);
+        context.clusterManager().cluster().update(userConfig, null);
 
         // Note again that when the cluster membership changes, the replicator will
         // be notified and remove any replicas that are no longer a part of the cluster.
@@ -278,7 +287,7 @@ public class LeaderController extends StateController implements Observer {
       currentTimer.cancel(true);
     }
     // Stop observing the observable cluster configuration.
-    context.cluster().config().deleteObserver(this);
+    context.cluster().deleteObserver(this);
   }
 
   @Override

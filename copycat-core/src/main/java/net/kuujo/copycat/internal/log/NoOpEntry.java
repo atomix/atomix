@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log.internal;
+package net.kuujo.copycat.internal.log;
 
 import net.kuujo.copycat.log.EntryType;
 

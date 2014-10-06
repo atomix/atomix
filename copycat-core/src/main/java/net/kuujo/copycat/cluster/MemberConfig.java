@@ -17,14 +17,11 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.internal.util.Args;
 
 import java.io.Serializable;
-import java.util.Observable;
 
 /**
- * Base cluster member configuration.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemberConfig extends Observable implements Serializable {
+public class MemberConfig implements Serializable {
   private String id;
 
   public MemberConfig() {
@@ -41,7 +38,6 @@ public class MemberConfig extends Observable implements Serializable {
    */
   public void setId(String id) {
     this.id = Args.checkNotNull(id);
-    notifyObservers();
   }
 
   /**
@@ -61,7 +57,6 @@ public class MemberConfig extends Observable implements Serializable {
    */
   public MemberConfig withId(String id) {
     this.id = Args.checkNotNull(id);
-    notifyObservers();
     return this;
   }
 
@@ -72,14 +67,14 @@ public class MemberConfig extends Observable implements Serializable {
 
   @Override
   public int hashCode() {
-    int hashCode = 23;
+    int hashCode = 41;
     hashCode = 37 * hashCode + id.hashCode();
     return hashCode;
   }
 
   @Override
   public String toString() {
-    return String.format("MemberConfig[id=%s]", id);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
   }
 
 }

@@ -14,18 +14,16 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
-import net.kuujo.copycat.spi.endpoint.Endpoint;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.internal.DefaultCopycat;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
+import net.kuujo.copycat.spi.service.Service;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -43,11 +41,18 @@ public interface Copycat {
   }
 
   /**
+   * Returns the copycat context.
+   *
+   * @return The underlying copycat context.
+   */
+  CopycatContext context();
+
+  /**
    * Returns the context events.
    *
    * @return Context events.
    */
-  EventsContext on();
+  Events on();
 
   /**
    * Returns the context for a specific event.
@@ -62,7 +67,7 @@ public interface Copycat {
    *
    * @return The event handlers registry.
    */
-  EventHandlersRegistry events();
+  EventHandlers events();
 
   /**
    * Returns an event handler registry for a specific event.
@@ -90,20 +95,20 @@ public interface Copycat {
    * Copycat builder.
    */
   public static class Builder {
-    private Endpoint endpoint;
+    private Service service;
     private final CopycatContext.Builder builder = CopycatContext.builder();
 
     private Builder() {
     }
 
     /**
-     * Sets the copycat endpoint.
+     * Sets the copycat service.
      *
-     * @param endpoint The copycat endpoint.
+     * @param service The copycat service.
      * @return The copycat builder.
      */
-    public Builder withEndpoint(Endpoint endpoint) {
-      this.endpoint = endpoint;
+    public Builder withService(Service service) {
+      this.service = service;
       return this;
     }
 
@@ -262,49 +267,13 @@ public interface Copycat {
     }
 
     /**
-     * Sets the cluster configuration.
+     * Sets the copycat cluster.
      *
-     * @param cluster The cluster configuration.
+     * @param cluster The copycat cluster.
      * @return The copycat builder.
      */
-    public Builder withClusterConfig(ClusterConfig<?> cluster) {
-      builder.withClusterConfig(cluster);
-      return this;
-    }
-
-    /**
-     * Sets the local cluster member.
-     *
-     * @param member The local cluster member configuration.
-     * @return The copycat builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withLocalMember(MemberConfig member) {
-      builder.withLocalMember(member);
-      return this;
-    }
-
-    /**
-     * Sets the remote cluster members.
-     *
-     * @param members The remote cluster member configurations.
-     * @return The copycat builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withRemoteMembers(MemberConfig... members) {
-      builder.withRemoteMembers(members);
-      return this;
-    }
-
-    /**
-     * Sets the remote cluster members.
-     *
-     * @param members The remote cluster member configurations.
-     * @return The copycat builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withRemoteMembers(Collection<MemberConfig> members) {
-      builder.withRemoteMembers(members);
+    public Builder withCluster(Cluster<?> cluster) {
+      builder.withCluster(cluster);
       return this;
     }
 
@@ -325,7 +294,7 @@ public interface Copycat {
      * @return The copycat instance.
      */
     public Copycat build() {
-      return new DefaultCopycat(endpoint, builder.build());
+      return new DefaultCopycat(service, builder.build());
     }
 
     @Override

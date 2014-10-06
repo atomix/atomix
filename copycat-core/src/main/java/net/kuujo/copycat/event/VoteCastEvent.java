@@ -16,7 +16,6 @@
 package net.kuujo.copycat.event;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MemberConfig;
 
 /**
  * Vote cast event.
@@ -48,8 +47,8 @@ public class VoteCastEvent implements Event {
    * @return The candidate for which the vote was cast.
    */
   @SuppressWarnings("unchecked")
-  public <M extends MemberConfig> Member<M> candidate() {
-    return candidate;
+  public <M extends Member> M candidate() {
+    return (M) candidate;
   }
 
   @Override

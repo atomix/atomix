@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
@@ -28,20 +28,20 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocol implements Protocol<MemberConfig> {
+public class LocalProtocol implements Protocol<Member> {
   private final Map<String, LocalProtocolServer> registry = new HashMap<>(10);
 
   public LocalProtocol() {
   }
 
   @Override
-  public ProtocolServer createServer(MemberConfig member) {
-    return new LocalProtocolServer(member.getId(), registry);
+  public ProtocolServer createServer(Member member) {
+    return new LocalProtocolServer(member.id(), registry);
   }
 
   @Override
-  public ProtocolClient createClient(MemberConfig member) {
-    return new LocalProtocolClient(member.getId(), registry);
+  public ProtocolClient createClient(Member member) {
+    return new LocalProtocolClient(member.id(), registry);
   }
 
   @Override

@@ -14,53 +14,73 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.util.Copyable;
+import net.kuujo.copycat.internal.util.Args;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
- * Copycat cluster.
+ * Cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Cluster<M extends MemberConfig> extends Observable implements Observer {
+public class Cluster<M extends Member> extends Observable implements Observer, Copyable<Cluster<M>> {
   private final Protocol<M> protocol;
   private final ClusterConfig<M> config;
-  private final LocalMember<M> localMember;
-  private final Set<RemoteMember<M>> remoteMembers = new HashSet<>(10);
-  private final Map<String, Member<M>> members = new HashMap<>(10);
+  private final M localMember;
+  private final Set<M> remoteMembers;
+  private final Map<String, M> members;
+
+  public Cluster(Cluster<M> cluster) {
+    this(cluster.protocol, cluster.config.copy());
+  }
 
   public Cluster(Protocol<M> protocol, ClusterConfig<M> config) {
-    this.protocol = protocol;
-    this.config = config;
-    this.localMember = new LocalMember<>(protocol.createServer(config.getLocalMember()), config.getLocalMember());
+    this.protocol = Args.checkNotNull(protocol);
+    this.config = Args.checkNotNull(config);
+    this.localMember = config.getLocalMember();
+    this.members = new HashMap<>(config.getMembers().size());
+    this.remoteMembers = new HashSet<>(config.getRemoteMembers().size());
+    this.config.addObserver(this);
     clusterChanged(config);
   }
 
   @Override
   @SuppressWarnings("unchecked")
+  public Cluster<M> copy() {
+    try {
+      return getClass().getConstructor(new Class<?>[]{getClass()}).newInstance(this);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new CopycatException(e);
+    }
+  }
+
+  @Override
   public void update(Observable o, Object arg) {
-    clusterChanged((ClusterConfig<M>) o);
+    clusterChanged((ClusterConfig<M>) config);
   }
 
   /**
-   * Called when the cluster configuration has changed.
+   * Updates the cluster when the configuration changes.
    */
-  private synchronized void clusterChanged(ClusterConfig<M> cluster) {
-    cluster.getRemoteMembers().forEach(config -> {
-      if (!members.containsKey(config.getId())) {
-        RemoteMember<M> member = new RemoteMember<>(protocol.createClient(config), config);
+  private void clusterChanged(ClusterConfig<M> config) {
+    // Add any remote members that don't already exist in the cluster.
+    config.getRemoteMembers().forEach(member -> {
+      if (!members.containsKey(member.id())) {
         remoteMembers.add(member);
         members.put(member.id(), member);
       }
     });
 
-    Iterator<RemoteMember<M>> iterator = remoteMembers.iterator();
+    Iterator<M> iterator = remoteMembers.iterator();
     while (iterator.hasNext()) {
-      RemoteMember<M> member = iterator.next();
+      M member = iterator.next();
       boolean exists = false;
-      for (M config : cluster.getRemoteMembers()) {
-        if (config.getId().equals(member.id())) {
+      for (M m : config.getRemoteMembers()) {
+        if (m.equals(member)) {
           exists = true;
           break;
         }
@@ -74,34 +94,45 @@ public class Cluster<M extends MemberConfig> extends Observable implements Obser
   }
 
   /**
-   * Returns the cluster configuration.
+   * Returns the cluster protocol.
    *
-   * @return The cluster configuration.
+   * @return The cluster protocol.
    */
-  public final ClusterConfig<M> config() {
+  public Protocol<M> protocol() {
+    return protocol;
+  }
+
+  /**
+   * Returns the current cluster configuration.
+   *
+   * @return The current cluster configuration.
+   */
+  public ClusterConfig<M> config() {
     return config;
   }
 
   /**
-   * Returns a cluster member by ID.
+   * Returns a member by ID.
    *
    * @param id The unique member ID.
-   * @return The cluster member.
+   * @return The cluster member if it exists, otherwise <code>null</code>
    */
-  @SuppressWarnings("unchecked")
-  public final <T extends Member<M>> T member(String id) {
-    return (T) members.get(id);
+  public M member(String id) {
+    return members != null ? members.get(id) : null;
   }
 
   /**
-   * Returns a set of all cluster members.
+   * Returns a set of all members in the cluster.
    *
-   * @return A set of all cluster members.
+   * @return A set of all members in the cluster.
    */
-  public final Set<Member<M>> members() {
-    Set<Member<M>> members = new HashSet<>(remoteMembers);
-    members.add(localMember);
-    return members;
+  public Set<M> members() {
+    if (remoteMembers != null) {
+      Set<M> members = new HashSet<>(remoteMembers);
+      members.add(localMember);
+      return members;
+    }
+    return new HashSet<>(0);
   }
 
   /**
@@ -109,33 +140,33 @@ public class Cluster<M extends MemberConfig> extends Observable implements Obser
    *
    * @return The local cluster member.
    */
-  public final LocalMember<M> localMember() {
+  public M localMember() {
     return localMember;
   }
 
   /**
    * Returns a remote member by ID.
    *
-   * @param id The remote member's unique ID.
-   * @return The remote member, or <code>null</code> if the remote member does not exist.
+   * @param id The remote member ID.
+   * @return The remote member if it exists in the cluster, otherwise <code>null</code>
    */
-  public final RemoteMember<M> remoteMember(String id) {
-    Member<M> member = members.get(id);
-    return member != localMember ? (RemoteMember<M>) member : null;
+  public M remoteMember(String id) {
+    M member = members != null ? members.get(id) : null;
+    return member != localMember ? member : null;
   }
 
   /**
-   * Returns a set of all remote cluster members.
+   * Returns a set of all remote members in the cluster.
    *
-   * @return A set of all remote cluster members.
+   * @return A set of all remote members in the cluster.
    */
-  public final Set<RemoteMember<M>> remoteMembers() {
-    return remoteMembers;
+  public Set<M> remoteMembers() {
+    return remoteMembers != null ? remoteMembers : new HashSet<>(0);
   }
 
   @Override
   public String toString() {
-    return String.format("RaftCluster[protocol=%s, config=%s]", protocol, config);
+    return String.format("%s[protocol=%s, config=%s]", getClass().getSimpleName(), protocol, config);
   }
 
 }

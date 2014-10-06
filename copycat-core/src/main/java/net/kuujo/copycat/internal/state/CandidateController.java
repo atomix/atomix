@@ -15,12 +15,12 @@
 package net.kuujo.copycat.internal.state;
 
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.RemoteMember;
-import net.kuujo.copycat.log.internal.CopycatEntry;
+import net.kuujo.copycat.internal.cluster.RemoteNode;
+import net.kuujo.copycat.internal.util.Quorum;
+import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.internal.util.Quorum;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -53,7 +53,7 @@ class CandidateController extends StateController {
   @Override
   void init(StateContext context) {
     super.init(context);
-    logger.info(String.format("%s starting election", context.cluster().config().getLocalMember()));
+    logger.info(String.format("%s starting election", context.clusterManager().localNode().member()));
     resetTimer();
   }
 
@@ -74,13 +74,13 @@ class CandidateController extends StateController {
     currentTimer = context.config().getTimerStrategy().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      logger.info(String.format("%s election timed out", context.cluster().config().getLocalMember()));
+      logger.info(String.format("%s election timed out", context.clusterManager().localNode().member()));
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       resetTimer();
-      logger.info(String.format("%s restarted election", context.cluster().config().getLocalMember()));
+      logger.info(String.format("%s restarted election", context.clusterManager().localNode().member()));
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
@@ -89,7 +89,7 @@ class CandidateController extends StateController {
     // to this node will be automatically successful.
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
-    final Quorum quorum = new Quorum((int) Math.floor(context.cluster().members().size() / 2) + 1, (elected) -> {
+    final Quorum quorum = new Quorum((int) Math.floor(context.clusterManager().nodes().size() / 2) + 1, (elected) -> {
       complete.set(true);
       if (elected) {
         context.transition(LeaderController.class);
@@ -106,13 +106,13 @@ class CandidateController extends StateController {
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.
     final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
-    for (RemoteMember<?> member : (Set<RemoteMember<?>>) context.cluster().remoteMembers()) {
-      final ProtocolClient client = member.client();
+    for (RemoteNode<?> node : (Set<RemoteNode<?>>) context.clusterManager().remoteNodes()) {
+      final ProtocolClient client = node.client();
       client.connect().whenCompleteAsync((result1, error1) -> {
         if (error1 != null) {
           quorum.fail();
         } else {
-          client.poll(new PollRequest(context.nextCorrelationId(), context.currentTerm(), context.cluster().localMember().id(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
+          client.poll(new PollRequest(context.nextCorrelationId(), context.currentTerm(), context.clusterManager().localNode().member().id(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
             client.close();
             if (!complete.get()) {
               if (error2 != null || !result2.voteGranted()) {
@@ -139,7 +139,7 @@ class CandidateController extends StateController {
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (!request.candidate().equals(context.cluster().localMember().id())) {
+    if (!request.candidate().equals(context.clusterManager().localNode().member().id())) {
       return CompletableFuture.completedFuture(new PollResponse(request.id(), context.currentTerm(), false));
     } else {
       return super.poll(request);

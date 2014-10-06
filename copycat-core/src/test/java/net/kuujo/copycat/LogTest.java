@@ -18,16 +18,14 @@ package net.kuujo.copycat;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.EntryType;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.internal.CommandEntry;
-import net.kuujo.copycat.log.internal.ConfigurationEntry;
-import net.kuujo.copycat.log.internal.NoOpEntry;
-import net.kuujo.copycat.log.internal.SnapshotEntry;
+import net.kuujo.copycat.internal.log.CommandEntry;
+import net.kuujo.copycat.internal.log.ConfigurationEntry;
+import net.kuujo.copycat.internal.log.NoOpEntry;
+import net.kuujo.copycat.internal.log.SnapshotEntry;
 
 import org.junit.Assert;
 import org.junit.Test;

@@ -62,13 +62,13 @@ public class LocalProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public CompletableFuture<Void> start() {
+  public CompletableFuture<Void> listen() {
     registry.put(id, this);
     return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override
-  public CompletableFuture<Void> stop() {
+  public CompletableFuture<Void> close() {
     registry.remove(id);
     return CompletableFuture.completedFuture((Void) null);
   }

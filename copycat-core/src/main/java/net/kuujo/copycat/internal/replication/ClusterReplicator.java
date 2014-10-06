@@ -16,8 +16,7 @@
 package net.kuujo.copycat.internal.replication;
 
 import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.internal.cluster.ClusterManager;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Quorum;
 
@@ -49,8 +48,8 @@ public class ClusterReplicator implements Replicator, Observer {
    * Initializes the replicator.
    */
   private void init() {
-    state.cluster().addObserver(this);
-    clusterChanged(state.cluster());
+    state.clusterManager().addObserver(this);
+    clusterChanged(state.clusterManager());
   }
 
   /**
@@ -58,25 +57,25 @@ public class ClusterReplicator implements Replicator, Observer {
    */
   @SuppressWarnings("unchecked")
   private void recalculateQuorumSize() {
-    readQuorum = state.config().getReadQuorumStrategy().calculateQuorumSize(new ClusterConfig(state.cluster()));
-    writeQuorum = state.config().getWriteQuorumStrategy().calculateQuorumSize(new ClusterConfig(state.cluster()));
+    readQuorum = state.config().getReadQuorumStrategy().calculateQuorumSize(state.clusterManager().cluster());
+    writeQuorum = state.config().getWriteQuorumStrategy().calculateQuorumSize(state.clusterManager().cluster());
     int quorumSize = (int) Math.floor((replicas.size() + 1) / 2) + 1;
     quorumIndex = quorumSize > 0 ? quorumSize - 1 : 0;
   }
 
   @Override
   public void update(Observable o, Object arg) {
-    clusterChanged((Cluster<?>) o);
+    clusterChanged((ClusterManager<?>) o);
   }
 
   /**
    * Called when the replicator cluster configuration has changed.
    */
-  private synchronized void clusterChanged(Cluster<?> cluster) {
-    cluster.remoteMembers().forEach(member -> {
-      if (!replicaMap.containsKey(member.id())) {
-        ClusterReplica replica = new ClusterReplica(member, state);
-        replicaMap.put(member.id(), replica);
+  private synchronized void clusterChanged(ClusterManager<?> clusterManager) {
+    clusterManager.remoteNodes().forEach(node -> {
+      if (!replicaMap.containsKey(node.member().id())) {
+        ClusterReplica replica = new ClusterReplica(node, state);
+        replicaMap.put(node.member().id(), replica);
         replicas.add(replica);
         replica.open();
         recalculateQuorumSize();
@@ -86,10 +85,10 @@ public class ClusterReplicator implements Replicator, Observer {
     Iterator<ClusterReplica> iterator = replicas.iterator();
     while (iterator.hasNext()) {
       ClusterReplica replica = iterator.next();
-      if (cluster.remoteMember(replica.member().id()) == null) {
+      if (clusterManager.remoteNode(replica.node().member().id()) == null) {
         replica.close();
         iterator.remove();
-        replicaMap.remove(replica.member().id());
+        replicaMap.remove(replica.node().member().id());
       }
     }
   }
@@ -183,7 +182,7 @@ public class ClusterReplicator implements Replicator, Observer {
       // Sort the list of replicas, order by the last index that was replicated
       // to the replica. This will allow us to determine the median index
       // for all known replicated entries across all cluster members.
-      Collections.sort(replicas, (o1, o2) -> Long.compare(o1.matchIndex(), o2.matchIndex()));
+      Collections.sort(replicas, (o1, o2) -> Long.compare(o1.index(), o2.index()));
 
       // Set the current commit index as the median replicated index.
       // Since replicas is a list with zero based indexes, use the negation of
@@ -191,7 +190,7 @@ public class ClusterReplicator implements Replicator, Observer {
       // possible quorum replication. That replica's match index is the commit index.
       // Set the commit index. Once the commit index has been set we can run
       // all tasks up to the given commit.
-      long commitIndex = replicas.get(quorumIndex).matchIndex();
+      long commitIndex = replicas.get(quorumIndex).index();
       state.commitIndex(commitIndex);
       triggerCommitFutures(commitIndex);
     }

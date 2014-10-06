@@ -25,7 +25,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import net.kuujo.copycat.log.internal.CopycatEntry;
+import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.openhft.chronicle.Chronicle;
 import net.openhft.chronicle.Excerpt;
 import net.openhft.chronicle.ExcerptAppender;

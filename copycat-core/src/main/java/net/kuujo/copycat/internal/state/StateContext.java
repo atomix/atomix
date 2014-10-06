@@ -19,21 +19,20 @@ import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
-import net.kuujo.copycat.cluster.RemoteMember;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.internal.cluster.ClusterManager;
+import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.event.LeaderElectEvent;
 import net.kuujo.copycat.event.StartEvent;
 import net.kuujo.copycat.event.StateChangeEvent;
 import net.kuujo.copycat.event.StopEvent;
-import net.kuujo.copycat.event.internal.DefaultEventHandlersRegistry;
+import net.kuujo.copycat.internal.event.DefaultEventHandlers;
+import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.RequestHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.internal.util.Args;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,9 +54,11 @@ public final class StateContext {
   private final StateMachine stateMachine;
   @SuppressWarnings("rawtypes")
   private final Cluster cluster;
+  @SuppressWarnings("rawtypes")
+  private final ClusterManager clusterManager;
   private final Log log;
   private final CopycatConfig config;
-  private final DefaultEventHandlersRegistry events = new DefaultEventHandlersRegistry();
+  private final DefaultEventHandlers events = new DefaultEventHandlers();
   private volatile StateController currentState;
   private volatile String currentLeader;
   private ProtocolClient leaderClient;
@@ -68,11 +69,12 @@ public final class StateContext {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  public <M extends MemberConfig> StateContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+  public <M extends Member> StateContext(StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
     this.stateMachine = stateMachine;
     this.log = log;
     this.config = config;
-    this.cluster = new Cluster<M>(protocol, cluster);
+    this.cluster = cluster;
+    this.clusterManager = new ClusterManager<M>(cluster);
   }
 
   /**
@@ -98,9 +100,18 @@ public final class StateContext {
    *
    * @return The copycat cluster.
    */
-  @SuppressWarnings("rawtypes")
   public Cluster cluster() {
     return cluster;
+  }
+
+  /**
+   * Returns the copycat cluster manager.
+   *
+   * @return The copycat cluster manager.
+   */
+  @SuppressWarnings("rawtypes")
+  public ClusterManager clusterManager() {
+    return clusterManager;
   }
 
   /**
@@ -117,7 +128,7 @@ public final class StateContext {
    *
    * @return The internal event registry.
    */
-  public DefaultEventHandlersRegistry events() {
+  public DefaultEventHandlers events() {
     return events;
   }
 
@@ -139,7 +150,7 @@ public final class StateContext {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
     transition(NoneController.class);
-    return cluster.localMember().server().start().whenCompleteAsync((result, error) -> {
+    return clusterManager.localNode().server().listen().whenCompleteAsync((result, error) -> {
       try {
         log.open();
       } catch (Exception e) {
@@ -156,7 +167,7 @@ public final class StateContext {
    * @return A completable future to be called once complete.
    */
   public CompletableFuture<Void> stop() {
-    return cluster.localMember().server().stop().whenCompleteAsync((result, error) -> {
+    return clusterManager.localNode().server().close().whenCompleteAsync((result, error) -> {
       try {
         log.close();
       } catch (Exception e) {
@@ -172,13 +183,11 @@ public final class StateContext {
    */
   public synchronized void transition(Class<? extends StateController> type) {
     Args.checkNotNull(type);
-    if (currentState == null) {
-      cluster.update(cluster.config(), null);
-    } else if (type != null && type.isAssignableFrom(currentState.getClass())) {
+    if ((currentState == null && type == null) || (currentState != null && type != null && type.isAssignableFrom(currentState.getClass()))) {
       return;
     }
 
-    logger.info(cluster.localMember() + " transitioning to " + type.toString());
+    logger.info(clusterManager.localNode() + " transitioning to " + type);
     final StateController oldState = currentState;
     try {
       currentState = type.newInstance();
@@ -212,10 +221,10 @@ public final class StateContext {
 
     if (currentLeader == null && leader != null) {
       currentLeader = leader;
-      events.leaderElect().handle(new LeaderElectEvent(currentTerm, cluster.member(currentLeader)));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
     } else if (currentLeader != null && leader != null && !currentLeader.equals(leader)) {
       currentLeader = leader;
-      events.leaderElect().handle(new LeaderElectEvent(currentTerm, cluster.member(currentLeader)));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
     } else {
       currentLeader = leader;
     }
@@ -227,7 +236,7 @@ public final class StateContext {
       leaderClient = null;
     } else if (!isLeader()) {
       leaderConnected = false;
-      leaderClient = cluster.<RemoteMember<?>>member(currentLeader).client();
+      leaderClient = clusterManager.<RemoteNode<?>>node(currentLeader).client();
       leaderClient.connect().thenRun(() -> {
         leaderConnected = true;
         runLeaderConnectCallbacks();
@@ -245,7 +254,7 @@ public final class StateContext {
    * @return Indicates whether this node is the leader.
    */
   public boolean isLeader() {
-    return currentLeader != null && currentLeader.equals(cluster.localMember().id());
+    return currentLeader != null && currentLeader.equals(clusterManager.localNode().member().id());
   }
 
   /**
@@ -364,7 +373,7 @@ public final class StateContext {
       });
     } else {
       executor.execute(() -> {
-        RequestHandler handler = currentLeader.equals(cluster.localMember().id()) ? currentState : leaderClient;
+        RequestHandler handler = currentLeader.equals(clusterManager.localNode().member().id()) ? currentState : leaderClient;
         handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
@@ -385,7 +394,7 @@ public final class StateContext {
   public String toString() {
     String value = "CopycatConfig";
     value += "[\n";
-    value += String.format("memberId=%s", cluster.localMember().id());
+    value += String.format("memberId=%s", clusterManager.localNode().member().id());
     value += ",\n";
     value += String.format("state=%s", currentState);
     value += ",\n";

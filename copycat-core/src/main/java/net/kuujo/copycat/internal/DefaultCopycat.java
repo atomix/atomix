@@ -19,13 +19,12 @@ import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
-import net.kuujo.copycat.spi.endpoint.Endpoint;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.protocol.SubmitHandler;
+import net.kuujo.copycat.spi.service.Service;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -33,18 +32,18 @@ import java.util.concurrent.CompletableFuture;
  * Primary copycat API.<p>
  *
  * The <code>CopyCat</code> class provides a fluent API for
- * combining the {@link DefaultCopycatContext} with an {@link Endpoint}.
+ * combining the {@link DefaultCopycatContext} with an {@link net.kuujo.copycat.spi.service.Service}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultCopycat implements Copycat {
-  private final Endpoint endpoint;
+  private final Service service;
   private final CopycatContext context;
 
-  public <M extends MemberConfig> DefaultCopycat(Endpoint endpoint, StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
-    this.context = new DefaultCopycatContext(stateMachine, log, cluster, protocol, config);
-    this.endpoint = endpoint;
-    this.endpoint.submitHandler(new SubmitHandler() {
+  public <M extends Member> DefaultCopycat(Service service, StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
+    this.context = new DefaultCopycatContext(stateMachine, log, cluster, config);
+    this.service = service;
+    this.service.submitHandler(new SubmitHandler() {
       @Override
       public <T> CompletableFuture<T> submit(String command, Object... args) {
         return context.submitCommand(command, args);
@@ -52,13 +51,18 @@ public class DefaultCopycat implements Copycat {
     });
   }
 
-  public DefaultCopycat(Endpoint endpoint, CopycatContext context) {
-    this.endpoint = endpoint;
+  public DefaultCopycat(Service service, CopycatContext context) {
+    this.service = service;
     this.context = context;
   }
 
   @Override
-  public EventsContext on() {
+  public CopycatContext context() {
+    return context;
+  }
+
+  @Override
+  public Events on() {
     return context.on();
   }
 
@@ -68,7 +72,7 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public EventHandlersRegistry events() {
+  public EventHandlers events() {
     return context.events();
   }
 
@@ -84,7 +88,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public CompletableFuture<Void> stop() {
-    return endpoint.stop();
+    return service.stop();
   }
 
   @Override

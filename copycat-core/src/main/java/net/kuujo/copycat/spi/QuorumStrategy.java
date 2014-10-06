@@ -14,15 +14,16 @@
  */
 package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.Cluster;
 
 /**
- * QUorum calculator strategy.
+ * Quorum calculator strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface QuorumStrategy {
+@SuppressWarnings("rawtypes")
+public interface QuorumStrategy<C extends Cluster> {
 
   /**
    * Calculates the quorum size.
@@ -30,6 +31,6 @@ public interface QuorumStrategy {
    * @param cluster The current cluster configuration.
    * @return The quorum size.
    */
-  int calculateQuorumSize(ClusterConfig<?> cluster);
+  int calculateQuorumSize(C cluster);
 
 }

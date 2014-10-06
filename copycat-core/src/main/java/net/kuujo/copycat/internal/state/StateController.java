@@ -16,14 +16,13 @@ package net.kuujo.copycat.internal.state;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.VoteCastEvent;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.internal.CommandEntry;
-import net.kuujo.copycat.log.internal.ConfigurationEntry;
-import net.kuujo.copycat.log.internal.CopycatEntry;
-import net.kuujo.copycat.log.internal.SnapshotEntry;
+import net.kuujo.copycat.internal.log.CommandEntry;
+import net.kuujo.copycat.internal.log.ConfigurationEntry;
+import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.protocol.*;
 
 import java.io.IOException;
@@ -56,7 +55,7 @@ abstract class StateController implements RequestHandler {
    */
   void init(StateContext context) {
     this.context = context;
-    context.cluster().localMember().server().requestHandler(this);
+    context.clusterManager().localNode().server().requestHandler(this);
   }
 
   @Override
@@ -293,7 +292,7 @@ abstract class StateController implements RequestHandler {
   @SuppressWarnings("unchecked")
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
-      context.cluster().update(entry.cluster(), null);
+      context.clusterManager().cluster().update(entry.cluster(), null);
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -321,7 +320,7 @@ abstract class StateController implements RequestHandler {
     }
 
     // Set the local cluster configuration according to the snapshot cluster membership.
-    context.cluster().update(entry.cluster(), null);
+    context.clusterManager().cluster().update(entry.cluster(), null);
 
     // Finally, if necessary, increment the current term.
     context.currentTerm(Math.max(context.currentTerm(), entry.term()));
@@ -337,7 +336,7 @@ abstract class StateController implements RequestHandler {
   protected SnapshotEntry createSnapshot() {
     byte[] snapshot = context.stateMachine().takeSnapshot();
     if (snapshot != null) {
-      return new SnapshotEntry(context.currentTerm(), new ClusterConfig(context.cluster()), snapshot);
+      return new SnapshotEntry(context.currentTerm(), context.clusterManager().cluster().config().copy(), snapshot);
     }
     return null;
   }
@@ -396,14 +395,14 @@ abstract class StateController implements RequestHandler {
     // If the requesting candidate is ourself then always vote for ourself. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate().equals(context.cluster().localMember().id())) {
-      context.lastVotedFor(context.cluster().localMember().id());
-      context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.cluster().localMember()));
+    else if (request.candidate().equals(context.clusterManager().localNode().member().id())) {
+      context.lastVotedFor(context.clusterManager().localNode().member().id());
+      context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.clusterManager().localNode().member()));
       return new PollResponse(request.id(), context.currentTerm(), true);
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (context.cluster().member(request.candidate()) == null) {
+    else if (context.clusterManager().node(request.candidate()) == null) {
       return new PollResponse(request.id(), context.currentTerm(), false);
     }
     // If we've already voted for someone else then don't vote again.
@@ -411,7 +410,7 @@ abstract class StateController implements RequestHandler {
       // If the log is empty then vote for the candidate.
       if (context.log().isEmpty()) {
         context.lastVotedFor(request.candidate());
-        context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.cluster().member(request.candidate())));
+        context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.clusterManager().node(request.candidate()).member()));
         return new PollResponse(request.id(), context.currentTerm(), true);
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
@@ -420,14 +419,15 @@ abstract class StateController implements RequestHandler {
         CopycatEntry entry = context.log().getEntry(lastIndex);
         if (entry == null) {
           context.lastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.cluster().member(request.candidate())));
+          context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.clusterManager().node(request
+            .candidate()).member()));
           return new PollResponse(request.id(), context.currentTerm(), true);
         }
 
         long lastTerm = entry.term();
         if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
           context.lastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.cluster().member(request.candidate())));
+          context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.clusterManager().node(request.candidate()).member()));
           return new PollResponse(request.id(), context.currentTerm(), true);
         } else {
           context.lastVotedFor(null);
@@ -450,7 +450,7 @@ abstract class StateController implements RequestHandler {
    * Destroys the state controller.
    */
   void destroy() {
-    context.cluster().localMember().server().requestHandler(null);
+    context.clusterManager().localNode().server().requestHandler(null);
   }
 
   @Override

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.spi.protocol;
 
-import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.Member;
 
 /**
  * Copycat protocol.<p>
@@ -26,7 +26,7 @@ import net.kuujo.copycat.cluster.MemberConfig;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol<M extends MemberConfig> {
+public interface Protocol<M extends Member> {
 
   /**
    * Creates a protocol server.

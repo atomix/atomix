@@ -13,27 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.endpoint;
+package net.kuujo.copycat.service;
 
 import net.kuujo.copycat.CopycatException;
 
 /**
- * A response exception.
+ * A service exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @SuppressWarnings("serial")
-public class EndpointException extends CopycatException {
+public class ServiceException extends CopycatException {
 
-  public EndpointException(String message) {
+  public ServiceException(String message) {
     super(message);
   }
 
-  public EndpointException(String message, Throwable cause) {
+  public ServiceException(String message, Throwable cause) {
     super(message, cause);
   }
 
-  public EndpointException(Throwable cause) {
+  public ServiceException(Throwable cause) {
     super(cause);
   }
 

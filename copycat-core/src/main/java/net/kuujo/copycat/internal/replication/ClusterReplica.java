@@ -16,12 +16,12 @@
 package net.kuujo.copycat.internal.replication;
 
 import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.cluster.RemoteMember;
+import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.state.FollowerController;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.internal.CopycatEntry;
-import net.kuujo.copycat.log.internal.SnapshotEntry;
+import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.Response;
@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 class ClusterReplica {
   private static final int BATCH_SIZE = 100;
-  private final RemoteMember<?> member;
+  private final RemoteNode<?> node;
   private final StateContext state;
   private final Log log;
   private volatile long nextIndex;
@@ -48,8 +48,8 @@ class ClusterReplica {
   private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
   private final Map<Long, CompletableFuture<Long>> replicateFutures = new ConcurrentHashMap<>(1024);
 
-  public ClusterReplica(RemoteMember<?> member, StateContext state) {
-    this.member = member;
+  public ClusterReplica(RemoteNode<?> node, StateContext state) {
+    this.node = node;
     this.state = state;
     this.log = state.log();
     this.nextIndex = log.lastIndex();
@@ -57,25 +57,18 @@ class ClusterReplica {
   }
 
   /**
-   * Returns the replica member.
+   * Returns the replica node.
    *
-   * @return The replica member.
+   * @return The replica node.
    */
-  RemoteMember<?> member() {
-    return member;
-  }
-
-  /**
-   * Returns the next index to be sent to the replica.
-   */
-  long nextIndex() {
-    return nextIndex;
+  RemoteNode<?> node() {
+    return node;
   }
 
   /**
    * Returns the index of the last entry known to be replicated to the replica.
    */
-  long matchIndex() {
+  long index() {
     return matchIndex;
   }
 
@@ -84,7 +77,7 @@ class ClusterReplica {
    */
   CompletableFuture<Void> open() {
     if (!open) {
-      return member.client().connect().whenComplete((result, error) -> {
+      return node.client().connect().whenComplete((result, error) -> {
         if (error == null) {
           open = true;
         }
@@ -116,7 +109,7 @@ class ClusterReplica {
     pingFutures.put(index, future);
 
     PingRequest request = new PingRequest(state.nextCorrelationId(), state.currentTerm(), state.cluster().localMember().id(), index, log.containsEntry(index) ? log.<CopycatEntry>getEntry(index).term() : 0, state.commitIndex());
-    member.client().ping(request).whenCompleteAsync((response, error) -> {
+    node.client().ping(request).whenCompleteAsync((response, error) -> {
       if (error != null) {
         triggerPingFutures(index, error);
       } else {
@@ -209,7 +202,7 @@ class ClusterReplica {
 
     sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 
-    member.client().sync(request).whenComplete((response, error) -> {
+    node.client().sync(request).whenComplete((response, error) -> {
       if (error != null) {
         triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), error);
       } else {
@@ -295,22 +288,24 @@ class ClusterReplica {
    * Closes the replica.
    */
   CompletableFuture<Void> close() {
-    return member.client().close().whenComplete((result, error) -> open = false);
+    return node.client().close().whenComplete((result, error) -> open = false);
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof ClusterReplica && ((ClusterReplica) object).member.equals(member);
+    return object instanceof ClusterReplica && ((ClusterReplica) object).node.equals(node);
   }
 
   @Override
   public int hashCode() {
-    return 37 + member.id().hashCode() * 7;
+    int hashCode = 7;
+    hashCode = 37 * hashCode + node.hashCode();
+    return hashCode;
   }
 
   @Override
   public String toString() {
-    return member.toString();
+    return node.toString();
   }
 
 }

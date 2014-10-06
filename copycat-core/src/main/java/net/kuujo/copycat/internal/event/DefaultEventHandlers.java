@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.event.internal;
+package net.kuujo.copycat.internal.event;
 
-import net.kuujo.copycat.event.Event;
-import net.kuujo.copycat.event.EventHandlersRegistry;
-import net.kuujo.copycat.event.Events;
-import net.kuujo.copycat.event.LeaderElectEvent;
-import net.kuujo.copycat.event.MembershipChangeEvent;
-import net.kuujo.copycat.event.StartEvent;
-import net.kuujo.copycat.event.StateChangeEvent;
-import net.kuujo.copycat.event.StopEvent;
-import net.kuujo.copycat.event.VoteCastEvent;
+import net.kuujo.copycat.event.*;
+import net.kuujo.copycat.event.EventHandlers;
 
 /**
  * Default event handlers registry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultEventHandlersRegistry implements EventHandlersRegistry {
+public class DefaultEventHandlers implements EventHandlers {
   private final DefaultEventHandlerRegistry<StartEvent> start = new DefaultEventHandlerRegistry<>();
   private final DefaultEventHandlerRegistry<StopEvent> stop = new DefaultEventHandlerRegistry<>();
   private final DefaultEventHandlerRegistry<VoteCastEvent> voteCast = new DefaultEventHandlerRegistry<>();

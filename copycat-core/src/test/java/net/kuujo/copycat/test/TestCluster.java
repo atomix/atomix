@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.test;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.protocol.LocalProtocol;
 

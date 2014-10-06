@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.protocol.LocalProtocol;

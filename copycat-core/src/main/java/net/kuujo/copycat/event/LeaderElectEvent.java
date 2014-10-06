@@ -16,7 +16,6 @@
 package net.kuujo.copycat.event;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MemberConfig;
 
 /**
  * Leader elcted event.
@@ -48,8 +47,8 @@ public class LeaderElectEvent implements Event {
    * @return The leader URI.
    */
   @SuppressWarnings("unchecked")
-  public <M extends MemberConfig> Member<M> leader() {
-    return leader;
+  public <M extends Member> M leader() {
+    return (M) leader;
   }
 
   @Override

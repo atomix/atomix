@@ -6,45 +6,40 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi.protocol;
+package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.protocol.RequestHandler;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.cluster.Member;
 
 /**
- * Protocol server.
+ * Node manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolServer {
+public abstract class ClusterNode<M extends Member> {
+  private final M member;
+
+  protected ClusterNode(M member) {
+    this.member = member;
+  }
 
   /**
-   * Registers a server request handler.
+   * Returns the member instance.
    *
-   * @param handler A request handler to handle requests received by the server.
+   * @return The node's underlying member instance.
    */
-  void requestHandler(RequestHandler handler);
+  public M member() {
+    return member;
+  }
 
-  /**
-   * Starts the server listening.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> listen();
-
-  /**
-   * Closes the server.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> close();
+  @Override
+  public String toString() {
+    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
+  }
 
 }

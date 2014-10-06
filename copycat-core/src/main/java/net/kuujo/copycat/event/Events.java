@@ -16,40 +16,66 @@
 package net.kuujo.copycat.event;
 
 /**
- * Event constants.
+ * Events context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class Events {
+public interface Events {
+  static final Class<? extends Event> START = StartEvent.class;
+  static final Class<? extends Event> STOP = StopEvent.class;
+  static final Class<? extends Event> VOTE_CAST = VoteCastEvent.class;
+  static final Class<? extends Event> LEADER_ELECT = LeaderElectEvent.class;
+  static final Class<? extends Event> MEMBERSHIP_CHANGE = MembershipChangeEvent.class;
+  static final Class<? extends Event> STATE_CHANGE = StateChangeEvent.class;
 
   /**
-   * Start event constant.
+   * Returns an event context.
+   *
+   * @param event The event for which to return a context.
+   * @return The event context.
    */
-  public static final Class<? extends Event> START = StartEvent.class;
+  <T extends Event> EventContext<T> event(Class<T> event);
 
   /**
-   * Stop event constant.
+   * Returns a start event context.
+   *
+   * @return The start event context.
    */
-  public static final Class<? extends Event> STOP = StopEvent.class;
+  EventContext<StartEvent> start();
 
   /**
-   * Vote cast event constant.
+   * Returns a stop event context.
+   *
+   * @return The stop event context.
    */
-  public static final Class<? extends Event> VOTE_CAST = VoteCastEvent.class;
+  EventContext<StopEvent> stop();
 
   /**
-   * Leader elected event constant.
+   * Returns a vote cast event context.
+   *
+   * @return The vote cast event context.
    */
-  public static final Class<? extends Event> LEADER_ELECT = LeaderElectEvent.class;
+  EventContext<VoteCastEvent> voteCast();
 
   /**
-   * State change event constant.
+   * Returns a leader elect event context.
+   *
+   * @return The leader elect event context.
    */
-  public static final Class<? extends Event> STATE_CHANGE = StateChangeEvent.class;
+  EventContext<LeaderElectEvent> leaderElect();
 
   /**
-   * Cluster membership change event constant.
+   * Returns a membership change event context.
+   *
+   * @return The membership change event context.
    */
-  public static final Class<? extends Event> MEMBERSHIP_CHANGE = MembershipChangeEvent.class;
+  EventContext<MembershipChangeEvent> membershipChange();
+
+  /**
+   * Returns a state change event context.
+   *
+   * @return The state change event context.
+   */
+  EventContext<StateChangeEvent> stateChange();
 
 }

@@ -23,7 +23,7 @@ import java.util.TreeMap;
 
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
-import net.kuujo.copycat.log.internal.CopycatEntry;
+import net.kuujo.copycat.internal.log.CopycatEntry;
 
 /**
  * Memory-based log.

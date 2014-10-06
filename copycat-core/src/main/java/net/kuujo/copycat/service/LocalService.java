@@ -13,25 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.endpoint;
+package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.protocol.SubmitHandler;
-import net.kuujo.copycat.spi.endpoint.Endpoint;
+import net.kuujo.copycat.spi.service.Service;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Direct endpoint implementation.
+ * Local service implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalEndpoint implements Endpoint {
+public class LocalService implements Service {
   private SubmitHandler submitHandler;
 
-  public LocalEndpoint() {
+  public LocalService() {
   }
 
   @Override
@@ -50,7 +48,7 @@ public class LocalEndpoint implements Endpoint {
   }
 
   /**
-   * Submits a command via the endpoint.
+   * Submits a command via the service.
    *
    * @param command The command to submit.
    * @param args The command arguments.

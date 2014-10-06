@@ -6,45 +6,38 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi.protocol;
+package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.protocol.RequestHandler;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 /**
- * Protocol server.
+ * Local node manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolServer {
+public class LocalNode<M extends Member> extends ClusterNode<M> {
+  private final ProtocolServer server;
+
+  public LocalNode(Protocol<M> protocol, M member) {
+    super(member);
+    this.server = protocol.createServer(member);
+  }
 
   /**
-   * Registers a server request handler.
+   * Returns the node's protocol server receiving messages for this member.
    *
-   * @param handler A request handler to handle requests received by the server.
+   * @return The node's protocol server.
    */
-  void requestHandler(RequestHandler handler);
-
-  /**
-   * Starts the server listening.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> listen();
-
-  /**
-   * Closes the server.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> close();
+  public ProtocolServer server() {
+    return server;
+  }
 
 }

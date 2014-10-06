@@ -19,14 +19,13 @@ import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.event.internal.DefaultEventsContext;
+import net.kuujo.copycat.internal.event.DefaultEvents;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.protocol.Protocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -53,7 +52,7 @@ import java.util.concurrent.CompletableFuture;
  * becomes the cluster leader, it will first commit a snapshot of its current
  * state to its log. This snapshot can be used to get any new nodes up to date.<p>
  *
- * CopyCat supports dynamic cluster membership changes. If the {@link ClusterConfig}
+ * CopyCat supports dynamic cluster membership changes. If the {@link Cluster}
  * provided to the CopyCat context is {@link java.util.Observable}, the cluster
  * leader will observe the configuration for changes. Note that cluster membership
  * changes can only occur on the leader's cluster configuration. This is because,
@@ -66,28 +65,28 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultCopycatContext implements CopycatContext {
-  private final ClusterConfig<?> cluster;
+  private final Cluster<?> cluster;
   private final CopycatConfig config;
   private final StateContext state;
-  private final EventsContext events;
+  private final Events events;
 
-  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, Protocol<M> protocol) {
-    this(stateMachine, new InMemoryLog(), cluster, protocol, new CopycatConfig());
+  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Cluster<M> cluster) {
+    this(stateMachine, new InMemoryLog(), cluster, new CopycatConfig());
   }
 
-  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
-    this(stateMachine, new InMemoryLog(), cluster, protocol, config);
+  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Cluster<M> cluster, CopycatConfig config) {
+    this(stateMachine, new InMemoryLog(), cluster, config);
   }
 
-  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol) {
-    this(stateMachine, log, cluster, protocol, new CopycatConfig());
+  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Log log, Cluster<M> cluster) {
+    this(stateMachine, log, cluster, new CopycatConfig());
   }
 
-  public <M extends MemberConfig> DefaultCopycatContext(StateMachine stateMachine, Log log, ClusterConfig<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
     this.cluster = cluster;
     this.config = config;
-    this.state = new StateContext(stateMachine, log, cluster, protocol, config);
-    this.events = new DefaultEventsContext(state.events());
+    this.state = new StateContext(stateMachine, log, cluster, config);
+    this.events = new DefaultEvents(state.events());
   }
 
   @Override
@@ -96,12 +95,13 @@ public class DefaultCopycatContext implements CopycatContext {
   }
 
   @Override
-  public ClusterConfig<?> cluster() {
-    return cluster;
+  @SuppressWarnings("unchecked")
+  public <M extends Member> Cluster<M> cluster() {
+    return (Cluster<M>) cluster;
   }
 
   @Override
-  public EventsContext on() {
+  public Events on() {
     return events;
   }
 
@@ -111,7 +111,7 @@ public class DefaultCopycatContext implements CopycatContext {
   }
 
   @Override
-  public EventHandlersRegistry events() {
+  public EventHandlers events() {
     return state.events();
   }
 

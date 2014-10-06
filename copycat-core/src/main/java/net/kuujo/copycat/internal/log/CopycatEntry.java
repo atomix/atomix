@@ -6,52 +6,63 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.internal.log;
 
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
+import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.EntryTypes;
 
 /**
+ * Copycat log entry.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalMember<M extends MemberConfig> extends Member<M> {
-  private final ProtocolServer server;
+@EntryTypes({
+  NoOpEntry.class,
+  CommandEntry.class,
+  ConfigurationEntry.class,
+  SnapshotEntry.class
+})
+public class CopycatEntry implements Entry {
+  protected long term;
 
-  public LocalMember(ProtocolServer server, M config) {
-    super(config);
-    this.server = server;
+  protected CopycatEntry() {
+  }
+
+  protected CopycatEntry(long term) {
+    this.term = term;
   }
 
   /**
-   * Returns the local member server.
-   *
-   * @return The local member server.
+   * Returns the log entry term.
+   * 
+   * @return The log entry term.
    */
-  public ProtocolServer server() {
-    return server;
+  public long term() {
+    return term;
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof LocalMember && ((Member<?>) object).config().equals(config());
+    return getClass().isAssignableFrom(object.getClass()) && ((CopycatEntry) object).term() == term;
   }
 
   @Override
   public int hashCode() {
     int hashCode = 23;
-    hashCode = 37 * hashCode + config().hashCode();
-    hashCode = 37 * hashCode + server.hashCode();
+    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
     return hashCode;
   }
 
   @Override
   public String toString() {
-    return String.format("LocalMember[config=%s]", config());
+    return String.format("%s[term=%s]", getClass().getSimpleName(), term);
   }
 
 }

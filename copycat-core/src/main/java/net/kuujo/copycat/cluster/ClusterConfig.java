@@ -14,18 +14,20 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.util.Copyable;
 import net.kuujo.copycat.internal.util.Args;
 
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public final class ClusterConfig<M extends MemberConfig> extends Observable implements Serializable {
+public class ClusterConfig<M extends Member> extends Observable implements Copyable<ClusterConfig<M>>, Serializable {
   private M localMember;
   private Set<M> remoteMembers = new HashSet<>(6);
 
@@ -37,14 +39,24 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
     remoteMembers = new HashSet<>(cluster.remoteMembers);
   }
 
+  @Override
+  @SuppressWarnings("unchecked")
+  public ClusterConfig<M> copy() {
+    try {
+      return getClass().getConstructor(new Class<?>[]{getClass()}).newInstance(this);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+      throw new CopycatException(e);
+    }
+  }
+
   /**
    * Constructs a cluster configuration from an existing cluster.
    *
    * @param cluster The cluster from which to construct the configuration.
    */
   public ClusterConfig(Cluster<M> cluster) {
-    localMember = Args.checkNotNull(cluster).localMember().config();
-    remoteMembers.addAll(cluster.remoteMembers().stream().<M>map(member -> member.config()).collect(Collectors.toList()));
+    localMember = Args.checkNotNull(cluster).localMember();
+    remoteMembers = cluster.remoteMembers();
   }
 
   /**
@@ -259,7 +271,7 @@ public final class ClusterConfig<M extends MemberConfig> extends Observable impl
 
   @Override
   public String toString() {
-    return String.format("ClusterConfig[localMember=%s, remoteMember=%s]", localMember, remoteMembers);
+    return String.format("%s[localMember=%s, remoteMember=%s]", getClass().getSimpleName(), localMember, remoteMembers);
   }
 
 }

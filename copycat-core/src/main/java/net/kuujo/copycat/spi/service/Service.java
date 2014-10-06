@@ -13,43 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi.endpoint;
+package net.kuujo.copycat.spi.service;
 
 import net.kuujo.copycat.protocol.SubmitHandler;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * CopyCat endpoint.<p>
+ * CopyCat service.<p>
  *
  * Endpoints are user-facing interfaces that can be used to
- * send commands to a CopyCat cluster. When an endpoint receives
+ * send commands to a CopyCat cluster. When an service receives
  * a request, if the current node is the cluster leader then the
  * command will be submitted to the cluster. If the current node
  * is not the cluster leader then the leader will be returned
  * to the client. This allows clients to locate the cluster leader.<p>
  *
  * Endpoints are defined via the CopyCat services API. To define a
- * new endpoint service, create a file in
+ * new service service, create a file in
  * <code>META-INF/services/net/kuujo/copycat/endpoints</code>. The
  * file name is the service name, and the file should contain the
  * name of a class that implements <code>Endpoint</code>.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Endpoint {
+public interface Service {
 
   /**
-   * Registers a submit handler on the endpoint.
+   * Registers a submit handler on the service.
    *
    * @param handler A submit request handler.
    */
   void submitHandler(SubmitHandler handler);
 
   /**
-   * Starts the endpoint.<p>
+   * Starts the service.<p>
    *
-   * CopyCat makes no assumptions about whether an endpoint is
+   * CopyCat makes no assumptions about whether an service is
    * asynchronous or not, so endpoints can be either synchronous
    * or asynchronous. Both types of endpoints should call the
    * given callback once started.
@@ -59,7 +59,7 @@ public interface Endpoint {
   CompletableFuture<Void> start();
 
   /**
-   * Stops the endpoint.
+   * Stops the service.
    *
    * @return A completable future to be completed once the service has been stopped.
    */

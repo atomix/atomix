@@ -14,27 +14,20 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.util.Observable;
-import java.util.Observer;
+import java.io.Serializable;
 
 /**
- * Cluster member.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Member<M extends MemberConfig> extends Observable implements Observer {
+public class Member implements Serializable {
   private final String id;
-  private final M config;
 
-  protected Member(M config) {
-    this.id = config.getId();
-    this.config = config;
-    config.addObserver(this);
+  public Member(String id) {
+    this.id = id;
   }
 
-  @Override
-  public void update(Observable o, Object arg) {
-    notifyObservers();
+  public Member(MemberConfig config) {
+    this(config.getId());
   }
 
   /**
@@ -42,22 +35,25 @@ public abstract class Member<M extends MemberConfig> extends Observable implemen
    *
    * @return The unique member ID.
    */
-  public final String id() {
+  public String id() {
     return id;
   }
 
-  /**
-   * Returns the member configuration.
-   *
-   * @return The member configuration.
-   */
-  public final M config() {
-    return config;
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof Member && ((Member) object).id.equals(id);
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 47;
+    hashCode = 37 * hashCode + id.hashCode();
+    return hashCode;
   }
 
   @Override
   public String toString() {
-    return String.format("Member[config=%s]", config);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
   }
 
 }

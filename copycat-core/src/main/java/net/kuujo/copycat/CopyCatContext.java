@@ -14,8 +14,8 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.log.Log;
@@ -25,8 +25,6 @@ import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
 
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -55,14 +53,14 @@ public interface CopycatContext {
    *
    * @return The cluster configuration.
    */
-  ClusterConfig<?> cluster();
+  <M extends Member> Cluster<M> cluster();
 
   /**
    * Returns the context events.
    *
    * @return Context events.
    */
-  EventsContext on();
+  Events on();
 
   /**
    * Returns the context for a specific event.
@@ -77,7 +75,7 @@ public interface CopycatContext {
    *
    * @return The event handlers registry.
    */
-  EventHandlersRegistry events();
+  EventHandlers events();
 
   /**
    * Returns an event handler registry for a specific event.
@@ -139,7 +137,7 @@ public interface CopycatContext {
   @SuppressWarnings("rawtypes")
   public static class Builder {
     private CopycatConfig config = new CopycatConfig();
-    private ClusterConfig cluster;
+    private Cluster cluster;
     private Protocol protocol;
     private StateMachine stateMachine;
     private Log log = new InMemoryLog();
@@ -302,49 +300,13 @@ public interface CopycatContext {
     }
 
     /**
-     * Sets the cluster configuration.
+     * Sets the copycat cluster.
      *
-     * @param cluster The cluster configuration.
+     * @param cluster The copycat cluster.
      * @return The copycat builder.
      */
-    public Builder withClusterConfig(ClusterConfig<?> cluster) {
+    public Builder withCluster(Cluster<?> cluster) {
       this.cluster = cluster;
-      return this;
-    }
-
-    /**
-     * Sets the local cluster member.
-     *
-     * @param member The local cluster member configuration.
-     * @return The copycat builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withLocalMember(MemberConfig member) {
-      this.cluster.setLocalMember(member);
-      return this;
-    }
-
-    /**
-     * Sets the remote cluster members.
-     *
-     * @param members The remote cluster member configurations.
-     * @return The copycat builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withRemoteMembers(MemberConfig... members) {
-      this.cluster.setRemoteMembers(Arrays.asList(members));
-      return this;
-    }
-
-    /**
-     * Sets the remote cluster members.
-     *
-     * @param members The remote cluster member configurations.
-     * @return The copycat builder.
-     */
-    @SuppressWarnings("unchecked")
-    public Builder withRemoteMembers(Collection<MemberConfig> members) {
-      this.cluster.setRemoteMembers(members);
       return this;
     }
 
@@ -365,7 +327,7 @@ public interface CopycatContext {
      * @return The copycat instance.
      */
     public CopycatContext build() {
-      return new DefaultCopycatContext(stateMachine, log, cluster, protocol, config);
+      return new DefaultCopycatContext(stateMachine, log, cluster, config);
     }
 
     @Override

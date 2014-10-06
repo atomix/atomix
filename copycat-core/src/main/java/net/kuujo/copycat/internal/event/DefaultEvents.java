@@ -13,26 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.event.internal;
+package net.kuujo.copycat.internal.event;
 
-import net.kuujo.copycat.event.Event;
-import net.kuujo.copycat.event.EventContext;
-import net.kuujo.copycat.event.EventHandlersRegistry;
-import net.kuujo.copycat.event.Events;
-import net.kuujo.copycat.event.EventsContext;
-import net.kuujo.copycat.event.LeaderElectEvent;
-import net.kuujo.copycat.event.MembershipChangeEvent;
-import net.kuujo.copycat.event.StartEvent;
-import net.kuujo.copycat.event.StateChangeEvent;
-import net.kuujo.copycat.event.StopEvent;
-import net.kuujo.copycat.event.VoteCastEvent;
+import net.kuujo.copycat.event.*;
 
 /**
  * Default events context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultEventsContext implements EventsContext {
+public class DefaultEvents implements Events {
   private final EventContext<StartEvent> start;
   private final EventContext<StopEvent> stop;
   private final EventContext<VoteCastEvent> voteCast;
@@ -40,7 +30,7 @@ public class DefaultEventsContext implements EventsContext {
   private final EventContext<MembershipChangeEvent> membershipChange;
   private final EventContext<StateChangeEvent> stateChange;
 
-  public DefaultEventsContext(EventHandlersRegistry registry) {
+  public DefaultEvents(EventHandlers registry) {
     start = new DefaultEventContext<>(registry.start());
     stop = new DefaultEventContext<>(registry.stop());
     voteCast = new DefaultEventContext<>(registry.voteCast());

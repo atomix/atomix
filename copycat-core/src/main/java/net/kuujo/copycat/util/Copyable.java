@@ -6,45 +6,26 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi.protocol;
-
-import net.kuujo.copycat.protocol.RequestHandler;
-
-import java.util.concurrent.CompletableFuture;
+package net.kuujo.copycat.util;
 
 /**
- * Protocol server.
+ * Identifies a copyable object.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolServer {
+public interface Copyable<T> {
 
   /**
-   * Registers a server request handler.
+   * Copies the object.
    *
-   * @param handler A request handler to handle requests received by the server.
+   * @return The copied object.
    */
-  void requestHandler(RequestHandler handler);
-
-  /**
-   * Starts the server listening.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> listen();
-
-  /**
-   * Closes the server.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> close();
+  T copy();
 
 }

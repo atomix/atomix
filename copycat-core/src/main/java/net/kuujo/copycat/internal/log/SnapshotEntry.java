@@ -13,46 +13,62 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log.internal;
+package net.kuujo.copycat.internal.log;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.EntryType;
 
+import java.util.Arrays;
+
 /**
- * Cluster configuration entry.
+ * Snapshot log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@EntryType(id=4, serializer=ConfigurationEntry.Serializer.class)
-public class ConfigurationEntry extends CopycatEntry {
-  private ClusterConfig<?> cluster;
+@SuppressWarnings("rawtypes")
+@EntryType(id=5, serializer=SnapshotEntry.Serializer.class)
+public class SnapshotEntry extends CopycatEntry {
+  private ClusterConfig cluster;
+  private byte[] data;
 
-  private ConfigurationEntry() {
+  private SnapshotEntry() {
     super();
   }
 
-  public ConfigurationEntry(long term, ClusterConfig<?> cluster) {
+  public SnapshotEntry(long term, ClusterConfig cluster, byte[] data) {
     super(term);
     this.cluster = cluster;
+    this.data = data;
   }
 
   /**
-   * Returns a set of updated cluster members.
-   * 
-   * @return A set of cluster member addresses.
+   * Returns the snapshot cluster configuration.
+   *
+   * @return The snapshot cluster configuration.
    */
-  public ClusterConfig<?> cluster() {
+  @SuppressWarnings("unchecked")
+  public <M extends Member> ClusterConfig<M> cluster() {
     return cluster;
+  }
+
+  /**
+   * Returns the snapshot data.
+   *
+   * @return The snapshot data.
+   */
+  public byte[] data() {
+    return data;
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof ConfigurationEntry) {
-      ConfigurationEntry entry = (ConfigurationEntry) object;
-      return term == entry.term && cluster.equals(entry.cluster);
+    if (object instanceof SnapshotEntry) {
+      SnapshotEntry entry = (SnapshotEntry) object;
+      return term == entry.term && cluster.equals(entry.cluster) && Arrays.equals(data, entry.data);
     }
     return false;
   }
@@ -62,32 +78,38 @@ public class ConfigurationEntry extends CopycatEntry {
     int hashCode = 23;
     hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
     hashCode = 37 * hashCode + cluster.hashCode();
+    hashCode = 37 * hashCode + Arrays.hashCode(data);
     return hashCode;
   }
 
   @Override
   public String toString() {
-    return String.format("ConfigurationEntry[term=%d, cluster=%s]", term(), cluster);
+    return String.format("SnapshotEntry[term=%d, config=%s, data=...]", term, cluster);
   }
 
   /**
-   * Configuration entry serializer.
+   * Snapshot entry serializer.
    *
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
-  public static class Serializer extends com.esotericsoftware.kryo.Serializer<ConfigurationEntry> {
+  public static class Serializer extends com.esotericsoftware.kryo.Serializer<SnapshotEntry> {
     @Override
     @SuppressWarnings("unchecked")
-    public ConfigurationEntry read(Kryo kryo, Input input, Class<ConfigurationEntry> type) {
-      ConfigurationEntry entry = new ConfigurationEntry();
+    public SnapshotEntry read(Kryo kryo, Input input, Class<SnapshotEntry> type) {
+      SnapshotEntry entry = new SnapshotEntry();
       entry.term = input.readLong();
       entry.cluster = kryo.readObject(input, ClusterConfig.class);
+      int length = input.readInt();
+      entry.data = new byte[length];
+      input.readBytes(entry.data);
       return entry;
     }
     @Override
-    public void write(Kryo kryo, Output output, ConfigurationEntry entry) {
+    public void write(Kryo kryo, Output output, SnapshotEntry entry) {
       output.writeLong(entry.term);
       kryo.writeObject(output, entry.cluster);
+      output.writeInt(entry.data.length);
+      output.writeBytes(entry.data);
     }
   }
 

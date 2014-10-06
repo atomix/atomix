@@ -12,46 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.internal.cluster;
 
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
 /**
+ * Remote node manager.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RemoteMember<M extends MemberConfig> extends Member<M> {
+public class RemoteNode<M extends Member> extends ClusterNode<M> {
   private final ProtocolClient client;
 
-  public RemoteMember(ProtocolClient client, M config) {
-    super(config);
-    this.client = client;
+  public RemoteNode(Protocol<M> protocol, M member) {
+    super(member);
+    this.client = protocol.createClient(member);
   }
 
   /**
-   * Returns the remote member client.
+   * Returns the protocol client connecting to this node.
    *
-   * @return The remote member client.
+   * @return The node's protocol client.
    */
   public ProtocolClient client() {
     return client;
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    return object instanceof RemoteMember && ((Member<?>) object).config().equals(config());
-  }
-
-  @Override
-  public int hashCode() {
-    int hashCode = 23;
-    hashCode = 37 * hashCode + config().hashCode();
-    hashCode = 37 * hashCode + client.hashCode();
-    return hashCode;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("RemoteMember[config=%s]", config());
   }
 
 }
