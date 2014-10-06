@@ -13,21 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.protocol.impl;
-
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.protocol.*;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.RequestHandler;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
+package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Vert.x event bus protocol server.
@@ -46,16 +40,20 @@ public class EventBusProtocolServer implements ProtocolServer {
     public void handle(Message<byte[]> message) {
       if (requestHandler != null) {
         Request request = reader.readRequest(message.body());
-        if (request instanceof AppendEntriesRequest) {
-          requestHandler.appendEntries((AppendEntriesRequest) request).whenComplete((response, error) -> {
+        if (request instanceof PingRequest) {
+          requestHandler.ping((PingRequest) request).whenComplete((response, error) -> {
             message.reply(writer.writeResponse(response));
           });
-        } else if (request instanceof RequestVoteRequest) {
-          requestHandler.requestVote((RequestVoteRequest) request).whenComplete((response, error) -> {
+        } else if (request instanceof SyncRequest) {
+          requestHandler.sync((SyncRequest) request).whenComplete((response, error) -> {
             message.reply(writer.writeResponse(response));
           });
-        } else if (request instanceof SubmitCommandRequest) {
-          requestHandler.submitCommand((SubmitCommandRequest) request).whenComplete((response, error) -> {
+        } else if (request instanceof PollRequest) {
+          requestHandler.poll((PollRequest) request).whenComplete((response, error) -> {
+            message.reply(writer.writeResponse(response));
+          });
+        } else if (request instanceof SubmitRequest) {
+          requestHandler.submit((SubmitRequest) request).whenComplete((response, error) -> {
             message.reply(writer.writeResponse(response));
           });
         }
@@ -74,7 +72,7 @@ public class EventBusProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public CompletableFuture<Void> start() {
+  public CompletableFuture<Void> listen() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
       @Override
@@ -90,7 +88,7 @@ public class EventBusProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public CompletableFuture<Void> stop() {
+  public CompletableFuture<Void> close() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     vertx.eventBus().unregisterHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
       @Override

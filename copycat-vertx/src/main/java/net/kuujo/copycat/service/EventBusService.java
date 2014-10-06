@@ -13,20 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.endpoint.impl;
+package net.kuujo.copycat.service;
 
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.internal.DefaultCopycatContext;
-import net.kuujo.copycat.spi.endpoint.Endpoint;
-import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.uri.UriQueryParam;
 import net.kuujo.copycat.internal.util.Args;
-
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
@@ -34,28 +23,31 @@ import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 /**
- * Event bus endpoint implementation.
+ * Event bus service implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusEndpoint implements Endpoint {
+public class EventBusService extends BaseService {
   private String address;
-  private DefaultCopycatContext context;
   private String host = "localhost";
   private int port;
   private Vertx vertx;
 
-  public EventBusEndpoint() {
+  public EventBusService() {
   }
 
-  public EventBusEndpoint(String host, int port, String address) {
+  public EventBusService(String host, int port, String address) {
     this.host = host;
     this.port = port;
     this.address = address;
   }
 
-  public EventBusEndpoint(Vertx vertx, String address) {
+  public EventBusService(Vertx vertx, String address) {
     this.vertx = vertx;
     this.address = address;
   }
@@ -67,7 +59,7 @@ public class EventBusEndpoint implements Endpoint {
       String command = message.body().getString("command");
       if (command != null) {
         JsonArray args = message.body().getArray("args");
-        context.submitCommand(command, args.toArray()).whenComplete((result, error) -> {
+        submit(command, args.toArray()).whenComplete((result, error) -> {
           if (error == null) {
             if (result instanceof Map) {
               message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)));
@@ -82,17 +74,11 @@ public class EventBusEndpoint implements Endpoint {
     }
   };
 
-  @Override
-  public void init(DefaultCopycatContext context) {
-    this.context = context;
-  }
-
   /**
    * Sets the event bus address.
    *
    * @param address The event bus address.
    */
-  @UriAuthority
   public void setAddress(String address) {
     this.address = address != null && !address.isEmpty() ? address : this.address;
   }
@@ -107,12 +93,12 @@ public class EventBusEndpoint implements Endpoint {
   }
 
   /**
-   * Sets the event bus address, returning the endpoint for method chaining.
+   * Sets the event bus address, returning the service for method chaining.
    *
    * @param address The event bus address.
-   * @return The event bus endpoint.
+   * @return The event bus service.
    */
-  public EventBusEndpoint withAddress(String address) {
+  public EventBusService withAddress(String address) {
     this.address = address;
     return this;
   }
@@ -122,7 +108,6 @@ public class EventBusEndpoint implements Endpoint {
    *
    * @param vertx The Vert.x instance.
    */
-  @UriQueryParam("vertx")
   public void setVertx(Vertx vertx) {
     this.vertx = vertx;
   }
@@ -137,12 +122,12 @@ public class EventBusEndpoint implements Endpoint {
   }
 
   /**
-   * Sets the Vert.x instance, returning the endpoint for method chaining.
+   * Sets the Vert.x instance, returning the service for method chaining.
    *
    * @param vertx The Vert.x instance.
-   * @return The event bus endpoint.
+   * @return The event bus service.
    */
-  public EventBusEndpoint withVertx(Vertx vertx) {
+  public EventBusService withVertx(Vertx vertx) {
     this.vertx = vertx;
     return this;
   }
@@ -152,7 +137,6 @@ public class EventBusEndpoint implements Endpoint {
    *
    * @param host The Vert.x host.
    */
-  @UriHost
   public void setHost(String host) {
     this.host = host;
   }
@@ -167,12 +151,12 @@ public class EventBusEndpoint implements Endpoint {
   }
 
   /**
-   * Sets the Vert.x host, returning the event bus endpoint for method chaining.
+   * Sets the Vert.x host, returning the event bus service for method chaining.
    *
    * @param host The Vert.x host.
-   * @return The event bus endpoint.
+   * @return The event bus service.
    */
-  public EventBusEndpoint withHost(String host) {
+  public EventBusService withHost(String host) {
     this.host = host;
     return this;
   }
@@ -182,7 +166,6 @@ public class EventBusEndpoint implements Endpoint {
    *
    * @param port The Vert.x port.
    */
-  @UriPort
   public void setPort(int port) {
     this.port = port;
   }
@@ -197,12 +180,12 @@ public class EventBusEndpoint implements Endpoint {
   }
 
   /**
-   * Sets the Vert.x port, returning the endpoint for method chaining.
+   * Sets the Vert.x port, returning the service for method chaining.
    *
    * @param port The Vert.x port.
-   * @return The event bus endpoint.
+   * @return The event bus service.
    */
-  public EventBusEndpoint withPort(int port) {
+  public EventBusService withPort(int port) {
     this.port = port;
     return this;
   }

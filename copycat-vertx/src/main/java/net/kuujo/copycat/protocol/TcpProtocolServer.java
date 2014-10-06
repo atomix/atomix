@@ -13,15 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.protocol.impl;
-
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.protocol.*;
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.RequestHandler;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
+package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import org.vertx.java.core.AsyncResult;
@@ -33,6 +25,8 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Vert.x TCP protocol server.
@@ -92,7 +86,7 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public CompletableFuture<Void> start() {
+  public CompletableFuture<Void> listen() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
 
     if (vertx == null) {
@@ -124,12 +118,14 @@ public class TcpProtocolServer implements ProtocolServer {
               Object id = json.getValue("id");
               try {
                 Request request = reader.readRequest(json.getBinary("request"));
-                if (request instanceof AppendEntriesRequest) {
-                  handleAppendRequest(id, socket, (AppendEntriesRequest) request);
-                } else if (request instanceof RequestVoteRequest) {
-                  handleVoteRequest(id, socket, (RequestVoteRequest) request);
-                } else if (request instanceof SubmitCommandRequest) {
-                  handleSubmitRequest(id, socket, (SubmitCommandRequest) request);
+                if (request instanceof PingRequest) {
+                  handlePingRequest(id, socket, (PingRequest) request);
+                } else if (request instanceof SyncRequest) {
+                  handleSyncRequest(id, socket, (SyncRequest) request);
+                } else if (request instanceof PollRequest) {
+                  handlePollRequest(id, socket, (PollRequest) request);
+                } else if (request instanceof SubmitRequest) {
+                  handleSubmitRequest(id, socket, (SubmitRequest) request);
                 }
               } catch (Exception e) {
                 respond(socket, id, null, e);
@@ -154,11 +150,22 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   /**
-   * Handles an append entries request.
+   * Handles a ping request.
    */
-  private void handleAppendRequest(final Object id, final NetSocket socket, AppendEntriesRequest request) {
+  private void handlePingRequest(final Object id, final NetSocket socket, PingRequest request) {
     if (requestHandler != null) {
-      requestHandler.appendEntries(request).whenComplete((response, error) -> {
+      requestHandler.ping(request).whenComplete((response, error) -> {
+        respond(socket, id, response, error);
+      });
+    }
+  }
+
+  /**
+   * Handles a sync request.
+   */
+  private void handleSyncRequest(final Object id, final NetSocket socket, SyncRequest request) {
+    if (requestHandler != null) {
+      requestHandler.sync(request).whenComplete((response, error) -> {
         respond(socket, id, response, error);
       });
     }
@@ -167,9 +174,9 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles a vote request.
    */
-  private void handleVoteRequest(final Object id, final NetSocket socket, RequestVoteRequest request) {
+  private void handlePollRequest(final Object id, final NetSocket socket, PollRequest request) {
     if (requestHandler != null) {
-      requestHandler.requestVote(request).whenComplete((response, error) -> {
+      requestHandler.poll(request).whenComplete((response, error) -> {
         respond(socket, id, response, error);
       });
     }
@@ -178,9 +185,9 @@ public class TcpProtocolServer implements ProtocolServer {
   /**
    * Handles a submit request.
    */
-  private void handleSubmitRequest(final Object id, final NetSocket socket, SubmitCommandRequest request) {
+  private void handleSubmitRequest(final Object id, final NetSocket socket, SubmitRequest request) {
     if (requestHandler != null) {
-      requestHandler.submitCommand(request).whenComplete((response, error) -> {
+      requestHandler.submit(request).whenComplete((response, error) -> {
         respond(socket, id, response, error);
       });
     }
@@ -198,7 +205,7 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public CompletableFuture<Void> stop() {
+  public CompletableFuture<Void> close() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (server != null) {
       server.close(new Handler<AsyncResult<Void>>() {

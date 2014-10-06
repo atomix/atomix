@@ -13,22 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.protocol.impl;
+package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.cluster.TcpMember;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriPort;
 
 /**
  * TCP based protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocol implements Protocol {
-  private String host = "localhost";
-  private int port;
+public class TcpProtocol implements Protocol<TcpMember> {
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
   private boolean useSsl;
@@ -40,76 +37,6 @@ public class TcpProtocol implements Protocol {
   private int connectTimeout = 60000;
 
   public TcpProtocol() {
-  }
-
-  public TcpProtocol(String host, int port) {
-    this.host = host;
-    this.port = port;
-  }
-
-  @Override
-  public String name() {
-    return String.format("%s-%d", host, port);
-  }
-
-  /**
-   * Sets the protocol host.
-   *
-   * @param host The TCP host.
-   */
-  @UriHost
-  public void setHost(String host) {
-    this.host = host;
-  }
-
-  /**
-   * Returns the protocol host.
-   *
-   * @return The protocol host.
-   */
-  public String getHost() {
-    return host;
-  }
-
-  /**
-   * Sets the protocol host, returning the protocol for method chaining.
-   *
-   * @param host The TCP host.
-   * @return The TCP protocol.
-   */
-  public TcpProtocol withHost(String host) {
-    this.host = host;
-    return this;
-  }
-
-  /**
-   * Sets the protocol port.
-   *
-   * @param port The TCP port.
-   */
-  @UriPort
-  public void setPort(int port) {
-    this.port = port;
-  }
-
-  /**
-   * Returns the protocol port.
-   *
-   * @return The TCP port.
-   */
-  public int getPort() {
-    return port;
-  }
-
-  /**
-   * Sets the protocol port, returning the protocol for method chaining.
-   *
-   * @param port The TCP port.
-   * @return The TCP protocol.
-   */
-  public TcpProtocol withPort(int port) {
-    this.port = port;
-    return this;
   }
 
   /**
@@ -374,13 +301,13 @@ public class TcpProtocol implements Protocol {
   }
 
   @Override
-  public ProtocolServer createServer() {
-    return new TcpProtocolServer(host, port, this);
+  public ProtocolServer createServer(TcpMember member) {
+    return new TcpProtocolServer(member.host(), member.port(), this);
   }
 
   @Override
-  public ProtocolClient createClient() {
-    return new TcpProtocolClient(host, port, this);
+  public ProtocolClient createClient(TcpMember member) {
+    return new TcpProtocolClient(member.host(), member.port(), this);
   }
 
 }

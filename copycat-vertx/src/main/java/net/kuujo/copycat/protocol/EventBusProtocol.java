@@ -13,83 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.protocol.impl;
+package net.kuujo.copycat.protocol;
 
-import java.util.concurrent.CountDownLatch;
-
+import net.kuujo.copycat.cluster.EventBusMember;
+import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
-import net.kuujo.copycat.uri.UriAuthority;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriPort;
-import net.kuujo.copycat.uri.UriQueryParam;
-import net.kuujo.copycat.internal.util.Args;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultVertx;
+
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Vert.x event bus protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusProtocol implements Protocol {
+public class EventBusProtocol implements Protocol<EventBusMember> {
   private String host;
   private int port;
   private Vertx vertx;
-  private String address;
 
   public EventBusProtocol() {
   }
 
-  public EventBusProtocol(String host, int port, String address) {
+  public EventBusProtocol(String host, int port) {
     this.host = host;
     this.port = port;
-    this.address = address;
   }
 
-  public EventBusProtocol(Vertx vertx, String address) {
+  public EventBusProtocol(Vertx vertx) {
     this.vertx = vertx;
-    this.address = address;
-  }
-
-  @Override
-  public String name() {
-    return address;
-  }
-
-  /**
-   * Sets the event bus address.
-   *
-   * @param address The event bus address.
-   */
-  @UriAuthority
-  public void setAddress(String address) {
-    this.address = address;
-  }
-
-  /**
-   * Returns the event bus address.
-   *
-   * @return The event bus address.
-   */
-  public String getAddress() {
-    return address;
-  }
-
-  /**
-   * Sets the event bus address, returning the protocol for method chaining.
-   *
-   * @param address The event bus address.
-   * @return The event bus protocol.
-   */
-  public EventBusProtocol withAddress(String address) {
-    this.address = address;
-    return this;
   }
 
   /**
@@ -97,7 +54,6 @@ public class EventBusProtocol implements Protocol {
    *
    * @param vertx The Vert.x instance.
    */
-  @UriQueryParam("vertx")
   public void setVertx(Vertx vertx) {
     this.vertx = vertx;
   }
@@ -127,7 +83,6 @@ public class EventBusProtocol implements Protocol {
    *
    * @param host The Vert.x host.
    */
-  @UriHost
   public void setHost(String host) {
     this.host = host;
   }
@@ -157,7 +112,6 @@ public class EventBusProtocol implements Protocol {
    *
    * @param port The Vert.x port.
    */
-  @UriPort
   public void setPort(int port) {
     this.port = port;
   }
@@ -203,20 +157,20 @@ public class EventBusProtocol implements Protocol {
   }
 
   @Override
-  public synchronized ProtocolServer createServer() {
+  public synchronized ProtocolServer createServer(EventBusMember member) {
     if (vertx != null) {
-      return new EventBusProtocolServer(address, vertx);
+      return new EventBusProtocolServer(member.address(), vertx);
     } else {
-      return new EventBusProtocolServer(address, createVertx());
+      return new EventBusProtocolServer(member.address(), createVertx());
     }
   }
 
   @Override
-  public synchronized ProtocolClient createClient() {
+  public synchronized ProtocolClient createClient(EventBusMember member) {
     if (vertx != null) {
-      return new EventBusProtocolClient(address, vertx);
+      return new EventBusProtocolClient(member.address(), vertx);
     } else {
-      return new EventBusProtocolClient(address, createVertx());
+      return new EventBusProtocolClient(member.address(), createVertx());
     }
   }
 

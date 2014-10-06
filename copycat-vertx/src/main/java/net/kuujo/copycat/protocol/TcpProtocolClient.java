@@ -13,25 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.protocol.impl;
+package net.kuujo.copycat.protocol;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.protocol.AppendEntriesRequest;
-import net.kuujo.copycat.protocol.AppendEntriesResponse;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.ProtocolReader;
-import net.kuujo.copycat.protocol.ProtocolWriter;
-import net.kuujo.copycat.protocol.Request;
-import net.kuujo.copycat.protocol.RequestVoteRequest;
-import net.kuujo.copycat.protocol.RequestVoteResponse;
-import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SubmitCommandRequest;
-import net.kuujo.copycat.protocol.SubmitCommandResponse;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -41,6 +25,10 @@ import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Vert.x TCP protocol client.
@@ -109,17 +97,22 @@ public class TcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<AppendEntriesResponse> appendEntries(AppendEntriesRequest request) {
+  public CompletableFuture<PingResponse> ping(PingRequest request) {
     return sendRequest(request);
   }
 
   @Override
-  public CompletableFuture<RequestVoteResponse> requestVote(RequestVoteRequest request) {
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
     return sendRequest(request);
   }
 
   @Override
-  public CompletableFuture<SubmitCommandResponse> submitCommand(SubmitCommandRequest request) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
+    return sendRequest(request);
+  }
+
+  @Override
+  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     return sendRequest(request);
   }
 

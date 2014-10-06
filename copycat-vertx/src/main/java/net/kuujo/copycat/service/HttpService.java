@@ -13,16 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.endpoint.impl;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.internal.DefaultCopycatContext;
-import net.kuujo.copycat.spi.endpoint.Endpoint;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriPort;
+package net.kuujo.copycat.service;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -35,81 +26,77 @@ import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 /**
- * Vert.x HTTP endpoint.
+ * Vert.x HTTP service.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class HttpEndpoint implements Endpoint {
+public class HttpService extends BaseService {
   private final Vertx vertx;
-  private DefaultCopycatContext context;
   private HttpServer server;
   private String host;
   private int port;
 
-  public HttpEndpoint() {
+  public HttpService() {
     this.vertx = new DefaultVertx();
   }
 
-  public HttpEndpoint(String host, int port) {
+  public HttpService(String host, int port) {
     this.host = host;
     this.port = port;
     this.vertx = new DefaultVertx();
   }
 
-  public HttpEndpoint(String host, int port, Vertx vertx) {
+  public HttpService(String host, int port, Vertx vertx) {
     this.host = host;
     this.port = port;
     this.vertx = vertx;
   }
 
-  @Override
-  public void init(DefaultCopycatContext context) {
-    this.context = context;
-  }
-
   /**
-   * Sets the endpoint host.
+   * Sets the service host.
    *
    * @param host The TCP host.
    */
-  @UriHost
   public void setHost(String host) {
     this.host = host;
   }
 
   /**
-   * Returns the endpoint host.
+   * Returns the service host.
    *
-   * @return The endpoint host.
+   * @return The service host.
    */
   public String getHost() {
     return host;
   }
 
   /**
-   * Sets the endpoint host, returning the endpoint for method chaining.
+   * Sets the service host, returning the service for method chaining.
    *
    * @param host The TCP host.
-   * @return The TCP endpoint.
+   * @return The TCP service.
    */
-  public HttpEndpoint withHost(String host) {
+  public HttpService withHost(String host) {
     this.host = host;
     return this;
   }
 
   /**
-   * Sets the endpoint port.
+   * Sets the service port.
    *
    * @param port The TCP port.
    */
-  @UriPort
   public void setPort(int port) {
     this.port = port;
   }
 
   /**
-   * Returns the endpoint port.
+   * Returns the service port.
    *
    * @return The TCP port.
    */
@@ -118,12 +105,12 @@ public class HttpEndpoint implements Endpoint {
   }
 
   /**
-   * Sets the endpoint port, returning the endpoint for method chaining.
+   * Sets the service port, returning the service for method chaining.
    *
    * @param port The TCP port.
-   * @return The TCP endpoint.
+   * @return The TCP service.
    */
-  public HttpEndpoint withPort(int port) {
+  public HttpService withPort(int port) {
     this.port = port;
     return this;
   }
@@ -143,15 +130,15 @@ public class HttpEndpoint implements Endpoint {
           @Override
           @SuppressWarnings({"unchecked", "rawtypes"})
           public void handle(Buffer buffer) {
-            HttpEndpoint.this.context.submitCommand(request.params().get("command"), new JsonArray(buffer.toString()).toArray()).whenComplete((result, error) -> {
+            submit(request.params().get("command"), new JsonArray(buffer.toString()).toArray()).whenComplete((result, error) -> {
               if (error == null) {
                 request.response().setStatusCode(200);
                 if (result instanceof Map) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putObject("result", new JsonObject((Map) result)).encode());                  
+                  request.response().end(new JsonObject().putString("status", "ok").putObject("result", new JsonObject((Map) result)).encode());
                 } else if (result instanceof List) {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putArray("result", new JsonArray((List) result)).encode());
+                  request.response().end(new JsonObject().putString("status", "ok").putArray("result", new JsonArray((List) result)).encode());
                 } else {
-                  request.response().end(new JsonObject().putString("status", "ok").putString("leader", HttpEndpoint.this.context.leader()).putValue("result", result).encode());
+                  request.response().end(new JsonObject().putString("status", "ok").putValue("result", result).encode());
                 }
               } else {
                 request.response().setStatusCode(400);

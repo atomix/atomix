@@ -13,16 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.endpoint.impl;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.internal.DefaultCopycatContext;
-import net.kuujo.copycat.spi.endpoint.Endpoint;
-import net.kuujo.copycat.uri.UriHost;
-import net.kuujo.copycat.uri.UriPort;
+package net.kuujo.copycat.service;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -35,78 +26,74 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Vert.x TCP protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpEndpoint implements Endpoint {
+public class TcpService extends BaseService {
   private Vertx vertx = new DefaultVertx();
-  private DefaultCopycatContext context;
   private NetServer server;
   private String host;
   private int port;
 
-  public TcpEndpoint() {
+  public TcpService() {
     this.vertx = new DefaultVertx();
   }
 
-  public TcpEndpoint(Vertx vertx) {
+  public TcpService(Vertx vertx) {
     this.vertx = vertx;
   }
 
-  public TcpEndpoint(String host, int port) {
+  public TcpService(String host, int port) {
     this.host = host;
     this.port = port;
   }
 
-  @Override
-  public void init(DefaultCopycatContext context) {
-    this.context = context;
-  }
-
   /**
-   * Sets the endpoint host.
+   * Sets the service host.
    *
    * @param host The TCP host.
    */
-  @UriHost
   public void setHost(String host) {
     this.host = host;
   }
 
   /**
-   * Returns the endpoint host.
+   * Returns the service host.
    *
-   * @return The endpoint host.
+   * @return The service host.
    */
   public String getHost() {
     return host;
   }
 
   /**
-   * Sets the endpoint host, returning the endpoint for method chaining.
+   * Sets the service host, returning the service for method chaining.
    *
    * @param host The TCP host.
-   * @return The TCP endpoint.
+   * @return The TCP service.
    */
-  public TcpEndpoint withHost(String host) {
+  public TcpService withHost(String host) {
     this.host = host;
     return this;
   }
 
   /**
-   * Sets the endpoint port.
+   * Sets the service port.
    *
    * @param port The TCP port.
    */
-  @UriPort
   public void setPort(int port) {
     this.port = port;
   }
 
   /**
-   * Returns the endpoint port.
+   * Returns the service port.
    *
    * @return The TCP port.
    */
@@ -115,12 +102,12 @@ public class TcpEndpoint implements Endpoint {
   }
 
   /**
-   * Sets the endpoint port, returning the endpoint for method chaining.
+   * Sets the service port, returning the service for method chaining.
    *
    * @param port The TCP port.
-   * @return The TCP endpoint.
+   * @return The TCP service.
    */
-  public TcpEndpoint withPort(int port) {
+  public TcpService withPort(int port) {
     this.port = port;
     return this;
   }
@@ -141,17 +128,17 @@ public class TcpEndpoint implements Endpoint {
           @SuppressWarnings({"unchecked", "rawtypes"})
           public void handle(Buffer buffer) {
             JsonObject json = new JsonObject(buffer.toString());
-            context.submitCommand(json.getString("command"), json.getArray("args").toArray()).whenComplete((result, error) -> {
+            submit(json.getString("command"), json.getArray("args").toArray()).whenComplete((result, error) -> {
               if (error == null) {
                 if (result instanceof Map) {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "ok").putObject("result", new JsonObject((Map) result)).encode() + '\00');
                 } else if (result instanceof List) {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "ok").putArray("result", new JsonArray((List) result)).encode() + '\00');
                 } else {
-                  socket.write(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result).encode() + '\00');
+                  socket.write(new JsonObject().putString("status", "ok").putValue("result", result).encode() + '\00');
                 }
               } else {
-                socket.write(new JsonObject().putString("status", "error").putString("leader", context.leader()).putString("message", error.getMessage()).encode() + '\00');
+                socket.write(new JsonObject().putString("status", "error").putString("message", error.getMessage()).encode() + '\00');
               }
             });
           }
