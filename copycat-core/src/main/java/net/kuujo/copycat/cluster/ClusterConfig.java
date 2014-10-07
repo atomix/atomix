@@ -35,8 +35,8 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   }
 
   public ClusterConfig(ClusterConfig<M> cluster) {
-    localMember = Args.checkNotNull(cluster).localMember;
-    remoteMembers = new HashSet<>(cluster.remoteMembers);
+    this.localMember = Args.checkNotNull(cluster).localMember;
+    this.remoteMembers = new HashSet<>(cluster.remoteMembers);
   }
 
   public ClusterConfig(M localMember, M... remoteMembers) {
@@ -44,8 +44,8 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   }
 
   public ClusterConfig(M localMember, Collection<M> remoteMembers) {
-    localMember = Args.checkNotNull(localMember);
-    remoteMembers = new HashSet<>(remoteMembers);
+    this.localMember = Args.checkNotNull(localMember);
+    this.remoteMembers = new HashSet<>(remoteMembers);
   }
 
   /**
@@ -58,9 +58,8 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public ClusterConfig<M> copy() {
-    return new ClusterConfig(localMember, remoteMembers);
+    return new ClusterConfig<>(localMember, remoteMembers);
   }
 
   /**
@@ -285,7 +284,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
 
   @Override
   public String toString() {
-    return String.format("%s[localMember=%s, remoteMember=%s]", getClass().getSimpleName(), localMember, remoteMembers);
+    return String.format("%s[localMember=%s, remoteMembers=%s]", getClass().getSimpleName(), localMember, remoteMembers);
   }
 
 }

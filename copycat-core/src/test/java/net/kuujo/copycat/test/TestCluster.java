@@ -55,16 +55,16 @@ public class TestCluster {
    * Synchronously starts the test cluster.
    */
   public void start() {
-    for (TestNode node : nodes) {
+    nodes.forEach(node -> {
       LocalClusterConfig config = new LocalClusterConfig();
       config.setLocalMember(node.member());
-      for (TestNode n : nodes) {
+      nodes.forEach(n -> {
         if (!n.id().equals(node.id())) {
           config.addRemoteMember(node.member());
         }
-      }
+      });
       node.start(new LocalCluster(config));
-    }
+    });
   }
 
 }
