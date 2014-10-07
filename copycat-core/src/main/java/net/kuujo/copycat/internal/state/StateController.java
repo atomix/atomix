@@ -182,7 +182,7 @@ abstract class StateController implements RequestHandler {
         for (int i = 0; i < request.entries().size(); i++) {
           CopycatEntry entry = request.<CopycatEntry>entries().get(i);
           CopycatEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
-          if (entry.term() != match.term()) {
+          if (match != null && entry.term() != match.term()) {
             context.log().removeAfter(request.prevLogIndex() + i);
             context.log().appendEntries(request.entries().subList(i, request.entries().size()));
           }

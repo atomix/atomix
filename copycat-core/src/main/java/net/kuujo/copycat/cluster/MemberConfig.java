@@ -16,12 +16,10 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.internal.util.Args;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemberConfig implements Serializable {
+public class MemberConfig {
   private String id;
 
   public MemberConfig() {

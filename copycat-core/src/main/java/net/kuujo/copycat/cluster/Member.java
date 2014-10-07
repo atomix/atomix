@@ -14,13 +14,15 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.io.Serializable;
-
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Member implements Serializable {
+public class Member {
   private final String id;
+
+  public Member() {
+    id = null;
+  }
 
   public Member(String id) {
     this.id = id;
