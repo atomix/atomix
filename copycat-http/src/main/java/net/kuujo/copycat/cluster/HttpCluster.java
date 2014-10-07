@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 
 /**
  * Basic HTTP cluster.
@@ -23,7 +23,7 @@ import net.kuujo.copycat.spi.protocol.Protocol;
  */
 public class HttpCluster extends Cluster<HttpMember> {
 
-  public HttpCluster(Protocol<HttpMember> protocol, ClusterConfig<HttpMember> config) {
+  public HttpCluster(CopycatProtocol<HttpMember> protocol, ClusterConfig<HttpMember> config) {
     super(protocol, config);
   }
 

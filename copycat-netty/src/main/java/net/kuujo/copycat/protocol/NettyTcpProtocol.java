@@ -16,7 +16,7 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
@@ -25,7 +25,7 @@ import net.kuujo.copycat.spi.protocol.ProtocolServer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocol implements Protocol<TcpMember> {
+public class NettyTcpProtocol implements CopycatProtocol<TcpMember> {
   private int threads = 1;
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;

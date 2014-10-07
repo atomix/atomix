@@ -26,7 +26,7 @@ import net.kuujo.copycat.cluster.Member;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol<M extends Member> {
+public interface CopycatProtocol<M extends Member> {
 
   /**
    * Creates a protocol server.

@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 
 /**
  * Basic TCP cluster.
@@ -23,7 +23,7 @@ import net.kuujo.copycat.spi.protocol.Protocol;
  */
 public class TcpCluster extends Cluster<TcpMember> {
 
-  public TcpCluster(Protocol<TcpMember> protocol, ClusterConfig<TcpMember> config) {
+  public TcpCluster(CopycatProtocol<TcpMember> protocol, ClusterConfig<TcpMember> config) {
     super(protocol, config);
   }
 

@@ -15,7 +15,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.internal.util.Args;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.util.Copyable;
 
 import java.util.*;
@@ -26,13 +26,13 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Cluster<M extends Member> extends Observable implements Observer, Copyable<Cluster<M>> {
-  protected final Protocol<M> protocol;
+  protected final CopycatProtocol<M> protocol;
   protected final ClusterConfig<M> config;
   private final M localMember;
   private final Set<M> remoteMembers;
   private final Map<String, M> members;
 
-  public Cluster(Protocol<M> protocol, ClusterConfig<M> config) {
+  public Cluster(CopycatProtocol<M> protocol, ClusterConfig<M> config) {
     this.protocol = Args.checkNotNull(protocol);
     this.config = Args.checkNotNull(config);
     this.localMember = config.getLocalMember();
@@ -92,7 +92,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
    *
    * @return The cluster protocol.
    */
-  public Protocol<M> protocol() {
+  public CopycatProtocol<M> protocol() {
     return protocol;
   }
 

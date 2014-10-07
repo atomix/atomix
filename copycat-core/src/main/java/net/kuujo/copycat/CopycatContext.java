@@ -20,7 +20,7 @@ import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.InMemoryLog;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
@@ -138,7 +138,7 @@ public interface CopycatContext {
   public static class Builder {
     private CopycatConfig config = new CopycatConfig();
     private Cluster cluster;
-    private Protocol protocol;
+    private CopycatProtocol protocol;
     private StateMachine stateMachine;
     private Log log = new InMemoryLog();
 
@@ -294,7 +294,7 @@ public interface CopycatContext {
      * @param protocol The cluster protocol.
      * @return The copycat builder.
      */
-    public Builder withProtocol(Protocol<?> protocol) {
+    public Builder withProtocol(CopycatProtocol<?> protocol) {
       this.protocol = protocol;
       return this;
     }

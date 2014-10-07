@@ -21,8 +21,8 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
-import net.kuujo.copycat.spi.service.Service;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
+import net.kuujo.copycat.spi.service.CopycatService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -95,7 +95,7 @@ public interface Copycat {
    * Copycat builder.
    */
   public static class Builder {
-    private Service service;
+    private CopycatService service;
     private final CopycatContext.Builder builder = CopycatContext.builder();
 
     private Builder() {
@@ -107,7 +107,7 @@ public interface Copycat {
      * @param service The copycat service.
      * @return The copycat builder.
      */
-    public Builder withService(Service service) {
+    public Builder withService(CopycatService service) {
       this.service = service;
       return this;
     }
@@ -261,7 +261,7 @@ public interface Copycat {
      * @param protocol The cluster protocol.
      * @return The copycat builder.
      */
-    public Builder withProtocol(Protocol<?> protocol) {
+    public Builder withProtocol(CopycatProtocol<?> protocol) {
       builder.withProtocol(protocol);
       return this;
     }

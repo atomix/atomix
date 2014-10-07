@@ -15,7 +15,7 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
 /**
@@ -26,7 +26,7 @@ import net.kuujo.copycat.spi.protocol.ProtocolClient;
 public class RemoteNode<M extends Member> extends ClusterNode<M> {
   private final ProtocolClient client;
 
-  public RemoteNode(Protocol<M> protocol, M member) {
+  public RemoteNode(CopycatProtocol<M> protocol, M member) {
     super(member);
     this.client = protocol.createClient(member);
   }

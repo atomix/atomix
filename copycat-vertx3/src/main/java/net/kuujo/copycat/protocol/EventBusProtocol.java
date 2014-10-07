@@ -18,7 +18,7 @@ package net.kuujo.copycat.protocol;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import net.kuujo.copycat.cluster.EventBusMember;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.CountDownLatch;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusProtocol implements Protocol<EventBusMember> {
+public class EventBusProtocol implements CopycatProtocol<EventBusMember> {
   private String host;
   private int port;
   private Vertx vertx;

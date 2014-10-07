@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Service {
+public interface CopycatService {
 
   /**
    * Initializes the service.

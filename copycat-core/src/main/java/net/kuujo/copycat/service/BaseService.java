@@ -15,7 +15,7 @@
 package net.kuujo.copycat.service;
 
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.spi.service.Service;
+import net.kuujo.copycat.spi.service.CopycatService;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -24,7 +24,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class BaseService implements Service {
+abstract class BaseService implements CopycatService {
   protected CopycatContext context;
 
   @Override

@@ -15,7 +15,7 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 /**
@@ -26,7 +26,7 @@ import net.kuujo.copycat.spi.protocol.ProtocolServer;
 public class LocalNode<M extends Member> extends ClusterNode<M> {
   private final ProtocolServer server;
 
-  public LocalNode(Protocol<M> protocol, M member) {
+  public LocalNode(CopycatProtocol<M> protocol, M member) {
     super(member);
     this.server = protocol.createServer(member);
   }
