@@ -35,13 +35,13 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
     this.localNode = new LocalNode<>(this.cluster.protocol(), this.cluster.localMember());
     this.remoteNodes = new HashSet<>(this.cluster.remoteMembers().size());
     this.nodes = new HashMap<>(this.cluster.members().size());
-    cluster.addObserver(this);
-    clusterChanged(cluster);
+    this.cluster.addObserver(this);
+    clusterChanged(this.cluster);
   }
 
   @Override
   public void update(Observable o, Object arg) {
-    clusterChanged((Cluster<M>) cluster);
+    clusterChanged(cluster);
   }
 
   /**

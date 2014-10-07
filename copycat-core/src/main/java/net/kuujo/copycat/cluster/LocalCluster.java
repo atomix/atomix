@@ -27,4 +27,9 @@ public class LocalCluster extends Cluster<Member> {
     super(new LocalProtocol(), config);
   }
 
+  @Override
+  public LocalCluster copy() {
+    return new LocalCluster(config.copy());
+  }
+
 }

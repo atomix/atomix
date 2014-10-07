@@ -25,4 +25,9 @@ public class EventBusCluster extends Cluster<EventBusMember> {
     super(protocol, config);
   }
 
+  @Override
+  public EventBusCluster copy() {
+    return new EventBusCluster(protocol, config.copy());
+  }
+
 }

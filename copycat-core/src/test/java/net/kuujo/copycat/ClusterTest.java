@@ -15,6 +15,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.*;
+import net.kuujo.copycat.internal.cluster.ClusterManager;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -84,6 +85,106 @@ public class ClusterTest {
     Member remoteMember3 = new Member(new MemberConfig("foobarbaz"));
     config.addRemoteMember(remoteMember3);
     assertEquals(remoteMember3, cluster.remoteMember("foobarbaz"));
+  }
+
+  @Test
+  public void testClusterCopy() {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    Member localMember = new Member(new MemberConfig("foo"));
+    config.setLocalMember(localMember);
+    Set<Member> remoteMembers = new HashSet<>(2);
+    Member remoteMember1 = new Member(new MemberConfig("bar"));
+    Member remoteMember2 = new Member(new MemberConfig("baz"));
+    remoteMembers.add(remoteMember1);
+    remoteMembers.add(remoteMember2);
+    config.setRemoteMembers(remoteMembers);
+    Cluster<Member> cluster = new LocalCluster(config);
+    Cluster<Member> copy = cluster.copy();
+    assertNotSame(copy, cluster);
+    assertEquals(cluster.localMember(), copy.localMember());
+    assertEquals(cluster.remoteMembers(), copy.remoteMembers());
+  }
+
+  @Test
+  public void testClusterCopyConfiguration() {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    Member localMember = new Member(new MemberConfig("foo"));
+    config.setLocalMember(localMember);
+    Set<Member> remoteMembers = new HashSet<>(2);
+    Member remoteMember1 = new Member(new MemberConfig("bar"));
+    Member remoteMember2 = new Member(new MemberConfig("baz"));
+    remoteMembers.add(remoteMember1);
+    remoteMembers.add(remoteMember2);
+    config.setRemoteMembers(remoteMembers);
+    ClusterConfig<Member> copy = config.copy();
+    assertNotSame(copy, config);
+    assertEquals(config.getLocalMember(), copy.getLocalMember());
+    assertEquals(config.getRemoteMembers(), copy.getRemoteMembers());
+  }
+
+  @Test
+  public void testClusterManager() {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    Member localMember = new Member(new MemberConfig("foo"));
+    config.setLocalMember(localMember);
+    Set<Member> remoteMembers = new HashSet<>(2);
+    Member remoteMember1 = new Member(new MemberConfig("bar"));
+    Member remoteMember2 = new Member(new MemberConfig("baz"));
+    remoteMembers.add(remoteMember1);
+    remoteMembers.add(remoteMember2);
+    config.setRemoteMembers(remoteMembers);
+    Cluster<Member> cluster = new LocalCluster(config);
+    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster);
+    assertEquals(localMember, clusterManager.localNode().member());
+    assertEquals(2, clusterManager.remoteNodes().size());
+    assertEquals(remoteMember1, clusterManager.remoteNode("bar").member());
+    assertEquals(remoteMember2, clusterManager.remoteNode("baz").member());
+  }
+
+  @Test
+  public void testClusterManagerNotExternallyConfigurable() {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    Member localMember = new Member(new MemberConfig("foo"));
+    config.setLocalMember(localMember);
+    Set<Member> remoteMembers = new HashSet<>(2);
+    Member remoteMember1 = new Member(new MemberConfig("bar"));
+    Member remoteMember2 = new Member(new MemberConfig("baz"));
+    remoteMembers.add(remoteMember1);
+    remoteMembers.add(remoteMember2);
+    config.setRemoteMembers(remoteMembers);
+    Cluster<Member> cluster = new LocalCluster(config);
+    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster);
+    assertEquals(localMember, clusterManager.localNode().member());
+    assertEquals(2, clusterManager.remoteNodes().size());
+    assertEquals(remoteMember1, clusterManager.remoteNode("bar").member());
+    assertEquals(remoteMember2, clusterManager.remoteNode("baz").member());
+    Member remoteMember3 = new Member(new MemberConfig("foobarbaz"));
+    config.addRemoteMember(remoteMember3);
+    assertEquals(remoteMember3, cluster.remoteMember("foobarbaz"));
+    assertNull(clusterManager.remoteNode("foobarbaz"));
+  }
+
+  @Test
+  public void testClusterManagerInternalReconfigure() {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    Member localMember = new Member(new MemberConfig("foo"));
+    config.setLocalMember(localMember);
+    Set<Member> remoteMembers = new HashSet<>(2);
+    Member remoteMember1 = new Member(new MemberConfig("bar"));
+    Member remoteMember2 = new Member(new MemberConfig("baz"));
+    remoteMembers.add(remoteMember1);
+    remoteMembers.add(remoteMember2);
+    config.setRemoteMembers(remoteMembers);
+    Cluster<Member> cluster = new LocalCluster(config);
+    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster);
+    assertEquals(localMember, clusterManager.localNode().member());
+    assertEquals(2, clusterManager.remoteNodes().size());
+    assertEquals(remoteMember1, clusterManager.remoteNode("bar").member());
+    assertEquals(remoteMember2, clusterManager.remoteNode("baz").member());
+    Member remoteMember3 = new Member(new MemberConfig("foobarbaz"));
+    clusterManager.cluster().config().addRemoteMember(remoteMember3);
+    assertEquals(remoteMember3, clusterManager.cluster().remoteMember("foobarbaz"));
+    assertEquals(remoteMember3, clusterManager.remoteNode("foobarbaz").member());
   }
 
 }

@@ -14,12 +14,10 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.util.Copyable;
-import net.kuujo.copycat.internal.util.Args;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -28,15 +26,11 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Cluster<M extends Member> extends Observable implements Observer, Copyable<Cluster<M>> {
-  private final Protocol<M> protocol;
-  private final ClusterConfig<M> config;
+  protected final Protocol<M> protocol;
+  protected final ClusterConfig<M> config;
   private final M localMember;
   private final Set<M> remoteMembers;
   private final Map<String, M> members;
-
-  public Cluster(Cluster<M> cluster) {
-    this(cluster.protocol, cluster.config.copy());
-  }
 
   public Cluster(Protocol<M> protocol, ClusterConfig<M> config) {
     this.protocol = Args.checkNotNull(protocol);
@@ -52,16 +46,12 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
   @Override
   @SuppressWarnings("unchecked")
   public Cluster<M> copy() {
-    try {
-      return getClass().getConstructor(new Class<?>[]{getClass()}).newInstance(this);
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new CopycatException(e);
-    }
+    return new Cluster(protocol, config.copy());
   }
 
   @Override
   public void update(Observable o, Object arg) {
-    clusterChanged((ClusterConfig<M>) config);
+    clusterChanged(config);
   }
 
   /**

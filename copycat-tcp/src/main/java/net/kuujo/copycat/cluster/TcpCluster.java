@@ -27,4 +27,9 @@ public class TcpCluster extends Cluster<TcpMember> {
     super(protocol, config);
   }
 
+  @Override
+  public TcpCluster copy() {
+    return new TcpCluster(protocol, config.copy());
+  }
+
 }

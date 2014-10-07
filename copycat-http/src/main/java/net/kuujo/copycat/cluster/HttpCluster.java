@@ -27,4 +27,9 @@ public class HttpCluster extends Cluster<HttpMember> {
     super(protocol, config);
   }
 
+  @Override
+  public HttpCluster copy() {
+    return new HttpCluster(protocol, config.copy());
+  }
+
 }
