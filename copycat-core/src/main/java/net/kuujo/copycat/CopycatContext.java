@@ -46,16 +46,7 @@ import java.util.concurrent.CompletableFuture;
  * Cluster<Member> cluster = new LocalCluster(config);
  * CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
  * context.start();
- * context.submitCommand("put", "foo").thenRun(() -> System.out.println("PUT 'foo'"));
- * }
- *
- * Copycat also exposes a fluent interface for reacting on internal events. This can be useful for detecting cluster
- * membership or leadership changes, for instance:<p>
- *
- * {@code
- * copycat.on().membershipChange(event -> {
- *   System.out.println("Membership changed: " + event.members());
- * });
+ * context.submitCommand("put", "foo").thenRun(System.ou;
  * }
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
