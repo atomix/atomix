@@ -96,7 +96,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
    */
   @SuppressWarnings("unchecked")
   public <T extends ClusterNode<M>> T node(String id) {
-    return (T) nodes.get(id);
+    return localNode.member().id().equals(id) ? (T) localNode : (T) nodes.get(id);
   }
 
   /**
