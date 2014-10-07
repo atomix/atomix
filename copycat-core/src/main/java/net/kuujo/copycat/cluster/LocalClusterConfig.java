@@ -88,4 +88,26 @@ public class LocalClusterConfig extends ClusterConfig<Member> {
     return this;
   }
 
+  /**
+   * Adds a remote member to the cluster configuration.
+   *
+   * @param id The remote member ID.
+   * @return The cluster configuration.
+   */
+  public LocalClusterConfig addRemoteMember(String id) {
+    addRemoteMember(new Member(id));
+    return this;
+  }
+
+  /**
+   * Removes a remote member from the cluster configuration.
+   *
+   * @param id The remote member ID.
+   * @return The cluster configuration.
+   */
+  public LocalClusterConfig removeRemoteMember(String id) {
+    removeRemoteMember(new Member(id));
+    return this;
+  }
+
 }

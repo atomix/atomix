@@ -40,7 +40,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class CandidateController extends StateController {
+public class CandidateController extends StateController {
   private static final Logger logger = Logger.getLogger(CandidateController.class.getCanonicalName());
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;

@@ -16,9 +16,10 @@
 package net.kuujo.copycat.test;
 
 import net.kuujo.copycat.CopycatConfig;
-import net.kuujo.copycat.spi.protocol.Protocol;
-import net.kuujo.copycat.state.State;
-import net.kuujo.copycat.state.impl.*;
+import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.internal.state.*;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -30,10 +31,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class TestNode {
   private final TestNodeEvents events;
-  private CopycatStateContext context;
+  private StateContext context;
   private String id;
-  private MemberConfig config;
-  private State.Type state;
+  private Member member;
+  private CopycatState state;
   private TestStateMachine stateMachine;
   private TestLog log;
   private String leader;
@@ -44,7 +45,7 @@ public class TestNode {
 
   public TestNode(String id) {
     this.id = id;
-    this.config = new MemberConfig(id);
+    this.member = new Member(id);
     this.events = new TestNodeEvents(this);
   }
 
@@ -62,8 +63,8 @@ public class TestNode {
    *
    * @return The node configuration.
    */
-  public MemberConfig config() {
-    return config;
+  public Member member() {
+    return member;
   }
 
   /**
@@ -72,7 +73,7 @@ public class TestNode {
    * @param state The initial node state.
    * @return The test node.
    */
-  public TestNode withState(State.Type state) {
+  public TestNode withState(CopycatState state) {
     this.state = state;
     return this;
   }
@@ -178,7 +179,7 @@ public class TestNode {
   /**
    * Returns the node context.
    */
-  public CopycatStateContext instance() {
+  public StateContext instance() {
     return context;
   }
 
@@ -186,32 +187,31 @@ public class TestNode {
    * Starts the node.
    *
    * @param cluster The cluster configuration.
-   * @param protocol The cluster protocol.
    */
-  public <M extends MemberConfig> void start(ClusterConfig<M> cluster, Protocol<M> protocol) {
-    context = new CopycatStateContext(stateMachine, log, cluster, protocol, new CopycatConfig());
-    context.setCurrentLeader(leader);
-    context.setCurrentTerm(term);
-    context.setLastVotedFor(votedFor);
-    context.setCommitIndex(commitIndex);
-    context.setLastApplied(lastApplied);
+  public <M extends Member> void start(Cluster<M> cluster) {
+    context = new StateContext(stateMachine, log, cluster, new CopycatConfig());
+    context.currentLeader(leader);
+    context.currentTerm(term);
+    context.lastVotedFor(votedFor);
+    context.commitIndex(commitIndex);
+    context.lastApplied(lastApplied);
     switch (state) {
       case NONE:
-        context.transition(None.class);
+        context.transition(NoneController.class);
         break;
       case FOLLOWER:
-        context.transition(Follower.class);
+        context.transition(FollowerController.class);
         break;
       case CANDIDATE:
-        context.transition(Candidate.class);
+        context.transition(CandidateController.class);
         break;
       case LEADER:
-        context.transition(Leader.class);
+        context.transition(LeaderController.class);
         break;
     }
 
     final CountDownLatch latch = new CountDownLatch(1);
-    context.cluster().localMember().server().start().whenCompleteAsync((result, error) -> latch.countDown());
+    context.clusterManager().localNode().server().listen().whenCompleteAsync((result, error) -> latch.countDown());
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {

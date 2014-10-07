@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.LocalCluster;
+import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.protocol.LocalProtocol;
@@ -64,14 +66,14 @@ class CopyCatTest {
     LocalProtocol protocol = new LocalProtocol();
     Set<DefaultCopycatContext> instances = new HashSet<>(numInstances);
     for (int i = 1; i <= numInstances; i++) {
-      ClusterConfig<MemberConfig> cluster = new ClusterConfig<>();
-      cluster.setLocalMember(new MemberConfig(String.valueOf(i)));
+      LocalClusterConfig config = new LocalClusterConfig();
+      config.setLocalMember(String.valueOf(i));
       for (int j = 1; j <= numInstances; j++) {
         if (j != i) {
-          cluster.addRemoteMember(new MemberConfig(String.valueOf(i)));
+          config.addRemoteMember(String.valueOf(i));
         }
       }
-      instances.add(new DefaultCopycatContext(new TestStateMachine(), new InMemoryLog(), cluster, protocol, new CopycatConfig().withMaxLogSize(1000)));
+      instances.add(new DefaultCopycatContext(new TestStateMachine(), new InMemoryLog(), new LocalCluster(config), new CopycatConfig().withMaxLogSize(1000)));
     }
     return instances;
   }

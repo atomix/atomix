@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.test;
 
-import net.kuujo.copycat.spi.protocol.Protocol;
-import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.cluster.LocalCluster;
+import net.kuujo.copycat.cluster.LocalClusterConfig;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -55,16 +55,15 @@ public class TestCluster {
    * Synchronously starts the test cluster.
    */
   public void start() {
-    Protocol<MemberConfig> protocol = new LocalProtocol();
     for (TestNode node : nodes) {
-      ClusterConfig<MemberConfig> cluster = new ClusterConfig<>();
-      cluster.setLocalMember(node.config());
+      LocalClusterConfig config = new LocalClusterConfig();
+      config.setLocalMember(node.member());
       for (TestNode n : nodes) {
         if (!n.id().equals(node.id())) {
-          cluster.addRemoteMember(node.config());
+          config.addRemoteMember(node.member());
         }
       }
-      node.start(cluster, protocol);
+      node.start(new LocalCluster(config));
     }
   }
 

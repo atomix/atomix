@@ -15,27 +15,27 @@
  */
 package net.kuujo.copycat;
 
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-
-import net.kuujo.copycat.log.Compactable;
-import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.log.EntryType;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.internal.log.CommandEntry;
-import net.kuujo.copycat.internal.log.ConfigurationEntry;
-import net.kuujo.copycat.internal.log.NoOpEntry;
-import net.kuujo.copycat.internal.log.SnapshotEntry;
-
-import org.junit.Assert;
-import org.junit.Test;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.internal.log.CommandEntry;
+import net.kuujo.copycat.internal.log.ConfigurationEntry;
+import net.kuujo.copycat.internal.log.NoOpEntry;
+import net.kuujo.copycat.internal.log.SnapshotEntry;
+import net.kuujo.copycat.log.Compactable;
+import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.EntryType;
+import net.kuujo.copycat.log.Log;
+import org.junit.Assert;
+import org.junit.Test;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 
 
 /**
@@ -75,22 +75,22 @@ public class LogTest {
 
   @Test
   public void testSerializeConfigurationEntry() throws Exception {
-    testSerializeEntry(ConfigurationEntry.class, new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    testSerializeEntry(ConfigurationEntry.class, new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
   }
 
   @Test
   public void testDeserializeConfigurationEntry() throws Exception {
-    testDeserializeEntry(ConfigurationEntry.class, new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    testDeserializeEntry(ConfigurationEntry.class, new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
   }
 
   @Test
   public void testSerializeSnapshotEntry() throws Exception {
-    testSerializeEntry(SnapshotEntry.class, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz")), new byte[]{1, 2, 3}));
+    testSerializeEntry(SnapshotEntry.class, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz")), new byte[]{1, 2, 3}));
   }
 
   @Test
   public void testDeserializeSnapshotEntry() throws Exception {
-    testSerializeEntry(SnapshotEntry.class, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz")), new byte[]{1, 2, 3}));
+    testSerializeEntry(SnapshotEntry.class, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz")), new byte[]{1, 2, 3}));
   }
 
   @SuppressWarnings("rawtypes")
@@ -152,7 +152,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
@@ -168,7 +168,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
@@ -184,7 +184,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
@@ -199,7 +199,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
@@ -215,7 +215,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
@@ -241,7 +241,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
@@ -250,7 +250,7 @@ public class LogTest {
     index = log.appendEntry(new CommandEntry(1, "baz", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 5);
     if (log instanceof Compactable) {
-      ((Compactable) log).compact(3, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz")), "Hello world!".getBytes()));
+      ((Compactable) log).compact(3, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
       Assert.assertTrue(log.size() == 3);
       Assert.assertTrue(log.firstIndex() == 3);
       Assert.assertTrue(log.lastIndex() == 5);
@@ -274,7 +274,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
@@ -283,7 +283,7 @@ public class LogTest {
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 5);
     if (log instanceof Compactable) {
-      ((Compactable) log).compact(5, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz")), "Hello world!".getBytes()));
+      ((Compactable) log).compact(5, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
       Assert.assertTrue(log.size() == 1);
       Assert.assertTrue(log.firstIndex() == 5);
       Assert.assertTrue(log.lastIndex() == 5);
@@ -301,7 +301,7 @@ public class LogTest {
     long index;
     index = log.appendEntry(new NoOpEntry(1));
     Assert.assertTrue(index == 1);
-    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new MemberConfig("foo")).withRemoteMembers(new MemberConfig("bar"), new MemberConfig("baz"))));
+    index = log.appendEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     Assert.assertTrue(index == 2);
     index = log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
     Assert.assertTrue(index == 3);
