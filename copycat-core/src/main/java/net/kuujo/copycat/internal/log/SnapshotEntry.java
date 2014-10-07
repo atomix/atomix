@@ -98,7 +98,7 @@ public class SnapshotEntry extends CopycatEntry {
     public SnapshotEntry read(Kryo kryo, Input input, Class<SnapshotEntry> type) {
       SnapshotEntry entry = new SnapshotEntry();
       entry.term = input.readLong();
-      entry.cluster = kryo.readObject(input, ClusterConfig.class);
+      entry.cluster = (ClusterConfig) kryo.readClassAndObject(input);
       int length = input.readInt();
       entry.data = new byte[length];
       input.readBytes(entry.data);
@@ -107,7 +107,7 @@ public class SnapshotEntry extends CopycatEntry {
     @Override
     public void write(Kryo kryo, Output output, SnapshotEntry entry) {
       output.writeLong(entry.term);
-      kryo.writeObject(output, entry.cluster);
+      kryo.writeClassAndObject(output, entry.cluster);
       output.writeInt(entry.data.length);
       output.writeBytes(entry.data);
     }

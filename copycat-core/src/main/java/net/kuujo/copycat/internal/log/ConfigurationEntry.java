@@ -84,13 +84,13 @@ public class ConfigurationEntry extends CopycatEntry {
     public ConfigurationEntry read(Kryo kryo, Input input, Class<ConfigurationEntry> type) {
       ConfigurationEntry entry = new ConfigurationEntry();
       entry.term = input.readLong();
-      entry.cluster = kryo.readObject(input, ClusterConfig.class);
+      entry.cluster = (ClusterConfig) kryo.readClassAndObject(input);
       return entry;
     }
     @Override
     public void write(Kryo kryo, Output output, ConfigurationEntry entry) {
       output.writeLong(entry.term);
-      kryo.writeObject(output, entry.cluster);
+      kryo.writeClassAndObject(output, entry.cluster);
     }
   }
 
