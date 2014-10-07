@@ -21,13 +21,11 @@ import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.MemoryMappedFileLog;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import org.junit.Assert;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -75,7 +73,7 @@ class CopyCatTest {
           config.addRemoteMember(String.valueOf(j));
         }
       }
-      instances.add(new DefaultCopycatContext(new TestStateMachine(), new InMemoryLog(), new Cluster<Member>(protocol, config), new CopycatConfig().withMaxLogSize(1000)));
+      instances.add(new DefaultCopycatContext(new TestStateMachine(), new MemoryMappedFileLog(UUID.randomUUID().toString()), new Cluster<Member>(protocol, config), new CopycatConfig().withMaxLogSize(1000)));
     }
     return instances;
   }

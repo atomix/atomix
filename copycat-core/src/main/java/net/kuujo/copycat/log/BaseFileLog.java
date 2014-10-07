@@ -42,7 +42,7 @@ abstract class BaseFileLog extends BaseLog {
     File logFile = null;
     long logTime = 0;
     for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(File::isFile)) {
-      if (file.getName().substring(0, file.getName().indexOf('.')).equals(baseFile.getName())) {
+      if (file.getName().contains(".") && file.getName().substring(0, file.getName().indexOf('.')).equals(baseFile.getName())) {
         try {
           long fileTime = fileNameFormat.parse(file.getName().substring(file.getName().indexOf('.') + 1, file.getName().indexOf('.', file.getName().indexOf('.') + 1))).getTime();
           if (fileTime > logTime) {

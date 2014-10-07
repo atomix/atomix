@@ -29,7 +29,7 @@ import org.junit.Before;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PersistentLogTest extends LogTest {
+public class MemoryMappedFileLogTest extends LogTest {
   private Log log;
 
   @Before
