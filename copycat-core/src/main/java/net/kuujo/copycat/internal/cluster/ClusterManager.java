@@ -20,7 +20,25 @@ import net.kuujo.copycat.cluster.Member;
 import java.util.*;
 
 /**
- * Cluster manager.
+ * Cluster manager.<p>
+ *
+ * This is an internal helper class which controls connections to all configured nodes within a cluster. Copycat's
+ * handling of cluster configuration changes dictates explicit separation from the user-facing
+ * {@link net.kuujo.copycat.cluster.Cluster} type. The {@code ClusterManager} allows Copycat to essentially maintain
+ * two instances of the cluster configuration, one which is accessible to the user and one which is purely internal
+ * and is based on the replicated log. When the {@code ClusterManager} is first constructed from the user-provided
+ * {@link net.kuujo.copycat.cluster.Cluster}, the {@code Cluster} is immediately copied and the {@code ClusterManager}
+ * begins observing the {@link java.util.Observable} <em>copy</em> of the cluster configuration. This prevents user
+ * changes to the external {@link net.kuujo.copycat.cluster.ClusterConfig} from being propagated to the internal
+ * {@code ClusterManager} through the observable chain. Instead, the {@code ClusterManager} exposes the copied
+ * {@link Cluster} for modification by internal Copycat code. This is the path through which Copycat updates the
+ * real cluster configuration.<p>
+ *
+ * When a Copycat node observes a user cluster configuration change, the change may be appended to the replicated log.
+ * All changes to the {@code ClusterManager}'s {@link net.kuujo.copycat.cluster.Cluster} <em>must only be the result
+ * of the application of a configuration entry.</em> When the logged configuration is replicated and the entry is applied,
+ * the cluster manager's {@link net.kuujo.copycat.cluster.Cluster} configuration is updated and the change is propagated
+ * up to the manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -137,6 +155,23 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
    */
   public Set<RemoteNode<M>> remoteNodes() {
     return remoteNodes;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof ClusterManager) {
+      ClusterManager<?> clusterManager = (ClusterManager<?>) object;
+      return clusterManager.localNode.equals(localNode) && clusterManager.remoteNodes.equals(remoteNodes);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 79;
+    hashCode = 37 * hashCode + localNode.hashCode();
+    hashCode = 37 * hashCode + remoteNodes.hashCode();
+    return hashCode;
   }
 
   @Override

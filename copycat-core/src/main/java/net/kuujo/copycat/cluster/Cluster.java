@@ -21,7 +21,27 @@ import net.kuujo.copycat.util.Copyable;
 import java.util.*;
 
 /**
- * Cluster.
+ * Immutable cluster configuration.<p>
+ *
+ * The {@code Cluster} is an immutable cluster configuration that is ultimately based on a mutable configuration. Each
+ * {@code Cluster} is related to a specific {@link net.kuujo.copycat.cluster.Member} type and
+ * {@link net.kuujo.copycat.spi.protocol.CopycatProtocol}. This allows Copycat's communication model to be effectively
+ * altered based on the protocol implementation. For instance, for HTTP protocols, an {@code HttpMember} will be required
+ * by the {@code HttpCluster} in order to provide the {@code host} and {@code port} required for operating the TCP
+ * protocol.<p>
+ *
+ * All Copycat clusters are modifiable even while the cluster is running. When the underlying
+ * {@link net.kuujo.copycat.cluster.ClusterConfig} is changed by the user, the {@code Cluster} membership will be
+ * automatically updated. Additionally, when the {@code Cluster} membership changes, Copycat will detect the change
+ * via an {@link java.util.Observer} and update the Copycat cluster's internal configuration safely. However, it's
+ * important to note that changes to the {@code Cluster} or its underlying {@link net.kuujo.copycat.cluster.ClusterConfig}
+ * may not necessarily be represented in the actual Copycat cluster. Copycat directs all cluster membership changes
+ * through the cluster leader and does so in a safe manner. This means that cluster configuration changes must occur
+ * only on the leader node for the time being (this will be changed in the future), and configuration changes on follower
+ * nodes will be essentially ignored unless they occur prior to starting the cluster.<p>
+ *
+ * Copycat core provides a {@link net.kuujo.copycat.cluster.LocalCluster} for performing inter-thread communication.
+ * This cluster type should be used in testing environments only.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

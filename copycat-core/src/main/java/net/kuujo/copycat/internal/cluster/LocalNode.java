@@ -19,7 +19,10 @@ import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 /**
- * Local node manager.
+ * Local node reference.<p>
+ *
+ * This type provides the interface for a local node via the appropriate
+ * {@link net.kuujo.copycat.spi.protocol.ProtocolServer} instance.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -38,6 +41,23 @@ public class LocalNode<M extends Member> extends ClusterNode<M> {
    */
   public ProtocolServer server() {
     return server;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof LocalNode && ((ClusterNode<?>) object).member().equals(member());
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 181;
+    hashCode = 37 * hashCode + member().hashCode();
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("LocalNode[member=%s]", member());
   }
 
 }

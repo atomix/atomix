@@ -23,7 +23,13 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
- * Cluster configuration.
+ * Cluster configuration.<p>
+ *
+ * The {@code ClusterConfig} is a mutable configuration that underlies each {@link net.kuujo.copycat.cluster.Cluster}
+ * instance. {@code ClusterConfig} is an {@link java.util.Observable} type and is automatically observed for changes
+ * by any {@link net.kuujo.copycat.cluster.Cluster} instance. This means that when a change to a {@code ClusterConfig}
+ * is made, the owning {@link net.kuujo.copycat.cluster.Cluster} (if any) is notified and automatically updates its
+ * immutable internal configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

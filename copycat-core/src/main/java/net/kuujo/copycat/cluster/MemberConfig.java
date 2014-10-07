@@ -17,6 +17,15 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.internal.util.Args;
 
 /**
+ * Cluster member configuration.<p>
+ *
+ * Member configurations are the mutable configurations that underly Copycat cluster members. In most cases, each
+ * cluster {@link net.kuujo.copycat.cluster.Member} type will have an associated mutable {@code MemberConfig}. Each
+ * member configuration must provide a unique identifier. However, in many cases construction of the unique identifier
+ * may be handled by a specific {@code MemberConfig} implementation. For instance, the {@code TcpMemberConfig}
+ * constructs the unique {@code id} from a combination of {@code host} and {@code port}. Consult the configuration
+ * documentation for specific requirements of each member configuration type.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemberConfig {

@@ -17,7 +17,10 @@ package net.kuujo.copycat.internal.cluster;
 import net.kuujo.copycat.cluster.Member;
 
 /**
- * Node manager.
+ * Cluster node.<p>
+ *
+ * This is an abstract type for local or remote node references. Cluster nodes assist in internal communication by
+ * exposing appropriate protocol interfaces.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

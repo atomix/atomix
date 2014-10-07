@@ -19,7 +19,10 @@ import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
 /**
- * Remote node manager.
+ * Remote node reference.<p>
+ *
+ * This type provides the interface for interacting with a remote note by exposing the appripriate
+ * {@link net.kuujo.copycat.spi.protocol.ProtocolClient} instance.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -38,6 +41,23 @@ public class RemoteNode<M extends Member> extends ClusterNode<M> {
    */
   public ProtocolClient client() {
     return client;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof RemoteNode && ((ClusterNode<?>) object).member().equals(member());
+  }
+
+  @Override
+  public int hashCode() {
+    int hashCode = 191;
+    hashCode = 37 * hashCode + member().hashCode();
+    return hashCode;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("RemoteNode[member=%s]", member());
   }
 
 }

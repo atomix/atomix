@@ -15,6 +15,13 @@
 package net.kuujo.copycat.cluster;
 
 /**
+ * Cluster member.<p>
+ *
+ * Each Copycat cluster is made up of any number of @{code Member} nodes. The {@code Member} is essentially an immutable
+ * single-node configuration based on a mutable {@link net.kuujo.copycat.cluster.MemberConfig}. Members and their
+ * configuration implementations can differ based on the protocol which they support. For instance, a {@code TcpMember}
+ * might provide a {@code host} and {@code port} as required by the TCP protocol.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Member {
