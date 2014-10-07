@@ -333,7 +333,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
       output.clear();
       appender.finish();
   
-      // Iterate through entries equal to or greater than the given index and copy them to the new chronicle.
+      // Iterate through entries greater than the given index and copy them to the new chronicle.
       long matchIndex = findAbsoluteIndex(index);
       tailer.index(matchIndex);
       while (tailer.nextIndex()) {
