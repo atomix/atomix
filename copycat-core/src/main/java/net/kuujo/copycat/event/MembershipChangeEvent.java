@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.event;
 
+import net.kuujo.copycat.cluster.Member;
+
 import java.util.Set;
 
 /**

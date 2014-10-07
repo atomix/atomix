@@ -237,7 +237,7 @@ public final class StateContext {
       leaderClient = null;
     } else if (!isLeader()) {
       leaderConnected = false;
-      leaderClient = clusterManager.<RemoteNode<?>>node(currentLeader).client();
+      leaderClient = ((RemoteNode<?>) clusterManager.node(currentLeader)).client();
       leaderClient.connect().thenRun(() -> {
         leaderConnected = true;
         runLeaderConnectCallbacks();

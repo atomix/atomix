@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.test;
 
+import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.event.EventHandler;
 import net.kuujo.copycat.event.LeaderElectEvent;
 import net.kuujo.copycat.event.StateChangeEvent;
-import net.kuujo.copycat.state.State;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -67,7 +67,7 @@ public class TestNodeEvents {
     node.instance().events().leaderElect().registerHandler(new EventHandler<LeaderElectEvent>() {
       @Override
       public void handle(LeaderElectEvent event) {
-        if (event.leader().equals(node.config())) {
+        if (event.leader().equals(node.id())) {
           node.instance().events().leaderElect().unregisterHandler(this);
           latch.countDown();
         }
@@ -87,7 +87,7 @@ public class TestNodeEvents {
    * @param state The state for which to listen.
    * @return The events object.
    */
-  public TestNodeEvents transition(final State.Type state) {
+  public TestNodeEvents transition(final CopycatState state) {
     final CountDownLatch latch = new CountDownLatch(1);
     node.instance().events().stateChange().registerHandler(new EventHandler<StateChangeEvent>() {
       @Override
