@@ -21,7 +21,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * State machine command information.
+ * State machine command annotation.<p>
+ *
+ * This annotation is used to identify commands within a {@link net.kuujo.copycat.StateMachine} implementation. Copycat
+ * uses the {@code Command} annotation to locate command methods and type information.<p>
+ *
+ * State machine commands can be one of three types: {@code READ}, {@code WRITE}, or {@code READ_WRITE}, and
+ * Copycat's behavior is altered by the type of a given command. Command types are identified by a
+ * {@link net.kuujo.copycat.Command.Type} enum value of the {@code type} field of this annotation. By default, all
+ * commands are {@code READ_WRITE} unless otherwise specified. However, it is highly recommended that command types be
+ * explicitly annotated. Copycat can provide significant performance optimizations given proper type information. For
+ * instance, for read-only commands, Copycat will forgo unnecessary replication of command submissions.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
