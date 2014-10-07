@@ -24,7 +24,6 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.internal.event.DefaultEvents;
 import net.kuujo.copycat.internal.state.StateContext;
-import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
 
 import java.util.concurrent.CompletableFuture;
@@ -70,19 +69,7 @@ public class DefaultCopycatContext implements CopycatContext {
   private final StateContext state;
   private final Events events;
 
-  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Cluster<M> cluster) {
-    this(stateMachine, new InMemoryLog(), cluster, new CopycatConfig());
-  }
-
-  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Cluster<M> cluster, CopycatConfig config) {
-    this(stateMachine, new InMemoryLog(), cluster, config);
-  }
-
-  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Log log, Cluster<M> cluster) {
-    this(stateMachine, log, cluster, new CopycatConfig());
-  }
-
-  public <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
+  <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
     this.cluster = cluster;
     this.config = config;
     this.state = new StateContext(stateMachine, log, cluster, config);

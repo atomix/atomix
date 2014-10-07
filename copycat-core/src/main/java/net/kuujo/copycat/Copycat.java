@@ -16,20 +16,47 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.internal.DefaultCopycat;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.spi.CopycatFactory;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.spi.service.CopycatService;
 
+import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Copycat service.<p>
+ *
+ * This is the primary type for implementing full remote services on top of Copycat. A {@code Copycat} instance consists
+ * of a {@link net.kuujo.copycat.CopycatContext} which controls logging and replication and a
+ * {@link net.kuujo.copycat.spi.service.CopycatService} which exposes an endpoint through which commands can be
+ * submitted to the Copycat cluster.<p>
+ *
+ * The {@code Copycat} constructor requires a {@link net.kuujo.copycat.CopycatContext} and
+ * {@link net.kuujo.copycat.spi.service.CopycatService}:<p>
+ *
+ * {@code
+ * StateMachine stateMachine = new MyStateMachine();
+ * Log log = new MemoryMappedFileLog("data.log");
+ * ClusterConfig<Member> config = new LocalClusterConfig();
+ * config.setLocalMember("foo");
+ * config.setRemoteMembers("bar", "baz");
+ * Cluster<Member> cluster = new LocalCluster(config);
+ * CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
+ *
+ * CopycatService service = new HttpService("localhost", 8080);
+ *
+ * Copycat copycat = Copycat.copycat(service, context);
+ * copycat.start();
+ * }
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Copycat {
+  static final CopycatFactory factory = ServiceLoader.load(CopycatFactory.class).iterator().next();
 
   /**
    * Returns a new copycat builder.
@@ -38,6 +65,31 @@ public interface Copycat {
    */
   static Builder builder() {
     return new Builder();
+  }
+
+  /**
+   * Creates a new Copycat instance.
+   *
+   * @param service The Copycat service.
+   * @param context The Copycat context.
+   * @return A new Copycat instance.
+   */
+  static Copycat copycat(CopycatService service, CopycatContext context) {
+    return factory.createCopycat(service, context);
+  }
+
+  /**
+   * Creates a new Copycat instance.
+   *
+   * @param service The Copycat service.
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster.
+   * @param config The Copycat configuration.
+   * @return A new Copycat instance.
+   */
+  static Copycat copycat(CopycatService service, StateMachine stateMachine, Log log, Cluster<?> cluster, CopycatConfig config) {
+    return factory.createCopycat(service, CopycatContext.context(stateMachine, log, cluster, config));
   }
 
   /**
@@ -294,7 +346,7 @@ public interface Copycat {
      * @return The copycat instance.
      */
     public Copycat build() {
-      return new DefaultCopycat(service, builder.build());
+      return copycat(service, builder.build());
     }
 
     @Override

@@ -16,13 +16,8 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.service.CopycatService;
 
 import java.util.concurrent.CompletableFuture;
@@ -39,13 +34,7 @@ public class DefaultCopycat implements Copycat {
   private final CopycatService service;
   private final CopycatContext context;
 
-  public <M extends Member> DefaultCopycat(CopycatService service, StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
-    this.context = new DefaultCopycatContext(stateMachine, log, cluster, config);
-    this.service = service;
-    this.service.init(context);
-  }
-
-  public DefaultCopycat(CopycatService service, CopycatContext context) {
+  DefaultCopycat(CopycatService service, CopycatContext context) {
     this.service = service;
     this.context = context;
     this.service.init(context);

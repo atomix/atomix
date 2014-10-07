@@ -18,19 +18,41 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.internal.DefaultCopycatContext;
-import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.InMemoryLog;
-import net.kuujo.copycat.spi.protocol.CopycatProtocol;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.spi.CopycatContextFactory;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
+import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 
+import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Copycat context.<p>
+ *
+ * The Copycat context is the core of Copycat's functionality. Contexts are startable objects that, once started,
+ * accept commands via the {@link CopycatContext#submitCommand(String, Object...)} method. Each context contains a
+ * {@link net.kuujo.copycat.StateMachine}, {@link net.kuujo.copycat.log.Log}, and
+ * {@link net.kuujo.copycat.cluster.Cluster}, each of which are required for the operation of the system.<p>
+ *
+ * {@code
+ * StateMachine stateMachine = new MyStateMachine();
+ * Log log = new MemoryMappedFileLog("data.log");
+ * ClusterConfig<Member> config = new LocalClusterConfig();
+ * config.setLocalMember("foo");
+ * config.setRemoteMembers("bar", "baz");
+ * Cluster<Member> cluster = new LocalCluster(config);
+ * CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
+ * context.start();
+ * context.submitCommand("put", "foo").thenRun(() -> System.out.println("PUT 'foo'"));
+ * }
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface CopycatContext {
+  static final CopycatContextFactory factory = ServiceLoader.load(CopycatContextFactory.class).iterator().next();
 
   /**
    * Returns a new context builder.
@@ -39,6 +61,42 @@ public interface CopycatContext {
    */
   static Builder builder() {
     return new Builder();
+  }
+
+  /**
+   * Creates a new Copycat context.
+   *
+   * @param stateMachine The Copycat state machine.
+   * @param cluster The Copycat cluster.
+   * @return A new Copycat context.
+   */
+  static CopycatContext context(StateMachine stateMachine, Cluster<?> cluster) {
+    return factory.createContext(stateMachine, new InMemoryLog(), cluster, new CopycatConfig());
+  }
+
+  /**
+   * Creates a new Copycat context.
+   *
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster.
+   * @return A new Copycat context.
+   */
+  static CopycatContext context(StateMachine stateMachine, Log log, Cluster<?> cluster) {
+    return factory.createContext(stateMachine, log, cluster, new CopycatConfig());
+  }
+
+  /**
+   * Creates a new Copycat context.
+   *
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster.
+   * @param config The Copycat configuration.
+   * @return A new Copycat context.
+   */
+  static CopycatContext context(StateMachine stateMachine, Log log, Cluster<?> cluster, CopycatConfig config) {
+    return factory.createContext(stateMachine, log, cluster, config);
   }
 
   /**
@@ -327,7 +385,7 @@ public interface CopycatContext {
      * @return The copycat instance.
      */
     public CopycatContext build() {
-      return new DefaultCopycatContext(stateMachine, log, cluster, config);
+      return context(stateMachine, log, cluster, config);
     }
 
     @Override
