@@ -23,7 +23,7 @@ import net.kuujo.copycat.protocol.LocalProtocol;
  */
 public class LocalCluster extends Cluster<Member> {
 
-  public LocalCluster(LocalClusterConfig config) {
+  public LocalCluster(ClusterConfig<Member> config) {
     super(new LocalProtocol(), config);
   }
 

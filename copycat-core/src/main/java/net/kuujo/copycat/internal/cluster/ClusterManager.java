@@ -72,7 +72,10 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
         node.client().close();
       }
     }
+
+    setChanged();
     notifyObservers();
+    clearChanged();
   }
 
   /**

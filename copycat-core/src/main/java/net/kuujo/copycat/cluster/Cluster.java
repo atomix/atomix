@@ -43,6 +43,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
     this.config = Args.checkNotNull(config);
     this.localMember = config.getLocalMember();
     this.members = new HashMap<>(config.getMembers().size());
+    this.members.put(localMember.id(), localMember);
     this.remoteMembers = new HashSet<>(config.getRemoteMembers().size());
     this.config.addObserver(this);
     clusterChanged(config);
@@ -90,7 +91,10 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
         members.remove(member.id());
       }
     }
+
+    setChanged();
     notifyObservers();
+    clearChanged();
   }
 
   /**

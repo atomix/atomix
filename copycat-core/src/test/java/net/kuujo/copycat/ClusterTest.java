@@ -14,9 +14,7 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.*;
 import org.junit.Test;
 
 import java.util.HashSet;
@@ -48,7 +46,7 @@ public class ClusterTest {
     Member localMember = new Member(new MemberConfig("foo"));
     config.setLocalMember(localMember);
     assertEquals(localMember, config.getLocalMember());
-    Set<Member> remoteMembers = new HashSet<>();
+    Set<Member> remoteMembers = new HashSet<>(2);
     Member remoteMember1 = new Member(new MemberConfig("bar"));
     Member remoteMember2 = new Member(new MemberConfig("baz"));
     remoteMembers.add(remoteMember1);
@@ -56,6 +54,36 @@ public class ClusterTest {
     config.setRemoteMembers(remoteMembers);
     assertTrue(config.getRemoteMembers().contains(remoteMember1));
     assertTrue(config.getRemoteMembers().contains(remoteMember2));
+    Cluster<Member> cluster = new LocalCluster(config);
+    assertEquals(localMember, cluster.localMember());
+    assertTrue(cluster.remoteMembers().contains(remoteMember1));
+    assertTrue(cluster.remoteMembers().contains(remoteMember2));
+    assertEquals(remoteMember1, cluster.remoteMember("bar"));
+    assertEquals(remoteMember2, cluster.remoteMember("baz"));
+    assertEquals(localMember, cluster.member("foo"));
+    assertEquals(remoteMember1, cluster.member("bar"));
+    assertEquals(remoteMember2, cluster.member("baz"));
+  }
+
+  @Test
+  public void testClusterReconfigure() {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    Member localMember = new Member(new MemberConfig("foo"));
+    config.setLocalMember(localMember);
+    Set<Member> remoteMembers = new HashSet<>(2);
+    Member remoteMember1 = new Member(new MemberConfig("bar"));
+    Member remoteMember2 = new Member(new MemberConfig("baz"));
+    remoteMembers.add(remoteMember1);
+    remoteMembers.add(remoteMember2);
+    config.setRemoteMembers(remoteMembers);
+    Cluster<Member> cluster = new LocalCluster(config);
+    assertEquals(localMember, cluster.localMember());
+    assertEquals(remoteMember1, cluster.remoteMember("bar"));
+    assertEquals(remoteMember2, cluster.remoteMember("baz"));
+    assertEquals(2, cluster.remoteMembers().size());
+    Member remoteMember3 = new Member(new MemberConfig("foobarbaz"));
+    config.addRemoteMember(remoteMember3);
+    assertEquals(remoteMember3, cluster.remoteMember("foobarbaz"));
   }
 
 }

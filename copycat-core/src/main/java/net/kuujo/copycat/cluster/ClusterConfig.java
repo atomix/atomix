@@ -39,6 +39,15 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
     remoteMembers = new HashSet<>(cluster.remoteMembers);
   }
 
+  /**
+   * Notifies observers and then resets the changed state.
+   */
+  private void notifyAndReset() {
+    setChanged();
+    notifyObservers();
+    clearChanged();
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public ClusterConfig<M> copy() {
@@ -96,7 +105,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   @SafeVarargs
   public final void setRemoteMembers(M... members) {
     remoteMembers = new HashSet<>(Arrays.asList(Args.checkNotNull(members)));
-    notifyObservers();
+    notifyAndReset();
   }
 
   /**
@@ -106,7 +115,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final void setRemoteMembers(Collection<M> members) {
     remoteMembers = new HashSet<>(Args.checkNotNull(members));
-    notifyObservers();
+    notifyAndReset();
   }
 
   /**
@@ -117,7 +126,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final ClusterConfig<M> addRemoteMember(M member) {
     remoteMembers.add(Args.checkNotNull(member));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -130,7 +139,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   @SafeVarargs
   public final ClusterConfig<M> addRemoteMembers(M... members) {
     remoteMembers.addAll(Arrays.asList(Args.checkNotNull(members)));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -142,7 +151,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final ClusterConfig<M> addRemoteMembers(Collection<M> members) {
     remoteMembers.addAll(Args.checkNotNull(members));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -154,7 +163,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final ClusterConfig<M> addRemoteMembers(ClusterConfig<M> cluster) {
     remoteMembers.addAll(cluster.remoteMembers);
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -166,7 +175,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final ClusterConfig<M> removeRemoteMember(M member) {
     remoteMembers.remove(Args.checkNotNull(member));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -179,7 +188,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   @SafeVarargs
   public final ClusterConfig<M> removeRemoteMembers(M... members) {
     remoteMembers.removeAll(Arrays.asList(Args.checkNotNull(members)));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -191,7 +200,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final ClusterConfig<M> removeRemoteMembers(Collection<M> members) {
     remoteMembers.removeAll(Args.checkNotNull(members));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -203,7 +212,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final ClusterConfig<M> removeRemoteMembers(ClusterConfig<M> cluster) {
     remoteMembers.removeAll(cluster.remoteMembers);
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -225,7 +234,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   @SafeVarargs
   public final ClusterConfig<M> withRemoteMembers(M... members) {
     this.remoteMembers = new HashSet<>(Arrays.asList(Args.checkNotNull(members)));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
@@ -237,7 +246,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    */
   public final ClusterConfig<M> withRemoteMembers(Collection<M> members) {
     this.remoteMembers = new HashSet<>(Args.checkNotNull(members));
-    notifyObservers();
+    notifyAndReset();
     return this;
   }
 
