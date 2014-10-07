@@ -49,6 +49,15 @@ import java.util.concurrent.CompletableFuture;
  * context.submitCommand("put", "foo").thenRun(() -> System.out.println("PUT 'foo'"));
  * }
  *
+ * Copycat also exposes a fluent interface for reacting on internal events. This can be useful for detecting cluster
+ * membership or leadership changes, for instance:<p>
+ *
+ * {@code
+ * copycat.on().membershipChange(event -> {
+ *   System.out.println("Membership changed: " + event.members());
+ * });
+ * }
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface CopycatContext {
