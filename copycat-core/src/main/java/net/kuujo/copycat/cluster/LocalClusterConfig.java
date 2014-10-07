@@ -24,6 +24,26 @@ import java.util.stream.Collectors;
  */
 public class LocalClusterConfig extends ClusterConfig<Member> {
 
+  public LocalClusterConfig() {
+  }
+
+  public LocalClusterConfig(ClusterConfig<Member> cluster) {
+    super(cluster);
+  }
+
+  public LocalClusterConfig(Member localMember, Member... remoteMembers) {
+    this(localMember, Arrays.asList(remoteMembers));
+  }
+
+  public LocalClusterConfig(Member localMember, Collection<Member> remoteMembers) {
+    super(localMember, remoteMembers);
+  }
+
+  @Override
+  public LocalClusterConfig copy() {
+    return new LocalClusterConfig(localMember, remoteMembers);
+  }
+
   /**
    * Sets the local member ID.
    *

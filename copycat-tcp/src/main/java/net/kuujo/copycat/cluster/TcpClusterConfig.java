@@ -14,10 +14,34 @@
  */
 package net.kuujo.copycat.cluster;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * Basic TCP cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TcpClusterConfig extends ClusterConfig<TcpMember> {
+
+  public TcpClusterConfig() {
+  }
+
+  public TcpClusterConfig(ClusterConfig<TcpMember> cluster) {
+    super(cluster);
+  }
+
+  public TcpClusterConfig(TcpMember localMember, TcpMember... remoteMembers) {
+    this(localMember, Arrays.asList(remoteMembers));
+  }
+
+  public TcpClusterConfig(TcpMember localMember, Collection<TcpMember> remoteMembers) {
+    super(localMember, remoteMembers);
+  }
+
+  @Override
+  public TcpClusterConfig copy() {
+    return new TcpClusterConfig(localMember, remoteMembers);
+  }
+
 }

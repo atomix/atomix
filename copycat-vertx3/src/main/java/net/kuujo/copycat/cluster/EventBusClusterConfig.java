@@ -14,10 +14,34 @@
  */
 package net.kuujo.copycat.cluster;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * Event bus cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EventBusClusterConfig extends ClusterConfig<EventBusMember> {
+
+  public EventBusClusterConfig() {
+  }
+
+  public EventBusClusterConfig(ClusterConfig<EventBusMember> cluster) {
+    super(cluster);
+  }
+
+  public EventBusClusterConfig(EventBusMember localMember, EventBusMember... remoteMembers) {
+    this(localMember, Arrays.asList(remoteMembers));
+  }
+
+  public EventBusClusterConfig(EventBusMember localMember, Collection<EventBusMember> remoteMembers) {
+    super(localMember, remoteMembers);
+  }
+
+  @Override
+  public EventBusClusterConfig copy() {
+    return new EventBusClusterConfig(localMember, remoteMembers);
+  }
+
 }

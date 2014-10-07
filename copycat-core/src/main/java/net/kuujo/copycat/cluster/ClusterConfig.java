@@ -28,8 +28,8 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ClusterConfig<M extends Member> extends Observable implements Copyable<ClusterConfig<M>>, Serializable {
-  private M localMember;
-  private Set<M> remoteMembers = new HashSet<>(6);
+  protected M localMember;
+  protected Set<M> remoteMembers = new HashSet<>(6);
 
   public ClusterConfig() {
   }
@@ -37,6 +37,15 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   public ClusterConfig(ClusterConfig<M> cluster) {
     localMember = Args.checkNotNull(cluster).localMember;
     remoteMembers = new HashSet<>(cluster.remoteMembers);
+  }
+
+  public ClusterConfig(M localMember, M... remoteMembers) {
+    this(localMember, Arrays.asList(remoteMembers));
+  }
+
+  public ClusterConfig(M localMember, Collection<M> remoteMembers) {
+    localMember = Args.checkNotNull(localMember);
+    remoteMembers = new HashSet<>(remoteMembers);
   }
 
   /**
@@ -51,11 +60,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   @Override
   @SuppressWarnings("unchecked")
   public ClusterConfig<M> copy() {
-    try {
-      return getClass().getConstructor(new Class<?>[]{getClass()}).newInstance(this);
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-      throw new CopycatException(e);
-    }
+    return new ClusterConfig(localMember, remoteMembers);
   }
 
   /**

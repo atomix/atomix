@@ -14,10 +14,34 @@
  */
 package net.kuujo.copycat.cluster;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * Basic HTTP cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class HttpClusterConfig extends ClusterConfig<HttpMember> {
+
+  public HttpClusterConfig() {
+  }
+
+  public HttpClusterConfig(ClusterConfig<HttpMember> cluster) {
+    super(cluster);
+  }
+
+  public HttpClusterConfig(HttpMember localMember, HttpMember... remoteMembers) {
+    this(localMember, Arrays.asList(remoteMembers));
+  }
+
+  public HttpClusterConfig(HttpMember localMember, Collection<HttpMember> remoteMembers) {
+    super(localMember, remoteMembers);
+  }
+
+  @Override
+  public HttpClusterConfig copy() {
+    return new HttpClusterConfig(localMember, remoteMembers);
+  }
+
 }
