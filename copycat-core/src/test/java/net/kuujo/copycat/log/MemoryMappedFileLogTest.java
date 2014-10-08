@@ -13,39 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.log;
 
-import java.io.IOException;
 import java.util.UUID;
 
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.MemoryMappedFileLog;
-
-import org.junit.After;
-import org.junit.Before;
+import org.testng.annotations.Test;
 
 /**
  * File log test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryMappedFileLogTest extends LogTest {
-  private Log log;
-
-  @Before
-  public void beforeClass() {
-    log = new MemoryMappedFileLog(UUID.randomUUID().toString());
+@Test
+public class MemoryMappedFileLogTest extends AbstractLogTest {
+  @Override
+  protected Log createLog() {
+    return new MemoryMappedFileLog(String.format("target/test-logs/%s", UUID.randomUUID()));
   }
 
   @Override
-  protected Log createLog() {
-    return log;
-  }
-
-  @After
-  public void afterClass() throws IOException {
+  public void deleteLog() throws Throwable {
     log.delete();
-    log = null;
   }
-
 }

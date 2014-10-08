@@ -15,14 +15,13 @@
  */
 package net.kuujo.copycat.test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.LocalCluster;
 import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.LocalProtocol;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Test cluster.

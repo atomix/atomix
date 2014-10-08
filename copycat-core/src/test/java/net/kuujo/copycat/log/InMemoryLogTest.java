@@ -13,21 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.InMemoryLog;
+import org.testng.annotations.Test;
 
 /**
  * Memory log test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InMemoryLogTest extends LogTest {
-
+@Test
+public class InMemoryLogTest extends AbstractLogTest {
   @Override
   protected Log createLog() {
     return new InMemoryLog();
   }
-
 }
