@@ -153,6 +153,7 @@ public final class StateContext {
     // be overwritten by the logs once the replica has been started.
     LOGGER.info("{} starting context", clusterManager.localNode().member());
     transition(NoneController.class);
+    checkConfiguration();
     return clusterManager.localNode().server().listen().whenCompleteAsync((result, error) -> {
       try {
         log.open();
@@ -162,6 +163,24 @@ public final class StateContext {
       transition(FollowerController.class);
       events.start().handle(new StartEvent());
     });
+  }
+
+  /**
+   * Checks the replica configuration and logs helpful warnings.
+   */
+  private void checkConfiguration() {
+    if (clusterManager.remoteNodes().isEmpty()) {
+      LOGGER.warn("{} No remote nodes in the cluster!", clusterManager.localNode().member());
+    }
+    if (!config.isRequireReadQuorum()) {
+      LOGGER.warn("{} Read quorums are disabled! This can cause stale reads!", clusterManager.localNode().member());
+    }
+    if (!config.isRequireWriteQuorum()) {
+      LOGGER.warn("{} Write quorums are disabled! This can cause data loss!", clusterManager.localNode().member());
+    }
+    if (config.getElectionTimeout() < config.getHeartbeatInterval()) {
+      LOGGER.error("{} Election timeout is greater than heartbeat interval!", clusterManager.localNode().member());
+    }
   }
 
   /**

@@ -89,14 +89,14 @@ public class LeaderController extends StateController implements Observer {
     // of the leader's election and that their terms are updated with the leader's term.
     NoOpEntry noOpEntry = new NoOpEntry(context.currentTerm());
     context.log().appendEntry(noOpEntry);
-    LOGGER.debug("{} appended {} to log", noOpEntry);
+    LOGGER.debug("{} appended {} to log", context.clusterManager().localNode().member(), noOpEntry);
 
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
     ConfigurationEntry configurationEntry = new ConfigurationEntry(context.currentTerm(), context.clusterManager().cluster().config().copy());
     context.log().appendEntry(configurationEntry);
-    LOGGER.debug("{} appended {} to log", configurationEntry);
+    LOGGER.debug("{} appended {} to log", context.clusterManager().localNode().member(), configurationEntry);
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
@@ -220,7 +220,7 @@ public class LeaderController extends StateController implements Observer {
     if (request.term() > context.currentTerm()) {
       return super.sync(request);
     } else if (request.term() < context.currentTerm()) {
-      return CompletableFuture.completedFuture(new SyncResponse(request.id(), context.currentTerm(), false, context.log().lastIndex()));
+      return CompletableFuture.completedFuture(logResponse(new SyncResponse(logRequest(request).id(), context.currentTerm(), false, context.log().lastIndex())));
     } else {
       context.transition(FollowerController.class);
       return super.sync(request);
@@ -229,6 +229,8 @@ public class LeaderController extends StateController implements Observer {
 
   @Override
   public CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
+    logRequest(request);
+
     CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
 
     // Determine the type of command this request is executing. The command
@@ -247,10 +249,12 @@ public class LeaderController extends StateController implements Observer {
       // simply apply the command, otherwise we need to ping a quorum of the
       // cluster to ensure that data is up-to-date before responding.
       if (context.config().isRequireReadQuorum()) {
-        replicator.ping(context.log().lastIndex()).whenComplete((index, error) -> {
+        long lastIndex = context.log().lastIndex();
+        LOGGER.debug("{} synchronizing logs to index {} for read", context.clusterManager().localNode().member(), lastIndex);
+        replicator.ping(lastIndex).whenComplete((index, error) -> {
           if (error == null) {
             try {
-              future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+              future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args()))));
             } catch (Exception e) {
               future.completeExceptionally(e);
             }
@@ -260,7 +264,7 @@ public class LeaderController extends StateController implements Observer {
         });
       } else {
         try {
-          future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+          future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args()))));
         } catch (Exception e) {
           future.completeExceptionally(e);
         }
@@ -279,6 +283,7 @@ public class LeaderController extends StateController implements Observer {
       if (context.config().isRequireWriteQuorum()) {
         // If the replica requires write quorums, we simply set a task to be
         // executed once the entry has been replicated to a quorum of the cluster.
+        LOGGER.debug("{} replicating logs up to {} for write", context.clusterManager().localNode().member(), index);
         replicator.commit(index).whenComplete((resultIndex, error) -> {
           if (error == null) {
             try {
