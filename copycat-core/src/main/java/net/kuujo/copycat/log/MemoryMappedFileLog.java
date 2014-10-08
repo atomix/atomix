@@ -195,7 +195,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public <T extends Entry> T firstEntry() {
+  public synchronized <T extends Entry> T firstEntry() {
     return getEntry(firstIndex);
   }
 
@@ -205,7 +205,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public <T extends Entry> T lastEntry() {
+  public synchronized <T extends Entry> T lastEntry() {
     return getEntry(lastIndex);
   }
 
@@ -256,7 +256,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public void removeEntry(long index) {
+  public synchronized void removeEntry(long index) {
     if (!indexInRange(index)) {
       throw new LogIndexOutOfBoundsException(String.format("Cannot remove entry at index %d", index));
     }
