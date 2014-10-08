@@ -20,6 +20,8 @@ import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import net.kuujo.copycat.internal.util.Args;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Local protocol server.
@@ -27,6 +29,7 @@ import net.kuujo.copycat.internal.util.Args;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocolServer implements ProtocolServer {
+  private static final Logger LOGGER = LoggerFactory.getLogger(LocalProtocolServer.class);
   private final String id;
   private final Map<String, LocalProtocolServer> registry;
   private RequestHandler requestHandler;
@@ -63,12 +66,14 @@ public class LocalProtocolServer implements ProtocolServer {
 
   @Override
   public CompletableFuture<Void> listen() {
+    LOGGER.debug("{} listening at {}", this, id);
     registry.put(id, this);
     return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override
   public CompletableFuture<Void> close() {
+    LOGGER.debug("{} closing server at {}", this, id);
     registry.remove(id);
     return CompletableFuture.completedFuture((Void) null);
   }

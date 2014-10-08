@@ -16,6 +16,8 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -26,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocolClient implements ProtocolClient {
+  private static final Logger LOGGER = LoggerFactory.getLogger(LocalProtocolClient.class);
   private final String id;
   private final Map<String, LocalProtocolServer> registry;
 
@@ -80,11 +83,13 @@ public class LocalProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<Void> connect() {
+    LOGGER.debug("{} connecting to {}", this, id);
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> close() {
+    LOGGER.debug("{} closing connection to {}", this, id);
     return CompletableFuture.completedFuture(null);
   }
 

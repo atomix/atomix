@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -29,6 +32,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class StateMachine {
+  private static final Logger LOGGER = LoggerFactory.getLogger(StateMachine.class);
   private final Map<String, CommandHolder> commands = new HashMap<>(50);
 
   private static class CommandHolder {
@@ -53,6 +57,7 @@ public abstract class StateMachine {
             }
 
             try {
+              LOGGER.debug("{} calling {} with arguments: {}", stateMachine, method.getName(), args);
               return method.invoke(stateMachine, args.toArray());
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
               throw new CopycatException(e);

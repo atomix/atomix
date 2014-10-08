@@ -17,6 +17,8 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.util.Copyable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -46,6 +48,7 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Cluster<M extends Member> extends Observable implements Observer, Copyable<Cluster<M>> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(Cluster.class);
   protected final CopycatProtocol<M> protocol;
   protected final ClusterConfig<M> config;
   private final M localMember;
@@ -71,6 +74,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
 
   @Override
   public void update(Observable o, Object arg) {
+    LOGGER.info("{} configuration change detected, updating membership", this);
     clusterChanged(config);
   }
 
@@ -132,7 +136,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
    * @return The cluster member if it exists, otherwise <code>null</code>
    */
   public M member(String id) {
-    return members != null ? members.get(id) : null;
+    return members.get(id);
   }
 
   /**
@@ -141,12 +145,9 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
    * @return A set of all members in the cluster.
    */
   public Set<M> members() {
-    if (remoteMembers != null) {
-      Set<M> members = new HashSet<>(remoteMembers);
-      members.add(localMember);
-      return members;
-    }
-    return new HashSet<>(0);
+    Set<M> members = new HashSet<>(remoteMembers);
+    members.add(localMember);
+    return members;
   }
 
   /**
@@ -165,7 +166,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
    * @return The remote member if it exists in the cluster, otherwise <code>null</code>
    */
   public M remoteMember(String id) {
-    M member = members != null ? members.get(id) : null;
+    M member = members.get(id);
     return member != localMember ? member : null;
   }
 
@@ -175,7 +176,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
    * @return A set of all remote members in the cluster.
    */
   public Set<M> remoteMembers() {
-    return remoteMembers != null ? remoteMembers : new HashSet<>(0);
+    return remoteMembers;
   }
 
   @Override

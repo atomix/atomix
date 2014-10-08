@@ -16,6 +16,8 @@ package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -43,6 +45,7 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ClusterManager<M extends Member> extends Observable implements Observer {
+  private static final Logger LOGGER = LoggerFactory.getLogger(ClusterManager.class);
   private final Cluster<M> cluster;
   private final LocalNode<M> localNode;
   private final Set<RemoteNode<M>> remoteNodes;
@@ -59,6 +62,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
 
   @Override
   public void update(Observable o, Object arg) {
+    LOGGER.debug("{} membership change detected, updating nodes", this);
     clusterChanged(cluster);
   }
 

@@ -48,9 +48,15 @@ public class FollowerController extends StateController {
   }
 
   @Override
+  Logger logger() {
+    return LOGGER;
+  }
+
+  @Override
   public synchronized void init(StateContext context) {
     shutdown = false;
     super.init(context);
+    LOGGER.debug("{} starting heartbeat timer", context.clusterManager().localNode().member());
     resetTimer();
   }
 
@@ -77,7 +83,7 @@ public class FollowerController extends StateController {
         // candidate and start a new election.
         currentTimer = null;
         if (context.lastVotedFor() == null) {
-          LOGGER.info("{} election timed out. Transitioning to candidate.", context.clusterManager().localNode().member());
+          LOGGER.info("{} election timed out", context.clusterManager().localNode().member());
           context.transition(CandidateController.class);
         } else {
           // If the node voted for a candidate then reset the election timer.
@@ -102,6 +108,7 @@ public class FollowerController extends StateController {
   @Override
   public synchronized void destroy() {
     if (currentTimer != null) {
+      LOGGER.debug("{} cancelling heartbeat timer", context.clusterManager().localNode().member());
       currentTimer.cancel(true);
     }
     shutdown = true;

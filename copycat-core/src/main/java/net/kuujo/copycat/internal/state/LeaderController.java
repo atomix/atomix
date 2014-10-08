@@ -58,6 +58,11 @@ public class LeaderController extends StateController implements Observer {
   }
 
   @Override
+  Logger logger() {
+    return LOGGER;
+  }
+
+  @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
   public void init(StateContext context) {
     super.init(context);
@@ -97,6 +102,7 @@ public class LeaderController extends StateController implements Observer {
     // When the cluster configuration changes, changes will be committed to the
     // log and replicated according to the Raft specification.
     context.cluster().addObserver(this);
+    LOGGER.debug("{} observing {}", context.clusterManager().localNode().member(), context.cluster());
 
     // Set the current leader as this replica.
     context.currentLeader(context.clusterManager().localNode().member().id());
@@ -105,6 +111,8 @@ public class LeaderController extends StateController implements Observer {
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
    replicator.pingAll();
+
+    LOGGER.debug("{} setting ping timer", context.clusterManager().localNode().member());
     setPingTimer();
   }
 
@@ -261,7 +269,9 @@ public class LeaderController extends StateController implements Observer {
       // For write commands or for commands for which the type is not known, an
       // entry must be logged, replicated, and committed prior to applying it
       // to the state machine and returning the result.
-      final long index = context.log().appendEntry(new CommandEntry(context.currentTerm(), request.command(), request.args()));
+      CommandEntry entry = new CommandEntry(context.currentTerm(), request.command(), request.args());
+      final long index = context.log().appendEntry(entry);
+      LOGGER.debug("{} appended {} to log", context.clusterManager().localNode().member());
 
       // Write quorums are also optional to the user. The user can optionally
       // indicate that write commands should be immediately applied to the state
@@ -272,7 +282,7 @@ public class LeaderController extends StateController implements Observer {
         replicator.commit(index).whenComplete((resultIndex, error) -> {
           if (error == null) {
             try {
-              future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+              future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args()))));
             } catch (Exception e) {
               future.completeExceptionally(e);
             } finally {
@@ -289,7 +299,7 @@ public class LeaderController extends StateController implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          future.complete(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args())));
+          future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args()))));
         } catch (Exception e) {
           future.completeExceptionally(e);
         } finally {
@@ -304,6 +314,7 @@ public class LeaderController extends StateController implements Observer {
   @Override
   void destroy() {
     if (currentTimer != null) {
+      LOGGER.debug("{} cancelling ping timer", context.clusterManager().localNode().member());
       currentTimer.cancel(true);
     }
     // Stop observing the observable cluster configuration.

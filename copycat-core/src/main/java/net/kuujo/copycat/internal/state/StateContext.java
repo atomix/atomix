@@ -151,6 +151,7 @@ public final class StateContext {
   public CompletableFuture<Void> start() {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
+    LOGGER.info("{} starting context", clusterManager.localNode().member());
     transition(NoneController.class);
     return clusterManager.localNode().server().listen().whenCompleteAsync((result, error) -> {
       try {
@@ -169,6 +170,7 @@ public final class StateContext {
    * @return A completable future to be called once complete.
    */
   public CompletableFuture<Void> stop() {
+    LOGGER.info("{} stopping context", clusterManager.localNode().member());
     return clusterManager.localNode().server().close().whenCompleteAsync((result, error) -> {
       try {
         log.close();
@@ -189,7 +191,7 @@ public final class StateContext {
       return;
     }
 
-    LOGGER.info("{} transitioning to {}", clusterManager.localNode().member(), type);
+    LOGGER.info("{} transitioning: {}", clusterManager.localNode().member(), type);
     final StateController oldState = currentState;
     try {
       currentState = type.newInstance();
@@ -218,7 +220,7 @@ public final class StateContext {
    */
   public StateContext currentLeader(String leader) {
     if (currentLeader == null || !currentLeader.equals(leader)) {
-      LOGGER.debug("{} leader changed: {}", clusterManager.localNode().member(), leader);
+      LOGGER.debug("{} currentLeader: {}", clusterManager.localNode().member(), leader);
     }
 
     if (currentLeader == null && leader != null) {
@@ -284,7 +286,7 @@ public final class StateContext {
   public StateContext currentTerm(long term) {
     if (term > currentTerm) {
       currentTerm = term;
-      LOGGER.debug("{} term changed: {}", clusterManager.localNode().member(), term);
+      LOGGER.debug("{} currentTerm: {}", clusterManager.localNode().member(), term);
       lastVotedFor = null;
     }
     return this;
@@ -302,7 +304,7 @@ public final class StateContext {
    */
   public StateContext lastVotedFor(String candidate) {
     if (lastVotedFor == null || !lastVotedFor.equals(candidate)) {
-      LOGGER.debug("{} voted for {}", clusterManager.localNode().member(), candidate);
+      LOGGER.debug("{} lastVotedFor: {}", clusterManager.localNode().member(), candidate);
     }
     lastVotedFor = candidate;
     return this;
@@ -334,6 +336,7 @@ public final class StateContext {
    * Sets the last applied index.
    */
   public StateContext lastApplied(long index) {
+    LOGGER.debug("{} lastApplied: {}", clusterManager.localNode().member(), index);
     lastApplied = index;
     return this;
   }

@@ -52,6 +52,11 @@ public class CandidateController extends StateController {
   }
 
   @Override
+  Logger logger() {
+    return LOGGER;
+  }
+
+  @Override
   void init(StateContext context) {
     super.init(context);
     LOGGER.info("{} starting election", context.clusterManager().localNode().member());
@@ -106,6 +111,7 @@ public class CandidateController extends StateController {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.
+    LOGGER.info("{} polling members {}", context.clusterManager().localNode().member(), context.clusterManager().cluster().remoteMembers());
     final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
     for (RemoteNode<?> node : (Set<RemoteNode<?>>) context.clusterManager().remoteNodes()) {
       final ProtocolClient client = node.client();
@@ -113,12 +119,21 @@ public class CandidateController extends StateController {
         if (error1 != null) {
           quorum.fail();
         } else {
+          LOGGER.debug("{} polling {}", context.clusterManager().localNode().member(), node.member());
           client.poll(new PollRequest(context.nextCorrelationId(), context.currentTerm(), context.clusterManager().localNode().member().id(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
             client.close();
             if (!complete.get()) {
-              if (error2 != null || !result2.voteGranted()) {
+              if (error2 != null) {
+                LOGGER.warn(context.clusterManager().localNode().member().toString(), error2);
+                quorum.fail();
+              } else if (!result2.voteGranted()) {
+                LOGGER.info("{} did not receive vote from {}", context.clusterManager().localNode().member(), node.member());
+                quorum.fail();
+              } else if (result2.term() != context.currentTerm()) {
+                LOGGER.info("{} received a vote for a different term from {}", context.clusterManager().localNode().member(), node.member());
                 quorum.fail();
               } else {
+                LOGGER.info("{} received vote from {}", context.clusterManager().localNode().member(), node.member());
                 quorum.succeed();
               }
             }
@@ -141,7 +156,7 @@ public class CandidateController extends StateController {
 
     // If the vote request is not for this candidate then reject the vote.
     if (!request.candidate().equals(context.clusterManager().localNode().member().id())) {
-      return CompletableFuture.completedFuture(new PollResponse(request.id(), context.currentTerm(), false));
+      return CompletableFuture.completedFuture(logResponse(new PollResponse(logRequest(request).id(), context.currentTerm(), false)));
     } else {
       return super.poll(request);
     }
@@ -150,6 +165,7 @@ public class CandidateController extends StateController {
   @Override
   synchronized void destroy() {
     if (currentTimer != null) {
+      LOGGER.debug("{} cancelling election", context.clusterManager().localNode().member());
       currentTimer.cancel(true);
     }
     if (quorum != null) {
