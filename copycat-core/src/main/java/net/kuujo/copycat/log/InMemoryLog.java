@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 import com.esotericsoftware.kryo.io.ByteBufferInput;
@@ -32,6 +33,7 @@ import net.kuujo.copycat.internal.log.CopycatEntry;
  */
 public class InMemoryLog extends BaseLog implements Compactable {
   private TreeMap<Long, byte[]> log;
+  private volatile long size;
   private final ByteBuffer buffer = ByteBuffer.allocate(4096);
   private final ByteBufferOutput output = new ByteBufferOutput(buffer);
   private final ByteBufferInput input = new ByteBufferInput(buffer);
@@ -51,7 +53,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
 
   @Override
   public synchronized long size() {
-    return log.size();
+    return size;
   }
 
   @Override
@@ -65,6 +67,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
     kryo.writeClassAndObject(output, entry);
     byte[] bytes = output.toBytes();
     log.put(index, bytes);
+    size += bytes.length;
     output.clear();
     return index;
   }
@@ -141,12 +144,19 @@ public class InMemoryLog extends BaseLog implements Compactable {
 
   @Override
   public synchronized void removeEntry(long index) {
-    log.remove(index);
+    byte[] value = log.remove(index);
+    if (value != null) {
+      size -= value.length;
+    }
   }
 
   @Override
   public synchronized void removeAfter(long index) {
-    log.tailMap(index, false).clear();
+    if (!log.isEmpty()) {
+      for (long i = index; i <= log.lastKey(); i++) {
+        removeEntry(index);
+      }
+    }
   }
 
   @Override
@@ -156,6 +166,11 @@ public class InMemoryLog extends BaseLog implements Compactable {
     output.clear();
     log.headMap(index).clear();
     log.put(index, bytes);
+    long newSize = 0;
+    for (Map.Entry<Long, byte[]> e : log.entrySet()) {
+      newSize += e.getValue().length;
+    }
+    size = newSize;
   }
 
   @Override
