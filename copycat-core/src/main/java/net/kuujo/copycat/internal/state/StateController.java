@@ -178,17 +178,19 @@ abstract class StateController implements RequestHandler {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
-      if (context.log().lastIndex() > request.prevLogIndex()) {
-        for (int i = 0; i < request.entries().size(); i++) {
-          CopycatEntry entry = request.<CopycatEntry>entries().get(i);
-          CopycatEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
-          if (match != null && entry.term() != match.term()) {
-            context.log().removeAfter(request.prevLogIndex() + i);
-            context.log().appendEntries(request.entries().subList(i, request.entries().size()));
+      synchronized (context.log()) {
+        if (context.log().lastIndex() > request.prevLogIndex()) {
+          for (int i = 0; i < request.entries().size(); i++) {
+            CopycatEntry entry = request.<CopycatEntry>entries().get(i);
+            CopycatEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
+            if (match != null && entry.term() != match.term()) {
+              context.log().removeAfter(request.prevLogIndex() + i);
+              context.log().appendEntries(request.entries().subList(i, request.entries().size()));
+            }
           }
+        } else {
+          context.log().appendEntries(request.entries());
         }
-      } else {
-        context.log().appendEntries(request.entries());
       }
     }
     return doApplyCommits(request);
@@ -307,24 +309,26 @@ abstract class StateController implements RequestHandler {
    */
   @SuppressWarnings("unchecked")
   protected void applySnapshot(long index, SnapshotEntry entry) {
-    // Apply the snapshot to the local state machine.
-    context.stateMachine().installSnapshot(entry.data());
+    synchronized (context.log()) {
+      // Apply the snapshot to the local state machine.
+      context.stateMachine().installSnapshot(entry.data());
 
-    // If the log is compactable then compact it at the snapshot index.
-    if (context.log() instanceof Compactable) {
-      try {
-        ((Compactable) context.log()).compact(index, entry);
-      } catch (IOException e) {
-        throw new CopycatException("Failed to compact log.", e);
+      // If the log is compactable then compact it at the snapshot index.
+      if (context.log() instanceof Compactable) {
+        try {
+          ((Compactable) context.log()).compact(index, entry);
+        } catch (IOException e) {
+          throw new CopycatException("Failed to compact log.", e);
+        }
       }
+
+      // Set the local cluster configuration according to the snapshot cluster membership.
+      context.clusterManager().cluster().update(entry.cluster(), null);
+
+      // Finally, if necessary, increment the current term.
+      context.currentTerm(Math.max(context.currentTerm(), entry.term()));
+      context.lastApplied(index);
     }
-
-    // Set the local cluster configuration according to the snapshot cluster membership.
-    context.clusterManager().cluster().update(entry.cluster(), null);
-
-    // Finally, if necessary, increment the current term.
-    context.currentTerm(Math.max(context.currentTerm(), entry.term()));
-    context.lastApplied(index);
   }
 
   /**
@@ -413,23 +417,32 @@ abstract class StateController implements RequestHandler {
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
-        long lastIndex = context.log().lastIndex();
-        CopycatEntry entry = context.log().getEntry(lastIndex);
-        if (entry == null) {
-          context.lastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.clusterManager().node(request
-            .candidate()).member()));
-          return new PollResponse(request.id(), context.currentTerm(), true);
-        }
+        synchronized (context.log()) {
+          long lastIndex = context.log().lastIndex();
+          CopycatEntry entry = context.log().getEntry(lastIndex);
+          if (entry == null) {
+            context.lastVotedFor(request.candidate());
+            context.events()
+              .voteCast()
+              .handle(new VoteCastEvent(context.currentTerm(), context.clusterManager()
+                .node(request.candidate())
+                .member()));
+            return new PollResponse(request.id(), context.currentTerm(), true);
+          }
 
-        long lastTerm = entry.term();
-        if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-          context.lastVotedFor(request.candidate());
-          context.events().voteCast().handle(new VoteCastEvent(context.currentTerm(), context.clusterManager().node(request.candidate()).member()));
-          return new PollResponse(request.id(), context.currentTerm(), true);
-        } else {
-          context.lastVotedFor(null);
-          return new PollResponse(request.id(), context.currentTerm(), false);
+          long lastTerm = entry.term();
+          if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
+            context.lastVotedFor(request.candidate());
+            context.events()
+              .voteCast()
+              .handle(new VoteCastEvent(context.currentTerm(), context.clusterManager()
+                .node(request.candidate())
+                .member()));
+            return new PollResponse(request.id(), context.currentTerm(), true);
+          } else {
+            context.lastVotedFor(null);
+            return new PollResponse(request.id(), context.currentTerm(), false);
+          }
         }
       }
     }
