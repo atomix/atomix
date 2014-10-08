@@ -42,7 +42,7 @@ public abstract class ClusterNode<M extends Member> {
 
   @Override
   public String toString() {
-    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), member.id());
   }
 
 }

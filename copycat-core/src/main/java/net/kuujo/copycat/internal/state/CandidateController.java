@@ -18,6 +18,8 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.internal.util.Quorum;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
@@ -59,7 +61,7 @@ public class CandidateController extends StateController {
   @Override
   void init(StateContext context) {
     super.init(context);
-    LOGGER.info("{} starting election", context.clusterManager().localNode().member());
+    LOGGER.info("{} - Starting election", context.clusterManager().localNode());
     resetTimer();
   }
 
@@ -80,13 +82,13 @@ public class CandidateController extends StateController {
     currentTimer = context.config().getTimerStrategy().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      LOGGER.info("{} election timed out", context.clusterManager().localNode().member());
+      LOGGER.info("{} - Election timed out", context.clusterManager().localNode());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       resetTimer();
-      LOGGER.info("{} restarted election", context.clusterManager().localNode().member());
+      LOGGER.info("{} - Restarted election", context.clusterManager().localNode());
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
@@ -111,7 +113,7 @@ public class CandidateController extends StateController {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.
-    LOGGER.info("{} polling members {}", context.clusterManager().localNode().member(), context.clusterManager().cluster().remoteMembers());
+    LOGGER.info("{} - Polling members {}", context.clusterManager().localNode(), context.clusterManager().cluster().remoteMembers());
     final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
     for (RemoteNode<?> node : (Set<RemoteNode<?>>) context.clusterManager().remoteNodes()) {
       final ProtocolClient client = node.client();
@@ -119,21 +121,21 @@ public class CandidateController extends StateController {
         if (error1 != null) {
           quorum.fail();
         } else {
-          LOGGER.debug("{} polling {}", context.clusterManager().localNode().member(), node.member());
+          LOGGER.debug("{} - Polling {}", context.clusterManager().localNode(), node.member());
           client.poll(new PollRequest(context.nextCorrelationId(), context.currentTerm(), context.clusterManager().localNode().member().id(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
             client.close();
             if (!complete.get()) {
               if (error2 != null) {
-                LOGGER.warn(context.clusterManager().localNode().member().toString(), error2);
+                LOGGER.warn(context.clusterManager().localNode().toString(), error2);
                 quorum.fail();
               } else if (!result2.voteGranted()) {
-                LOGGER.info("{} did not receive vote from {}", context.clusterManager().localNode().member(), node.member());
+                LOGGER.info("{} - Received rejected vote from {}", context.clusterManager().localNode(), node.member());
                 quorum.fail();
               } else if (result2.term() != context.currentTerm()) {
-                LOGGER.info("{} received a vote for a different term from {}", context.clusterManager().localNode().member(), node.member());
+                LOGGER.info("{} - Received successful vote for a different term from {}", context.clusterManager().localNode(), node.member());
                 quorum.fail();
               } else {
-                LOGGER.info("{} received vote from {}", context.clusterManager().localNode().member(), node.member());
+                LOGGER.info("{} - Received successful vote from {}", context.clusterManager().localNode(), node.member());
                 quorum.succeed();
               }
             }
@@ -144,9 +146,22 @@ public class CandidateController extends StateController {
   }
 
   @Override
+  public CompletableFuture<PingResponse> ping(PingRequest request) {
+    // If the request indicates a term that is greater than the current term then
+    // assign that term and leader to the current context and step down as a candidate.
+    if (request.term() >= context.currentTerm()) {
+      context.currentTerm(request.term());
+      context.currentLeader(null);
+      context.lastVotedFor(null);
+      context.transition(FollowerController.class);
+    }
+    return super.ping(request);
+  }
+
+  @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
     // If the request indicates a term that is greater than the current term then
-    // assign that term and leader to the current context and step down as leader.
+    // assign that term and leader to the current context and step down as a candidate.
     if (request.term() > context.currentTerm()) {
       context.currentTerm(request.term());
       context.currentLeader(null);
@@ -165,7 +180,7 @@ public class CandidateController extends StateController {
   @Override
   synchronized void destroy() {
     if (currentTimer != null) {
-      LOGGER.debug("{} cancelling election", context.clusterManager().localNode().member());
+      LOGGER.debug("{} - Cancelling election", context.clusterManager().localNode());
       currentTimer.cancel(true);
     }
     if (quorum != null) {

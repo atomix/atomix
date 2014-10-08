@@ -57,7 +57,7 @@ public class LocalNode<M extends Member> extends ClusterNode<M> {
 
   @Override
   public String toString() {
-    return String.format("LocalNode[member=%s]", member());
+    return String.format("LocalNode[id=%s]", member().id());
   }
 
 }

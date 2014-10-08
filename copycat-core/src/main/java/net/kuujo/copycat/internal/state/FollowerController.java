@@ -15,10 +15,7 @@
 package net.kuujo.copycat.internal.state;
 
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
+import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +53,7 @@ public class FollowerController extends StateController {
   public synchronized void init(StateContext context) {
     shutdown = false;
     super.init(context);
-    LOGGER.debug("{} starting heartbeat timer", context.clusterManager().localNode().member());
+    LOGGER.debug("{} - Starting heartbeat timer", context.clusterManager().localNode());
     resetTimer();
   }
 
@@ -67,6 +64,7 @@ public class FollowerController extends StateController {
     if (!shutdown) {
       // If a timer is already set, cancel the timer.
       if (currentTimer != null) {
+        LOGGER.debug("{} - Reset heartbeat timeout", context.clusterManager().localNode());
         currentTimer.cancel(true);
       }
 
@@ -83,7 +81,7 @@ public class FollowerController extends StateController {
         // candidate and start a new election.
         currentTimer = null;
         if (context.lastVotedFor() == null) {
-          LOGGER.info("{} election timed out", context.clusterManager().localNode().member());
+          LOGGER.info("{} - Heartbeat timed out", context.clusterManager().localNode());
           context.transition(CandidateController.class);
         } else {
           // If the node voted for a candidate then reset the election timer.
@@ -91,6 +89,12 @@ public class FollowerController extends StateController {
         }
       }, delay, TimeUnit.MILLISECONDS);
     }
+  }
+
+  @Override
+  public CompletableFuture<PingResponse> ping(PingRequest request) {
+    resetTimer();
+    return super.ping(request);
   }
 
   @Override
@@ -108,7 +112,7 @@ public class FollowerController extends StateController {
   @Override
   public synchronized void destroy() {
     if (currentTimer != null) {
-      LOGGER.debug("{} cancelling heartbeat timer", context.clusterManager().localNode().member());
+      LOGGER.debug("{} - Cancelling heartbeat timer", context.clusterManager().localNode());
       currentTimer.cancel(true);
     }
     shutdown = true;

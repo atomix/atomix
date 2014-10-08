@@ -57,7 +57,7 @@ public class RemoteNode<M extends Member> extends ClusterNode<M> {
 
   @Override
   public String toString() {
-    return String.format("RemoteNode[member=%s]", member());
+    return String.format("RemoteNode[id=%s]", member().id());
   }
 
 }

@@ -151,7 +151,7 @@ public final class StateContext {
   public CompletableFuture<Void> start() {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
-    LOGGER.info("{} starting context", clusterManager.localNode().member());
+    LOGGER.info("{} starting context", clusterManager.localNode());
     transition(NoneController.class);
     checkConfiguration();
     return clusterManager.localNode().server().listen().whenCompleteAsync((result, error) -> {
@@ -170,16 +170,16 @@ public final class StateContext {
    */
   private void checkConfiguration() {
     if (clusterManager.remoteNodes().isEmpty()) {
-      LOGGER.warn("{} No remote nodes in the cluster!", clusterManager.localNode().member());
+      LOGGER.warn("{} - No remote nodes in the cluster!", clusterManager.localNode());
     }
     if (!config.isRequireReadQuorum()) {
-      LOGGER.warn("{} Read quorums are disabled! This can cause stale reads!", clusterManager.localNode().member());
+      LOGGER.warn("{} - Read quorums are disabled! This can cause stale reads!", clusterManager.localNode());
     }
     if (!config.isRequireWriteQuorum()) {
-      LOGGER.warn("{} Write quorums are disabled! This can cause data loss!", clusterManager.localNode().member());
+      LOGGER.warn("{} - Write quorums are disabled! This can cause data loss!", clusterManager.localNode());
     }
     if (config.getElectionTimeout() < config.getHeartbeatInterval()) {
-      LOGGER.error("{} Election timeout is greater than heartbeat interval!", clusterManager.localNode().member());
+      LOGGER.error("{} - Election timeout is greater than heartbeat interval!", clusterManager.localNode());
     }
   }
 
@@ -189,7 +189,7 @@ public final class StateContext {
    * @return A completable future to be called once complete.
    */
   public CompletableFuture<Void> stop() {
-    LOGGER.info("{} stopping context", clusterManager.localNode().member());
+    LOGGER.info("{} - Stopping context", clusterManager.localNode());
     return clusterManager.localNode().server().close().whenCompleteAsync((result, error) -> {
       try {
         log.close();
@@ -210,7 +210,7 @@ public final class StateContext {
       return;
     }
 
-    LOGGER.info("{} transitioning: {}", clusterManager.localNode().member(), type);
+    LOGGER.info("{} - Transitioning: {}", clusterManager.localNode(), type);
     final StateController oldState = currentState;
     try {
       currentState = type.newInstance();
@@ -239,7 +239,7 @@ public final class StateContext {
    */
   public StateContext currentLeader(String leader) {
     if (currentLeader == null || !currentLeader.equals(leader)) {
-      LOGGER.debug("{} currentLeader: {}", clusterManager.localNode().member(), leader);
+      LOGGER.debug("{} - currentLeader: {}", clusterManager.localNode(), leader);
     }
 
     if (currentLeader == null && leader != null) {
@@ -305,7 +305,7 @@ public final class StateContext {
   public StateContext currentTerm(long term) {
     if (term > currentTerm) {
       currentTerm = term;
-      LOGGER.debug("{} currentTerm: {}", clusterManager.localNode().member(), term);
+      LOGGER.debug("{} - currentTerm: {}", clusterManager.localNode(), term);
       lastVotedFor = null;
     }
     return this;
@@ -323,7 +323,7 @@ public final class StateContext {
    */
   public StateContext lastVotedFor(String candidate) {
     if (lastVotedFor == null || !lastVotedFor.equals(candidate)) {
-      LOGGER.debug("{} lastVotedFor: {}", clusterManager.localNode().member(), candidate);
+      LOGGER.debug("{} - lastVotedFor: {}", clusterManager.localNode(), candidate);
     }
     lastVotedFor = candidate;
     return this;
@@ -355,7 +355,7 @@ public final class StateContext {
    * Sets the last applied index.
    */
   public StateContext lastApplied(long index) {
-    LOGGER.debug("{} lastApplied: {}", clusterManager.localNode().member(), index);
+    LOGGER.debug("{} - lastApplied: {}", clusterManager.localNode(), index);
     lastApplied = index;
     return this;
   }

@@ -62,7 +62,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
 
   @Override
   public void update(Observable o, Object arg) {
-    LOGGER.debug("{} membership change detected, updating nodes", this);
+    LOGGER.debug("{} - Membership change detected, updating nodes", this);
     clusterChanged(cluster);
   }
 
