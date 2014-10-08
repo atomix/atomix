@@ -70,7 +70,7 @@ class CopycatTest {
           config.addRemoteMember(String.valueOf(j));
         }
       }
-      instances.add(CopycatContext.context(new TestStateMachine(), new MemoryMappedFileLog(UUID.randomUUID().toString()), new Cluster<Member>(protocol, config), new CopycatConfig().withMaxLogSize(1000)));
+      instances.add(CopycatContext.context(new TestStateMachine(), new MemoryMappedFileLog(UUID.randomUUID().toString()), new Cluster<Member>(protocol, config)));
     }
     return instances;
   }
