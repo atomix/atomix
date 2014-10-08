@@ -25,18 +25,6 @@ User Manual
 ===========
 
 1. [A Brief Introduction](#a-brief-introduction)
-1. [How it works](#how-it-works)
-   * [State machines](#state-machines)
-   * [Commands](#commands)
-   * [Logs](#logs)
-   * [Snapshots](#snapshots)
-   * [Cluster configurations](#cluster-configurations)
-   * [Leader election](#leader-election)
-      * [Followers](#followers)
-      * [Candidates](#candidates)
-      * [Leaders](#leaders)
-   * [Protocols](#protocols)
-   * [Services](#services)
 1. [Getting started](#getting-started)
    * [Creating a state machine](#creating-a-state-machine)
    * [Providing command types](#providing-command-types)
@@ -68,6 +56,18 @@ User Manual
       * [Vert.x Event Bus](#vertx-event-bus-service)
       * [Vert.x TCP](#vertx-tcp-service)
       * [Vert.x HTTP](#vertx-http-service)
+1. [How it works](#how-it-works)
+   * [State machines](#state-machines)
+   * [Commands](#commands)
+   * [Logs](#logs)
+   * [Snapshots](#snapshots)
+   * [Cluster configurations](#cluster-configurations)
+   * [Leader election](#leader-election)
+      * [Followers](#followers)
+      * [Candidates](#candidates)
+      * [Leaders](#leaders)
+   * [Protocols](#protocols)
+   * [Services](#services)
 
 # A brief introduction
 Copycat is a "protocol agnostic" implementation of the Raft consensus algorithm. It
@@ -241,118 +241,6 @@ context.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
   });
 });
 ```
-
-# How it works
-Copycat uses a Raft-based consensus algorithm to perform leader election and state
-replication. Each node in a Copycat cluster may be in one of three states at any
-given time - [follower](#followers), [candidate](#candidates), or [leader](#leaders).
-Each node in the cluster maintains an internal [log](#logs) of replicated commands.
-When a command is submitted to a Copycat cluster, the command is forwarded to the
-cluster leader. The leader then logs the command and replicates it to a majority
-of the cluster. Once the command has been replicated, it applies the command to its
-local state machine and replies with the command result.
-
-*For the most in depth description of how Copycat works, see
-[In Search of an Understandable Consensus Algorithm](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf)
-by Diego Ongaro and John Ousterhout.*
-
-### State Machines
-Each node in a Copycat cluster contains a state machine to which the node applies
-[commands](#commands) sent to the cluster. State machines are simply classes that
-extend Copycat's `StateMachine` class, but there are a couple of very important
-aspects to note about state machines.
-* Given the same commands in the same order, state machines should always arrive at
-  the same state with the same output.
-* Following from that rule, each node's state machine should be identical.
-
-### Commands
-Commands are state change instructions that are submitted to the Copycat cluster
-and ultimately applied to the state machine. For instance, in a key-value store,
-a command could be something like `get` or `set`. Copycat provides unique features
-that allow it to optimize handling of certain command types. For instance, read-only
-commands which don't contribute to the system state will not be replicated, but commands
-that do alter the system state are eventually replicated to all the nodes in the cluster.
-
-### Logs
-Copycat nodes share state using a replicated log. When a command is submitted to the
-Copycat cluster, the command is appended to the [leader's](#leader-election) log and
-replicated to other nodes in the cluster. If a node dies and later restarts, the node
-will rebuild its internal state by reapplying logged commands to its state machine.
-The log is essential to the operation of the Copycat cluster in that it both helps
-maintain consistency of state across nodes and assists in [leader election](#leader-election).
-Copycat provides both in-memory logs for testing and file-based logs for production.
-
-### Snapshots
-In order to ensure [logs](#logs) do not grow too large for the disk, Copycat replicas periodically
-take and persist snapshots of the [state machine](#state-machines) state. Copycat manages snapshots
-using a method different than is described in the original Raft paper. Rather than persisting
-snapshots to separate snapshot files and replicating snapshots using an additional RCP method,
-Copycat appends snapshots directly to the log. This allows Copycat to minimize complexity by
-transfering snapshots as a normal part of log replication.
-
-Normally, when a node crashes and recovers, it restores its state using the latest snapshot
-and then rebuilds the rest of its state by reapplying committed [command](#commands) entries.
-But in some cases, replicas can become so far out of sync that the cluster leader has already
-written a new snapshot to its log. In that case, the [leader](#leader-election) will replicate
-its latest snapshot to the recovering node, allowing it to start with the leader's snapshot.
-
-### Cluster Configurations
-Copycat replicas communicate with one another through a user-defined cluster configuration.
-The Copycat cluster is very flexible, and the [protocol](#protocols) underlying the Copycat
-cluster is pluggable. Additionally, for cases where cluster configuration may change over
-time, Copycat supports runtime cluster configuration changes. As with other state changes,
-all cluster configuration changes are performed through the cluster leader.
-
-### Leader Election
-Copycat clusters use leader election to maintain synchronization of nodes. In Copycat,
-all state changes are performed via the leader. In other words, commands that are submitted
-to the cluster are *always* forwarded to the leader for processing. This leads to a much
-simpler implementation of single-copy consistency.
-
-Raft's leader election algorithm relies largely on the log to elect a leader. Each node
-in the cluster can serve one of three roles at any given time - [follower](#followers),
-[candidate](#candidates), and [leader](#leaders) - each of which serve a specific role
-in contributing to elections, replicating logs, and maintaining general consistency
-of state across the cluster.
-
-### Followers
-When a node is first started, it is initialized as a follower. The follower
-serves only to listen for synchronization requests from cluster leaders and apply
-replicated log entries to its [state machine](#state-machines). If the follower does not
-receive a request from the cluster leader for a configurable amount of time, it will
-transition to a [candidate](#candidates) and start a new election.
-
-### Candidates
-The candidate role occurs when a replica is announcing its candidacy to become the
-cluster leader. Candidacy occurs when a [follower](#followers) has not heard from the
-cluster leader for a configurable amount of time. When a replica becomes a candidate, it
-requests votes from each other member of the cluster. The voting algorithm is essential
-to the consistency of Copycat logs. When a replica receives a vote request, it compares
-the status of the requesting node's log to its own log and decides whether to vote
-for the candidate based on how up-to-date the candidates log is. This ensures that
-only replicas with the most up-to-date logs can become the cluster leader.
-
-### Leaders
-Once a replica has won an election, it transitions to the leader role. The leader
-is the node through which all commands and configuration changes are performed.
-When a command is submitted to the cluster, the command is forwarded to the leader.
-Based on the command type - read or write - the leader will then replicate the command
-to its [followers](#followers), apply it to its [state machine](#state-machines), and return
-the result. The leader is also responsible for maintaining log consistency during
-[cluster configuration changes](#cluster-configurations).
-
-### Protocols
-The `copycat-core` project is purely an implementation of the Raft consensus algorithm.
-It does not implement any specific transport aside from a `local` transport for testing.
-Instead, the Copycat API is designed to allow users to implement the transport layer
-using the `Protocol` API. Copycat does, however, provide some core protocol implementations
-in the `copycat-netty` and `copycat-vertx` projects.
-
-### Services
-Copycat provides a framework for building fault-tolerant [state machines](#state-machines) on
-the Raft consensus algorithm, but fault-tolerant distributed systems are of no use if they can't
-be accessed from the outside world. Copycat's `Service` API facilitates creating user-facing
-interfaces (servers) for submitting [commands](#commands) to the Copycat cluster.
 
 # Getting Started
 
@@ -769,13 +657,10 @@ config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").
 config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(3456)));
 
 TcpCluster cluster = new TcpCluster(config);
+cluster.protocol().setThreads(3);
 ```
 
-Additional named arguments can be passed as query arguments:
-
-```
-tcp://localhost:1234?sendBufferSize=5000&receiveBufferSize=5000
-```
+The TCP protocol also provides additional options:
 
 The Netty `tcp` protocol has several additional named options.
 * `threads`
@@ -801,6 +686,8 @@ config.addRemoteMember(new EventBusMember("baz"));
 
 EventBusCluster cluster = new EventBusCluster(config);
 ```
+
+*Note that Copycat now provides a prototyped Vert.x 3 event bus protocol*
 
 ### Vert.x TCP Protocol
 The Vert.x `tcp` protocol communicates between replicas using a simple wire protocol
@@ -899,3 +786,115 @@ execute a `POST` request to the `/read` path using a JSON body containing comman
 ```java
 Copycat copycat = Copycat.copycat(new HttpService("localhost", 8080), new MyStateMachine(), cluster);
 ```
+
+# How it works
+Copycat uses a Raft-based consensus algorithm to perform leader election and state
+replication. Each node in a Copycat cluster may be in one of three states at any
+given time - [follower](#followers), [candidate](#candidates), or [leader](#leaders).
+Each node in the cluster maintains an internal [log](#logs) of replicated commands.
+When a command is submitted to a Copycat cluster, the command is forwarded to the
+cluster leader. The leader then logs the command and replicates it to a majority
+of the cluster. Once the command has been replicated, it applies the command to its
+local state machine and replies with the command result.
+
+*For the most in depth description of how Copycat works, see
+[In Search of an Understandable Consensus Algorithm](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf)
+by Diego Ongaro and John Ousterhout.*
+
+### State Machines
+Each node in a Copycat cluster contains a state machine to which the node applies
+[commands](#commands) sent to the cluster. State machines are simply classes that
+extend Copycat's `StateMachine` class, but there are a couple of very important
+aspects to note about state machines.
+* Given the same commands in the same order, state machines should always arrive at
+  the same state with the same output.
+* Following from that rule, each node's state machine should be identical.
+
+### Commands
+Commands are state change instructions that are submitted to the Copycat cluster
+and ultimately applied to the state machine. For instance, in a key-value store,
+a command could be something like `get` or `set`. Copycat provides unique features
+that allow it to optimize handling of certain command types. For instance, read-only
+commands which don't contribute to the system state will not be replicated, but commands
+that do alter the system state are eventually replicated to all the nodes in the cluster.
+
+### Logs
+Copycat nodes share state using a replicated log. When a command is submitted to the
+Copycat cluster, the command is appended to the [leader's](#leader-election) log and
+replicated to other nodes in the cluster. If a node dies and later restarts, the node
+will rebuild its internal state by reapplying logged commands to its state machine.
+The log is essential to the operation of the Copycat cluster in that it both helps
+maintain consistency of state across nodes and assists in [leader election](#leader-election).
+Copycat provides both in-memory logs for testing and file-based logs for production.
+
+### Snapshots
+In order to ensure [logs](#logs) do not grow too large for the disk, Copycat replicas periodically
+take and persist snapshots of the [state machine](#state-machines) state. Copycat manages snapshots
+using a method different than is described in the original Raft paper. Rather than persisting
+snapshots to separate snapshot files and replicating snapshots using an additional RCP method,
+Copycat appends snapshots directly to the log. This allows Copycat to minimize complexity by
+transfering snapshots as a normal part of log replication.
+
+Normally, when a node crashes and recovers, it restores its state using the latest snapshot
+and then rebuilds the rest of its state by reapplying committed [command](#commands) entries.
+But in some cases, replicas can become so far out of sync that the cluster leader has already
+written a new snapshot to its log. In that case, the [leader](#leader-election) will replicate
+its latest snapshot to the recovering node, allowing it to start with the leader's snapshot.
+
+### Cluster Configurations
+Copycat replicas communicate with one another through a user-defined cluster configuration.
+The Copycat cluster is very flexible, and the [protocol](#protocols) underlying the Copycat
+cluster is pluggable. Additionally, for cases where cluster configuration may change over
+time, Copycat supports runtime cluster configuration changes. As with other state changes,
+all cluster configuration changes are performed through the cluster leader.
+
+### Leader Election
+Copycat clusters use leader election to maintain synchronization of nodes. In Copycat,
+all state changes are performed via the leader. In other words, commands that are submitted
+to the cluster are *always* forwarded to the leader for processing. This leads to a much
+simpler implementation of single-copy consistency.
+
+Raft's leader election algorithm relies largely on the log to elect a leader. Each node
+in the cluster can serve one of three roles at any given time - [follower](#followers),
+[candidate](#candidates), and [leader](#leaders) - each of which serve a specific role
+in contributing to elections, replicating logs, and maintaining general consistency
+of state across the cluster.
+
+### Followers
+When a node is first started, it is initialized as a follower. The follower
+serves only to listen for synchronization requests from cluster leaders and apply
+replicated log entries to its [state machine](#state-machines). If the follower does not
+receive a request from the cluster leader for a configurable amount of time, it will
+transition to a [candidate](#candidates) and start a new election.
+
+### Candidates
+The candidate role occurs when a replica is announcing its candidacy to become the
+cluster leader. Candidacy occurs when a [follower](#followers) has not heard from the
+cluster leader for a configurable amount of time. When a replica becomes a candidate, it
+requests votes from each other member of the cluster. The voting algorithm is essential
+to the consistency of Copycat logs. When a replica receives a vote request, it compares
+the status of the requesting node's log to its own log and decides whether to vote
+for the candidate based on how up-to-date the candidates log is. This ensures that
+only replicas with the most up-to-date logs can become the cluster leader.
+
+### Leaders
+Once a replica has won an election, it transitions to the leader role. The leader
+is the node through which all commands and configuration changes are performed.
+When a command is submitted to the cluster, the command is forwarded to the leader.
+Based on the command type - read or write - the leader will then replicate the command
+to its [followers](#followers), apply it to its [state machine](#state-machines), and return
+the result. The leader is also responsible for maintaining log consistency during
+[cluster configuration changes](#cluster-configurations).
+
+### Protocols
+The `copycat-core` project is purely an implementation of the Raft consensus algorithm.
+It does not implement any specific transport aside from a `local` transport for testing.
+Instead, the Copycat API is designed to allow users to implement the transport layer
+using the `Protocol` API. Copycat does, however, provide some core protocol implementations
+in the `copycat-netty` and `copycat-vertx` projects.
+
+### Services
+Copycat provides a framework for building fault-tolerant [state machines](#state-machines) on
+the Raft consensus algorithm, but fault-tolerant distributed systems are of no use if they can't
+be accessed from the outside world. Copycat's `Service` API facilitates creating user-facing
+interfaces (servers) for submitting [commands](#commands) to the Copycat cluster.
