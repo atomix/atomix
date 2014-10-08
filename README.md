@@ -19,10 +19,14 @@ various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io
 **Please note that Copycat is still undergoing heavy development, and until a beta release,
 the API is subject to change.**
 
-* The cluster/protocol APIs were recently refactor to provide more flexibility
+* The cluster/protocol APIs were recently refactored to provide more flexibility
 * Work on extensive integration tests is currently under way
+* Much of the new API is lacking sufficient documentation
 * Work to provide state machine proxies is next up on the TODO list
 * A full featured fault-tolerant cluster manager/service is being developed as well
+
+Copycat *will* be published to Maven Central once these features (except the last)
+are complete. Follow the project for updates!
 
 *Copycat requires Java 8. Though it has been requested, there are currently no imminent
 plans for supporting Java 7. Of course, feel free to fork and PR :-)*
