@@ -36,7 +36,10 @@ import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 
 /**
- * Java chronicle based log implementation.
+ * Java chronicle based log implementation.<p>
+ *
+ * This is a naive thread-safe log implementation. In the future, internal
+ * read/write locks should be used for concurrent operations.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -52,8 +55,8 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   private Excerpt excerpt;
   private ExcerptAppender appender;
   private ExcerptTailer tailer;
-  private long firstIndex;
-  private long lastIndex;
+  private volatile long firstIndex;
+  private volatile long lastIndex;
   private long syncInterval = 0;
   private ScheduledFuture<Void> syncFuture;
 
@@ -104,7 +107,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   @SuppressWarnings("unchecked")
-  public void open() throws IOException {
+  public synchronized void open() throws IOException {
     logFile = findLogFile();
     chronicle = new IndexedChronicle(logFile.getAbsolutePath());
 
@@ -129,32 +132,19 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     }
   }
 
-  /**
-   * Returns the next log index.
-   *
-   * @return The next log index.
-   */
-  private long nextIndex() {
-    long index = ++lastIndex;
-    if (firstIndex == 0) {
-      firstIndex = 1;
-    }
-    return index;
-  }
-
   @Override
-  public long size() {
+  public synchronized long size() {
     return firstIndex > 0 ? lastIndex - firstIndex + 1 : 0;
   }
 
   @Override
-  public boolean isEmpty() {
+  public synchronized boolean isEmpty() {
     return lastIndex > firstIndex;
   }
 
   @Override
-  public long appendEntry(Entry entry) {
-    long index = nextIndex();
+  public synchronized long appendEntry(Entry entry) {
+    long index = lastIndex + 1;
     appender.startExcerpt();
     appender.writeLong(index);
     appender.writeByte(ACTIVE);
@@ -164,11 +154,15 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     appender.write(bytes);
     output.clear();
     appender.finish();
+    lastIndex = index;
+    if (firstIndex == 0) {
+      firstIndex = 1;
+    }
     return index;
   }
 
   @Override
-  public List<Long> appendEntries(Entry... entries) {
+  public synchronized List<Long> appendEntries(Entry... entries) {
     List<Long> indices = new ArrayList<>(entries.length);
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
@@ -177,7 +171,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public List<Long> appendEntries(List<Entry> entries) {
+  public synchronized List<Long> appendEntries(List<Entry> entries) {
     List<Long> indices = new ArrayList<>(entries.size());
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
@@ -212,7 +206,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Entry> T getEntry(long index) {
+  public synchronized <T extends Entry> T getEntry(long index) {
     long matchIndex = findAbsoluteIndex(index);
     excerpt.index(matchIndex);
     excerpt.skip(9);
@@ -229,7 +223,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Entry> List<T> getEntries(long from, long to) {
+  public synchronized <T extends Entry> List<T> getEntries(long from, long to) {
     if (!indexInRange(from)) {
       throw new LogIndexOutOfBoundsException("From index out of bounds.");
     }
@@ -270,7 +264,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public void removeAfter(long index) {
+  public synchronized void removeAfter(long index) {
     if (!indexInRange(index)) {
       throw new LogIndexOutOfBoundsException(String.format("Cannot remove entry at index %d", index));
     }
@@ -314,7 +308,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public void compact(long index, Entry snapshot) throws IOException {
+  public synchronized void compact(long index, Entry snapshot) throws IOException {
     if (index > firstIndex) {
       // Create a new log file using the most recent timestamp.
       File newLogFile = createLogFile();
@@ -366,12 +360,12 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public void sync() {
+  public synchronized void sync() {
     appender.nextSynchronous(true);
   }
 
   @Override
-  public void close() throws IOException {
+  public synchronized void close() throws IOException {
     chronicle.close();
     firstIndex = 0;
     lastIndex = 0;
@@ -381,7 +375,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public void delete() {
+  public synchronized void delete() {
     if (chronicle != null) {
       chronicle.clear();
     }
