@@ -24,14 +24,14 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Cluster replicator implementation.
+ * Cluster replicator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ClusterReplicator implements Replicator, Observer {
   private final StateContext state;
-  private final Map<String, ClusterReplica> replicaMap;
-  private final List<ClusterReplica> replicas;
+  private final Map<String, NodeReplicator> replicaMap;
+  private final List<NodeReplicator> replicas;
   private Integer readQuorum;
   private Integer writeQuorum;
   private int quorumIndex;
@@ -74,7 +74,7 @@ public class ClusterReplicator implements Replicator, Observer {
   private synchronized void clusterChanged(ClusterManager<?> clusterManager) {
     clusterManager.remoteNodes().forEach(node -> {
       if (!replicaMap.containsKey(node.member().id())) {
-        ClusterReplica replica = new ClusterReplica(node, state);
+        NodeReplicator replica = new NodeReplicator(node, state);
         replicaMap.put(node.member().id(), replica);
         replicas.add(replica);
         replica.open();
@@ -82,9 +82,9 @@ public class ClusterReplicator implements Replicator, Observer {
       }
     });
 
-    Iterator<ClusterReplica> iterator = replicas.iterator();
+    Iterator<NodeReplicator> iterator = replicas.iterator();
     while (iterator.hasNext()) {
-      ClusterReplica replica = iterator.next();
+      NodeReplicator replica = iterator.next();
       if (clusterManager.remoteNode(replica.node().member().id()) == null) {
         replica.close();
         iterator.remove();
@@ -109,7 +109,7 @@ public class ClusterReplicator implements Replicator, Observer {
     });
 
     // Iterate through replicas and commit all entries up to the given index.
-    for (ClusterReplica replica : replicaMap.values()) {
+    for (NodeReplicator replica : replicaMap.values()) {
       replica.replicate(index).whenComplete((resultIndex, error) -> {
         // Once the commit succeeds, check the commit index of all replicas.
         if (error == null) {
@@ -144,7 +144,7 @@ public class ClusterReplicator implements Replicator, Observer {
 
     // Iterate through replicas and ping each replica. Internally, this
     // should cause the replica to send any remaining entries if necessary.
-    for (ClusterReplica replica : replicaMap.values()) {
+    for (NodeReplicator replica : replicaMap.values()) {
       replica.ping(index).whenComplete((resultIndex, error) -> {
         if (error == null) {
           quorum.succeed();

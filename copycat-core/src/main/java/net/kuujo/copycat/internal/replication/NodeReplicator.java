@@ -26,17 +26,20 @@ import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SyncRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Cluster replica implementation.
+ * Node replicator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ClusterReplica {
+class NodeReplicator {
+  private static final Logger LOGGER = LoggerFactory.getLogger(NodeReplicator.class);
   private static final int BATCH_SIZE = 100;
   private final RemoteNode<?> node;
   private final StateContext state;
@@ -48,7 +51,7 @@ class ClusterReplica {
   private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
   private final Map<Long, CompletableFuture<Long>> replicateFutures = new ConcurrentHashMap<>(1024);
 
-  public ClusterReplica(RemoteNode<?> node, StateContext state) {
+  public NodeReplicator(RemoteNode<?> node, StateContext state) {
     this.node = node;
     this.state = state;
     this.log = state.log();
@@ -109,10 +112,12 @@ class ClusterReplica {
     pingFutures.put(index, future);
 
     PingRequest request = new PingRequest(state.nextCorrelationId(), state.currentTerm(), state.cluster().localMember().id(), index, log.containsEntry(index) ? log.<CopycatEntry>getEntry(index).term() : 0, state.commitIndex());
+    LOGGER.debug("{} - Sent {} to {}", state.clusterManager().localNode(), request, node);
     node.client().ping(request).whenCompleteAsync((response, error) -> {
       if (error != null) {
         triggerPingFutures(index, error);
       } else {
+        LOGGER.debug("{} - Received {} from {}", state.clusterManager().localNode(), response, node);
         if (response.status().equals(Response.Status.OK)) {
           if (response.term() > state.currentTerm()) {
             state.currentTerm(response.term());
@@ -202,10 +207,12 @@ class ClusterReplica {
 
     sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 
+    LOGGER.debug("{} - Sent {} to {}", state.clusterManager().localNode(), request, node);
     node.client().sync(request).whenComplete((response, error) -> {
       if (error != null) {
         triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), error);
       } else {
+        LOGGER.debug("{} - Received {} to {}", state.clusterManager().localNode(), response, node);
         if (response.status().equals(Response.Status.OK)) {
           if (response.succeeded()) {
             // Update the next index to send and the last index known to be replicated.
@@ -293,7 +300,7 @@ class ClusterReplica {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof ClusterReplica && ((ClusterReplica) object).node.equals(node);
+    return object instanceof NodeReplicator && ((NodeReplicator) object).node.equals(node);
   }
 
   @Override
