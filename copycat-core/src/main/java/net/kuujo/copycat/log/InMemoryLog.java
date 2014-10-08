@@ -45,22 +45,22 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public void open() {
+  public synchronized void open() {
     log = new TreeMap<>();
   }
 
   @Override
-  public long size() {
+  public synchronized long size() {
     return log.size();
   }
 
   @Override
-  public boolean isEmpty() {
+  public synchronized boolean isEmpty() {
     return log.isEmpty();
   }
 
   @Override
-  public long appendEntry(Entry entry) {
+  public synchronized long appendEntry(Entry entry) {
     long index = log.isEmpty() ? 1 : log.lastKey() + 1;
     kryo.writeClassAndObject(output, entry);
     byte[] bytes = output.toBytes();
@@ -70,7 +70,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public List<Long> appendEntries(Entry... entries) {
+  public synchronized List<Long> appendEntries(Entry... entries) {
     List<Long> indices = new ArrayList<>(entries.length);
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
@@ -79,7 +79,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public List<Long> appendEntries(List<Entry> entries) {
+  public synchronized List<Long> appendEntries(List<Entry> entries) {
     List<Long> indices = new ArrayList<>(entries.size());
     for (Entry entry : entries) {
       indices.add(appendEntry(entry));
@@ -88,33 +88,33 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public boolean containsEntry(long index) {
+  public synchronized boolean containsEntry(long index) {
     return log.containsKey(index);
   }
 
   @Override
-  public long firstIndex() {
+  public synchronized long firstIndex() {
     return !log.isEmpty() ? log.firstKey() : 0;
   }
 
   @Override
-  public <T extends Entry> T firstEntry() {
+  public synchronized <T extends Entry> T firstEntry() {
     return !log.isEmpty() ? getEntry(log.firstKey()) : null;
   }
 
   @Override
-  public long lastIndex() {
+  public synchronized long lastIndex() {
     return !log.isEmpty() ? log.lastKey() : 0;
   }
 
   @Override
-  public <T extends Entry> T lastEntry() {
+  public synchronized <T extends Entry> T lastEntry() {
     return !log.isEmpty() ? getEntry(log.lastKey()) : null;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Entry> T getEntry(long index) {
+  public synchronized <T extends Entry> T getEntry(long index) {
     byte[] bytes = log.get(index);
     if (bytes != null) {
       buffer.put(bytes);
@@ -128,7 +128,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public <T extends Entry> List<T> getEntries(long from, long to) {
+  public synchronized <T extends Entry> List<T> getEntries(long from, long to) {
     List<T> entries = new ArrayList<>((int)(to - from + 1));
     for (long i = from; i <= to; i++) {
       T entry = getEntry(i);
@@ -140,17 +140,17 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public void removeEntry(long index) {
+  public synchronized void removeEntry(long index) {
     log.remove(index);
   }
 
   @Override
-  public void removeAfter(long index) {
+  public synchronized void removeAfter(long index) {
     log.tailMap(index, false).clear();
   }
 
   @Override
-  public void compact(long index, Entry entry) throws IOException {
+  public synchronized void compact(long index, Entry entry) throws IOException {
     kryo.writeClassAndObject(output, entry);
     byte[] bytes = output.toBytes();
     output.clear();
