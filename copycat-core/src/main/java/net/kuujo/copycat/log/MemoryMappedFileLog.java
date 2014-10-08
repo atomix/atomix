@@ -47,6 +47,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
+  private static final int EXTRA_BYTES = 9;
   private final ByteBuffer buffer = ByteBuffer.allocate(4096);
   private final ByteBufferOutput output = new ByteBufferOutput(buffer);
   private final ByteBufferInput input = new ByteBufferInput(buffer);
@@ -57,6 +58,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   private ExcerptTailer tailer;
   private volatile long firstIndex;
   private volatile long lastIndex;
+  private volatile long size;
   private long syncInterval = 0;
   private ScheduledFuture<Void> syncFuture;
 
@@ -118,13 +120,15 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     tailer.toStart();
     while (tailer.nextIndex()) {
       long index = tailer.readLong();
-      byte deleted = tailer.readByte();
-      if (deleted == ACTIVE) {
+      byte status = tailer.readByte();
+      int length = excerpt.readInt();
+      if (status == ACTIVE) {
         if (firstIndex == 0) {
           firstIndex = index;
         }
         lastIndex = index;
       }
+      size += length + EXTRA_BYTES; // 9 bytes for index and status
     }
 
     if (syncInterval > 0 && syncFuture == null) {
@@ -134,7 +138,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   public synchronized long size() {
-    return firstIndex > 0 ? lastIndex - firstIndex + 1 : 0;
+    return size;
   }
 
   @Override
@@ -154,6 +158,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     appender.write(bytes);
     output.clear();
     appender.finish();
+    size += bytes.length + EXTRA_BYTES; // 9 bytes for index and status
     lastIndex = index;
     if (firstIndex == 0) {
       firstIndex = 1;
@@ -313,6 +318,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
       // Create a new log file using the most recent timestamp.
       File newLogFile = createLogFile();
       File oldLogFile = logFile;
+      long newSize = 0;
   
       // Create a new chronicle for the new log file.
       Chronicle chronicle = new IndexedChronicle(newLogFile.getAbsolutePath());
@@ -326,7 +332,8 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
       appender.write(snapshotBytes);
       output.clear();
       appender.finish();
-  
+      newSize += snapshotBytes.length + EXTRA_BYTES; // 9 bytes for index and status
+
       // Iterate through entries greater than the given index and copy them to the new chronicle.
       long matchIndex = findAbsoluteIndex(index);
       tailer.index(matchIndex);
@@ -343,6 +350,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
           appender.writeInt(length);
           appender.write(bytes);
           appender.finish();
+          newSize += bytes.length + EXTRA_BYTES;
         }
       }
   
@@ -353,6 +361,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
       this.appender = appender;
       this.tailer = chronicle.createTailer();
       this.firstIndex = index;
+      this.size = newSize;
   
       // Finally, delete the old log file.
       deleteLogFile(oldLogFile);
