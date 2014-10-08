@@ -16,18 +16,19 @@ package net.kuujo.copycat.internal.state;
 
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
-import net.kuujo.copycat.internal.util.Quorum;
 import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.util.Quorum;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Logger;
 
 /**
  * Candidate state.<p>
@@ -41,7 +42,7 @@ import java.util.logging.Logger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CandidateController extends StateController {
-  private static final Logger logger = Logger.getLogger(CandidateController.class.getCanonicalName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(CandidateController.class);
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;
 
@@ -53,7 +54,7 @@ public class CandidateController extends StateController {
   @Override
   void init(StateContext context) {
     super.init(context);
-    logger.info(String.format("%s starting election", context.clusterManager().localNode().member()));
+    LOGGER.info("{} starting election", context.clusterManager().localNode().member());
     resetTimer();
   }
 
@@ -74,13 +75,13 @@ public class CandidateController extends StateController {
     currentTimer = context.config().getTimerStrategy().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      logger.info(String.format("%s election timed out", context.clusterManager().localNode().member()));
+      LOGGER.info("{} election timed out", context.clusterManager().localNode().member());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       resetTimer();
-      logger.info(String.format("%s restarted election", context.clusterManager().localNode().member()));
+      LOGGER.info("{} restarted election", context.clusterManager().localNode().member());
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
@@ -159,7 +160,7 @@ public class CandidateController extends StateController {
 
   @Override
   public String toString() {
-    return String.format("Candidate[context=%s]", context);
+    return String.format("CandidateController[context=%s]", context);
   }
 
 }

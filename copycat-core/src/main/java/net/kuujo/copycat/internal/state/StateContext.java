@@ -20,12 +20,12 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.cluster.ClusterManager;
-import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.event.LeaderElectEvent;
 import net.kuujo.copycat.event.StartEvent;
 import net.kuujo.copycat.event.StateChangeEvent;
 import net.kuujo.copycat.event.StopEvent;
+import net.kuujo.copycat.internal.cluster.ClusterManager;
+import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
 import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.Log;
@@ -33,6 +33,8 @@ import net.kuujo.copycat.protocol.RequestHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,7 +43,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.logging.Logger;
 
 /**
  * Raft state context.
@@ -49,7 +50,7 @@ import java.util.logging.Logger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class StateContext {
-  private static final Logger logger = Logger.getLogger(StateContext.class.getCanonicalName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(StateContext.class);
   private final Executor executor = Executors.newCachedThreadPool();
   private final StateMachine stateMachine;
   @SuppressWarnings("rawtypes")
@@ -188,7 +189,7 @@ public final class StateContext {
       return;
     }
 
-    logger.info(clusterManager.localNode() + " transitioning to " + type);
+    LOGGER.info("{} transitioning to {}", clusterManager.localNode().member(), type);
     final StateController oldState = currentState;
     try {
       currentState = type.newInstance();
@@ -217,7 +218,7 @@ public final class StateContext {
    */
   public StateContext currentLeader(String leader) {
     if (currentLeader == null || !currentLeader.equals(leader)) {
-      logger.finer(String.format("Current cluster leader changed: %s", leader));
+      LOGGER.debug("{} leader changed: {}", clusterManager.localNode().member(), leader);
     }
 
     if (currentLeader == null && leader != null) {
@@ -283,7 +284,7 @@ public final class StateContext {
   public StateContext currentTerm(long term) {
     if (term > currentTerm) {
       currentTerm = term;
-      logger.finer(String.format("Updated current term %d", term));
+      LOGGER.debug("{} term changed: {}", clusterManager.localNode().member(), term);
       lastVotedFor = null;
     }
     return this;
@@ -301,7 +302,7 @@ public final class StateContext {
    */
   public StateContext lastVotedFor(String candidate) {
     if (lastVotedFor == null || !lastVotedFor.equals(candidate)) {
-      logger.finer(String.format("Voted for %s", candidate));
+      LOGGER.debug("{} voted for {}", clusterManager.localNode().member(), candidate);
     }
     lastVotedFor = candidate;
     return this;

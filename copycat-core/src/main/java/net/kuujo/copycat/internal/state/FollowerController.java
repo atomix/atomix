@@ -19,11 +19,12 @@ import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 
 /**
  * Follower state.<p>
@@ -37,7 +38,7 @@ import java.util.logging.Logger;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FollowerController extends StateController {
-  private static final Logger logger = Logger.getLogger(FollowerController.class.getCanonicalName());
+  private static final Logger LOGGER = LoggerFactory.getLogger(FollowerController.class);
   private ScheduledFuture<Void> currentTimer;
   private boolean shutdown = true;
 
@@ -76,7 +77,7 @@ public class FollowerController extends StateController {
         // candidate and start a new election.
         currentTimer = null;
         if (context.lastVotedFor() == null) {
-          logger.info("Election timed out. Transitioning to candidate.");
+          LOGGER.info("{} election timed out. Transitioning to candidate.", context.clusterManager().localNode().member());
           context.transition(CandidateController.class);
         } else {
           // If the node voted for a candidate then reset the election timer.
@@ -108,7 +109,7 @@ public class FollowerController extends StateController {
 
   @Override
   public String toString() {
-    return String.format("Follower[context=%s]", context);
+    return String.format("FollowerController[context=%s]", context);
   }
 
 }
