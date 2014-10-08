@@ -16,6 +16,8 @@ package net.kuujo.copycat.internal.state;
 
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.protocol.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -28,10 +30,16 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NoneController extends StateController {
+  private static final Logger LOGGER = LoggerFactory.getLogger(NoneController.class);
 
   @Override
   CopycatState state() {
     return CopycatState.NONE;
+  }
+
+  @Override
+  Logger logger() {
+    return LOGGER;
   }
 
   @Override
@@ -41,18 +49,23 @@ public class NoneController extends StateController {
   }
 
   @Override
+  public CompletableFuture<PingResponse> ping(PingRequest request) {
+    return CompletableFuture.completedFuture(logResponse(new PingResponse(logRequest(request).id(), "Replica is not alive")));
+  }
+
+  @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    return CompletableFuture.completedFuture(new SyncResponse(request.id(), "Replica is not alive"));
+    return CompletableFuture.completedFuture(logResponse(new SyncResponse(logRequest(request).id(), "Replica is not alive")));
   }
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    return CompletableFuture.completedFuture(new PollResponse(request.id(), "Replica is not alive"));
+    return CompletableFuture.completedFuture(logResponse(new PollResponse(logRequest(request).id(), "Replica is not alive")));
   }
 
   @Override
   public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
-    return CompletableFuture.completedFuture(new SubmitResponse(request.id(), "Replica is not alive"));
+    return CompletableFuture.completedFuture(logResponse(new SubmitResponse(logRequest(request).id(), "Replica is not alive")));
   }
 
   @Override
