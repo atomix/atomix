@@ -16,10 +16,16 @@ pipelining, fast serialization, and read-only state queries.
 Copycat is a pluggable framework, providing protocol and service implementations for
 various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
-*Please note that Copycat is still undergoing heavy development, and until a beta release,
-the API is subject to change.*
+**Please note that Copycat is still undergoing heavy development, and until a beta release,
+the API is subject to change.**
 
-*Copycat requires Java 8*
+* The cluster/protocol APIs were recently refactor to provide more flexibility
+* Work on extensive integration tests is currently under way
+* Work to provide state machine proxies is next up on the TODO list
+* A full featured fault-tolerant cluster manager/service is being developed as well
+
+*Copycat requires Java 8. Though it has been requested, there are currently no imminent
+plans for supporting Java 7. Of course, feel free to fork and PR :-)*
 
 User Manual
 ===========
