@@ -39,10 +39,10 @@ public class CopycatConfig {
   private boolean requireReadQuorum = true;
   private int readQuorumSize = -1;
   @SuppressWarnings("rawtypes")
-  private QuorumStrategy readQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size()) + 1;
+  private QuorumStrategy readQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
   private int writeQuorumSize = -1;
   @SuppressWarnings("rawtypes")
-  private QuorumStrategy writeQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size()) + 1;
+  private QuorumStrategy writeQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
   private int maxLogSize = 32 * 1024^2;
   private CorrelationStrategy<?> correlationStrategy = () -> UUID.randomUUID().toString();
   @SuppressWarnings("unchecked")
