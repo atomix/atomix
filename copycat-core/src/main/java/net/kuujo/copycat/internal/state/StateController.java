@@ -356,7 +356,7 @@ abstract class StateController implements RequestHandler {
         try {
           ((Compactable) context.log()).compact(index, entry);
         } catch (IOException e) {
-          throw new CopycatException("Failed to compact log.", e);
+          throw new CopycatException(e, "Failed to compact log.");
         }
       }
 
@@ -402,7 +402,7 @@ abstract class StateController implements RequestHandler {
           try {
             log.compact(lastApplied, snapshot);
           } catch (IOException e) {
-            throw new CopycatException("Failed to compact log.", e);
+            throw new CopycatException(e, "Failed to compact log.");
           }
         }
       }

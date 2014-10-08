@@ -18,6 +18,7 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.event.*;
+import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.spi.service.CopycatService;
 
 import java.util.concurrent.CompletableFuture;

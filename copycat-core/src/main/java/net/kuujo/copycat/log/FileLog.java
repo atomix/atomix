@@ -16,7 +16,9 @@ package net.kuujo.copycat.log;
 
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
+
 import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.util.Args;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -63,14 +65,14 @@ public class FileLog extends BaseFileLog implements Compactable {
         }
         logFile.createNewFile();
       } catch (IOException e) {
-        throw new LogException(e);
+        throw new LogException(e, "Failed to create file %s", logFile);
       }
     }
 
     try {
       file = new RandomAccessFile(logFile.getAbsolutePath(), "rw");
     } catch (FileNotFoundException e) {
-      throw new LogException(e);
+      throw new LogException(e, "Failed to open file %s", logFile);
     }
 
     String line = null;
@@ -88,7 +90,7 @@ public class FileLog extends BaseFileLog implements Compactable {
         lastIndex = ByteBuffer.wrap(lastLine.getBytes()).getLong();
       }
     } catch (IOException e) {
-      throw new LogException(e);
+      throw new LogException(e, "Failed to read file %s", file);
     }
   }
 
@@ -141,7 +143,8 @@ public class FileLog extends BaseFileLog implements Compactable {
 
   @Override
   public synchronized long appendEntry(Entry entry) {
-    if (entry == null) throw new NullPointerException();
+    Args.checkNotNull(entry);
+
     try {
       long index = lastIndex + 1;
       file.writeLong(index);
@@ -157,7 +160,7 @@ public class FileLog extends BaseFileLog implements Compactable {
       }
       return index;
     } catch (IOException e) {
-      throw new LogException(e);
+      throw new LogException(e, "Failed to append entry");
     }
   }
 

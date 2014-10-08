@@ -22,17 +22,15 @@ package net.kuujo.copycat.log;
  */
 @SuppressWarnings("serial")
 public class LogIndexOutOfBoundsException extends LogException {
-
-  public LogIndexOutOfBoundsException(String message) {
-    super(message);
+  public LogIndexOutOfBoundsException(String message, Object... args) {
+    super(message, args);
   }
 
-  public LogIndexOutOfBoundsException(String message, Throwable cause) {
-    super(message, cause);
+  public LogIndexOutOfBoundsException(Throwable cause, String message, Object... args) {
+    super(cause, message, args);
   }
 
   public LogIndexOutOfBoundsException(Throwable cause) {
     super(cause);
   }
-
 }

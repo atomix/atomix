@@ -41,7 +41,7 @@ abstract class BaseLog implements Log {
       try {
         kryo.register(type, info.serializer().newInstance(), info.id());
       } catch (InstantiationException | IllegalAccessException e) {
-        throw new LogException(e);
+        throw new LogException(e, "Failed to instantiate serializer %s", info.serializer().getName());
       }
     }
   }

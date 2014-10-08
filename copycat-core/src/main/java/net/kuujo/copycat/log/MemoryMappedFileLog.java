@@ -258,7 +258,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   @Override
   public synchronized void removeEntry(long index) {
     if (!indexInRange(index)) {
-      throw new LogIndexOutOfBoundsException(String.format("Cannot remove entry at index %d", index));
+      throw new LogIndexOutOfBoundsException("Cannot remove entry at index %s", index);
     }
     long matchIndex = findAbsoluteIndex(index);
     if (matchIndex > -1) {
@@ -271,7 +271,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   @Override
   public synchronized void removeAfter(long index) {
     if (!indexInRange(index)) {
-      throw new LogIndexOutOfBoundsException(String.format("Cannot remove entry at index %d", index));
+      throw new LogIndexOutOfBoundsException("Cannot remove entry at index %s", index);
     }
     long matchIndex = findAbsoluteIndex(index);
     if (matchIndex > -1) {
