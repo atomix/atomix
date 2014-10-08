@@ -16,6 +16,9 @@
 package net.kuujo.copycat.log;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -65,6 +68,24 @@ abstract class BaseFileLog extends BaseLog {
    */
   protected final File createLogFile() {
     return new File(baseFile.getAbsoluteFile().getParentFile().getAbsolutePath(), String.format("%s.%s", baseFile.getName(), fileNameFormat.format(new Date())));
+  }
+
+  /**
+   * Creates a new temporary log file.
+   */
+  protected final File createTempFile() {
+    return new File(baseFile.getAbsoluteFile().getParentFile().getAbsolutePath(), String.format("%s.%s.temp", baseFile.getName(), fileNameFormat.format(new Date())));
+  }
+
+  /**
+   * Moves a temporary file to its final position.
+   */
+  protected final void moveTempFile(File tempFile, File newFile) throws IOException {
+    for (File file : baseFile.getAbsoluteFile().getParentFile().listFiles(File::isFile)) {
+      if (file.getName().startsWith(tempFile.getName())) {
+        Files.move(file.toPath(), new File(file.getParentFile(), String.format("%s%s", newFile.getName(), file.getName().substring(tempFile.getName().length()))).toPath(), StandardCopyOption.REPLACE_EXISTING);
+      }
+    }
   }
 
   /**

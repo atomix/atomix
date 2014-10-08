@@ -317,11 +317,12 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     if (index > firstIndex) {
       // Create a new log file using the most recent timestamp.
       File newLogFile = createLogFile();
+      File tempLogFile = createTempFile();
       File oldLogFile = logFile;
       long newSize = 0;
   
       // Create a new chronicle for the new log file.
-      Chronicle chronicle = new IndexedChronicle(newLogFile.getAbsolutePath());
+      Chronicle chronicle = new IndexedChronicle(tempLogFile.getAbsolutePath());
       ExcerptAppender appender = chronicle.createAppender();
       appender.startExcerpt();
       appender.writeLong(index);
@@ -353,12 +354,14 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
           newSize += bytes.length + EXTRA_BYTES;
         }
       }
-  
+
+      moveTempFile(tempLogFile, newLogFile);
+
       // Override existing chronicle types.
       this.logFile = newLogFile;
-      this.chronicle = chronicle;
+      this.chronicle = new IndexedChronicle(newLogFile.getAbsolutePath());
       this.excerpt = chronicle.createExcerpt();
-      this.appender = appender;
+      this.appender = chronicle.createAppender();
       this.tailer = chronicle.createTailer();
       this.firstIndex = index;
       this.size = newSize;
