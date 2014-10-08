@@ -74,6 +74,18 @@ public class Args {
     }
     return value;
   }
+  
+  /**
+   * Validates that a value is not null.
+   *
+   * @param value The value to validate.
+   */
+  public static <T> T checkNotNull(T value, String parameterName) {
+    if (value == null) {
+      throw new NullPointerException(String.format("%s cannot be null", parameterName));
+    }
+    return value;
+  }
 
   /**
    * Validates that a value is not null.
@@ -116,18 +128,17 @@ public class Args {
   }
 
   /**
-   * Validates that a value meets a predicate.
+   * Validates that a condition applies.
    *
-   * @param value The value to validate.
-   * @param predicate The predicate with which to check the value.
+   * @param value The resulting value to passthrough
+   * @param condition The condition to assert.
    * @param message The failure exception message.
    * @param args A list of message string formatting arguments.
    */
-  public static <T> T checkValue(T value, Predicate<T> predicate, String message, Object... args) {
-    if (!predicate.test(value)) {
+  public static <T> T checkValue(T value, boolean condition, String message, Object... args) {
+    if (!condition) {
       throw new IllegalArgumentException(String.format(message, args));
     }
     return value;
   }
-
 }

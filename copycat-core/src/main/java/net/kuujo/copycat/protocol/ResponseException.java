@@ -24,17 +24,15 @@ import net.kuujo.copycat.CopycatException;
  */
 @SuppressWarnings("serial")
 public class ResponseException extends CopycatException {
-
-  public ResponseException(String message) {
-    super(message);
+  public ResponseException(String message, Object... args) {
+    super(message, args);
   }
 
-  public ResponseException(String message, Throwable cause) {
-    super(message, cause);
+  public ResponseException(Throwable cause, String message, Object... args) {
+    super(cause, message, args);
   }
 
   public ResponseException(Throwable cause) {
     super(cause);
   }
-
 }

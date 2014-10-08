@@ -24,6 +24,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.internal.event.DefaultEvents;
 import net.kuujo.copycat.internal.state.StateContext;
+import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.Log;
 
 import java.util.concurrent.CompletableFuture;
@@ -94,7 +95,7 @@ public class DefaultCopycatContext implements CopycatContext {
 
   @Override
   public <T extends Event> EventContext<T> on(Class<T> event) {
-    return events.event(event);
+    return events.event(Args.checkNotNull(event, "Event cannot be null"));
   }
 
   @Override
@@ -104,7 +105,7 @@ public class DefaultCopycatContext implements CopycatContext {
 
   @Override
   public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
-    return state.events().event(event);
+    return state.events().event(Args.checkNotNull(event, "Event cannot be null"));
   }
 
   @Override
@@ -134,7 +135,7 @@ public class DefaultCopycatContext implements CopycatContext {
 
   @Override
   public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
-    return state.submitCommand(command, args);
+    return state.submitCommand(Args.checkNotNull(command, "command cannot be null"), args);
   }
 
   @Override

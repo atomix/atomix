@@ -24,17 +24,15 @@ import net.kuujo.copycat.CopycatException;
  */
 @SuppressWarnings("serial")
 public class LogException extends CopycatException {
-
-  public LogException(String message) {
-    super(message);
+  public LogException(String message, Object... args) {
+    super(message, args);
   }
 
-  public LogException(String message, Throwable cause) {
-    super(message, cause);
+  public LogException(Throwable cause, String message, Object... args) {
+    super(cause, message, args);
   }
 
   public LogException(Throwable cause) {
     super(cause);
   }
-
 }

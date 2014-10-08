@@ -24,17 +24,15 @@ import net.kuujo.copycat.CopycatException;
  */
 @SuppressWarnings("serial")
 public class ServiceException extends CopycatException {
-
-  public ServiceException(String message) {
-    super(message);
+  public ServiceException(String message, Object... args) {
+    super(message, args);
   }
 
-  public ServiceException(String message, Throwable cause) {
-    super(message, cause);
+  public ServiceException(Throwable cause, String message, Object... args) {
+    super(cause, message, args);
   }
 
   public ServiceException(Throwable cause) {
     super(cause);
   }
-
 }

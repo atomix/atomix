@@ -14,10 +14,17 @@
  */
 package net.kuujo.copycat;
 
+import java.util.ServiceLoader;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.internal.DefaultCopycatContext;
+import net.kuujo.copycat.event.Event;
+import net.kuujo.copycat.event.EventContext;
+import net.kuujo.copycat.event.EventHandlerRegistry;
+import net.kuujo.copycat.event.EventHandlers;
+import net.kuujo.copycat.event.Events;
+import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.CopycatContextFactory;
@@ -25,9 +32,6 @@ import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.spi.protocol.CopycatProtocol;
-
-import java.util.ServiceLoader;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Copycat context.<p>
@@ -125,6 +129,7 @@ public interface CopycatContext {
    *
    * @param event The event for which to return the context.
    * @return The event context.
+   * @throws NullPointerException if {@code event} is null
    */
   <T extends Event> EventContext<T> on(Class<T> event);
 
@@ -140,6 +145,7 @@ public interface CopycatContext {
    *
    * @param event The event for which to return the registry.
    * @return The event handler registry.
+   * @throws NullPointerException if {@code event} is null
    */
   <T extends Event> EventHandlerRegistry<T> event(Class<T> event);
 
@@ -184,6 +190,7 @@ public interface CopycatContext {
    * @param command The name of the command to submit.
    * @param args An ordered list of command arguments.
    * @return A completable future to be completed once the result is received.
+   * @throws NullPointerException if {@code command} is null
    */
   <R> CompletableFuture<R> submitCommand(final String command, final Object... args);
 
@@ -208,9 +215,10 @@ public interface CopycatContext {
      *
      * @param log The copycat log.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code log} is null
      */
     public Builder withLog(Log log) {
-      this.log = log;
+      this.log = Args.checkNotNull(log, "log");
       return this;
     }
 
@@ -219,9 +227,10 @@ public interface CopycatContext {
      *
      * @param config The copycat configuration.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code config} is null
      */
     public Builder withConfig(CopycatConfig config) {
-      this.config = config;
+      this.config = Args.checkNotNull(config, "config");
       return this;
     }
 
@@ -230,6 +239,7 @@ public interface CopycatContext {
      *
      * @param timeout The copycat election timeout.
      * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code timeout} is not > 0
      */
     public Builder withElectionTimeout(long timeout) {
       config.setElectionTimeout(timeout);
@@ -241,6 +251,7 @@ public interface CopycatContext {
      *
      * @param interval The copycat heartbeat interval.
      * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code interval} is not > 0
      */
     public Builder withHeartbeatInterval(long interval) {
       config.setHeartbeatInterval(interval);
@@ -263,6 +274,7 @@ public interface CopycatContext {
      *
      * @param quorumSize The read quorum size.
      * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code quorumSize} is not > -1
      */
     public Builder withReadQuorumSize(int quorumSize) {
       config.setReadQuorumSize(quorumSize);
@@ -274,6 +286,7 @@ public interface CopycatContext {
      *
      * @param quorumStrategy The read quorum strategy.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code quorumStrategy} is null
      */
     public Builder withReadQuorumStrategy(QuorumStrategy quorumStrategy) {
       config.setReadQuorumStrategy(quorumStrategy);
@@ -296,6 +309,7 @@ public interface CopycatContext {
      *
      * @param quorumSize The write quorum size.
      * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code quorumSize} is not > -1
      */
     public Builder withWriteQuorumSize(int quorumSize) {
       config.setWriteQuorumSize(quorumSize);
@@ -307,6 +321,7 @@ public interface CopycatContext {
      *
      * @param quorumStrategy The write quorum strategy.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code quorumStrategy} is null
      */
     public Builder withWriteQuorumStrategy(QuorumStrategy quorumStrategy) {
       config.setWriteQuorumStrategy(quorumStrategy);
@@ -318,6 +333,7 @@ public interface CopycatContext {
      *
      * @param maxSize The max log size.
      * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code maxSize} is not > 0
      */
     public Builder withMaxLogSize(int maxSize) {
       config.setMaxLogSize(maxSize);
@@ -329,6 +345,7 @@ public interface CopycatContext {
      *
      * @param strategy The correlation strategy.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code strategy} is null
      */
     public Builder withCorrelationStrategy(CorrelationStrategy<?> strategy) {
       config.setCorrelationStrategy(strategy);
@@ -340,6 +357,7 @@ public interface CopycatContext {
      *
      * @param strategy The timer strategy.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code strategy} is null
      */
     public Builder withTimerStrategy(TimerStrategy strategy) {
       config.setTimerStrategy(strategy);
@@ -351,9 +369,10 @@ public interface CopycatContext {
      *
      * @param protocol The cluster protocol.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code protocol} is null
      */
     public Builder withProtocol(CopycatProtocol<?> protocol) {
-      this.protocol = protocol;
+      this.protocol = Args.checkNotNull(protocol, "protocol");
       return this;
     }
 
@@ -362,9 +381,10 @@ public interface CopycatContext {
      *
      * @param cluster The copycat cluster.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code cluster} is null
      */
     public Builder withCluster(Cluster<?> cluster) {
-      this.cluster = cluster;
+      this.cluster = Args.checkNotNull(cluster, "cluster");
       return this;
     }
 
@@ -373,9 +393,10 @@ public interface CopycatContext {
      *
      * @param stateMachine The state machine.
      * @return The copycat builder.
+     * @throws NullPointerException if {@code stateMachine} is null
      */
     public Builder withStateMachine(StateMachine stateMachine) {
-      this.stateMachine = stateMachine;
+      this.stateMachine = Args.checkNotNull(stateMachine, "stateMachine");
       return this;
     }
 
