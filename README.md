@@ -6,12 +6,12 @@ Copycat
 Copycat is an extensible Java-based implementation of the
 [Raft consensus protocol](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
 
-The core of Copycat is a framework designed to support a variety of asynchronous frameworks
-and protocols. Copycat provides a simple extensible API that can be used to build a
-strongly consistent, fault/partition tolerant state machine over any mode of communication.
+The core of Copycat is a framework designed to integrate with any asynchronous framework
+or protocol. Copycat provides a simple extensible API that can be used to build a
+strongly consistent, *fault/partition tolerant state machine* over any mode of communication.
 Copycat's Raft implementation also supports advanced features of the Raft algorithm such as
-snapshotting and dynamic cluster configuration changes and provides additional optimizations
-pipelining, fast serialization, and read-only state queries.
+snapshotting and dynamic cluster configuration changes and provides *additional optimizations
+pipelining, fast Kryo-based serialization, memory-mapped file logging, and read-only state queries.*
 
 Copycat is a pluggable framework, providing protocol and service implementations for
 various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
@@ -19,14 +19,18 @@ various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io
 **Please note that Copycat is still undergoing heavy development, and until a beta release,
 the API is subject to change.**
 
+This project has been in development for over a year, and it's finally nearing its first release.
+Until then, here are a few items on the TODO list:
+
 * The cluster/protocol APIs were recently refactored to provide more flexibility
+* Commands will soon be separated into separate Command (write) and Query (read) operations
+* Work on a separate synchronous API is currently under way
 * Work on extensive integration tests is currently under way
 * Much of the new API is lacking sufficient documentation
-* Work to provide state machine proxies is next up on the TODO list
-* A full featured fault-tolerant cluster manager/service is being developed as well
+* Work to provide state machine proxies is next up on the list
 
-Copycat *will* be published to Maven Central once these features (except the last)
-are complete. Follow the project for updates!
+Copycat *will* be published to Maven Central once these features are complete. Follow
+the project for updates!
 
 *Copycat requires Java 8. Though it has been requested, there are currently no imminent
 plans for supporting Java 7. Of course, feel free to fork and PR :-)*
@@ -87,7 +91,6 @@ quite simple. Here's a quick example.
 
 ```java
 public class KeyValueStore extends StateMachine {
-  @Stateful
   private Map<String, Object> data = new HashMap<>();
 
   @Command(type = Command.Type.READ)
@@ -113,8 +116,7 @@ nodes in a cluster, Copycat will ensure commands (i.e. `get`, `set`, and `delete
 applied to the state machine in the order in which they're submitted to the cluster
 (log order). Internally, Copycat uses a replicated log to order and replicate commands,
 and it uses leader election to coordinate log replication. When the replicated log grows
-too large, Copycat will take a snapshot of the `@Stateful` state machine state and
-compact the log.
+too large, Copycat will take a snapshot of the state machine state and compact the log.
 
 ```java
 Log log = new MemoryMappedFileLog("data.log");
@@ -149,7 +151,7 @@ to serve as the outside facing interface of the Copycat cluster.
 HttpService service = new HttpService("localhost", 8080);
 ```
 
-Now that the cluster has been set up, we simply create a `CopyCat` instance, specifying
+Now that the cluster has been set up, we simply create a `Copycat` instance, specifying
 an [service](#services) through which the outside world can communicate with the cluster.
 
 ```java
@@ -217,12 +219,12 @@ We can now execute commands on the state machine by making `POST` requests to
 the HTTP interface.
 
 ```
-POST http://localhost:5000/set
+POST http://localhost:8080/set
 ["foo", "Hello world!"]
 
 200 OK
 
-POST http://localhost:5000/get
+POST http://localhost:8080/get
 ["foo"]
 
 200 OK
@@ -231,7 +233,7 @@ POST http://localhost:5000/get
   "result": "Hello world!"
 }
 
-POST http://localhost:5000/delete
+POST http://localhost:8080/delete
 ["foo"]
 
 200 OK
@@ -353,10 +355,10 @@ CopycatConfig config = new CopycatConfig();
 
 The `CopycatConfig` exposes the following configuration methods:
 * `setElectionTimeout`/`withElectionTimeout` - sets the timeout within which a [follower](#follower)
-must receive an `AppendEntries` request from the leader before starting a new election. This timeout
+must receive a `Sync` request from the leader before starting a new election. This timeout
 is also used to calculate the election timeout during elections. Defaults to `2000` milliseconds
 * `setHeartbeatInterval`/`withHeartbeatInterval` - sets the interval at which the leader will send
-heartbeats (`AppendEntries` requests) to followers. Defaults to `500` milliseconds
+heartbeats (`Ping` requests) to followers. Defaults to `500` milliseconds
 * `setRequireWriteQuorum`/`withRequireWriteQuorum` - sets whether to require a quorum during write
 operations. It is strongly recommended that this remain enabled for consistency. Defaults to `true` (enabled)
 * `setWriteQuorumSize`/`withWriteQuorumSize` - sets the absolute write quorum size
@@ -407,8 +409,7 @@ constructor or call the `setLocalMember` method.
 config.setLocalMember(new Member("foo"));
 ```
 
-Note that the configuration uses URIs to identify nodes.
-[The protocol used by Copycat is pluggable](#protocols), so member address formats may
+[The protocol used by Copycat is pluggable](#protocols), so member configuration formats may
 differ depending on the protocol you're using.
 
 To set remote cluster members, use the `setRemoteMembers` or `addRemoteMember` method:
@@ -438,6 +439,13 @@ simply call the `start()` method.
 ```java
 CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
 context.start();
+```
+
+The `start` method returns a `CompletableFuture` which will be completed once
+the Copycat replica has started.
+
+```java
+context.start().thenRun(() -> System.out.println("Started!"));
 ```
 
 ### Setting the [log](#logs) type
@@ -533,23 +541,10 @@ context.event(Events.STATE_CHANGE).registerHandler((event) -> {
 # Protocols
 Copycat is an abstract API that can implement the Raft consensus algorithm over
 any conceivable protocol. To do this, Copycat provides a flexible protocol plugin
-system. Protocols use special URIs - such as `local:foo` or `tcp://localhost:5050` -
-and Copycat uses a custom service loader similar to the Java service loader. Using
-URIs, a protocol can be constructed and started by Copycat without the large amounts
-of boilerplate code that would otherwise be required.
+system. Protocols use special cluster configurations to configure protocol-specific
+settings.
 
-To define a new protocol, simply create a file in your project's
-`META-INF/services/net/kuujo/copycat/protocol` directory, naming the file with the
-project name. In the file should be a single string indicating the name of the protocol
-class. For example:
-
-`META-INF/services/net/kuujo/copycat/protocol/http`
-
-```
-net.kuujo.copycat.protocol.impl.HttpProtocol
-```
-
-The class name should point to a class that implements the `Protocol` interface.
+To define a new protocol, simply implement the base `Protocol` interface.
 The `Protocol` interface provides the following methods:
 
 ```java
@@ -571,8 +566,9 @@ a `TcpProtocol` might be assiciated with a `TcpMember` which contains `host` and
 ### Writing a protocol server
 The `ProtocolServer` interface is implemented by the receiving side of the protocol.
 The server's task is quite simple - to call replica callbacks when a message is received.
-In order to do so, the `ProtocolServer` provides a number of methods for registering
-callbacks for each command. Each callback is in the form of an `AsyncCallback` instance.
+In order to do so, the `ProtocolServer` provides a methods for registering
+a request handler. Protocols and the request handler rely upon `CompletableFuture`
+to perform tasks asynchronously.
 
 ```java
 public interface ProtocolServer {
@@ -628,9 +624,6 @@ config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").
 TcpCluster cluster = new TcpCluster(config);
 ```
 
-Note that Copycat does not particularly care about the protocol of any given node
-in the cluster. Theoretically, different nodes could be connected together by any
-protocol they want (though I can't imagine why one would want to do such a thing).
 For the local replica, the protocol's server is used to receive messages. For remote
 replicas, each protocol instance's client is used to send messages to those replicas.
 
@@ -650,8 +643,6 @@ LocalCluster cluster = new LocalCluster(config);
 
 CopycatContext context = CopycatContext.context(new MyStateMachine(), log, cluster);
 ```
-
-Note that you should use a `ConcurrentRegistry` when using the `local` protocol.
 
 ### Netty TCP Protocol
 The netty `tcp` protocol communicates between replicas using Netty TCP channels.
@@ -682,7 +673,7 @@ The Netty `tcp` protocol has several additional named options.
 * `connectTimeout`
 
 ### Vert.x Event Bus Protocol
-The Vert.x `eventbus` protocol communicates between replicas on the Vert.x event
+The Vert.x `EventBus` protocol communicates between replicas on the Vert.x event
 bus. The event bus can either be created in a new `Vertx` instance or referenced
 in an existing `Vertx` instance.
 
@@ -750,11 +741,6 @@ public interface Service {
 
 Services simply wrap the `CopycatContext` and forward requests to the local
 context via the `CopycatContext.submitCommand` method.
-
-### Using URI annotations with services
-Services support all the same URI annotations as do protocols. See the protocol
-[documentation on URI annotations](#injecting-uri-arguments-into-a-protocol)
-for a tutorial on injecting arguments into custom services.
 
 ### Wrapping the CopycatContext in a service
 Copycat provides a simple helper class for wrapping a `CopycatContext in an
