@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import net.kuujo.copycat.internal.log.CopycatEntry;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
@@ -41,107 +41,22 @@ public class FileLog extends BaseFileLog implements Compactable {
   private final ByteBufferInput input = new ByteBufferInput(buffer);
   private File logFile;
   private RandomAccessFile file;
+  private boolean isOpen;
   private long firstIndex;
   private long lastIndex;
-
-  public FileLog(String baseName) {
-    this(new File(baseName));
-  }
 
   public FileLog(File baseFile) {
     super(baseFile, CopycatEntry.class);
   }
 
-  @Override
-  public void open() throws IOException {
-    logFile = findLogFile();
-
-    if (!logFile.exists()) {
-      try {
-        File parent = logFile.getParentFile();
-        if (parent != null) {
-          parent.mkdirs();
-        }
-        logFile.createNewFile();
-      } catch (IOException e) {
-        throw new LogException(e, "Failed to create file %s", logFile);
-      }
-    }
-
-    try {
-      file = new RandomAccessFile(logFile.getAbsolutePath(), "rw");
-    } catch (FileNotFoundException e) {
-      throw new LogException(e, "Failed to open file %s", logFile);
-    }
-
-    String line = null;
-    try {
-      String firstLine = file.readLine();
-      if (firstLine != null) {
-        firstIndex = ByteBuffer.wrap(firstLine.getBytes()).getLong();
-      }
-      String lastLine = firstLine;
-      while ((line = file.readLine()) != null) {
-        lastLine = line;
-      }
-
-      if (lastLine != null) {
-        lastIndex = ByteBuffer.wrap(lastLine.getBytes()).getLong();
-      }
-    } catch (IOException e) {
-      throw new LogException(e, "Failed to read file %s", file);
-    }
-  }
-
-  /**
-   * Returns a boolean indicating whether the given index is within the range of the log.
-   */
-  private boolean indexInRange(long index) {
-    return index >= firstIndex && index <= lastIndex;
-  }
-
-  /**
-   * Finds the file pointer for the entry at the given index.
-   */
-  private long findFilePointer(long index) {
-    if (!indexInRange(index)) {
-      throw new IndexOutOfBoundsException("Index out of bounds");
-    }
-
-    try {
-      file.seek(0);
-      long lastPointer = 0;
-      long currentIndex = firstIndex;
-      String line = file.readLine();
-      do {
-        ByteBuffer buffer = ByteBuffer.wrap(file.readLine().getBytes());
-        long matchIndex = buffer.getLong();
-        byte status = buffer.get();
-        if (status == ACTIVE) {
-          currentIndex = matchIndex;
-        }
-        lastPointer = file.getFilePointer();
-      } while (currentIndex <= index && (line = file.readLine()) != null);
-      file.seek(lastPointer);
-      return lastPointer;
-    } catch (IOException e) {
-      throw new LogException(e);
-    }
-  }
-
-  @Override
-  public long size() {
-    return lastIndex - firstIndex + 1;
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return firstIndex == 0;
+  public FileLog(String baseName) {
+    this(new File(baseName));
   }
 
   @Override
   public synchronized long appendEntry(Entry entry) {
-    Args.checkNotNull(entry);
+    Assert.isNotNull(entry, "entry");
+    assertIsOpen();
 
     try {
       long index = lastIndex + 1;
@@ -163,77 +78,21 @@ public class FileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public boolean containsEntry(long index) {
-    return indexInRange(index);
-  }
+  public void close() throws IOException {
+    assertIsOpen();
 
-  @Override
-  public long firstIndex() {
-    return firstIndex;
-  }
-
-  @Override
-  public <T extends Entry> T firstEntry() {
-    return getEntry(firstIndex);
-  }
-
-  @Override
-  public long lastIndex() {
-    return lastIndex;
-  }
-
-  @Override
-  public <T extends Entry> T lastEntry() {
-    return getEntry(lastIndex);
-  }
-
-  @Override
-  public <T extends Entry> T getEntry(long index) {
-    return null;
-  }
-
-  @Override
-  public <T extends Entry> List<T> getEntries(long from, long to) {
-    return null;
-  }
-
-  @Override
-  public void removeEntry(long index) {
-    long pointer = findFilePointer(index);
     try {
-      file.seek(pointer + 8);
-      file.write(DELETED);
-    } catch (IOException e) {
-      throw new LogException(e);
+      file.close();
     } finally {
-      try {
-        file.seek(file.length());
-      } catch (IOException e) {
-      }
+      isOpen = false;
     }
   }
 
   @Override
-  public void removeAfter(long index) {
-    long pointer = findFilePointer(index);
-    try {
-      file.seek(pointer + 8);
-      String line;
-      while ((line = file.readLine()) != null) {
-        file.seek(file.getFilePointer() + 8);
-      }
-    } catch (IOException e) {
-      throw new LogException(e);
-    } finally {
-      try {
-        file.seek(file.length());
-      } catch (IOException e) {
-      }
-    }
-  }
+  public synchronized void compact(long index, Entry entry) throws IOException {
+    Assert.isNotNull(entry, "entry");
+    assertIsOpen();
 
-  @Override
-  public void compact(long index, Entry entry) throws IOException {
     if (indexInRange(index) && index > firstIndex) {
       // Create a new log file using the most recent timestamp.
       File newLogFile = createLogFile();
@@ -277,13 +136,9 @@ public class FileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public void sync() throws IOException {
-    file.getFD().sync();
-  }
-
-  @Override
-  public void close() throws IOException {
-    file.close();
+  public synchronized boolean containsEntry(long index) {
+    assertIsOpen();
+    return indexInRange(index);
   }
 
   @Override
@@ -291,4 +146,177 @@ public class FileLog extends BaseFileLog implements Compactable {
     logFile.delete();
   }
 
+  @Override
+  public synchronized <T extends Entry> T firstEntry() {
+    assertIsOpen();
+    return getEntry(firstIndex);
+  }
+
+  @Override
+  public long firstIndex() {
+    return firstIndex;
+  }
+
+  @Override
+  public <T extends Entry> List<T> getEntries(long from, long to) {
+    assertIsOpen();
+    return null;
+  }
+
+  @Override
+  public <T extends Entry> T getEntry(long index) {
+    assertIsOpen();
+    return null;
+  }
+
+  @Override
+  public boolean isEmpty() {
+    assertIsOpen();
+    return firstIndex == 0;
+  }
+
+  @Override
+  public boolean isOpen() {
+    return isOpen;
+  }
+
+  @Override
+  public synchronized <T extends Entry> T lastEntry() {
+    assertIsOpen();
+    return getEntry(lastIndex);
+  }
+
+  @Override
+  public long lastIndex() {
+    assertIsOpen();
+    return lastIndex;
+  }
+
+  @Override
+  public void open() throws IOException {
+    assertIsNotOpen();
+    logFile = findLogFile();
+
+    if (!logFile.exists()) {
+      try {
+        File parent = logFile.getParentFile();
+        if (parent != null) {
+          parent.mkdirs();
+        }
+        logFile.createNewFile();
+      } catch (IOException e) {
+        throw new LogException(e, "Failed to create file %s", logFile);
+      }
+    }
+
+    try {
+      file = new RandomAccessFile(logFile.getAbsolutePath(), "rw");
+      isOpen = true;
+    } catch (FileNotFoundException e) {
+      throw new LogException(e, "Failed to open file %s", logFile);
+    }
+
+    String line = null;
+    try {
+      String firstLine = file.readLine();
+      if (firstLine != null) {
+        firstIndex = ByteBuffer.wrap(firstLine.getBytes()).getLong();
+      }
+      String lastLine = firstLine;
+      while ((line = file.readLine()) != null) {
+        lastLine = line;
+      }
+
+      if (lastLine != null) {
+        lastIndex = ByteBuffer.wrap(lastLine.getBytes()).getLong();
+      }
+    } catch (IOException e) {
+      throw new LogException(e, "Failed to read file %s", file);
+    }
+  }
+
+  @Override
+  public synchronized void removeAfter(long index) {
+    assertIsOpen();
+    long pointer = findFilePointer(index);
+    try {
+      file.seek(pointer + 8);
+      String line;
+      while ((line = file.readLine()) != null) {
+        file.seek(file.getFilePointer() + 8);
+      }
+    } catch (IOException e) {
+      throw new LogException(e);
+    } finally {
+      try {
+        file.seek(file.length());
+      } catch (IOException e) {
+      }
+    }
+  }
+
+  @Override
+  public synchronized void removeEntry(long index) {
+    assertIsOpen();
+    long pointer = findFilePointer(index);
+    try {
+      file.seek(pointer + 8);
+      file.write(DELETED);
+    } catch (IOException e) {
+      throw new LogException(e);
+    } finally {
+      try {
+        file.seek(file.length());
+      } catch (IOException e) {
+      }
+    }
+  }
+
+  @Override
+  public long size() {
+    assertIsOpen();
+    return lastIndex - firstIndex + 1;
+  }
+
+  @Override
+  public void sync() throws IOException {
+    assertIsOpen();
+    file.getFD().sync();
+  }
+
+  /**
+   * Finds the file pointer for the entry at the given index.
+   */
+  private long findFilePointer(long index) {
+    if (!indexInRange(index)) {
+      throw new IndexOutOfBoundsException("Index out of bounds");
+    }
+
+    try {
+      file.seek(0);
+      long lastPointer = 0;
+      long currentIndex = firstIndex;
+      String line = file.readLine();
+      do {
+        ByteBuffer buffer = ByteBuffer.wrap(file.readLine().getBytes());
+        long matchIndex = buffer.getLong();
+        byte status = buffer.get();
+        if (status == ACTIVE) {
+          currentIndex = matchIndex;
+        }
+        lastPointer = file.getFilePointer();
+      } while (currentIndex <= index && (line = file.readLine()) != null);
+      file.seek(lastPointer);
+      return lastPointer;
+    } catch (IOException e) {
+      throw new LogException(e);
+    }
+  }
+
+  /**
+   * Returns a boolean indicating whether the given index is within the range of the log.
+   */
+  private boolean indexInRange(long index) {
+    return index >= firstIndex && index <= lastIndex;
+  }
 }

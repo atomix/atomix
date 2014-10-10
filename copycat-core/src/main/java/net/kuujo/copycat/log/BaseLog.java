@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import net.kuujo.copycat.internal.util.Assert;
+
 import com.esotericsoftware.kryo.Kryo;
 
 /**
@@ -38,26 +40,43 @@ abstract class BaseLog implements Log {
   
   @Override
   public List<Long> appendEntries(Entry... entries) {
+    Assert.isNotNull(entries, "entries");
+    assertIsOpen();
     return Arrays.stream(entries).map(entry -> appendEntry(entry)).collect(Collectors.toList());
   }
-
+  
   @Override
   public List<Long> appendEntries(List<Entry> entries) {
+    Assert.isNotNull(entries, "entries");
+    assertIsOpen();
     return entries.stream().map(entry -> appendEntry(entry)).collect(Collectors.toList());
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[size=%d]", getClass().getSimpleName(), size());
+  }
+
+  protected void assertIsOpen() {
+    Assert.state(isOpen(), "The log is not currently open.");
+  }
+  
+  protected void assertIsNotOpen() {
+    Assert.state(!isOpen(), "The log is already open.");
+  }
+
   /**
-   * Initializes the log, loading entry type mappings.
+   * Finds entry type info for a specific entry type.
    */
-  private void init() {
-    for (Class<? extends Entry> type : findEntryTypes(entryType).value()) {
-      EntryType info = findEntryTypeInfo(type);
-      try {
-        kryo.register(type, info.serializer().newInstance(), info.id());
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new LogException(e, "Failed to instantiate serializer %s", info.serializer().getName());
+  private EntryType findEntryTypeInfo(Class<?> clazz) {
+    while (clazz != Object.class && clazz != null) {
+      EntryType info = clazz.getAnnotation(EntryType.class);
+      if (info != null) {
+        return info;
       }
+      clazz = clazz.getSuperclass();
     }
+    throw new LogException("Invalid entry type. No type info found.");
   }
 
   /**
@@ -75,22 +94,17 @@ abstract class BaseLog implements Log {
   }
 
   /**
-   * Finds entry type info for a specific entry type.
+   * Initializes the log, loading entry type mappings.
    */
-  private EntryType findEntryTypeInfo(Class<?> clazz) {
-    while (clazz != Object.class && clazz != null) {
-      EntryType info = clazz.getAnnotation(EntryType.class);
-      if (info != null) {
-        return info;
+  private void init() {
+    for (Class<? extends Entry> type : findEntryTypes(entryType).value()) {
+      EntryType info = findEntryTypeInfo(type);
+      try {
+        kryo.register(type, info.serializer().newInstance(), info.id());
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new LogException(e, "Failed to instantiate serializer %s", info.serializer().getName());
       }
-      clazz = clazz.getSuperclass();
     }
-    throw new LogException("Invalid entry type. No type info found.");
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[size=%d]", getClass().getSimpleName(), size());
   }
 
 }

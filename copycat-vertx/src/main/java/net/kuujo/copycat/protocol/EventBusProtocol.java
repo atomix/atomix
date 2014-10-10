@@ -16,7 +16,7 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.cluster.EventBusMember;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
@@ -141,7 +141,7 @@ public class EventBusProtocol implements AsyncProtocol<EventBusMember> {
    */
   private Vertx createVertx() {
     final CountDownLatch latch = new CountDownLatch(1);
-    new DefaultVertx(port > 0 ? port : 0, Args.checkNotNull(host, "Vert.x host cannot be null"), new Handler<AsyncResult<Vertx>>() {
+    new DefaultVertx(port > 0 ? port : 0, Assert.isNotNull(host, "Vert.x host cannot be null"), new Handler<AsyncResult<Vertx>>() {
       @Override
       public void handle(AsyncResult<Vertx> result) {
         EventBusProtocol.this.vertx = result.result();

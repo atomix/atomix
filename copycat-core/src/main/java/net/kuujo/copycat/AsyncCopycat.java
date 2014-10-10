@@ -16,7 +16,7 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.*;
@@ -173,7 +173,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code service} is null
      */
     public Builder withService(AsyncService service) {
-      this.service = Args.checkNotNull(service);
+      this.service = Assert.isNotNull(service, "service");
       return this;
     }
 

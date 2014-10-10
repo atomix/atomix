@@ -21,39 +21,50 @@ import java.util.HashSet;
 import java.util.Observable;
 import java.util.Set;
 
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.util.Copyable;
 
 /**
- * Cluster configuration.<p>
+ * Cluster configuration.
+ * <p>
  *
- * The {@code ClusterConfig} is a mutable configuration that underlies each {@link net.kuujo.copycat.cluster.Cluster}
- * instance. {@code ClusterConfig} is an {@link java.util.Observable} type and is automatically observed for changes
- * by any {@link net.kuujo.copycat.cluster.Cluster} instance. This means that when a change to a {@code ClusterConfig}
- * is made, the owning {@link net.kuujo.copycat.cluster.Cluster} (if any) is notified and automatically updates its
- * immutable internal configuration.
+ * The {@code ClusterConfig} is a mutable configuration that underlies each
+ * {@link net.kuujo.copycat.cluster.Cluster} instance. {@code ClusterConfig} is an
+ * {@link java.util.Observable} type and is automatically observed for changes by any
+ * {@link net.kuujo.copycat.cluster.Cluster} instance. This means that when a change to a
+ * {@code ClusterConfig} is made, the owning {@link net.kuujo.copycat.cluster.Cluster} (if any) is
+ * notified and automatically updates its immutable internal configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterConfig<M extends Member> extends Observable implements Copyable<ClusterConfig<M>>, Serializable {
+public class ClusterConfig<M extends Member> extends Observable implements
+    Copyable<ClusterConfig<M>>, Serializable {
   protected M localMember;
   protected Set<M> remoteMembers = new HashSet<>(6);
 
-  public ClusterConfig() {
-  }
+  public ClusterConfig() {}
 
+  /**
+   * throws NullPointerException if {@code cluster} is null
+   */
   public ClusterConfig(ClusterConfig<M> cluster) {
-    this.localMember = Args.checkNotNull(cluster).localMember;
+    this.localMember = Assert.isNotNull(cluster, "cluster").localMember;
     this.remoteMembers = new HashSet<>(cluster.remoteMembers);
   }
 
+  /**
+   * throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
+   */
   public ClusterConfig(M localMember, M... remoteMembers) {
-    this(localMember, Arrays.asList(remoteMembers));
+    this(localMember, Arrays.asList(Assert.isNotNull(remoteMembers, "remoteMembers")));
   }
 
+  /**
+   * throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
+   */
   public ClusterConfig(M localMember, Collection<M> remoteMembers) {
-    this.localMember = Args.checkNotNull(localMember);
-    this.remoteMembers = new HashSet<>(remoteMembers);
+    this.localMember = Assert.isNotNull(localMember, "localMember");
+    this.remoteMembers = new HashSet<>(Assert.isNotNull(remoteMembers, "remoteMembers"));
   }
 
   /**
@@ -73,20 +84,21 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   /**
    * Constructs a cluster configuration from an existing cluster.
    *
-   * @param cluster The cluster from which to construct the configuration.
+   * @param cluster The cluster from which to construct the configuration. throws
+   *        NullPointerException if {@code cluster} is null
    */
   public ClusterConfig(Cluster<M> cluster) {
-    localMember = Args.checkNotNull(cluster).localMember();
+    localMember = Assert.isNotNull(cluster, "cluster").localMember();
     remoteMembers = cluster.remoteMembers();
   }
 
   /**
    * Sets the local cluster member.
    *
-   * @param member The local cluster member.
+   * @param member The local cluster member. throws NullPointerException if {@code member} is null
    */
   public final void setLocalMember(M member) {
-    localMember = Args.checkNotNull(member);
+    localMember = Assert.isNotNull(member, "member");
   }
 
   /**
@@ -102,31 +114,33 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Sets the local cluster member, returning the configuration for method chaining.
    *
    * @param member The local cluster member.
-   * @return The cluster configuration.
+   * @return The cluster configuration. throws NullPointerException if {@code member} is null
    */
   public final ClusterConfig<M> withLocalMember(M member) {
-    localMember = Args.checkNotNull(member);
+    localMember = Assert.isNotNull(member, "member");
     return this;
   }
 
   /**
    * Sets the remote cluster members.
    *
-   * @param members A collection of remote cluster member configurations.
+   * @param members A collection of remote cluster member configurations. throws
+   *        NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final void setRemoteMembers(M... members) {
-    remoteMembers = new HashSet<>(Arrays.asList(Args.checkNotNull(members)));
+    remoteMembers = new HashSet<>(Arrays.asList(Assert.isNotNull(members, "members")));
     notifyAndReset();
   }
 
   /**
    * Sets the remote cluster members.
    *
-   * @param members A collection of remote cluster member configurations.
+   * @param members A collection of remote cluster member configurations. throws
+   *        NullPointerException if {@code members} is null
    */
   public final void setRemoteMembers(Collection<M> members) {
-    remoteMembers = new HashSet<>(Args.checkNotNull(members));
+    remoteMembers = new HashSet<>(Assert.isNotNull(members, "members"));
     notifyAndReset();
   }
 
@@ -134,10 +148,10 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Adds a remote member to this cluster configuration.
    *
    * @param member The remote member to add.
-   * @return The updated configuration.
+   * @return The updated configuration. throws NullPointerException if {@code member} is null
    */
   public final ClusterConfig<M> addRemoteMember(M member) {
-    remoteMembers.add(Args.checkNotNull(member));
+    remoteMembers.add(Assert.isNotNull(member, "member"));
     notifyAndReset();
     return this;
   }
@@ -146,11 +160,11 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Adds the collection of remote members to this cluster configuration.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration.
+   * @return The updated configuration. throws NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final ClusterConfig<M> addRemoteMembers(M... members) {
-    remoteMembers.addAll(Arrays.asList(Args.checkNotNull(members)));
+    remoteMembers.addAll(Arrays.asList(Assert.isNotNull(members, "members")));
     notifyAndReset();
     return this;
   }
@@ -162,7 +176,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * @return The updated configuration.
    */
   public final ClusterConfig<M> addRemoteMembers(Collection<M> members) {
-    remoteMembers.addAll(Args.checkNotNull(members));
+    remoteMembers.addAll(Assert.isNotNull(members, "members"));
     notifyAndReset();
     return this;
   }
@@ -171,9 +185,10 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Adds the set of remote cluster members from the given configuration.
    *
    * @param cluster The cluster configuration with which to add members to this configuration.
-   * @return The updated configuration.
+   * @return The updated configuration. throws NullPointerException if {@code cluster} is null
    */
   public final ClusterConfig<M> addRemoteMembers(ClusterConfig<M> cluster) {
+    Assert.isNotNull(cluster, "cluster");
     remoteMembers.addAll(cluster.remoteMembers);
     notifyAndReset();
     return this;
@@ -183,10 +198,10 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Removes a remote member from this cluster configuration.
    *
    * @param member The remote member to remove.
-   * @return The updated configuration.
+   * @return The updated configuration. throws NullPointerException if {@code member} is null
    */
   public final ClusterConfig<M> removeRemoteMember(M member) {
-    remoteMembers.remove(Args.checkNotNull(member));
+    remoteMembers.remove(Assert.isNotNull(member, "member"));
     notifyAndReset();
     return this;
   }
@@ -195,11 +210,11 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Removes the collection of remote members from this cluster configuration.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration.
+   * @return The updated configuration. throws NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final ClusterConfig<M> removeRemoteMembers(M... members) {
-    remoteMembers.removeAll(Arrays.asList(Args.checkNotNull(members)));
+    remoteMembers.removeAll(Arrays.asList(Assert.isNotNull(members, "members")));
     notifyAndReset();
     return this;
   }
@@ -208,10 +223,10 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Removes the collection of remote members from this cluster configuration.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration.
+   * @return The updated configuration. throws NullPointerException if {@code members} is null
    */
   public final ClusterConfig<M> removeRemoteMembers(Collection<M> members) {
-    remoteMembers.removeAll(Args.checkNotNull(members));
+    remoteMembers.removeAll(Assert.isNotNull(members, "members"));
     notifyAndReset();
     return this;
   }
@@ -220,7 +235,7 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Removes the set of remote members from the given cluster configuration.
    *
    * @param cluster The cluster configuration with which to remove members from this configuration.
-   * @return The updated configuration.
+   * @return The updated configuration. throws NullPointerException if {@code cluster} is null
    */
   public final ClusterConfig<M> removeRemoteMembers(ClusterConfig<M> cluster) {
     remoteMembers.removeAll(cluster.remoteMembers);
@@ -241,11 +256,11 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Sets the remote cluster members, returning the configuration for method chaining.
    *
    * @param members A list of remote cluster member configurations.
-   * @return The cluster configuration
+   * @return The cluster configuration throws NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final ClusterConfig<M> withRemoteMembers(M... members) {
-    this.remoteMembers = new HashSet<>(Arrays.asList(Args.checkNotNull(members)));
+    this.remoteMembers = new HashSet<>(Arrays.asList(Assert.isNotNull(members, "members")));
     notifyAndReset();
     return this;
   }
@@ -254,10 +269,10 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
    * Sets the remote cluster members, returning the configuration for method chaining.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The cluster configuration.
+   * @return The cluster configuration. throws NullPointerException if {@code members} is null
    */
   public final ClusterConfig<M> withRemoteMembers(Collection<M> members) {
-    this.remoteMembers = new HashSet<>(Args.checkNotNull(members));
+    this.remoteMembers = new HashSet<>(Assert.isNotNull(members, "members"));
     notifyAndReset();
     return this;
   }
@@ -277,7 +292,8 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
   public boolean equals(Object object) {
     if (getClass().isInstance(object)) {
       ClusterConfig<?> config = (ClusterConfig<?>) object;
-      return config.getLocalMember().equals(localMember) && config.getRemoteMembers().equals(remoteMembers);
+      return config.getLocalMember().equals(localMember)
+          && config.getRemoteMembers().equals(remoteMembers);
     }
     return false;
   }
@@ -292,7 +308,8 @@ public class ClusterConfig<M extends Member> extends Observable implements Copya
 
   @Override
   public String toString() {
-    return String.format("%s[localMember=%s, remoteMembers=%s]", getClass().getSimpleName(), localMember, remoteMembers);
+    return String.format("%s[localMember=%s, remoteMembers=%s]", getClass().getSimpleName(),
+        localMember, remoteMembers);
   }
 
 }

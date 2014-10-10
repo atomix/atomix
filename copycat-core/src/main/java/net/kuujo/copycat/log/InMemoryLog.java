@@ -24,7 +24,9 @@ import java.util.TreeMap;
 
 import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
+
 import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.util.Assert;
 
 /**
  * Memory-based log.
@@ -47,22 +49,10 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public synchronized void open() {
-    log = new TreeMap<>();
-  }
-
-  @Override
-  public synchronized long size() {
-    return size;
-  }
-
-  @Override
-  public synchronized boolean isEmpty() {
-    return log.isEmpty();
-  }
-
-  @Override
   public synchronized long appendEntry(Entry entry) {
+    Assert.isNotNull(entry, "entry");
+    assertIsOpen();
+
     long index = log.isEmpty() ? 1 : log.lastKey() + 1;
     kryo.writeClassAndObject(output, entry);
     byte[] bytes = output.toBytes();
@@ -73,33 +63,72 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
+  public void close() {
+    assertIsOpen();
+    log = null;
+  }
+
+  @Override
+  public synchronized void compact(long index, Entry entry) throws IOException {
+    Assert.isNotNull(entry, "entry");
+    assertIsOpen();
+
+    kryo.writeClassAndObject(output, entry);
+    byte[] bytes = output.toBytes();
+    output.clear();
+    // TODO - calculate newSize by doing the lesser of subtracting out removed entries or adding
+    // remaining entries.
+    log.headMap(index).clear();
+    log.put(index, bytes);
+    long newSize = 0;
+    for (Map.Entry<Long, byte[]> e : log.entrySet()) {
+      newSize += e.getValue().length;
+    }
+    size = newSize;
+  }
+
+  @Override
   public synchronized boolean containsEntry(long index) {
+    assertIsOpen();
     return log.containsKey(index);
   }
 
   @Override
-  public synchronized long firstIndex() {
-    return !log.isEmpty() ? log.firstKey() : 0;
+  public void delete() {
+    log = null;
   }
 
   @Override
   public synchronized <T extends Entry> T firstEntry() {
+    assertIsOpen();
     return !log.isEmpty() ? getEntry(log.firstKey()) : null;
   }
 
   @Override
-  public synchronized long lastIndex() {
-    return !log.isEmpty() ? log.lastKey() : 0;
+  public synchronized long firstIndex() {
+    assertIsOpen();
+    return !log.isEmpty() ? log.firstKey() : 0;
   }
 
   @Override
-  public synchronized <T extends Entry> T lastEntry() {
-    return !log.isEmpty() ? getEntry(log.lastKey()) : null;
+  public synchronized <T extends Entry> List<T> getEntries(long from, long to) {
+    assertIsOpen();
+
+    List<T> entries = new ArrayList<>((int) (to - from + 1));
+    for (long i = from; i <= to; i++) {
+      T entry = getEntry(i);
+      if (entry != null) {
+        entries.add(entry);
+      }
+    }
+    return entries;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <T extends Entry> T getEntry(long index) {
+    assertIsOpen();
+
     byte[] bytes = log.get(index);
     if (bytes != null) {
       buffer.put(bytes);
@@ -113,27 +142,37 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public synchronized <T extends Entry> List<T> getEntries(long from, long to) {
-    List<T> entries = new ArrayList<>((int)(to - from + 1));
-    for (long i = from; i <= to; i++) {
-      T entry = getEntry(i);
-      if (entry != null) {
-        entries.add(entry);
-      }
-    }
-    return entries;
+  public synchronized boolean isEmpty() {
+    assertIsOpen();
+    return log.isEmpty();
   }
 
   @Override
-  public synchronized void removeEntry(long index) {
-    byte[] value = log.remove(index);
-    if (value != null) {
-      size -= value.length;
-    }
+  public boolean isOpen() {
+    return log != null;
+  }
+
+  @Override
+  public synchronized <T extends Entry> T lastEntry() {
+    assertIsOpen();
+    return !log.isEmpty() ? getEntry(log.lastKey()) : null;
+  }
+
+  @Override
+  public synchronized long lastIndex() {
+    assertIsOpen();
+    return !log.isEmpty() ? log.lastKey() : 0;
+  }
+
+  @Override
+  public synchronized void open() {
+    assertIsNotOpen();
+    log = new TreeMap<>();
   }
 
   @Override
   public synchronized void removeAfter(long index) {
+    assertIsOpen();
     if (!log.isEmpty()) {
       for (long i = index + 1; i <= log.lastKey(); i++) {
         removeEntry(i);
@@ -142,32 +181,23 @@ public class InMemoryLog extends BaseLog implements Compactable {
   }
 
   @Override
-  public synchronized void compact(long index, Entry entry) throws IOException {
-    kryo.writeClassAndObject(output, entry);
-    byte[] bytes = output.toBytes();
-    output.clear();
-    // TODO - calculate newSize by doing the lesser of subtracting out removed entries or adding remaining entries.
-    log.headMap(index).clear();
-    log.put(index, bytes);
-    long newSize = 0;
-    for (Map.Entry<Long, byte[]> e : log.entrySet()) {
-      newSize += e.getValue().length;
+  public synchronized void removeEntry(long index) {
+    assertIsOpen();
+    byte[] value = log.remove(index);
+    if (value != null) {
+      size -= value.length;
     }
-    size = newSize;
+  }
+
+  @Override
+  public synchronized long size() {
+    assertIsOpen();
+    return size;
   }
 
   @Override
   public void sync() {
-  }
-
-  @Override
-  public void close() {
-    log = null;
-  }
-
-  @Override
-  public void delete() {
-    log = null;
+    assertIsOpen();
   }
 
   @Override
