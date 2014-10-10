@@ -115,7 +115,7 @@ public class ProtocolWriter {
    */
   private byte[] submitRequest(SubmitRequest request) {
     byte[] idBytes = serializeObject(request.id());
-    byte[] commandBytes = request.command().getBytes();
+    byte[] commandBytes = request.operation().getBytes();
     byte[] argsBytes = serializeObject(request.args());
     ByteBuffer buffer = ByteBuffer.allocate(1 + 4 * 3 + idBytes.length + commandBytes.length + argsBytes.length);
     buffer.put(SUBMIT_REQUEST);

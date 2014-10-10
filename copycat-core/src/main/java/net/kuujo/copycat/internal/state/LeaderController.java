@@ -14,11 +14,12 @@
  */
 package net.kuujo.copycat.internal.state;
 
-import net.kuujo.copycat.Command;
+import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.internal.log.CommandEntry;
+import net.kuujo.copycat.internal.StateMachineExecutor;
+import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.NoOpEntry;
 import net.kuujo.copycat.internal.replication.ClusterReplicator;
@@ -38,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *
  * The leader state is assigned to replicas who have assumed
  * a leadership role in the cluster through a cluster-wide election.
- * The leader's role is to receive command submissions and log and
+ * The leader's role is to receive operation submissions and log and
  * replicate state changes. All state changes go through the leader
  * for simplicity.
  *
@@ -66,7 +67,7 @@ public class LeaderController extends StateController implements Observer {
 
     replicator = new ClusterReplicator(context);
 
-    // When the leader is first elected, it needs to commit any pending commands
+    // When the leader is first elected, it needs to commit any pending operations
     // in its log to the state machine and then commit a snapshot to its log.
     // This methodology differs slightly from the standard Raft algorithm. Instead
     // if storing snapshots in a separate file, we store them as normal log entries.
@@ -242,20 +243,21 @@ public class LeaderController extends StateController implements Observer {
 
     CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
 
-    // Determine the type of command this request is executing. The command
-    // type is provided by a CommandProvider which provides CommandInfo for a
-    // given command. If no CommandInfo is provided then all commands are assumed
-    // to be READ_WRITE commands.
-    Command command = context.stateMachine().getCommand(request.command());
+    // Find the named operation.
+    StateMachineExecutor.Operation operation = context.stateMachineExecutor().getOperation(request.operation());
 
-    // Depending on the command type, read or write commands may or may not be replicated
-    // to a quorum based on configuration  options. For write commands, if a quorum is
-    // required then the command will be replicated. For read commands, if a quorum is
+    // If the operation is unknown the immediately return a failure.
+    if (operation == null) {
+      future.completeExceptionally(new CopycatException("Invalid operation"));
+    }
+    // Depending on the operation type, read or write operations may or may not be replicated
+    // to a quorum based on configuration options. For write operations, if a quorum is
+    // required then the operation will be replicated. For read operations, if a quorum is
     // required then we simply ping a quorum of the cluster to ensure that data is not stale.
-    if (command != null && command.type().equals(Command.Type.READ)) {
+    else if (operation.isReadOnly()) {
       // Users have the option of whether to allow stale data to be returned. By
       // default, read quorums are enabled. If read quorums are disabled then we
-      // simply apply the command, otherwise we need to ping a quorum of the
+      // simply apply the operation, otherwise we need to ping a quorum of the
       // cluster to ensure that data is up-to-date before responding.
       if (context.config().isRequireReadQuorum()) {
         long lastIndex = context.log().lastIndex();
@@ -263,8 +265,7 @@ public class LeaderController extends StateController implements Observer {
         replicator.ping(lastIndex).whenComplete((index, error) -> {
           if (error == null) {
             try {
-              future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine()
-                .applyCommand(request.command(), request.args()))));
+              future.complete(logResponse(new SubmitResponse(request.id(), operation.apply(request.args()))));
             } catch (Exception e) {
               future.completeExceptionally(e);
             }
@@ -274,21 +275,21 @@ public class LeaderController extends StateController implements Observer {
         });
       } else {
         try {
-          future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args()))));
+          future.complete(logResponse(new SubmitResponse(request.id(), operation.apply(request.args()))));
         } catch (Exception e) {
           future.completeExceptionally(e);
         }
       }
     } else {
-      // For write commands or for commands for which the type is not known, an
+      // For write operations or for operations for which the type is not known, an
       // entry must be logged, replicated, and committed prior to applying it
       // to the state machine and returning the result.
-      CommandEntry entry = new CommandEntry(context.currentTerm(), request.command(), request.args());
+      OperationEntry entry = new OperationEntry(context.currentTerm(), request.operation(), request.args());
       final long index = context.log().appendEntry(entry);
       LOGGER.debug("{} - Appended {} to log", context.clusterManager().localNode());
 
       // Write quorums are also optional to the user. The user can optionally
-      // indicate that write commands should be immediately applied to the state
+      // indicate that write operations should be immediately applied to the state
       // machine and the result returned.
       if (context.config().isRequireWriteQuorum()) {
         // If the replica requires write quorums, we simply set a task to be
@@ -297,7 +298,7 @@ public class LeaderController extends StateController implements Observer {
         replicator.commit(index).whenComplete((resultIndex, error) -> {
           if (error == null) {
             try {
-              future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args()))));
+              future.complete(logResponse(new SubmitResponse(request.id(), operation.apply(request.args()))));
             } catch (Exception e) {
               future.completeExceptionally(e);
             } finally {
@@ -314,7 +315,7 @@ public class LeaderController extends StateController implements Observer {
         // all entries written to the log will not require a quorum and thus
         // we won't be applying any entries out of order.
         try {
-          future.complete(logResponse(new SubmitResponse(request.id(), context.stateMachine().applyCommand(request.command(), request.args()))));
+          future.complete(logResponse(new SubmitResponse(request.id(), operation.apply(request.args()))));
         } catch (Exception e) {
           future.completeExceptionally(e);
         } finally {

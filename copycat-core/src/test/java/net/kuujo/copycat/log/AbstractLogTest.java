@@ -15,23 +15,19 @@
  */
 package net.kuujo.copycat.log;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNotEquals;
-import static org.testng.Assert.assertTrue;
-
-import java.util.Arrays;
-
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.log.CommandEntry;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.NoOpEntry;
+import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
-
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.util.Arrays;
+
+import static org.testng.Assert.*;
 
 /**
  * Base log test.
@@ -103,7 +99,7 @@ public abstract class AbstractLogTest {
     appendEntries();
     assertTrue(log.getEntry(1) instanceof NoOpEntry);
     assertTrue(log.getEntry(2) instanceof ConfigurationEntry);
-    assertTrue(log.getEntry(3) instanceof CommandEntry);
+    assertTrue(log.getEntry(3) instanceof OperationEntry);
   }
 
   public void testFirstIndex() throws Exception {
@@ -123,7 +119,7 @@ public abstract class AbstractLogTest {
 
   public void testLastEntry() throws Exception {
     appendEntries();
-    assertTrue(log.lastEntry() instanceof CommandEntry);
+    assertTrue(log.lastEntry() instanceof OperationEntry);
   }
 
   public void testRemoveEntry() throws Exception {
@@ -162,12 +158,12 @@ public abstract class AbstractLogTest {
       SnapshotEntry entry = log.getEntry(3);
       assertEquals(entry.term(), 1);
       assertEquals("Hello world!", new String(entry.data()));
-      CommandEntry entry2 = log.getEntry(4);
+      OperationEntry entry2 = log.getEntry(4);
       assertEquals(entry2.term(), 1);
-      assertEquals("bar", entry2.command());
-      CommandEntry entry3 = log.getEntry(5);
+      assertEquals("bar", entry2.operation());
+      OperationEntry entry3 = log.getEntry(5);
       assertEquals(entry3.term(), 1);
-      assertEquals("baz", entry3.command());
+      assertEquals("baz", entry3.operation());
     }
   }
 
@@ -190,8 +186,8 @@ public abstract class AbstractLogTest {
     log.appendEntry(new NoOpEntry(1));
     log.appendEntry(new ConfigurationEntry(1, new ClusterConfig()
         .withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
-    log.appendEntry(new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
-    log.appendEntry(new CommandEntry(1, "bar", Arrays.asList("bar", "baz")));
-    log.appendEntry(new CommandEntry(1, "baz", Arrays.asList("bar", "baz")));
+    log.appendEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
+    log.appendEntry(new OperationEntry(1, "bar", Arrays.asList("bar", "baz")));
+    log.appendEntry(new OperationEntry(1, "baz", Arrays.asList("bar", "baz")));
   }
 }

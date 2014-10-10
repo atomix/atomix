@@ -49,8 +49,8 @@ public class DefaultAsyncCopycatContext extends AbstractCopycatContext implement
 
   @Override
   @SuppressWarnings("unchecked")
-  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
-    return state.submitCommand(Args.checkNotNull(command, "command cannot be null"), args);
+  public <R> CompletableFuture<R> submit(final String operation, final Object... args) {
+    return state.submitCommand(Args.checkNotNull(operation, "operation cannot be null"), args);
   }
 
   @Override

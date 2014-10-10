@@ -25,36 +25,36 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * State machine command entry.
+ * State machine operation entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@EntryType(id=3, serializer=CommandEntry.Serializer.class)
-public class CommandEntry extends CopycatEntry {
-  private String command;
+@EntryType(id=3, serializer=OperationEntry.Serializer.class)
+public class OperationEntry extends CopycatEntry {
+  private String operation;
   private List<Object> args;
 
-  private CommandEntry() {
+  private OperationEntry() {
     super();
   }
 
-  public CommandEntry(long term, String command, Object... args) {
-    this(term, command, Arrays.asList(args));
+  public OperationEntry(long term, String operation, Object... args) {
+    this(term, operation, Arrays.asList(args));
   }
 
-  public CommandEntry(long term, String command, List<Object> args) {
+  public OperationEntry(long term, String operation, List<Object> args) {
     super(term);
-    this.command = command;
+    this.operation = operation;
     this.args = args;
   }
 
   /**
-   * Returns the state machine command.
+   * Returns the state machine operation.
    * 
-   * @return The state machine command.
+   * @return The state machine operation.
    */
-  public String command() {
-    return command;
+  public String operation() {
+    return operation;
   }
 
   /**
@@ -68,9 +68,9 @@ public class CommandEntry extends CopycatEntry {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof CommandEntry) {
-      CommandEntry entry = (CommandEntry) object;
-      return term == entry.term && command.equals(entry.command) && args.equals(entry.args);
+    if (object instanceof OperationEntry) {
+      OperationEntry entry = (OperationEntry) object;
+      return term == entry.term && operation.equals(entry.operation) && args.equals(entry.args);
     }
     return false;
   }
@@ -79,38 +79,38 @@ public class CommandEntry extends CopycatEntry {
   public int hashCode() {
     int hashCode = 23;
     hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
-    hashCode = 37 * hashCode + command.hashCode();
+    hashCode = 37 * hashCode + operation.hashCode();
     hashCode = 37 * hashCode + args.hashCode();
     return hashCode;
   }
 
   @Override
   public String toString() {
-    return String.format("CommandEntry[term=%d, command=%s, args=%s]", term, command, args);
+    return String.format("OperationEntry[term=%d, operation=%s, args=%s]", term, operation, args);
   }
 
   /**
-   * Command entry serializer.
+   * Operation entry serializer.
    *
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
-  public static class Serializer extends com.esotericsoftware.kryo.Serializer<CommandEntry> {
+  public static class Serializer extends com.esotericsoftware.kryo.Serializer<OperationEntry> {
     @Override
     @SuppressWarnings("unchecked")
-    public CommandEntry read(Kryo kryo, Input input, Class<CommandEntry> type) {
-      CommandEntry entry = new CommandEntry();
+    public OperationEntry read(Kryo kryo, Input input, Class<OperationEntry> type) {
+      OperationEntry entry = new OperationEntry();
       entry.term = input.readLong();
       int commandLength = input.readInt();
       byte[] commandBytes = new byte[commandLength];
       input.readBytes(commandBytes);
-      entry.command = new String(commandBytes);
+      entry.operation = new String(commandBytes);
       entry.args = kryo.readObject(input, ArrayList.class);
       return entry;
     }
     @Override
-    public void write(Kryo kryo, Output output, CommandEntry entry) {
+    public void write(Kryo kryo, Output output, OperationEntry entry) {
       output.writeLong(entry.term);
-      byte[] commandBytes = entry.command.getBytes();
+      byte[] commandBytes = entry.operation.getBytes();
       output.writeInt(commandBytes.length);
       output.writeBytes(commandBytes);
       kryo.writeObject(output, entry.args);

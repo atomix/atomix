@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  * Copycat context.<p>
  *
  * The Copycat context is the core of Copycat's functionality. Contexts are startable objects that, once started,
- * accept commands via the {@link AsyncCopycatContext#submitCommand(String, Object...)} method. Each context contains a
+ * accept commands via the {@link AsyncCopycatContext#submit(String, Object...)} method. Each context contains a
  * {@link net.kuujo.copycat.StateMachine}, {@link net.kuujo.copycat.log.Log}, and
  * {@link net.kuujo.copycat.cluster.Cluster}, each of which are required for the operation of the system.<p>
  *
@@ -73,14 +73,14 @@ public interface AsyncCopycatContext extends BaseCopycatContext {
   CompletableFuture<Void> stop();
 
   /**
-   * Submits a command to the cluster.
+   * Submits a operation to the cluster.
    *
-   * @param command The name of the command to submit.
-   * @param args An ordered list of command arguments.
+   * @param operation The name of the operation to submit.
+   * @param args An ordered list of operation arguments.
    * @return A completable future to be completed once the result is received.
-   * @throws NullPointerException if {@code command} is null
+   * @throws NullPointerException if {@code operation} is null
    */
-  <R> CompletableFuture<R> submitCommand(final String command, final Object... args);
+  <R> CompletableFuture<R> submit(final String operation, final Object... args);
 
   /**
    * Copycat context builder.

@@ -95,10 +95,10 @@ public class DefaultCopycatContext extends AbstractCopycatContext implements Cop
 
   @Override
   @SuppressWarnings("unchecked")
-  public <R> R submitCommand(final String command, final Object... args) {
+  public <R> R submit(final String operation, final Object... args) {
     final CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<R> result = new AtomicReference<>();
-    state.submitCommand(Args.checkNotNull(command, "command cannot be null"), args).whenComplete((r, error) -> {
+    state.submitCommand(Args.checkNotNull(operation, "operation cannot be null"), args).whenComplete((r, error) -> {
       latch.countDown();
       result.set((R) r);
     });

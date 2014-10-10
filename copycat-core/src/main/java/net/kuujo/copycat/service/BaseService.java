@@ -37,7 +37,7 @@ abstract class BaseService implements Service {
     if (context == null) {
       throw new ServiceException("No submit handlers registered");
     }
-    return context.submitCommand(command, args);
+    return context.submit(command, args);
   }
 
 }

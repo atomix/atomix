@@ -67,14 +67,14 @@ public interface CopycatContext extends BaseCopycatContext {
   void stop();
 
   /**
-   * Submits a command to the cluster.
+   * Submits an operation to the cluster.
    *
-   * @param command The name of the command to submit.
-   * @param args An ordered list of command arguments.
-   * @return The command result.
-   * @throws NullPointerException if {@code command} is null
+   * @param operation The name of the operation to submit.
+   * @param args An ordered list of operation arguments.
+   * @return The operation result.
+   * @throws NullPointerException if {@code operation} is null
    */
-  <R> R submitCommand(String command, Object... args);
+  <R> R submit(String operation, Object... args);
 
   /**
    * Copycat context builder.

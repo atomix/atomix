@@ -33,12 +33,27 @@ public class TestStateMachineEvents {
   /**
    * Listens for a command to be applied to the state machine.
    *
-   * @param command The command for which to listen.
    * @return The events object.
    */
-  public TestStateMachineEvents commandApplied(String command) {
+  public TestStateMachineEvents commandApplied() {
     final CountDownLatch latch = new CountDownLatch(1);
-    stateMachine.addCommandListener(command, latch::countDown);
+    stateMachine.addCommandListener(latch::countDown);
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
+
+  /**
+   * Listens for a query to be applied to the state machine.
+   *
+   * @return The events object.
+   */
+  public TestStateMachineEvents queryApplied() {
+    final CountDownLatch latch = new CountDownLatch(1);
+    stateMachine.addQueryListener(latch::countDown);
     try {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {

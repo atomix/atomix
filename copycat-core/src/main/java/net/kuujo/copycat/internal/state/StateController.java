@@ -17,9 +17,10 @@ package net.kuujo.copycat.internal.state;
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.event.VoteCastEvent;
-import net.kuujo.copycat.internal.log.CommandEntry;
+import net.kuujo.copycat.internal.StateMachineExecutor;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
@@ -290,8 +291,8 @@ abstract class StateController implements AsyncRequestHandler {
       }
   
       // If the entry is a command entry, apply the command to the state machine.
-      if (entry instanceof CommandEntry) {
-        applyCommand(index, (CommandEntry) entry);
+      if (entry instanceof OperationEntry) {
+        applyCommand(index, (OperationEntry) entry);
       }
       // If the entry is a configuration entry, update the local cluster configuration.
       else if (entry instanceof ConfigurationEntry) {
@@ -314,9 +315,12 @@ abstract class StateController implements AsyncRequestHandler {
    * @param index The index of the entry being applied.
    * @param entry The entry to apply.
    */
-  protected void applyCommand(long index, CommandEntry entry) {
+  protected void applyCommand(long index, OperationEntry entry) {
     try {
-      context.stateMachine().applyCommand(entry.command(), entry.args());
+      StateMachineExecutor.Operation operation = context.stateMachineExecutor().getOperation(entry.operation());
+      if (operation != null) {
+        operation.apply(entry.args());
+      }
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -349,7 +353,7 @@ abstract class StateController implements AsyncRequestHandler {
   protected void applySnapshot(long index, SnapshotEntry entry) {
     synchronized (context.log()) {
       // Apply the snapshot to the local state machine.
-      context.stateMachine().installSnapshot(entry.data());
+      context.stateMachineExecutor().stateMachine().installSnapshot(entry.data());
 
       // If the log is compactable then compact it at the snapshot index.
       if (context.log() instanceof Compactable) {
@@ -376,7 +380,7 @@ abstract class StateController implements AsyncRequestHandler {
    */
   @SuppressWarnings("unchecked")
   protected SnapshotEntry createSnapshot() {
-    byte[] snapshot = context.stateMachine().takeSnapshot();
+    byte[] snapshot = context.stateMachineExecutor().stateMachine().takeSnapshot();
     if (snapshot != null) {
       return new SnapshotEntry(context.currentTerm(), context.clusterManager().cluster().config().copy(), snapshot);
     }

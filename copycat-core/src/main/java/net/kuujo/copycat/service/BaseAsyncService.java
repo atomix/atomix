@@ -41,7 +41,7 @@ abstract class BaseAsyncService implements AsyncService {
       future.completeExceptionally(new ServiceException("No submit handlers registered"));
       return future;
     }
-    return context.submitCommand(command, args);
+    return context.submit(command, args);
   }
 
 }

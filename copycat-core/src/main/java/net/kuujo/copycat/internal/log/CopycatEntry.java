@@ -25,7 +25,7 @@ import net.kuujo.copycat.log.EntryTypes;
  */
 @EntryTypes({
   NoOpEntry.class,
-  CommandEntry.class,
+  OperationEntry.class,
   ConfigurationEntry.class,
   SnapshotEntry.class
 })

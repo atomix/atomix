@@ -5,7 +5,7 @@ import java.util.Arrays;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.log.CommandEntry;
+import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.NoOpEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
@@ -32,12 +32,12 @@ public class LogEntrySerializationTest {
   }
 
   public void testSerializeCommandEntry() throws Exception {
-    testSerializeEntry(CommandEntry.class, new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
+    testSerializeEntry(OperationEntry.class, new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
   }
 
   public void testDeserializeCommandEntry() throws Exception {
-    testDeserializeEntry(CommandEntry.class,
-        new CommandEntry(1, "foo", Arrays.asList("bar", "baz")));
+    testDeserializeEntry(OperationEntry.class,
+        new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
   }
 
   public void testSerializeConfigurationEntry() throws Exception {

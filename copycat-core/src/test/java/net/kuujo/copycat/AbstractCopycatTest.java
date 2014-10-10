@@ -77,7 +77,7 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
     return instances;
   }
 
-  protected static class TestStateMachine extends StateMachine {
+  protected static class TestStateMachine implements StateMachine {
     private final Map<String, Object> data = new HashMap<>();
 
     @Override
@@ -90,22 +90,22 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
       
     }
 
-    @Command(type=Command.Type.WRITE)
+    @Command
     public void set(String key, Object value) {
       data.put(key, value);
     }
 
-    @Command(type=Command.Type.READ)
+    @Query
     public Object get(String key) {
       return data.get(key);
     }
 
-    @Command(type=Command.Type.WRITE)
+    @Command
     public void delete(String key) {
       data.remove(key);
     }
 
-    @Command(type=Command.Type.WRITE)
+    @Command
     public void clear() {
       data.clear();
     }

@@ -26,14 +26,14 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class SubmitCommandTest extends AbstractCopycatTest {
+public class SubmitTest extends AbstractCopycatTest {
   public void testCopyCat() throws Throwable {
     Set<AsyncCopycatContext> contexts = startCluster(3);
     final AsyncCopycatContext context = contexts.iterator().next();
     context.on().leaderElect().run((event) -> {
-      context.submitCommand("set", "foo", "bar").thenRun(() -> {
-        context.submitCommand("set", "bar", "baz").thenRun(() -> {
-          context.submitCommand("get", "foo").whenComplete((result, error) -> {
+      context.submit("set", "foo", "bar").thenRun(() -> {
+        context.submit("set", "bar", "baz").thenRun(() -> {
+          context.submit("get", "foo").whenComplete((result, error) -> {
             threadAssertNull(error);
             threadAssertEquals("bar", result);
             resume();

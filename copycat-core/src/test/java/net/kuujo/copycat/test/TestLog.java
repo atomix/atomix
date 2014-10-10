@@ -22,8 +22,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.function.BiFunction;
 
+import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.internal.log.CommandEntry;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.internal.log.NoOpEntry;
@@ -95,7 +95,7 @@ public class TestLog extends InMemoryLog {
    */
   public TestLog withCommandEntries(int numEntries, long term) {
     for (int i = 0; i < numEntries; i++) {
-      appendEntry(new CommandEntry(term, "foo", Arrays.asList("bar", "baz")));
+      appendEntry(new OperationEntry(term, "foo", Arrays.asList("bar", "baz")));
     }
     return this;
   }

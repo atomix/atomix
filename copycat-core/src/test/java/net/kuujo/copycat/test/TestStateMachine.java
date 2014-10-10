@@ -15,20 +15,21 @@
  */
 package net.kuujo.copycat.test;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.Query;
 import net.kuujo.copycat.StateMachine;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Test state machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TestStateMachine extends StateMachine {
+public class TestStateMachine implements StateMachine {
   private final TestStateMachineEvents events;
-  private final Map<String, Runnable> commandListeners = new HashMap<>(10);
+  private final Map<String, Runnable> listeners = new HashMap<>(10);
 
   public TestStateMachine() {
     events = new TestStateMachineEvents(this);
@@ -41,18 +42,30 @@ public class TestStateMachine extends StateMachine {
     return events;
   }
 
-  void addCommandListener(String command, Runnable callback) {
-    commandListeners.put(command, callback);
+  void addCommandListener(Runnable callback) {
+    listeners.put("command", callback);
   }
 
-  @Override
-  public Object applyCommand(String command, List<Object> args) {
-    Object result = super.applyCommand(command, args);
-    Runnable listener = commandListeners.remove(command);
+  void addQueryListener(Runnable callback) {
+    listeners.put("query", callback);
+  }
+
+  @Command
+  public String command(String arg) {
+    Runnable listener = listeners.remove("command");
     if (listener != null) {
       listener.run();
     }
-    return result;
+    return arg;
+  }
+
+  @Query
+  public String query(String arg) {
+    Runnable listener = listeners.remove("query");
+    if (listener != null) {
+      listener.run();
+    }
+    return arg;
   }
 
 }

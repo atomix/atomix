@@ -24,6 +24,7 @@ import net.kuujo.copycat.event.LeaderElectEvent;
 import net.kuujo.copycat.event.StartEvent;
 import net.kuujo.copycat.event.StateChangeEvent;
 import net.kuujo.copycat.event.StopEvent;
+import net.kuujo.copycat.internal.StateMachineExecutor;
 import net.kuujo.copycat.internal.cluster.ClusterManager;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
@@ -53,7 +54,7 @@ import java.util.concurrent.Executors;
 public final class StateContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(StateContext.class);
   private final Executor executor = Executors.newCachedThreadPool();
-  private final StateMachine stateMachine;
+  private final StateMachineExecutor stateMachineExecutor;
   @SuppressWarnings("rawtypes")
   private final Cluster cluster;
   @SuppressWarnings("rawtypes")
@@ -72,7 +73,7 @@ public final class StateContext {
   private volatile long lastApplied = 0;
 
   public <M extends Member> StateContext(StateMachine stateMachine, Log log, Cluster<M> cluster, BaseProtocol<M> protocol, CopycatConfig config) {
-    this.stateMachine = stateMachine;
+    this.stateMachineExecutor = new StateMachineExecutor(stateMachine);
     this.log = log;
     this.config = config;
     this.cluster = cluster;
@@ -84,8 +85,8 @@ public final class StateContext {
    *
    * @return The state machine.
    */
-  public StateMachine stateMachine() {
-    return stateMachine;
+  public StateMachineExecutor stateMachineExecutor() {
+    return stateMachineExecutor;
   }
 
   /**
