@@ -59,15 +59,15 @@ import net.kuujo.copycat.spi.protocol.AsyncProtocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCopycat extends Copycat {
+public interface AsyncCopycat extends BaseCopycat {
   /**
    * Returns a new copycat builder.
    *
    * @return A new copycat builder.
    */
   @SuppressWarnings("unchecked")
-  static Copycat.Builder<AsyncCopycat, AsyncProtocol<?>> builder() {
-    return new Copycat.Builder<>((builder) -> new AsyncCopycatImpl(new StateContext(
+  static BaseCopycat.Builder<AsyncCopycat, AsyncProtocol<?>> builder() {
+    return new BaseCopycat.Builder<>((builder) -> new AsyncCopycatImpl(new StateContext(
         builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config),
         builder.cluster, builder.config));
   }

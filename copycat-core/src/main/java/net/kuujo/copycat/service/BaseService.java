@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.SyncCopycat;
+import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.spi.service.Service;
 
 /**
@@ -23,10 +23,10 @@ import net.kuujo.copycat.spi.service.Service;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class BaseService implements Service {
-  protected SyncCopycat copycat;
+  protected Copycat copycat;
 
   @Override
-  public void init(SyncCopycat copycat) {
+  public void init(Copycat copycat) {
     this.copycat = copycat;
   }
 

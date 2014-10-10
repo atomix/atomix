@@ -32,7 +32,7 @@ import net.kuujo.copycat.internal.util.Assert;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncCopycatImpl extends AbstractCopycat implements AsyncCopycat {
+public class AsyncCopycatImpl extends BaseCopycatImpl implements AsyncCopycat {
   public AsyncCopycatImpl(StateContext state, Cluster<?> cluster, CopycatConfig config) {
     super(state, cluster, config);
   }

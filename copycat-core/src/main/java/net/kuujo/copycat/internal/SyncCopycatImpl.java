@@ -19,7 +19,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import net.kuujo.copycat.SyncCopycat;
+import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.Cluster;
@@ -35,7 +35,7 @@ import net.kuujo.copycat.internal.util.Assert;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SyncCopycatImpl extends AbstractCopycat implements SyncCopycat {
+public class SyncCopycatImpl extends BaseCopycatImpl implements Copycat {
   public SyncCopycatImpl(StateContext state, Cluster<?> cluster, CopycatConfig config) {
     super(state, cluster, config);
   }

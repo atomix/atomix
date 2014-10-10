@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.BaseCopycat;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
@@ -31,13 +31,13 @@ import net.kuujo.copycat.internal.util.Assert;
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractCopycat implements Copycat {
+abstract class BaseCopycatImpl implements BaseCopycat {
   protected final StateContext state;
   protected final Cluster<?> cluster;
   protected final CopycatConfig config;
   protected final Events events;
 
-  protected AbstractCopycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
+  protected BaseCopycatImpl(StateContext state, Cluster<?> cluster, CopycatConfig config) {
     this.state = state;
     this.cluster = cluster;
     this.config = config;
