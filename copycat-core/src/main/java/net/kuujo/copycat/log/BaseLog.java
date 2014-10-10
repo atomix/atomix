@@ -15,6 +15,10 @@
  */
 package net.kuujo.copycat.log;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import com.esotericsoftware.kryo.Kryo;
 
 /**
@@ -30,6 +34,16 @@ abstract class BaseLog implements Log {
     this.entryType = entryType;
     this.kryo = new Kryo();
     init();
+  }
+  
+  @Override
+  public List<Long> appendEntries(Entry... entries) {
+    return Arrays.stream(entries).map(entry -> appendEntry(entry)).collect(Collectors.toList());
+  }
+
+  @Override
+  public List<Long> appendEntries(List<Entry> entries) {
+    return entries.stream().map(entry -> appendEntry(entry)).collect(Collectors.toList());
   }
 
   /**

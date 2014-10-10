@@ -14,19 +14,18 @@
  */
 package net.kuujo.copycat.log;
 
-import com.esotericsoftware.kryo.io.ByteBufferInput;
-import com.esotericsoftware.kryo.io.ByteBufferOutput;
-
-import net.kuujo.copycat.internal.log.CopycatEntry;
-import net.kuujo.copycat.internal.util.Args;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.List;
+
+import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.util.Args;
+
+import com.esotericsoftware.kryo.io.ByteBufferInput;
+import com.esotericsoftware.kryo.io.ByteBufferOutput;
 
 /**
  * Random access file log.
@@ -95,8 +94,7 @@ public class FileLog extends BaseFileLog implements Compactable {
   }
 
   /**
-   * Returns a boolean indicating whether the given index is within the range
-   * of the log.
+   * Returns a boolean indicating whether the given index is within the range of the log.
    */
   private boolean indexInRange(long index) {
     return index >= firstIndex && index <= lastIndex;
@@ -162,24 +160,6 @@ public class FileLog extends BaseFileLog implements Compactable {
     } catch (IOException e) {
       throw new LogException(e, "Failed to append entry");
     }
-  }
-
-  @Override
-  public List<Long> appendEntries(Entry... entries) {
-    List<Long> indices = new ArrayList<>(entries.length);
-    for (Entry entry : entries) {
-      indices.add(appendEntry(entry));
-    }
-    return indices;
-  }
-
-  @Override
-  public List<Long> appendEntries(List<Entry> entries) {
-    List<Long> indices = new ArrayList<>(entries.size());
-    for (Entry entry : entries) {
-      indices.add(appendEntry(entry));
-    }
-    return indices;
   }
 
   @Override
@@ -272,7 +252,8 @@ public class FileLog extends BaseFileLog implements Compactable {
       newFile.writeBytes(SEPARATOR);
       output.clear();
 
-      // Find existing entries with indices greater than the given index and append them to the new log.
+      // Find existing entries with indices greater than the given index and append them to the new
+      // log.
       long pointer = findFilePointer(index);
       String line;
       while ((line = file.readLine()) != null) {
