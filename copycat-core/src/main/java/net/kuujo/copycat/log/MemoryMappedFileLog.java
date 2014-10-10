@@ -167,24 +167,6 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public synchronized List<Long> appendEntries(Entry... entries) {
-    List<Long> indices = new ArrayList<>(entries.length);
-    for (Entry entry : entries) {
-      indices.add(appendEntry(entry));
-    }
-    return indices;
-  }
-
-  @Override
-  public synchronized List<Long> appendEntries(List<Entry> entries) {
-    List<Long> indices = new ArrayList<>(entries.size());
-    for (Entry entry : entries) {
-      indices.add(appendEntry(entry));
-    }
-    return indices;
-  }
-
-  @Override
   public boolean containsEntry(long index) {
     long matchIndex = findAbsoluteIndex(index);
     excerpt.index(matchIndex);

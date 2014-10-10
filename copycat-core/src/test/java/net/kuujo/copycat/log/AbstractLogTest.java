@@ -30,7 +30,7 @@ import java.util.Arrays;
 import static org.testng.Assert.*;
 
 /**
- * Base log test.
+ * Tests log implementations.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -58,6 +58,13 @@ public abstract class AbstractLogTest {
   @AfterMethod
   public void afterMethod() throws Throwable {
     log.close();
+    log.delete();
+  }
+
+  public void testAppendEntries() throws Exception {
+    Entry entry = new NoOpEntry(1);
+    assertEquals(log.appendEntries(entry, entry, entry),
+      Arrays.asList(Long.valueOf(1), Long.valueOf(2), Long.valueOf(3)));
   }
 
   public void testAppendEntry() throws Exception {
@@ -66,33 +73,57 @@ public abstract class AbstractLogTest {
     assertEquals(log.appendEntry(new NoOpEntry(1)), 3);
   }
 
-  public void testAppendEntries() throws Exception {
-    Entry entry = new NoOpEntry(1);
-    assertEquals(log.appendEntries(entry, entry, entry),
-        Arrays.asList(Long.valueOf(1), Long.valueOf(2), Long.valueOf(3)));
+  public void testCompactEndOfLog() throws Exception {
+    if (log instanceof Compactable) {
+      appendEntries();
+      ((Compactable) log).compact(5,
+        new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo"))
+          .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
+
+      assertEquals(log.firstIndex(), 5);
+      assertEquals(log.lastIndex(), 5);
+      SnapshotEntry entry = log.getEntry(5);
+      assertEquals(entry.term(), 1);
+      assertEquals("Hello world!", new String(entry.data()));
+    }
   }
 
-  public void testIsEmpty() {
-    assertTrue(log.isEmpty());
-    assertEquals(log.appendEntry(new NoOpEntry(1)), 1);
-    assertFalse(log.isEmpty());
-  }
+  public void testCompactMiddleOfLog() throws Exception {
+    if (log instanceof Compactable) {
+      appendEntries();
+      ((Compactable) log).compact(3,
+        new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo"))
+          .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
 
-  public void testSize() {
-    long size = log.size();
-    log.appendEntry(new NoOpEntry(1));
-    assertNotEquals(size, size = log.size());
-    log.appendEntry(new NoOpEntry(1));
-    assertNotEquals(size, size = log.size());
-    log.appendEntry(new NoOpEntry(1));
-    assertNotEquals(size, size = log.size());
+      assertEquals(log.firstIndex(), 3);
+      assertEquals(log.lastIndex(), 5);
+      SnapshotEntry entry = log.getEntry(3);
+      assertEquals(entry.term(), 1);
+      assertEquals("Hello world!", new String(entry.data()));
+      OperationEntry entry2 = log.getEntry(4);
+      assertEquals(entry2.term(), 1);
+      assertEquals("bar", entry2.operation());
+      OperationEntry entry3 = log.getEntry(5);
+      assertEquals(entry3.term(), 1);
+      assertEquals("baz", entry3.operation());
+    }
   }
 
   public void testContainsEntry() throws Exception {
     appendEntries();
-    
+
     assertTrue(log.containsEntry(3));
     assertFalse(log.containsEntry(7));
+  }
+
+  public void testFirstEntry() throws Exception {
+    appendEntries();
+    assertTrue(log.firstEntry() instanceof NoOpEntry);
+  }
+
+  public void testFirstIndex() throws Exception {
+    appendEntries();
+    assertEquals(log.firstIndex(), 1);
   }
 
   public void testGetEntry() throws Exception {
@@ -102,14 +133,15 @@ public abstract class AbstractLogTest {
     assertTrue(log.getEntry(3) instanceof OperationEntry);
   }
 
-  public void testFirstIndex() throws Exception {
-    appendEntries();
-    assertEquals(log.firstIndex(), 1);
+  public void testIsEmpty() {
+    assertTrue(log.isEmpty());
+    assertEquals(log.appendEntry(new NoOpEntry(1)), 1);
+    assertFalse(log.isEmpty());
   }
 
-  public void testFirstEntry() throws Exception {
+  public void testLastEntry() throws Exception {
     appendEntries();
-    assertTrue(log.firstEntry() instanceof NoOpEntry);
+    assertTrue(log.lastEntry() instanceof OperationEntry);
   }
 
   public void testLastIndex() throws Exception {
@@ -117,9 +149,14 @@ public abstract class AbstractLogTest {
     assertEquals(log.lastIndex(), 5);
   }
 
-  public void testLastEntry() throws Exception {
+  public void testRemoveAfter() throws Exception {
     appendEntries();
-    assertTrue(log.lastEntry() instanceof OperationEntry);
+    log.removeAfter(2);
+
+    assertEquals(log.firstIndex(), 1);
+    assertTrue(log.firstEntry() instanceof NoOpEntry);
+    assertEquals(log.lastIndex(), 2);
+    assertTrue(log.lastEntry() instanceof ConfigurationEntry);
   }
 
   public void testRemoveEntry() throws Exception {
@@ -136,56 +173,20 @@ public abstract class AbstractLogTest {
     assertTrue(log.containsEntry(4));
   }
 
-  public void testRemoveAfter() throws Exception {
-    appendEntries();
-    log.removeAfter(2);
-
-    assertEquals(log.firstIndex(), 1);
-    assertTrue(log.firstEntry() instanceof NoOpEntry);
-    assertEquals(log.lastIndex(), 2);
-    assertTrue(log.lastEntry() instanceof ConfigurationEntry);
-  }
-
-  public void testCompactMiddleOfLog() throws Exception {
-    if (log instanceof Compactable) {
-      appendEntries();
-      ((Compactable) log).compact(3,
-          new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo"))
-              .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
-
-      assertEquals(log.firstIndex(), 3);
-      assertEquals(log.lastIndex(), 5);
-      SnapshotEntry entry = log.getEntry(3);
-      assertEquals(entry.term(), 1);
-      assertEquals("Hello world!", new String(entry.data()));
-      OperationEntry entry2 = log.getEntry(4);
-      assertEquals(entry2.term(), 1);
-      assertEquals("bar", entry2.operation());
-      OperationEntry entry3 = log.getEntry(5);
-      assertEquals(entry3.term(), 1);
-      assertEquals("baz", entry3.operation());
-    }
-  }
-
-  public void testCompactEndOfLog() throws Exception {
-    if (log instanceof Compactable) {
-      appendEntries();
-      ((Compactable) log).compact(5,
-          new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo"))
-              .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
-
-      assertEquals(log.firstIndex(), 5);
-      assertEquals(log.lastIndex(), 5);
-      SnapshotEntry entry = log.getEntry(5);
-      assertEquals(entry.term(), 1);
-      assertEquals("Hello world!", new String(entry.data()));
-    }
+  public void testSize() {
+    long size = log.size();
+    log.appendEntry(new NoOpEntry(1));
+    assertNotEquals(size, size = log.size());
+    log.appendEntry(new NoOpEntry(1));
+    assertNotEquals(size, size = log.size());
+    log.appendEntry(new NoOpEntry(1));
+    assertNotEquals(size, size = log.size());
   }
 
   private void appendEntries() {
     log.appendEntry(new NoOpEntry(1));
     log.appendEntry(new ConfigurationEntry(1, new ClusterConfig()
-        .withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
+      .withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
     log.appendEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
     log.appendEntry(new OperationEntry(1, "bar", Arrays.asList("bar", "baz")));
     log.appendEntry(new OperationEntry(1, "baz", Arrays.asList("bar", "baz")));
