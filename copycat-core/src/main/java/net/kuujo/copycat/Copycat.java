@@ -30,7 +30,6 @@ import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.spi.protocol.BaseProtocol;
-import net.kuujo.copycat.spi.protocol.Protocol;
 
 /**
  * Base copycat interface.
