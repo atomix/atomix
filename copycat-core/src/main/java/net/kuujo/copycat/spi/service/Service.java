@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.spi.service;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.SyncCopycat;
 
 /**
  * CopyCat service.<p>
@@ -42,7 +42,7 @@ public interface Service extends BaseService {
    *
    * @param context The copycat context.
    */
-  void init(CopycatContext context);
+  void init(SyncCopycat copycat);
 
   /**
    * Starts the service.<p>

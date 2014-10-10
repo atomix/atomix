@@ -14,10 +14,10 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.AsyncCopycatContext;
-import net.kuujo.copycat.spi.service.AsyncService;
-
 import java.util.concurrent.CompletableFuture;
+
+import net.kuujo.copycat.AsyncCopycat;
+import net.kuujo.copycat.spi.service.AsyncService;
 
 /**
  * Base service implementation.
@@ -25,23 +25,23 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class BaseAsyncService implements AsyncService {
-  protected AsyncCopycatContext context;
+  protected AsyncCopycat copycat;
 
   @Override
-  public void init(AsyncCopycatContext context) {
-    this.context = context;
+  public void init(AsyncCopycat copycat) {
+    this.copycat = copycat;
   }
 
   /**
    * Handles a command submission.
    */
   protected <T> CompletableFuture<T> submit(String command, Object... args) {
-    if (context == null) {
+    if (copycat == null) {
       CompletableFuture<T> future = new CompletableFuture<>();
       future.completeExceptionally(new ServiceException("No submit handlers registered"));
       return future;
     }
-    return context.submit(command, args);
+    return copycat.submit(command, args);
   }
 
 }

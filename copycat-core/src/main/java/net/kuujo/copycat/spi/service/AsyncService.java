@@ -14,9 +14,9 @@
  */
 package net.kuujo.copycat.spi.service;
 
-import net.kuujo.copycat.AsyncCopycatContext;
-
 import java.util.concurrent.CompletableFuture;
+
+import net.kuujo.copycat.AsyncCopycat;
 
 /**
  * CopyCat service.<p>
@@ -43,7 +43,7 @@ public interface AsyncService extends BaseService {
    *
    * @param context The copycat context.
    */
-  void init(AsyncCopycatContext context);
+  void init(AsyncCopycat copycat);
 
   /**
    * Starts the service.<p>

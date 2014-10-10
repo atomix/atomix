@@ -14,11 +14,12 @@
  */
 package net.kuujo.copycat.functional;
 
-import net.kuujo.copycat.AbstractCopycatTest;
-import net.kuujo.copycat.AsyncCopycatContext;
-import org.testng.annotations.Test;
-
 import java.util.Set;
+
+import net.kuujo.copycat.AbstractCopycatTest;
+import net.kuujo.copycat.AsyncCopycat;
+
+import org.testng.annotations.Test;
 
 /**
  * Submit command test.
@@ -28,12 +29,12 @@ import java.util.Set;
 @Test
 public class SubmitTest extends AbstractCopycatTest {
   public void testCopyCat() throws Throwable {
-    Set<AsyncCopycatContext> contexts = startCluster(3);
-    final AsyncCopycatContext context = contexts.iterator().next();
-    context.on().leaderElect().run((event) -> {
-      context.submit("set", "foo", "bar").thenRun(() -> {
-        context.submit("set", "bar", "baz").thenRun(() -> {
-          context.submit("get", "foo").whenComplete((result, error) -> {
+    Set<AsyncCopycat> copycats = startCluster(3);
+    final AsyncCopycat copycat = copycats.iterator().next();
+    copycat.on().leaderElect().run((event) -> {
+      copycat.submit("set", "foo", "bar").thenRun(() -> {
+        copycat.submit("set", "bar", "baz").thenRun(() -> {
+          copycat.submit("get", "foo").whenComplete((result, error) -> {
             threadAssertNull(error);
             threadAssertEquals("bar", result);
             resume();

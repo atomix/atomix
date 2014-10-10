@@ -14,43 +14,79 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.BaseCopycat;
-import net.kuujo.copycat.BaseCopycatContext;
-import net.kuujo.copycat.event.*;
+import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.CopycatConfig;
+import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.event.Event;
+import net.kuujo.copycat.event.EventContext;
+import net.kuujo.copycat.event.EventHandlerRegistry;
+import net.kuujo.copycat.event.EventHandlers;
+import net.kuujo.copycat.event.Events;
+import net.kuujo.copycat.internal.event.DefaultEvents;
+import net.kuujo.copycat.internal.state.StateContext;
+import net.kuujo.copycat.internal.util.Assert;
 
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractCopycat<T extends BaseCopycatContext> implements BaseCopycat<T> {
-  protected final T context;
+abstract class AbstractCopycat implements Copycat {
+  protected final StateContext state;
+  protected final Cluster<?> cluster;
+  protected final CopycatConfig config;
+  protected final Events events;
 
-  protected AbstractCopycat(T context) {
-    this.context = context;
+  protected AbstractCopycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
+    this.state = state;
+    this.cluster = cluster;
+    this.config = config;
+    this.events = new DefaultEvents(state.events());
+  }
+  
+  @Override
+  public CopycatConfig config() {
+    return config;
   }
 
   @Override
-  public T context() {
-    return context;
+  @SuppressWarnings("unchecked")
+  public <M extends Member> Cluster<M> cluster() {
+    return (Cluster<M>) cluster;
   }
 
   @Override
   public Events on() {
-    return context.on();
+    return events;
   }
 
   @Override
-  public <T1 extends Event> EventContext<T1> on(Class<T1> event) {
-    return context.on(event);
+  public <T extends Event> EventContext<T> on(Class<T> event) {
+    return events.event(Assert.isNotNull(event, "Event cannot be null"));
   }
 
   @Override
   public EventHandlers events() {
-    return context.events();
+    return state.events();
   }
 
   @Override
-  public <T1 extends Event> EventHandlerRegistry<T1> event(Class<T1> event) {
-    return context.event(event);
+  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
+    return state.events().event(Assert.isNotNull(event, "Event cannot be null"));
   }
 
+  @Override
+  public CopycatState state() {
+    return state.state();
+  }
+
+  @Override
+  public String leader() {
+    return state.currentLeader();
+  }
+
+  @Override
+  public boolean isLeader() {
+    return state.isLeader();
+  }
 }

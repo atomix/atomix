@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.SyncCopycat;
 import net.kuujo.copycat.spi.service.Service;
 
 /**
@@ -23,21 +23,21 @@ import net.kuujo.copycat.spi.service.Service;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class BaseService implements Service {
-  protected CopycatContext context;
+  protected SyncCopycat copycat;
 
   @Override
-  public void init(CopycatContext context) {
-    this.context = context;
+  public void init(SyncCopycat copycat) {
+    this.copycat = copycat;
   }
 
   /**
    * Handles a command submission.
    */
   protected <T> T submit(String command, Object... args) {
-    if (context == null) {
+    if (copycat == null) {
       throw new ServiceException("No submit handlers registered");
     }
-    return context.submit(command, args);
+    return copycat.submit(command, args);
   }
 
 }

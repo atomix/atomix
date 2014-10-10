@@ -61,11 +61,11 @@ public class EventBusService extends BaseAsyncService {
         submit(command, args.toArray()).whenComplete((result, error) -> {
           if (error == null) {
             if (result instanceof Map) {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)));
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", copycat.leader()).putObject("result", new JsonObject((Map) result)));
             } else if (result instanceof List) {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)));
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", copycat.leader()).putArray("result", new JsonArray((List) result)));
             } else {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result));
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", copycat.leader()).putValue("result", result));
             }
           }
         });

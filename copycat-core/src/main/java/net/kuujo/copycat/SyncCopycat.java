@@ -14,11 +14,9 @@
  */
 package net.kuujo.copycat;
 
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.internal.AsyncCopycatImpl;
+import net.kuujo.copycat.internal.SyncCopycatImpl;
 import net.kuujo.copycat.internal.state.StateContext;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
 /**
  * Copycat service.
@@ -59,40 +57,37 @@ import net.kuujo.copycat.spi.protocol.AsyncProtocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCopycat extends Copycat {
+public interface SyncCopycat extends Copycat {
   /**
    * Returns a new copycat builder.
    *
    * @return A new copycat builder.
    */
   @SuppressWarnings("unchecked")
-  static Copycat.Builder<AsyncCopycat, AsyncProtocol<?>> builder() {
-    return new Copycat.Builder<>((builder) -> new AsyncCopycatImpl(new StateContext(
+  static Copycat.Builder<SyncCopycat, Protocol<?>> builder() {
+    return new Copycat.Builder<>((builder) -> new SyncCopycatImpl(new StateContext(
         builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config),
         builder.cluster, builder.config));
   }
 
   /**
-   * Starts the context.
-   *
-   * @return A completable future to be completed once the context has started.
+   * Starts the replica.
    */
-  CompletableFuture<Void> start();
+  void start();
 
   /**
-   * Stops the context.
-   *
-   * @return A completable future that will be completed when the context has started.
+   * Stops the replica.
    */
-  CompletableFuture<Void> stop();
+  void stop();
 
   /**
-   * Submits a operation to the cluster.
+   * Submits an operation to the cluster.
    *
    * @param operation The name of the operation to submit.
    * @param args An ordered list of operation arguments.
-   * @return A completable future to be completed once the result is received.
+   * @return The operation result.
    * @throws NullPointerException if {@code operation} is null
    */
-  <R> CompletableFuture<R> submit(final String operation, final Object... args);
+  <R> R submit(String operation, Object... args);
+
 }
