@@ -93,9 +93,10 @@ public abstract class AbstractLogTest {
   }
 
   public void testContainsEntry() throws Exception {
-    log.appendEntry(new NoOpEntry(1));
-
-    assertTrue(log.containsEntry(1));
+    appendEntries();
+    
+    assertTrue(log.containsEntry(3));
+    assertFalse(log.containsEntry(7));
   }
 
   public void testGetEntry() throws Exception {
