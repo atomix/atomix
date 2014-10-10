@@ -15,16 +15,18 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.spi.CorrelationStrategy;
-import net.kuujo.copycat.spi.QuorumStrategy;
-import net.kuujo.copycat.spi.TimerStrategy;
-
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
+
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.QuorumStrategy;
+import net.kuujo.copycat.spi.TimerStrategy;
 
 /**
  * Replica configuration.
@@ -32,7 +34,9 @@ import java.util.concurrent.ScheduledFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatConfig {
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("config-timer-%s");
+  
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
   private long electionTimeout = 2000;
   private long heartbeatInterval = 500;
   private boolean requireWriteQuorum = true;

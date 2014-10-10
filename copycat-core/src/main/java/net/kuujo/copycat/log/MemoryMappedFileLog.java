@@ -23,10 +23,12 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.openhft.chronicle.Chronicle;
 import net.openhft.chronicle.Excerpt;
 import net.openhft.chronicle.ExcerptAppender;
@@ -46,7 +48,9 @@ import com.esotericsoftware.kryo.io.ByteBufferOutput;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("log-file-syncer-%s");
+  
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
   private static final int EXTRA_BYTES = 9;

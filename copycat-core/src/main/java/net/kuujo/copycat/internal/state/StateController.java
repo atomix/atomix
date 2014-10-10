@@ -14,6 +14,14 @@
  */
 package net.kuujo.copycat.internal.state;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.event.VoteCastEvent;
@@ -21,17 +29,22 @@ import net.kuujo.copycat.internal.log.CommandEntry;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.protocol.*;
-import org.slf4j.Logger;
+import net.kuujo.copycat.protocol.AsyncRequestHandler;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.Request;
+import net.kuujo.copycat.protocol.Response;
+import net.kuujo.copycat.protocol.SubmitRequest;
+import net.kuujo.copycat.protocol.SubmitResponse;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
 
 /**
  * Base replica state controller.
@@ -39,8 +52,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class StateController implements AsyncRequestHandler {
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("state-controller-%s");
+  
   protected StateContext context;
-  private final Executor executor = Executors.newSingleThreadExecutor();
+  private final Executor executor = Executors.newSingleThreadExecutor(THREAD_FACTORY);
   private final AtomicBoolean transition = new AtomicBoolean();
 
   /**
