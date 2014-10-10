@@ -97,10 +97,12 @@ public interface Log {
   /**
    * Returns a list of entries from the log.
    *
-   * @param from The index at which to start.
-   * @param to The index at which to end.
+   * @param from The index at which to start, inclusive.
+   * @param to The index at which to end, inclusive.
    * @return A list of log entries.
    * @throws IllegalStateException if the log is not open
+   * @throws LogIndexOutOfBoundsException if {@code from} or {@code to} represent a range that is
+   *         out of bounds
    */
   <T extends Entry> List<T> getEntries(long from, long to);
 
