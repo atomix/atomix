@@ -63,7 +63,7 @@ public class TestCluster {
       config.setLocalMember(node.member());
       nodes.forEach(n -> {
         if (!n.id().equals(node.id())) {
-          config.addRemoteMember(node.member());
+          config.addRemoteMember(n.member());
         }
       });
       node.start(new Cluster<Member>(config), protocol);
