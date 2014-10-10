@@ -24,6 +24,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.event.MembershipChangeEvent;
 import net.kuujo.copycat.event.VoteCastEvent;
 import net.kuujo.copycat.internal.StateMachineExecutor;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
@@ -351,6 +352,7 @@ abstract class StateController implements AsyncRequestHandler {
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
       context.clusterManager().cluster().update(entry.cluster(), null);
+      context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster().getMembers()));
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -379,6 +381,7 @@ abstract class StateController implements AsyncRequestHandler {
 
       // Set the local cluster configuration according to the snapshot cluster membership.
       context.clusterManager().cluster().update(entry.cluster(), null);
+      context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster().getMembers()));
 
       // Finally, if necessary, increment the current term.
       context.currentTerm(Math.max(context.currentTerm(), entry.term()));

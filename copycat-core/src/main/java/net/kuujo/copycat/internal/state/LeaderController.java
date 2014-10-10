@@ -18,6 +18,7 @@ import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.event.MembershipChangeEvent;
 import net.kuujo.copycat.internal.StateMachineExecutor;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
@@ -172,6 +173,7 @@ public class LeaderController extends StateController implements Observer {
       // Since we're using a joint consensus, it's safe to work with all members
       // of both the old and new configuration without causing split elections.
       context.clusterManager().cluster().update(jointConfig, null);
+      context.events().membershipChange().handle(new MembershipChangeEvent(jointConfig.getMembers()));
       LOGGER.debug("{} - Updated internal cluster configuration {}", context.clusterManager().localNode(), context.clusterManager().cluster());
 
       // Once the cluster is updated, the replicator will be notified and update its
@@ -190,6 +192,7 @@ public class LeaderController extends StateController implements Observer {
         // Again, once we've appended the new configuration to the log, update
         // the local internal configuration.
         context.clusterManager().cluster().update(userConfig, null);
+        context.events().membershipChange().handle(new MembershipChangeEvent(userConfig.getMembers()));
         LOGGER.debug("{} - Updated internal cluster configuration {}", context.clusterManager().localNode(), context.clusterManager().cluster());
 
         // Note again that when the cluster membership changes, the replicator will
