@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,22 +43,22 @@ public class LocalProtocolServer implements ProtocolServer {
   }
 
   PingResponse ping(PingRequest request) {
-    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.ping(request);
   }
 
   SyncResponse sync(SyncRequest request) {
-    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.sync(request);
   }
 
   PollResponse poll(PollRequest request) {
-    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.poll(request);
   }
 
   SubmitResponse submit(SubmitRequest request) {
-    Args.checkNotNull(requestHandler, "No protocol handler provided");
+    Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.submit(request);
   }
 

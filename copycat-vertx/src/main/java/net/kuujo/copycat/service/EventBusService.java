@@ -15,17 +15,16 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.internal.util.Args;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Event bus service implementation.
@@ -194,7 +193,7 @@ public class EventBusService extends BaseAsyncService {
   public CompletableFuture<Void> start() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (vertx == null) {
-      vertx = new DefaultVertx(port >= 0 ? port : 0, Args.checkNotNull(host), (vertxResult) -> {
+      vertx = new DefaultVertx(port >= 0 ? port : 0, host, (vertxResult) -> {
         if (vertxResult.failed()) {
           future.completeExceptionally(vertxResult.cause());
         } else {

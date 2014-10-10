@@ -333,7 +333,6 @@ abstract class StateController implements AsyncRequestHandler {
    * @param index The index of the entry being applied.
    * @param entry The entry to apply.
    */
-  @SuppressWarnings("unchecked")
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
       context.clusterManager().cluster().update(entry.cluster(), null);
@@ -349,7 +348,6 @@ abstract class StateController implements AsyncRequestHandler {
    * @param index The index of the entry to apply.
    * @param entry The entry to apply.
    */
-  @SuppressWarnings("unchecked")
   protected void applySnapshot(long index, SnapshotEntry entry) {
     synchronized (context.log()) {
       // Apply the snapshot to the local state machine.
@@ -378,7 +376,6 @@ abstract class StateController implements AsyncRequestHandler {
    *
    * @return A snapshot of the state machine state.
    */
-  @SuppressWarnings("unchecked")
   protected SnapshotEntry createSnapshot() {
     byte[] snapshot = context.stateMachineExecutor().stateMachine().takeSnapshot();
     if (snapshot != null) {

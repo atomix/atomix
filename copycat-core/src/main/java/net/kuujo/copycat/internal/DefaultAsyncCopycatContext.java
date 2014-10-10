@@ -14,13 +14,13 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.AsyncCopycatContext;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.AsyncCopycatContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.state.StateContext;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 
@@ -50,7 +50,7 @@ public class DefaultAsyncCopycatContext extends AbstractCopycatContext implement
   @Override
   @SuppressWarnings("unchecked")
   public <R> CompletableFuture<R> submit(final String operation, final Object... args) {
-    return state.submitCommand(Args.checkNotNull(operation, "operation cannot be null"), args);
+    return state.submit(Assert.isNotNull(operation, "operation cannot be null"), args);
   }
 
   @Override

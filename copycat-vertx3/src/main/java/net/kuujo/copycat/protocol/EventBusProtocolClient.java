@@ -20,7 +20,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
 
 import java.util.concurrent.CompletableFuture;
@@ -37,8 +37,8 @@ public class EventBusProtocolClient implements AsyncProtocolClient {
   private Vertx vertx;
 
   public EventBusProtocolClient(String address, Vertx vertx) {
-    this.address = Args.checkNotNull(address, "Vert.x event bus address cannot be null");
-    this.vertx = Args.checkNotNull(vertx, "Vert.x instance cannot be null");
+    this.address = Assert.isNotNull(address, "Vert.x event bus address cannot be null");
+    this.vertx = Assert.isNotNull(vertx, "Vert.x instance cannot be null");
   }
 
   @Override

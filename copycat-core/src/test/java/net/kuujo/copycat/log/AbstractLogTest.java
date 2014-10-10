@@ -57,7 +57,10 @@ public abstract class AbstractLogTest {
 
   @AfterMethod
   public void afterMethod() throws Throwable {
-    log.close();
+    try {
+      log.close();
+    } catch (Exception ignore) {
+    }
     log.delete();
   }
 
@@ -71,6 +74,13 @@ public abstract class AbstractLogTest {
     assertEquals(log.appendEntry(new NoOpEntry(1)), 1);
     assertEquals(log.appendEntry(new NoOpEntry(1)), 2);
     assertEquals(log.appendEntry(new NoOpEntry(1)), 3);
+  }
+
+  public void testClose() throws Exception {
+    appendEntries();
+    assertTrue(log.isOpen());
+    log.close();
+    assertFalse(log.isOpen());
   }
 
   public void testCompactEndOfLog() throws Exception {
@@ -137,6 +147,12 @@ public abstract class AbstractLogTest {
     assertTrue(log.isEmpty());
     assertEquals(log.appendEntry(new NoOpEntry(1)), 1);
     assertFalse(log.isEmpty());
+  }
+
+  public void testIsOpen() throws Throwable {
+    assertTrue(log.isOpen());
+    log.close();
+    assertFalse(log.isOpen());
   }
 
   public void testLastEntry() throws Exception {

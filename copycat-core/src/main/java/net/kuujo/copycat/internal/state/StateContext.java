@@ -28,7 +28,7 @@ import net.kuujo.copycat.internal.StateMachineExecutor;
 import net.kuujo.copycat.internal.cluster.ClusterManager;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.AsyncRequestHandler;
 import net.kuujo.copycat.protocol.Response;
@@ -175,13 +175,16 @@ public final class StateContext {
       LOGGER.warn("{} - No remote nodes in the cluster!", clusterManager.localNode());
     }
     if (!config.isRequireReadQuorum()) {
-      LOGGER.warn("{} - Read quorums are disabled! This can cause stale reads!", clusterManager.localNode());
+      LOGGER.warn("{} - Read quorums are disabled! This can cause stale reads!",
+          clusterManager.localNode());
     }
     if (!config.isRequireWriteQuorum()) {
-      LOGGER.warn("{} - Write quorums are disabled! This can cause data loss!", clusterManager.localNode());
+      LOGGER.warn("{} - Write quorums are disabled! This can cause data loss!",
+          clusterManager.localNode());
     }
     if (config.getElectionTimeout() < config.getHeartbeatInterval()) {
-      LOGGER.error("{} - Election timeout is greater than heartbeat interval!", clusterManager.localNode());
+      LOGGER.error("{} - Election timeout is greater than heartbeat interval!",
+          clusterManager.localNode());
     }
   }
 
@@ -205,10 +208,13 @@ public final class StateContext {
 
   /**
    * Transitions to a new state.
+   * 
+   * @throws NullPointerException if {@code type} is null
    */
   public synchronized void transition(Class<? extends StateController> type) {
-    Args.checkNotNull(type);
-    if ((currentState == null && type == null) || (currentState != null && type != null && type.isAssignableFrom(currentState.getClass()))) {
+    Assert.isNotNull(type, "type");
+    if ((currentState == null && type == null)
+        || (currentState != null && type != null && type.isAssignableFrom(currentState.getClass()))) {
       return;
     }
 
@@ -246,10 +252,12 @@ public final class StateContext {
 
     if (currentLeader == null && leader != null) {
       currentLeader = leader;
-      events.leaderElect().handle(new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
+      events.leaderElect().handle(
+          new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
     } else if (currentLeader != null && leader != null && !currentLeader.equals(leader)) {
       currentLeader = leader;
-      events.leaderElect().handle(new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
+      events.leaderElect().handle(
+          new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
     } else {
       currentLeader = leader;
     }
@@ -370,47 +378,51 @@ public final class StateContext {
   }
 
   /**
-   * Submits a command to the state.
+   * Submits an operation to the state.
    *
-   * @param command The command to submit.
-   * @param args The command arguments.
-   * @param <R> The command return type.
+   * @param operation The operation to submit.
+   * @param args The operation arguments.
+   * @param <R> The operation return type.
    * @return A completable future to be completed with the command result.
    */
   @SuppressWarnings("unchecked")
-  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
+  public <R> CompletableFuture<R> submit(final String operation, final Object... args) {
     CompletableFuture<R> future = new CompletableFuture<>();
     if (currentLeader == null) {
       future.completeExceptionally(new CopycatException("No leader available"));
     } else if (!leaderConnected) {
       leaderConnectCallbacks.add(() -> {
         AsyncRequestHandler handler = leaderClient != null ? leaderClient : currentState;
-        handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
-          if (error != null) {
-            future.completeExceptionally(error);
-          } else {
-            if (result.status().equals(Response.Status.OK)) {
-              future.complete((R) result.result());
-            } else {
-              future.completeExceptionally(result.error());
-            }
-          }
-        });
+        handler.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args)))
+            .whenComplete((result, error) -> {
+              if (error != null) {
+                future.completeExceptionally(error);
+              } else {
+                if (result.status().equals(Response.Status.OK)) {
+                  future.complete((R) result.result());
+                } else {
+                  future.completeExceptionally(result.error());
+                }
+              }
+            });
       });
     } else {
       executor.execute(() -> {
-        AsyncRequestHandler handler = currentLeader.equals(clusterManager.localNode().member().id()) ? currentState : leaderClient;
-        handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
-          if (error != null) {
-            future.completeExceptionally(error);
-          } else {
-            if (result.status().equals(Response.Status.OK)) {
-              future.complete((R) result.result());
-            } else {
-              future.completeExceptionally(result.error());
-            }
-          }
-        });
+        AsyncRequestHandler handler =
+            currentLeader.equals(clusterManager.localNode().member().id()) ? currentState
+                : leaderClient;
+        handler.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args)))
+            .whenComplete((result, error) -> {
+              if (error != null) {
+                future.completeExceptionally(error);
+              } else {
+                if (result.status().equals(Response.Status.OK)) {
+                  future.complete((R) result.result());
+                } else {
+                  future.completeExceptionally(result.error());
+                }
+              }
+            });
       });
     }
     return future;

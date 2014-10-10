@@ -24,41 +24,13 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Log {
-
-  /**
-   * Opens the log.
-   *
-   * @throws IOException If the log could not be opened.
-   */
-  void open() throws IOException;
-
-  /**
-   * Returns the current size of the log.
-   *
-   * @return The current size of the log.
-   */
-  long size();
-
-  /**
-   * Returns a boolean indicating whether the log is empty.
-   *
-   * @return Indicates whether the log is empty.
-   */
-  boolean isEmpty();
-
-  /**
-   * Appends an entry to the log.
-   *
-   * @param entry The entry to append.
-   * @return The appended entry index.
-   */
-  long appendEntry(Entry entry);
-
   /**
    * Appends a list of entries to the log.
    *
    * @param entries A list of entries to append to the log.
    * @return A list of appended entry indices.
+   * @throws NullPointerException if {@code entries} is null
+   * @throws IllegalStateException if the log is not open
    */
   List<Long> appendEntries(Entry... entries);
 
@@ -67,89 +39,37 @@ public interface Log {
    *
    * @param entries A list of entries to append to the log.
    * @return A list of appended entry indices.
+   * @throws NullPointerException if {@code entries} is null
+   * @throws IllegalStateException if the log is not open
    */
   List<Long> appendEntries(List<Entry> entries);
+
+  /**
+   * Appends an entry to the log.
+   *
+   * @param entry The entry to append.
+   * @return The appended entry index.
+   * @throws NullPointerException if {@code entry} is null
+   * @throws IllegalStateException if the log is not open
+   */
+  long appendEntry(Entry entry);
+
+  /**
+   * Closes the log.
+   *
+   * @throws IOException If the log file could not be closed.
+   * @throws IllegalStateException if the log is not open
+   */
+  void close() throws IOException;
 
   /**
    * Returns a boolean indicating whether the log contains an entry.
    *
    * @param index The index for which to search the log.
    * @return Indicates whether the log contains an entry at the given index.
+   * @throws IllegalStateException if the log is not open
    */
   boolean containsEntry(long index);
-
-  /**
-   * Returns the first index in the log.
-   *
-   * @return The first index in the log.
-   */
-  long firstIndex();
-
-  /**
-   * Returns the first entry in the log.
-   *
-   * @return The first entry in the log.
-   */
-  <T extends Entry> T firstEntry();
-
-  /**
-   * Returns the last index in the log.
-   *
-   * @return The last index in the log.
-   */
-  long lastIndex();
-
-  /**
-   * Returns the last entry in the log.
-   *
-   * @return The last entry in the log.
-   */
-  <T extends Entry> T lastEntry();
-
-  /**
-   * Returns a log entry by index.
-   *
-   * @param index The index from which to retrieve the entry.
-   * @return The log entry.
-   */
-  <T extends Entry> T getEntry(long index);
-
-  /**
-   * Returns a list of entries from the log.
-   *
-   * @param from The index at which to start.
-   * @param to The index at which to end.
-   * @return A list of log entries.
-   */
-  <T extends Entry> List<T> getEntries(long from, long to);
-
-  /**
-   * Removes the entry at the given index.
-   *
-   * @param index The index at which to remove the entry.
-   */
-  void removeEntry(long index);
-
-  /**
-   * Removes all entries after the given index, exclusive.
-   *
-   * @param index The index after which to remove entries.
-   */
-  void removeAfter(long index);
-
-  /**
-   * Forces the log to sync to disk (if the log is persistent).
-   *
-   * @throws IOException If the log file could not be synced.
-   */
-  void sync() throws IOException;
-
-  /**
-   * Closes the log.
-   *
-   * @throws IOException If the log file could not be closed.
-   */
-  void close() throws IOException;
 
   /**
    * Deletes the log.
@@ -158,4 +78,110 @@ public interface Log {
    */
   void delete() throws IOException;
 
+  /**
+   * Returns the first entry in the log.
+   *
+   * @return The first entry in the log.
+   * @throws IllegalStateException if the log is not open
+   */
+  <T extends Entry> T firstEntry();
+
+  /**
+   * Returns the first index in the log.
+   *
+   * @return The first index in the log.
+   * @throws IllegalStateException if the log is not open
+   */
+  long firstIndex();
+
+  /**
+   * Returns a list of entries from the log.
+   *
+   * @param from The index at which to start.
+   * @param to The index at which to end.
+   * @return A list of log entries.
+   * @throws IllegalStateException if the log is not open
+   */
+  <T extends Entry> List<T> getEntries(long from, long to);
+
+  /**
+   * Returns a log entry by index.
+   *
+   * @param index The index from which to retrieve the entry.
+   * @return The log entry.
+   * @throws IllegalStateException if the log is not open
+   */
+  <T extends Entry> T getEntry(long index);
+
+  /**
+   * Returns a boolean indicating whether the log is empty.
+   *
+   * @return Indicates whether the log is empty.
+   * @throws IllegalStateException if the log is not open
+   */
+  boolean isEmpty();
+
+  /**
+   * Returns whether the log is open or not.
+   * 
+   * @return true if the log is open
+   * @throws IllegalStateException if the log is not open
+   */
+  boolean isOpen();
+
+  /**
+   * Returns the last entry in the log.
+   *
+   * @return The last entry in the log.
+   * @throws IllegalStateException if the log is not open
+   */
+  <T extends Entry> T lastEntry();
+
+  /**
+   * Returns the last index in the log.
+   *
+   * @return The last index in the log.
+   * @throws IllegalStateException if the log is not open
+   */
+  long lastIndex();
+
+  /**
+   * Opens the log.
+   *
+   * @throws IOException If the log could not be opened.
+   * @throws IllegalStateException if the log is already open
+   */
+  void open() throws IOException;
+
+  /**
+   * Removes all entries after the given index, exclusive.
+   *
+   * @param index The index after which to remove entries.
+   * @throws IllegalStateException if the log is not open
+   */
+  void removeAfter(long index);
+
+  /**
+   * Removes the entry at the given index.
+   *
+   * @param index The index at which to remove the entry.
+   * @throws IllegalStateException if the log is not open
+   */
+  void removeEntry(long index);
+
+  /**
+   * Returns the current size of the log.
+   *
+   * @return The current size of the log.
+   * @throws IllegalStateException if the log is not open
+   */
+  long size();
+
+  /**
+   * Forces the log to sync to disk (if the log is persistent).
+   *
+   * @throws IOException If the log file could not be synced.
+   * @throws IllegalStateException if the log is not open
+   */
+  void sync() throws IOException;
 }
