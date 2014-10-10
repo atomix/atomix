@@ -16,7 +16,7 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.async.AsyncCopycatContext;
+import net.kuujo.copycat.AsyncCopycatContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.state.StateContext;

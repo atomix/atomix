@@ -12,33 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.async;
+package net.kuujo.copycat;
 
-import net.kuujo.copycat.BaseCopycat;
-import net.kuujo.copycat.CopycatConfig;
-import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.*;
+import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.QuorumStrategy;
+import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.spi.protocol.AsyncProtocol;
-import net.kuujo.copycat.spi.service.AsyncService;
 
-import java.util.ServiceLoader;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Copycat service.<p>
+ * Copycat context.<p>
  *
- * This is the primary type for implementing full remote services on top of Copycat. A {@code Copycat} instance consists
- * of a {@link AsyncCopycatContext} which controls logging and replication and a
- * {@link net.kuujo.copycat.spi.service.Service} which exposes an endpoint through which commands can be
- * submitted to the Copycat cluster.<p>
- *
- * The {@code Copycat} constructor requires a {@link AsyncCopycatContext} and
- * {@link net.kuujo.copycat.spi.service.Service}:<p>
+ * The Copycat context is the core of Copycat's functionality. Contexts are startable objects that, once started,
+ * accept commands via the {@link AsyncCopycatContext#submitCommand(String, Object...)} method. Each context contains a
+ * {@link net.kuujo.copycat.StateMachine}, {@link net.kuujo.copycat.log.Log}, and
+ * {@link net.kuujo.copycat.cluster.Cluster}, each of which are required for the operation of the system.<p>
  *
  * {@code
  * StateMachine stateMachine = new MyStateMachine();
@@ -48,136 +41,61 @@ import java.util.concurrent.CompletableFuture;
  * config.setRemoteMembers("bar", "baz");
  * Cluster<Member> cluster = new LocalCluster(config);
  * CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
- *
- * CopycatService service = new HttpService("localhost", 8080);
- *
- * Copycat copycat = Copycat.copycat(service, context);
- * copycat.start();
- * }
- * <p>
- *
- * Copycat also exposes a fluent interface for reacting on internal events. This can be useful for detecting cluster
- * membership or leadership changes, for instance:<p>
- *
- * {@code
- * copycat.on().membershipChange(event -> {
- *   System.out.println("Membership changed: " + event.members());
- * });
+ * context.start();
+ * context.submitCommand("put", "foo").thenRun(System.ou;
  * }
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
-  static final AsyncCopycatFactory copycatFactory = ServiceLoader.load(AsyncCopycatFactory.class).iterator().next();
-  static final AsyncCopycatContextFactory contextFactory = ServiceLoader.load(AsyncCopycatContextFactory.class).iterator().next();
+public interface AsyncCopycatContext extends BaseCopycatContext {
 
   /**
-   * Returns a new copycat builder.
+   * Returns a new context builder.
    *
-   * @return A new copycat builder.
+   * @return A new copycat context builder.
    */
   static Builder builder() {
     return new Builder();
   }
 
   /**
-   * Creates a new Copycat instance.
+   * Starts the context.
    *
-   * @param service The Copycat service.
-   * @param context The Copycat context.
-   * @return A new Copycat instance.
-   */
-  static AsyncCopycat copycat(AsyncService service, AsyncCopycatContext context) {
-    return copycatFactory.createCopycat(service, context);
-  }
-
-  /**
-   * Creates a new Copycat instance.
-   *
-   * @param service The Copycat service.
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @param config The Copycat configuration.
-   * @return A new Copycat instance.
-   */
-  static <M extends Member> AsyncCopycat copycat(AsyncService service, StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol, CopycatConfig config) {
-    return copycatFactory.createCopycat(service, context(stateMachine, log, cluster, protocol, config));
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param cluster The Copycat cluster.
-   * @param protocol The Copycat protocol.
-   * @return A new Copycat context.
-   */
-  static <M extends Member> AsyncCopycatContext context(StateMachine stateMachine, Cluster<M> cluster, AsyncProtocol<M> protocol) {
-    return contextFactory.createContext(stateMachine, new InMemoryLog(), cluster, protocol, new CopycatConfig());
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @param protocol The Copycat protocol.
-   * @return A new Copycat context.
-   */
-  static <M extends Member> AsyncCopycatContext context(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol) {
-    return contextFactory.createContext(stateMachine, log, cluster, protocol, new CopycatConfig());
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @param protocol The Copycat protocol.
-   * @param config The Copycat configuration.
-   * @return A new Copycat context.
-   */
-  static <M extends Member> AsyncCopycatContext context(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol, CopycatConfig config) {
-    return contextFactory.createContext(stateMachine, log, cluster, protocol, config);
-  }
-
-  /**
-   * Starts the replica.
-   *
-   * @return A completable future to be completed once the replica has started.
+   * @return A completable future to be completed once the context has started.
    */
   CompletableFuture<Void> start();
 
   /**
-   * Stops the replica.
+   * Stops the context.
    *
-   * @return A completable future to be completed once the replica has stopped.
+   * @return A completable future that will be completed when the context has started.
    */
   CompletableFuture<Void> stop();
 
   /**
-   * Copycat builder.
+   * Submits a command to the cluster.
+   *
+   * @param command The name of the command to submit.
+   * @param args An ordered list of command arguments.
+   * @return A completable future to be completed once the result is received.
+   * @throws NullPointerException if {@code command} is null
    */
+  <R> CompletableFuture<R> submitCommand(final String command, final Object... args);
+
+  /**
+   * Copycat context builder.
+   *
+   * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
+   */
+  @SuppressWarnings("rawtypes")
   public static class Builder {
-    private AsyncService service;
-    private final AsyncCopycatContext.Builder builder = AsyncCopycatContext.builder();
+    private CopycatConfig config = new CopycatConfig();
+    private Cluster cluster;
+    private AsyncProtocol protocol;
+    private StateMachine stateMachine;
+    private Log log = new InMemoryLog();
 
     private Builder() {
-    }
-
-    /**
-     * Sets the copycat service.
-     *
-     * @param service The copycat service.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code service} is null
-     */
-    public Builder withService(AsyncService service) {
-      this.service = Args.checkNotNull(service);
-      return this;
     }
 
     /**
@@ -188,7 +106,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code log} is null
      */
     public Builder withLog(Log log) {
-      builder.withLog(log);
+      this.log = Args.checkNotNull(log, "log");
       return this;
     }
 
@@ -200,7 +118,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code config} is null
      */
     public Builder withConfig(CopycatConfig config) {
-      builder.withConfig(config);
+      this.config = Args.checkNotNull(config, "config");
       return this;
     }
 
@@ -212,7 +130,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws IllegalArgumentException if {@code timeout} is not > 0
      */
     public Builder withElectionTimeout(long timeout) {
-      builder.withElectionTimeout(timeout);
+      config.setElectionTimeout(timeout);
       return this;
     }
 
@@ -224,7 +142,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws IllegalArgumentException if {@code interval} is not > 0
      */
     public Builder withHeartbeatInterval(long interval) {
-      builder.withHeartbeatInterval(interval);
+      config.setHeartbeatInterval(interval);
       return this;
     }
 
@@ -235,7 +153,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @return The copycat builder.
      */
     public Builder withRequireReadQuorum(boolean requireQuorum) {
-      builder.withRequireReadQuorum(requireQuorum);
+      config.setRequireReadQuorum(requireQuorum);
       return this;
     }
 
@@ -247,7 +165,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws IllegalArgumentException if {@code quorumSize} is not > -1
      */
     public Builder withReadQuorumSize(int quorumSize) {
-      builder.withReadQuorumSize(quorumSize);
+      config.setReadQuorumSize(quorumSize);
       return this;
     }
 
@@ -258,8 +176,8 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @return The copycat builder.
      * @throws NullPointerException if {@code quorumStrategy} is null
      */
-    public Builder withReadQuorumStrategy(QuorumStrategy<?> quorumStrategy) {
-      builder.withReadQuorumStrategy(quorumStrategy);
+    public Builder withReadQuorumStrategy(QuorumStrategy quorumStrategy) {
+      config.setReadQuorumStrategy(quorumStrategy);
       return this;
     }
 
@@ -270,7 +188,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @return The copycat builder.
      */
     public Builder withRequireWriteQuorum(boolean requireQuorum) {
-      builder.withRequireWriteQuorum(requireQuorum);
+      config.setRequireWriteQuorum(requireQuorum);
       return this;
     }
 
@@ -282,7 +200,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws IllegalArgumentException if {@code quorumSize} is not > -1
      */
     public Builder withWriteQuorumSize(int quorumSize) {
-      builder.withWriteQuorumSize(quorumSize);
+      config.setWriteQuorumSize(quorumSize);
       return this;
     }
 
@@ -293,8 +211,8 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @return The copycat builder.
      * @throws NullPointerException if {@code quorumStrategy} is null
      */
-    public Builder withWriteQuorumStrategy(QuorumStrategy<?> quorumStrategy) {
-      builder.withWriteQuorumStrategy(quorumStrategy);
+    public Builder withWriteQuorumStrategy(QuorumStrategy quorumStrategy) {
+      config.setWriteQuorumStrategy(quorumStrategy);
       return this;
     }
 
@@ -306,7 +224,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws IllegalArgumentException if {@code maxSize} is not > 0
      */
     public Builder withMaxLogSize(int maxSize) {
-      builder.withMaxLogSize(maxSize);
+      config.setMaxLogSize(maxSize);
       return this;
     }
 
@@ -318,7 +236,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code strategy} is null
      */
     public Builder withCorrelationStrategy(CorrelationStrategy<?> strategy) {
-      builder.withCorrelationStrategy(strategy);
+      config.setCorrelationStrategy(strategy);
       return this;
     }
 
@@ -330,7 +248,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code strategy} is null
      */
     public Builder withTimerStrategy(TimerStrategy strategy) {
-      builder.withTimerStrategy(strategy);
+      config.setTimerStrategy(strategy);
       return this;
     }
 
@@ -342,7 +260,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code protocol} is null
      */
     public Builder withProtocol(AsyncProtocol<?> protocol) {
-      builder.withProtocol(protocol);
+      this.protocol = Args.checkNotNull(protocol, "protocol");
       return this;
     }
 
@@ -354,7 +272,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code cluster} is null
      */
     public Builder withCluster(Cluster<?> cluster) {
-      builder.withCluster(cluster);
+      this.cluster = Args.checkNotNull(cluster, "cluster");
       return this;
     }
 
@@ -366,7 +284,7 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      * @throws NullPointerException if {@code stateMachine} is null
      */
     public Builder withStateMachine(StateMachine stateMachine) {
-      builder.withStateMachine(stateMachine);
+      this.stateMachine = Args.checkNotNull(stateMachine, "stateMachine");
       return this;
     }
 
@@ -375,8 +293,8 @@ public interface AsyncCopycat extends BaseCopycat<AsyncCopycatContext> {
      *
      * @return The copycat instance.
      */
-    public AsyncCopycat build() {
-      return copycat(service, builder.build());
+    public AsyncCopycatContext build() {
+      return AsyncCopycat.context(stateMachine, log, cluster, protocol, config);
     }
 
     @Override

@@ -17,8 +17,6 @@ package net.kuujo.copycat;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.jodah.concurrentunit.Waiter;
-import net.kuujo.copycat.async.AsyncCopycat;
-import net.kuujo.copycat.async.AsyncCopycatContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;

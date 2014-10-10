@@ -15,7 +15,7 @@
 package net.kuujo.copycat.functional;
 
 import net.kuujo.copycat.AbstractCopycatTest;
-import net.kuujo.copycat.async.AsyncCopycatContext;
+import net.kuujo.copycat.AsyncCopycatContext;
 import org.testng.annotations.Test;
 
 import java.util.Set;

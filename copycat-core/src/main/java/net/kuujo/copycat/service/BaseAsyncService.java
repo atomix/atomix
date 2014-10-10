@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.async.AsyncCopycatContext;
+import net.kuujo.copycat.AsyncCopycatContext;
 import net.kuujo.copycat.spi.service.AsyncService;
 
 import java.util.concurrent.CompletableFuture;
