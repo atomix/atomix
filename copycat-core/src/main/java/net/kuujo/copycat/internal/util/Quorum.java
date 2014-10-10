@@ -38,7 +38,6 @@ public class Quorum {
    * Counts the current node in the quorum.
    */
   public Quorum countSelf() {
-    quorum++;
     succeeded++;
     return this;
   }
