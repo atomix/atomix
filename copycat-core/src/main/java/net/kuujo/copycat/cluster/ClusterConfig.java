@@ -14,13 +14,15 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.util.Copyable;
-import net.kuujo.copycat.internal.util.Args;
-
 import java.io.Serializable;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Observable;
+import java.util.Set;
+
+import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.util.Copyable;
 
 /**
  * Cluster configuration.<p>

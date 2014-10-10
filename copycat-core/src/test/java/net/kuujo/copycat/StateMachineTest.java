@@ -15,37 +15,37 @@
  */
 package net.kuujo.copycat;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNotNull;
+
 import java.util.ArrayList;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 /**
  * Annotated state machine test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@Test
 public class StateMachineTest {
-
-  @Test
   public void testGetCommandType() {
     StateMachine stateMachine = new TestGetCommandType();
     Command command = stateMachine.getCommand("foo");
-    Assert.assertNotNull(command);
-    Assert.assertEquals(Command.Type.READ, command.type());
+    assertNotNull(command);
+    assertEquals(Command.Type.READ, command.type());
   }
 
   private static class TestGetCommandType extends StateMachine {
-    @Command(type=Command.Type.READ)
+    @Command(type = Command.Type.READ)
     public String foo() {
       return "bar";
     }
   }
 
-  @Test
   public void testApplyUnnamedCommand() {
     StateMachine stateMachine = new TestApplyUnnamedCommand();
-    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>(0)));
+    assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>(0)));
   }
 
   private static class TestApplyUnnamedCommand extends StateMachine {
@@ -55,14 +55,13 @@ public class StateMachineTest {
     }
   }
 
-  @Test
   public void testApplyNamedCommand() {
     StateMachine stateMachine = new TestApplyNamedCommand();
-    Assert.assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>(0)));
+    assertEquals("bar", stateMachine.applyCommand("foo", new ArrayList<>(0)));
   }
 
   private static class TestApplyNamedCommand extends StateMachine {
-    @Command(name="foo")
+    @Command(name = "foo")
     public String notFoo() {
       return "bar";
     }

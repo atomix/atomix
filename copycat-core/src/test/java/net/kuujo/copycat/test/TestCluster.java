@@ -15,13 +15,13 @@
  */
 package net.kuujo.copycat.test;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Test cluster.
@@ -66,7 +66,7 @@ public class TestCluster {
           config.addRemoteMember(node.member());
         }
       });
-      node.start(new Cluster<Member>(protocol, config));
+      node.start(new Cluster<Member>(config), protocol);
     });
   }
 

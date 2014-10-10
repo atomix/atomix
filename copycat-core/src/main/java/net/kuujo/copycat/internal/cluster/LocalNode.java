@@ -33,7 +33,7 @@ public class LocalNode<M extends Member> extends ClusterNode<M> {
   private final AsyncProtocolServer server;
 
   @SuppressWarnings("unchecked")
-  public LocalNode(BaseProtocol<M> protocol, M member) {
+  public LocalNode(M member, BaseProtocol<M> protocol) {
     super(member);
     if (protocol instanceof AsyncProtocol) {
       this.server = ((AsyncProtocol<M>) protocol).createServer(member);

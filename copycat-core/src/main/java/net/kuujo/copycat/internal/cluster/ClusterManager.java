@@ -53,10 +53,10 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
   private final Set<RemoteNode<M>> remoteNodes;
   private final Map<String, ClusterNode<M>> nodes;
 
-  public ClusterManager(BaseProtocol<M> protocol, Cluster<M> cluster) {
-    this.protocol = protocol;
+  public ClusterManager(Cluster<M> cluster, BaseProtocol<M> protocol) {
     this.cluster = cluster.copy();
-    this.localNode = new LocalNode<>(protocol, this.cluster.localMember());
+    this.protocol = protocol;
+    this.localNode = new LocalNode<>(this.cluster.localMember(), protocol);
     this.remoteNodes = new HashSet<>(this.cluster.remoteMembers().size());
     this.nodes = new HashMap<>(this.cluster.members().size());
     this.cluster.addObserver(this);
@@ -75,7 +75,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
   private void clusterChanged(Cluster<M> cluster) {
     cluster.remoteMembers().forEach(member -> {
       if (!nodes.containsKey(member.id())) {
-        RemoteNode<M> node = new RemoteNode<>(protocol, member);
+        RemoteNode<M> node = new RemoteNode<>(member, protocol);
         remoteNodes.add(node);
         nodes.put(member.id(), node);
       }

@@ -20,6 +20,7 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.state.*;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -188,8 +189,8 @@ public class TestNode {
    *
    * @param cluster The cluster configuration.
    */
-  public <M extends Member> void start(Cluster<M> cluster) {
-    context = new StateContext(stateMachine, log, cluster, new CopycatConfig());
+  public <M extends Member> void start(Cluster<M> cluster, AsyncProtocol<M> protocol) {
+    context = new StateContext(stateMachine, log, cluster, protocol, new CopycatConfig());
     context.currentLeader(leader);
     context.currentTerm(term);
     context.lastVotedFor(votedFor);

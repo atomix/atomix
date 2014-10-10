@@ -33,7 +33,7 @@ public class RemoteNode<M extends Member> extends ClusterNode<M> {
   private final AsyncProtocolClient client;
 
   @SuppressWarnings("unchecked")
-  public RemoteNode(BaseProtocol<M> protocol, M member) {
+  public RemoteNode(M member, BaseProtocol<M> protocol) {
     super(member);
     if (protocol instanceof AsyncProtocol) {
       this.client = ((AsyncProtocol<M>) protocol).createClient(member);

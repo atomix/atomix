@@ -15,43 +15,46 @@
  */
 package net.kuujo.copycat;
 
+import net.jodah.concurrentunit.ConcurrentTestCase;
+import net.jodah.concurrentunit.Waiter;
+import net.kuujo.copycat.async.AsyncCopycat;
+import net.kuujo.copycat.async.AsyncCopycatContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.MemoryMappedFileLog;
 import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-import org.junit.Assert;
+import org.testng.annotations.Test;
 
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
- * CopyCat test.
+ * Copycat test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class CopycatTest {
-
+@Test
+public abstract class AbstractCopycatTest extends ConcurrentTestCase {
   /**
    * Starts a cluster of contexts.
    */
-  protected void startCluster(Set<CopycatContext> contexts) throws InterruptedException {
-    final CountDownLatch latch = new CountDownLatch(contexts.size());
-    for (CopycatContext context : contexts) {
+  protected void startCluster(Set<AsyncCopycatContext> contexts) throws Throwable {
+    Waiter waiter = new Waiter();
+    for (AsyncCopycatContext context : contexts) {
       context.start().whenComplete((result, error) -> {
-        Assert.assertNull(error);
-        latch.countDown();
+        waiter.assertNull(error);
+        waiter.resume();
       });
     }
-    latch.await(10, TimeUnit.SECONDS);
+    
+    waiter.await(10000, contexts.size());
   }
 
   /**
    * Starts a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<CopycatContext> startCluster(int numInstances) throws InterruptedException {
-    Set<CopycatContext> contexts = createCluster(numInstances);
+  protected Set<AsyncCopycatContext> startCluster(int numInstances) throws Throwable {
+    Set<AsyncCopycatContext> contexts = createCluster(numInstances);
     startCluster(contexts);
     return contexts;
   }
@@ -59,9 +62,9 @@ class CopycatTest {
   /**
    * Creates a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<CopycatContext> createCluster(int numInstances) {
+  protected Set<AsyncCopycatContext> createCluster(int numInstances) {
     AsyncLocalProtocol protocol = new AsyncLocalProtocol();
-    Set<CopycatContext> instances = new HashSet<>(numInstances);
+    Set<AsyncCopycatContext> instances = new HashSet<>(numInstances);
     for (int i = 1; i <= numInstances; i++) {
       LocalClusterConfig config = new LocalClusterConfig();
       config.setLocalMember(String.valueOf(i));
@@ -70,7 +73,8 @@ class CopycatTest {
           config.addRemoteMember(String.valueOf(j));
         }
       }
-      instances.add(CopycatContext.context(new TestStateMachine(), new MemoryMappedFileLog(UUID.randomUUID().toString()), new Cluster<Member>(protocol, config)));
+      instances.add(AsyncCopycat.context(new TestStateMachine(), new MemoryMappedFileLog(String.format("target/test-logs/%s", UUID
+        .randomUUID())), new Cluster<Member>(config), protocol));
     }
     return instances;
   }
@@ -107,45 +111,5 @@ class CopycatTest {
     public void clear() {
       data.clear();
     }
-
   }
-
-  /**
-   * Runnable test.
-   */
-  protected static abstract class RunnableTest {
-    private final CountDownLatch latch = new CountDownLatch(1);
-    private final long timeout;
-    private final TimeUnit unit;
-
-    protected RunnableTest() {
-      this(30, TimeUnit.SECONDS);
-    }
-
-    protected RunnableTest(long timeout, TimeUnit unit) {
-      this.timeout = timeout;
-      this.unit = unit;
-    }
-
-    /**
-     * Starts the test.
-     */
-    public void start() throws Exception {
-      run();
-      latch.await(timeout, unit);
-    }
-
-    /**
-     * Runs the test.
-     */
-    public abstract void run() throws Exception;
-
-    /**
-     * Completes the test.
-     */
-    protected void testComplete() {
-      latch.countDown();
-    }
-  }
-
 }
