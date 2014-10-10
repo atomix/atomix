@@ -143,7 +143,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   public synchronized boolean isEmpty() {
-    return lastIndex > firstIndex;
+    return lastIndex == firstIndex && size == 0;
   }
 
   @Override
@@ -186,7 +186,10 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
 
   @Override
   public boolean containsEntry(long index) {
-    return indexInRange(index);
+    long matchIndex = findAbsoluteIndex(index);
+    excerpt.index(matchIndex);
+    excerpt.skip(8);
+    return excerpt.readByte() == ACTIVE;
   }
 
   @Override
