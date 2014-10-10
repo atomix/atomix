@@ -16,8 +16,9 @@ package net.kuujo.copycat;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.internal.AsyncCopycatImpl;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.state.StateContext;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 
 /**
@@ -59,15 +60,19 @@ import net.kuujo.copycat.spi.protocol.AsyncProtocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCopycat extends BaseCopycat {
+public class AsyncCopycat extends AbstractCopycat {
+  private AsyncCopycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
+    super(state, cluster, config);
+  }
+
   /**
    * Returns a new copycat builder.
    *
    * @return A new copycat builder.
    */
   @SuppressWarnings("unchecked")
-  static BaseCopycat.Builder<AsyncCopycat, AsyncProtocol<?>> builder() {
-    return new BaseCopycat.Builder<>((builder) -> new AsyncCopycatImpl(new StateContext(
+  public static AbstractCopycat.Builder<AsyncCopycat, AsyncProtocol<?>> builder() {
+    return new AbstractCopycat.Builder<>((builder) -> new AsyncCopycat(new StateContext(
         builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config),
         builder.cluster, builder.config));
   }
@@ -77,14 +82,18 @@ public interface AsyncCopycat extends BaseCopycat {
    *
    * @return A completable future to be completed once the context has started.
    */
-  CompletableFuture<Void> start();
+  public CompletableFuture<Void> start() {
+    return state.start();
+  }
 
   /**
    * Stops the context.
    *
    * @return A completable future that will be completed when the context has started.
    */
-  CompletableFuture<Void> stop();
+  public CompletableFuture<Void> stop() {
+    return state.stop();
+  }
 
   /**
    * Submits a operation to the cluster.
@@ -94,5 +103,7 @@ public interface AsyncCopycat extends BaseCopycat {
    * @return A completable future to be completed once the result is received.
    * @throws NullPointerException if {@code operation} is null
    */
-  <R> CompletableFuture<R> submit(final String operation, final Object... args);
+  public <R> CompletableFuture<R> submit(final String operation, final Object... args) {
+    return state.submit(Assert.isNotNull(operation, "operation cannot be null"), args);
+  }
 }

@@ -14,8 +14,13 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.internal.SyncCopycatImpl;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.state.StateContext;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.Protocol;
 
 /**
@@ -57,15 +62,19 @@ import net.kuujo.copycat.spi.protocol.Protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Copycat extends BaseCopycat {
+public class Copycat extends AbstractCopycat {
+  private Copycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
+    super(state, cluster, config);
+  }
+
   /**
    * Returns a new copycat builder.
    *
    * @return A new copycat builder.
    */
   @SuppressWarnings("unchecked")
-  static BaseCopycat.Builder<Copycat, Protocol<?>> builder() {
-    return new BaseCopycat.Builder<>((builder) -> new SyncCopycatImpl(new StateContext(
+  public static AbstractCopycat.Builder<Copycat, Protocol<?>> builder() {
+    return new AbstractCopycat.Builder<>((builder) -> new Copycat(new StateContext(
         builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config),
         builder.cluster, builder.config));
   }
@@ -73,12 +82,28 @@ public interface Copycat extends BaseCopycat {
   /**
    * Starts the replica.
    */
-  void start();
+  public void start() {
+    CountDownLatch latch = new CountDownLatch(1);
+    state.start().thenRun(latch::countDown);
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    };
+  }
 
   /**
    * Stops the replica.
    */
-  void stop();
+  public void stop() {
+    CountDownLatch latch = new CountDownLatch(1);
+    state.stop().thenRun(latch::countDown);
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    };
+  }
 
   /**
    * Submits an operation to the cluster.
@@ -88,6 +113,20 @@ public interface Copycat extends BaseCopycat {
    * @return The operation result.
    * @throws NullPointerException if {@code operation} is null
    */
-  <R> R submit(String operation, Object... args);
-
+  @SuppressWarnings("unchecked")
+  public <R> R submit(final String operation, final Object... args) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<R> result = new AtomicReference<>();
+    state.submit(Assert.isNotNull(operation, "operation cannot be null"), args).whenComplete(
+        (r, error) -> {
+          latch.countDown();
+          result.set((R) r);
+        });
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    }
+    return result.get();
+  }
 }
