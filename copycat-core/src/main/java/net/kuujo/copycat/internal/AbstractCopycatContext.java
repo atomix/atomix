@@ -22,7 +22,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.*;
 import net.kuujo.copycat.internal.event.DefaultEvents;
 import net.kuujo.copycat.internal.state.StateContext;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 
 /**
  * Abstract Copycat context implementation.
@@ -60,7 +60,7 @@ abstract class AbstractCopycatContext implements BaseCopycatContext {
 
   @Override
   public <T extends Event> EventContext<T> on(Class<T> event) {
-    return events.event(Args.checkNotNull(event, "Event cannot be null"));
+    return events.event(Assert.isNotNull(event, "Event cannot be null"));
   }
 
   @Override
@@ -70,7 +70,7 @@ abstract class AbstractCopycatContext implements BaseCopycatContext {
 
   @Override
   public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
-    return state.events().event(Args.checkNotNull(event, "Event cannot be null"));
+    return state.events().event(Assert.isNotNull(event, "Event cannot be null"));
   }
 
   @Override

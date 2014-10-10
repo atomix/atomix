@@ -14,16 +14,18 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 
 /**
- * Cluster member configuration.<p>
+ * Cluster member configuration.
+ * <p>
  *
- * Member configurations are the mutable configurations that underly Copycat cluster members. In most cases, each
- * cluster {@link net.kuujo.copycat.cluster.Member} type will have an associated mutable {@code MemberConfig}. Each
- * member configuration must provide a unique identifier. However, in many cases construction of the unique identifier
- * may be handled by a specific {@code MemberConfig} implementation. For instance, the {@code TcpMemberConfig}
- * constructs the unique {@code id} from a combination of {@code host} and {@code port}. Consult the configuration
+ * Member configurations are the mutable configurations that underly Copycat cluster members. In
+ * most cases, each cluster {@link net.kuujo.copycat.cluster.Member} type will have an associated
+ * mutable {@code MemberConfig}. Each member configuration must provide a unique identifier.
+ * However, in many cases construction of the unique identifier may be handled by a specific
+ * {@code MemberConfig} implementation. For instance, the {@code TcpMemberConfig} constructs the
+ * unique {@code id} from a combination of {@code host} and {@code port}. Consult the configuration
  * documentation for specific requirements of each member configuration type.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -31,8 +33,7 @@ import net.kuujo.copycat.internal.util.Args;
 public class MemberConfig {
   private String id;
 
-  public MemberConfig() {
-  }
+  public MemberConfig() {}
 
   public MemberConfig(String id) {
     this.id = id;
@@ -42,9 +43,10 @@ public class MemberConfig {
    * Sets the member's unique ID.
    *
    * @param id The member's unique ID.
+   * @throws NullPointerException if {@code id} is null
    */
   public void setId(String id) {
-    this.id = Args.checkNotNull(id);
+    this.id = Assert.isNotNull(id, "id");
   }
 
   /**
@@ -61,9 +63,10 @@ public class MemberConfig {
    *
    * @param id The member's unique ID.
    * @return The member configuration.
+   * @throws NullPointerException if {@code id} is null
    */
   public MemberConfig withId(String id) {
-    this.id = Args.checkNotNull(id);
+    this.id = Assert.isNotNull(id, "id");
     return this;
   }
 

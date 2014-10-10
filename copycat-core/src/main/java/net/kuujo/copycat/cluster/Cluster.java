@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.util.Copyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,7 +54,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
   private final Map<String, M> members;
 
   public Cluster(ClusterConfig<M> config) {
-    this.config = Args.checkNotNull(config);
+    this.config = Assert.isNotNull(config, "config");
     this.localMember = config.getLocalMember();
     this.members = new HashMap<>(config.getMembers().size());
     this.members.put(localMember.id(), localMember);

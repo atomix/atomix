@@ -15,7 +15,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.CorrelationStrategy;
@@ -100,7 +100,7 @@ public interface CopycatContext extends BaseCopycatContext {
      * @throws NullPointerException if {@code log} is null
      */
     public Builder withLog(Log log) {
-      this.log = Args.checkNotNull(log, "log");
+      this.log = Assert.isNotNull(log, "log");
       return this;
     }
 
@@ -112,7 +112,7 @@ public interface CopycatContext extends BaseCopycatContext {
      * @throws NullPointerException if {@code config} is null
      */
     public Builder withConfig(CopycatConfig config) {
-      this.config = Args.checkNotNull(config, "config");
+      this.config = Assert.isNotNull(config, "config");
       return this;
     }
 
@@ -254,7 +254,7 @@ public interface CopycatContext extends BaseCopycatContext {
      * @throws NullPointerException if {@code protocol} is null
      */
     public Builder withProtocol(Protocol<?> protocol) {
-      this.protocol = Args.checkNotNull(protocol, "protocol");
+      this.protocol = Assert.isNotNull(protocol, "protocol");
       return this;
     }
 
@@ -266,7 +266,7 @@ public interface CopycatContext extends BaseCopycatContext {
      * @throws NullPointerException if {@code cluster} is null
      */
     public Builder withCluster(Cluster<?> cluster) {
-      this.cluster = Args.checkNotNull(cluster, "cluster");
+      this.cluster = Assert.isNotNull(cluster, "cluster");
       return this;
     }
 
@@ -278,7 +278,7 @@ public interface CopycatContext extends BaseCopycatContext {
      * @throws NullPointerException if {@code stateMachine} is null
      */
     public Builder withStateMachine(StateMachine stateMachine) {
-      this.stateMachine = Args.checkNotNull(stateMachine, "stateMachine");
+      this.stateMachine = Assert.isNotNull(stateMachine, "stateMachine");
       return this;
     }
 

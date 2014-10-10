@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -36,8 +36,8 @@ public class EventBusProtocolClient implements AsyncProtocolClient {
   private Vertx vertx;
 
   public EventBusProtocolClient(String address, Vertx vertx) {
-    this.address = Args.checkNotNull(address, "Vert.x event bus address cannot be null");
-    this.vertx = Args.checkNotNull(vertx, "Vert.x instance cannot be null");
+    this.address = Assert.isNotNull(address, "Vert.x event bus address cannot be null");
+    this.vertx = Assert.isNotNull(vertx, "Vert.x instance cannot be null");
   }
 
   @Override

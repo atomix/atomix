@@ -26,6 +26,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.util.Assert;
 import net.openhft.chronicle.Chronicle;
 import net.openhft.chronicle.Excerpt;
 import net.openhft.chronicle.ExcerptAppender;
@@ -36,10 +37,11 @@ import com.esotericsoftware.kryo.io.ByteBufferInput;
 import com.esotericsoftware.kryo.io.ByteBufferOutput;
 
 /**
- * Java chronicle based log implementation.<p>
+ * Java chronicle based log implementation.
+ * <p>
  *
- * This is a naive thread-safe log implementation. In the future, internal
- * read/write locks should be used for concurrent operations.
+ * This is a naive thread-safe log implementation. In the future, internal read/write locks should
+ * be used for concurrent operations.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -62,92 +64,27 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   private long syncInterval = 0;
   private ScheduledFuture<Void> syncFuture;
 
-  public MemoryMappedFileLog(String baseName) {
-    this(baseName, CopycatEntry.class);
-  }
-
   public MemoryMappedFileLog(File baseFile) {
     this(baseFile, CopycatEntry.class);
-  }
-
-  public MemoryMappedFileLog(String baseName, Class<? extends Entry> entryType) {
-    this(new File(baseName), entryType);
   }
 
   public MemoryMappedFileLog(File baseFile, Class<? extends Entry> entryType) {
     super(baseFile, entryType);
   }
 
-  /**
-   * Sets the interval at which to sync the log to disk.
-   *
-   * @param interval The interval at which to sync the log to disk.
-   */
-  public void setSyncInterval(long interval) {
-    this.syncInterval = interval;
+  public MemoryMappedFileLog(String baseName) {
+    this(baseName, CopycatEntry.class);
   }
 
-  /**
-   * Returns the interval at which to sync the log to disk.
-   *
-   * @return The interval at which to sync the log to disk.
-   */
-  public long getSyncInterval() {
-    return syncInterval;
-  }
-
-  /**
-   * Sets the interval at which to sync the log to disk, returning the log for method chaining.
-   *
-   * @param interval The interval at which to sync the log to disk.
-   * @return The memory mapped file log for method chaining.
-   */
-  public MemoryMappedFileLog withSyncInterval(long interval) {
-    this.syncInterval = interval;
-    return this;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public synchronized void open() throws IOException {
-    logFile = findLogFile();
-    chronicle = new IndexedChronicle(logFile.getAbsolutePath());
-
-    excerpt = chronicle.createExcerpt();
-    appender = chronicle.createAppender();
-    tailer = chronicle.createTailer();
-
-    tailer.toStart();
-    while (tailer.nextIndex()) {
-      long index = tailer.readLong();
-      byte status = tailer.readByte();
-      int length = excerpt.readInt();
-      if (status == ACTIVE) {
-        if (firstIndex == 0) {
-          firstIndex = index;
-        }
-        lastIndex = index;
-      }
-      size += length + EXTRA_BYTES; // 9 bytes for index and status
-    }
-
-    if (syncInterval > 0 && syncFuture == null) {
-      syncFuture = (ScheduledFuture<Void>) scheduler.scheduleAtFixedRate(this::sync, syncInterval, syncInterval, TimeUnit.MILLISECONDS);
-    }
-  }
-
-  @Override
-  public synchronized long size() {
-    return size;
-  }
-
-  @Override
-  public synchronized boolean isEmpty() {
-    return lastIndex == firstIndex && size == 0;
+  public MemoryMappedFileLog(String baseName, Class<? extends Entry> entryType) {
+    this(new File(baseName), entryType);
   }
 
   @Override
   public synchronized long appendEntry(Entry entry) {
+    Assert.isNotNull(entry, "entry");
+    assertIsOpen();
+    
     long index = lastIndex + 1;
     appender.startExcerpt();
     appender.writeLong(index);
@@ -167,145 +104,33 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
-  public boolean containsEntry(long index) {
-    long matchIndex = findAbsoluteIndex(index);
-    excerpt.index(matchIndex);
-    excerpt.skip(8);
-    return excerpt.readByte() == ACTIVE;
-  }
-
-  @Override
-  public long firstIndex() {
-    return firstIndex;
-  }
-
-  @Override
-  public synchronized <T extends Entry> T firstEntry() {
-    return getEntry(firstIndex);
-  }
-
-  @Override
-  public long lastIndex() {
-    return lastIndex;
-  }
-
-  @Override
-  public synchronized <T extends Entry> T lastEntry() {
-    return getEntry(lastIndex);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public synchronized <T extends Entry> T getEntry(long index) {
-    long matchIndex = findAbsoluteIndex(index);
-    excerpt.index(matchIndex);
-    excerpt.skip(9);
-    int length = excerpt.readInt();
-    byte[] bytes = new byte[length];
-    excerpt.read(bytes);
-    buffer.put(bytes);
-    buffer.rewind();
-    input.setBuffer(buffer);
-    T entry = (T) kryo.readClassAndObject(input);
-    buffer.clear();
-    return entry;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public synchronized <T extends Entry> List<T> getEntries(long from, long to) {
-    if (!indexInRange(from)) {
-      throw new LogIndexOutOfBoundsException("From index out of bounds.");
-    }
-    if (!indexInRange(to)) {
-      throw new LogIndexOutOfBoundsException("To index out of bounds.");
-    }
-
-    List<T> entries = new ArrayList<>((int)(to - from + 1));
-    long matchIndex = findAbsoluteIndex(from);
-    tailer.index(matchIndex);
-    do {
-      long index = tailer.readLong();
-      byte status = tailer.readByte();
-      if (status == ACTIVE) {
-        int length = tailer.readInt();
-        byte[] bytes = new byte[length];
-        tailer.read(bytes);
-        buffer.put(bytes);
-        entries.add((T) kryo.readClassAndObject(input));
-        buffer.clear();
-        matchIndex = index;
-      }
-    } while (tailer.nextIndex() && matchIndex <= to);
-    return entries;
-  }
-
-  @Override
-  public synchronized void removeEntry(long index) {
-    if (!indexInRange(index)) {
-      throw new LogIndexOutOfBoundsException("Cannot remove entry at index %s", index);
-    }
-    long matchIndex = findAbsoluteIndex(index);
-    if (matchIndex > -1) {
-      tailer.index(matchIndex);
-      tailer.skip(8);
-      tailer.writeByte(DELETED);
-    }
-  }
-
-  @Override
-  public synchronized void removeAfter(long index) {
-    if (!indexInRange(index)) {
-      throw new LogIndexOutOfBoundsException("Cannot remove entry at index %s", index);
-    }
-    long matchIndex = findAbsoluteIndex(index);
-    if (matchIndex > -1) {
-      tailer.index(matchIndex);
-      while (tailer.nextIndex()) {
-        tailer.skip(8);
-        tailer.writeByte(DELETED);
+  public synchronized void close() throws IOException {
+    assertIsOpen();
+    
+    try {
+      chronicle.close();
+    } finally {
+      excerpt = null;
+      firstIndex = 0;
+      lastIndex = 0;
+      if (syncFuture != null) {
+        syncFuture.cancel(false);
       }
     }
-    lastIndex = index;
-  }
-
-  /**
-   * Finds the absolute index of a log entry in the chronicle by log index.
-   */
-  private long findAbsoluteIndex(long index) {
-    return excerpt.findMatch((excerpt) -> {
-      long match = excerpt.readLong();
-      if (match < index) {
-        return -1;
-      } else if (match > index) {
-        return 1;
-      } else {
-        byte status = excerpt.readByte();
-        if (status == DELETED) {
-          return -1;
-        }
-      }
-      return 0;
-    });
-  }
-
-  /**
-   * Returns a boolean indicating whether the given index is within the range
-   * of the log.
-   */
-  private boolean indexInRange(long index) {
-    return index >= firstIndex && index <= lastIndex;
   }
 
   @Override
   public synchronized void compact(long index, Entry snapshot) throws IOException {
+    Assert.isNotNull(snapshot, "snapshot");
+    assertIsOpen();
+    
     if (index > firstIndex) {
       // Create a new log file using the most recent timestamp.
       File newLogFile = createLogFile();
       File tempLogFile = createTempFile();
       File oldLogFile = logFile;
       long newSize = 0;
-  
+
       // Create a new chronicle for the new log file.
       Chronicle chronicle = new IndexedChronicle(tempLogFile.getAbsolutePath());
       ExcerptAppender appender = chronicle.createAppender();
@@ -350,25 +175,20 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
       this.tailer = chronicle.createTailer();
       this.firstIndex = index;
       this.size = newSize;
-  
+
       // Finally, delete the old log file.
       deleteLogFile(oldLogFile);
     }
   }
 
   @Override
-  public synchronized void sync() {
-    appender.nextSynchronous(true);
-  }
-
-  @Override
-  public synchronized void close() throws IOException {
-    chronicle.close();
-    firstIndex = 0;
-    lastIndex = 0;
-    if (syncFuture != null) {
-      syncFuture.cancel(false);
-    }
+  public boolean containsEntry(long index) {
+    assertIsOpen();
+    
+    long matchIndex = findAbsoluteIndex(index);
+    excerpt.index(matchIndex);
+    excerpt.skip(8);
+    return excerpt.readByte() == ACTIVE;
   }
 
   @Override
@@ -379,8 +199,221 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   }
 
   @Override
+  public synchronized <T extends Entry> T firstEntry() {
+    return getEntry(firstIndex);
+  }
+
+  @Override
+  public long firstIndex() {
+    assertIsOpen();
+    return firstIndex;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized <T extends Entry> List<T> getEntries(long from, long to) {
+    assertIsOpen();
+    if (!indexInRange(from)) {
+      throw new LogIndexOutOfBoundsException("From index out of bounds.");
+    }
+    if (!indexInRange(to)) {
+      throw new LogIndexOutOfBoundsException("To index out of bounds.");
+    }
+
+    List<T> entries = new ArrayList<>((int) (to - from + 1));
+    long matchIndex = findAbsoluteIndex(from);
+    tailer.index(matchIndex);
+    do {
+      long index = tailer.readLong();
+      byte status = tailer.readByte();
+      if (status == ACTIVE) {
+        int length = tailer.readInt();
+        byte[] bytes = new byte[length];
+        tailer.read(bytes);
+        buffer.put(bytes);
+        entries.add((T) kryo.readClassAndObject(input));
+        buffer.clear();
+        matchIndex = index;
+      }
+    } while (tailer.nextIndex() && matchIndex <= to);
+    return entries;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized <T extends Entry> T getEntry(long index) {
+    assertIsOpen();
+    long matchIndex = findAbsoluteIndex(index);
+    excerpt.index(matchIndex);
+    excerpt.skip(9);
+    int length = excerpt.readInt();
+    byte[] bytes = new byte[length];
+    excerpt.read(bytes);
+    buffer.put(bytes);
+    buffer.rewind();
+    input.setBuffer(buffer);
+    T entry = (T) kryo.readClassAndObject(input);
+    buffer.clear();
+    return entry;
+  }
+
+  /**
+   * Returns the interval at which to sync the log to disk.
+   *
+   * @return The interval at which to sync the log to disk.
+   */
+  public long getSyncInterval() {
+    return syncInterval;
+  }
+
+  @Override
+  public synchronized boolean isEmpty() {
+    assertIsOpen();
+    return lastIndex == firstIndex && size == 0;
+  }
+
+  @Override
+  public boolean isOpen() {
+    return excerpt != null;
+  }
+
+  @Override
+  public synchronized <T extends Entry> T lastEntry() {
+    assertIsOpen();
+    return getEntry(lastIndex);
+  }
+
+  @Override
+  public long lastIndex() {
+    assertIsOpen();
+    return lastIndex;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized void open() throws IOException {
+    assertIsNotOpen();
+    logFile = findLogFile();
+    chronicle = new IndexedChronicle(logFile.getAbsolutePath());
+
+    excerpt = chronicle.createExcerpt();
+    appender = chronicle.createAppender();
+    tailer = chronicle.createTailer();
+
+    tailer.toStart();
+    while (tailer.nextIndex()) {
+      long index = tailer.readLong();
+      byte status = tailer.readByte();
+      int length = excerpt.readInt();
+      if (status == ACTIVE) {
+        if (firstIndex == 0) {
+          firstIndex = index;
+        }
+        lastIndex = index;
+      }
+      size += length + EXTRA_BYTES; // 9 bytes for index and status
+    }
+
+    if (syncInterval > 0 && syncFuture == null) {
+      syncFuture =
+          (ScheduledFuture<Void>) scheduler.scheduleAtFixedRate(this::sync, syncInterval,
+              syncInterval, TimeUnit.MILLISECONDS);
+    }
+  }
+
+  @Override
+  public synchronized void removeAfter(long index) {
+    assertIsOpen();
+    if (!indexInRange(index)) {
+      throw new LogIndexOutOfBoundsException("Cannot remove entry at index %s", index);
+    }
+    long matchIndex = findAbsoluteIndex(index);
+    if (matchIndex > -1) {
+      tailer.index(matchIndex);
+      while (tailer.nextIndex()) {
+        tailer.skip(8);
+        tailer.writeByte(DELETED);
+      }
+    }
+    lastIndex = index;
+  }
+
+  @Override
+  public synchronized void removeEntry(long index) {
+    assertIsOpen();
+    if (!indexInRange(index)) {
+      throw new LogIndexOutOfBoundsException("Cannot remove entry at index %s", index);
+    }
+    long matchIndex = findAbsoluteIndex(index);
+    if (matchIndex > -1) {
+      tailer.index(matchIndex);
+      tailer.skip(8);
+      tailer.writeByte(DELETED);
+    }
+  }
+
+  /**
+   * Sets the interval at which to sync the log to disk.
+   *
+   * @param interval The interval at which to sync the log to disk.
+   */
+  public void setSyncInterval(long interval) {
+    this.syncInterval = interval;
+  }
+
+  @Override
+  public synchronized long size() {
+    assertIsOpen();
+    return size;
+  }
+
+  @Override
+  public synchronized void sync() {
+    assertIsOpen();
+    appender.nextSynchronous(true);
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[size=%d]", getClass().getSimpleName(), size());
+  }
+
+  /**
+   * Sets the interval at which to sync the log to disk, returning the log for method chaining.
+   *
+   * @param interval The interval at which to sync the log to disk.
+   * @return The memory mapped file log for method chaining.
+   */
+  public MemoryMappedFileLog withSyncInterval(long interval) {
+    this.syncInterval = interval;
+    return this;
+  }
+
+  /**
+   * Finds the absolute index of a log entry in the chronicle by log index.
+   */
+  private long findAbsoluteIndex(long index) {
+    return excerpt.findMatch((excerpt) -> {
+      long match = excerpt.readLong();
+      if (match < index) {
+        return -1;
+      } else if (match > index) {
+        return 1;
+      } else {
+        byte status = excerpt.readByte();
+        if (status == DELETED) {
+          return -1;
+        }
+      }
+      return 0;
+    });
+  }
+
+  /**
+   * Returns a boolean indicating whether the given index is within the range of the log.
+   */
+  private boolean indexInRange(long index) {
+    return index >= firstIndex && index <= lastIndex;
   }
 
 }

@@ -29,6 +29,7 @@ public interface Compactable {
    *
    * @param index The index at which to compact the log, inclusive.
    * @param entry A snapshot entry to place at the start of the compacted log.
+   * @throws NullPointerException if {@code entry} is null
    * @throws IOException If the snapshot persistence failed.
    */
   void compact(long index, Entry entry) throws IOException;

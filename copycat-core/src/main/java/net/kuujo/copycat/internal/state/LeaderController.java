@@ -60,7 +60,6 @@ public class LeaderController extends StateController implements Observer {
   }
 
   @Override
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public void init(StateContext context) {
     super.init(context);
 

@@ -16,7 +16,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
@@ -55,7 +55,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code timeout} is not > 0
    */
   public void setElectionTimeout(long timeout) {
-    this.electionTimeout = Args.checkValue(timeout, timeout > 0, "Election timeout must be positive");
+    this.electionTimeout = Assert.arg(timeout, timeout > 0, "Election timeout must be positive");
   }
 
   /**
@@ -75,7 +75,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code timeout} is not > 0
    */
   public CopycatConfig withElectionTimeout(long timeout) {
-    this.electionTimeout = Args.checkValue(timeout, timeout > 0, "Election timeout must be positive");
+    this.electionTimeout = Assert.arg(timeout, timeout > 0, "Election timeout must be positive");
     return this;
   }
 
@@ -86,7 +86,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code interval} is not > 0
    */
   public void setHeartbeatInterval(long interval) {
-    this.heartbeatInterval = Args.checkValue(interval, interval > 0, "Heart beat interval must be positive");
+    this.heartbeatInterval = Assert.arg(interval, interval > 0, "Heart beat interval must be positive");
   }
 
   /**
@@ -106,7 +106,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code interval} is not > 0
    */
   public CopycatConfig withHeartbeatInterval(long interval) {
-    this.heartbeatInterval = Args.checkValue(interval, interval > 0, "Heart beat interval must be positive");
+    this.heartbeatInterval = Assert.arg(interval, interval > 0, "Heart beat interval must be positive");
     return this;
   }
 
@@ -148,7 +148,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public void setWriteQuorumSize(int quorumSize) {
-    this.writeQuorumSize = Args.checkValue(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.writeQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
     this.writeQuorumStrategy = (config) -> writeQuorumSize;
   }
 
@@ -169,7 +169,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public CopycatConfig withWriteQuorumSize(int quorumSize) {
-    this.writeQuorumSize = Args.checkValue(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.writeQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
     this.writeQuorumStrategy = (config) -> writeQuorumSize;
     return this;
   }
@@ -214,7 +214,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public void setWriteQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.writeQuorumStrategy = Args.checkNotNull(strategy, "strategy");
+    this.writeQuorumStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
   /**
@@ -235,7 +235,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public CopycatConfig withWriteQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.writeQuorumStrategy = Args.checkNotNull(strategy, "strategy");
+    this.writeQuorumStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
 
@@ -246,7 +246,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public void setReadQuorumSize(int quorumSize) {
-    this.readQuorumSize = Args.checkValue(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.readQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
     this.readQuorumStrategy = (config) -> readQuorumSize;
   }
 
@@ -267,7 +267,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public CopycatConfig withReadQuorumSize(int quorumSize) {
-    this.readQuorumSize = Args.checkValue(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.readQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
     this.readQuorumStrategy = (config) -> readQuorumSize;
     return this;
   }
@@ -279,7 +279,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public void setReadQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.readQuorumStrategy = Args.checkNotNull(strategy, "strategy");
+    this.readQuorumStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
   /**
@@ -300,7 +300,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public CopycatConfig withReadQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.readQuorumStrategy = Args.checkNotNull(strategy, "strategy");
+    this.readQuorumStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
 
@@ -311,7 +311,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code maxSize} is not > 0
    */
   public void setMaxLogSize(int maxSize) {
-    this.maxLogSize = Args.checkValue(maxSize, maxSize > 0, "Max log size must be positive");
+    this.maxLogSize = Assert.arg(maxSize, maxSize > 0, "Max log size must be positive");
   }
 
   /**
@@ -331,7 +331,7 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code maxSize} is not > 0
    */
   public CopycatConfig withMaxLogSize(int maxSize) {
-    this.maxLogSize = Args.checkValue(maxSize, maxSize > 0, "Max log size must be positive");
+    this.maxLogSize = Assert.arg(maxSize, maxSize > 0, "Max log size must be positive");
     return this;
   }
 
@@ -342,7 +342,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public void setCorrelationStrategy(CorrelationStrategy<?> strategy) {
-    this.correlationStrategy = Args.checkNotNull(strategy, "strategy");
+    this.correlationStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
   /**
@@ -362,7 +362,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public CopycatConfig withCorrelationStrategy(CorrelationStrategy<?> strategy) {
-    this.correlationStrategy = Args.checkNotNull(strategy, "strategy");
+    this.correlationStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
 
@@ -373,7 +373,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public void setTimerStrategy(TimerStrategy strategy) {
-    this.timerStrategy = Args.checkNotNull(strategy, "strategy");
+    this.timerStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
   /**
@@ -393,7 +393,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public CopycatConfig withTimerStrategy(TimerStrategy strategy) {
-    this.timerStrategy = Args.checkNotNull(strategy, "strategy");
+    this.timerStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
 
