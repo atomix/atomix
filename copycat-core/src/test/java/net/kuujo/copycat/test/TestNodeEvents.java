@@ -18,6 +18,7 @@ package net.kuujo.copycat.test;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.event.EventHandler;
 import net.kuujo.copycat.event.LeaderElectEvent;
+import net.kuujo.copycat.event.MembershipChangeEvent;
 import net.kuujo.copycat.event.StateChangeEvent;
 
 import java.util.concurrent.CountDownLatch;
@@ -33,6 +34,28 @@ public class TestNodeEvents {
 
   public TestNodeEvents(TestNode node) {
     this.node = node;
+  }
+
+  /**
+   * Listens for the node to record a membership change.
+   *
+   * @return The events object.
+   */
+  public TestNodeEvents membershipChange() {
+    final CountDownLatch latch = new CountDownLatch(1);
+    node.instance().events().membershipChange().registerHandler(new EventHandler<MembershipChangeEvent>() {
+      @Override
+      public void handle(MembershipChangeEvent event) {
+        node.instance().events().membershipChange().unregisterHandler(this);
+        latch.countDown();
+      }
+    });
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
   }
 
   /**

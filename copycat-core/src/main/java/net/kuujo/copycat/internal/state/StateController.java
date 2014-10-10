@@ -138,6 +138,7 @@ abstract class StateController implements AsyncRequestHandler {
    */
   private PingResponse doCheckPingEntry(PingRequest request) {
     if (request.logIndex() > context.log().lastIndex()) {
+      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.clusterManager().localNode(), request, request.logIndex(), context.log().lastIndex());
       return new PingResponse(request.id(), context.currentTerm(), false);
     }
 
@@ -201,6 +202,7 @@ abstract class StateController implements AsyncRequestHandler {
    */
   private SyncResponse doCheckPreviousEntry(SyncRequest request) {
     if (request.prevLogIndex() > context.log().lastIndex()) {
+      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.clusterManager().localNode(), request, request.prevLogIndex(), context.log().lastIndex());
       return new SyncResponse(request.id(), context.currentTerm(), false, context.log().lastIndex());
     }
 
@@ -337,6 +339,7 @@ abstract class StateController implements AsyncRequestHandler {
       if (operation != null) {
         operation.apply(entry.args());
       }
+      logger().debug("{} Applied operation: {}", context.clusterManager().localNode(), entry.operation());
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -353,6 +356,7 @@ abstract class StateController implements AsyncRequestHandler {
     try {
       context.clusterManager().cluster().update(entry.cluster(), null);
       context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster().getMembers()));
+      logger().debug("{} Applied configuration change: {}", context.clusterManager().localNode(), entry.cluster());
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -386,6 +390,7 @@ abstract class StateController implements AsyncRequestHandler {
       // Finally, if necessary, increment the current term.
       context.currentTerm(Math.max(context.currentTerm(), entry.term()));
       context.lastApplied(index);
+      logger().debug("{} Applied snapshot: {}", context.clusterManager().localNode(), entry.cluster());
     }
   }
 

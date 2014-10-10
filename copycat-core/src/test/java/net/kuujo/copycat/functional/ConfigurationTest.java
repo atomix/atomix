@@ -30,22 +30,22 @@ import org.testng.annotations.Test;
 import java.util.Arrays;
 
 /**
- * Leader election tests.
+ * Configuration replication tests.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
 @SuppressWarnings("unchecked")
-public class LeaderElectionTest {
+public class ConfigurationTest {
 
   /**
-   * Tests that the candidate with the most up-to-date log is elected.
+   * Tests that the leader's expanded configuration is logged and replicated.
    */
-  public void testCandidateWithMostUpToDateLogIsElected() {
+  public void testLeaderReplicatesExpandedConfiguration() {
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode("foo")
       .withTerm(3)
-      .withLeader(null)
+      .withLeader("baz")
       .withStateMachine(new TestStateMachine())
       .withLog(new TestLog()
         .withEntry(new NoOpEntry(1))
@@ -55,31 +55,65 @@ public class LeaderElectionTest {
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
-      .withState(CopycatState.CANDIDATE)
+      .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
       .withLastApplied(6);
     cluster.addNode(node1);
 
     TestNode node2 = new TestNode("bar")
       .withTerm(3)
-      .withLeader(null)
+      .withLeader("baz")
       .withStateMachine(new TestStateMachine())
       .withLog(new TestLog()
         .withEntry(new NoOpEntry(1))
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("bar")).withRemoteMembers(new Member("foo"), new Member("baz"))))
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("bar"))
+          .withRemoteMembers(new Member("foo"), new Member("baz"))))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
-      .withState(CopycatState.CANDIDATE)
+      .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
       .withLastApplied(6);
     cluster.addNode(node2);
 
+    TestNode node3 = new TestNode("baz")
+      .withTerm(3)
+      .withLeader("baz")
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new NoOpEntry(1))
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("baz"))
+          .withRemoteMembers(new Member("foo"), new Member("bar"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.LEADER)
+      .withCommitIndex(6)
+      .withLastApplied(6);
+    cluster.addNode(node3);
+
     cluster.start();
 
-    node1.await().electedLeader();
-    Assert.assertTrue(node1.instance().isLeader());
+    node3.instance().cluster().config().addRemoteMember(new Member("foobarbaz"));
+
+    // First, the leader should have replicated a join configuration.
+    node1.await().membershipChange();
+    Assert.assertNotNull(node1.instance().clusterManager().cluster().remoteMember("foobarbaz"));
+
+    // Next, the leader should have replicated the new configuration.
+    node1.await().membershipChange();
+    Assert.assertNotNull(node1.instance().clusterManager().cluster().remoteMember("foobarbaz"));
+  }
+
+  /**
+   * Tests that the leader's reduced cluster configuration is logged and replicated.
+   */
+  public void testLeaderReplicatesReducedConfiguration() {
+
   }
 
 }
