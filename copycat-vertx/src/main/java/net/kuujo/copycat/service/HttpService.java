@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class HttpService extends BaseService {
+public class HttpService extends BaseAsyncService {
   private final Vertx vertx;
   private HttpServer server;
   private String host;

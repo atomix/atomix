@@ -18,8 +18,10 @@ import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.CopycatContextFactory;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
 /**
  * Default Copycat context factory.
@@ -29,8 +31,8 @@ import net.kuujo.copycat.spi.CopycatContextFactory;
 public class DefaultCopycatContextFactory implements CopycatContextFactory {
 
   @Override
-  public CopycatContext createContext(StateMachine stateMachine, Log log, Cluster<?> cluster, CopycatConfig config) {
-    return new DefaultCopycatContext(stateMachine, log, cluster, config);
+  public <M extends Member> CopycatContext createContext(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+    return new DefaultCopycatContext(stateMachine, log, cluster, protocol, config);
   }
 
 }

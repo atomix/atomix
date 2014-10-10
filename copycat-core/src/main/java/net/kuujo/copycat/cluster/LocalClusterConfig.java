@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * Local cluster configuration.<p>
  *
  * This {@link net.kuujo.copycat.cluster.ClusterConfig} provides the configuration interface for the
- * {@link net.kuujo.copycat.cluster.LocalClusterConfig} which provides the {@link net.kuujo.copycat.protocol.LocalProtocol}.
+ * {@link net.kuujo.copycat.cluster.LocalClusterConfig} which provides the {@link net.kuujo.copycat.protocol.AsyncLocalProtocol}.
  * Users should construct a local cluster configuration in order to make use of the local protocol for testing.
  * Local members are identified by a simple string identifier which is used to perform inter-thread communication.
  *

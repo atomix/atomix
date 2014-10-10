@@ -23,9 +23,9 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalService extends BaseService {
+public class AsyncLocalService extends BaseAsyncService {
 
-  public LocalService() {
+  public AsyncLocalService() {
   }
 
   @Override

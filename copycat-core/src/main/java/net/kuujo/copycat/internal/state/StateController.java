@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class StateController implements RequestHandler {
+abstract class StateController implements AsyncRequestHandler {
   protected StateContext context;
   private final Executor executor = Executors.newSingleThreadExecutor();
   private final AtomicBoolean transition = new AtomicBoolean();
@@ -413,7 +413,7 @@ abstract class StateController implements RequestHandler {
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
     logger().debug("{} - Received {}", context.clusterManager().localNode(), request);
-    return CompletableFuture.supplyAsync(() ->  logResponse(handlePoll(logRequest(request))), executor);
+    return CompletableFuture.supplyAsync(() -> logResponse(handlePoll(logRequest(request))), executor);
   }
 
   /**

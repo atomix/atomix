@@ -15,8 +15,11 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.spi.protocol.CopycatProtocol;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import net.kuujo.copycat.internal.protocol.AsyncProtocolClientWrapper;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
+import net.kuujo.copycat.spi.protocol.BaseProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
 /**
  * Remote node reference.<p>
@@ -27,11 +30,16 @@ import net.kuujo.copycat.spi.protocol.ProtocolClient;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RemoteNode<M extends Member> extends ClusterNode<M> {
-  private final ProtocolClient client;
+  private final AsyncProtocolClient client;
 
-  public RemoteNode(CopycatProtocol<M> protocol, M member) {
+  @SuppressWarnings("unchecked")
+  public RemoteNode(BaseProtocol<M> protocol, M member) {
     super(member);
-    this.client = protocol.createClient(member);
+    if (protocol instanceof AsyncProtocol) {
+      this.client = ((AsyncProtocol<M>) protocol).createClient(member);
+    } else {
+      this.client = new AsyncProtocolClientWrapper(((Protocol<M>) protocol).createClient(member));
+    }
   }
 
   /**
@@ -39,7 +47,7 @@ public class RemoteNode<M extends Member> extends ClusterNode<M> {
    *
    * @return The node's protocol client.
    */
-  public ProtocolClient client() {
+  public AsyncProtocolClient client() {
     return client;
   }
 

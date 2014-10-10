@@ -29,10 +29,11 @@ import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
 import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.RequestHandler;
+import net.kuujo.copycat.protocol.AsyncRequestHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
+import net.kuujo.copycat.spi.protocol.BaseProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +63,7 @@ public final class StateContext {
   private final DefaultEventHandlers events = new DefaultEventHandlers();
   private volatile StateController currentState;
   private volatile String currentLeader;
-  private ProtocolClient leaderClient;
+  private AsyncProtocolClient leaderClient;
   private final List<Runnable> leaderConnectCallbacks = new ArrayList<>(50);
   private boolean leaderConnected;
   private volatile long currentTerm;
@@ -70,12 +71,12 @@ public final class StateContext {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
-  public <M extends Member> StateContext(StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
+  public <M extends Member> StateContext(StateMachine stateMachine, Log log, Cluster<M> cluster, BaseProtocol<M> protocol, CopycatConfig config) {
     this.stateMachine = stateMachine;
     this.log = log;
     this.config = config;
     this.cluster = cluster;
-    this.clusterManager = new ClusterManager<>(cluster);
+    this.clusterManager = new ClusterManager<>(protocol, cluster);
   }
 
   /**
@@ -382,7 +383,7 @@ public final class StateContext {
       future.completeExceptionally(new CopycatException("No leader available"));
     } else if (!leaderConnected) {
       leaderConnectCallbacks.add(() -> {
-        RequestHandler handler = leaderClient != null ? leaderClient : currentState;
+        AsyncRequestHandler handler = leaderClient != null ? leaderClient : currentState;
         handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);
@@ -397,7 +398,7 @@ public final class StateContext {
       });
     } else {
       executor.execute(() -> {
-        RequestHandler handler = currentLeader.equals(clusterManager.localNode().member().id()) ? currentState : leaderClient;
+        AsyncRequestHandler handler = currentLeader.equals(clusterManager.localNode().member().id()) ? currentState : leaderClient;
         handler.submit(new SubmitRequest(nextCorrelationId(), command, Arrays.asList(args))).whenComplete((result, error) -> {
           if (error != null) {
             future.completeExceptionally(error);

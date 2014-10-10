@@ -26,7 +26,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
 
 import javax.net.ssl.SSLException;
 import java.security.cert.CertificateException;
@@ -37,10 +37,10 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocolServer implements ProtocolServer {
+public class NettyTcpProtocolServer implements AsyncProtocolServer {
   private final NettyTcpProtocol protocol;
   private final TcpMember member;
-  private RequestHandler handler;
+  private AsyncRequestHandler handler;
   private Channel channel;
 
   public NettyTcpProtocolServer(NettyTcpProtocol protocol, TcpMember member) {
@@ -49,7 +49,7 @@ public class NettyTcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void requestHandler(RequestHandler handler) {
+  public void requestHandler(AsyncRequestHandler handler) {
     this.handler = handler;
   }
 

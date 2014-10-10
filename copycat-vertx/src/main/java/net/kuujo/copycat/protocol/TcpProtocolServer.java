@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocolServer implements ProtocolServer {
+public class TcpProtocolServer implements AsyncProtocolServer {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private static final String DELIMITER = "\\x00";
@@ -43,7 +43,7 @@ public class TcpProtocolServer implements ProtocolServer {
   private boolean clientAuthRequired;
   private final TcpProtocol protocol;
   private NetServer server;
-  private RequestHandler requestHandler;
+  private AsyncRequestHandler requestHandler;
 
   public TcpProtocolServer(String host, int port, TcpProtocol protocol) {
     this.host = host;
@@ -81,7 +81,7 @@ public class TcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void requestHandler(RequestHandler handler) {
+  public void requestHandler(AsyncRequestHandler handler) {
     this.requestHandler = handler;
   }
 

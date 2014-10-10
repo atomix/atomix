@@ -15,29 +15,26 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.event.*;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.CopycatFactory;
-import net.kuujo.copycat.spi.CorrelationStrategy;
-import net.kuujo.copycat.spi.QuorumStrategy;
-import net.kuujo.copycat.spi.TimerStrategy;
-import net.kuujo.copycat.spi.protocol.CopycatProtocol;
-import net.kuujo.copycat.spi.service.CopycatService;
+import net.kuujo.copycat.spi.*;
+import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.service.Service;
 
 import java.util.ServiceLoader;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Copycat service.<p>
  *
  * This is the primary type for implementing full remote services on top of Copycat. A {@code Copycat} instance consists
  * of a {@link net.kuujo.copycat.CopycatContext} which controls logging and replication and a
- * {@link net.kuujo.copycat.spi.service.CopycatService} which exposes an endpoint through which commands can be
+ * {@link net.kuujo.copycat.spi.service.Service} which exposes an endpoint through which commands can be
  * submitted to the Copycat cluster.<p>
  *
  * The {@code Copycat} constructor requires a {@link net.kuujo.copycat.CopycatContext} and
- * {@link net.kuujo.copycat.spi.service.CopycatService}:<p>
+ * {@link net.kuujo.copycat.spi.service.Service}:<p>
  *
  * {@code
  * StateMachine stateMachine = new MyStateMachine();
@@ -66,8 +63,9 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Copycat {
-  static final CopycatFactory factory = ServiceLoader.load(CopycatFactory.class).iterator().next();
+public interface Copycat extends BaseCopycat<CopycatContext> {
+  static final CopycatFactory copycatFactory = ServiceLoader.load(CopycatFactory.class).iterator().next();
+  static final CopycatContextFactory contextFactory = ServiceLoader.load(CopycatContextFactory.class).iterator().next();
 
   /**
    * Returns a new copycat builder.
@@ -85,8 +83,8 @@ public interface Copycat {
    * @param context The Copycat context.
    * @return A new Copycat instance.
    */
-  static Copycat copycat(CopycatService service, CopycatContext context) {
-    return factory.createCopycat(service, context);
+  static Copycat copycat(Service service, CopycatContext context) {
+    return copycatFactory.createCopycat(service, context);
   }
 
   /**
@@ -96,71 +94,68 @@ public interface Copycat {
    * @param stateMachine The Copycat state machine.
    * @param log The Copycat log.
    * @param cluster The Copycat cluster.
+   * @param protocol The Copycat protocol.
    * @param config The Copycat configuration.
    * @return A new Copycat instance.
    */
-  static Copycat copycat(CopycatService service, StateMachine stateMachine, Log log, Cluster<?> cluster, CopycatConfig config) {
-    return factory.createCopycat(service, CopycatContext.context(stateMachine, log, cluster, config));
+  static <M extends Member> Copycat copycat(Service service, StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+    return copycatFactory.createCopycat(service, context(stateMachine, log, cluster, protocol, config));
   }
 
   /**
-   * Returns the copycat context.
+   * Creates a new Copycat context.
    *
-   * @return The underlying copycat context.
+   * @param stateMachine The Copycat state machine.
+   * @param cluster The Copycat cluster.
+   * @param protocol The Copycat protocol.
+   * @return A new Copycat context.
    */
-  CopycatContext context();
+  static <M extends Member> CopycatContext context(StateMachine stateMachine, Cluster<M> cluster, Protocol<M> protocol) {
+    return contextFactory.createContext(stateMachine, new InMemoryLog(), cluster, protocol, new CopycatConfig());
+  }
 
   /**
-   * Returns the context events.
+   * Creates a new Copycat context.
    *
-   * @return Context events.
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster.
+   * @param protocol The Copycat protocol.
+   * @return A new Copycat context.
    */
-  Events on();
+  static <M extends Member> CopycatContext context(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol) {
+    return contextFactory.createContext(stateMachine, log, cluster, protocol, new CopycatConfig());
+  }
 
   /**
-   * Returns the context for a specific event.
+   * Creates a new Copycat context.
    *
-   * @param event The event for which to return the context.
-   * @return The event context.
-   * @throws NullPointerException if {@code event} is null
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster.
+   * @param protocol The Copycat protocol.
+   * @param config The Copycat configuration.
+   * @return A new Copycat context.
    */
-  <T extends Event> EventContext<T> on(Class<T> event);
-
-  /**
-   * Returns the event handlers registry.
-   *
-   * @return The event handlers registry.
-   */
-  EventHandlers events();
-
-  /**
-   * Returns an event handler registry for a specific event.
-   *
-   * @param event The event for which to return the registry.
-   * @return An event handler registry.
-   * @throws NullPointerException if {@code event} is null
-   */
-  <T extends Event> EventHandlerRegistry<T> event(Class<T> event);
+  static <M extends Member> CopycatContext context(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+    return contextFactory.createContext(stateMachine, log, cluster, protocol, config);
+  }
 
   /**
    * Starts the replica.
-   *
-   * @return A completable future to be completed once the replica has started.
    */
-  CompletableFuture<Void> start();
+  void start();
 
   /**
    * Stops the replica.
-   *
-   * @return A completable future to be completed once the replica has stopped.
    */
-  CompletableFuture<Void> stop();
+  void stop();
 
   /**
    * Copycat builder.
    */
   public static class Builder {
-    private CopycatService service;
+    private Service service;
     private final CopycatContext.Builder builder = CopycatContext.builder();
 
     private Builder() {
@@ -173,7 +168,7 @@ public interface Copycat {
      * @return The copycat builder.
      * @throws NullPointerException if {@code service} is null
      */
-    public Builder withService(CopycatService service) {
+    public Builder withService(Service service) {
       this.service = Args.checkNotNull(service);
       return this;
     }
@@ -339,7 +334,7 @@ public interface Copycat {
      * @return The copycat builder.
      * @throws NullPointerException if {@code protocol} is null
      */
-    public Builder withProtocol(CopycatProtocol<?> protocol) {
+    public Builder withProtocol(Protocol<?> protocol) {
       builder.withProtocol(protocol);
       return this;
     }

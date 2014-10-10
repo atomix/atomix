@@ -17,7 +17,7 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.spi.CopycatFactory;
-import net.kuujo.copycat.spi.service.CopycatService;
+import net.kuujo.copycat.spi.service.Service;
 
 /**
  * Default Copycat factory implementation.
@@ -27,7 +27,7 @@ import net.kuujo.copycat.spi.service.CopycatService;
 public class DefaultCopycatFactory implements CopycatFactory {
 
   @Override
-  public Copycat createCopycat(CopycatService service, CopycatContext context) {
+  public Copycat createCopycat(Service service, CopycatContext context) {
     return new DefaultCopycat(service, context);
   }
 

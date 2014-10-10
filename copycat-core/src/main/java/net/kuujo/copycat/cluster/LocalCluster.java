@@ -14,12 +14,10 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.protocol.LocalProtocol;
-
 /**
  * Local protocol cluster.<p>
  *
- * This cluster type provides for the {@link net.kuujo.copycat.protocol.LocalProtocol}. Members of the {@code LocalCluster}
+ * This cluster type provides for the {@link net.kuujo.copycat.protocol.AsyncLocalProtocol}. Members of the {@code LocalCluster}
  * are identified simply by a string identifier with which threads identify one another.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
@@ -27,7 +25,7 @@ import net.kuujo.copycat.protocol.LocalProtocol;
 public class LocalCluster extends Cluster<Member> {
 
   public LocalCluster(ClusterConfig<Member> config) {
-    super(new LocalProtocol(), config);
+    super(config);
   }
 
   @Override

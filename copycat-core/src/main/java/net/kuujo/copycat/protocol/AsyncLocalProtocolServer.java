@@ -15,32 +15,32 @@
  */
 package net.kuujo.copycat.protocol;
 
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import net.kuujo.copycat.internal.util.Args;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Local protocol server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocolServer implements ProtocolServer {
-  private static final Logger LOGGER = LoggerFactory.getLogger(LocalProtocolServer.class);
+public class AsyncLocalProtocolServer implements AsyncProtocolServer {
+  private static final Logger LOGGER = LoggerFactory.getLogger(AsyncLocalProtocolServer.class);
   private final String id;
-  private final Map<String, LocalProtocolServer> registry;
-  private RequestHandler requestHandler;
+  private final Map<String, AsyncLocalProtocolServer> registry;
+  private AsyncRequestHandler requestHandler;
 
-  public LocalProtocolServer(String id, Map<String, LocalProtocolServer> registry) {
+  public AsyncLocalProtocolServer(String id, Map<String, AsyncLocalProtocolServer> registry) {
     this.id = id;
     this.registry = registry;
   }
 
   @Override
-  public void requestHandler(RequestHandler handler) {
+  public void requestHandler(AsyncRequestHandler handler) {
     this.requestHandler = handler;
   }
 
@@ -80,7 +80,7 @@ public class LocalProtocolServer implements ProtocolServer {
 
   @Override
   public String toString() {
-    return String.format("LocalProtocolServer[id=%s]", id);
+    return String.format("AsyncLocalProtocolServer[id=%s]", id);
   }
 
 }

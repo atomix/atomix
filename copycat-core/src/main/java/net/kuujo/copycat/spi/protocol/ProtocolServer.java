@@ -17,8 +17,6 @@ package net.kuujo.copycat.spi.protocol;
 
 import net.kuujo.copycat.protocol.RequestHandler;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Protocol server.
  *
@@ -35,16 +33,12 @@ public interface ProtocolServer {
 
   /**
    * Starts the server listening.
-   *
-   * @return A callback to be called once complete.
    */
-  CompletableFuture<Void> listen();
+  void listen();
 
   /**
    * Closes the server.
-   *
-   * @return A callback to be called once complete.
    */
-  CompletableFuture<Void> close();
+  void close();
 
 }

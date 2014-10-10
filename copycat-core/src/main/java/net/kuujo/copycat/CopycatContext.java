@@ -14,24 +14,14 @@
  */
 package net.kuujo.copycat;
 
-import java.util.ServiceLoader;
-import java.util.concurrent.CompletableFuture;
-
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.event.Event;
-import net.kuujo.copycat.event.EventContext;
-import net.kuujo.copycat.event.EventHandlerRegistry;
-import net.kuujo.copycat.event.EventHandlers;
-import net.kuujo.copycat.event.Events;
 import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.CopycatContextFactory;
 import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
-import net.kuujo.copycat.spi.protocol.CopycatProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
 /**
  * Copycat context.<p>
@@ -55,8 +45,7 @@ import net.kuujo.copycat.spi.protocol.CopycatProtocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatContext {
-  static final CopycatContextFactory factory = ServiceLoader.load(CopycatContextFactory.class).iterator().next();
+public interface CopycatContext extends BaseCopycatContext {
 
   /**
    * Returns a new context builder.
@@ -68,131 +57,24 @@ public interface CopycatContext {
   }
 
   /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param cluster The Copycat cluster.
-   * @return A new Copycat context.
-   */
-  static CopycatContext context(StateMachine stateMachine, Cluster<?> cluster) {
-    return factory.createContext(stateMachine, new InMemoryLog(), cluster, new CopycatConfig());
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @return A new Copycat context.
-   */
-  static CopycatContext context(StateMachine stateMachine, Log log, Cluster<?> cluster) {
-    return factory.createContext(stateMachine, log, cluster, new CopycatConfig());
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @param config The Copycat configuration.
-   * @return A new Copycat context.
-   */
-  static CopycatContext context(StateMachine stateMachine, Log log, Cluster<?> cluster, CopycatConfig config) {
-    return factory.createContext(stateMachine, log, cluster, config);
-  }
-
-  /**
-   * Returns the replica configuration.
-   *
-   * @return The replica configuration.
-   */
-  CopycatConfig config();
-
-  /**
-   * Returns the cluster configuration.
-   *
-   * @return The cluster configuration.
-   */
-  <M extends Member> Cluster<M> cluster();
-
-  /**
-   * Returns the context events.
-   *
-   * @return Context events.
-   */
-  Events on();
-
-  /**
-   * Returns the context for a specific event.
-   *
-   * @param event The event for which to return the context.
-   * @return The event context.
-   * @throws NullPointerException if {@code event} is null
-   */
-  <T extends Event> EventContext<T> on(Class<T> event);
-
-  /**
-   * Returns the event handlers registry.
-   *
-   * @return The event handlers registry.
-   */
-  EventHandlers events();
-
-  /**
-   * Returns an event handler registry for a specific event.
-   *
-   * @param event The event for which to return the registry.
-   * @return The event handler registry.
-   * @throws NullPointerException if {@code event} is null
-   */
-  <T extends Event> EventHandlerRegistry<T> event(Class<T> event);
-
-  /**
-   * Returns the current replica state.
-   *
-   * @return The current replica state.
-   */
-  CopycatState state();
-
-  /**
-   * Returns the current leader URI.
-   *
-   * @return The current leader URI.
-   */
-  String leader();
-
-  /**
-   * Returns a boolean indicating whether the node is the current leader.
-   *
-   * @return Indicates whether the node is the current leader.
-   */
-  boolean isLeader();
-
-  /**
    * Starts the context.
-   *
-   * @return A completable future to be completed once the context has started.
    */
-  CompletableFuture<Void> start();
+  void start();
 
   /**
    * Stops the context.
-   *
-   * @return A completable future that will be completed when the context has started.
    */
-  CompletableFuture<Void> stop();
+  void stop();
 
   /**
    * Submits a command to the cluster.
    *
    * @param command The name of the command to submit.
    * @param args An ordered list of command arguments.
-   * @return A completable future to be completed once the result is received.
+   * @return The command result.
    * @throws NullPointerException if {@code command} is null
    */
-  <R> CompletableFuture<R> submitCommand(final String command, final Object... args);
+  <R> R submitCommand(String command, Object... args);
 
   /**
    * Copycat context builder.
@@ -203,7 +85,7 @@ public interface CopycatContext {
   public static class Builder {
     private CopycatConfig config = new CopycatConfig();
     private Cluster cluster;
-    private CopycatProtocol protocol;
+    private Protocol protocol;
     private StateMachine stateMachine;
     private Log log = new InMemoryLog();
 
@@ -371,7 +253,7 @@ public interface CopycatContext {
      * @return The copycat builder.
      * @throws NullPointerException if {@code protocol} is null
      */
-    public Builder withProtocol(CopycatProtocol<?> protocol) {
+    public Builder withProtocol(Protocol<?> protocol) {
       this.protocol = Args.checkNotNull(protocol, "protocol");
       return this;
     }
@@ -406,7 +288,7 @@ public interface CopycatContext {
      * @return The copycat instance.
      */
     public CopycatContext build() {
-      return context(stateMachine, log, cluster, config);
+      return Copycat.context(stateMachine, log, cluster, protocol, config);
     }
 
     @Override

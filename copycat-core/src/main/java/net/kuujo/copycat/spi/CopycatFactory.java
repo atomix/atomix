@@ -16,7 +16,7 @@ package net.kuujo.copycat.spi;
 
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.spi.service.CopycatService;
+import net.kuujo.copycat.spi.service.Service;
 
 /**
  * Copycat factory.
@@ -32,6 +32,6 @@ public interface CopycatFactory {
    * @param context The copycat context.
    * @return A new copycat instance.
    */
-  Copycat createCopycat(CopycatService service, CopycatContext context);
+  Copycat createCopycat(Service service, CopycatContext context);
 
 }

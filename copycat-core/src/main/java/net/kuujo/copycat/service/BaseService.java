@@ -15,16 +15,14 @@
 package net.kuujo.copycat.service;
 
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.spi.service.CopycatService;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.spi.service.Service;
 
 /**
  * Base service implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class BaseService implements CopycatService {
+abstract class BaseService implements Service {
   protected CopycatContext context;
 
   @Override
@@ -35,11 +33,9 @@ abstract class BaseService implements CopycatService {
   /**
    * Handles a command submission.
    */
-  protected <T> CompletableFuture<T> submit(String command, Object... args) {
+  protected <T> T submit(String command, Object... args) {
     if (context == null) {
-      CompletableFuture<T> future = new CompletableFuture<>();
-      future.completeExceptionally(new ServiceException("No submit handlers registered"));
-      return future;
+      throw new ServiceException("No submit handlers registered");
     }
     return context.submitCommand(command, args);
   }

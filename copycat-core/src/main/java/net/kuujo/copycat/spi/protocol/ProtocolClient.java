@@ -17,8 +17,6 @@ package net.kuujo.copycat.spi.protocol;
 
 import net.kuujo.copycat.protocol.RequestHandler;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Protocol client.
  *
@@ -28,16 +26,12 @@ public interface ProtocolClient extends RequestHandler {
 
   /**
    * Connects the client.
-   *
-   * @return A completable future to be completed once the client has connected.
    */
-  CompletableFuture<Void> connect();
+  void connect();
 
   /**
    * Closes the client.
-   *
-   * @return A completable future to be completed once the client has disconnected.
    */
-  CompletableFuture<Void> close();
+  void close();
 
 }

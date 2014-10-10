@@ -19,7 +19,7 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.MemoryMappedFileLog;
-import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.protocol.AsyncLocalProtocol;
 import org.junit.Assert;
 
 import java.util.*;
@@ -60,7 +60,7 @@ class CopycatTest {
    * Creates a cluster of uniquely named CopyCat contexts.
    */
   protected Set<CopycatContext> createCluster(int numInstances) {
-    LocalProtocol protocol = new LocalProtocol();
+    AsyncLocalProtocol protocol = new AsyncLocalProtocol();
     Set<CopycatContext> instances = new HashSet<>(numInstances);
     for (int i = 1; i <= numInstances; i++) {
       LocalClusterConfig config = new LocalClusterConfig();

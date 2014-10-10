@@ -16,6 +16,7 @@ package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.spi.protocol.BaseProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +47,16 @@ import java.util.*;
  */
 public class ClusterManager<M extends Member> extends Observable implements Observer {
   private static final Logger LOGGER = LoggerFactory.getLogger(ClusterManager.class);
+  private final BaseProtocol<M> protocol;
   private final Cluster<M> cluster;
   private final LocalNode<M> localNode;
   private final Set<RemoteNode<M>> remoteNodes;
   private final Map<String, ClusterNode<M>> nodes;
 
-  public ClusterManager(Cluster<M> cluster) {
+  public ClusterManager(BaseProtocol<M> protocol, Cluster<M> cluster) {
+    this.protocol = protocol;
     this.cluster = cluster.copy();
-    this.localNode = new LocalNode<>(this.cluster.protocol(), this.cluster.localMember());
+    this.localNode = new LocalNode<>(protocol, this.cluster.localMember());
     this.remoteNodes = new HashSet<>(this.cluster.remoteMembers().size());
     this.nodes = new HashMap<>(this.cluster.members().size());
     this.cluster.addObserver(this);
@@ -72,7 +75,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
   private void clusterChanged(Cluster<M> cluster) {
     cluster.remoteMembers().forEach(member -> {
       if (!nodes.containsKey(member.id())) {
-        RemoteNode<M> node = new RemoteNode<>(cluster.protocol(), member);
+        RemoteNode<M> node = new RemoteNode<>(protocol, member);
         remoteNodes.add(node);
         nodes.put(member.id(), node);
       }

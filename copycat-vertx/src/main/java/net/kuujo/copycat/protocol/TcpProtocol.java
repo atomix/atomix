@@ -16,16 +16,16 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.CopycatProtocol;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
 
 /**
  * TCP based protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocol implements CopycatProtocol<TcpMember> {
+public class TcpProtocol implements AsyncProtocol<TcpMember> {
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
   private boolean useSsl;
@@ -301,12 +301,12 @@ public class TcpProtocol implements CopycatProtocol<TcpMember> {
   }
 
   @Override
-  public ProtocolServer createServer(TcpMember member) {
+  public AsyncProtocolServer createServer(TcpMember member) {
     return new TcpProtocolServer(member.host(), member.port(), this);
   }
 
   @Override
-  public ProtocolClient createClient(TcpMember member) {
+  public AsyncProtocolClient createClient(TcpMember member) {
     return new TcpProtocolClient(member.host(), member.port(), this);
   }
 

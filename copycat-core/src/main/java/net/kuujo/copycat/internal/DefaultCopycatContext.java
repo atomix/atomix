@@ -17,17 +17,18 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.internal.event.DefaultEvents;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Args;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * CopyCat replica context.<p>
@@ -64,83 +65,54 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultCopycatContext implements CopycatContext {
-  private final Cluster<?> cluster;
-  private final CopycatConfig config;
-  private final StateContext state;
-  private final Events events;
+public class DefaultCopycatContext extends AbstractCopycatContext implements CopycatContext {
 
-  <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Log log, Cluster<M> cluster, CopycatConfig config) {
-    this.cluster = cluster;
-    this.config = config;
-    this.state = new StateContext(stateMachine, log, cluster, config);
-    this.events = new DefaultEvents(state.events());
+  <M extends Member> DefaultCopycatContext(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+    super(new StateContext(stateMachine, log, cluster, protocol, config), cluster, config);
   }
 
   @Override
-  public CopycatConfig config() {
-    return config;
+  public void start() {
+    CountDownLatch latch = new CountDownLatch(1);
+    state.start().thenRun(latch::countDown);
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    };
+  }
+
+  @Override
+  public void stop() {
+    CountDownLatch latch = new CountDownLatch(1);
+    state.stop().thenRun(latch::countDown);
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    };
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <M extends Member> Cluster<M> cluster() {
-    return (Cluster<M>) cluster;
-  }
-
-  @Override
-  public Events on() {
-    return events;
-  }
-
-  @Override
-  public <T extends Event> EventContext<T> on(Class<T> event) {
-    return events.event(Args.checkNotNull(event, "Event cannot be null"));
-  }
-
-  @Override
-  public EventHandlers events() {
-    return state.events();
-  }
-
-  @Override
-  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
-    return state.events().event(Args.checkNotNull(event, "Event cannot be null"));
-  }
-
-  @Override
-  public CopycatState state() {
-    return state.state();
-  }
-
-  @Override
-  public String leader() {
-    return state.currentLeader();
-  }
-
-  @Override
-  public boolean isLeader() {
-    return state.isLeader();
-  }
-
-  @Override
-  public CompletableFuture<Void> start() {
-    return state.start();
-  }
-
-  @Override
-  public CompletableFuture<Void> stop() {
-    return state.stop();
-  }
-
-  @Override
-  public <R> CompletableFuture<R> submitCommand(final String command, final Object... args) {
-    return state.submitCommand(Args.checkNotNull(command, "command cannot be null"), args);
+  public <R> R submitCommand(final String command, final Object... args) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<R> result = new AtomicReference<>();
+    state.submitCommand(Args.checkNotNull(command, "command cannot be null"), args).whenComplete((r, error) -> {
+      latch.countDown();
+      result.set((R) r);
+    });
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    }
+    return result.get();
   }
 
   @Override
   public String toString() {
-    return getClass().getSimpleName();
+    return String.format("%s[state=%s]", getClass().getSimpleName(), state.state());
   }
 
 }

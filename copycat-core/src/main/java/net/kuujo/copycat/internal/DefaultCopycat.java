@@ -17,63 +17,35 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.event.*;
-import net.kuujo.copycat.internal.util.Args;
-import net.kuujo.copycat.spi.service.CopycatService;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.spi.service.Service;
 
 /**
  * Primary copycat API.<p>
  *
  * The <code>CopyCat</code> class provides a fluent API for
- * combining the {@link DefaultCopycatContext} with an {@link net.kuujo.copycat.spi.service.CopycatService}.
+ * combining the {@link DefaultCopycatContext} with an {@link net.kuujo.copycat.spi.service.Service}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultCopycat implements Copycat {
-  private final CopycatService service;
-  private final CopycatContext context;
+public class DefaultCopycat extends AbstractCopycat<CopycatContext> implements Copycat {
+  private final Service service;
 
-  DefaultCopycat(CopycatService service, CopycatContext context) {
+  DefaultCopycat(Service service, CopycatContext context) {
+    super(context);
     this.service = service;
-    this.context = context;
     this.service.init(context);
   }
 
   @Override
-  public CopycatContext context() {
-    return context;
+  public void start() {
+    context.start();
+    service.start();
   }
 
   @Override
-  public Events on() {
-    return context.on();
-  }
-
-  @Override
-  public <T extends Event> EventContext<T> on(Class<T> event) {
-    return context.on().event(event);
-  }
-
-  @Override
-  public EventHandlers events() {
-    return context.events();
-  }
-
-  @Override
-  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
-    return context.event(event);
-  }
-
-  @Override
-  public CompletableFuture<Void> start() {
-    return context.start().thenRun(()->{});
-  }
-
-  @Override
-  public CompletableFuture<Void> stop() {
-    return service.stop();
+  public void stop() {
+    service.stop();
+    context.stop();
   }
 
   @Override

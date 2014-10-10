@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -28,12 +28,12 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusProtocolServer implements ProtocolServer {
+public class EventBusProtocolServer implements AsyncProtocolServer {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
   private Vertx vertx;
-  private RequestHandler requestHandler;
+  private AsyncRequestHandler requestHandler;
 
   private final Handler<Message<byte[]>> messageHandler = new Handler<Message<byte[]>>() {
     @Override
@@ -67,7 +67,7 @@ public class EventBusProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void requestHandler(RequestHandler handler) {
+  public void requestHandler(AsyncRequestHandler handler) {
     this.requestHandler = handler;
   }
 

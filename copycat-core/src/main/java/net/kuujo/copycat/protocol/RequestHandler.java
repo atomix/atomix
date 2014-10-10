@@ -30,7 +30,7 @@ public interface RequestHandler {
    * @param request The ping request.
    * @return A ping response future.
    */
-  CompletableFuture<PingResponse> ping(PingRequest request);
+  PingResponse ping(PingRequest request);
 
   /**
    * Sends or handles a protocol sync request.
@@ -38,7 +38,7 @@ public interface RequestHandler {
    * @param request The sync request.
    * @return A sync response future.
    */
-  CompletableFuture<SyncResponse> sync(SyncRequest request);
+  SyncResponse sync(SyncRequest request);
 
   /**
    * Sends or handles a protocol poll request.
@@ -46,7 +46,7 @@ public interface RequestHandler {
    * @param request The poll request.
    * @return A poll response future.
    */
-  CompletableFuture<PollResponse> poll(PollRequest request);
+  PollResponse poll(PollRequest request);
 
   /**
    * Sends or handles a protocol submit request.
@@ -54,6 +54,6 @@ public interface RequestHandler {
    * @param request The submit request.
    * @return A submit response future.
    */
-  CompletableFuture<SubmitResponse> submit(SubmitRequest request);
+  SubmitResponse submit(SubmitRequest request);
 
 }

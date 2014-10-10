@@ -15,7 +15,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.internal.util.Args;
-import net.kuujo.copycat.spi.protocol.CopycatProtocol;
 import net.kuujo.copycat.util.Copyable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +26,7 @@ import java.util.*;
  *
  * The {@code Cluster} is an immutable cluster configuration that is ultimately based on a mutable configuration. Each
  * {@code Cluster} is related to a specific {@link net.kuujo.copycat.cluster.Member} type and
- * {@link net.kuujo.copycat.spi.protocol.CopycatProtocol}. This allows Copycat's communication model to be effectively
+ * {@link net.kuujo.copycat.spi.protocol.Protocol}. This allows Copycat's communication model to be effectively
  * altered based on the protocol implementation. For instance, for HTTP protocols, an {@code HttpMember} will be required
  * by the {@code HttpCluster} in order to provide the {@code host} and {@code port} required for operating the TCP
  * protocol.<p>
@@ -49,14 +48,12 @@ import java.util.*;
  */
 public class Cluster<M extends Member> extends Observable implements Observer, Copyable<Cluster<M>> {
   private static final Logger LOGGER = LoggerFactory.getLogger(Cluster.class);
-  protected final CopycatProtocol<M> protocol;
   protected final ClusterConfig<M> config;
   private final M localMember;
   private final Set<M> remoteMembers;
   private final Map<String, M> members;
 
-  public Cluster(CopycatProtocol<M> protocol, ClusterConfig<M> config) {
-    this.protocol = Args.checkNotNull(protocol);
+  public Cluster(ClusterConfig<M> config) {
     this.config = Args.checkNotNull(config);
     this.localMember = config.getLocalMember();
     this.members = new HashMap<>(config.getMembers().size());
@@ -69,7 +66,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
   @Override
   @SuppressWarnings("unchecked")
   public Cluster<M> copy() {
-    return new Cluster(protocol, config.copy());
+    return new Cluster(config.copy());
   }
 
   @Override
@@ -109,15 +106,6 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
     setChanged();
     notifyObservers();
     clearChanged();
-  }
-
-  /**
-   * Returns the cluster protocol.
-   *
-   * @return The cluster protocol.
-   */
-  public CopycatProtocol<M> protocol() {
-    return protocol;
   }
 
   /**
@@ -198,7 +186,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
 
   @Override
   public String toString() {
-    return String.format("%s[protocol=%s, config=%s]", getClass().getSimpleName(), protocol, config);
+    return String.format("%s[config=%s]", getClass().getSimpleName(), config);
   }
 
 }

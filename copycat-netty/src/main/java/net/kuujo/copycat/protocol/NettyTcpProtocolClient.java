@@ -26,7 +26,7 @@ import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
 
 import javax.net.ssl.SSLException;
 import java.util.HashMap;
@@ -38,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocolClient implements ProtocolClient {
+public class NettyTcpProtocolClient implements AsyncProtocolClient {
   private final NettyTcpProtocol protocol;
   private final TcpMember member;
   private Channel channel;

@@ -22,7 +22,7 @@ import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,7 +116,7 @@ public class CandidateController extends StateController {
     LOGGER.info("{} - Polling members {}", context.clusterManager().localNode(), context.clusterManager().cluster().remoteMembers());
     final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
     for (RemoteNode<?> node : (Set<RemoteNode<?>>) context.clusterManager().remoteNodes()) {
-      final ProtocolClient client = node.client();
+      final AsyncProtocolClient client = node.client();
       client.connect().whenCompleteAsync((result1, error1) -> {
         if (error1 != null) {
           quorum.fail();

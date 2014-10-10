@@ -35,4 +35,5 @@ public class ResponseException extends CopycatException {
   public ResponseException(Throwable cause) {
     super(cause);
   }
+
 }

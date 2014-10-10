@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +25,7 @@ import net.kuujo.copycat.cluster.Member;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatProtocol<M extends Member> {
+public interface AsyncProtocol<M extends Member> extends BaseProtocol<M> {
 
   /**
    * Creates a protocol server.
@@ -34,7 +33,7 @@ public interface CopycatProtocol<M extends Member> {
    * @param member The member configuration.
    * @return The protocol server.
    */
-  ProtocolServer createServer(M member);
+  AsyncProtocolServer createServer(M member);
 
   /**
    * Creates a protocol client.
@@ -42,6 +41,6 @@ public interface CopycatProtocol<M extends Member> {
    * @param member The member configuration.
    * @return The protocol client.
    */
-  ProtocolClient createClient(M member);
+  AsyncProtocolClient createClient(M member);
 
 }

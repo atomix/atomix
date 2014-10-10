@@ -14,20 +14,18 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.spi.protocol.CopycatProtocol;
-
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EventBusCluster extends Cluster<EventBusMember> {
 
-  public EventBusCluster(CopycatProtocol<EventBusMember> protocol, ClusterConfig<EventBusMember> config) {
-    super(protocol, config);
+  public EventBusCluster(ClusterConfig<EventBusMember> config) {
+    super(config);
   }
 
   @Override
   public EventBusCluster copy() {
-    return new EventBusCluster(protocol, config.copy());
+    return new EventBusCluster(config.copy());
   }
 
 }

@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,7 +14,7 @@
  */
 package net.kuujo.copycat.spi.service;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.async.AsyncCopycatContext;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,14 +36,14 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatService {
+public interface AsyncService extends BaseService {
 
   /**
    * Initializes the service.
    *
    * @param context The copycat context.
    */
-  void init(CopycatContext context);
+  void init(AsyncCopycatContext context);
 
   /**
    * Starts the service.<p>

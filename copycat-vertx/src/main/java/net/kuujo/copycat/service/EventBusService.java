@@ -32,7 +32,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusService extends BaseService {
+public class EventBusService extends BaseAsyncService {
   private String address;
   private String host = "localhost";
   private int port;

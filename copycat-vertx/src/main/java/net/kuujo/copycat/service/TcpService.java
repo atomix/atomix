@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpService extends BaseService {
+public class TcpService extends BaseAsyncService {
   private Vertx vertx = new DefaultVertx();
   private NetServer server;
   private String host;
