@@ -17,11 +17,13 @@ package net.kuujo.copycat.internal.event;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import net.kuujo.copycat.event.Event;
 import net.kuujo.copycat.event.EventContext;
 import net.kuujo.copycat.event.EventHandler;
 import net.kuujo.copycat.event.EventHandlerRegistry;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 /**
  * Default event context.
@@ -31,7 +33,9 @@ import net.kuujo.copycat.event.EventHandlerRegistry;
  * @param <E> The event type.
  */
 public class DefaultEventContext<E extends Event> implements EventContext<E>, EventHandler<E> {
-  private final Executor executor = Executors.newCachedThreadPool();
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("event-handler-%s");
+  
+  private final Executor executor = Executors.newCachedThreadPool(THREAD_FACTORY);
   private HandlerHolder handler;
 
   private class HandlerHolder {

@@ -29,6 +29,7 @@ import net.kuujo.copycat.internal.cluster.ClusterManager;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.AsyncRequestHandler;
 import net.kuujo.copycat.protocol.Response;
@@ -45,6 +46,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Raft state context.
@@ -53,8 +55,9 @@ import java.util.concurrent.Executors;
  */
 public final class StateContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(StateContext.class);
-  private final Executor executor = Executors.newCachedThreadPool();
   private final StateMachineExecutor stateMachineExecutor;
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("state-context-%s");
+  private final Executor executor = Executors.newCachedThreadPool(THREAD_FACTORY);
   @SuppressWarnings("rawtypes")
   private final Cluster cluster;
   @SuppressWarnings("rawtypes")

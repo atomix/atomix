@@ -37,15 +37,14 @@ import net.kuujo.copycat.util.Copyable;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterConfig<M extends Member> extends Observable implements
-    Copyable<ClusterConfig<M>>, Serializable {
+public class ClusterConfig<M extends Member> extends Observable implements Copyable<ClusterConfig<M>>, Serializable {
   protected M localMember;
   protected Set<M> remoteMembers = new HashSet<>(6);
 
   public ClusterConfig() {}
 
   /**
-   * throws NullPointerException if {@code cluster} is null
+   * @throws NullPointerException if {@code cluster} is null
    */
   public ClusterConfig(ClusterConfig<M> cluster) {
     this.localMember = Assert.isNotNull(cluster, "cluster").localMember;
@@ -53,14 +52,14 @@ public class ClusterConfig<M extends Member> extends Observable implements
   }
 
   /**
-   * throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
+   * @throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
    */
   public ClusterConfig(M localMember, M... remoteMembers) {
     this(localMember, Arrays.asList(Assert.isNotNull(remoteMembers, "remoteMembers")));
   }
 
   /**
-   * throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
+   * @throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
    */
   public ClusterConfig(M localMember, Collection<M> remoteMembers) {
     this.localMember = Assert.isNotNull(localMember, "localMember");
@@ -84,8 +83,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
   /**
    * Constructs a cluster configuration from an existing cluster.
    *
-   * @param cluster The cluster from which to construct the configuration. throws
-   *        NullPointerException if {@code cluster} is null
+   * @param cluster The cluster from which to construct the configuration.
+   * @throws NullPointerException if {@code cluster} is null
    */
   public ClusterConfig(Cluster<M> cluster) {
     localMember = Assert.isNotNull(cluster, "cluster").localMember();
@@ -95,7 +94,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
   /**
    * Sets the local cluster member.
    *
-   * @param member The local cluster member. throws NullPointerException if {@code member} is null
+   * @param member The local cluster member.
+   * @throws NullPointerException if {@code member} is null
    */
   public final void setLocalMember(M member) {
     localMember = Assert.isNotNull(member, "member");
@@ -114,7 +114,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Sets the local cluster member, returning the configuration for method chaining.
    *
    * @param member The local cluster member.
-   * @return The cluster configuration. throws NullPointerException if {@code member} is null
+   * @return The cluster configuration.
+   * @throws NullPointerException if {@code member} is null
    */
   public final ClusterConfig<M> withLocalMember(M member) {
     localMember = Assert.isNotNull(member, "member");
@@ -124,8 +125,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
   /**
    * Sets the remote cluster members.
    *
-   * @param members A collection of remote cluster member configurations. throws
-   *        NullPointerException if {@code members} is null
+   * @param members A collection of remote cluster member configurations.
+   * @throws NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final void setRemoteMembers(M... members) {
@@ -136,8 +137,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
   /**
    * Sets the remote cluster members.
    *
-   * @param members A collection of remote cluster member configurations. throws
-   *        NullPointerException if {@code members} is null
+   * @param members A collection of remote cluster member configurations.
+   * @throws NullPointerException if {@code members} is null
    */
   public final void setRemoteMembers(Collection<M> members) {
     remoteMembers = new HashSet<>(Assert.isNotNull(members, "members"));
@@ -148,7 +149,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Adds a remote member to this cluster configuration.
    *
    * @param member The remote member to add.
-   * @return The updated configuration. throws NullPointerException if {@code member} is null
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code member} is null
    */
   public final ClusterConfig<M> addRemoteMember(M member) {
     remoteMembers.add(Assert.isNotNull(member, "member"));
@@ -160,7 +162,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Adds the collection of remote members to this cluster configuration.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration. throws NullPointerException if {@code members} is null
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final ClusterConfig<M> addRemoteMembers(M... members) {
@@ -174,6 +177,7 @@ public class ClusterConfig<M extends Member> extends Observable implements
    *
    * @param members A collection of remote cluster member configurations.
    * @return The updated configuration.
+   * @throws NullPointerException if {@code members} is null
    */
   public final ClusterConfig<M> addRemoteMembers(Collection<M> members) {
     remoteMembers.addAll(Assert.isNotNull(members, "members"));
@@ -185,7 +189,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Adds the set of remote cluster members from the given configuration.
    *
    * @param cluster The cluster configuration with which to add members to this configuration.
-   * @return The updated configuration. throws NullPointerException if {@code cluster} is null
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code cluster} is null
    */
   public final ClusterConfig<M> addRemoteMembers(ClusterConfig<M> cluster) {
     Assert.isNotNull(cluster, "cluster");
@@ -198,7 +203,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Removes a remote member from this cluster configuration.
    *
    * @param member The remote member to remove.
-   * @return The updated configuration. throws NullPointerException if {@code member} is null
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code member} is null
    */
   public final ClusterConfig<M> removeRemoteMember(M member) {
     remoteMembers.remove(Assert.isNotNull(member, "member"));
@@ -210,7 +216,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Removes the collection of remote members from this cluster configuration.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration. throws NullPointerException if {@code members} is null
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final ClusterConfig<M> removeRemoteMembers(M... members) {
@@ -223,7 +230,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Removes the collection of remote members from this cluster configuration.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration. throws NullPointerException if {@code members} is null
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code members} is null
    */
   public final ClusterConfig<M> removeRemoteMembers(Collection<M> members) {
     remoteMembers.removeAll(Assert.isNotNull(members, "members"));
@@ -235,7 +243,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Removes the set of remote members from the given cluster configuration.
    *
    * @param cluster The cluster configuration with which to remove members from this configuration.
-   * @return The updated configuration. throws NullPointerException if {@code cluster} is null
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code cluster} is null
    */
   public final ClusterConfig<M> removeRemoteMembers(ClusterConfig<M> cluster) {
     remoteMembers.removeAll(cluster.remoteMembers);
@@ -256,7 +265,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Sets the remote cluster members, returning the configuration for method chaining.
    *
    * @param members A list of remote cluster member configurations.
-   * @return The cluster configuration throws NullPointerException if {@code members} is null
+   * @return The cluster configuration
+   * @throws NullPointerException if {@code members} is null
    */
   @SafeVarargs
   public final ClusterConfig<M> withRemoteMembers(M... members) {
@@ -269,7 +279,8 @@ public class ClusterConfig<M extends Member> extends Observable implements
    * Sets the remote cluster members, returning the configuration for method chaining.
    *
    * @param members A collection of remote cluster member configurations.
-   * @return The cluster configuration. throws NullPointerException if {@code members} is null
+   * @return The cluster configuration.
+   * @throws NullPointerException if {@code members} is null
    */
   public final ClusterConfig<M> withRemoteMembers(Collection<M> members) {
     this.remoteMembers = new HashSet<>(Assert.isNotNull(members, "members"));

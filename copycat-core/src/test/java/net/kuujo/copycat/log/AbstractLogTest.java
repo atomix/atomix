@@ -66,14 +66,19 @@ public abstract class AbstractLogTest {
 
   public void testAppendEntries() throws Exception {
     Entry entry = new NoOpEntry(1);
-    assertEquals(log.appendEntries(entry, entry, entry),
-      Arrays.asList(Long.valueOf(1), Long.valueOf(2), Long.valueOf(3)));
+    assertEquals(log.appendEntries(entry, entry, entry), Arrays.asList(1L, 2L, 3L));
   }
 
   public void testAppendEntry() throws Exception {
     assertEquals(log.appendEntry(new NoOpEntry(1)), 1);
     assertEquals(log.appendEntry(new NoOpEntry(1)), 2);
     assertEquals(log.appendEntry(new NoOpEntry(1)), 3);
+  }
+
+  @Test(expectedExceptions = IllegalStateException.class)
+  public void shouldThrowOnAppendEntryWhenClosed() throws Exception {
+    log.close();
+    log.appendEntry(new NoOpEntry(1));
   }
 
   public void testClose() throws Exception {
@@ -136,6 +141,18 @@ public abstract class AbstractLogTest {
     assertEquals(log.firstIndex(), 1);
   }
 
+  public void testGetEntries() throws Exception {
+    appendEntries();
+    assertEquals(log.getEntries(1, 5).size(), 5);
+    assertEquals(log.getEntries(2, 4).size(), 3);
+  }
+
+  @Test(expectedExceptions = LogIndexOutOfBoundsException.class)
+  public void shouldThrowOnGetEntriesWithOutOfBoundsIndex() throws Exception {
+    appendEntries();
+    log.getEntries(-1, 10);
+  }
+
   public void testGetEntry() throws Exception {
     appendEntries();
     assertTrue(log.getEntry(1) instanceof NoOpEntry);
@@ -153,6 +170,11 @@ public abstract class AbstractLogTest {
     assertTrue(log.isOpen());
     log.close();
     assertFalse(log.isOpen());
+  }
+
+  @Test(expectedExceptions = IllegalStateException.class)
+  public void shouldThrowOnIsOpenAlready() throws Throwable {
+    log.open();
   }
 
   public void testLastEntry() throws Exception {
