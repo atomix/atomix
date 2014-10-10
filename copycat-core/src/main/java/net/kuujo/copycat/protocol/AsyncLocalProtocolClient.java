@@ -95,7 +95,7 @@ public class AsyncLocalProtocolClient implements AsyncProtocolClient {
 
   @Override
   public String toString() {
-    return String.format("AsyncLocalProtocolClient[id=%s]", id);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
   }
 
 }
