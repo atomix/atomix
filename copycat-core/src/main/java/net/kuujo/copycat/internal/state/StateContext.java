@@ -76,7 +76,7 @@ public final class StateContext {
     this.log = log;
     this.config = config;
     this.cluster = cluster;
-    this.clusterManager = new ClusterManager<>(protocol, cluster);
+    this.clusterManager = new ClusterManager<>(cluster, protocol);
   }
 
   /**
