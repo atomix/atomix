@@ -16,8 +16,6 @@ package net.kuujo.copycat.spi.service;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.AsyncCopycat;
-
 /**
  * CopyCat service.<p>
  *
@@ -36,15 +34,7 @@ import net.kuujo.copycat.AsyncCopycat;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncService extends BaseService {
-
-  /**
-   * Initializes the service.
-   *
-   * @param context The copycat context.
-   */
-  void init(AsyncCopycat copycat);
-
+public interface AsyncService  {
   /**
    * Starts the service.<p>
    *
@@ -63,5 +53,4 @@ public interface AsyncService extends BaseService {
    * @return A completable future to be completed once the service has been stopped.
    */
   CompletableFuture<Void> stop();
-
 }

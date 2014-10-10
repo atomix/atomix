@@ -22,11 +22,10 @@ import net.kuujo.copycat.spi.service.Service;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class BaseService implements Service {
+abstract class AbstractService implements Service {
   protected Copycat copycat;
 
-  @Override
-  public void init(Copycat copycat) {
+  protected AbstractService(Copycat copycat) {
     this.copycat = copycat;
   }
 

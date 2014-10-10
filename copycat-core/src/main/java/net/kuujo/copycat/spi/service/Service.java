@@ -15,42 +15,30 @@
  */
 package net.kuujo.copycat.spi.service;
 
-import net.kuujo.copycat.Copycat;
-
 /**
- * CopyCat service.<p>
+ * CopyCat service.
+ * <p>
  *
- * Endpoints are user-facing interfaces that can be used to
- * send commands to a CopyCat cluster. When an service receives
- * a request, if the current node is the cluster leader then the
- * command will be submitted to the cluster. If the current node
- * is not the cluster leader then the leader will be returned
- * to the client. This allows clients to locate the cluster leader.<p>
+ * Endpoints are user-facing interfaces that can be used to send commands to a CopyCat cluster. When
+ * an service receives a request, if the current node is the cluster leader then the command will be
+ * submitted to the cluster. If the current node is not the cluster leader then the leader will be
+ * returned to the client. This allows clients to locate the cluster leader.
+ * <p>
  *
- * Endpoints are defined via the CopyCat services API. To define a
- * new service service, create a file in
- * <code>META-INF/services/net/kuujo/copycat/endpoints</code>. The
- * file name is the service name, and the file should contain the
- * name of a class that implements <code>Endpoint</code>.
+ * Endpoints are defined via the CopyCat services API. To define a new service service, create a
+ * file in <code>META-INF/services/net/kuujo/copycat/endpoints</code>. The file name is the service
+ * name, and the file should contain the name of a class that implements <code>Endpoint</code>.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Service extends BaseService {
-
+public interface Service {
   /**
-   * Initializes the service.
+   * Starts the service.
+   * <p>
    *
-   * @param context The copycat context.
-   */
-  void init(Copycat copycat);
-
-  /**
-   * Starts the service.<p>
-   *
-   * CopyCat makes no assumptions about whether an service is
-   * asynchronous or not, so endpoints can be either synchronous
-   * or asynchronous. Both types of endpoints should call the
-   * given callback once started.
+   * CopyCat makes no assumptions about whether an service is asynchronous or not, so endpoints can
+   * be either synchronous or asynchronous. Both types of endpoints should call the given callback
+   * once started.
    */
   void start();
 
@@ -58,5 +46,4 @@ public interface Service extends BaseService {
    * Stops the service.
    */
   void stop();
-
 }

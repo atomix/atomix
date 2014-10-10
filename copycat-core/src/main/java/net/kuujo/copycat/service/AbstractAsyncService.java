@@ -24,11 +24,10 @@ import net.kuujo.copycat.spi.service.AsyncService;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class BaseAsyncService implements AsyncService {
+abstract class AbstractAsyncService implements AsyncService {
   protected AsyncCopycat copycat;
 
-  @Override
-  public void init(AsyncCopycat copycat) {
+  protected AbstractAsyncService(AsyncCopycat copycat) {
     this.copycat = copycat;
   }
 
@@ -43,5 +42,4 @@ abstract class BaseAsyncService implements AsyncService {
     }
     return copycat.submit(command, args);
   }
-
 }
