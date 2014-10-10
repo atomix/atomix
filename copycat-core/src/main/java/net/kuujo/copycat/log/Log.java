@@ -131,7 +131,7 @@ public interface Log {
   void removeEntry(long index);
 
   /**
-   * Removes all entries after the given index.
+   * Removes all entries after the given index, exclusive.
    *
    * @param index The index after which to remove entries.
    */
