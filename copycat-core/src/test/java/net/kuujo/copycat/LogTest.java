@@ -251,7 +251,6 @@ public class LogTest {
     Assert.assertTrue(index == 5);
     if (log instanceof Compactable) {
       ((Compactable) log).compact(3, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
-      Assert.assertTrue(log.size() == 3);
       Assert.assertTrue(log.firstIndex() == 3);
       Assert.assertTrue(log.lastIndex() == 5);
       SnapshotEntry entry = log.getEntry(3);
@@ -284,7 +283,6 @@ public class LogTest {
     Assert.assertTrue(index == 5);
     if (log instanceof Compactable) {
       ((Compactable) log).compact(5, new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
-      Assert.assertTrue(log.size() == 1);
       Assert.assertTrue(log.firstIndex() == 5);
       Assert.assertTrue(log.lastIndex() == 5);
       SnapshotEntry entry = log.getEntry(5);

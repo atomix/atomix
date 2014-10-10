@@ -153,8 +153,8 @@ public class InMemoryLog extends BaseLog implements Compactable {
   @Override
   public synchronized void removeAfter(long index) {
     if (!log.isEmpty()) {
-      for (long i = index; i <= log.lastKey(); i++) {
-        removeEntry(index);
+      for (long i = index + 1; i <= log.lastKey(); i++) {
+        removeEntry(i);
       }
     }
   }
@@ -164,6 +164,7 @@ public class InMemoryLog extends BaseLog implements Compactable {
     kryo.writeClassAndObject(output, entry);
     byte[] bytes = output.toBytes();
     output.clear();
+    // TODO - calculate newSize by doing the lesser of subtracting out removed entries or adding remaining entries.
     log.headMap(index).clear();
     log.put(index, bytes);
     long newSize = 0;

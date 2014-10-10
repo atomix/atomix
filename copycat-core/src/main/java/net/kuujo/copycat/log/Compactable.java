@@ -27,7 +27,7 @@ public interface Compactable {
   /**
    * Compacts the log.
    *
-   * @param index The index at which to compact the log.
+   * @param index The index at which to compact the log, inclusive.
    * @param entry A snapshot entry to place at the start of the compacted log.
    * @throws IOException If the snapshot persistence failed.
    */
