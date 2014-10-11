@@ -66,7 +66,7 @@ public class ClusterReplicator implements Replicator, Observer {
       writeQuorum = state.config().getCommandQuorumStrategy().calculateQuorumSize(state.clusterManager().cluster());
     }
     int quorumSize = (int) Math.floor((replicas.size() + 1) / 2) + 1;
-    quorumIndex = quorumSize > 0 ? quorumSize - 1 : 0;
+    quorumIndex = quorumSize > 1 ? quorumSize - 2 : 0; // Subtract two, one for the current node and one for list indices
   }
 
   @Override
@@ -112,7 +112,7 @@ public class ClusterReplicator implements Replicator, Observer {
       } else {
         future.completeExceptionally(new CopycatException("Failed to obtain quorum"));
       }
-    });
+    }).countSelf();
 
     // Iterate through replicas and commit all entries up to the given index.
     for (NodeReplicator replica : replicaMap.values()) {
@@ -146,7 +146,7 @@ public class ClusterReplicator implements Replicator, Observer {
       } else {
         future.completeExceptionally(new CopycatException("Failed to obtain quorum"));
       }
-    });
+    }).countSelf();
 
     // Iterate through replicas and ping each replica. Internally, this
     // should cause the replica to send any remaining entries if necessary.
