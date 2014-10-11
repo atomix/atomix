@@ -39,7 +39,7 @@ import java.util.concurrent.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
-  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("log-file-syncer-%s");
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("chronicle-syncer-%s");
   
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
   private static final byte DELETED = 0;
