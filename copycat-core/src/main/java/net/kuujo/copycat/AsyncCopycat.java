@@ -14,49 +14,15 @@
  */
 package net.kuujo.copycat;
 
-import java.util.concurrent.CompletableFuture;
-
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Copycat service.
- * <p>
- *
- * This is the primary type for implementing full remote services on top of Copycat. A
- * {@code Copycat} instance consists of a {@link net.kuujo.copycat.CopycatContext} which controls
- * logging and replication and a {@link net.kuujo.copycat.spi.service.Service} which exposes an
- * endpoint through which commands can be submitted to the Copycat cluster.
- * <p>
- *
- * The {@code Copycat} constructor requires a {@link net.kuujo.copycat.CopycatContext} and
- * {@link net.kuujo.copycat.spi.service.Service}:
- * <p>
- *
- * {@code
- * StateMachine stateMachine = new MyStateMachine();
- * Log log = new MemoryMappedFileLog("data.log");
- * ClusterConfig<Member> config = new LocalClusterConfig();
- * config.setLocalMember("foo");
- * config.setRemoteMembers("bar", "baz");
- * Cluster<Member> cluster = new LocalCluster(config);
- * CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
- * 
- * CopycatService service = new HttpService("localhost", 8080);
- * 
- * Copycat copycat = Copycat.copycat(service, context);
- * copycat.start();
- * }
- * <p>
- *
- * Copycat also exposes a fluent interface for reacting on internal events. This can be useful for
- * detecting cluster membership or leadership changes, for instance:
- * <p>
- *
- * {@code copycat.on().membershipChange(event -> System.out.println("Membership changed: " +
- * event.members()); }); }
+ * Asynchronous Copycat replica.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -66,15 +32,21 @@ public class AsyncCopycat extends AbstractCopycat {
   }
 
   /**
+   * Asynchronous Copycat builder.
+   */
+  public static class Builder extends AbstractCopycat.Builder<AsyncCopycat, Protocol<?>> {
+    public Builder() {
+      super((builder) -> new AsyncCopycat(new StateContext(builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config), builder.cluster, builder.config));
+    }
+  }
+
+  /**
    * Returns a new copycat builder.
    *
    * @return A new copycat builder.
    */
-  @SuppressWarnings("unchecked")
-  public static AbstractCopycat.Builder<AsyncCopycat, AsyncProtocol<?>> builder() {
-    return new AbstractCopycat.Builder<>((builder) -> new AsyncCopycat(new StateContext(
-        builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config),
-        builder.cluster, builder.config));
+  public static Builder builder() {
+    return new Builder();
   }
 
   /**

@@ -19,8 +19,12 @@ public class KeyValueStore implements StateMachine {
     clusterConfig.setLocalMember("tcp://localhost:8080");
     clusterConfig.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
 
-    AsyncCopycat.builder().withStateMachine(new KeyValueStore()).withLog(new InMemoryLog())
-        .withCluster(new Cluster(clusterConfig)).build().start();
+    AsyncCopycat.builder()
+      .withStateMachine(new KeyValueStore())
+      .withLog(new InMemoryLog())
+      .withCluster(new Cluster(clusterConfig))
+      .build()
+      .start();
   }
 
   @Query
