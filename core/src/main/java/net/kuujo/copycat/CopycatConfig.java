@@ -39,15 +39,15 @@ public class CopycatConfig {
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
   private long electionTimeout = 2000;
   private long heartbeatInterval = 500;
-  private boolean requireWriteQuorum = true;
-  private boolean requireReadQuorum = true;
-  private int readQuorumSize = -1;
+  private boolean requireCommandQuorum = true;
+  private int commandQuorumSize = -1;
   @SuppressWarnings("rawtypes")
-  private QuorumStrategy readQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
-  private int writeQuorumSize = -1;
-  @SuppressWarnings("rawtypes")
-  private QuorumStrategy writeQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
+  private QuorumStrategy commandQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
   private int maxLogSize = 32 * 1024^2;
+  private boolean requireQueryQuorum = true;
+  private int queryQuorumSize = -1;
+  @SuppressWarnings("rawtypes")
+  private QuorumStrategy queryQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
   private CorrelationStrategy<?> correlationStrategy = () -> UUID.randomUUID().toString();
   @SuppressWarnings("unchecked")
   private TimerStrategy timerStrategy = (task, delay, unit) -> (ScheduledFuture<Void>) scheduler.schedule(task, delay, unit);
@@ -119,8 +119,8 @@ public class CopycatConfig {
    * 
    * @param require Indicates whether a quorum replication should be required for writes.   
    */
-  public void setRequireWriteQuorum(boolean require) {
-    this.requireWriteQuorum = require;
+  public void setRequireCommandQuorum(boolean require) {
+    this.requireCommandQuorum = require;
   }
 
   /**
@@ -129,8 +129,8 @@ public class CopycatConfig {
    * 
    * @return Indicates whether a quorum replication is required for write operations.
    */
-  public boolean isRequireWriteQuorum() {
-    return requireWriteQuorum;
+  public boolean isRequireCommandQuorum() {
+    return requireCommandQuorum;
   }
 
   /**
@@ -141,7 +141,7 @@ public class CopycatConfig {
    * @return The replica configuration.
    */
   public CopycatConfig withRequireWriteQuorum(boolean require) {
-    this.requireWriteQuorum = require;
+    this.requireCommandQuorum = require;
     return this;
   }
 
@@ -151,9 +151,9 @@ public class CopycatConfig {
    * @param quorumSize The required write quorum size.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
-  public void setWriteQuorumSize(int quorumSize) {
-    this.writeQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
-    this.writeQuorumStrategy = (config) -> writeQuorumSize;
+  public void setCommandQuorumSize(int quorumSize) {
+    this.commandQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.commandQuorumStrategy = (config) -> commandQuorumSize;
   }
 
   /**
@@ -161,8 +161,8 @@ public class CopycatConfig {
    *
    * @return The required write quorum size. Defaults to <code>null</code>
    */
-  public int getWriteQuorumSize() {
-    return writeQuorumSize;
+  public int getCommandQuorumSize() {
+    return commandQuorumSize;
   }
 
   /**
@@ -173,8 +173,8 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public CopycatConfig withWriteQuorumSize(int quorumSize) {
-    this.writeQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
-    this.writeQuorumStrategy = (config) -> writeQuorumSize;
+    this.commandQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.commandQuorumStrategy = (config) -> commandQuorumSize;
     return this;
   }
 
@@ -184,8 +184,8 @@ public class CopycatConfig {
    * @param require Indicates whether a quorum synchronization should be required for read
    *          operations.
    */
-  public void setRequireReadQuorum(boolean require) {
-    this.requireReadQuorum = require;
+  public void setRequireQueryQuorum(boolean require) {
+    this.requireQueryQuorum = require;
   }
 
   /**
@@ -194,8 +194,8 @@ public class CopycatConfig {
    * 
    * @return Indicates whether a quorum synchronization is required for read operations.
    */
-  public boolean isRequireReadQuorum() {
-    return requireReadQuorum;
+  public boolean isRequireQueryQuorum() {
+    return requireQueryQuorum;
   }
 
   /**
@@ -207,7 +207,7 @@ public class CopycatConfig {
    * @return The replica configuration.
    */
   public CopycatConfig withRequireReadQuorum(boolean require) {
-    this.requireReadQuorum = require;
+    this.requireQueryQuorum = require;
     return this;
   }
 
@@ -217,8 +217,8 @@ public class CopycatConfig {
    * @param strategy The cluster write quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public void setWriteQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.writeQuorumStrategy = Assert.isNotNull(strategy, "strategy");
+  public void setCommandQuorumStrategy(QuorumStrategy<?> strategy) {
+    this.commandQuorumStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
   /**
@@ -227,8 +227,8 @@ public class CopycatConfig {
    * @return The cluster write quorum calculation strategy.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public <C extends Cluster> QuorumStrategy<C> getWriteQuorumStrategy() {
-    return writeQuorumStrategy;
+  public <C extends Cluster> QuorumStrategy<C> getCommandQuorumStrategy() {
+    return commandQuorumStrategy;
   }
 
   /**
@@ -239,7 +239,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public CopycatConfig withWriteQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.writeQuorumStrategy = Assert.isNotNull(strategy, "strategy");
+    this.commandQuorumStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
 
@@ -249,9 +249,9 @@ public class CopycatConfig {
    * @param quorumSize The required read quorum size.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
-  public void setReadQuorumSize(int quorumSize) {
-    this.readQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
-    this.readQuorumStrategy = (config) -> readQuorumSize;
+  public void setQueryQuorumSize(int quorumSize) {
+    this.queryQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.queryQuorumStrategy = (config) -> queryQuorumSize;
   }
 
   /**
@@ -259,8 +259,8 @@ public class CopycatConfig {
    *
    * @return The required read quorum size. Defaults to <code>null</code>
    */
-  public int getReadQuorumSize() {
-    return readQuorumSize;
+  public int getQueryQuorumSize() {
+    return queryQuorumSize;
   }
 
   /**
@@ -271,8 +271,8 @@ public class CopycatConfig {
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public CopycatConfig withReadQuorumSize(int quorumSize) {
-    this.readQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
-    this.readQuorumStrategy = (config) -> readQuorumSize;
+    this.queryQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
+    this.queryQuorumStrategy = (config) -> queryQuorumSize;
     return this;
   }
 
@@ -282,8 +282,8 @@ public class CopycatConfig {
    * @param strategy The cluster read quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public void setReadQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.readQuorumStrategy = Assert.isNotNull(strategy, "strategy");
+  public void setQueryQuorumStrategy(QuorumStrategy<?> strategy) {
+    this.queryQuorumStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
   /**
@@ -292,8 +292,8 @@ public class CopycatConfig {
    * @return The cluster read quorum calculation strategy.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  public <C extends Cluster> QuorumStrategy<C> getReadQuorumStrategy() {
-    return readQuorumStrategy;
+  public <C extends Cluster> QuorumStrategy<C> getQueryQuorumStrategy() {
+    return queryQuorumStrategy;
   }
 
   /**
@@ -304,7 +304,7 @@ public class CopycatConfig {
    * @throws NullPointerException if {@code strategy} is null
    */
   public CopycatConfig withReadQuorumStrategy(QuorumStrategy<?> strategy) {
-    this.readQuorumStrategy = Assert.isNotNull(strategy, "strategy");
+    this.queryQuorumStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
 
@@ -409,17 +409,17 @@ public class CopycatConfig {
     value += ",\n";
     value += String.format("heartbeatInterval=%d", heartbeatInterval);
     value += ",\n";
-    value += String.format("requireReadQuorum=%s", requireReadQuorum);
+    value += String.format("requireQueryQuorum=%s", requireQueryQuorum);
     value += ",\n";
-    value += String.format("readQuorumSize=%d", readQuorumSize);
+    value += String.format("queryQuorumSize=%d", queryQuorumSize);
     value += ",\n";
-    value += String.format("readQuorumStrategy=%s", readQuorumStrategy);
+    value += String.format("queryQuorumStrategy=%s", queryQuorumStrategy);
     value += ",\n";
-    value += String.format("requireWriteQuorum=%s", requireWriteQuorum);
+    value += String.format("requireCommandQuorum=%s", requireCommandQuorum);
     value += ",\n";
-    value += String.format("requireWriteQuorum=%s", requireWriteQuorum);
+    value += String.format("commandQuorumSize=%s", commandQuorumSize);
     value += ",\n";
-    value += String.format("writeQuorumStrategy=%s", writeQuorumStrategy);
+    value += String.format("commandQuorumStrategy=%s", commandQuorumStrategy);
     value += ",\n";
     value += String.format("maxLogSize=%d", maxLogSize);
     value += ",\n";

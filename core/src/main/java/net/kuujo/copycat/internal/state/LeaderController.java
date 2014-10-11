@@ -261,7 +261,7 @@ public class LeaderController extends StateController implements Observer {
       // default, read quorums are enabled. If read quorums are disabled then we
       // simply apply the operation, otherwise we need to ping a quorum of the
       // cluster to ensure that data is up-to-date before responding.
-      if (context.config().isRequireReadQuorum()) {
+      if (context.config().isRequireQueryQuorum()) {
         long lastIndex = context.log().lastIndex();
         LOGGER.debug("{} - Synchronizing logs to index {} for read", context.clusterManager().localNode(), lastIndex);
         replicator.ping(lastIndex).whenComplete((index, error) -> {
@@ -293,7 +293,7 @@ public class LeaderController extends StateController implements Observer {
       // Write quorums are also optional to the user. The user can optionally
       // indicate that write operations should be immediately applied to the state
       // machine and the result returned.
-      if (context.config().isRequireWriteQuorum()) {
+      if (context.config().isRequireCommandQuorum()) {
         // If the replica requires write quorums, we simply set a task to be
         // executed once the entry has been replicated to a quorum of the cluster.
         LOGGER.debug("{} - Replicating logs up to {} for write", context.clusterManager().localNode(), index);

@@ -57,8 +57,8 @@ public class ClusterReplicator implements Replicator, Observer {
    */
   @SuppressWarnings("unchecked")
   private void recalculateQuorumSize() {
-    readQuorum = state.config().getReadQuorumStrategy().calculateQuorumSize(state.clusterManager().cluster());
-    writeQuorum = state.config().getWriteQuorumStrategy().calculateQuorumSize(state.clusterManager().cluster());
+    readQuorum = state.config().getQueryQuorumStrategy().calculateQuorumSize(state.clusterManager().cluster());
+    writeQuorum = state.config().getCommandQuorumStrategy().calculateQuorumSize(state.clusterManager().cluster());
     int quorumSize = (int) Math.floor((replicas.size() + 1) / 2) + 1;
     quorumIndex = quorumSize > 0 ? quorumSize - 1 : 0;
   }

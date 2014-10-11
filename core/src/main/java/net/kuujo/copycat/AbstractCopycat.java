@@ -178,7 +178,7 @@ abstract class AbstractCopycat {
      * @throws IllegalArgumentException if {@code quorumSize} is not > -1
      */
     public Builder<T, P> withReadQuorumSize(int quorumSize) {
-      config.setReadQuorumSize(quorumSize);
+      config.setQueryQuorumSize(quorumSize);
       return this;
     }
 
@@ -190,7 +190,7 @@ abstract class AbstractCopycat {
      * @throws NullPointerException if {@code quorumStrategy} is null
      */
     public Builder<T, P> withReadQuorumStrategy(QuorumStrategy quorumStrategy) {
-      config.setReadQuorumStrategy(quorumStrategy);
+      config.setQueryQuorumStrategy(quorumStrategy);
       return this;
     }
 
@@ -201,7 +201,7 @@ abstract class AbstractCopycat {
      * @return The copycat builder.
      */
     public Builder<T, P> withRequireReadQuorum(boolean requireQuorum) {
-      config.setRequireReadQuorum(requireQuorum);
+      config.setRequireQueryQuorum(requireQuorum);
       return this;
     }
 
@@ -212,7 +212,7 @@ abstract class AbstractCopycat {
      * @return The copycat builder.
      */
     public Builder<T, P> withRequireWriteQuorum(boolean requireQuorum) {
-      config.setRequireWriteQuorum(requireQuorum);
+      config.setRequireCommandQuorum(requireQuorum);
       return this;
     }
 
@@ -248,7 +248,7 @@ abstract class AbstractCopycat {
      * @throws IllegalArgumentException if {@code quorumSize} is not > -1
      */
     public Builder<T, P> withWriteQuorumSize(int quorumSize) {
-      config.setWriteQuorumSize(quorumSize);
+      config.setCommandQuorumSize(quorumSize);
       return this;
     }
 
@@ -260,7 +260,7 @@ abstract class AbstractCopycat {
      * @throws NullPointerException if {@code quorumStrategy} is null
      */
     public Builder<T, P> withWriteQuorumStrategy(QuorumStrategy quorumStrategy) {
-      config.setWriteQuorumStrategy(quorumStrategy);
+      config.setCommandQuorumStrategy(quorumStrategy);
       return this;
     }
   }

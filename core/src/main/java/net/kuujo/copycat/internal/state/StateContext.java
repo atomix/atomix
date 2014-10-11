@@ -177,11 +177,11 @@ public final class StateContext {
     if (clusterManager.remoteNodes().isEmpty()) {
       LOGGER.warn("{} - No remote nodes in the cluster!", clusterManager.localNode());
     }
-    if (!config.isRequireReadQuorum()) {
+    if (!config.isRequireQueryQuorum()) {
       LOGGER.warn("{} - Read quorums are disabled! This can cause stale reads!",
           clusterManager.localNode());
     }
-    if (!config.isRequireWriteQuorum()) {
+    if (!config.isRequireCommandQuorum()) {
       LOGGER.warn("{} - Write quorums are disabled! This can cause data loss!",
           clusterManager.localNode());
     }
