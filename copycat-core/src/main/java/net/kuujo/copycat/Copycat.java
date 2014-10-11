@@ -15,8 +15,11 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 import net.kuujo.copycat.spi.protocol.Protocol;
 
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +32,34 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Copycat extends AbstractCopycat {
+
+  /**
+   * Constructs a synchronous Copycat replica with a default configuration.
+   *
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster configuration.
+   * @param protocol The synchronous protocol.
+   * @param <M> The cluster member type.
+   */
+  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol) {
+    this(stateMachine, log, cluster, protocol, new CopycatConfig());
+  }
+
+  /**
+   * Constructs a synchronous Copycat replica with a user-defined configuration.
+   *
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster configuration.
+   * @param protocol The synchronous protocol.
+   * @param config The replica configuration.
+   * @param <M> The cluster member type.
+   */
+  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol, CopycatConfig config) {
+    super(new StateContext(stateMachine, log, cluster, protocol, config), cluster, config);
+  }
+
   private Copycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
     super(state, cluster, config);
   }
