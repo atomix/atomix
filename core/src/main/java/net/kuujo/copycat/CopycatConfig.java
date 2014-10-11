@@ -340,6 +340,18 @@ public class CopycatConfig {
    * Sets the cluster query quorum strategy, returning the configuration for method chaining.
    *
    * @param strategy The cluster query quorum calculation strategy.
+   * @return The Copycat configuration.
+   * @throws NullPointerException if {@code strategy} is null
+   */
+  public CopycatConfig withQueryQuorumStrategn(QuorumStrategy<?> strategy) {
+    this.queryQuorumStrategy = Assert.isNotNull(strategy, "strategy");
+    return this;
+  }
+
+  /**
+   * Sets the cluster query quorum strategy, returning the configuration for method chaining.
+   *
+   * @param strategy The cluster query quorum calculation strategy.
    * @return The copycat configuration.
    * @throws NullPointerException if {@code strategy} is null
    */
