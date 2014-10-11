@@ -113,6 +113,13 @@ public class InMemoryLog extends BaseLog implements Compactable {
   @Override
   public synchronized <T extends Entry> List<T> getEntries(long from, long to) {
     assertIsOpen();
+    if (log.isEmpty()) {
+      throw new LogIndexOutOfBoundsException("Log is empty");
+    } else if (from < log.firstKey()) {
+      throw new LogIndexOutOfBoundsException("From index out of bounds.");
+    } else if (to > log.lastKey()) {
+      throw new LogIndexOutOfBoundsException("To index out of bounds.");
+    }
 
     List<T> entries = new ArrayList<>((int) (to - from + 1));
     for (long i = from; i <= to; i++) {
