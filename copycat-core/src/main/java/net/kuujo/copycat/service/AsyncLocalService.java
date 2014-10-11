@@ -18,14 +18,17 @@ package net.kuujo.copycat.service;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import net.kuujo.copycat.AsyncCopycat;
+
 /**
  * Local service implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncLocalService extends BaseAsyncService {
+public class AsyncLocalService extends AbstractAsyncService {
 
-  public AsyncLocalService() {
+  public AsyncLocalService(AsyncCopycat copycat) {
+    super(copycat);
   }
 
   @Override

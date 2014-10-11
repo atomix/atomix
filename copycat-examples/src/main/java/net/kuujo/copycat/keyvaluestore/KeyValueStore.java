@@ -3,42 +3,41 @@ package net.kuujo.copycat.keyvaluestore;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.kuujo.copycat.AsyncCopycat;
 import net.kuujo.copycat.Command;
-import net.kuujo.copycat.CopyCat;
+import net.kuujo.copycat.Query;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.Stateful;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.LogFactory;
-import net.kuujo.copycat.log.impl.FileLogFactory;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.LocalClusterConfig;
+import net.kuujo.copycat.log.InMemoryLog;
 
-public class KeyValueStore extends StateMachine {
-  public static void main(String[] args) {
-    // Create the local file log.
-    LogFactory logFactory = new FileLogFactory();
-
-    // Configure the cluster.
-    ClusterConfig cluster = new ClusterConfig();
-    cluster.setLocalMember("tcp://localhost:8080");
-    cluster.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
-
-    // Create and start a server at localhost:5000.
-    new CopyCat("http://localhost:5000", new KeyValueStore(), logFactory, cluster).start();
-  }
-
-  @Stateful
+public class KeyValueStore implements StateMachine {
   private Map<String, Object> data = new HashMap<>();
 
-  @Command(type = Command.Type.READ)
+  public static void main(String[] args) {
+    LocalClusterConfig clusterConfig = new LocalClusterConfig();
+    clusterConfig.setLocalMember("tcp://localhost:8080");
+    clusterConfig.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
+
+    AsyncCopycat.builder()
+      .withStateMachine(new KeyValueStore())
+      .withLog(new InMemoryLog())
+      .withCluster(new Cluster(clusterConfig))
+      .build()
+      .start();
+  }
+
+  @Query
   public Object get(String key) {
     return data.get(key);
   }
 
-  @Command(type = Command.Type.WRITE)
+  @Command
   public void set(String key, Object value) {
     data.put(key, value);
   }
 
-  @Command(type = Command.Type.WRITE)
+  @Command
   public void delete(String key) {
     data.remove(key);
   }

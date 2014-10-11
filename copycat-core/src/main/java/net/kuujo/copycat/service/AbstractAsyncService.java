@@ -12,23 +12,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal;
+package net.kuujo.copycat.service;
+
+import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.AsyncCopycat;
-import net.kuujo.copycat.AsyncCopycatContext;
-import net.kuujo.copycat.spi.AsyncCopycatFactory;
 import net.kuujo.copycat.spi.service.AsyncService;
 
 /**
- * Default asynchronous Copycat factory implementation.
+ * Base service implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncCopycatFactory implements AsyncCopycatFactory {
+abstract class AbstractAsyncService implements AsyncService {
+  protected AsyncCopycat copycat;
 
-  @Override
-  public AsyncCopycat createCopycat(AsyncService service, AsyncCopycatContext context) {
-    return new DefaultAsyncCopycat(service, context);
+  protected AbstractAsyncService(AsyncCopycat copycat) {
+    this.copycat = copycat;
   }
 
+  /**
+   * Handles a command submission.
+   */
+  protected <T> CompletableFuture<T> submit(String command, Object... args) {
+    if (copycat == null) {
+      CompletableFuture<T> future = new CompletableFuture<>();
+      future.completeExceptionally(new ServiceException("No submit handlers registered"));
+      return future;
+    }
+    return copycat.submit(command, args);
+  }
 }

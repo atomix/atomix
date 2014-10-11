@@ -15,6 +15,12 @@
  */
 package net.kuujo.copycat;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.jodah.concurrentunit.Waiter;
 import net.kuujo.copycat.cluster.Cluster;
@@ -22,9 +28,8 @@ import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.MemoryMappedFileLog;
 import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-import org.testng.annotations.Test;
 
-import java.util.*;
+import org.testng.annotations.Test;
 
 /**
  * Copycat test.
@@ -36,23 +41,23 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
   /**
    * Starts a cluster of contexts.
    */
-  protected void startCluster(Set<AsyncCopycatContext> contexts) throws Throwable {
+  protected void startCluster(Set<AsyncCopycat> contexts) throws Throwable {
     Waiter waiter = new Waiter();
-    for (AsyncCopycatContext context : contexts) {
+    for (AsyncCopycat context : contexts) {
       context.start().whenComplete((result, error) -> {
         waiter.assertNull(error);
         waiter.resume();
       });
     }
-    
+
     waiter.await(10000, contexts.size());
   }
 
   /**
    * Starts a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<AsyncCopycatContext> startCluster(int numInstances) throws Throwable {
-    Set<AsyncCopycatContext> contexts = createCluster(numInstances);
+  protected Set<AsyncCopycat> startCluster(int numInstances) throws Throwable {
+    Set<AsyncCopycat> contexts = createCluster(numInstances);
     startCluster(contexts);
     return contexts;
   }
@@ -60,9 +65,9 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
   /**
    * Creates a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<AsyncCopycatContext> createCluster(int numInstances) {
+  protected Set<AsyncCopycat> createCluster(int numInstances) {
     AsyncLocalProtocol protocol = new AsyncLocalProtocol();
-    Set<AsyncCopycatContext> instances = new HashSet<>(numInstances);
+    Set<AsyncCopycat> instances = new HashSet<>(numInstances);
     for (int i = 1; i <= numInstances; i++) {
       LocalClusterConfig config = new LocalClusterConfig();
       config.setLocalMember(String.valueOf(i));
@@ -71,8 +76,14 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
           config.addRemoteMember(String.valueOf(j));
         }
       }
-      instances.add(AsyncCopycat.context(new TestStateMachine(), new MemoryMappedFileLog(String.format("target/test-logs/%s", UUID
-        .randomUUID())), new Cluster<Member>(config), protocol));
+
+      instances
+          .add(AsyncCopycat
+              .builder()
+              .withStateMachine(new TestStateMachine())
+              .withLog(
+                  new MemoryMappedFileLog(String.format("target/test-logs/%s", UUID.randomUUID())))
+              .withCluster(new Cluster<Member>(config)).withProtocol(protocol).build());
     }
     return instances;
   }
@@ -87,7 +98,7 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
 
     @Override
     public void installSnapshot(byte[] snapshot) {
-      
+
     }
 
     @Command

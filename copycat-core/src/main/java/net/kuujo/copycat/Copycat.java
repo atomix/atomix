@@ -16,367 +16,120 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.*;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 import net.kuujo.copycat.spi.protocol.Protocol;
-import net.kuujo.copycat.spi.service.Service;
 
-import java.util.ServiceLoader;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Copycat service.<p>
- *
- * This is the primary type for implementing full remote services on top of Copycat. A {@code Copycat} instance consists
- * of a {@link net.kuujo.copycat.CopycatContext} which controls logging and replication and a
- * {@link net.kuujo.copycat.spi.service.Service} which exposes an endpoint through which commands can be
- * submitted to the Copycat cluster.<p>
- *
- * The {@code Copycat} constructor requires a {@link net.kuujo.copycat.CopycatContext} and
- * {@link net.kuujo.copycat.spi.service.Service}:<p>
- *
- * {@code
- * StateMachine stateMachine = new MyStateMachine();
- * Log log = new MemoryMappedFileLog("data.log");
- * ClusterConfig<Member> config = new LocalClusterConfig();
- * config.setLocalMember("foo");
- * config.setRemoteMembers("bar", "baz");
- * Cluster<Member> cluster = new LocalCluster(config);
- * CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
- *
- * CopycatService service = new HttpService("localhost", 8080);
- *
- * Copycat copycat = Copycat.copycat(service, context);
- * copycat.start();
- * }
- * <p>
- *
- * Copycat also exposes a fluent interface for reacting on internal events. This can be useful for detecting cluster
- * membership or leadership changes, for instance:<p>
- *
- * {@code
- * copycat.on().membershipChange(event -> {
- *   System.out.println("Membership changed: " + event.members());
- * });
- * }
+ * Synchronous Copycat replica.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Copycat extends BaseCopycat<CopycatContext> {
-  static final CopycatFactory copycatFactory = ServiceLoader.load(CopycatFactory.class).iterator().next();
-  static final CopycatContextFactory contextFactory = ServiceLoader.load(CopycatContextFactory.class).iterator().next();
+public class Copycat extends AbstractCopycat {
+
+  /**
+   * Constructs a synchronous Copycat replica with a default configuration.
+   *
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster configuration.
+   * @param protocol The synchronous protocol.
+   * @param <M> The cluster member type.
+   */
+  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol) {
+    this(stateMachine, log, cluster, protocol, new CopycatConfig());
+  }
+
+  /**
+   * Constructs a synchronous Copycat replica with a user-defined configuration.
+   *
+   * @param stateMachine The Copycat state machine.
+   * @param log The Copycat log.
+   * @param cluster The Copycat cluster configuration.
+   * @param protocol The synchronous protocol.
+   * @param config The replica configuration.
+   * @param <M> The cluster member type.
+   */
+  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol, CopycatConfig config) {
+    super(new StateContext(stateMachine, log, cluster, protocol, config), cluster, config);
+  }
+
+  private Copycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
+    super(state, cluster, config);
+  }
+
+  /**
+   * Copycat builder.
+   */
+  public static class Builder extends AbstractCopycat.Builder<Copycat, Protocol<?>> {
+    public Builder() {
+      super((builder) -> new Copycat(new StateContext(builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config), builder.cluster, builder.config));
+    }
+  }
 
   /**
    * Returns a new copycat builder.
    *
    * @return A new copycat builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
-  }
-
-  /**
-   * Creates a new Copycat instance.
-   *
-   * @param service The Copycat service.
-   * @param context The Copycat context.
-   * @return A new Copycat instance.
-   */
-  static Copycat copycat(Service service, CopycatContext context) {
-    return copycatFactory.createCopycat(service, context);
-  }
-
-  /**
-   * Creates a new Copycat instance.
-   *
-   * @param service The Copycat service.
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @param protocol The Copycat protocol.
-   * @param config The Copycat configuration.
-   * @return A new Copycat instance.
-   */
-  static <M extends Member> Copycat copycat(Service service, StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
-    return copycatFactory.createCopycat(service, context(stateMachine, log, cluster, protocol, config));
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param cluster The Copycat cluster.
-   * @param protocol The Copycat protocol.
-   * @return A new Copycat context.
-   */
-  static <M extends Member> CopycatContext context(StateMachine stateMachine, Cluster<M> cluster, Protocol<M> protocol) {
-    return contextFactory.createContext(stateMachine, new InMemoryLog(), cluster, protocol, new CopycatConfig());
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @param protocol The Copycat protocol.
-   * @return A new Copycat context.
-   */
-  static <M extends Member> CopycatContext context(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol) {
-    return contextFactory.createContext(stateMachine, log, cluster, protocol, new CopycatConfig());
-  }
-
-  /**
-   * Creates a new Copycat context.
-   *
-   * @param stateMachine The Copycat state machine.
-   * @param log The Copycat log.
-   * @param cluster The Copycat cluster.
-   * @param protocol The Copycat protocol.
-   * @param config The Copycat configuration.
-   * @return A new Copycat context.
-   */
-  static <M extends Member> CopycatContext context(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
-    return contextFactory.createContext(stateMachine, log, cluster, protocol, config);
   }
 
   /**
    * Starts the replica.
    */
-  void start();
+  public void start() {
+    CountDownLatch latch = new CountDownLatch(1);
+    state.start().thenRun(latch::countDown);
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    };
+  }
 
   /**
    * Stops the replica.
    */
-  void stop();
-
-  /**
-   * Copycat builder.
-   */
-  public static class Builder {
-    private Service service;
-    private final CopycatContext.Builder builder = CopycatContext.builder();
-
-    private Builder() {
-    }
-
-    /**
-     * Sets the copycat service.
-     *
-     * @param service The copycat service.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code service} is null
-     */
-    public Builder withService(Service service) {
-      this.service = Assert.isNotNull(service, "service");
-      return this;
-    }
-
-    /**
-     * Sets the copycat log.
-     *
-     * @param log The copycat log.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code log} is null
-     */
-    public Builder withLog(Log log) {
-      builder.withLog(log);
-      return this;
-    }
-
-    /**
-     * Sets the copycat configuration.
-     *
-     * @param config The copycat configuration.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code config} is null
-     */
-    public Builder withConfig(CopycatConfig config) {
-      builder.withConfig(config);
-      return this;
-    }
-
-    /**
-     * Sets the copycat election timeout.
-     *
-     * @param timeout The copycat election timeout.
-     * @return The copycat builder.
-     * @throws IllegalArgumentException if {@code timeout} is not > 0
-     */
-    public Builder withElectionTimeout(long timeout) {
-      builder.withElectionTimeout(timeout);
-      return this;
-    }
-
-    /**
-     * Sets the copycat heartbeat interval.
-     *
-     * @param interval The copycat heartbeat interval.
-     * @return The copycat builder.
-     * @throws IllegalArgumentException if {@code interval} is not > 0
-     */
-    public Builder withHeartbeatInterval(long interval) {
-      builder.withHeartbeatInterval(interval);
-      return this;
-    }
-
-    /**
-     * Sets whether to require quorums during reads.
-     *
-     * @param requireQuorum Whether to require quorums during reads.
-     * @return The copycat builder.
-     */
-    public Builder withRequireReadQuorum(boolean requireQuorum) {
-      builder.withRequireReadQuorum(requireQuorum);
-      return this;
-    }
-
-    /**
-     * Sets the read quorum size.
-     *
-     * @param quorumSize The read quorum size.
-     * @return The copycat builder.
-     * @throws IllegalArgumentException if {@code quorumSize} is not > -1
-     */
-    public Builder withReadQuorumSize(int quorumSize) {
-      builder.withReadQuorumSize(quorumSize);
-      return this;
-    }
-
-    /**
-     * Sets the read quorum strategy.
-     *
-     * @param quorumStrategy The read quorum strategy.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code quorumStrategy} is null
-     */
-    public Builder withReadQuorumStrategy(QuorumStrategy<?> quorumStrategy) {
-      builder.withReadQuorumStrategy(quorumStrategy);
-      return this;
-    }
-
-    /**
-     * Sets whether to require quorums during writes.
-     *
-     * @param requireQuorum Whether to require quorums during writes.
-     * @return The copycat builder.
-     */
-    public Builder withRequireWriteQuorum(boolean requireQuorum) {
-      builder.withRequireWriteQuorum(requireQuorum);
-      return this;
-    }
-
-    /**
-     * Sets the write quorum size.
-     *
-     * @param quorumSize The write quorum size.
-     * @return The copycat builder.
-     * @throws IllegalArgumentException if {@code quorumSize} is not > -1
-     */
-    public Builder withWriteQuorumSize(int quorumSize) {
-      builder.withWriteQuorumSize(quorumSize);
-      return this;
-    }
-
-    /**
-     * Sets the write quorum strategy.
-     *
-     * @param quorumStrategy The write quorum strategy.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code quorumStrategy} is null
-     */
-    public Builder withWriteQuorumStrategy(QuorumStrategy<?> quorumStrategy) {
-      builder.withWriteQuorumStrategy(quorumStrategy);
-      return this;
-    }
-
-    /**
-     * Sets the max log size.
-     *
-     * @param maxSize The max log size.
-     * @return The copycat builder.
-     * @throws IllegalArgumentException if {@code maxSize} is not > 0
-     */
-    public Builder withMaxLogSize(int maxSize) {
-      builder.withMaxLogSize(maxSize);
-      return this;
-    }
-
-    /**
-     * Sets the correlation strategy.
-     *
-     * @param strategy The correlation strategy.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code strategy} is null
-     */
-    public Builder withCorrelationStrategy(CorrelationStrategy<?> strategy) {
-      builder.withCorrelationStrategy(strategy);
-      return this;
-    }
-
-    /**
-     * Sets the timer strategy.
-     *
-     * @param strategy The timer strategy.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code strategy} is null
-     */
-    public Builder withTimerStrategy(TimerStrategy strategy) {
-      builder.withTimerStrategy(strategy);
-      return this;
-    }
-
-    /**
-     * Sets the cluster protocol.
-     *
-     * @param protocol The cluster protocol.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code protocol} is null
-     */
-    public Builder withProtocol(Protocol<?> protocol) {
-      builder.withProtocol(protocol);
-      return this;
-    }
-
-    /**
-     * Sets the copycat cluster.
-     *
-     * @param cluster The copycat cluster.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code cluster} is null
-     */
-    public Builder withCluster(Cluster<?> cluster) {
-      builder.withCluster(cluster);
-      return this;
-    }
-
-    /**
-     * Sets the copycat state machine.
-     *
-     * @param stateMachine The state machine.
-     * @return The copycat builder.
-     * @throws NullPointerException if {@code stateMachine} is null
-     */
-    public Builder withStateMachine(StateMachine stateMachine) {
-      builder.withStateMachine(stateMachine);
-      return this;
-    }
-
-    /**
-     * Builds the copycat instance.
-     *
-     * @return The copycat instance.
-     */
-    public Copycat build() {
-      return copycat(service, builder.build());
-    }
-
-    @Override
-    public String toString() {
-      return getClass().getSimpleName();
-    }
-
+  public void stop() {
+    CountDownLatch latch = new CountDownLatch(1);
+    state.stop().thenRun(latch::countDown);
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    };
   }
 
+  /**
+   * Submits an operation to the cluster.
+   *
+   * @param operation The name of the operation to submit.
+   * @param args An ordered list of operation arguments.
+   * @return The operation result.
+   * @throws NullPointerException if {@code operation} is null
+   */
+  @SuppressWarnings("unchecked")
+  public <R> R submit(final String operation, final Object... args) {
+    final CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<R> result = new AtomicReference<>();
+    state.submit(Assert.isNotNull(operation, "operation cannot be null"), args).whenComplete(
+        (r, error) -> {
+          latch.countDown();
+          result.set((R) r);
+        });
+    try {
+      latch.await(30, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      throw new CopycatException(e);
+    }
+    return result.get();
+  }
 }

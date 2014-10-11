@@ -74,6 +74,7 @@
     <module>copycat-netty</module>
     <module>copycat-vertx</module>
     <module>copycat-vertx3</module>
+    <module>copycat-examples</module>
   </modules>
 
   <dependencies>

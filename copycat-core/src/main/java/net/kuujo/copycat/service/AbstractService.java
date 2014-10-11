@@ -12,26 +12,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi;
+package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.AsyncCopycat;
-import net.kuujo.copycat.AsyncCopycatContext;
-import net.kuujo.copycat.spi.service.AsyncService;
+import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.spi.service.Service;
 
 /**
- * Copycat factory.
+ * Base service implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCopycatFactory {
+abstract class AbstractService implements Service {
+  protected Copycat copycat;
+
+  protected AbstractService(Copycat copycat) {
+    this.copycat = copycat;
+  }
 
   /**
-   * Creates a copycat instance.
-   *
-   * @param service The copycat service.
-   * @param context The copycat context.
-   * @return A new copycat instance.
+   * Handles a command submission.
    */
-  AsyncCopycat createCopycat(AsyncService service, AsyncCopycatContext context);
+  protected <T> T submit(String command, Object... args) {
+    if (copycat == null) {
+      throw new ServiceException("No submit handlers registered");
+    }
+    return copycat.submit(command, args);
+  }
 
 }

@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import net.kuujo.copycat.AsyncCopycat;
+
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
@@ -31,22 +33,25 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusService extends BaseAsyncService {
+public class EventBusService extends AbstractAsyncService {
   private String address;
   private String host = "localhost";
   private int port;
   private Vertx vertx;
 
-  public EventBusService() {
+  public EventBusService(AsyncCopycat copycat) {
+    super(copycat);
   }
 
-  public EventBusService(String host, int port, String address) {
+  public EventBusService(AsyncCopycat copycat, String host, int port, String address) {
+    super(copycat);
     this.host = host;
     this.port = port;
     this.address = address;
   }
 
-  public EventBusService(Vertx vertx, String address) {
+  public EventBusService(AsyncCopycat copycat, Vertx vertx, String address) {
+    super(copycat);
     this.vertx = vertx;
     this.address = address;
   }
@@ -61,11 +66,11 @@ public class EventBusService extends BaseAsyncService {
         submit(command, args.toArray()).whenComplete((result, error) -> {
           if (error == null) {
             if (result instanceof Map) {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putObject("result", new JsonObject((Map) result)));
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", copycat.leader()).putObject("result", new JsonObject((Map) result)));
             } else if (result instanceof List) {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putArray("result", new JsonArray((List) result)));
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", copycat.leader()).putArray("result", new JsonArray((List) result)));
             } else {
-              message.reply(new JsonObject().putString("status", "ok").putString("leader", context.leader()).putValue("result", result));
+              message.reply(new JsonObject().putString("status", "ok").putString("leader", copycat.leader()).putValue("result", result));
             }
           }
         });
