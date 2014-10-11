@@ -2,17 +2,15 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>net.kuujo</groupId>
+    <groupId>net.kuujo.copycat</groupId>
     <artifactId>copycat-parent</artifactId>
     <version>0.4.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>copycat-vertx3</artifactId>
-  <name>CopyCat Vert.x 3</name>
+  <name>Copycat Vert.x 3</name>
 
   <properties>
-    <module.name>${project.groupId}~${project.artifactId}~${project.version}</module.name>
-
     <vertx.version>3.0.0-SNAPSHOT</vertx.version>
   </properties>
 
@@ -24,7 +22,7 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
-      <groupId>net.kuujo</groupId>
+      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat</artifactId>
       <version>${project.version}</version>
     </dependency>

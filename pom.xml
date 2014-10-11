@@ -7,7 +7,7 @@
     <version>7</version>
   </parent>
 
-  <groupId>net.kuujo</groupId>
+  <groupId>net.kuujo.copycat</groupId>
   <artifactId>copycat-parent</artifactId>
   <version>0.4.0-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -68,13 +68,13 @@
   </distributionManagement>
 
   <modules>
-    <module>copycat-core</module>
-    <module>copycat-tcp</module>
-    <module>copycat-http</module>
-    <module>copycat-netty</module>
-    <module>copycat-vertx</module>
-    <module>copycat-vertx3</module>
-    <module>copycat-examples</module>
+    <module>core</module>
+    <module>tcp</module>
+    <module>http</module>
+    <module>netty</module>
+    <module>vertx</module>
+    <module>vertx3</module>
+    <module>examples</module>
   </modules>
 
   <dependencies>
