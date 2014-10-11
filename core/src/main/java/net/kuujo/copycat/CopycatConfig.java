@@ -22,11 +22,17 @@ import net.kuujo.copycat.spi.CorrelationStrategy;
 import net.kuujo.copycat.spi.QuorumStrategy;
 import net.kuujo.copycat.spi.TimerStrategy;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
  * Replica configuration.
@@ -34,6 +40,60 @@ import java.util.concurrent.ThreadFactory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatConfig {
+  public static final String ELECTION_TIMEOUT = "copycat.election.timeout";
+  public static final String HEARTBEAT_INTERVAL = "copycat.heartbeat.interval";
+  public static final String COMMAND_QUORUM = "copycat.command.quorum";
+  public static final String COMMAND_QUORUM_SIZE = "copycat.command.quorum.size";
+  public static final String COMMAND_QUORUM_STRATEGY = "copycat.command.quorum.strategy";
+  public static final String COMMAND_CONSISTENT_EXECUTION = "copycat.command.consistent_execution";
+  public static final String QUERY_QUORUM = "copycat.query.quorum";
+  public static final String QUERY_QUORUM_SIZE = "copycat.query.quorum.size";
+  public static final String QUERY_QUORUM_STRATEGY = "copycat.query.quorum.strategy";
+  public static final String QUERY_CONSISTENT_EXECUTION = "copycat.query.consistent_execution";
+  public static final String MAX_LOG_SIZE = "copycat.log.max_size";
+  public static final String CORRELATION_STRATEGY = "copycat.correlation.strategy";
+  public static final String TIMER_STRATEGY = "copycat.timer.strategy";
+
+  private static class ClassLoaderProcessor<T> implements Function<String, T> {
+    @Override
+    public T apply(String value) {
+      try {
+        return (T) Thread.currentThread().getContextClassLoader().loadClass(value).newInstance();
+      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+
+  @SuppressWarnings("rawtypes")
+  private static class PropertyWrapper<T> {
+    private final Predicate<String> validator;
+    private final Function<String, T> processor;
+    private final Consumer setter;
+
+    private PropertyWrapper(Predicate<String> validator, Function<String, T> processor, Consumer<T> setter) {
+      this.validator = validator;
+      this.processor = processor;
+      this.setter = setter;
+    }
+  }
+
+  private final Map<String, PropertyWrapper<?>> processors = new HashMap<String, PropertyWrapper<?>>() {{
+    put(ELECTION_TIMEOUT, new PropertyWrapper<Long>(null, Long::valueOf, CopycatConfig.this::setElectionTimeout));
+    put(HEARTBEAT_INTERVAL, new PropertyWrapper<Long>(null, Long::valueOf, CopycatConfig.this::setHeartbeatInterval));
+    put(COMMAND_QUORUM, new PropertyWrapper<Boolean>(null, Boolean::parseBoolean, CopycatConfig.this::setRequireCommandQuorum));
+    put(COMMAND_QUORUM_SIZE, new PropertyWrapper<Integer>(null, Integer::valueOf, CopycatConfig.this::setCommandQuorumSize));
+    put(COMMAND_QUORUM_STRATEGY, new PropertyWrapper<QuorumStrategy<?>>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setCommandQuorumStrategy));
+    put(COMMAND_CONSISTENT_EXECUTION, new PropertyWrapper<>(null, Boolean::parseBoolean, CopycatConfig.this::setConsistentCommandExecution));
+    put(QUERY_QUORUM, new PropertyWrapper<Boolean>(null, Boolean::parseBoolean, CopycatConfig.this::setRequireQueryQuorum));
+    put(QUERY_QUORUM_SIZE, new PropertyWrapper<Integer>(null, Integer::valueOf, CopycatConfig.this::setQueryQuorumSize));
+    put(QUERY_QUORUM_STRATEGY, new PropertyWrapper<QuorumStrategy<?>>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setQueryQuorumStrategy));
+    put(QUERY_CONSISTENT_EXECUTION, new PropertyWrapper<>(null, Boolean::parseBoolean, CopycatConfig.this::setConsistentQueryExecution));
+    put(MAX_LOG_SIZE, new PropertyWrapper<Long>(null, Long::valueOf, CopycatConfig.this::setElectionTimeout));
+    put(CORRELATION_STRATEGY, new PropertyWrapper<CorrelationStrategy<?>>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setCorrelationStrategy));
+    put(TIMER_STRATEGY, new PropertyWrapper<TimerStrategy>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setTimerStrategy));
+  }};
+
   private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("config-timer-%s");
   private static final QuorumStrategy<?> DEFAULT_QUORUM_STRATEGY = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
   private static final CorrelationStrategy<?> DEFAULT_CORRELATION_STRATEGY = () -> UUID.randomUUID().toString();
@@ -56,6 +116,30 @@ public class CopycatConfig {
   private int maxLogSize = 32 * 1024^2;
   private CorrelationStrategy<?> correlationStrategy = DEFAULT_CORRELATION_STRATEGY;
   private TimerStrategy timerStrategy = DEFAULT_TIMER_STRATEGY;
+
+  public CopycatConfig() {
+  }
+
+  /**
+   * Constructs a Copycat configuration from properties.
+   *
+   * @param properties Copycat configuration properties.
+   */
+  @SuppressWarnings("unchecked")
+  public CopycatConfig(Properties properties) {
+    for (Map.Entry<String, PropertyWrapper<?>> entry : processors.entrySet()) {
+      String value = properties.getProperty(entry.getKey());
+      if (value != null) {
+        PropertyWrapper<?> property = entry.getValue();
+        if (property.validator != null) {
+          if (!property.validator.test(value)) {
+            throw new CopycatException("Invalid property value for " + entry.getKey());
+          }
+        }
+        property.setter.accept(property.processor.apply(value));
+      }
+    }
+  }
 
   /**
    * Sets the replica election timeout.
