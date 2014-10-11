@@ -15,18 +15,17 @@
  */
 package net.kuujo.copycat.log;
 
+import com.esotericsoftware.kryo.io.ByteBufferInput;
+import com.esotericsoftware.kryo.io.ByteBufferOutput;
+import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.util.Assert;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import com.esotericsoftware.kryo.io.ByteBufferInput;
-import com.esotericsoftware.kryo.io.ByteBufferOutput;
-
-import net.kuujo.copycat.internal.log.CopycatEntry;
-import net.kuujo.copycat.internal.util.Assert;
 
 /**
  * Memory-based log.
@@ -182,17 +181,11 @@ public class InMemoryLog extends BaseLog implements Compactable {
     assertIsOpen();
     if (!log.isEmpty()) {
       for (long i = index + 1; i <= log.lastKey(); i++) {
-        removeEntry(i);
+        byte[] value = log.remove(i);
+        if (value != null) {
+          size -= value.length;
+        }
       }
-    }
-  }
-
-  @Override
-  public synchronized void removeEntry(long index) {
-    assertIsOpen();
-    byte[] value = log.remove(index);
-    if (value != null) {
-      size -= value.length;
     }
   }
 

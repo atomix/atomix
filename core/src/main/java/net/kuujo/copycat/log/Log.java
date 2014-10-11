@@ -163,14 +163,6 @@ public interface Log {
   void removeAfter(long index);
 
   /**
-   * Removes the entry at the given index.
-   *
-   * @param index The index at which to remove the entry.
-   * @throws IllegalStateException if the log is not open
-   */
-  void removeEntry(long index);
-
-  /**
    * Returns the current size of the log.
    *
    * @return The current size of the log.

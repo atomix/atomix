@@ -197,20 +197,6 @@ public abstract class AbstractLogTest {
     assertTrue(log.lastEntry() instanceof ConfigurationEntry);
   }
 
-  public void testRemoveEntry() throws Exception {
-    appendEntries();
-
-    log.removeEntry(1);
-    log.removeEntry(3);
-    log.removeEntry(5);
-
-    assertFalse(log.containsEntry(1));
-    assertFalse(log.containsEntry(3));
-    assertFalse(log.containsEntry(5));
-    assertTrue(log.containsEntry(2));
-    assertTrue(log.containsEntry(4));
-  }
-
   public void testSize() {
     long size = log.size();
     log.appendEntry(new NoOpEntry(1));
