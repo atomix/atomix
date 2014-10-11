@@ -35,27 +35,86 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
- * Replica configuration.
+ * Copycat replica configuration.<p>
+ *
+ * This is the primary configuration for the algorithm underlying Copycat replicas.
+ * By default, this configuration is set up to ensure strong consistency of the state machine.
+ * However, various options allow users to make consistency concessions in return for performance
+ * improvements. The individual method documentation will describe the benefits and drawbacks
+ * of each configuration option.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatConfig {
+
+  /**
+   * Property name for the timeout within which a leader election occurs.
+   */
   public static final String ELECTION_TIMEOUT = "copycat.election.timeout";
+
+  /**
+   * Property name for the interval at which the replica sends heartbeats to other nodes in the cluster.
+   */
   public static final String HEARTBEAT_INTERVAL = "copycat.heartbeat.interval";
+
+  /**
+   * Property name for indicating whether quorums are required for command operations.
+   */
   public static final String COMMAND_QUORUM = "copycat.command.quorum";
+
+  /**
+   * Property name for configuring the command quorum size.
+   */
   public static final String COMMAND_QUORUM_SIZE = "copycat.command.quorum.size";
+
+  /**
+   * Property name for specifying a command quorum strategy implementation.
+   */
   public static final String COMMAND_QUORUM_STRATEGY = "copycat.command.quorum.strategy";
+
+  /**
+   * Property name for indicating whether consistent execution of commands is enabled.
+   */
   public static final String COMMAND_CONSISTENT_EXECUTION = "copycat.command.consistent_execution";
+
+  /**
+   * Property name for indicating whether quorums are required for query operations.
+   */
   public static final String QUERY_QUORUM = "copycat.query.quorum";
+
+  /**
+   * Property name for configuring the query quorum size.
+   */
   public static final String QUERY_QUORUM_SIZE = "copycat.query.quorum.size";
+
+  /**
+   * Property name for specifying a query quorum strategy implementation.
+   */
   public static final String QUERY_QUORUM_STRATEGY = "copycat.query.quorum.strategy";
+
+  /**
+   * Property name for indicating whether consistent execution of queries is enabled.
+   */
   public static final String QUERY_CONSISTENT_EXECUTION = "copycat.query.consistent_execution";
+
+  /**
+   * Property name for specifying the maximum log file size.
+   */
   public static final String MAX_LOG_SIZE = "copycat.log.max_size";
+
+  /**
+   * Property name for specifying a correlation strategy implementation.
+   */
   public static final String CORRELATION_STRATEGY = "copycat.correlation.strategy";
+
+  /**
+   * Property name for specifying a timer strategy implementation.
+   */
   public static final String TIMER_STRATEGY = "copycat.timer.strategy";
 
   private static class ClassLoaderProcessor<T> implements Function<String, T> {
     @Override
+    @SuppressWarnings("unchecked")
     public T apply(String value) {
       try {
         return (T) Thread.currentThread().getContextClassLoader().loadClass(value).newInstance();
@@ -142,9 +201,13 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the replica election timeout.
+   * Sets the replica election timeout.<p>
+   *
+   * This is the timeout within which a vote must occur. When a replica becomes a candidate in an election,
+   * the election timer will be started. If the election timer expires before the election round has completed
+   * (i.e. enough votes were received) then a new election round will begin.
    * 
-   * @param timeout The election timeout.
+   * @param timeout The election timeout in milliseconds.
    * @throws IllegalArgumentException if {@code timeout} is not > 0
    */
   public void setElectionTimeout(long timeout) {
@@ -152,7 +215,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the replica election timeout.
+   * Returns the replica election timeout.<p>
+   *
+   * This is the timeout within which a vote must occur. When a replica becomes a candidate in an election,
+   * the election timer will be started. If the election timer expires before the election round has completed
+   * (i.e. enough votes were received) then a new election round will begin.
    * 
    * @return The election timeout.
    */
@@ -161,9 +228,13 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the replica election timeout, returning the configuration for method chaining.
+   * Sets the replica election timeout, returning the configuration for method chaining.<p>
+   *
+   * This is the timeout within which a vote must occur. When a replica becomes a candidate in an election,
+   * the election timer will be started. If the election timer expires before the election round has completed
+   * (i.e. enough votes were received) then a new election round will begin.
    * 
-   * @param timeout The election timeout.
+   * @param timeout The election timeout in milliseconds.
    * @return The copycat configuration.
    * @throws IllegalArgumentException if {@code timeout} is not > 0
    */
@@ -173,9 +244,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the replica heartbeat interval.
+   * Sets the replica heartbeat interval.<p>
+   *
+   * This is the interval at which the replica sends heartbeat messages to other nodes in the cluster. Note that
+   * this property only applies to leaders as all heartbeats only flow from leader to followers.
    * 
-   * @param interval The interval at which the node should send heartbeat messages.
+   * @param interval The interval at which the node should send heartbeat messages in milliseconds.
    * @throws IllegalArgumentException if {@code interval} is not > 0
    */
   public void setHeartbeatInterval(long interval) {
@@ -183,7 +257,10 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the replica heartbeat interval.
+   * Returns the replica heartbeat interval.<p>
+   *
+   * This is the interval at which the replica sends heartbeat messages to other nodes in the cluster. Note that
+   * this property only applies to leaders as all heartbeats only flow from leader to followers.
    * 
    * @return The replica heartbeat interval.
    */
@@ -192,9 +269,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the replica heartbeat interval, returning the configuration for method chaining.
+   * Sets the replica heartbeat interval, returning the configuration for method chaining.<p>
+   *
+   * This is the interval at which the replica sends heartbeat messages to other nodes in the cluster. Note that
+   * this property only applies to leaders as all heartbeats only flow from leader to followers.
    * 
-   * @param interval The interval at which the node should send heartbeat messages.
+   * @param interval The interval at which the node should send heartbeat messages in milliseconds.
    * @return The replica configuration.
    * @throws IllegalArgumentException if {@code interval} is not > 0
    */
@@ -204,7 +284,14 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets whether a quorum replication is required for command operations.
+   * Sets whether a quorum replication is required for command operations.<p>
+   *
+   * If command quorums are disabled, the leader will forgo replicating individual commands to followers
+   * during writes. When a command is received by the leader, it will immediately log the command and return
+   * the result, eventually replicating the command asynchronously. <em>Disabling command quorums can cause
+   * inconsistency of state</em> between replicas. While disabling quorums will allow a leader to remain
+   * available even while a majority of the cluster is unavailable, once the cluster is healed data may
+   * be overwritten. Thus it is strongly recommended that command quorums not be disabled.
    * 
    * @param require Indicates whether a quorum replication should be required for commands.
    */
@@ -214,7 +301,14 @@ public class CopycatConfig {
 
   /**
    * Returns a boolean indicating whether a quorum replication is required for command
-   * operations.
+   * operations.<p>
+   *
+   * If command quorums are disabled, the leader will forgo replicating individual commands to followers
+   * during writes. When a command is received by the leader, it will immediately log the command and return
+   * the result, eventually replicating the command asynchronously. <em>Disabling command quorums can cause
+   * inconsistency of state</em> between replicas. While disabling quorums will allow a leader to remain
+   * available even while a majority of the cluster is unavailable, once the cluster is healed data may
+   * be overwritten. Thus it is strongly recommended that command quorums not be disabled.
    * 
    * @return Indicates whether a quorum replication is required for command operations.
    */
@@ -224,7 +318,14 @@ public class CopycatConfig {
 
   /**
    * Sets whether a quorum replication is required for command operations, returning the
-   * configuration for method chaining.
+   * configuration for method chaining.<p>
+   *
+   * If command quorums are disabled, the leader will forgo replicating individual commands to followers
+   * during writes. When a command is received by the leader, it will immediately log the command and return
+   * the result, eventually replicating the command asynchronously. <em>Disabling command quorums can cause
+   * inconsistency of state</em> between replicas. While disabling quorums will allow a leader to remain
+   * available even while a majority of the cluster is unavailable, once the cluster is healed data may
+   * be overwritten. Thus it is strongly recommended that command quorums not be disabled.
    * 
    * @param require Indicates whether a quorum replication should be required for commands.
    * @return The Copycat configuration.
@@ -235,10 +336,14 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the required command quorum size.
+   * Sets the fixed required command quorum size.<p>
+   *
+   * The quorum size is the number of replicas to which a command must be replicated before it will be
+   * considered committed. Rather than calculating a quorum size based on the cluster configuration, users
+   * can set a fixed quorum size for commands.
    *
    * @param quorumSize The required command quorum size.
-   * @throws IllegalArgumentException if {@code quorumSize} is not > -1
+   * @throws IllegalArgumentException if {@code quorumSize} is not >= -1
    */
   public void setCommandQuorumSize(int quorumSize) {
     this.commandQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
@@ -246,16 +351,24 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the required command quorum size.
+   * Returns the required command quorum size.<p>
    *
-   * @return The required command quorum size. Defaults to <code>null</code>
+   * The quorum size is the number of replicas to which a command must be replicated before it will be
+   * considered committed. Rather than calculating a quorum size based on the cluster configuration, users
+   * can set a fixed quorum size for commands.
+   *
+   * @return The required command quorum size. Defaults to <code>-1</code>
    */
   public int getCommandQuorumSize() {
     return commandQuorumSize;
   }
 
   /**
-   * Sets the required command quorum size, returning the configuration for method chaining.
+   * Sets the required command quorum size, returning the configuration for method chaining.<p>
+   *
+   * The quorum size is the number of replicas to which a command must be replicated before it will be
+   * considered committed. Rather than calculating a quorum size based on the cluster configuration, users
+   * can set a fixed quorum size for commands.
    *
    * @param quorumSize The required command quorum size.
    * @return The copycat configuration.
@@ -268,7 +381,14 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the cluster command quorum strategy.
+   * Sets the cluster command quorum strategy.<p>
+   *
+   * The quorum strategy is used by the replica to calculate the number of nodes to which a command must be
+   * replicated before it can be considered committed. By default, the calculated quorum size is
+   * <code>Math.min(clusterSize / 2) + 1</code> - commands must be replicated to a majority of the cluster in
+   * order to be considered committed. <em>It is strongly recommended that quorum sizes remain at least
+   * greater than half the cluster size.</em> Reducing the quorum size to less than a majority of the cluster
+   * membership may result in data loss.
    *
    * @param strategy The cluster command quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
@@ -278,7 +398,14 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the cluster command quorum strategy.
+   * Returns the cluster command quorum strategy.<p>
+   *
+   * The quorum strategy is used by the replica to calculate the number of nodes to which a command must be
+   * replicated before it can be considered committed. By default, the calculated quorum size is
+   * <code>Math.min(clusterSize / 2) + 1</code> - commands must be replicated to a majority of the cluster in
+   * order to be considered committed. <em>It is strongly recommended that quorum sizes remain at least
+   * greater than half the cluster size.</em> Reducing the quorum size to less than a majority of the cluster
+   * membership may result in data loss.
    *
    * @return The cluster command quorum calculation strategy.
    */
@@ -288,7 +415,14 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the cluster command quorum strategy, returning the configuration for method chaining.
+   * Sets the cluster command quorum strategy, returning the configuration for method chaining.<p>
+   *
+   * The quorum strategy is used by the replica to calculate the number of nodes to which a command must be
+   * replicated before it can be considered committed. By default, the calculated quorum size is
+   * <code>Math.min(clusterSize / 2) + 1</code> - commands must be replicated to a majority of the cluster in
+   * order to be considered committed. <em>It is strongly recommended that quorum sizes remain at least
+   * greater than half the cluster size.</em> Reducing the quorum size to less than a majority of the cluster
+   * membership may result in data loss.
    *
    * @param strategy The cluster command quorum calculation strategy.
    * @return The copycat configuration.
@@ -300,7 +434,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets whether to use consistent command execution.
+   * Sets whether to use consistent command execution.<p>
+   *
+   * Consistent command execution configures a high level consistency behavior. If consistent command execution
+   * is enabled, command quorums will be enabled and the command quorum size will always be a majority of the cluster.
+   * This ensures the strongest guarantees of consistency for operations that contribute to the state machine state.
    *
    * @param consistent Whether to use consistent command execution.
    */
@@ -308,6 +446,7 @@ public class CopycatConfig {
     this.consistentCommandExecution = consistent;
     if (consistent) {
       setRequireCommandQuorum(true);
+      this.commandQuorumSize = -1;
       this.commandQuorumStrategy = DEFAULT_QUORUM_STRATEGY;
     } else {
       setRequireCommandQuorum(false);
@@ -315,7 +454,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns whether consistent command execution is enabled.
+   * Returns whether consistent command execution is enabled.<p>
+   *
+   * Consistent command execution configures a high level consistency behavior. If consistent command execution
+   * is enabled, command quorums will be enabled and the command quorum size will always be a majority of the cluster.
+   * This ensures the strongest guarantees of consistency for operations that contribute to the state machine state.
    *
    * @return Indicates whether consistent command execution is enabled.
    */
@@ -335,7 +478,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets whether a quorum synchronization is required for query operations.
+   * Sets whether a quorum synchronization is required for query operations.<p>
+   *
+   * This property indicates whether the leader must synchronize with followers during read-only operations.
+   * If query quorums are enabled, when the leader receives a read-only request it will ping a quorum of the
+   * cluster prior to responding with the read result. Quorums can be configured via static configuration or
+   * the strategy pattern.
    *
    * @param require Indicates whether a quorum synchronization should be required for query
    *          operations.
@@ -346,7 +494,12 @@ public class CopycatConfig {
 
   /**
    * Returns a boolean indicating whether a quorum synchronization is required for query
-   * operations.
+   * operations.<p>
+   *
+   * This property indicates whether the leader must synchronize with followers during read-only operations.
+   * If query quorums are enabled, when the leader receives a read-only request it will ping a quorum of the
+   * cluster prior to responding with the read result. Quorums can be configured via static configuration or
+   * the strategy pattern.
    *
    * @return Indicates whether a quorum synchronization is required for query operations.
    */
@@ -356,7 +509,12 @@ public class CopycatConfig {
 
   /**
    * Sets whether a quorum synchronization is required for query operations, returning
-   * the configuration for method chaining.
+   * the configuration for method chaining.<p>
+   *
+   * This property indicates whether the leader must synchronize with followers during read-only operations.
+   * If query quorums are enabled, when the leader receives a read-only request it will ping a quorum of the
+   * cluster prior to responding with the read result. Quorums can be configured via static configuration or
+   * the strategy pattern.
    *
    * @param require Indicates whether a quorum synchronization should be required for query
    *          operations.
@@ -368,7 +526,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the required query quorum size.
+   * Sets the required query quorum size.<p>
+   *
+   * The quorum size is the number of replicas that must be pinged during a read-only query operation. Reducing the
+   * quorum size for query operations can help improve read performance, but there is a slightly greater potential
+   * for inconsistent reads.
    *
    * @param quorumSize The required query quorum size.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
@@ -379,7 +541,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the required query quorum size.
+   * Returns the required query quorum size.<p>
+   *
+   * The quorum size is the number of replicas that must be pinged during a read-only query operation. Reducing the
+   * quorum size for query operations can help improve read performance, but there is a slightly greater potential
+   * for inconsistent reads.
    *
    * @return The required query quorum size. Defaults to <code>null</code>
    */
@@ -388,7 +554,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the required query quorum size, returning the configuration for method chaining.
+   * Sets the required query quorum size, returning the configuration for method chaining.<p>
+   *
+   * The quorum size is the number of replicas that must be pinged during a read-only query operation. Reducing the
+   * quorum size for query operations can help improve read performance, but there is a slightly greater potential
+   * for inconsistent reads.
    *
    * @param quorumSize The required query quorum size.
    * @return The copycat configuration.
@@ -401,7 +571,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the cluster query quorum strategy.
+   * Sets the cluster query quorum strategy.<p>
+   *
+   * The quorum size is the number of replicas that must be pinged during a read-only query operation. Using the
+   * strategy pattern, users can provide dynamic quorum sizes based on the mutable cluster configuration. By default,
+   * the query quorum size is a majority of the cluster. Reducing the quorum size for query operations can help
+   * improve read performance, but there is a slightly greater potential for inconsistent reads.
    *
    * @param strategy The cluster query quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
@@ -411,7 +586,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the cluster query quorum strategy.
+   * Returns the cluster query quorum strategy.<p>
+   *
+   * The quorum size is the number of replicas that must be pinged during a read-only query operation. Using the
+   * strategy pattern, users can provide dynamic quorum sizes based on the mutable cluster configuration. By default,
+   * the query quorum size is a majority of the cluster. Reducing the quorum size for query operations can help
+   * improve read performance, but there is a slightly greater potential for inconsistent reads.
    *
    * @return The cluster query quorum calculation strategy.
    */
@@ -421,7 +601,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the cluster query quorum strategy, returning the configuration for method chaining.
+   * Sets the cluster query quorum strategy, returning the configuration for method chaining.<p>
+   *
+   * The quorum size is the number of replicas that must be pinged during a read-only query operation. Using the
+   * strategy pattern, users can provide dynamic quorum sizes based on the mutable cluster configuration. By default,
+   * the query quorum size is a majority of the cluster. Reducing the quorum size for query operations can help
+   * improve read performance, but there is a slightly greater potential for inconsistent reads.
    *
    * @param strategy The cluster query quorum calculation strategy.
    * @return The Copycat configuration.
@@ -433,7 +618,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets whether to use consistent query execution.
+   * Sets whether to use consistent query execution.<p>
+   *
+   * Normally, all command <em>and</em> query operations must go through the cluster leader. However, disabling
+   * consistent query execution allows clients to perform query operations on followers. This can dramatically
+   * increase performance in read-heavy systems at the risk of exposing stale data to the user.
    *
    * @param consistent Whether to use consistent query execution.
    */
@@ -448,7 +637,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns whether consistent query execution is enabled.
+   * Returns whether consistent query execution is enabled.<p>
+   *
+   * Normally, all command <em>and</em> query operations must go through the cluster leader. However, disabling
+   * consistent query execution allows clients to perform query operations on followers. This can dramatically
+   * increase performance in read-heavy systems at the risk of exposing stale data to the user.
    *
    * @return Indicates whether consistent query execution is enabled.
    */
@@ -457,7 +650,11 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets whether to use consistent query execution, returning the configuration for method chaining.
+   * Sets whether to use consistent query execution, returning the configuration for method chaining.<p>
+   *
+   * Normally, all command <em>and</em> query operations must go through the cluster leader. However, disabling
+   * consistent query execution allows clients to perform query operations on followers. This can dramatically
+   * increase performance in read-heavy systems at the risk of exposing stale data to the user.
    *
    * @param consistent Whether to use consistent query execution.
    * @return The Copycat configuration.
@@ -468,7 +665,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the maximum log size.
+   * Sets the maximum log size.<p>
+   *
+   * This is the maximum size to which the log can grow (in bytes) before Copycat will compact the log. Once the log
+   * has grown to the given size, the replica will take a snapshot of the state machine state by calling
+   * {@link StateMachine#takeSnapshot()}, append the snapshot to the log, and remove all entries prior to the snapshot.
+   * This allows Copycat's logs to expand infinitely.
    *
    * @param maxSize The maximum local log size.
    * @throws IllegalArgumentException if {@code maxSize} is not > 0
@@ -478,7 +680,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the maximum log size.
+   * Returns the maximum log size.<p>
+   *
+   * This is the maximum size to which the log can grow (in bytes) before Copycat will compact the log. Once the log
+   * has grown to the given size, the replica will take a snapshot of the state machine state by calling
+   * {@link StateMachine#takeSnapshot()}, append the snapshot to the log, and remove all entries prior to the snapshot.
+   * This allows Copycat's logs to expand infinitely.
    *
    * @return The maximum local log size.
    */
@@ -487,7 +694,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the maximum log size, returning the configuration for method chaining.
+   * Sets the maximum log size, returning the configuration for method chaining.<p>
+   *
+   * This is the maximum size to which the log can grow (in bytes) before Copycat will compact the log. Once the log
+   * has grown to the given size, the replica will take a snapshot of the state machine state by calling
+   * {@link StateMachine#takeSnapshot()}, append the snapshot to the log, and remove all entries prior to the snapshot.
+   * This allows Copycat's logs to expand infinitely.
    *
    * @param maxSize The maximum local log size.
    * @return The replica configuration.
@@ -499,7 +711,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the message correlation strategy.
+   * Sets the message correlation strategy.<p>
+   *
+   * This is a strategy for creating unique correlation identifiers for Copycat's internal
+   * {@link net.kuujo.copycat.protocol.Request} and {@link net.kuujo.copycat.protocol.Response} instances. By
+   * default, Copycat uses a {@link java.util.UUID} based correlation strategy, but simple counters are more
+   * efficient and should work fine with most protocol implementations.
    *
    * @param strategy The message correlation strategy.
    * @throws NullPointerException if {@code strategy} is null
@@ -509,7 +726,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the message correlation strategy.
+   * Returns the message correlation strategy.<p>
+   *
+   * This is a strategy for creating unique correlation identifiers for Copycat's internal
+   * {@link net.kuujo.copycat.protocol.Request} and {@link net.kuujo.copycat.protocol.Response} instances. By
+   * default, Copycat uses a {@link java.util.UUID} based correlation strategy, but simple counters are more
+   * efficient and should work fine with most protocol implementations.
    *
    * @return The message correlation strategy.
    */
@@ -518,7 +740,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the message correlation strategy, returning the configuration for method chaining.
+   * Sets the message correlation strategy, returning the configuration for method chaining.<p>
+   *
+   * This is a strategy for creating unique correlation identifiers for Copycat's internal
+   * {@link net.kuujo.copycat.protocol.Request} and {@link net.kuujo.copycat.protocol.Response} instances. By
+   * default Copycat uses a {@link java.util.UUID} based correlation strategy, but simple counters are more
+   * efficient and should work fine with most protocol implementations.
    *
    * @param strategy The message correlation strategy.
    * @return The copycat configuration.
@@ -530,7 +757,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the timer strategy.
+   * Sets the timer strategy.<p>
+   *
+   * This is the timer on which Copycat schedules elections, heartbeats, and other time-dependent operations. By
+   * default Copycat uses a {@link java.util.concurrent.ScheduledExecutorService} to schedule operations. However,
+   * asynchronous environments such as Netty have their own event loop based timers, and the timer strategy can be
+   * used to run Copycat timers on the event loop.
    *
    * @param strategy The timer strategy.
    * @throws NullPointerException if {@code strategy} is null
@@ -540,7 +772,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the timer strategy.
+   * Returns the timer strategy.<p>
+   *
+   * This is the timer on which Copycat schedules elections, heartbeats, and other time-dependent operations. By
+   * default Copycat uses a {@link java.util.concurrent.ScheduledExecutorService} to schedule operations. However,
+   * asynchronous environments such as Netty have their own event loop based timers, and the timer strategy can be
+   * used to run Copycat timers on the event loop.
    *
    * @return The timer strategy.
    */
@@ -549,7 +786,12 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the timer strategy, returning the configuration for method chaining.
+   * Sets the timer strategy, returning the configuration for method chaining.<p>
+   *
+   * This is the timer on which Copycat schedules elections, heartbeats, and other time-dependent operations. By
+   * default Copycat uses a {@link java.util.concurrent.ScheduledExecutorService} to schedule operations. However,
+   * asynchronous environments such as Netty have their own event loop based timers, and the timer strategy can be
+   * used to run Copycat timers on the event loop.
    *
    * @param strategy The timer strategy.
    * @return The copycat configuration.
