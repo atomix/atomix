@@ -76,7 +76,7 @@ public abstract class AbstractLogTest {
   }
 
   @Test(expectedExceptions = IllegalStateException.class)
-  public void shouldThrowOnAppendEntryWhenClosed() throws Exception {
+  public void testThrowsIllegalStateExceptionWhenClosed() throws Exception {
     log.close();
     log.appendEntry(new NoOpEntry(1));
   }

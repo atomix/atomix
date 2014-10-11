@@ -45,15 +45,14 @@ public class EntryTest {
 
   @Test(dataProvider = "entryProvider")
   @SuppressWarnings({"rawtypes"})
-  public <T extends Entry> void shouldSerializeAndDeserializeEntry(Class<T> entryType, T entry)
+  public <T extends Entry> void testSerializeAndDeserializeEntry(Class<T> entryType, T entry)
     throws Exception {
     Kryo kryo = new Kryo();
     ByteBuffer buffer = ByteBuffer.allocate(4096);
     Output output = new ByteBufferOutput(buffer);
     Input input = new ByteBufferInput(buffer);
     Class<? extends Serializer> serializer = entryType.getAnnotation(EntryType.class).serializer();
-    kryo.register(entryType, serializer.newInstance(), entryType.getAnnotation(EntryType.class)
-      .id());
+    kryo.register(entryType, serializer.newInstance(), entryType.getAnnotation(EntryType.class) .id());
     kryo.writeClassAndObject(output, entry);
     T result = (T) kryo.readClassAndObject(input);
     Assert.assertEquals(entry, result);
