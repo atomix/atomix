@@ -17,7 +17,7 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -34,7 +34,7 @@ public class AsyncCopycat extends AbstractCopycat {
   /**
    * Asynchronous Copycat builder.
    */
-  public static class Builder extends AbstractCopycat.Builder<AsyncCopycat, Protocol<?>> {
+  public static class Builder extends AbstractCopycat.Builder<AsyncCopycat, AsyncProtocol<?>> {
     public Builder() {
       super((builder) -> new AsyncCopycat(new StateContext(builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config), builder.cluster, builder.config));
     }
