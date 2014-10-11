@@ -35,22 +35,27 @@ import java.util.concurrent.ThreadFactory;
  */
 public class CopycatConfig {
   private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("config-timer-%s");
-  
+  private static final QuorumStrategy<?> DEFAULT_QUORUM_STRATEGY = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
+  private static final CorrelationStrategy<?> DEFAULT_CORRELATION_STRATEGY = () -> UUID.randomUUID().toString();
+
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
+  @SuppressWarnings("unchecked")
+  private final TimerStrategy DEFAULT_TIMER_STRATEGY = (task, delay, unit) -> (ScheduledFuture<Void>) scheduler.schedule(task, delay, unit);
   private long electionTimeout = 2000;
   private long heartbeatInterval = 500;
   private boolean requireCommandQuorum = true;
   private int commandQuorumSize = -1;
   @SuppressWarnings("rawtypes")
-  private QuorumStrategy commandQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
-  private int maxLogSize = 32 * 1024^2;
+  private QuorumStrategy commandQuorumStrategy = DEFAULT_QUORUM_STRATEGY;
+  private boolean consistentCommandExecution = true;
   private boolean requireQueryQuorum = true;
   private int queryQuorumSize = -1;
   @SuppressWarnings("rawtypes")
-  private QuorumStrategy queryQuorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
-  private CorrelationStrategy<?> correlationStrategy = () -> UUID.randomUUID().toString();
-  @SuppressWarnings("unchecked")
-  private TimerStrategy timerStrategy = (task, delay, unit) -> (ScheduledFuture<Void>) scheduler.schedule(task, delay, unit);
+  private QuorumStrategy queryQuorumStrategy = DEFAULT_QUORUM_STRATEGY;
+  private boolean consistentQueryExecution = true;
+  private int maxLogSize = 32 * 1024^2;
+  private CorrelationStrategy<?> correlationStrategy = DEFAULT_CORRELATION_STRATEGY;
+  private TimerStrategy timerStrategy = DEFAULT_TIMER_STRATEGY;
 
   /**
    * Sets the replica election timeout.
@@ -115,40 +120,40 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets whether a quorum replication is required for write operations.
+   * Sets whether a quorum replication is required for command operations.
    * 
-   * @param require Indicates whether a quorum replication should be required for writes.   
+   * @param require Indicates whether a quorum replication should be required for commands.
    */
   public void setRequireCommandQuorum(boolean require) {
     this.requireCommandQuorum = require;
   }
 
   /**
-   * Returns a boolean indicating whether a quorum replication is required for write
+   * Returns a boolean indicating whether a quorum replication is required for command
    * operations.
    * 
-   * @return Indicates whether a quorum replication is required for write operations.
+   * @return Indicates whether a quorum replication is required for command operations.
    */
   public boolean isRequireCommandQuorum() {
     return requireCommandQuorum;
   }
 
   /**
-   * Sets whether a quorum replication is required for write operations, returning the
+   * Sets whether a quorum replication is required for command operations, returning the
    * configuration for method chaining.
    * 
-   * @param require Indicates whether a quorum replication should be required for writes.
-   * @return The replica configuration.
+   * @param require Indicates whether a quorum replication should be required for commands.
+   * @return The Copycat configuration.
    */
-  public CopycatConfig withRequireWriteQuorum(boolean require) {
+  public CopycatConfig withRequireCommandQuorum(boolean require) {
     this.requireCommandQuorum = require;
     return this;
   }
 
   /**
-   * Sets the required write quorum size.
+   * Sets the required command quorum size.
    *
-   * @param quorumSize The required write quorum size.
+   * @param quorumSize The required command quorum size.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public void setCommandQuorumSize(int quorumSize) {
@@ -157,64 +162,31 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the required write quorum size.
+   * Returns the required command quorum size.
    *
-   * @return The required write quorum size. Defaults to <code>null</code>
+   * @return The required command quorum size. Defaults to <code>null</code>
    */
   public int getCommandQuorumSize() {
     return commandQuorumSize;
   }
 
   /**
-   * Sets the required write quorum size, returning the configuration for method chaining.
+   * Sets the required command quorum size, returning the configuration for method chaining.
    *
-   * @param quorumSize The required write quorum size.
+   * @param quorumSize The required command quorum size.
    * @return The copycat configuration.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
-  public CopycatConfig withWriteQuorumSize(int quorumSize) {
+  public CopycatConfig withCommandQuorumSize(int quorumSize) {
     this.commandQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
     this.commandQuorumStrategy = (config) -> commandQuorumSize;
     return this;
   }
 
   /**
-   * Sets whether a quorum synchronization is required for read operations.
-   * 
-   * @param require Indicates whether a quorum synchronization should be required for read
-   *          operations.
-   */
-  public void setRequireQueryQuorum(boolean require) {
-    this.requireQueryQuorum = require;
-  }
-
-  /**
-   * Returns a boolean indicating whether a quorum synchronization is required for read
-   * operations.
-   * 
-   * @return Indicates whether a quorum synchronization is required for read operations.
-   */
-  public boolean isRequireQueryQuorum() {
-    return requireQueryQuorum;
-  }
-
-  /**
-   * Sets whether a quorum synchronization is required for read operations, returning
-   * the configuration for method chaining.
-   * 
-   * @param require Indicates whether a quorum synchronization should be required for read
-   *          operations.
-   * @return The replica configuration.
-   */
-  public CopycatConfig withRequireReadQuorum(boolean require) {
-    this.requireQueryQuorum = require;
-    return this;
-  }
-
-  /**
-   * Sets the cluster write quorum strategy.
+   * Sets the cluster command quorum strategy.
    *
-   * @param strategy The cluster write quorum calculation strategy.
+   * @param strategy The cluster command quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
   public void setCommandQuorumStrategy(QuorumStrategy<?> strategy) {
@@ -222,9 +194,9 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the cluster write quorum strategy.
+   * Returns the cluster command quorum strategy.
    *
-   * @return The cluster write quorum calculation strategy.
+   * @return The cluster command quorum calculation strategy.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public <C extends Cluster> QuorumStrategy<C> getCommandQuorumStrategy() {
@@ -232,21 +204,89 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the cluster write quorum strategy, returning the configuration for method chaining.
+   * Sets the cluster command quorum strategy, returning the configuration for method chaining.
    *
-   * @param strategy The cluster write quorum calculation strategy.
+   * @param strategy The cluster command quorum calculation strategy.
    * @return The copycat configuration.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public CopycatConfig withWriteQuorumStrategy(QuorumStrategy<?> strategy) {
+  public CopycatConfig withCommandQuorumStrategy(QuorumStrategy<?> strategy) {
     this.commandQuorumStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
 
   /**
-   * Sets the required read quorum size.
+   * Sets whether to use consistent command execution.
    *
-   * @param quorumSize The required read quorum size.
+   * @param consistent Whether to use consistent command execution.
+   */
+  public void setConsistentCommandExecution(boolean consistent) {
+    this.consistentCommandExecution = consistent;
+    if (consistent) {
+      setRequireCommandQuorum(true);
+      this.commandQuorumStrategy = DEFAULT_QUORUM_STRATEGY;
+    } else {
+      setRequireCommandQuorum(false);
+    }
+  }
+
+  /**
+   * Returns whether consistent command execution is enabled.
+   *
+   * @return Indicates whether consistent command execution is enabled.
+   */
+  public boolean isConsistentCommandExecution() {
+    return consistentCommandExecution;
+  }
+
+  /**
+   * Sets whether to use consistent command execution, returning the configuration for method chaining.
+   *
+   * @param consistent Whether to use consistent command execution.
+   * @return The Copycat configuration.
+   */
+  public CopycatConfig withConsistentCommandExecution(boolean consistent) {
+    setConsistentCommandExecution(consistent);
+    return this;
+  }
+
+  /**
+   * Sets whether a quorum synchronization is required for query operations.
+   *
+   * @param require Indicates whether a quorum synchronization should be required for query
+   *          operations.
+   */
+  public void setRequireQueryQuorum(boolean require) {
+    this.requireQueryQuorum = require;
+  }
+
+  /**
+   * Returns a boolean indicating whether a quorum synchronization is required for query
+   * operations.
+   *
+   * @return Indicates whether a quorum synchronization is required for query operations.
+   */
+  public boolean isRequireQueryQuorum() {
+    return requireQueryQuorum;
+  }
+
+  /**
+   * Sets whether a quorum synchronization is required for query operations, returning
+   * the configuration for method chaining.
+   *
+   * @param require Indicates whether a quorum synchronization should be required for query
+   *          operations.
+   * @return The replica configuration.
+   */
+  public CopycatConfig withRequireQueryQuorum(boolean require) {
+    this.requireQueryQuorum = require;
+    return this;
+  }
+
+  /**
+   * Sets the required query quorum size.
+   *
+   * @param quorumSize The required query quorum size.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
   public void setQueryQuorumSize(int quorumSize) {
@@ -255,31 +295,31 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the required read quorum size.
+   * Returns the required query quorum size.
    *
-   * @return The required read quorum size. Defaults to <code>null</code>
+   * @return The required query quorum size. Defaults to <code>null</code>
    */
   public int getQueryQuorumSize() {
     return queryQuorumSize;
   }
 
   /**
-   * Sets the required read quorum size, returning the configuration for method chaining.
+   * Sets the required query quorum size, returning the configuration for method chaining.
    *
-   * @param quorumSize The required read quorum size.
+   * @param quorumSize The required query quorum size.
    * @return The copycat configuration.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
-  public CopycatConfig withReadQuorumSize(int quorumSize) {
+  public CopycatConfig withQueryQuorumSize(int quorumSize) {
     this.queryQuorumSize = Assert.arg(quorumSize, quorumSize > -1, "Quorum size must be -1 or greater");
     this.queryQuorumStrategy = (config) -> queryQuorumSize;
     return this;
   }
 
   /**
-   * Sets the cluster read quorum strategy.
+   * Sets the cluster query quorum strategy.
    *
-   * @param strategy The cluster read quorum calculation strategy.
+   * @param strategy The cluster query quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
   public void setQueryQuorumStrategy(QuorumStrategy<?> strategy) {
@@ -287,9 +327,9 @@ public class CopycatConfig {
   }
 
   /**
-   * Returns the cluster read quorum strategy.
+   * Returns the cluster query quorum strategy.
    *
-   * @return The cluster read quorum calculation strategy.
+   * @return The cluster query quorum calculation strategy.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public <C extends Cluster> QuorumStrategy<C> getQueryQuorumStrategy() {
@@ -297,14 +337,49 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the cluster read quorum strategy, returning the configuration for method chaining.
+   * Sets the cluster query quorum strategy, returning the configuration for method chaining.
    *
-   * @param strategy The cluster read quorum calculation strategy.
+   * @param strategy The cluster query quorum calculation strategy.
    * @return The copycat configuration.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public CopycatConfig withReadQuorumStrategy(QuorumStrategy<?> strategy) {
+  public CopycatConfig query(QuorumStrategy<?> strategy) {
     this.queryQuorumStrategy = Assert.isNotNull(strategy, "strategy");
+    return this;
+  }
+
+  /**
+   * Sets whether to use consistent query execution.
+   *
+   * @param consistent Whether to use consistent query execution.
+   */
+  public void setConsistentQueryExecution(boolean consistent) {
+    this.consistentQueryExecution = consistent;
+    if (consistent) {
+      setRequireQueryQuorum(true);
+      this.queryQuorumStrategy = DEFAULT_QUORUM_STRATEGY;
+    } else {
+      setRequireQueryQuorum(false);
+    }
+  }
+
+  /**
+   * Returns whether consistent query execution is enabled.
+   *
+   * @return Indicates whether consistent query execution is enabled.
+   */
+  public boolean isConsistentQueryExecution() {
+    return consistentQueryExecution;
+  }
+
+  /**
+   * Sets whether to use consistent query execution, returning the configuration for method chaining.
+   *
+   * @param consistent Whether to use consistent query execution.
+   * @return The Copycat configuration.
+   */
+  public CopycatConfig withConsistentQueryExecution(boolean consistent) {
+    setConsistentQueryExecution(consistent);
     return this;
   }
 
