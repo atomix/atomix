@@ -15,21 +15,19 @@
  */
 package net.kuujo.copycat;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.jodah.concurrentunit.Waiter;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.log.MemoryMappedFileLog;
+import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-
 import org.testng.annotations.Test;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Copycat test.
@@ -81,8 +79,7 @@ public abstract class AbstractCopycatTest extends ConcurrentTestCase {
           .add(AsyncCopycat
               .builder()
               .withStateMachine(new TestStateMachine())
-              .withLog(
-                  new MemoryMappedFileLog(String.format("target/test-logs/%s", UUID.randomUUID())))
+              .withLog(new InMemoryLog())
               .withCluster(new Cluster<Member>(config)).withProtocol(protocol).build());
     }
     return instances;

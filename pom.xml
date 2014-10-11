@@ -74,6 +74,7 @@
     <module>netty</module>
     <module>vertx</module>
     <module>vertx3</module>
+    <module>chronicle</module>
     <module>examples</module>
   </modules>
 
