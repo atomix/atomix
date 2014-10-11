@@ -26,23 +26,17 @@ import net.kuujo.copycat.event.StateChangeEvent;
 import net.kuujo.copycat.event.StopEvent;
 import net.kuujo.copycat.internal.StateMachineExecutor;
 import net.kuujo.copycat.internal.cluster.ClusterManager;
-import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.AsyncRequestHandler;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
 import net.kuujo.copycat.spi.protocol.BaseProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -67,9 +61,6 @@ public final class StateContext {
   private final DefaultEventHandlers events = new DefaultEventHandlers();
   private volatile StateController currentState;
   private volatile String currentLeader;
-  private AsyncProtocolClient leaderClient;
-  private final List<Runnable> leaderConnectCallbacks = new ArrayList<>(50);
-  private boolean leaderConnected;
   private volatile long currentTerm;
   private volatile String lastVotedFor;
   private volatile long commitIndex = 0;
@@ -255,31 +246,12 @@ public final class StateContext {
 
     if (currentLeader == null && leader != null) {
       currentLeader = leader;
-      events.leaderElect().handle(
-          new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
     } else if (currentLeader != null && leader != null && !currentLeader.equals(leader)) {
       currentLeader = leader;
-      events.leaderElect().handle(
-          new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
+      events.leaderElect().handle(new LeaderElectEvent(currentTerm, clusterManager.node(currentLeader).member()));
     } else {
       currentLeader = leader;
-    }
-
-    // When a new leader is elected, we create a client and connect to the leader.
-    // Once this node is connected to the leader we can begin submitting commands.
-    if (leader == null) {
-      leaderConnected = false;
-      leaderClient = null;
-    } else if (!isLeader()) {
-      leaderConnected = false;
-      leaderClient = ((RemoteNode<?>) clusterManager.node(currentLeader)).client();
-      leaderClient.connect().thenRun(() -> {
-        leaderConnected = true;
-        runLeaderConnectCallbacks();
-      });
-    } else {
-      leaderConnected = true;
-      runLeaderConnectCallbacks();
     }
     return this;
   }
@@ -291,18 +263,6 @@ public final class StateContext {
    */
   public boolean isLeader() {
     return currentLeader != null && currentLeader.equals(clusterManager.localNode().member().id());
-  }
-
-  /**
-   * Runs leader connect callbacks.
-   */
-  private void runLeaderConnectCallbacks() {
-    Iterator<Runnable> iterator = leaderConnectCallbacks.iterator();
-    while (iterator.hasNext()) {
-      Runnable runnable = iterator.next();
-      iterator.remove();
-      runnable.run();
-    }
   }
 
   /**
@@ -390,44 +350,23 @@ public final class StateContext {
    */
   @SuppressWarnings("unchecked")
   public <R> CompletableFuture<R> submit(final String operation, final Object... args) {
-    CompletableFuture<R> future = new CompletableFuture<>();
-    if (currentLeader == null) {
-      future.completeExceptionally(new CopycatException("No leader available"));
-    } else if (!leaderConnected) {
-      leaderConnectCallbacks.add(() -> {
-        AsyncRequestHandler handler = leaderClient != null ? leaderClient : currentState;
-        handler.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args)))
-            .whenComplete((result, error) -> {
-              if (error != null) {
-                future.completeExceptionally(error);
-              } else {
-                if (result.status().equals(Response.Status.OK)) {
-                  future.complete((R) result.result());
-                } else {
-                  future.completeExceptionally(result.error());
-                }
-              }
-            });
-      });
-    } else {
-      executor.execute(() -> {
-        AsyncRequestHandler handler =
-            currentLeader.equals(clusterManager.localNode().member().id()) ? currentState
-                : leaderClient;
-        handler.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args)))
-            .whenComplete((result, error) -> {
-              if (error != null) {
-                future.completeExceptionally(error);
-              } else {
-                if (result.status().equals(Response.Status.OK)) {
-                  future.complete((R) result.result());
-                } else {
-                  future.completeExceptionally(result.error());
-                }
-              }
-            });
-      });
+    final CompletableFuture<R> future = new CompletableFuture<>();
+    if (currentState == null) {
+      future.completeExceptionally(new CopycatException("Invalid copycat state"));
+      return future;
     }
+
+    currentState.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args))).whenComplete((result, error) -> {
+      if (error != null) {
+        future.completeExceptionally(error);
+      } else {
+        if (result.status().equals(Response.Status.OK)) {
+          future.complete((R) result.result());
+        } else {
+          future.completeExceptionally(result.error());
+        }
+      }
+    });
     return future;
   }
 

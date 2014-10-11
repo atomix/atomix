@@ -51,7 +51,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
   private final Cluster<M> cluster;
   private final LocalNode<M> localNode;
   private final Set<RemoteNode<M>> remoteNodes;
-  private final Map<String, ClusterNode<M>> nodes;
+  private final Map<String, Node<M>> nodes;
 
   public ClusterManager(Cluster<M> cluster, BaseProtocol<M> protocol) {
     this.cluster = cluster.copy();
@@ -120,7 +120,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
    * @return The node manager instance.
    */
   @SuppressWarnings("unchecked")
-  public <T extends ClusterNode<M>> T node(String id) {
+  public <T extends Node<M>> T node(String id) {
     return localNode.member().id().equals(id) ? (T) localNode : (T) nodes.get(id);
   }
 
@@ -129,8 +129,8 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
    *
    * @return A set of all node managers in the cluster.
    */
-  public Set<ClusterNode<M>> nodes() {
-    Set<ClusterNode<M>> nodes = new HashSet<>(remoteNodes);
+  public Set<Node<M>> nodes() {
+    Set<Node<M>> nodes = new HashSet<>(remoteNodes);
     nodes.add(localNode);
     return nodes;
   }
@@ -151,7 +151,7 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
    * @return The remote node manager.
    */
   public RemoteNode<M> remoteNode(String id) {
-    ClusterNode<M> node = nodes.get(id);
+    Node<M> node = nodes.get(id);
     return node != null && node instanceof RemoteNode ? (RemoteNode<M>) node : null;
   }
 

@@ -27,6 +27,7 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.event.MembershipChangeEvent;
 import net.kuujo.copycat.event.VoteCastEvent;
 import net.kuujo.copycat.internal.StateMachineExecutor;
+import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
@@ -526,7 +527,32 @@ abstract class StateController implements AsyncRequestHandler {
 
   @Override
   public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
-    return CompletableFuture.completedFuture(logResponse(new SubmitResponse(logRequest(request).id(), "Not the leader")));
+    logRequest(request);
+
+    // If consistent queries are disabled then this node can accept reads regardless of the
+    // current state of the system. Note that this only applies to read-only operations.
+    CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+    if (!context.config().isConsistentQueryExecution()) {
+      StateMachineExecutor.Operation operation = context.stateMachineExecutor().getOperation(request.operation());
+      if (operation != null && operation.isReadOnly()) {
+        try {
+          future.complete(logResponse(new SubmitResponse(request.id(), operation.apply(request.args()))));
+        } catch (Exception e) {
+          future.completeExceptionally(e);
+        }
+        return future;
+      }
+    }
+
+    // If the cluster has a leader then locate the leader and forward the operation.
+    if (context.currentLeader() != null) {
+      @SuppressWarnings("rawtypes")
+      RemoteNode leader = context.clusterManager().remoteNode(context.currentLeader());
+      if (leader != null) {
+        return leader.client().submit(request);
+      }
+    }
+    return CompletableFuture.completedFuture(logResponse(new SubmitResponse(request.id(), "Not the leader")));
   }
 
   /**

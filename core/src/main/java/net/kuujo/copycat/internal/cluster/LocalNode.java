@@ -29,7 +29,7 @@ import net.kuujo.copycat.spi.protocol.Protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalNode<M extends Member> extends ClusterNode<M> {
+public class LocalNode<M extends Member> extends Node<M> {
   private final AsyncProtocolServer server;
 
   @SuppressWarnings("unchecked")
@@ -53,7 +53,7 @@ public class LocalNode<M extends Member> extends ClusterNode<M> {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof LocalNode && ((ClusterNode<?>) object).member().equals(member());
+    return object instanceof LocalNode && ((Node<?>) object).member().equals(member());
   }
 
   @Override
