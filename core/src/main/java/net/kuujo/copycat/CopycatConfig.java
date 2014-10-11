@@ -349,18 +349,6 @@ public class CopycatConfig {
   }
 
   /**
-   * Sets the cluster query quorum strategy, returning the configuration for method chaining.
-   *
-   * @param strategy The cluster query quorum calculation strategy.
-   * @return The copycat configuration.
-   * @throws NullPointerException if {@code strategy} is null
-   */
-  public CopycatConfig query(QuorumStrategy<?> strategy) {
-    this.queryQuorumStrategy = Assert.isNotNull(strategy, "strategy");
-    return this;
-  }
-
-  /**
    * Sets whether to use consistent query execution.
    *
    * @param consistent Whether to use consistent query execution.
@@ -502,11 +490,15 @@ public class CopycatConfig {
     value += ",\n";
     value += String.format("queryQuorumStrategy=%s", queryQuorumStrategy);
     value += ",\n";
+    value += String.format("consistentQueryExecution=%s", consistentQueryExecution);
+    value += ",\n";
     value += String.format("requireCommandQuorum=%s", requireCommandQuorum);
     value += ",\n";
     value += String.format("commandQuorumSize=%s", commandQuorumSize);
     value += ",\n";
     value += String.format("commandQuorumStrategy=%s", commandQuorumStrategy);
+    value += ",\n";
+    value += String.format("consistentCommandExecution=%s", consistentCommandExecution);
     value += ",\n";
     value += String.format("maxLogSize=%d", maxLogSize);
     value += ",\n";
