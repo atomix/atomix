@@ -64,6 +64,7 @@ public class ProtocolWriter {
     buffer.put(PING_REQUEST);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
+    buffer.putLong(request.term());
     buffer.putInt(leaderBytes.length);
     buffer.put(leaderBytes);
     buffer.putLong(request.logIndex());
@@ -83,6 +84,7 @@ public class ProtocolWriter {
     buffer.put(SYNC_REQUEST);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
+    buffer.putLong(request.term());
     buffer.putInt(leaderBytes.length);
     buffer.put(leaderBytes);
     buffer.putLong(request.prevLogIndex());
@@ -103,6 +105,7 @@ public class ProtocolWriter {
     buffer.put(POLL_REQUEST);
     buffer.putInt(idBytes.length);
     buffer.put(idBytes);
+    buffer.putLong(request.term());
     buffer.putInt(candidateBytes.length);
     buffer.put(candidateBytes);
     buffer.putLong(request.lastLogIndex());

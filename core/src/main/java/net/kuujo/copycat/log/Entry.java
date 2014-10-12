@@ -15,10 +15,12 @@
  */
 package net.kuujo.copycat.log;
 
+import java.io.Serializable;
+
 /**
  * Log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Entry {
+public interface Entry extends Serializable {
 }

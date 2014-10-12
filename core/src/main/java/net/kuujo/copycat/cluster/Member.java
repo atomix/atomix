@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.cluster;
 
+import java.io.Serializable;
+
 /**
  * Cluster member.<p>
  *
@@ -24,7 +26,7 @@ package net.kuujo.copycat.cluster;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Member {
+public class Member implements Serializable {
   private final String id;
 
   public Member() {
