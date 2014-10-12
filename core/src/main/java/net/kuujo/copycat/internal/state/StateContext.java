@@ -356,14 +356,14 @@ public final class StateContext {
       return future;
     }
 
-    currentState.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args))).whenComplete((result, error) -> {
+    currentState.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args))).whenComplete((response, error) -> {
       if (error != null) {
         future.completeExceptionally(error);
       } else {
-        if (result.status().equals(Response.Status.OK)) {
-          future.complete((R) result.result());
+        if (response.status().equals(Response.Status.OK)) {
+          future.complete((R) response.result());
         } else {
-          future.completeExceptionally(result.error());
+          future.completeExceptionally(response.error());
         }
       }
     });
@@ -372,7 +372,7 @@ public final class StateContext {
 
   @Override
   public String toString() {
-    String value = "CopycatConfig";
+    String value = "StateContext";
     value += "[\n";
     value += String.format("memberId=%s", clusterManager.localNode().member().id());
     value += ",\n";
