@@ -356,16 +356,18 @@ public final class StateContext {
       return future;
     }
 
-    currentState.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args))).whenComplete((response, error) -> {
-      if (error != null) {
-        future.completeExceptionally(error);
-      } else {
-        if (response.status().equals(Response.Status.OK)) {
-          future.complete((R) response.result());
+    executor.execute(() -> {
+      currentState.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args))).whenComplete((response, error) -> {
+        if (error != null) {
+          future.completeExceptionally(error);
         } else {
-          future.completeExceptionally(response.error());
+          if (response.status().equals(Response.Status.OK)) {
+            future.complete((R) response.result());
+          } else {
+            future.completeExceptionally(response.error());
+          }
         }
-      }
+      });
     });
     return future;
   }
