@@ -212,7 +212,7 @@ class NodeReplicator {
       if (error != null) {
         triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), error);
       } else {
-        LOGGER.debug("{} - Received {} to {}", state.clusterManager().localNode(), response, node);
+        LOGGER.debug("{} - Received {} from {}", state.clusterManager().localNode(), response, node);
         if (response.status().equals(Response.Status.OK)) {
           if (response.succeeded()) {
             // Update the next index to send and the last index known to be replicated.

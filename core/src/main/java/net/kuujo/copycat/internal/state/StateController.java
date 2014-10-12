@@ -163,7 +163,6 @@ abstract class StateController implements AsyncRequestHandler {
 
   @Override
   public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
-    logger().debug("{} - Received {}", context.clusterManager().localNode(), request);
     CompletableFuture<SyncResponse> future = CompletableFuture.completedFuture(logResponse(handleSync(logRequest(request))));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
