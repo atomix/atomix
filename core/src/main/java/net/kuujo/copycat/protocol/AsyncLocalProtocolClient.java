@@ -42,7 +42,7 @@ public class AsyncLocalProtocolClient implements AsyncProtocolClient {
     AsyncLocalProtocolServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<PingResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address"));
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
       return future;
     }
     return server.ping(request);
@@ -53,7 +53,7 @@ public class AsyncLocalProtocolClient implements AsyncProtocolClient {
     AsyncLocalProtocolServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<SyncResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address"));
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
       return future;
     }
     return server.sync(request);
@@ -64,7 +64,7 @@ public class AsyncLocalProtocolClient implements AsyncProtocolClient {
     AsyncLocalProtocolServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<PollResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address"));
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
       return future;
     }
     return server.poll(request);
@@ -75,7 +75,7 @@ public class AsyncLocalProtocolClient implements AsyncProtocolClient {
     AsyncLocalProtocolServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address"));
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
       return future;
     }
     return server.submit(request);

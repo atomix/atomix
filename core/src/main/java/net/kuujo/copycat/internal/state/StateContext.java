@@ -147,7 +147,7 @@ public final class StateContext {
   public CompletableFuture<Void> start() {
     // Set the local the remote internal cluster members at startup. This may
     // be overwritten by the logs once the replica has been started.
-    LOGGER.info("{} starting context", clusterManager.localNode());
+    LOGGER.info("{} Starting context", clusterManager.localNode());
     transition(NoneController.class);
     checkConfiguration();
     return clusterManager.localNode().server().listen().whenCompleteAsync((result, error) -> {
@@ -212,10 +212,10 @@ public final class StateContext {
       return;
     }
 
-    LOGGER.info("{} - Transitioning: {}", clusterManager.localNode(), type);
     final StateController oldState = currentState;
     try {
       currentState = type.newInstance();
+      LOGGER.info("{} - Transitioning to {}", clusterManager.localNode(), currentState.state());
     } catch (InstantiationException | IllegalAccessException e) {
       // Log the exception.
     }
