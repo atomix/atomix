@@ -17,11 +17,11 @@ package net.kuujo.copycat.internal.replication;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
+import net.kuujo.copycat.internal.log.CopycatEntry;
+import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.internal.state.FollowerController;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.internal.log.CopycatEntry;
-import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.Response;
@@ -113,7 +113,7 @@ class NodeReplicator {
 
     PingRequest request = new PingRequest(state.nextCorrelationId(), state.currentTerm(), state.cluster().localMember().id(), index, log.containsEntry(index) ? log.<CopycatEntry>getEntry(index).term() : 0, state.commitIndex());
     LOGGER.debug("{} - Sent {} to {}", state.clusterManager().localNode(), request, node);
-    node.client().ping(request).whenCompleteAsync((response, error) -> {
+    node.client().ping(request).whenComplete((response, error) -> {
       if (error != null) {
         triggerPingFutures(index, error);
       } else {

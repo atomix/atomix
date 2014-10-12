@@ -28,7 +28,6 @@ import net.kuujo.copycat.internal.StateMachineExecutor;
 import net.kuujo.copycat.internal.cluster.ClusterManager;
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
@@ -38,9 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Raft state context.
@@ -49,13 +45,11 @@ import java.util.concurrent.ThreadFactory;
  */
 public final class StateContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(StateContext.class);
-  private final StateMachineExecutor stateMachineExecutor;
-  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("state-context-%s");
-  private final Executor executor = Executors.newCachedThreadPool(THREAD_FACTORY);
   @SuppressWarnings("rawtypes")
   private final Cluster cluster;
   @SuppressWarnings("rawtypes")
   private final ClusterManager clusterManager;
+  private final StateMachineExecutor stateMachineExecutor;
   private final Log log;
   private final CopycatConfig config;
   private final DefaultEventHandlers events = new DefaultEventHandlers();
@@ -150,7 +144,7 @@ public final class StateContext {
     LOGGER.info("{} Starting context", clusterManager.localNode());
     transition(NoneController.class);
     checkConfiguration();
-    return clusterManager.localNode().server().listen().whenCompleteAsync((result, error) -> {
+    return clusterManager.localNode().server().listen().whenComplete((result, error) -> {
       try {
         log.open();
       } catch (Exception e) {
@@ -189,7 +183,7 @@ public final class StateContext {
    */
   public CompletableFuture<Void> stop() {
     LOGGER.info("{} - Stopping context", clusterManager.localNode());
-    return clusterManager.localNode().server().close().whenCompleteAsync((result, error) -> {
+    return clusterManager.localNode().server().close().whenComplete((result, error) -> {
       try {
         log.close();
       } catch (Exception e) {
@@ -356,18 +350,16 @@ public final class StateContext {
       return future;
     }
 
-    executor.execute(() -> {
-      currentState.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args))).whenComplete((response, error) -> {
-        if (error != null) {
-          future.completeExceptionally(error);
+    currentState.submit(new SubmitRequest(nextCorrelationId(), operation, Arrays.asList(args))).whenComplete((response, error) -> {
+      if (error != null) {
+        future.completeExceptionally(error);
+      } else {
+        if (response.status().equals(Response.Status.OK)) {
+          future.complete((R) response.result());
         } else {
-          if (response.status().equals(Response.Status.OK)) {
-            future.complete((R) response.result());
-          } else {
-            future.completeExceptionally(response.error());
-          }
+          future.completeExceptionally(response.error());
         }
-      });
+      }
     });
     return future;
   }

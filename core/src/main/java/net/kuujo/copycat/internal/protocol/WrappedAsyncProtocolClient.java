@@ -14,52 +14,58 @@
  */
 package net.kuujo.copycat.internal.protocol;
 
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 /**
  * Asynchronous protocol client wrapper.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncProtocolClientWrapper implements AsyncProtocolClient {
+public class WrappedAsyncProtocolClient implements AsyncProtocolClient {
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("wrapped-async-protocol-client-%s");
+  private final Executor executor = Executors.newCachedThreadPool(THREAD_FACTORY);
   private final ProtocolClient client;
 
-  public AsyncProtocolClientWrapper(ProtocolClient client) {
+  public WrappedAsyncProtocolClient(ProtocolClient client) {
     this.client = client;
   }
 
   @Override
   public CompletableFuture<PingResponse> ping(PingRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.ping(request));
+    return CompletableFuture.supplyAsync(() -> client.ping(request), executor);
   }
 
   @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.sync(request));
+    return CompletableFuture.supplyAsync(() -> client.sync(request), executor);
   }
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.poll(request));
+    return CompletableFuture.supplyAsync(() -> client.poll(request), executor);
   }
 
   @Override
   public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.submit(request));
+    return CompletableFuture.supplyAsync(() -> client.submit(request), executor);
   }
 
   @Override
   public CompletableFuture<Void> connect() {
-    return CompletableFuture.runAsync(client::connect);
+    return CompletableFuture.runAsync(client::connect, executor);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return CompletableFuture.runAsync(client::close);
+    return CompletableFuture.runAsync(client::close, executor);
   }
 
   @Override

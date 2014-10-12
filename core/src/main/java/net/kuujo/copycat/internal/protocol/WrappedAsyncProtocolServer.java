@@ -14,13 +14,12 @@
  */
 package net.kuujo.copycat.internal.protocol;
 
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -28,10 +27,12 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncProtocolServerWrapper implements AsyncProtocolServer {
+public class WrappedAsyncProtocolServer implements AsyncProtocolServer {
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("wrapped-async-protocol-server-%s");
+  private final Executor executor = Executors.newCachedThreadPool(THREAD_FACTORY);
   private final ProtocolServer server;
 
-  public AsyncProtocolServerWrapper(ProtocolServer server) {
+  public WrappedAsyncProtocolServer(ProtocolServer server) {
     this.server = server;
   }
 
@@ -82,12 +83,12 @@ public class AsyncProtocolServerWrapper implements AsyncProtocolServer {
 
   @Override
   public CompletableFuture<Void> listen() {
-    return CompletableFuture.runAsync(server::listen);
+    return CompletableFuture.runAsync(server::listen, executor);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return CompletableFuture.runAsync(server::close);
+    return CompletableFuture.runAsync(server::close, executor);
   }
 
   @Override

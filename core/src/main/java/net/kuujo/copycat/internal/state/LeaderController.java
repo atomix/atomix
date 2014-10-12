@@ -192,7 +192,6 @@ public class LeaderController extends StateController implements Observer {
         // Now that the cluster and replicator have been updated, we can commit the
         // new configuration.
         LOGGER.debug("{} - Committing all entries for configuration change", context.clusterManager().localNode());
-        System.out.println("YES");
         replicator.commitAll();
       });
     });

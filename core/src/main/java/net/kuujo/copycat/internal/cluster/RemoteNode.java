@@ -15,7 +15,7 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.protocol.AsyncProtocolClientWrapper;
+import net.kuujo.copycat.internal.protocol.WrappedAsyncProtocolClient;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
@@ -43,7 +43,7 @@ public class RemoteNode<M extends Member> extends Node<M> {
     if (protocol instanceof AsyncProtocol) {
       this.client = new QueueingAsyncProtocolClient(((AsyncProtocol<M>) protocol).createClient(member));
     } else {
-      this.client = new QueueingAsyncProtocolClient(new AsyncProtocolClientWrapper(((Protocol<M>) protocol).createClient(member)));
+      this.client = new QueueingAsyncProtocolClient(new WrappedAsyncProtocolClient(((Protocol<M>) protocol).createClient(member)));
     }
   }
 
@@ -76,7 +76,7 @@ public class RemoteNode<M extends Member> extends Node<M> {
       }
       if (connectFuture == null) {
         connectFuture = new CompletableFuture<>();
-        client.connect().whenCompleteAsync((result, error) -> {
+        client.connect().whenComplete((result, error) -> {
           CompletableFuture<Void> future = connectFuture;
           connectFuture = null;
           if (future != null) {
@@ -91,7 +91,7 @@ public class RemoteNode<M extends Member> extends Node<M> {
           }
         });
       }
-      return connectFuture;
+      return connectFuture != null ? connectFuture : CompletableFuture.completedFuture(null);
     }
 
     /**

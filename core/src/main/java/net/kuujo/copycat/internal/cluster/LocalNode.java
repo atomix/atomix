@@ -15,7 +15,7 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.protocol.AsyncProtocolServerWrapper;
+import net.kuujo.copycat.internal.protocol.WrappedAsyncProtocolServer;
 import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
 import net.kuujo.copycat.spi.protocol.BaseProtocol;
@@ -38,7 +38,7 @@ public class LocalNode<M extends Member> extends Node<M> {
     if (protocol instanceof AsyncProtocol) {
       this.server = ((AsyncProtocol<M>) protocol).createServer(member);
     } else {
-      this.server = new AsyncProtocolServerWrapper(((Protocol<M>) protocol).createServer(member));
+      this.server = new WrappedAsyncProtocolServer(((Protocol<M>) protocol).createServer(member));
     }
   }
 

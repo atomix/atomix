@@ -18,7 +18,6 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.internal.util.Quorum;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
@@ -28,7 +27,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -43,9 +44,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CandidateController extends StateController {
-  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("candidate-controller-%s");
   private static final Logger LOGGER = LoggerFactory.getLogger(CandidateController.class);
-  private final Executor executor = Executors.newSingleThreadExecutor(THREAD_FACTORY);
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;
 
@@ -118,12 +117,15 @@ public class CandidateController extends StateController {
     final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
     for (RemoteNode<?> node : (Set<RemoteNode<?>>) context.clusterManager().remoteNodes()) {
       final AsyncProtocolClient client = node.client();
-      client.connect().whenCompleteAsync((result1, error1) -> {
+      client.connect().whenComplete((result1, error1) -> {
         if (error1 != null) {
           quorum.fail();
         } else {
           LOGGER.debug("{} - Polling {}", context.clusterManager().localNode(), node.member());
-          client.poll(new PollRequest(context.nextCorrelationId(), context.currentTerm(), context.clusterManager().localNode().member().id(), lastIndex, lastTerm)).whenCompleteAsync((result2, error2) -> {
+          client.poll(new PollRequest(context.nextCorrelationId(), context.currentTerm(), context.clusterManager()
+            .localNode()
+            .member()
+            .id(), lastIndex, lastTerm)).whenComplete((result2, error2) -> {
             client.close();
             if (!complete.get()) {
               if (error2 != null) {
@@ -133,16 +135,18 @@ public class CandidateController extends StateController {
                 LOGGER.info("{} - Received rejected vote from {}", context.clusterManager().localNode(), node.member());
                 quorum.fail();
               } else if (result2.term() != context.currentTerm()) {
-                LOGGER.info("{} - Received successful vote for a different term from {}", context.clusterManager().localNode(), node.member());
+                LOGGER.info("{} - Received successful vote for a different term from {}", context.clusterManager()
+                  .localNode(), node.member());
                 quorum.fail();
               } else {
-                LOGGER.info("{} - Received successful vote from {}", context.clusterManager().localNode(), node.member());
+                LOGGER.info("{} - Received successful vote from {}", context.clusterManager()
+                  .localNode(), node.member());
                 quorum.succeed();
               }
             }
-          }, executor);
+          });
         }
-      }, executor);
+      });
     }
   }
 
