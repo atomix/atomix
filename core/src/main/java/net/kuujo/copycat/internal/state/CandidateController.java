@@ -18,6 +18,7 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.internal.util.Quorum;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
@@ -27,9 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -44,7 +43,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CandidateController extends StateController {
+  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("candidate-controller-%s");
   private static final Logger LOGGER = LoggerFactory.getLogger(CandidateController.class);
+  private final Executor executor = Executors.newSingleThreadExecutor(THREAD_FACTORY);
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;
 
@@ -139,9 +140,9 @@ public class CandidateController extends StateController {
                 quorum.succeed();
               }
             }
-          });
+          }, executor);
         }
-      });
+      }, executor);
     }
   }
 
