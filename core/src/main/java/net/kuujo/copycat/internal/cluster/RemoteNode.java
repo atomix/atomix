@@ -70,13 +70,13 @@ public class RemoteNode<M extends Member> extends Node<M> {
     }
 
     @Override
-    public CompletableFuture<Void> connect() {
+    public synchronized CompletableFuture<Void> connect() {
       if (connected) {
         return CompletableFuture.completedFuture(null);
       }
       if (connectFuture == null) {
         connectFuture = new CompletableFuture<>();
-        client.connect().whenComplete((result, error) -> {
+        client.connect().whenCompleteAsync((result, error) -> {
           CompletableFuture<Void> future = connectFuture;
           connectFuture = null;
           if (future != null) {
