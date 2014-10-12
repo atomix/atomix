@@ -20,9 +20,8 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.MembershipChangeEvent;
 import net.kuujo.copycat.internal.StateMachineExecutor;
-import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
-import net.kuujo.copycat.internal.log.NoOpEntry;
+import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.replication.ClusterReplicator;
 import net.kuujo.copycat.internal.replication.Replicator;
 import net.kuujo.copycat.protocol.*;
@@ -81,13 +80,6 @@ public class LeaderController extends StateController implements Observer {
       count++;
     }
     LOGGER.debug("{} - Applied {} entries to state machine", context.clusterManager().localNode(), count);
-
-    // Next, the leader must write a no-op entry to the log and replicate the log
-    // to all the nodes in the cluster. This ensures that other nodes are notified
-    // of the leader's election and that their terms are updated with the leader's term.
-    NoOpEntry noOpEntry = new NoOpEntry(context.currentTerm());
-    context.log().appendEntry(noOpEntry);
-    LOGGER.debug("{} - Appended {} to log", context.clusterManager().localNode(), noOpEntry);
 
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
