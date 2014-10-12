@@ -55,7 +55,7 @@ class NodeReplicator {
     this.node = node;
     this.state = state;
     this.log = state.log();
-    this.nextIndex = log.lastIndex();
+    this.nextIndex = log.lastIndex() + 1;
     this.sendIndex = nextIndex;
   }
 
