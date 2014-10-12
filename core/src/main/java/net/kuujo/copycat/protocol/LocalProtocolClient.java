@@ -39,7 +39,7 @@ public class LocalProtocolClient implements ProtocolClient {
   public PingResponse ping(PingRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address");
+      throw new ProtocolException("Invalid server address: %s", id);
     }
     return server.ping(request);
   }
@@ -48,7 +48,7 @@ public class LocalProtocolClient implements ProtocolClient {
   public SyncResponse sync(SyncRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address");
+      throw new ProtocolException("Invalid server address: %s", id);
     }
     return server.sync(request);
   }
@@ -57,7 +57,7 @@ public class LocalProtocolClient implements ProtocolClient {
   public PollResponse poll(PollRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address");
+      throw new ProtocolException("Invalid server address: %s", id);
     }
     return server.poll(request);
   }
@@ -66,7 +66,7 @@ public class LocalProtocolClient implements ProtocolClient {
   public SubmitResponse submit(SubmitRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address");
+      throw new ProtocolException("Invalid server address: %s", id);
     }
     return server.submit(request);
   }
