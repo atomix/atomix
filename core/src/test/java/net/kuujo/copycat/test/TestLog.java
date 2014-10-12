@@ -15,19 +15,18 @@
  */
 package net.kuujo.copycat.test;
 
+import net.kuujo.copycat.internal.log.ConfigurationEntry;
+import net.kuujo.copycat.internal.log.OperationEntry;
+import net.kuujo.copycat.internal.log.SnapshotEntry;
+import net.kuujo.copycat.log.Entry;
+import net.kuujo.copycat.log.InMemoryLog;
+
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.function.BiFunction;
-
-import net.kuujo.copycat.internal.log.OperationEntry;
-import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.internal.log.ConfigurationEntry;
-import net.kuujo.copycat.log.InMemoryLog;
-import net.kuujo.copycat.internal.log.NoOpEntry;
-import net.kuujo.copycat.internal.log.SnapshotEntry;
 
 /**
  * Test log.
@@ -60,17 +59,6 @@ public class TestLog extends InMemoryLog {
    * @return The test log.
    */
   public TestLog withEntry(Entry entry) {
-    appendEntry(entry);
-    return this;
-  }
-
-  /**
-   * Adds a no-op entry to the log.
-   *
-   * @param entry The entry to add.
-   * @return The test log.
-   */
-  public TestLog withNoOpEntry(NoOpEntry entry) {
     appendEntry(entry);
     return this;
   }

@@ -18,7 +18,6 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
-import net.kuujo.copycat.internal.log.NoOpEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.test.TestCluster;
 import net.kuujo.copycat.test.TestLog;
@@ -48,8 +47,9 @@ public class LeaderElectionTest {
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
       .withLog(new TestLog()
-        .withEntry(new NoOpEntry(1))
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))))
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("foo"))
+          .withRemoteMembers(new Member("bar"), new Member("baz"))))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
@@ -65,8 +65,9 @@ public class LeaderElectionTest {
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
       .withLog(new TestLog()
-        .withEntry(new NoOpEntry(1))
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig().withLocalMember(new Member("bar")).withRemoteMembers(new Member("foo"), new Member("baz"))))
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("bar"))
+          .withRemoteMembers(new Member("foo"), new Member("baz"))))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
         .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))

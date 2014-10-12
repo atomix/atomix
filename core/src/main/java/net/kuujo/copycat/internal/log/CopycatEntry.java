@@ -24,7 +24,6 @@ import net.kuujo.copycat.log.EntryTypes;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @EntryTypes({
-  NoOpEntry.class,
   OperationEntry.class,
   ConfigurationEntry.class,
   SnapshotEntry.class

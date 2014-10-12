@@ -9,7 +9,6 @@ import com.esotericsoftware.kryo.io.Output;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
-import net.kuujo.copycat.internal.log.NoOpEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
 import org.testng.Assert;
@@ -31,7 +30,6 @@ public class EntryTest {
   @DataProvider
   private Object[][] entryProvider() {
     return new Object[][] {
-      {NoOpEntry.class, new NoOpEntry(1)},
       {OperationEntry.class, new OperationEntry(1, "foo", Arrays.asList("bar", "baz"))},
       {
         ConfigurationEntry.class,

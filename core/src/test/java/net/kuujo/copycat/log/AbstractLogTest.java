@@ -18,7 +18,6 @@ package net.kuujo.copycat.log;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
-import net.kuujo.copycat.internal.log.NoOpEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
 import org.testng.annotations.AfterMethod;
@@ -65,20 +64,20 @@ public abstract class AbstractLogTest {
   }
 
   public void testAppendEntries() throws Exception {
-    Entry entry = new NoOpEntry(1);
+    Entry entry = new OperationEntry(1, "foo", "bar");
     assertEquals(log.appendEntries(entry, entry, entry), Arrays.asList(1L, 2L, 3L));
   }
 
   public void testAppendEntry() throws Exception {
-    assertEquals(log.appendEntry(new NoOpEntry(1)), 1);
-    assertEquals(log.appendEntry(new NoOpEntry(1)), 2);
-    assertEquals(log.appendEntry(new NoOpEntry(1)), 3);
+    assertEquals(log.appendEntry(new OperationEntry(1, "foo", "bar")), 1);
+    assertEquals(log.appendEntry(new OperationEntry(1, "foo", "bar")), 2);
+    assertEquals(log.appendEntry(new OperationEntry(1, "foo", "bar")), 3);
   }
 
   @Test(expectedExceptions = IllegalStateException.class)
   public void testThrowsIllegalStateExceptionWhenClosed() throws Exception {
     log.close();
-    log.appendEntry(new NoOpEntry(1));
+    log.appendEntry(new OperationEntry(1, "foo", "bar"));
   }
 
   public void testClose() throws Exception {
@@ -92,7 +91,8 @@ public abstract class AbstractLogTest {
     if (log instanceof Compactable) {
       appendEntries();
       ((Compactable) log).compact(5,
-        new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo"))
+        new SnapshotEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("foo"))
           .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
 
       assertEquals(log.firstIndex(), 5);
@@ -107,7 +107,8 @@ public abstract class AbstractLogTest {
     if (log instanceof Compactable) {
       appendEntries();
       ((Compactable) log).compact(3,
-        new SnapshotEntry(1, new ClusterConfig().withLocalMember(new Member("foo"))
+        new SnapshotEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("foo"))
           .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
 
       assertEquals(log.firstIndex(), 3);
@@ -133,7 +134,7 @@ public abstract class AbstractLogTest {
 
   public void testFirstEntry() throws Exception {
     appendEntries();
-    assertTrue(log.firstEntry() instanceof NoOpEntry);
+    assertTrue(log.firstEntry() instanceof SnapshotEntry);
   }
 
   public void testFirstIndex() throws Exception {
@@ -155,14 +156,14 @@ public abstract class AbstractLogTest {
 
   public void testGetEntry() throws Exception {
     appendEntries();
-    assertTrue(log.getEntry(1) instanceof NoOpEntry);
+    assertTrue(log.getEntry(1) instanceof SnapshotEntry);
     assertTrue(log.getEntry(2) instanceof ConfigurationEntry);
     assertTrue(log.getEntry(3) instanceof OperationEntry);
   }
 
   public void testIsEmpty() {
     assertTrue(log.isEmpty());
-    assertEquals(log.appendEntry(new NoOpEntry(1)), 1);
+    assertEquals(log.appendEntry(new OperationEntry(1, "foo", "bar")), 1);
     assertFalse(log.isEmpty());
   }
 
@@ -192,25 +193,28 @@ public abstract class AbstractLogTest {
     log.removeAfter(2);
 
     assertEquals(log.firstIndex(), 1);
-    assertTrue(log.firstEntry() instanceof NoOpEntry);
+    assertTrue(log.firstEntry() instanceof SnapshotEntry);
     assertEquals(log.lastIndex(), 2);
     assertTrue(log.lastEntry() instanceof ConfigurationEntry);
   }
 
   public void testSize() {
     long size = log.size();
-    log.appendEntry(new NoOpEntry(1));
+    log.appendEntry(new OperationEntry(1, "foo", "bar"));
     assertNotEquals(size, size = log.size());
-    log.appendEntry(new NoOpEntry(1));
+    log.appendEntry(new OperationEntry(1, "foo", "bar"));
     assertNotEquals(size, size = log.size());
-    log.appendEntry(new NoOpEntry(1));
+    log.appendEntry(new OperationEntry(1, "foo", "bar"));
     assertNotEquals(size, size = log.size());
   }
 
   private void appendEntries() {
-    log.appendEntry(new NoOpEntry(1));
+    log.appendEntry(new SnapshotEntry(1, new ClusterConfig()
+      .withLocalMember(new Member("foo"))
+      .withRemoteMembers(new Member("bar"), new Member("baz")), new byte[10]));
     log.appendEntry(new ConfigurationEntry(1, new ClusterConfig()
-      .withLocalMember(new Member("foo")).withRemoteMembers(new Member("bar"), new Member("baz"))));
+      .withLocalMember(new Member("foo"))
+      .withRemoteMembers(new Member("bar"), new Member("baz"))));
     log.appendEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
     log.appendEntry(new OperationEntry(1, "bar", Arrays.asList("bar", "baz")));
     log.appendEntry(new OperationEntry(1, "baz", Arrays.asList("bar", "baz")));
