@@ -36,7 +36,7 @@ import net.kuujo.copycat.spi.protocol.BaseProtocol;
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractCopycat {
+public abstract class AbstractCopycat {
   protected final StateContext state;
   protected final Cluster<?> cluster;
   protected final CopycatConfig config;
