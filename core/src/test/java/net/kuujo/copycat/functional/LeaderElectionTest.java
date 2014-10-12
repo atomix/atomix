@@ -19,6 +19,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
+import net.kuujo.copycat.protocol.AsyncLocalProtocol;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 import net.kuujo.copycat.test.TestCluster;
 import net.kuujo.copycat.test.TestLog;
 import net.kuujo.copycat.test.TestNode;
@@ -41,8 +43,9 @@ public class LeaderElectionTest {
    * Tests that the candidate with the most up-to-date log is elected.
    */
   public void testCandidateWithMostUpToDateLogIsElected() {
+    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode("foo")
+    TestNode node1 = new TestNode(new Member("foo"), protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -60,7 +63,7 @@ public class LeaderElectionTest {
       .withLastApplied(6);
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode("bar")
+    TestNode node2 = new TestNode(new Member("bar"), protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())

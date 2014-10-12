@@ -19,6 +19,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
+import net.kuujo.copycat.protocol.AsyncLocalProtocol;
+import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 import net.kuujo.copycat.test.TestCluster;
 import net.kuujo.copycat.test.TestLog;
 import net.kuujo.copycat.test.TestNode;
@@ -41,8 +43,9 @@ public class ConfigurationTest {
    * Tests that the leader's expanded configuration is logged and replicated.
    */
   public void testLeaderReplicatesExpandedConfiguration() {
+    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode("foo")
+    TestNode node1 = new TestNode(new Member("foo"), protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -60,7 +63,7 @@ public class ConfigurationTest {
       .withLastApplied(6);
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode("bar")
+    TestNode node2 = new TestNode(new Member("bar"), protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -78,7 +81,7 @@ public class ConfigurationTest {
       .withLastApplied(6);
     cluster.addNode(node2);
 
-    TestNode node3 = new TestNode("baz")
+    TestNode node3 = new TestNode(new Member("baz"), protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())

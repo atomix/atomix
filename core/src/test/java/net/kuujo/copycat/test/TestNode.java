@@ -33,8 +33,9 @@ import java.util.concurrent.TimeUnit;
 public class TestNode {
   private final TestNodeEvents events;
   private StateContext context;
-  private String id;
   private Member member;
+  private AsyncProtocol protocol;
+  private CopycatConfig config;
   private CopycatState state;
   private TestStateMachine stateMachine;
   private TestLog log;
@@ -44,9 +45,9 @@ public class TestNode {
   private long commitIndex;
   private long lastApplied;
 
-  public TestNode(String id) {
-    this.id = id;
-    this.member = new Member(id);
+  public <M extends Member> TestNode(M member, AsyncProtocol<M> protocol) {
+    this.member = member;
+    this.protocol = protocol;
     this.events = new TestNodeEvents(this);
   }
 
@@ -56,7 +57,7 @@ public class TestNode {
    * @return The node id.
    */
   public String id() {
-    return id;
+    return member.id();
   }
 
   /**
@@ -66,6 +67,26 @@ public class TestNode {
    */
   public Member member() {
     return member;
+  }
+
+  /**
+   * Returns the node protocol.
+   *
+   * @return The node protocol.
+   */
+  public AsyncProtocol protocol() {
+    return protocol;
+  }
+
+  /**
+   * Sets the node configuration.
+   *
+   * @param config The node configuration.
+   * @return The test node.
+   */
+  public TestNode withConfig(CopycatConfig config) {
+    this.config = config;
+    return this;
   }
 
   /**
@@ -189,8 +210,8 @@ public class TestNode {
    *
    * @param cluster The cluster configuration.
    */
-  public <M extends Member> void start(Cluster<M> cluster, AsyncProtocol<M> protocol) {
-    context = new StateContext(stateMachine, log, cluster, protocol, new CopycatConfig());
+  public <M extends Member> void start(Cluster<M> cluster) {
+    context = new StateContext(stateMachine, log, cluster, protocol, config);
     context.currentLeader(leader);
     context.currentTerm(term);
     context.lastVotedFor(votedFor);
