@@ -38,8 +38,7 @@ public class Quorum {
    * Counts the current node in the quorum.
    */
   public Quorum countSelf() {
-    succeeded++;
-    return this;
+    return succeed();
   }
 
   private void checkComplete() {
