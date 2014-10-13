@@ -228,4 +228,96 @@ public class LeaderElectionTest {
     Assert.assertTrue(node1.instance().currentTerm() > 3);
   }
 
+  /**
+   * Tests that only a single leader is elected when more than one node is equal in terms of state.
+   */
+  public void testThatOneLeaderElectedWhenTwoNodesAreEqual() {
+    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    TestCluster cluster = new TestCluster();
+    TestNode node1 = new TestNode(new Member("foo"), protocol)
+      .withTerm(3)
+      .withLeader(null)
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("foo"))
+          .withRemoteMembers(new Member("bar"), new Member("baz"), new Member("foobar"), new Member("barbaz"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.FOLLOWER)
+      .withCommitIndex(6)
+      .withLastApplied(6);
+    cluster.addNode(node1);
+
+    TestNode node2 = new TestNode(new Member("bar"), protocol)
+      .withTerm(3)
+      .withLeader(null)
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("bar"))
+          .withRemoteMembers(new Member("foo"), new Member("baz"), new Member("foobar"), new Member("barbaz"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.FOLLOWER)
+      .withCommitIndex(6)
+      .withLastApplied(6);
+    cluster.addNode(node2);
+
+    TestNode node3 = new TestNode(new Member("baz"), protocol)
+      .withTerm(3)
+      .withLeader(null)
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("baz"))
+          .withRemoteMembers(new Member("bar"), new Member("foo"), new Member("foobar"), new Member("barbaz"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.FOLLOWER)
+      .withCommitIndex(6)
+      .withLastApplied(6);
+    cluster.addNode(node3);
+
+    TestNode node4 = new TestNode(new Member("foobar"), protocol)
+      .withTerm(3)
+      .withLeader(null)
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("foobar"))
+          .withRemoteMembers(new Member("bar"), new Member("baz"), new Member("foo"), new Member("barbaz"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.FOLLOWER)
+      .withCommitIndex(6)
+      .withLastApplied(6);
+    cluster.addNode(node4);
+
+    cluster.start();
+
+    node1.await().leaderElected();
+
+    int leaderCount = 0;
+    for (TestNode node : cluster.nodes()) {
+      if (node.instance().isLeader()) {
+        leaderCount++;
+      }
+    }
+
+    Assert.assertEquals(1, leaderCount);
+  }
+
 }

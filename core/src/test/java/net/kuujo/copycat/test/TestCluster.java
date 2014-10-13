@@ -69,6 +69,15 @@ public class TestCluster {
   }
 
   /**
+   * Returns a list of test nodes.
+   *
+   * @return A list of test nodes.
+   */
+  public List<TestNode> nodes() {
+    return nodes;
+  }
+
+  /**
    * Synchronously starts the test cluster.
    */
   public void start() {
