@@ -27,7 +27,89 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Synchronous Copycat replica.
+ * Synchronous Copycat replica.<p>
+ *
+ * <b>Note that synchronous replicas are currently experimental</b>
+ *
+ * The Copycat replica is a fault-tolerant, replicated container for a {@link net.kuujo.copycat.StateMachine}.
+ * Given a cluster of {@code Copycat} replicas, Copycat guarantees that commands and queries applied to the
+ * state machine will be applied in the same order on all nodes (unless configuration specifies otherwise).<p>
+ *
+ * <pre>
+ * {@code
+ * // Create the state machine.
+ * StateMachine stateMachine = new DataStore();
+ *
+ * // Create the log.
+ * Log log = new MemoryMappedFileLog("data.log");
+ *
+ * // Create the cluster configuration.
+ * TcpClusterConfig clusterConfig = new TcpClusterConfig()
+ *   .withLocalMember(new TcpMember("localhost", 1234))
+ *   .withRemoteMembers(new TcpMember("localhost", 2345), new TcpMember("localhost", 3456));
+ * TcpCluster cluster = new TcpCluster(clusterConfig);
+ *
+ * // Create a TCP protocol.
+ * BasicTcpProtocol protocol = new BasicTcpProtocol();
+ *
+ * // Create a synchronous Copycat instance.
+ * Copycat copycat = new Copycat(stateMachine, log, cluster, protocol);
+ *
+ * // Start the Copycat instance.
+ * copycat.start();
+ *
+ * copycat.submit("set", "foo", "Hello world!");
+ * String result = copycat.submit("get", "foo");
+ * assertEquals("Hello world!", result);
+ * }
+ * </pre>
+ *
+ * In order to provide this guarantee, state machines must be designed accordingly. State machines must be
+ * deterministic, meaning given the same commands in the same order, the state machine will always create
+ * the same state.<p>
+ *
+ * To create a state machine, simple implement the {@link StateMachine} interface.
+ *
+ * <pre>
+ * {@code
+ * public class DataStore implements StateMachine {
+ *   private final Map<String, Object> data = new HashMap<>();
+ *
+ *   @Command
+ *   public void set(String name, Object value) {
+ *     data.put(name, value);
+ *   }
+ *
+ *   @Query
+ *   public void get(String name) {
+ *     return data.get(name);
+ *   }
+ *
+ * }
+ * }
+ * </pre><p>
+ *
+ * Copycat will wrap this state machine on any number of nodes and ensure commands submitted
+ * to the cluster are applied to the state machine in the order in which they're received.
+ * Copycat supports two different types of operations - {@link net.kuujo.copycat.Command}
+ * and {@link net.kuujo.copycat.Query}. {@link net.kuujo.copycat.Command} operations are write
+ * operations that modify the state machine's state. All commands submitted to the cluster
+ * will go through the cluster leader to ensure log order. {@link net.kuujo.copycat.Query}
+ * operations are read-only operations that do not modify the state machine's state. Copycat
+ * can be optionally configured to allow read-only operations on follower nodes.<p>
+ *
+ * As mentioned, underlying each Copycat replica is a persistent {@link net.kuujo.copycat.log.Log}.
+ * The log is a strongly ordered sequence of events which Copycat replicates between leader and
+ * followers. Copycat provides several {@link net.kuujo.copycat.log.Log} implementations for
+ * different use cases.<p>
+ *
+ * Copycat also provides extensible {@link net.kuujo.copycat.spi.protocol.Protocol} support.
+ * The Copycat replication implementation is completely protocol agnostic, so users can use
+ * Copycat provided protocols or custom protocols. Each {@link net.kuujo.copycat.Copycat} instance
+ * is thus associated with a {@link net.kuujo.copycat.cluster.Cluster} and
+ * {@link net.kuujo.copycat.spi.protocol.Protocol} which it uses for communication between replicas.
+ * It is very important that all nodes within the same Copycat cluster use the same protocol for
+ * obvious reasons.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
