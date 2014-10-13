@@ -178,4 +178,54 @@ public class LeaderElectionTest {
     Assert.assertTrue(node2.instance().isLeader());
   }
 
+  /**
+   * Tests that candidates restart an election during a split vote.
+   */
+  public void testCandidatesIncrementTermAndRestartElectionDuringSplitVote() {
+    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    TestCluster cluster = new TestCluster();
+    TestNode node1 = new TestNode(new Member("foo"), protocol)
+      .withTerm(3)
+      .withLeader(null)
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("foo"))
+          .withRemoteMembers(new Member("bar"), new Member("baz"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.CANDIDATE)
+      .withCommitIndex(6)
+      .withLastApplied(6)
+      .withVotedFor("foo");
+    cluster.addNode(node1);
+
+    TestNode node2 = new TestNode(new Member("bar"), protocol)
+      .withTerm(3)
+      .withLeader(null)
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("bar"))
+          .withRemoteMembers(new Member("foo"), new Member("baz"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.CANDIDATE)
+      .withCommitIndex(5)
+      .withLastApplied(5)
+      .withVotedFor("bar");
+    cluster.addNode(node2);
+
+    cluster.start();
+
+    node1.await().electedLeader();
+    Assert.assertTrue(node1.instance().isLeader());
+    Assert.assertTrue(node1.instance().currentTerm() > 3);
+  }
+
 }
