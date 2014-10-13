@@ -20,6 +20,7 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.state.*;
+import net.kuujo.copycat.protocol.AsyncLocalProtocol;
 import net.kuujo.copycat.spi.protocol.AsyncProtocol;
 
 import java.util.concurrent.CountDownLatch;
@@ -34,11 +35,11 @@ public class TestNode {
   private final TestNodeEvents events;
   private StateContext context;
   private Member member;
-  private AsyncProtocol protocol;
-  private CopycatConfig config;
-  private CopycatState state;
-  private TestStateMachine stateMachine;
-  private TestLog log;
+  private AsyncProtocol protocol = new AsyncLocalProtocol();
+  private CopycatConfig config = new CopycatConfig();
+  private CopycatState state = CopycatState.FOLLOWER;
+  private TestStateMachine stateMachine = new TestStateMachine();
+  private TestLog log = new TestLog();
   private String leader;
   private long term;
   private String votedFor;
