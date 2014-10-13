@@ -105,7 +105,6 @@ public class FollowerController extends StateController {
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    resetTimer();
     return super.poll(request);
   }
 

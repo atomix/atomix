@@ -482,18 +482,22 @@ abstract class StateController implements AsyncRequestHandler {
           }
 
           long lastTerm = entry.term();
-          if (request.lastLogIndex() >= lastIndex && request.lastLogTerm() >= lastTerm) {
-            context.lastVotedFor(request.candidate());
-            context.events()
-              .voteCast()
-              .handle(new VoteCastEvent(context.currentTerm(), context.clusterManager()
-                .node(request.candidate())
-                .member()));
-            logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.clusterManager().localNode(), request);
-            return new PollResponse(request.id(), context.currentTerm(), true);
+          if (request.lastLogIndex() >= lastIndex) {
+            if (request.lastLogTerm() >= lastTerm) {
+              context.lastVotedFor(request.candidate());
+              context.events()
+                .voteCast()
+                .handle(new VoteCastEvent(context.currentTerm(), context.clusterManager()
+                  .node(request.candidate())
+                  .member()));
+              logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.clusterManager().localNode(), request);
+              return new PollResponse(request.id(), context.currentTerm(), true);
+            } else {
+              logger().debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.clusterManager().localNode(), request, request.lastLogTerm(), lastTerm);
+              return new PollResponse(request.id(), context.currentTerm(), false);
+            }
           } else {
-            logger().debug("{} - Rejected {}: candidate's log is not up-to-date", context.clusterManager().localNode(), request);
-            context.lastVotedFor(null);
+            logger().debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.clusterManager().localNode(), request, request.lastLogIndex(), lastIndex);
             return new PollResponse(request.id(), context.currentTerm(), false);
           }
         }
