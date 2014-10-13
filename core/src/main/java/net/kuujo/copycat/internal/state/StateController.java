@@ -82,7 +82,7 @@ abstract class StateController implements AsyncRequestHandler {
   }
 
   @Override
-  public CompletableFuture<PingResponse> ping(final PingRequest request) {
+  public synchronized CompletableFuture<PingResponse> ping(final PingRequest request) {
     CompletableFuture<PingResponse> future = CompletableFuture.completedFuture(logResponse(handlePing(logRequest(request))));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
@@ -95,7 +95,7 @@ abstract class StateController implements AsyncRequestHandler {
   /**
    * Handles a ping request.
    */
-  private PingResponse handlePing(PingRequest request) {
+  private synchronized PingResponse handlePing(PingRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.currentTerm() || (request.term() == context.currentTerm() && context.currentLeader() == null)) {
@@ -119,7 +119,7 @@ abstract class StateController implements AsyncRequestHandler {
   /**
    * Checks the ping log entry for consistency.
    */
-  private PingResponse doCheckPingEntry(PingRequest request) {
+  private synchronized PingResponse doCheckPingEntry(PingRequest request) {
     if (request.logIndex() > context.log().lastIndex()) {
       logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.clusterManager().localNode(), request, request.logIndex(), context.log().lastIndex());
       return new PingResponse(request.id(), context.currentTerm(), false);
@@ -139,12 +139,13 @@ abstract class StateController implements AsyncRequestHandler {
       logger().warn("{} - Rejected {}: request entry term does not match local log", context.clusterManager().localNode(), request);
       return new PingResponse(request.id(), context.currentTerm(), false);
     } else {
+      doApplyCommits(request.commitIndex());
       return new PingResponse(request.id(), context.currentTerm(), true);
     }
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
+  public synchronized CompletableFuture<SyncResponse> sync(final SyncRequest request) {
     CompletableFuture<SyncResponse> future = CompletableFuture.completedFuture(logResponse(handleSync(logRequest(request))));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
@@ -157,7 +158,7 @@ abstract class StateController implements AsyncRequestHandler {
   /**
    * Starts the sync process.
    */
-  private SyncResponse handleSync(SyncRequest request) {
+  private synchronized SyncResponse handleSync(SyncRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.currentTerm() || (request.term() == context.currentTerm() && context.currentLeader() == null)) {
@@ -182,7 +183,7 @@ abstract class StateController implements AsyncRequestHandler {
   /**
    * Checks the previous log entry for consistency.
    */
-  private SyncResponse doCheckPreviousEntry(SyncRequest request) {
+  private synchronized SyncResponse doCheckPreviousEntry(SyncRequest request) {
     if (request.prevLogIndex() > context.log().lastIndex()) {
       logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.clusterManager().localNode(), request, request.prevLogIndex(), context.log().lastIndex());
       return new SyncResponse(request.id(), context.currentTerm(), false, context.log().lastIndex());
@@ -209,7 +210,7 @@ abstract class StateController implements AsyncRequestHandler {
   /**
    * Appends entries to the local log.
    */
-  private SyncResponse doAppendEntries(SyncRequest request) {
+  private synchronized SyncResponse doAppendEntries(SyncRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
@@ -232,23 +233,24 @@ abstract class StateController implements AsyncRequestHandler {
         }
       }
     }
-    return doApplyCommits(request);
+    doApplyCommits(request.commitIndex());
+    return new SyncResponse(request.id(), context.currentTerm(), true, context.log().lastIndex());
   }
 
   /**
    * Applies commits to the local state machine.
    */
-  private SyncResponse doApplyCommits(SyncRequest request) {
+  private synchronized void doApplyCommits(long commitIndex) {
     // If the synced commit index is greater than the local commit index then
     // apply commits to the local state machine.
     // Also, it's possible that one of the previous command applications failed
     // due to asynchronous communication errors, so alternatively check if the
     // local commit index is greater than last applied. If all the state machine
     // commands have not yet been applied then we want to re-attempt to apply them.
-    if (request.commitIndex() > context.commitIndex() || context.commitIndex() > context.lastApplied()) {
+    if (commitIndex > context.commitIndex() || context.commitIndex() > context.lastApplied()) {
       // Update the local commit index with min(request commit, last log // index)
       long lastIndex = context.log().lastIndex();
-      context.commitIndex(Math.min(Math.max(request.commitIndex(), context.commitIndex()), lastIndex));
+      context.commitIndex(Math.min(Math.max(commitIndex, context.commitIndex()), lastIndex));
 
       // If the updated commit index indicates that commits remain to be
       // applied to the state machine, iterate entries and apply them.
@@ -264,7 +266,6 @@ abstract class StateController implements AsyncRequestHandler {
         compactLog();
       }
     }
-    return new SyncResponse(request.id(), context.currentTerm(), true, context.log().lastIndex());
   }
 
   /**
@@ -317,11 +318,11 @@ abstract class StateController implements AsyncRequestHandler {
    */
   protected void applyCommand(long index, OperationEntry entry) {
     try {
+      logger().debug("{} - Apply operation: {}", context.clusterManager().localNode(), entry.operation());
       StateMachineExecutor.Operation operation = context.stateMachineExecutor().getOperation(entry.operation());
       if (operation != null) {
         operation.apply(entry.args());
       }
-      logger().debug("{} Applied operation: {}", context.clusterManager().localNode(), entry.operation());
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -336,9 +337,9 @@ abstract class StateController implements AsyncRequestHandler {
    */
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
+      logger().debug("{} - Apply configuration change: {}", context.clusterManager().localNode(), entry.cluster());
       context.clusterManager().cluster().update(entry.cluster(), null);
       context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster().getMembers()));
-      logger().debug("{} Applied configuration change: {}", context.clusterManager().localNode(), entry.cluster());
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -352,6 +353,7 @@ abstract class StateController implements AsyncRequestHandler {
    * @param entry The entry to apply.
    */
   protected void applySnapshot(long index, SnapshotEntry entry) {
+    logger().debug("{} - Apply snapshot: {}", context.clusterManager().localNode(), entry.cluster());
     synchronized (context.log()) {
       // Apply the snapshot to the local state machine.
       context.stateMachineExecutor().stateMachine().installSnapshot(entry.data());
@@ -372,7 +374,6 @@ abstract class StateController implements AsyncRequestHandler {
       // Finally, if necessary, increment the current term.
       context.currentTerm(Math.max(context.currentTerm(), entry.term()));
       context.lastApplied(index);
-      logger().debug("{} Applied snapshot: {}", context.clusterManager().localNode(), entry.cluster());
     }
   }
 
