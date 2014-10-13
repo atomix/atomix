@@ -230,7 +230,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
         buffer.clear();
         matchIndex = index;
       }
-    } while (tailer.nextIndex() && matchIndex <= to);
+    } while (tailer.nextIndex() && matchIndex < to);
     return entries;
   }
 
