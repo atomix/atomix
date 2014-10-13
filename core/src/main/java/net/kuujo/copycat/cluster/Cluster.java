@@ -70,9 +70,10 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void update(Observable o, Object arg) {
     LOGGER.info("{} - Configuration change detected, updating membership", this);
-    clusterChanged(config);
+    clusterChanged((ClusterConfig<M>) o);
   }
 
   /**

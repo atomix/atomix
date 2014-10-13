@@ -64,15 +64,16 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void update(Observable o, Object arg) {
     LOGGER.debug("{} - Membership change detected, updating nodes", this);
-    clusterChanged(cluster);
+    clusterChanged((Cluster<M>) o);
   }
 
   /**
    * Called when the cluster configuration has changed.
    */
-  private void clusterChanged(Cluster<M> cluster) {
+  private synchronized void clusterChanged(Cluster<M> cluster) {
     cluster.remoteMembers().forEach(member -> {
       if (!nodes.containsKey(member.id())) {
         RemoteNode<M> node = new RemoteNode<>(member, protocol);
