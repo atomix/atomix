@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Copycat extends AbstractCopycat {
+public class Copycat extends Replica {
 
   /**
    * Constructs a synchronous Copycat replica with a default configuration.
@@ -67,7 +67,7 @@ public class Copycat extends AbstractCopycat {
   /**
    * Copycat builder.
    */
-  public static class Builder extends AbstractCopycat.Builder<Copycat, Protocol<?>> {
+  public static class Builder extends Replica.Builder<Copycat, Protocol<?>> {
     public Builder() {
       super((builder) -> new Copycat(new StateContext(builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config), builder.cluster, builder.config));
     }

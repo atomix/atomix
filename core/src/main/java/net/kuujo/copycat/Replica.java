@@ -34,9 +34,11 @@ import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.spi.protocol.BaseProtocol;
 
 /**
+ * Base class for Copycat replicas.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractCopycat {
+public abstract class Replica {
   protected final StateContext state;
   protected final Cluster<?> cluster;
   protected final CopycatConfig config;
@@ -48,7 +50,7 @@ public abstract class AbstractCopycat {
    * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
    */
   @SuppressWarnings("rawtypes")
-  public static class Builder<T extends AbstractCopycat, P extends BaseProtocol<?>> {
+  public static class Builder<T extends Replica, P extends BaseProtocol<?>> {
     final Function<Builder, T> copycatFactory;
     CopycatConfig config = new CopycatConfig();
     Cluster cluster;
@@ -265,7 +267,7 @@ public abstract class AbstractCopycat {
     }
   }
 
-  protected AbstractCopycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
+  protected Replica(StateContext state, Cluster<?> cluster, CopycatConfig config) {
     this.state = state;
     this.cluster = cluster;
     this.config = config;

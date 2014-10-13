@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncCopycat extends AbstractCopycat {
+public class AsyncCopycat extends Replica {
 
   /**
    * Constructs a synchronous Copycat replica with a default configuration.
@@ -64,7 +64,7 @@ public class AsyncCopycat extends AbstractCopycat {
   /**
    * Asynchronous Copycat builder.
    */
-  public static class Builder extends AbstractCopycat.Builder<AsyncCopycat, AsyncProtocol<?>> {
+  public static class Builder extends Replica.Builder<AsyncCopycat, AsyncProtocol<?>> {
     public Builder() {
       super((builder) -> new AsyncCopycat(new StateContext(builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config), builder.cluster, builder.config));
     }
