@@ -18,7 +18,11 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.cluster.Member;
 
 /**
- * Vote cast event.
+ * Vote cast event.<p>
+ *
+ * This event will be triggered when the local replica casts a vote for one of the replicas in the cluster.
+ * Note that the vote could potentially be cast for the local replica itself as nodes always vote for themselves
+ * when they become candidates.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

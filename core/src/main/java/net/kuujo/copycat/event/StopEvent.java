@@ -16,7 +16,7 @@
 package net.kuujo.copycat.event;
 
 /**
- * Stop event.
+ * Replica stop event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

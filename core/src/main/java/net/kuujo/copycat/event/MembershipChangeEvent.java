@@ -20,7 +20,11 @@ import net.kuujo.copycat.cluster.Member;
 import java.util.Set;
 
 /**
- * Cluster membership change event.
+ * Cluster membership change event.<p>
+ *
+ * This event will be triggered when the local node <em>commits</em> a cluster configuration change. Note
+ * that this does not necessarily indicate that the user-provided cluster configuration changed. Copycat
+ * maintains a separate internal replicated cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

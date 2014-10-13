@@ -18,7 +18,10 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.CopycatState;
 
 /**
- * State change event.
+ * State change event.<p>
+ *
+ * This event will be triggered when the local replica's internal {@link net.kuujo.copycat.CopycatState} changes.
+ * Copycat replicas can be in one of four states at any given time.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

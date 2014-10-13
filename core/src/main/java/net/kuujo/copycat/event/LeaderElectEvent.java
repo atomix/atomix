@@ -18,7 +18,10 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.cluster.Member;
 
 /**
- * Leader elected event.
+ * Leader elect event.<p>
+ *
+ * This event will be triggered when the local node is elected leader or discovers a newly elected
+ * cluster leader.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
