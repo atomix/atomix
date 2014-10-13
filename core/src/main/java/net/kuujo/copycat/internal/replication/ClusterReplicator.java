@@ -184,7 +184,7 @@ public class ClusterReplicator implements Replicator, Observer {
    * Determines which message have been committed.
    */
   private void checkCommits() {
-    if (!replicas.isEmpty() && quorumIndex > 0) {
+    if (!replicas.isEmpty() && quorumIndex >= 0) {
       // Sort the list of replicas, order by the last index that was replicated
       // to the replica. This will allow us to determine the median index
       // for all known replicated entries across all cluster members.

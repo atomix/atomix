@@ -307,6 +307,7 @@ public final class StateContext {
    * Sets the commit index.
    */
   public StateContext commitIndex(long index) {
+    LOGGER.debug("{} - commitIndex: {}", clusterManager.localNode(), index);
     commitIndex = Math.max(commitIndex, index);
     return this;
   }
