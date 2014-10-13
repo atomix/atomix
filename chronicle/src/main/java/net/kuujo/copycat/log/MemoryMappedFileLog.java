@@ -333,20 +333,6 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
     lastIndex = index;
   }
 
-  @Override
-  public synchronized void removeEntry(long index) {
-    assertIsOpen();
-    if (!indexInRange(index)) {
-      throw new LogIndexOutOfBoundsException("Cannot remove entry at index %s", index);
-    }
-    long matchIndex = findAbsoluteIndex(index);
-    if (matchIndex > -1) {
-      tailer.index(matchIndex);
-      tailer.skip(8);
-      tailer.writeByte(DELETED);
-    }
-  }
-
   /**
    * Sets the interval at which to sync the log to disk.
    *
