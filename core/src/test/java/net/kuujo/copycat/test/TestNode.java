@@ -80,6 +80,15 @@ public class TestNode {
   }
 
   /**
+   * Kills the node.
+   */
+  public void kill() {
+    if (context != null) {
+      context.stop();
+    }
+  }
+
+  /**
    * Sets the node configuration.
    *
    * @param config The node configuration.
