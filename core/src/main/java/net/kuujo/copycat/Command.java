@@ -21,10 +21,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * State machine command annotation.<p>
+ * State machine write operation annotation.<p>
  *
- * This annotation is used to identify commands within a {@link net.kuujo.copycat.StateMachine} implementation. Copycat
- * uses the {@code Command} annotation to locate command methods and type information.
+ * This annotation is used to identify write-only operations within a {@link net.kuujo.copycat.StateMachine}
+ * implementation. Users should annotate any public state machine method that alters the state machine's state
+ * with this annotation. This allows Copycat to determine which operations must be pass through the leader,
+ * logged and replicated.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -33,7 +35,7 @@ import java.lang.annotation.Target;
 public @interface Command {
 
   /**
-   * The command name.
+   * The command name. Defaults to the method name.
    */
   String name() default "";
 

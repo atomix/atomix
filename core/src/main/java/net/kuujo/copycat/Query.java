@@ -20,7 +20,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a read only state machine method.
+ * State machine read-only operation annotation.<p>
+ *
+ * This annotation is used to identify read-only operations in the state machine. It is strongly recommended that
+ * users use this annotation for read-only state machine methods. This annotation allows Copycat to identify
+ * operations that do not need to be logged or replicated and thus use of this annotation can significantly
+ * improve read performance. Alternatively, this annotation should <em>never</em> be used on any method that
+ * modifies the state machine's state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -29,7 +35,7 @@ import java.lang.annotation.Target;
 public @interface Query {
 
   /**
-   * The query name.
+   * The query name. Defaults to the method name.
    */
   String name() default "";
 
