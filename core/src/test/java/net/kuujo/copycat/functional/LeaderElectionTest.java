@@ -45,11 +45,12 @@ public class LeaderElectionTest {
   public void testSingleNodeClusterLeaderIsElected() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol);
+    TestNode node1 = new TestNode().withCluster("foo").withProtocol(protocol);
     cluster.addNode(node1);
     cluster.start();
     node1.await().electedLeader();
     Assert.assertTrue(node1.instance().isLeader());
+    cluster.stop();
   }
 
   /**
@@ -58,13 +59,14 @@ public class LeaderElectionTest {
   public void testTwoNodeClusterLeaderIsElected() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol);
+    TestNode node1 = new TestNode().withCluster("foo", "bar").withProtocol(protocol);
     cluster.addNode(node1);
-    TestNode node2 = new TestNode(new Member("bar"), protocol);
+    TestNode node2 = new TestNode().withCluster("bar", "foo").withProtocol(protocol);
     cluster.addNode(node2);
     cluster.start();
     node1.await().leaderElected();
     Assert.assertTrue(node1.instance().isLeader() || node2.instance().isLeader());
+    cluster.stop();
   }
 
   /**
@@ -73,15 +75,16 @@ public class LeaderElectionTest {
   public void testThreeNodeClusterLeaderIsElected() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol);
+    TestNode node1 = new TestNode().withCluster("foo", "bar", "baz").withProtocol(protocol);
     cluster.addNode(node1);
-    TestNode node2 = new TestNode(new Member("bar"), protocol);
+    TestNode node2 = new TestNode().withCluster("bar", "foo", "baz").withProtocol(protocol);
     cluster.addNode(node2);
-    TestNode node3 = new TestNode(new Member("baz"), protocol);
+    TestNode node3 = new TestNode().withCluster("baz", "foo", "bar").withProtocol(protocol);
     cluster.addNode(node3);
     cluster.start();
     node1.await().leaderElected();
     Assert.assertTrue(node1.instance().isLeader() || node2.instance().isLeader() || node3.instance().isLeader());
+    cluster.stop();
   }
 
   /**
@@ -90,7 +93,9 @@ public class LeaderElectionTest {
   public void testCandidateWithMostUpToDateLogIsElectedOnStartup() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol)
+    TestNode node1 = new TestNode()
+      .withCluster("foo", "bar", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -108,7 +113,9 @@ public class LeaderElectionTest {
       .withLastApplied(6);
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode(new Member("bar"), protocol)
+    TestNode node2 = new TestNode()
+      .withCluster("bar", "foo", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -129,6 +136,7 @@ public class LeaderElectionTest {
 
     node1.await().electedLeader();
     Assert.assertTrue(node1.instance().isLeader());
+    cluster.stop();
   }
 
   /**
@@ -137,9 +145,11 @@ public class LeaderElectionTest {
   public void testCandidateWithMostUpToDateLogIsElectedAfterFailure() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol)
+    TestNode node1 = new TestNode()
+      .withCluster("foo", "bar", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
-      .withLeader(null)
+      .withLeader("baz")
       .withStateMachine(new TestStateMachine())
       .withLog(new TestLog()
         .withEntry(new ConfigurationEntry(1, new ClusterConfig()
@@ -151,12 +161,15 @@ public class LeaderElectionTest {
         .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(5)
-      .withLastApplied(5);
+      .withLastApplied(5)
+      .withVotedFor(null);
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode(new Member("bar"), protocol)
+    TestNode node2 = new TestNode()
+      .withCluster("bar", "foo", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
-      .withLeader(null)
+      .withLeader("baz")
       .withStateMachine(new TestStateMachine())
       .withLog(new TestLog()
         .withEntry(new ConfigurationEntry(1, new ClusterConfig()
@@ -169,13 +182,15 @@ public class LeaderElectionTest {
         .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
-      .withLastApplied(6);
+      .withLastApplied(6)
+      .withVotedFor(null);
     cluster.addNode(node2);
 
     cluster.start();
 
     node2.await().electedLeader();
     Assert.assertTrue(node2.instance().isLeader());
+    cluster.stop();
   }
 
   /**
@@ -184,7 +199,9 @@ public class LeaderElectionTest {
   public void testCandidatesIncrementTermAndRestartElectionDuringSplitVote() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol)
+    TestNode node1 = new TestNode()
+      .withCluster("foo", "bar", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -203,7 +220,9 @@ public class LeaderElectionTest {
       .withVotedFor("foo");
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode(new Member("bar"), protocol)
+    TestNode node2 = new TestNode()
+      .withCluster("bar", "foo", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -226,6 +245,7 @@ public class LeaderElectionTest {
     node1.await().electedLeader();
     Assert.assertTrue(node1.instance().isLeader());
     Assert.assertTrue(node1.instance().currentTerm() > 3);
+    cluster.stop();
   }
 
   /**
@@ -234,7 +254,9 @@ public class LeaderElectionTest {
   public void testThatOneLeaderElectedWhenTwoNodesAreEqual() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol)
+    TestNode node1 = new TestNode()
+      .withCluster("foo", "bar", "baz", "foobar", "barbaz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -252,7 +274,9 @@ public class LeaderElectionTest {
       .withLastApplied(6);
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode(new Member("bar"), protocol)
+    TestNode node2 = new TestNode()
+      .withCluster("bar", "foo", "baz", "foobar", "barbaz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -270,7 +294,9 @@ public class LeaderElectionTest {
       .withLastApplied(6);
     cluster.addNode(node2);
 
-    TestNode node3 = new TestNode(new Member("baz"), protocol)
+    TestNode node3 = new TestNode()
+      .withCluster("baz", "bar", "foo", "foobar", "barbaz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -288,7 +314,9 @@ public class LeaderElectionTest {
       .withLastApplied(6);
     cluster.addNode(node3);
 
-    TestNode node4 = new TestNode(new Member("foobar"), protocol)
+    TestNode node4 = new TestNode()
+      .withCluster("foobar", "foo", "bar", "baz", "barbaz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
@@ -318,6 +346,7 @@ public class LeaderElectionTest {
     }
 
     Assert.assertEquals(1, leaderCount);
+    cluster.stop();
   }
 
 }

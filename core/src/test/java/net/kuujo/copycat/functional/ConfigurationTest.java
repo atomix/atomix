@@ -45,7 +45,9 @@ public class ConfigurationTest {
   public void testLeaderReplicatesExpandedConfiguration() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol)
+    TestNode node1 = new TestNode()
+      .withCluster("foo", "bar", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -63,7 +65,9 @@ public class ConfigurationTest {
       .withLastApplied(6);
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode(new Member("bar"), protocol)
+    TestNode node2 = new TestNode()
+      .withCluster("bar", "foo", "baz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -81,7 +85,9 @@ public class ConfigurationTest {
       .withLastApplied(6);
     cluster.addNode(node2);
 
-    TestNode node3 = new TestNode(new Member("baz"), protocol)
+    TestNode node3 = new TestNode()
+      .withCluster("baz", "bar", "foo")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -106,6 +112,7 @@ public class ConfigurationTest {
     // First, the leader should have replicated a join configuration.
     node1.await().membershipChange();
     Assert.assertNotNull(node1.instance().clusterManager().cluster().remoteMember("foobarbaz"));
+    cluster.stop();
   }
 
   /**
@@ -114,7 +121,9 @@ public class ConfigurationTest {
   public void testLeaderReplicatesReducedConfiguration() {
     AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode(new Member("foo"), protocol)
+    TestNode node1 = new TestNode()
+      .withCluster("foo", "bar", "baz", "foobarbaz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -132,7 +141,9 @@ public class ConfigurationTest {
       .withLastApplied(6);
     cluster.addNode(node1);
 
-    TestNode node2 = new TestNode(new Member("bar"), protocol)
+    TestNode node2 = new TestNode()
+      .withCluster("bar", "foo", "baz", "foobarbaz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -150,7 +161,9 @@ public class ConfigurationTest {
       .withLastApplied(6);
     cluster.addNode(node2);
 
-    TestNode node3 = new TestNode(new Member("baz"), protocol)
+    TestNode node3 = new TestNode()
+      .withCluster("baz", "bar", "foo", "foobarbaz")
+      .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
@@ -173,8 +186,13 @@ public class ConfigurationTest {
     node3.instance().cluster().config().removeRemoteMember(new Member("foobarbaz"));
 
     // First, the leader should have replicated a join configuration.
-    node1.await().membershipChange();
-    Assert.assertNull(node1.instance().clusterManager().cluster().remoteMember("foobarbaz"));
+    if (node1.instance().clusterManager().cluster().remoteMember("foobarbaz") == null) {
+      Assert.assertNull(node1.instance().clusterManager().cluster().remoteMember("foobarbaz"));
+    } else {
+      node1.await().membershipChange();
+      Assert.assertNull(node1.instance().clusterManager().cluster().remoteMember("foobarbaz"));
+    }
+    cluster.stop();
   }
 
 }

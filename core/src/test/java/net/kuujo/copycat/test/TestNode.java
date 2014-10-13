@@ -18,6 +18,7 @@ package net.kuujo.copycat.test;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.state.*;
 import net.kuujo.copycat.protocol.AsyncLocalProtocol;
@@ -34,7 +35,7 @@ import java.util.concurrent.TimeUnit;
 public class TestNode {
   private final TestNodeEvents events;
   private StateContext context;
-  private Member member;
+  private Cluster cluster;
   private AsyncProtocol protocol = new AsyncLocalProtocol();
   private CopycatConfig config = new CopycatConfig();
   private CopycatState state = CopycatState.FOLLOWER;
@@ -46,10 +47,62 @@ public class TestNode {
   private long commitIndex;
   private long lastApplied;
 
-  public <M extends Member> TestNode(M member, AsyncProtocol<M> protocol) {
-    this.member = member;
-    this.protocol = protocol;
+  public <M extends Member> TestNode() {
     this.events = new TestNodeEvents(this);
+  }
+
+  /**
+   * Sets the test node cluster.
+   *
+   * @param members The test node cluster members.
+   * @return The test node.
+   */
+  public TestNode withCluster(String... members) {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    config.setLocalMember(new Member(members[0]));
+    for (int i = 1; i < members.length; i++) {
+      config.addRemoteMember(new Member(members[i]));
+    }
+    this.cluster = new Cluster<>(config);
+    return this;
+  }
+
+  /**
+   * Sets the test node cluster.
+   *
+   * @param members The test node cluster members.
+   * @return The test node.
+   */
+  public <M extends Member> TestNode withCluster(M... members) {
+    ClusterConfig<Member> config = new ClusterConfig<>();
+    config.setLocalMember(members[0]);
+    for (int i = 1; i < members.length; i++) {
+      config.addRemoteMember(members[i]);
+    }
+    this.cluster = new Cluster<>(config);
+    return this;
+  }
+
+  /**
+   * Sets the test node cluster.
+   *
+   * @param cluster The test node cluster.
+   * @return The test node.
+   */
+  public <M extends Member> TestNode withCluster(Cluster<M> cluster) {
+    this.cluster = cluster;
+    return this;
+  }
+
+  /**
+   * Sets the test node protocol.
+   *
+   * @param protocol The test node protocol.
+   * @return The test node.
+   */
+  public TestNode withProtocol(AsyncProtocol protocol) {
+    this.protocol = protocol;
+    return this;
   }
 
   /**
@@ -58,7 +111,7 @@ public class TestNode {
    * @return The node id.
    */
   public String id() {
-    return member.id();
+    return cluster.localMember().id();
   }
 
   /**
@@ -67,7 +120,7 @@ public class TestNode {
    * @return The node configuration.
    */
   public Member member() {
-    return member;
+    return cluster.localMember();
   }
 
   /**
@@ -217,10 +270,8 @@ public class TestNode {
 
   /**
    * Starts the node.
-   *
-   * @param cluster The cluster configuration.
    */
-  public <M extends Member> void start(Cluster<M> cluster) {
+  public <M extends Member> void start() {
     context = new StateContext(stateMachine, log, cluster, protocol, config);
     context.currentLeader(leader);
     context.currentTerm(term);
@@ -248,6 +299,21 @@ public class TestNode {
       latch.await(30, TimeUnit.SECONDS);
     } catch (InterruptedException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Stops the test node.
+   */
+  public void stop() {
+    if (context != null) {
+      CountDownLatch latch = new CountDownLatch(1);
+      context.stop().thenRun(latch::countDown);
+      try {
+        latch.await(30, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        throw new RuntimeException(e);
+      }
     }
   }
 

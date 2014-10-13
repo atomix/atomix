@@ -15,15 +15,8 @@
  */
 package net.kuujo.copycat.test;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.LocalClusterConfig;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
-
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * Test cluster.
@@ -31,20 +24,7 @@ import java.util.function.Supplier;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestCluster {
-  private static final AsyncProtocol<?> DEFAULT_PROTOCOL = new AsyncLocalProtocol();
   private final List<TestNode> nodes = new ArrayList<>();
-  private Supplier<AsyncProtocol<?>> protocolFactory = () -> DEFAULT_PROTOCOL;
-
-  /**
-   * Sets a protocol factory.
-   *
-   * @param factory The protocol factory.
-   * @return The test cluster.
-   */
-  public TestCluster withProtocolFactory(Supplier<AsyncProtocol<?>> factory) {
-    this.protocolFactory = factory;
-    return this;
-  }
 
   /**
    * Adds a test node to the cluster.
@@ -81,16 +61,14 @@ public class TestCluster {
    * Synchronously starts the test cluster.
    */
   public void start() {
-    nodes.forEach(node -> {
-      LocalClusterConfig config = new LocalClusterConfig();
-      config.setLocalMember(node.member());
-      nodes.forEach(n -> {
-        if (!n.id().equals(node.id())) {
-          config.addRemoteMember(n.member());
-        }
-      });
-      node.start(new Cluster<Member>(config));
-    });
+    nodes.forEach(TestNode::start);
+  }
+
+  /**
+   * Synchronously stops the test cluster.
+   */
+  public void stop() {
+    nodes.forEach(TestNode::stop);
   }
 
 }
