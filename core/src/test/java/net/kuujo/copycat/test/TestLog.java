@@ -102,7 +102,7 @@ public class TestLog extends InMemoryLog {
   /**
    * Returns test log event listeners.
    */
-  public TestLogEvents await() {
+  public TestLogEvents on() {
     return events;
   }
 

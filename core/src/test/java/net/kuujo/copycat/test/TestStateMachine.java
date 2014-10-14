@@ -28,6 +28,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestStateMachine implements StateMachine {
+  private String data = "Hello world!";
   private final TestStateMachineEvents events;
   private final Map<String, Runnable> listeners = new HashMap<>(10);
 
@@ -42,12 +43,52 @@ public class TestStateMachine implements StateMachine {
     return events;
   }
 
+  void addSnapshotListener(Runnable callback) {
+    listeners.put("snapshot", callback);
+  }
+
+  void addInstallListener(Runnable callback) {
+    listeners.put("install", callback);
+  }
+
   void addCommandListener(Runnable callback) {
     listeners.put("command", callback);
   }
 
   void addQueryListener(Runnable callback) {
     listeners.put("query", callback);
+  }
+
+  /**
+   * Returns the state machine data.
+   */
+  public String data() {
+    return data;
+  }
+
+  /**
+   * Sets the state machine data.
+   */
+  public void data(String data) {
+    this.data = data;
+  }
+
+  @Override
+  public byte[] takeSnapshot() {
+    Runnable listener = listeners.remove("snapshot");
+    if (listener != null) {
+      listener.run();
+    }
+    return data.getBytes();
+  }
+
+  @Override
+  public void installSnapshot(byte[] snapshot) {
+    Runnable listener = listeners.remove("install");
+    if (listener != null) {
+      listener.run();
+    }
+    data = new String(snapshot);
   }
 
   @Command

@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.test;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import net.kuujo.copycat.log.Entry;
 
 /**
@@ -35,34 +32,24 @@ public class TestLogEvents {
   /**
    * Listens for an entry being appended to the log.
    *
-   * @param entry The entry to match.
+   * @param entry The entry.
+   * @param callback The event callback.
    * @return The event object.
    */
-  public TestLogEvents appendedEntry(Entry entry) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    log.addEntryListener((i, e) -> e.equals(entry), latch::countDown);
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+  public TestLogEvents appendedEntry(Entry entry, Runnable callback) {
+    log.addEntryListener((i, e) -> e.equals(entry), callback);
     return this;
   }
 
   /**
    * Listens for an entry being appended to the log.
    *
-   * @param index The index for which to listen.
+   * @param index The entry index.
+   * @param callback The event callback.
    * @return The event object.
    */
-  public TestLogEvents appendedEntry(long index) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    log.addEntryListener((i, e) -> i == index, latch::countDown);
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+  public TestLogEvents appendedEntry(long index, Runnable callback) {
+    log.addEntryListener((i, e) -> i == index, callback);
     return this;
   }
 
@@ -70,32 +57,22 @@ public class TestLogEvents {
    * Listens for an entry being appended to the log.
    *
    * @param entryType The entry type.
+   * @param callback The event callback.
    * @return The event object.
    */
-  public TestLogEvents appendedEntry(Class<? extends Entry> entryType) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    log.addEntryListener((i, e) -> entryType.isAssignableFrom(e.getClass()), latch::countDown);
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+  public TestLogEvents appendedEntry(Class<? extends Entry> entryType, Runnable callback) {
+    log.addEntryListener((i, e) -> entryType.isAssignableFrom(e.getClass()), callback);
     return this;
   }
 
   /**
    * Listens for the log to be compacted.
    *
+   * @param callback An event callback.
    * @return The event object.
    */
-  public TestLogEvents compacted() {
-    final CountDownLatch latch = new CountDownLatch(1);
-    log.addCompactListener(latch::countDown);
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
-    }
+  public TestLogEvents compacted(Runnable callback) {
+    log.addCompactListener(callback);
     return this;
   }
 

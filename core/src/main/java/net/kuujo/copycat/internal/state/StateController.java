@@ -411,6 +411,8 @@ abstract class StateController implements AsyncRequestHandler {
           } catch (IOException e) {
             throw new CopycatException(e, "Failed to compact log.");
           }
+        } else {
+          logger().warn("{} - Failed to compact log: no snapshot data provided", context.clusterManager().localNode());
         }
       }
     }
