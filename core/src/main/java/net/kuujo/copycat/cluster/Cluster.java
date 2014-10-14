@@ -81,8 +81,8 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
    */
   private void clusterChanged(ClusterConfig<M> config) {
     // Add any remote members that don't already exist in the cluster.
-    config.getRemoteMembers().forEach(member -> {
-      if (!members.containsKey(member.id())) {
+    config.getMembers().forEach(member -> {
+      if (!member.equals(localMember) && !members.containsKey(member.id())) {
         remoteMembers.add(member);
         members.put(member.id(), member);
       }
@@ -92,7 +92,7 @@ public class Cluster<M extends Member> extends Observable implements Observer, C
     while (iterator.hasNext()) {
       M member = iterator.next();
       boolean exists = false;
-      for (M m : config.getRemoteMembers()) {
+      for (M m : config.getMembers()) {
         if (m.equals(member)) {
           exists = true;
           break;
