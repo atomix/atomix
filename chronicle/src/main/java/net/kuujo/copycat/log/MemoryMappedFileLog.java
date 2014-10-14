@@ -38,7 +38,7 @@ import java.util.concurrent.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
+public class MemoryMappedFileLog extends BaseFileLog {
   private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("chronicle-syncer-%s");
   
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
@@ -118,7 +118,7 @@ public class MemoryMappedFileLog extends BaseFileLog implements Compactable {
   public synchronized void compact(long index, Entry snapshot) throws IOException {
     Assert.isNotNull(snapshot, "snapshot");
     assertIsOpen();
-    
+
     if (index > firstIndex) {
       // Create a new log file using the most recent timestamp.
       File newLogFile = createLogFile();

@@ -203,7 +203,7 @@ class NodeReplicator {
   private void doSync(final long prevIndex, final CopycatEntry prevEntry, final List<CopycatEntry> entries) {
     final long commitIndex = state.commitIndex();
 
-    SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.currentTerm(), state.cluster().localMember().id(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
+    SyncRequest request = new SyncRequest(state.nextCorrelationId(), state.currentTerm(), state.clusterManager().localNode().member().id(), prevIndex, prevEntry != null ? prevEntry.term() : 0, entries, commitIndex);
 
     sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 
@@ -231,7 +231,7 @@ class NodeReplicator {
               // the replica in the response to generate a new nextIndex. This allows
               // us to skip repeatedly replicating one entry at a time if it's not
               // necessary.
-              nextIndex = sendIndex = response.lastLogIndex() + 1;
+              nextIndex = sendIndex = Math.max(response.lastLogIndex() + 1, log.firstIndex());
               replicate();
             }
           }
@@ -240,6 +240,9 @@ class NodeReplicator {
         }
       }
     });
+
+    // TODO: replicate() should immediately be called recursively for pipelining.
+    // replicate();
   }
 
   /**

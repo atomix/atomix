@@ -32,7 +32,7 @@ import java.util.TreeMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InMemoryLog extends BaseLog implements Compactable {
+public class InMemoryLog extends BaseLog {
   private TreeMap<Long, byte[]> log;
   private volatile long size;
   private final ByteBuffer buffer = ByteBuffer.allocate(4096);

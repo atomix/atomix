@@ -97,7 +97,7 @@ public class SyncResponse extends Response {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, succeeded=%b]", getClass().getSimpleName(), id(), term, succeeded);
+    return String.format("%s[id=%s, term=%d, succeeded=%b, lastLogIndex=%d]", getClass().getSimpleName(), id(), term, succeeded, lastLogIndex);
   }
 
 }

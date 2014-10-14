@@ -24,13 +24,11 @@ import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.CopycatEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
-import net.kuujo.copycat.log.Compactable;
 import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -108,7 +106,8 @@ abstract class StateController implements AsyncRequestHandler {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.currentTerm()) {
-      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.clusterManager().localNode(), request, context.currentTerm());
+      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.clusterManager()
+        .localNode(), request, context.currentTerm());
       return new PingResponse(request.id(), context.currentTerm(), false);
     } else if (request.logIndex() > 0 && request.logTerm() > 0) {
       return doCheckPingEntry(request);
@@ -215,21 +214,28 @@ abstract class StateController implements AsyncRequestHandler {
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
       synchronized (context.log()) {
-        if (context.log().lastIndex() > request.prevLogIndex()) {
-          for (int i = 0; i < request.entries().size(); i++) {
-            CopycatEntry entry = request.<CopycatEntry>entries().get(i);
-            CopycatEntry match = context.log().getEntry(request.prevLogIndex() + i + 1);
-            if (match != null && entry.term() != match.term()) {
-              logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.clusterManager().localNode());
-              context.log().removeAfter(request.prevLogIndex() + i);
-              List<Entry> entries = request.entries().subList(i, request.entries().size());
-              context.log().appendEntries(entries);
-              logger().debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), entries, request.prevLogIndex() + i);
+        long index = request.prevLogIndex();
+        for (CopycatEntry entry : request.<CopycatEntry>entries()) {
+          index++;
+          // Replicated snapshot entries are *always* immediately logged and applied to the state machine
+          // since snapshots are only taken of committed state machine state. This will cause all previous
+          // entries to be removed from the log.
+          if (entry instanceof SnapshotEntry) {
+            installSnapshot(index, (SnapshotEntry) entry);
+          } else {
+            CopycatEntry match = context.log().getEntry(index);
+            if (match != null) {
+              if (entry.term() != match.term()) {
+                logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.clusterManager().localNode());
+                context.log().removeAfter(index - 1);
+                context.log().appendEntry(entry);
+                logger().debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), entry, index);
+              }
+            } else {
+              context.log().appendEntry(entry);
+              logger().debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), entry, index);
             }
           }
-        } else {
-          context.log().appendEntries(request.entries());
-          logger().debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), request.entries(), request.prevLogIndex() + 1);
         }
       }
     }
@@ -266,6 +272,23 @@ abstract class StateController implements AsyncRequestHandler {
         compactLog();
       }
     }
+  }
+
+  /**
+   * Installs a replicated snapshot.
+   */
+  private synchronized void installSnapshot(long index, SnapshotEntry entry) {
+    logger().info("{} - Installing snapshot {}", context.clusterManager().localNode(), entry);
+    logger().info("{} - Compacting log", context.clusterManager().localNode());
+    try {
+      context.log().compact(index, entry);
+    } catch (IOException e) {
+      logger().error(e.getMessage());
+    }
+
+    applySnapshot(index, (SnapshotEntry) entry);
+    context.commitIndex(index);
+    context.lastApplied(index);
   }
 
   /**
@@ -359,12 +382,10 @@ abstract class StateController implements AsyncRequestHandler {
       context.stateMachineExecutor().stateMachine().installSnapshot(entry.data());
 
       // If the log is compactable then compact it at the snapshot index.
-      if (context.log() instanceof Compactable) {
-        try {
-          ((Compactable) context.log()).compact(index, entry);
-        } catch (IOException e) {
-          throw new CopycatException(e, "Failed to compact log.");
-        }
+      try {
+        context.log().compact(index, entry);
+      } catch (IOException e) {
+        throw new CopycatException(e, "Failed to compact log.");
       }
 
       // Set the local cluster configuration according to the snapshot cluster membership.
@@ -399,15 +420,14 @@ abstract class StateController implements AsyncRequestHandler {
     // using the state machine snapshot as the first entry. The snapshot
     // is stored as a log entry in order to simplify replication to
     // out-of-sync followers.
-    if (context.log() instanceof Compactable && context.log().size() > context.config().getMaxLogSize()) {
+    if (context.log().size() > context.config().getMaxLogSize()) {
       synchronized (context.log()) {
         logger().info("{} - Compacting log", context.clusterManager().localNode());
         final long lastApplied = context.lastApplied();
         final SnapshotEntry snapshot = createSnapshot();
         if (snapshot != null) {
-          Compactable log = (Compactable) context.log();
           try {
-            log.compact(lastApplied, snapshot);
+            context.log().compact(lastApplied, snapshot);
           } catch (IOException e) {
             throw new CopycatException(e, "Failed to compact log.");
           }

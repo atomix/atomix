@@ -88,41 +88,37 @@ public abstract class AbstractLogTest {
   }
 
   public void testCompactEndOfLog() throws Exception {
-    if (log instanceof Compactable) {
-      appendEntries();
-      ((Compactable) log).compact(5,
-        new SnapshotEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("foo"))
-          .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
+    appendEntries();
+    log.compact(5,
+      new SnapshotEntry(1, new ClusterConfig()
+        .withLocalMember(new Member("foo"))
+        .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
 
-      assertEquals(log.firstIndex(), 5);
-      assertEquals(log.lastIndex(), 5);
-      SnapshotEntry entry = log.getEntry(5);
-      assertEquals(entry.term(), 1);
-      assertEquals("Hello world!", new String(entry.data()));
-    }
+    assertEquals(log.firstIndex(), 5);
+    assertEquals(log.lastIndex(), 5);
+    SnapshotEntry entry = log.getEntry(5);
+    assertEquals(entry.term(), 1);
+    assertEquals("Hello world!", new String(entry.data()));
   }
 
   public void testCompactMiddleOfLog() throws Exception {
-    if (log instanceof Compactable) {
-      appendEntries();
-      ((Compactable) log).compact(3,
-        new SnapshotEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("foo"))
-          .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
+    appendEntries();
+    log.compact(3,
+      new SnapshotEntry(1, new ClusterConfig()
+        .withLocalMember(new Member("foo"))
+        .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
 
-      assertEquals(log.firstIndex(), 3);
-      assertEquals(log.lastIndex(), 5);
-      SnapshotEntry entry = log.getEntry(3);
-      assertEquals(entry.term(), 1);
-      assertEquals("Hello world!", new String(entry.data()));
-      OperationEntry entry2 = log.getEntry(4);
-      assertEquals(entry2.term(), 1);
-      assertEquals("bar", entry2.operation());
-      OperationEntry entry3 = log.getEntry(5);
-      assertEquals(entry3.term(), 1);
-      assertEquals("baz", entry3.operation());
-    }
+    assertEquals(log.firstIndex(), 3);
+    assertEquals(log.lastIndex(), 5);
+    SnapshotEntry entry = log.getEntry(3);
+    assertEquals(entry.term(), 1);
+    assertEquals("Hello world!", new String(entry.data()));
+    OperationEntry entry2 = log.getEntry(4);
+    assertEquals(entry2.term(), 1);
+    assertEquals("bar", entry2.operation());
+    OperationEntry entry3 = log.getEntry(5);
+    assertEquals(entry3.term(), 1);
+    assertEquals("baz", entry3.operation());
   }
 
   public void testContainsEntry() throws Exception {

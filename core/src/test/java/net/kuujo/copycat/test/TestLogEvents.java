@@ -17,6 +17,8 @@ package net.kuujo.copycat.test;
 
 import net.kuujo.copycat.log.Entry;
 
+import java.util.function.BiConsumer;
+
 /**
  * Test log events.
  *
@@ -36,7 +38,7 @@ public class TestLogEvents {
    * @param callback The event callback.
    * @return The event object.
    */
-  public TestLogEvents appendedEntry(Entry entry, Runnable callback) {
+  public TestLogEvents appendedEntry(Entry entry, BiConsumer<Long, Entry> callback) {
     log.addEntryListener((i, e) -> e.equals(entry), callback);
     return this;
   }
@@ -48,7 +50,7 @@ public class TestLogEvents {
    * @param callback The event callback.
    * @return The event object.
    */
-  public TestLogEvents appendedEntry(long index, Runnable callback) {
+  public TestLogEvents appendedEntry(long index, BiConsumer<Long, Entry> callback) {
     log.addEntryListener((i, e) -> i == index, callback);
     return this;
   }
@@ -60,7 +62,7 @@ public class TestLogEvents {
    * @param callback The event callback.
    * @return The event object.
    */
-  public TestLogEvents appendedEntry(Class<? extends Entry> entryType, Runnable callback) {
+  public TestLogEvents appendedEntry(Class<? extends Entry> entryType, BiConsumer<Long, Entry> callback) {
     log.addEntryListener((i, e) -> entryType.isAssignableFrom(e.getClass()), callback);
     return this;
   }

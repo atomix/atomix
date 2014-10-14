@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 /**
@@ -40,8 +41,8 @@ public class TestLog extends InMemoryLog {
 
   private static class EntryListener {
     private final BiFunction<Long, Entry, Boolean> predicate;
-    private final Runnable callback;
-    private EntryListener(BiFunction<Long, Entry, Boolean> predicate, Runnable callback) {
+    private final BiConsumer<Long, Entry> callback;
+    private EntryListener(BiFunction<Long, Entry, Boolean> predicate, BiConsumer<Long, Entry> callback) {
       this.predicate = predicate;
       this.callback = callback;
     }
@@ -114,7 +115,7 @@ public class TestLog extends InMemoryLog {
       EntryListener listener = iterator.next();
       if (listener.predicate.apply(index, entry)) {
         iterator.remove();
-        listener.callback.run();
+        listener.callback.accept(index, entry);
       }
     }
     return index;
@@ -129,7 +130,7 @@ public class TestLog extends InMemoryLog {
     compactListeners.clear();
   }
 
-  void addEntryListener(BiFunction<Long, Entry, Boolean> function, Runnable callback) {
+  void addEntryListener(BiFunction<Long, Entry, Boolean> function, BiConsumer<Long, Entry> callback) {
     entryListeners.add(new EntryListener(function, callback));
   }
 

@@ -18,6 +18,8 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -215,6 +217,93 @@ public class SnapshotTest {
     Assert.assertTrue(compacted.get());
 
     Entry firstEntry = node1.log().firstEntry();
+    Assert.assertTrue(firstEntry instanceof SnapshotEntry);
+    Assert.assertEquals("Hello world!", new String(((SnapshotEntry) firstEntry).data()));
+
+    cluster.stop();
+  }
+
+  /**
+   * Tests that the leader replicates its snapshot to far out of sync followers.
+   */
+  public void testLeaderReplicatesSnapshotToOutOfSyncFollowers() throws Exception {
+    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+
+    TestLog log1 = new TestLog();
+    log1.appendEntry(new ConfigurationEntry(1, new ClusterConfig()
+      .withLocalMember(new Member("foo"))
+      .withRemoteMembers(new Member("bar"), new Member("baz"))));
+    for (long i = 0; i < 1000; i++) {
+      log1.appendEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
+    }
+    SnapshotEntry snapshot1 = new SnapshotEntry(1, new ClusterConfig()
+      .withLocalMember(new Member("foo"))
+      .withRemoteMembers(new Member("bar"), new Member("baz")),
+      "Hello world!".getBytes());
+    log1.compact(800, snapshot1);
+
+    TestCluster cluster = new TestCluster();
+    TestNode node1 = new TestNode()
+      .withCluster("foo", "bar", "baz")
+      .withProtocol(protocol)
+      .withTerm(1)
+      .withLeader("baz")
+      .withStateMachine(new TestStateMachine())
+      .withLog(log1)
+      .withState(CopycatState.FOLLOWER)
+      .withCommitIndex(999)
+      .withLastApplied(999);
+    cluster.addNode(node1);
+
+    TestNode node2 = new TestNode()
+      .withCluster("bar", "foo", "baz")
+      .withProtocol(protocol)
+      .withTerm(1)
+      .withLeader("baz")
+      .withStateMachine(new TestStateMachine())
+      .withLog(new TestLog()
+        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
+          .withLocalMember(new Member("bar"))
+          .withRemoteMembers(new Member("foo"), new Member("baz"))))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
+        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz"))))
+      .withState(CopycatState.FOLLOWER)
+      .withCommitIndex(0)
+      .withLastApplied(0);
+    cluster.addNode(node2);
+
+    TestLog log3 = new TestLog();
+    log1.appendEntry(new ConfigurationEntry(1, new ClusterConfig()
+      .withLocalMember(new Member("baz"))
+      .withRemoteMembers(new Member("bar"), new Member("foo"))));
+    for (long i = 0; i < 1000; i++) {
+      log3.appendEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
+    }
+    SnapshotEntry snapshot3 = new SnapshotEntry(1, new ClusterConfig()
+      .withLocalMember(new Member("baz"))
+      .withRemoteMembers(new Member("bar"), new Member("foo")),
+      "Hello world!".getBytes());
+    log3.compact(800, snapshot3);
+
+    TestNode node3 = new TestNode()
+      .withCluster("baz", "bar", "foo")
+      .withProtocol(protocol)
+      .withTerm(1)
+      .withLeader("baz")
+      .withStateMachine(new TestStateMachine())
+      .withLog(log3)
+      .withState(CopycatState.LEADER)
+      .withCommitIndex(999)
+      .withLastApplied(999);
+    cluster.addNode(node3);
+
+    cluster.start();
+
+    Assert.assertEquals(800, node2.log().firstIndex());
+    Entry firstEntry = node2.log().firstEntry();
     Assert.assertTrue(firstEntry instanceof SnapshotEntry);
     Assert.assertEquals("Hello world!", new String(((SnapshotEntry) firstEntry).data()));
 
