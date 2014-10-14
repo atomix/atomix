@@ -371,7 +371,7 @@ public final class StateContext {
     value += "[\n";
     value += String.format("memberId=%s", clusterManager.localNode().member().id());
     value += ",\n";
-    value += String.format("state=%s", currentState);
+    value += String.format("state=%s", currentState.state());
     value += ",\n";
     value += String.format("term=%d", currentTerm);
     value += ",\n";

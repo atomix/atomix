@@ -224,12 +224,12 @@ abstract class StateController implements AsyncRequestHandler {
               context.log().removeAfter(request.prevLogIndex() + i);
               List<Entry> entries = request.entries().subList(i, request.entries().size());
               context.log().appendEntries(entries);
-              logger().debug("{} - Appended {} to log", context.clusterManager().localNode(), entries);
+              logger().debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), entries, request.prevLogIndex() + i);
             }
           }
         } else {
           context.log().appendEntries(request.entries());
-          logger().debug("{} - Appended {} to log", context.clusterManager().localNode(), request.entries());
+          logger().debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), request.entries(), request.prevLogIndex() + 1);
         }
       }
     }
@@ -535,7 +535,21 @@ abstract class StateController implements AsyncRequestHandler {
       @SuppressWarnings("rawtypes")
       RemoteNode leader = context.clusterManager().remoteNode(context.currentLeader());
       if (leader != null) {
-        return leader.client().submit(request);
+        logger().debug("{} - Forwarding {} to leader {}", context.clusterManager().localNode(), request, leader);
+        leader.client().connect().whenComplete((r, e) -> {
+          if (e != null) {
+            future.completeExceptionally(e);
+          } else {
+            leader.client().submit(request).whenComplete((result, error) -> {
+              if (error != null) {
+                future.completeExceptionally(error);
+              } else {
+                future.complete(result);
+              }
+            });
+          }
+        });
+        return future;
       }
     }
     return CompletableFuture.completedFuture(logResponse(new SubmitResponse(request.id(), "Not the leader")));

@@ -84,9 +84,9 @@ public class LeaderController extends StateController implements Observer {
     // Ensure that the cluster configuration is up-to-date and properly
     // replicated by committing the current configuration to the log. This will
     // ensure that nodes' cluster configurations are consistent with the leader's.
-    ConfigurationEntry configurationEntry = new ConfigurationEntry(context.currentTerm(), context.clusterManager().cluster().config().copy());
-    context.log().appendEntry(configurationEntry);
-    LOGGER.debug("{} - Appended {} to log", context.clusterManager().localNode(), configurationEntry);
+    ConfigurationEntry configEntry = new ConfigurationEntry(context.currentTerm(), context.clusterManager().cluster().config().copy());
+    long configIndex = context.log().appendEntry(configEntry);
+    LOGGER.debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), configEntry, configIndex);
 
     // Start observing the user provided cluster configuration for changes.
     // When the cluster configuration changes, changes will be committed to the
@@ -158,7 +158,7 @@ public class LeaderController extends StateController implements Observer {
       // followers and applied to their internal cluster managers.
       ConfigurationEntry jointConfigEntry = new ConfigurationEntry(context.currentTerm(), jointConfig);
       long configIndex = context.log().appendEntry(jointConfigEntry);
-      LOGGER.debug("{} - Appended {} to log", context.clusterManager().localNode(), jointConfigEntry);
+      LOGGER.debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), jointConfigEntry, configIndex);
 
       // Immediately after the entry is appended to the log, apply the joint
       // configuration. Cluster membership changes do not wait for commitment.
@@ -178,8 +178,8 @@ public class LeaderController extends StateController implements Observer {
         // Append the new user configuration to the log and force all replicas
         // to be synchronized.
         ConfigurationEntry newConfigEntry = new ConfigurationEntry(context.currentTerm(), userConfig);
-        context.log().appendEntry(newConfigEntry);
-        LOGGER.debug("{} - Appended {} to log", context.clusterManager().localNode(), newConfigEntry);
+        long newConfigIndex = context.log().appendEntry(newConfigEntry);
+        LOGGER.debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), newConfigEntry, newConfigIndex);
 
         // Again, once we've appended the new configuration to the log, update
         // the local internal configuration.
@@ -280,7 +280,7 @@ public class LeaderController extends StateController implements Observer {
       // to the state machine and returning the result.
       OperationEntry entry = new OperationEntry(context.currentTerm(), request.operation(), request.args());
       final long index = context.log().appendEntry(entry);
-      LOGGER.debug("{} - Appended {} to log", context.clusterManager().localNode());
+      LOGGER.debug("{} - Appended {} to log at index {}", context.clusterManager().localNode(), entry, index);
 
       // Write quorums are also optional to the user. The user can optionally
       // indicate that write operations should be immediately applied to the state
@@ -288,7 +288,7 @@ public class LeaderController extends StateController implements Observer {
       if (context.config().isRequireCommandQuorum()) {
         // If the replica requires write quorums, we simply set a task to be
         // executed once the entry has been replicated to a quorum of the cluster.
-        LOGGER.debug("{} - Replicating logs up to {} for write", context.clusterManager().localNode(), index);
+        LOGGER.debug("{} - Replicating logs up to index {} for write", context.clusterManager().localNode(), index);
         replicator.commit(index).whenComplete((resultIndex, error) -> {
           if (error == null) {
             try {
