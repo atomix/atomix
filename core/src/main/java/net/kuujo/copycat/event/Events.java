@@ -21,12 +21,12 @@ package net.kuujo.copycat.event;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Events {
-  static final Class<? extends Event> START = StartEvent.class;
-  static final Class<? extends Event> STOP = StopEvent.class;
-  static final Class<? extends Event> VOTE_CAST = VoteCastEvent.class;
-  static final Class<? extends Event> LEADER_ELECT = LeaderElectEvent.class;
-  static final Class<? extends Event> MEMBERSHIP_CHANGE = MembershipChangeEvent.class;
-  static final Class<? extends Event> STATE_CHANGE = StateChangeEvent.class;
+  static final Class<StartEvent> START = StartEvent.class;
+  static final Class<StopEvent> STOP = StopEvent.class;
+  static final Class<VoteCastEvent> VOTE_CAST = VoteCastEvent.class;
+  static final Class<LeaderElectEvent> LEADER_ELECT = LeaderElectEvent.class;
+  static final Class<MembershipChangeEvent> MEMBERSHIP_CHANGE = MembershipChangeEvent.class;
+  static final Class<StateChangeEvent> STATE_CHANGE = StateChangeEvent.class;
 
   /**
    * Returns an event context.
