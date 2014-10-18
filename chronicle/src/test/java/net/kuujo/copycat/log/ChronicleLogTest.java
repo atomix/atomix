@@ -25,10 +25,10 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class MemoryMappedFileLogTest extends AbstractLogTest {
+public class ChronicleLogTest extends AbstractLogTest {
   @Override
   protected Log createLog() {
-    return new MemoryMappedFileLog(String.format("target/test-logs/%s", UUID.randomUUID()));
+    return new ChronicleLog(String.format("target/test-logs/%s", UUID.randomUUID()));
   }
 
   @Override

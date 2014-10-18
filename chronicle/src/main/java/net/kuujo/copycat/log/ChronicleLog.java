@@ -38,7 +38,7 @@ import java.util.concurrent.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MemoryMappedFileLog extends BaseFileLog {
+public class ChronicleLog extends BaseFileLog {
   private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("chronicle-syncer-%s");
   
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
@@ -59,19 +59,19 @@ public class MemoryMappedFileLog extends BaseFileLog {
   private long syncInterval = 0;
   private ScheduledFuture<Void> syncFuture;
 
-  public MemoryMappedFileLog(File baseFile) {
+  public ChronicleLog(File baseFile) {
     this(baseFile, CopycatEntry.class);
   }
 
-  public MemoryMappedFileLog(File baseFile, Class<? extends Entry> entryType) {
+  public ChronicleLog(File baseFile, Class<? extends Entry> entryType) {
     super(baseFile, entryType);
   }
 
-  public MemoryMappedFileLog(String baseName) {
+  public ChronicleLog(String baseName) {
     this(baseName, CopycatEntry.class);
   }
 
-  public MemoryMappedFileLog(String baseName, Class<? extends Entry> entryType) {
+  public ChronicleLog(String baseName, Class<? extends Entry> entryType) {
     this(new File(baseName), entryType);
   }
 
@@ -365,7 +365,7 @@ public class MemoryMappedFileLog extends BaseFileLog {
    * @param interval The interval at which to sync the log to disk.
    * @return The memory mapped file log for method chaining.
    */
-  public MemoryMappedFileLog withSyncInterval(long interval) {
+  public ChronicleLog withSyncInterval(long interval) {
     this.syncInterval = interval;
     return this;
   }
