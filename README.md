@@ -49,7 +49,7 @@ taking place on Copycat**
    * [Configuring the replica](#configuring-the-replica)
    * [Configuring the cluster](#configuring-the-cluster)
    * [Creating a dynamic cluster](#creating-a-dynamic-cluster)
-   * [Creating the CopycatContext](#creating-the-copycatcontext)
+   * [Creating the Copycat](#creating-the-copycat)
    * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
 1. [Events](#events)
@@ -68,7 +68,7 @@ taking place on Copycat**
       * [Vert.x TCP](#vertx-tcp-protocol)
 1. [Services](#services-1)
    * [Using URI annotations with services](#using-uri-annotations-with-services)
-   * [Wrapping the CopycatContext in a service](#wrapping-the-copycatcontext-in-a-service)
+   * [Wrapping the Copycat in a service](#wrapping-the-copycat-in-a-service)
    * [Built-in services](#built-in-services)
       * [Vert.x Event Bus](#vertx-event-bus-service)
       * [Vert.x TCP](#vertx-tcp-service)
@@ -258,16 +258,16 @@ POST http://localhost:8080/delete
 ```
 
 Copycat doesn't require that commands be submitted via a service. Rather than
-submitting commands via the HTTP service, simply construct a `CopycatContext`
-instance and submit commands directly to the cluster via the context.
+submitting commands via the HTTP service, simply construct a `Copycat`
+instance and submit commands directly to the cluster via the copycat.
 
 ```java
 AsyncCopycat copycat = new AsyncCopycat(new KeyValueStore(), log, cluster, protocol);
 
 // Set a key in the key-value store.
-copycat.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
-  copycat.submitCommand("get", "foo").whenComplete((result, error) {
-    copycat.submitCommand("delete", "foo").thenRun(() -> System.out.println("Deleted 'foo'"));
+copycat.submit("set", "foo", "Hello world!").thenRun(() -> {
+  copycat.submit("get", "foo").whenComplete((result, error) {
+    copycat.submit("delete", "foo").thenRun(() -> System.out.println("Deleted 'foo'"));
   });
 });
 ```
@@ -354,7 +354,7 @@ public class MyStateMachine implements StateMachine {
 ### Configuring the replica
 Copycat exposes a configuration API that allows users to configure how Copycat behaves
 during elections and how it replicates commands. To configure a Copycat replica, create
-a `CopycatConfig` to pass to the `CopycatContext` constructor.
+a `CopycatConfig` to pass to the `Copycat` constructor.
 
 ```java
 CopycatConfig config = new CopycatConfig();
@@ -438,14 +438,14 @@ to ensure that logs remain consistent while nodes are added or removed, but it a
 means that cluster configuration changes may not be propagated for some period of
 time after the `ClusterConfig` is updated.
 
-### Creating the CopycatContext
-Copycat replicas are run via a `CopycatContext`. The Copycat context is a container
+### Creating the Copycat
+Copycat replicas are run via a `Copycat`. The Copycat instance is a container
 for the replica's `Log`, `StateMachine`, and `ClusterConfig`. To start the replica,
 simply call the `start()` method.
 
 ```java
 Copycat copycat = new Copycat(stateMachine, log, cluster, protocol);
-context.start();
+copycat.start();
 ```
 
 The `Copycat` `start` method blocks until the replica is started.
@@ -454,7 +454,7 @@ The `AsyncCopycat` `start` method returns a `CompletableFuture` which will be co
 the Copycat replica has started.
 
 ```java
-context.start().thenRun(() -> System.out.println("Started!"));
+copycat.start().thenRun(() -> System.out.println("Started!"));
 ```
 
 ### Setting the [log](#logs) type
@@ -465,7 +465,7 @@ users should use a disk-based log. Copycat provides two `Log` implementations:
 * `ChronicleLog` - a fast [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log
 
 To set the log to be used by a Copycat replica, simply pass the log instance in
-the `CopycatContext` constructor:
+the `Copycat` constructor:
 
 ```java
 Copycat copycat = new Copycat(new MyStateMachine(), new MemoryMappedFileLog("data.log"), cluster, protocol);
@@ -473,15 +473,15 @@ copycat.start();
 ```
 
 ### Submitting [operations](#operations) to the cluster
-To submit commands to the Copycat cluster, simply call the `submitCommand` method
-on any `CopycatContext`.
+To submit commands to the Copycat cluster, simply call the `submit` method
+on any `Copycat` or `AsyncCopycat` object.
 
 ```java
-copycat.submitCommand("get", "foo").thenAccept((result) -> System.out.println(result));
+copycat.submit("get", "foo").thenAccept((result) -> System.out.println(result));
 ```
 
 The `Copycat` API is supports an arbitrary number of positional arguments. When
-a command is submitted, the context will return a `CompletableFuture` which will be
+a command is submitted, the copycat will return a `CompletableFuture` which will be
 completed once the command result is received. The command will automatically
 be forwarded on to the current cluster [leader](#leaders). If the cluster does not have any
 currently [elected](#leader-election) leader (or the node to which the command is submitted
@@ -611,9 +611,9 @@ public interface ProtocolClient {
 
   CompletableFuture<SyncResponse> sync(SyncRequest request);
 
-  CompletableFuture<PollResponse> requestVote(PollRequest request);
+  CompletableFuture<PollResponse> poll(PollRequest request);
 
-  CompletableFuture<SubmitResponse> submitCommand(SubmitRequest request);
+  CompletableFuture<SubmitResponse> submit(SubmitRequest request);
 
 }
 ```
@@ -641,7 +641,7 @@ Copycat maintains several built-in protocols, some of which are implemented on t
 of asynchronous frameworks like [Netty](http://netty.io) and [Vert.x](http://vertx.io).
 
 ### Local Protocol
-The `local` protocol is a simple protocol that communicates between contexts using
+The `local` protocol is a simple protocol that communicates between copycats using
 direct method calls. This protocol is intended purely for testing.
 
 ```java
@@ -748,12 +748,12 @@ public interface Service {
 }
 ```
 
-Services simply wrap the `CopycatContext` and forward requests to the local
-context via the `Copycat.submitCommand` method.
+Services simply wrap a `Copycat` instance and forward requests to the local
+copycat via the `Copycat.submit` method.
 
 ### Wrapping the Copycat instance in a service
 Copycat provides a simple helper class for wrapping a `Copycat` in an
-service. To wrap a context, use the `Copycat` class.
+service. To wrap a copycat, use the `Copycat` class.
 
 ```java
 TcpClusterConfig config = new TcpClusterConfig();
