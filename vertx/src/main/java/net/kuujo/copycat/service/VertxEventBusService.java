@@ -33,24 +33,24 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusService extends AbstractAsyncService {
+public class VertxEventBusService extends AbstractAsyncService {
   private String address;
   private String host = "localhost";
   private int port;
   private Vertx vertx;
 
-  public EventBusService(AsyncCopycat copycat) {
+  public VertxEventBusService(AsyncCopycat copycat) {
     super(copycat);
   }
 
-  public EventBusService(AsyncCopycat copycat, String host, int port, String address) {
+  public VertxEventBusService(AsyncCopycat copycat, String host, int port, String address) {
     super(copycat);
     this.host = host;
     this.port = port;
     this.address = address;
   }
 
-  public EventBusService(AsyncCopycat copycat, Vertx vertx, String address) {
+  public VertxEventBusService(AsyncCopycat copycat, Vertx vertx, String address) {
     super(copycat);
     this.vertx = vertx;
     this.address = address;
@@ -102,7 +102,7 @@ public class EventBusService extends AbstractAsyncService {
    * @param address The event bus address.
    * @return The event bus service.
    */
-  public EventBusService withAddress(String address) {
+  public VertxEventBusService withAddress(String address) {
     this.address = address;
     return this;
   }
@@ -131,7 +131,7 @@ public class EventBusService extends AbstractAsyncService {
    * @param vertx The Vert.x instance.
    * @return The event bus service.
    */
-  public EventBusService withVertx(Vertx vertx) {
+  public VertxEventBusService withVertx(Vertx vertx) {
     this.vertx = vertx;
     return this;
   }
@@ -160,7 +160,7 @@ public class EventBusService extends AbstractAsyncService {
    * @param host The Vert.x host.
    * @return The event bus service.
    */
-  public EventBusService withHost(String host) {
+  public VertxEventBusService withHost(String host) {
     this.host = host;
     return this;
   }
@@ -189,7 +189,7 @@ public class EventBusService extends AbstractAsyncService {
    * @param port The Vert.x port.
    * @return The event bus service.
    */
-  public EventBusService withPort(int port) {
+  public VertxEventBusService withPort(int port) {
     this.port = port;
     return this;
   }

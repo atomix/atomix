@@ -29,20 +29,20 @@ import java.util.concurrent.CountDownLatch;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusProtocol implements AsyncProtocol<EventBusMember> {
+public class VertxEventBusProtocol implements AsyncProtocol<EventBusMember> {
   private String host;
   private int port;
   private Vertx vertx;
 
-  public EventBusProtocol() {
+  public VertxEventBusProtocol() {
   }
 
-  public EventBusProtocol(String host, int port) {
+  public VertxEventBusProtocol(String host, int port) {
     this.host = host;
     this.port = port;
   }
 
-  public EventBusProtocol(Vertx vertx) {
+  public VertxEventBusProtocol(Vertx vertx) {
     this.vertx = vertx;
   }
 
@@ -70,7 +70,7 @@ public class EventBusProtocol implements AsyncProtocol<EventBusMember> {
    * @param vertx The Vert.x instance.
    * @return The event bus protocol.
    */
-  public EventBusProtocol withVertx(Vertx vertx) {
+  public VertxEventBusProtocol withVertx(Vertx vertx) {
     this.vertx = vertx;
     return this;
   }
@@ -99,7 +99,7 @@ public class EventBusProtocol implements AsyncProtocol<EventBusMember> {
    * @param host The Vert.x host.
    * @return The event bus protocol.
    */
-  public EventBusProtocol withHost(String host) {
+  public VertxEventBusProtocol withHost(String host) {
     this.host = host;
     return this;
   }
@@ -128,7 +128,7 @@ public class EventBusProtocol implements AsyncProtocol<EventBusMember> {
    * @param port The Vert.x port.
    * @return The event bus protocol.
    */
-  public EventBusProtocol withPort(int port) {
+  public VertxEventBusProtocol withPort(int port) {
     this.port = port;
     return this;
   }
@@ -156,18 +156,18 @@ public class EventBusProtocol implements AsyncProtocol<EventBusMember> {
   @Override
   public synchronized AsyncProtocolServer createServer(EventBusMember member) {
     if (vertx != null) {
-      return new EventBusProtocolServer(member.address(), vertx);
+      return new VertxEventBusProtocolServer(member.address(), vertx);
     } else {
-      return new EventBusProtocolServer(member.address(), createVertx());
+      return new VertxEventBusProtocolServer(member.address(), createVertx());
     }
   }
 
   @Override
   public synchronized AsyncProtocolClient createClient(EventBusMember member) {
     if (vertx != null) {
-      return new EventBusProtocolClient(member.address(), vertx);
+      return new VertxEventBusProtocolClient(member.address(), vertx);
     } else {
-      return new EventBusProtocolClient(member.address(), createVertx());
+      return new VertxEventBusProtocolClient(member.address(), createVertx());
     }
   }
 

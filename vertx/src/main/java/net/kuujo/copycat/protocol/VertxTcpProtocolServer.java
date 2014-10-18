@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocolServer implements AsyncProtocolServer {
+public class VertxTcpProtocolServer implements AsyncProtocolServer {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private static final String DELIMITER = "\\x00";
@@ -41,11 +41,11 @@ public class TcpProtocolServer implements AsyncProtocolServer {
   private final String host;
   private final int port;
   private boolean clientAuthRequired;
-  private final TcpProtocol protocol;
+  private final VertxTcpProtocol protocol;
   private NetServer server;
   private AsyncRequestHandler requestHandler;
 
-  public TcpProtocolServer(String host, int port, TcpProtocol protocol) {
+  public VertxTcpProtocolServer(String host, int port, VertxTcpProtocol protocol) {
     this.host = host;
     this.port = port;
     this.protocol = protocol;
@@ -75,7 +75,7 @@ public class TcpProtocolServer implements AsyncProtocolServer {
    * @param required Whether client authentication is required.
    * @return The TCP protocol.
    */
-  public TcpProtocolServer withClientAuthRequired(boolean required) {
+  public VertxTcpProtocolServer withClientAuthRequired(boolean required) {
     this.clientAuthRequired = required;
     return this;
   }

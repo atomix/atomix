@@ -22,12 +22,12 @@ the API is subject to change.**
 This project has been in development for over a year, and it's finally nearing its first release.
 Until then, here are a few items on the TODO list:
 
-* The cluster/protocol APIs were recently refactored to provide more flexibility
-* Commands will soon be separated into separate Command (write) and Query (read) operations
-* Work on a separate synchronous API is currently under way
-* Work on extensive integration tests is currently under way
-* Much of the new API is lacking sufficient documentation
-* Work to provide state machine proxies is next up on the list
+* ~~Refactor the cluster/protocol APIs to provide more flexibility~~
+* ~~Separate commands into separate Command (write) and Query (read) operations~~
+* ~~Provide APIs for both synchronous and asynchronous environments~~
+* Develop extensive integration tests for configuration, leader election and replication algorithms
+* Update documentation for new API changes
+* Publish to Maven Central!
 
 Copycat *will* be published to Maven Central once these features are complete. Follow
 the project for updates!
@@ -37,6 +37,9 @@ plans for supporting Java 7. Of course, feel free to fork and PR :-)*
 
 User Manual
 ===========
+
+**Note: Some of this documentation may be innacurate due to the rapid development currently
+taking place on Copycat**
 
 1. [A Brief Introduction](#a-brief-introduction)
 1. [Getting started](#getting-started)
@@ -90,20 +93,20 @@ over a variety of wire-level protocols. It sounds complicated, but the API is ac
 quite simple. Here's a quick example.
 
 ```java
-public class KeyValueStore extends StateMachine {
+public class KeyValueStore implements StateMachine {
   private Map<String, Object> data = new HashMap<>();
 
-  @Command(type = Command.Type.READ)
+  @Query
   public Object get(String key) {
     return data.get(key);
   }
 
-  @Command(type = Command.Type.WRITE)
+  @Command
   public void set(String key, Object value) {
     data.put(key, value);
   }
 
-  @Command(type = Command.Type.WRITE)
+  @Command
   public void delete(String key) {
     data.remove(key);
   }
@@ -111,8 +114,10 @@ public class KeyValueStore extends StateMachine {
 }
 ```
 
-Here we've created a simple key value store. By deploying this state machine on several
-nodes in a cluster, Copycat will ensure commands (i.e. `get`, `set`, and `delete`) are
+Here we've created a simple key value store. The state machine is a special object that
+exposes `Command` (write) and `Query` (read) operations. Copycat optimizes based on the
+operation being performed. By deploying this state machine on several
+nodes in a cluster, Copycat will ensure operations (i.e. `get`, `set`, and `delete`) are
 applied to the state machine in the order in which they're submitted to the cluster
 (log order). Internally, Copycat uses a replicated log to order and replicate commands,
 and it uses leader election to coordinate log replication. When the replicated log grows
@@ -142,32 +147,39 @@ Additionally, Copycat cluster membership is dynamic, and the `Cluster` is `Obser
 This means that if the `ClusterConfig` is changed while the cluster is running, Copycat
 will pick up the membership change and replicate the cluster configuration in a safe manner.
 
-Now that the cluster has been set up, we need a service through which remote users can
-access the service. For this, Copycat provides the `Service` type. Similar to protocols,
-services are implementations of a protocol such as TCP or HTTP, but they're intended
-to serve as the outside facing interface of the Copycat cluster.
+Now that the cluster has been set up, we need a protocol over which it can communicate
+with other Copycat nodes. Copycat's protocol framework is pluggable, meaning Copycat
+can communicate over a variety of wire-level protocols. Additionally, Copycat's API
+is designed to operate in both synchronous and asynchronuos environments. In this
+case, we'll use an asynchronous protocol.
 
 ```java
-HttpService service = new HttpService("localhost", 8080);
+AsyncProtocol protocol = new VertxTcpProtocol();
 ```
 
-Now that the cluster has been set up, we simply create a `Copycat` instance, specifying
-an [service](#services) through which the outside world can communicate with the cluster.
+Now that the cluster and protocol have been set up, we simply create a `AsyncCopycat` instance.
 
 ```java
-Copycat copycat = Copycat.copycat(service, new KeyValueStore(), log, cluster);
-copycat.start();
+AsyncCopycat copycat = new AsyncCopycat(new KeyValueStore(), log, cluster);
+```
+
+We can expose the Copycat cluster as an HTTP service by using a `Service`. We'll use
+the `VertxHttpService` to expose the cluster via an HTTP server.
+
+```java
+AsyncService service = new VertxHttpService(copycat, "localhost", 8080);
+service.start();
 ```
 
 That's it! We've just created a strongly consistent, fault-tolerant key-value store with an
 HTTP API in less than 25 lines of code!
 
 ```java
-public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore extends StateMachine {
+public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore implements StateMachine {
 
   public static void main(String[] args) {
     // Create the local file log.
-    Log log = new MemoryMappedFileLog("data.log");
+    Log log = new ChronicleLog("data.log");
 
     // Configure the cluster.
     TcpClusterConfig config = new TcpClusterConfig();
@@ -177,12 +189,18 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore exten
     // Create the cluster.
     TcpCluster cluster = new TcpCluster(config);
 
-    // Create an HTTP service.
-    HttpService service = new HttpService("localhost", 8080);
+    // Create the protocol.
+    AsyncProtocol protocol = new VertxTcpProtocol();
 
-    // Create a Copycat instance and start it.
-    Copycat copycat = Copycat.copycat(service, log, cluster);
-    copycat.start();
+    // Create a state machine instance.
+    StateMachine stateMachine = new StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore();
+
+    // Create a Copycat instance.
+    AsyncCopycat copycat = new AsyncCopycat(stateMachine, log, cluster, protocol);
+
+    // Create an HTTP service and start it.
+    VertxHttpService service = new VertxHttpService(copycat, "localhost", 8080);
+    service.start();
   }
 
   private Map<String, Object> data = new HashMap<>();
@@ -197,17 +215,17 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore exten
     this.data = Serializer.getSerializer().deserialize(data, Map.class);
   }
 
-  @Command(type = Command.Type.READ)
+  @Query
   public Object get(String key) {
     return data.get(key);
   }
 
-  @Command(type = Command.Type.WRITE)
+  @Command
   public void set(String key, Object value) {
     data.put(key, value);
   }
 
-  @Command(type = Command.Type.WRITE)
+  @Command
   public void delete(String key) {
     data.remove(key);
   }
@@ -244,12 +262,12 @@ submitting commands via the HTTP service, simply construct a `CopycatContext`
 instance and submit commands directly to the cluster via the context.
 
 ```java
-CopycatContext context = CopycatContext.context(new KeyValueStore(), log, cluster);
+AsyncCopycat copycat = new AsyncCopycat(new KeyValueStore(), log, cluster, protocol);
 
 // Set a key in the key-value store.
-context.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
-  context.submitCommand("get", "foo").whenComplete((result, error) {
-    context.submitCommand("delete", "foo").thenRun(() -> System.out.println("Deleted 'foo'"));
+copycat.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
+  copycat.submitCommand("get", "foo").whenComplete((result, error) {
+    copycat.submitCommand("delete", "foo").thenRun(() -> System.out.println("Deleted 'foo'"));
   });
 });
 ```
@@ -257,16 +275,16 @@ context.submitCommand("set", "foo", "Hello world!").thenRun(() -> {
 # Getting Started
 
 ### Creating a [state machine](#state-machines)
-To create a state machine in Copycat, simply extend the `StateMachine`
-class.
+To create a state machine in Copycat, simply implement the `StateMachine`
+interface.
 
 ```java
-public class MyStateMachine extends StateMachine {
+public class MyStateMachine implements StateMachine {
 }
 ```
 
-The state machine interface is simply an identifier interface. *All public methods
-within a state machine* can be called as Copycat commands. This is important to remember.
+The state machine interface is simply an identifier interface. Arbitrary operations
+are added to the state machine via the `@Command` and `@Query` annotations.
 
 ### Providing [command types](#commands)
 When a command is submitted to the Copycat cluster, the command is first written
@@ -281,31 +299,20 @@ can simply ensure that the cluster is in sync, apply the command to the state ma
 and return the result. However, in order for it to do this it needs to have some
 additional information about each specific command.
 
-To provide command information to Copycat, use the `@Command` annotation on a command
-method.
+To annotate a state change method, use the `@Command` annotation.
 
-Each command can have one of three types:
-* `READ`
-* `WRITE`
-* `READ_WRITE`
-
-By default, all commands are of the type `READ_WRITE`. While there is no real difference
-between the `WRITE` and `READ_WRITE` types, the `READ` type is important in allowing
-Copycat to identify read-only commands. *It is important that any command identified as
-a `READ` command never modify the machine state.*
-
-Let's look at an example of a command provider:
+To annotate a state query method, use the `@Query` annotation.
 
 ```java
-public class MyStateMachine extends StateMachine {
+public class MyStateMachine implements StateMachine {
   private final Map<String, Object> data = new HashMap<>();
 
-  @Command(type = Command.Type.READ)
+  @Query
   public Object read(String key) {
     return data.get(key);
   }
 
-  @Command(type = Command.Type.WRITE)
+  @Command
   public void write(String key, Object value) {
     data.put(key, value);
   }
@@ -328,7 +335,7 @@ Users can implement snapshot support in their `StateMachine` implementation by o
 the default `takeSnapshot` and `installSnapshot` methods.
 
 ```java
-public class MyStateMachine extends StateMachine {
+public class MyStateMachine implements StateMachine {
   private Map<String, Object> data = new HashMap<>();
 
   @Override
@@ -437,11 +444,13 @@ for the replica's `Log`, `StateMachine`, and `ClusterConfig`. To start the repli
 simply call the `start()` method.
 
 ```java
-CopycatContext context = CopycatContext.context(stateMachine, log, cluster);
+Copycat copycat = new Copycat(stateMachine, log, cluster, protocol);
 context.start();
 ```
 
-The `start` method returns a `CompletableFuture` which will be completed once
+The `Copycat` `start` method blocks until the replica is started.
+
+The `AsyncCopycat` `start` method returns a `CompletableFuture` which will be completed once
 the Copycat replica has started.
 
 ```java
@@ -453,25 +462,25 @@ By default, Copycat uses an in-memory log for simplicity. However, in production
 users should use a disk-based log. Copycat provides two `Log` implementations:
 * `InMemoryLog` - an in-memory `TreeMap` based log
 * `FileLog` - a `RandomAccessFile` based log
-* `MemoryMappedFileLog` - a fast [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log
+* `ChronicleLog` - a fast [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log
 
 To set the log to be used by a Copycat replica, simply pass the log instance in
 the `CopycatContext` constructor:
 
 ```java
-CopycatContext context = CopycatContext.context(new MyStateMachine(), new MemoryMappedFileLog("data.log"), cluster);
-context.start();
+Copycat copycat = new Copycat(new MyStateMachine(), new MemoryMappedFileLog("data.log"), cluster, protocol);
+copycat.start();
 ```
 
-### Submitting [commands](#commands) to the cluster
+### Submitting [operations](#operations) to the cluster
 To submit commands to the Copycat cluster, simply call the `submitCommand` method
 on any `CopycatContext`.
 
 ```java
-context.submitCommand("get", "foo").thenAccept((result) -> System.out.println(result));
+copycat.submitCommand("get", "foo").thenAccept((result) -> System.out.println(result));
 ```
 
-The `CopycatContext` API is supports an arbitrary number of positional arguments. When
+The `Copycat` API is supports an arbitrary number of positional arguments. When
 a command is submitted, the context will return a `CompletableFuture` which will be
 completed once the command result is received. The command will automatically
 be forwarded on to the current cluster [leader](#leaders). If the cluster does not have any
@@ -488,34 +497,34 @@ and cluster membership changes.
 Start/stop event handlers are registered using the `start()` and `stop()` event methods:
 
 ```java
-context.on().start().runOnce((event) -> System.out.println("Context started"));
+copycat.on().start().runOnce((event) -> System.out.println("Copycat started"));
 ```
 
 ```java
-context.events().start().registerHandler((event) -> System.out.println("Context started"));
+copycat.events().start().registerHandler((event) -> System.out.println("Copycat started"));
 ```
 
 ```java
-context.event(Events.START).registerHandler((event) -> System.out.println("Context started"));
+copycat.event(Events.START).registerHandler((event) -> System.out.println("Copycat started"));
 ```
 
 ### Election events
 Election event handlers are registered on the `ElectionContext` instance.
 
 ```java
-context.on().voteCast().run((event) -> System.out.println(String.format("Vote cast for " + event.candidate())));
+copycat.on().voteCast().run((event) -> System.out.println(String.format("Vote cast for " + event.candidate())));
 ```
 
 ```java
-context.event(Events.VOTE_CAST).registerHandler((event) -> {
+copycat.event(Events.VOTE_CAST).registerHandler((event) -> {
   System.out.println(String.format("Vote cast for " + event.candidate()));
 });
 ```
 
-context.on().leaderElect().run((event) -> System.out.println(String.format("Leader elected")));
+copycat.on().leaderElect().run((event) -> System.out.println(String.format("Leader elected")));
 
 ```java
-context.event(Events.LEADER_ELECT).registerHandler((event) -> {
+copycat.event(Events.LEADER_ELECT).registerHandler((event) -> {
   System.out.println(String.format("%s was elected for term %d", event.leader(), event.term()));
 });
 ```
@@ -524,7 +533,7 @@ context.event(Events.LEADER_ELECT).registerHandler((event) -> {
 Cluster event handlers are registered using the `MEMBERSHIP_CHANGE` constant
 
 ```java
-context.event(Events.STATE_CHANGE).registerHandler((event) -> {
+copycat.event(Events.STATE_CHANGE).registerHandler((event) -> {
   System.out.println(String.format("%s members", event.members()));
 });
 ```
@@ -533,7 +542,7 @@ context.event(Events.STATE_CHANGE).registerHandler((event) -> {
 State event handlers are registered using the `STATE_CHANGE` constant
 
 ```java
-context.event(Events.STATE_CHANGE).registerHandler((event) -> {
+copycat.event(Events.STATE_CHANGE).registerHandler((event) -> {
   System.out.println(String.format("State changed to %s", event.state()));
 });
 ```
@@ -641,7 +650,7 @@ LocalClusterConfig config = new LocalClusterConfig()
   .withRemoteMembers(new Member("bar"), new Member("baz"));
 LocalCluster cluster = new LocalCluster(config);
 
-CopycatContext context = CopycatContext.context(new MyStateMachine(), log, cluster);
+Copycat copycat = new Copycat(new MyStateMachine(), log, cluster, protocol);
 ```
 
 ### Netty TCP Protocol
@@ -740,10 +749,10 @@ public interface Service {
 ```
 
 Services simply wrap the `CopycatContext` and forward requests to the local
-context via the `CopycatContext.submitCommand` method.
+context via the `Copycat.submitCommand` method.
 
-### Wrapping the CopycatContext in a service
-Copycat provides a simple helper class for wrapping a `CopycatContext in an
+### Wrapping the Copycat instance in a service
+Copycat provides a simple helper class for wrapping a `Copycat` in an
 service. To wrap a context, use the `Copycat` class.
 
 ```java
@@ -752,8 +761,10 @@ config.setLocalMember(new TcpMember("localhost", 1234));
 config.setRemoteMembers(new TcpMember("localhost", 2345), new TcpMember("localhost", 3456));
 TcpCluster cluster = new TcpCluster(config);
 
-Copycat copycat = Copycat.copycat(new HttpService("localhost", 8080), new MyStateMachine(), cluster)
-copycat.start();
+AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol)
+
+AsyncService service = new HttpService(copycat, "localhost", 8080);
+service.start();
 ```
 
 ## Built-in services
@@ -765,13 +776,17 @@ project as a dependency.
 The Vert.x event bus service receives submissions over the Vert.x event bus.
 
 ```java
-Copycat copycat = Copycat.copycat(new EventBusService("some-address"), new MyStateMachine(), cluster);
+AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol);
+AsyncService service = new VertxEventBusService(copycat, "some-address");
+service.start();
 ```
 
 ### Vert.x TCP Service
 The Vert.x TCP service uses a delimited JSON-based protocol:
 ```java
-Copycat copycat = Copycat.copycat(new TcpService("localhost", 8080), new MyStateMachine(), cluster);
+AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol);
+AsyncService service = new VertxTcpService(copycat, "localhost", 5000);
+service.start();
 ```
 
 ### Vert.x HTTP Service
@@ -780,7 +795,9 @@ to the command path. For instance, to submit the `read` command with `{"key":"fo
 execute a `POST` request to the `/read` path using a JSON body containing command arguments.
 
 ```java
-Copycat copycat = Copycat.copycat(new HttpService("localhost", 8080), new MyStateMachine(), cluster);
+AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol);
+AsyncService service = new VertxHttpService(copycat, "localhost", 8080);
+service.start();
 ```
 
 # How it works

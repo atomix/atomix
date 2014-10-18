@@ -29,13 +29,13 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusProtocolClient implements AsyncProtocolClient {
+public class VertxEventBusProtocolClient implements AsyncProtocolClient {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
   private Vertx vertx;
 
-  public EventBusProtocolClient(String address, Vertx vertx) {
+  public VertxEventBusProtocolClient(String address, Vertx vertx) {
     this.address = Assert.isNotNull(address, "Vert.x event bus address cannot be null");
     this.vertx = Assert.isNotNull(vertx, "Vert.x instance cannot be null");
   }

@@ -15,51 +15,48 @@
  */
 package net.kuujo.copycat.service;
 
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.AsyncCopycat;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
-import org.vertx.java.core.http.HttpServer;
-import org.vertx.java.core.http.HttpServerRequest;
-import org.vertx.java.core.http.RouteMatcher;
 import org.vertx.java.core.impl.DefaultVertx;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.core.json.JsonObject;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
+import org.vertx.java.core.net.NetServer;
+import org.vertx.java.core.net.NetSocket;
+import org.vertx.java.core.parsetools.RecordParser;
 
 /**
- * Vert.x HTTP service.
+ * Vert.x TCP protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class HttpService extends AbstractAsyncService {
-  private final Vertx vertx;
-  private HttpServer server;
+public class VertxTcpService extends AbstractAsyncService {
+  private Vertx vertx = new DefaultVertx();
+  private NetServer server;
   private String host;
   private int port;
 
-  public HttpService(AsyncCopycat copycat) {
+  public VertxTcpService(AsyncCopycat copycat) {
     super(copycat);
     this.vertx = new DefaultVertx();
   }
 
-  public HttpService(AsyncCopycat copycat, String host, int port) {
+  public VertxTcpService(AsyncCopycat copycat, Vertx vertx) {
     super(copycat);
-    this.host = host;
-    this.port = port;
-    this.vertx = new DefaultVertx();
-  }
-
-  public HttpService(AsyncCopycat copycat, String host, int port, Vertx vertx) {
-    super(copycat);
-    this.host = host;
-    this.port = port;
     this.vertx = vertx;
+  }
+
+  public VertxTcpService(AsyncCopycat copycat, String host, int port) {
+    super(copycat);
+    this.host = host;
+    this.port = port;
   }
 
   /**
@@ -86,7 +83,7 @@ public class HttpService extends AbstractAsyncService {
    * @param host The TCP host.
    * @return The TCP service.
    */
-  public HttpService withHost(String host) {
+  public VertxTcpService withHost(String host) {
     this.host = host;
     return this;
   }
@@ -115,7 +112,7 @@ public class HttpService extends AbstractAsyncService {
    * @param port The TCP port.
    * @return The TCP service.
    */
-  public HttpService withPort(int port) {
+  public VertxTcpService withPort(int port) {
     this.port = port;
     return this;
   }
@@ -123,41 +120,38 @@ public class HttpService extends AbstractAsyncService {
   @Override
   public CompletableFuture<Void> start() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
+
     if (server == null) {
-      server = vertx.createHttpServer();
+      server = vertx.createNetServer();
     }
 
-    RouteMatcher routeMatcher = new RouteMatcher();
-    routeMatcher.post("/:command", new Handler<HttpServerRequest>() {
+    server.connectHandler(new Handler<NetSocket>() {
       @Override
-      public void handle(final HttpServerRequest request) {
-        request.bodyHandler(new Handler<Buffer>() {
+      public void handle(final NetSocket socket) {
+        socket.dataHandler(RecordParser.newDelimited(new byte[]{'\00'}, new Handler<Buffer>() {
           @Override
           @SuppressWarnings({"unchecked", "rawtypes"})
           public void handle(Buffer buffer) {
-            submit(request.params().get("command"), new JsonArray(buffer.toString()).toArray()).whenComplete((result, error) -> {
+            JsonObject json = new JsonObject(buffer.toString());
+            submit(json.getString("command"), json.getArray("args").toArray()).whenComplete((result, error) -> {
               if (error == null) {
-                request.response().setStatusCode(200);
                 if (result instanceof Map) {
-                  request.response().end(new JsonObject().putString("status", "ok").putObject("result", new JsonObject((Map) result)).encode());
+                  socket.write(new JsonObject().putString("status", "ok").putObject("result", new JsonObject((Map) result)).encode() + '\00');
                 } else if (result instanceof List) {
-                  request.response().end(new JsonObject().putString("status", "ok").putArray("result", new JsonArray((List) result)).encode());
+                  socket.write(new JsonObject().putString("status", "ok").putArray("result", new JsonArray((List) result)).encode() + '\00');
                 } else {
-                  request.response().end(new JsonObject().putString("status", "ok").putValue("result", result).encode());
+                  socket.write(new JsonObject().putString("status", "ok").putValue("result", result).encode() + '\00');
                 }
               } else {
-                request.response().setStatusCode(400);
+                socket.write(new JsonObject().putString("status", "error").putString("message", error.getMessage()).encode() + '\00');
               }
             });
           }
-        });
+        }));
       }
-    });
-
-    server.requestHandler(routeMatcher);
-    server.listen(port, host, new Handler<AsyncResult<HttpServer>>() {
+    }).listen(port, host, new Handler<AsyncResult<NetServer>>() {
       @Override
-      public void handle(AsyncResult<HttpServer> result) {
+      public void handle(AsyncResult<NetServer> result) {
         if (result.failed()) {
           future.completeExceptionally(result.cause());
         } else {
@@ -171,20 +165,16 @@ public class HttpService extends AbstractAsyncService {
   @Override
   public CompletableFuture<Void> stop() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    if (server != null) {
-      server.close(new Handler<AsyncResult<Void>>() {
-        @Override
-        public void handle(AsyncResult<Void> result) {
-          if (result.failed()) {
-            future.completeExceptionally(result.cause());
-          } else {
-            future.complete(null);
-          }
+    server.close(new Handler<AsyncResult<Void>>() {
+      @Override
+      public void handle(AsyncResult<Void> result) {
+        if (result.failed()) {
+          future.completeExceptionally(result.cause());
+        } else {
+          future.complete(null);
         }
-      });
-    } else {
-      future.complete(null);
-    }
+      }
+    });
     return future;
   }
 

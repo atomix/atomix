@@ -25,7 +25,7 @@ import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocol implements AsyncProtocol<TcpMember> {
+public class VertxTcpProtocol implements AsyncProtocol<TcpMember> {
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
   private boolean useSsl;
@@ -36,7 +36,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
   private int acceptBacklog = 1024;
   private int connectTimeout = 60000;
 
-  public TcpProtocol() {
+  public VertxTcpProtocol() {
   }
 
   /**
@@ -63,7 +63,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param bufferSize The send buffer size.
    * @return The TCP protocol.
    */
-  public TcpProtocol withSendBufferSize(int bufferSize) {
+  public VertxTcpProtocol withSendBufferSize(int bufferSize) {
     this.sendBufferSize = bufferSize;
     return this;
   }
@@ -92,7 +92,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param bufferSize The receive buffer size.
    * @return The TCP protocol.
    */
-  public TcpProtocol withReceiveBufferSize(int bufferSize) {
+  public VertxTcpProtocol withReceiveBufferSize(int bufferSize) {
     this.receiveBufferSize = bufferSize;
     return this;
   }
@@ -121,7 +121,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param useSsl Whether to use SSL encryption.
    * @return The TCP protocol.
    */
-  public TcpProtocol withSsl(boolean useSsl) {
+  public VertxTcpProtocol withSsl(boolean useSsl) {
     this.useSsl = useSsl;
     return this;
   }
@@ -150,7 +150,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param keyStorePath The key store path.
    * @return The TCP protocol.
    */
-  public TcpProtocol withKeyStorePath(String keyStorePath) {
+  public VertxTcpProtocol withKeyStorePath(String keyStorePath) {
     this.keyStorePath = keyStorePath;
     return this;
   }
@@ -179,7 +179,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param keyStorePassword The key store password.
    * @return The TCP protocol.
    */
-  public TcpProtocol withKeyStorePassword(String keyStorePassword) {
+  public VertxTcpProtocol withKeyStorePassword(String keyStorePassword) {
     this.keyStorePassword = keyStorePassword;
     return this;
   }
@@ -208,7 +208,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param path The trust store path.
    * @return The TCP protocol.
    */
-  public TcpProtocol withTrustStorePath(String path) {
+  public VertxTcpProtocol withTrustStorePath(String path) {
     this.trustStorePath = path;
     return this;
   }
@@ -237,7 +237,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param password The trust store password.
    * @return The TCP protocol.
    */
-  public TcpProtocol withTrustStorePassword(String password) {
+  public VertxTcpProtocol withTrustStorePassword(String password) {
     this.trustStorePassword = password;
     return this;
   }
@@ -266,7 +266,7 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param backlog The accept backlog.
    * @return The TCP protocol.
    */
-  public TcpProtocol withAcceptBacklog(int backlog) {
+  public VertxTcpProtocol withAcceptBacklog(int backlog) {
     this.acceptBacklog = backlog;
     return this;
   }
@@ -295,19 +295,19 @@ public class TcpProtocol implements AsyncProtocol<TcpMember> {
    * @param connectTimeout The connection timeout.
    * @return The TCP protocol.
    */
-  public TcpProtocol withConnectTimeout(int connectTimeout) {
+  public VertxTcpProtocol withConnectTimeout(int connectTimeout) {
     this.connectTimeout = connectTimeout;
     return this;
   }
 
   @Override
   public AsyncProtocolServer createServer(TcpMember member) {
-    return new TcpProtocolServer(member.host(), member.port(), this);
+    return new VertxTcpProtocolServer(member.host(), member.port(), this);
   }
 
   @Override
   public AsyncProtocolClient createClient(TcpMember member) {
-    return new TcpProtocolClient(member.host(), member.port(), this);
+    return new VertxTcpProtocolClient(member.host(), member.port(), this);
   }
 
 }

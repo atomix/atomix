@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TcpProtocolClient implements AsyncProtocolClient {
+public class VertxTcpProtocolClient implements AsyncProtocolClient {
   private static final String DELIMITER = "\\x00";
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
@@ -43,7 +43,7 @@ public class TcpProtocolClient implements AsyncProtocolClient {
   private final String host;
   private final int port;
   private boolean trustAll;
-  private final TcpProtocol protocol;
+  private final VertxTcpProtocol protocol;
   private NetClient client;
   private NetSocket socket;
   private final Map<Object, ResponseHolder> responses = new HashMap<>(1000);
@@ -61,7 +61,7 @@ public class TcpProtocolClient implements AsyncProtocolClient {
     }
   }
 
-  public TcpProtocolClient(String host, int port, TcpProtocol protocol) {
+  public VertxTcpProtocolClient(String host, int port, VertxTcpProtocol protocol) {
     this.host = host;
     this.port = port;
     this.protocol = protocol;
@@ -91,7 +91,7 @@ public class TcpProtocolClient implements AsyncProtocolClient {
    * @param trustAll Whether to trust all server certs.
    * @return The TCP protocol.
    */
-  public TcpProtocolClient withTrustAll(boolean trustAll) {
+  public VertxTcpProtocolClient withTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }

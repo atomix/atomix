@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventBusProtocolServer implements AsyncProtocolServer {
+public class VertxEventBusProtocolServer implements AsyncProtocolServer {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
@@ -61,7 +61,7 @@ public class EventBusProtocolServer implements AsyncProtocolServer {
     }
   };
 
-  public EventBusProtocolServer(String address, Vertx vertx) {
+  public VertxEventBusProtocolServer(String address, Vertx vertx) {
     this.address = address;
     this.vertx = vertx;
   }
