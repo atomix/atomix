@@ -30,8 +30,6 @@ import java.util.concurrent.ThreadFactory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class WrappedAsyncProtocolClient implements AsyncProtocolClient {
-  private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("wrapped-async-protocol-client-%s");
-  private final Executor executor = Executors.newCachedThreadPool(THREAD_FACTORY);
   private final ProtocolClient client;
 
   public WrappedAsyncProtocolClient(ProtocolClient client) {
@@ -40,32 +38,46 @@ public class WrappedAsyncProtocolClient implements AsyncProtocolClient {
 
   @Override
   public CompletableFuture<PingResponse> ping(PingRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.ping(request), executor);
+    return CompletableFuture.completedFuture(client.ping(request));
   }
 
   @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.sync(request), executor);
+    return CompletableFuture.completedFuture(client.sync(request));
   }
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.poll(request), executor);
+    return CompletableFuture.completedFuture(client.poll(request));
   }
 
   @Override
   public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
-    return CompletableFuture.supplyAsync(() -> client.submit(request), executor);
+    return CompletableFuture.completedFuture(client.submit(request));
   }
 
   @Override
   public CompletableFuture<Void> connect() {
-    return CompletableFuture.runAsync(client::connect, executor);
+    try {
+      client.connect();
+    } catch (Exception e) {
+      CompletableFuture<Void> future = new CompletableFuture<>();
+      future.completeExceptionally(e);
+      return future;
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return CompletableFuture.runAsync(client::close, executor);
+    try {
+      client.close();
+    } catch (Exception e) {
+      CompletableFuture<Void> future = new CompletableFuture<>();
+      future.completeExceptionally(e);
+      return future;
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
