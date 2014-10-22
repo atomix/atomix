@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.AsyncCopycat;
+import net.kuujo.copycat.Copycat;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -37,23 +37,23 @@ import org.vertx.java.core.parsetools.RecordParser;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxTcpService extends AbstractAsyncService {
+public class VertxTcpService extends AbstractService {
   private Vertx vertx = new DefaultVertx();
   private NetServer server;
   private String host;
   private int port;
 
-  public VertxTcpService(AsyncCopycat copycat) {
+  public VertxTcpService(Copycat copycat) {
     super(copycat);
     this.vertx = new DefaultVertx();
   }
 
-  public VertxTcpService(AsyncCopycat copycat, Vertx vertx) {
+  public VertxTcpService(Copycat copycat, Vertx vertx) {
     super(copycat);
     this.vertx = vertx;
   }
 
-  public VertxTcpService(AsyncCopycat copycat, String host, int port) {
+  public VertxTcpService(Copycat copycat, String host, int port) {
     super(copycat);
     this.host = host;
     this.port = port;

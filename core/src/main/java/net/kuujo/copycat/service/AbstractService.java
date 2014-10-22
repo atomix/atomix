@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.service;
 
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.spi.service.Service;
 
@@ -32,11 +34,12 @@ abstract class AbstractService implements Service {
   /**
    * Handles a command submission.
    */
-  protected <T> T submit(String command, Object... args) {
+  protected <T> CompletableFuture<T> submit(String command, Object... args) {
     if (copycat == null) {
-      throw new ServiceException("No submit handlers registered");
+      CompletableFuture<T> future = new CompletableFuture<>();
+      future.completeExceptionally(new ServiceException("No submit handlers registered"));
+      return future;
     }
     return copycat.submit(command, args);
   }
-
 }

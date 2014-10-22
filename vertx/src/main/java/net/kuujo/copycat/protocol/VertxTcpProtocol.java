@@ -16,16 +16,16 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
+import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 /**
  * TCP based protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxTcpProtocol implements AsyncProtocol<TcpMember> {
+public class VertxTcpProtocol implements Protocol<TcpMember> {
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
   private boolean useSsl;
@@ -301,12 +301,12 @@ public class VertxTcpProtocol implements AsyncProtocol<TcpMember> {
   }
 
   @Override
-  public AsyncProtocolServer createServer(TcpMember member) {
+  public ProtocolServer createServer(TcpMember member) {
     return new VertxTcpProtocolServer(member.host(), member.port(), this);
   }
 
   @Override
-  public AsyncProtocolClient createClient(TcpMember member) {
+  public ProtocolClient createClient(TcpMember member) {
     return new VertxTcpProtocolClient(member.host(), member.port(), this);
   }
 

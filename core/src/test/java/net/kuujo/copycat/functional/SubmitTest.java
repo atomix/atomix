@@ -17,7 +17,7 @@ package net.kuujo.copycat.functional;
 import java.util.Set;
 
 import net.kuujo.copycat.AbstractCopycatTest;
-import net.kuujo.copycat.AsyncCopycat;
+import net.kuujo.copycat.Copycat;
 
 import org.testng.annotations.Test;
 
@@ -29,8 +29,8 @@ import org.testng.annotations.Test;
 @Test
 public class SubmitTest extends AbstractCopycatTest {
   public void testCopyCat() throws Throwable {
-    Set<AsyncCopycat> copycats = startCluster(3);
-    final AsyncCopycat copycat = copycats.iterator().next();
+    Set<Copycat> copycats = startCluster(3);
+    final Copycat copycat = copycats.iterator().next();
     copycat.on().leaderElect().run((event) -> {
       copycat.submit("set", "foo", "bar").thenRun(() -> {
         copycat.submit("set", "bar", "baz").thenRun(() -> {

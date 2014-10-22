@@ -16,16 +16,16 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
+import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 /**
  * Netty TCP protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocol implements AsyncProtocol<TcpMember> {
+public class NettyTcpProtocol implements Protocol<TcpMember> {
   private int threads = 1;
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
@@ -268,12 +268,12 @@ public class NettyTcpProtocol implements AsyncProtocol<TcpMember> {
   }
 
   @Override
-  public AsyncProtocolServer createServer(TcpMember member) {
+  public ProtocolServer createServer(TcpMember member) {
     return new NettyTcpProtocolServer(this, member);
   }
 
   @Override
-  public AsyncProtocolClient createClient(TcpMember member) {
+  public ProtocolClient createClient(TcpMember member) {
     return new NettyTcpProtocolClient(this, member);
   }
 

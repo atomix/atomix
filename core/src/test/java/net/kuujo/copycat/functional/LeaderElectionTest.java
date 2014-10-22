@@ -19,8 +19,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
-import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.test.TestCluster;
 import net.kuujo.copycat.test.TestLog;
 import net.kuujo.copycat.test.TestNode;
@@ -43,7 +43,7 @@ public class LeaderElectionTest {
    * Tests that a leader is elected in a single-node cluster.
    */
   public void testSingleNodeClusterLeaderIsElected() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode().withCluster("foo").withProtocol(protocol);
     cluster.addNode(node1);
@@ -57,7 +57,7 @@ public class LeaderElectionTest {
    * Tests that a leader is elected in a double-node cluster.
    */
   public void testTwoNodeClusterLeaderIsElected() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode().withCluster("foo", "bar").withProtocol(protocol);
     cluster.addNode(node1);
@@ -73,7 +73,7 @@ public class LeaderElectionTest {
    * Tests that a leader is elected in a triple-node cluster.
    */
   public void testThreeNodeClusterLeaderIsElected() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode().withCluster("foo", "bar", "baz").withProtocol(protocol);
     cluster.addNode(node1);
@@ -91,7 +91,7 @@ public class LeaderElectionTest {
    * Tests that the candidate with the most up-to-date log is elected on startup.
    */
   public void testCandidateWithMostUpToDateLogIsElectedOnStartup() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz")
@@ -143,7 +143,7 @@ public class LeaderElectionTest {
    * Test candidate with most up-to-date log elected after failure.
    */
   public void testCandidateWithMostUpToDateLogIsElectedAfterFailure() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz")
@@ -197,7 +197,7 @@ public class LeaderElectionTest {
    * Tests that candidates restart an election during a split vote.
    */
   public void testCandidatesIncrementTermAndRestartElectionDuringSplitVote() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz")
@@ -252,7 +252,7 @@ public class LeaderElectionTest {
    * Tests that only a single leader is elected when more than one node is equal in terms of state.
    */
   public void testThatOneLeaderElectedWhenTwoNodesAreEqual() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz", "foobar", "barbaz")

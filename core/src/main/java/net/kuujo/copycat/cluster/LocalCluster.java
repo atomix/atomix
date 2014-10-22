@@ -17,7 +17,7 @@ package net.kuujo.copycat.cluster;
 /**
  * Local protocol cluster.<p>
  *
- * This cluster type provides for the {@link net.kuujo.copycat.protocol.AsyncLocalProtocol}. Members of the {@code LocalCluster}
+ * This cluster type provides for the {@link net.kuujo.copycat.protocol.LocalProtocol}. Members of the {@code LocalCluster}
  * are identified simply by a string identifier with which threads identify one another.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>

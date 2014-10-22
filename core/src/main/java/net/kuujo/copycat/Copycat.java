@@ -16,23 +16,24 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.event.*;
+import net.kuujo.copycat.internal.event.DefaultEvents;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.QuorumStrategy;
+import net.kuujo.copycat.spi.TimerStrategy;
 import net.kuujo.copycat.spi.protocol.Protocol;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Synchronous Copycat replica.<p>
- *
- * <b>Note that synchronous replicas are currently experimental</b>
+ * Asynchronous Copycat replica.<p>
  *
  * The Copycat replica is a fault-tolerant, replicated container for a {@link net.kuujo.copycat.StateMachine}.
- * Given a cluster of {@code Copycat} replicas, Copycat guarantees that commands and queries applied to the
+ * Given a cluster of {@code AsyncCopycat} replicas, Copycat guarantees that commands and queries applied to the
  * state machine will be applied in the same order on all nodes (unless configuration specifies otherwise).<p>
  *
  * <pre>
@@ -50,17 +51,19 @@ import java.util.concurrent.atomic.AtomicReference;
  * TcpCluster cluster = new TcpCluster(clusterConfig);
  *
  * // Create a TCP protocol.
- * BasicTcpProtocol protocol = new BasicTcpProtocol();
+ * NettyTcpProtocol protocol = new NettyTcpProtocol();
  *
- * // Create a synchronous Copycat instance.
- * Copycat copycat = new Copycat(stateMachine, log, cluster, protocol);
+ * // Create an asynchronous Copycat instance.
+ * AsyncCopycat copycat = new AsyncCopycat(stateMachine, log, cluster, protocol);
  *
  * // Start the Copycat instance.
- * copycat.start();
- *
- * copycat.submit("set", "foo", "Hello world!");
- * String result = copycat.submit("get", "foo");
- * assertEquals("Hello world!", result);
+ * copycat.start().thenRun(() -> {
+ *   copycat.submit("set", "foo", "Hello world!").thenRun(() -> {
+ *     copycat.submit("get", "foo").whenComplete((result, error) -> {
+ *       assertEquals("Hello world!", result);
+ *     });
+ *   });
+ * });
  * }
  * </pre>
  *
@@ -105,7 +108,7 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * Copycat also provides extensible {@link net.kuujo.copycat.spi.protocol.Protocol} support.
  * The Copycat replication implementation is completely protocol agnostic, so users can use
- * Copycat provided protocols or custom protocols. Each {@link net.kuujo.copycat.Copycat} instance
+ * Copycat provided protocols or custom protocols. Each {@link Copycat} instance
  * is thus associated with a {@link net.kuujo.copycat.cluster.Cluster} and
  * {@link net.kuujo.copycat.spi.protocol.Protocol} which it uses for communication between replicas.
  * It is very important that all nodes within the same Copycat cluster use the same protocol for
@@ -113,46 +116,44 @@ import java.util.concurrent.atomic.AtomicReference;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Copycat extends Replica {
+public class Copycat {
+  protected final StateContext state;
+  protected final Cluster<?> cluster;
+  protected final CopycatConfig config;
+  protected final Events events;
 
   /**
-   * Constructs a synchronous Copycat replica with a default configuration.
+   * Constructs an asynchronous Copycat replica with a default configuration.
    *
    * @param stateMachine The Copycat state machine.
    * @param log The Copycat log.
    * @param cluster The Copycat cluster configuration.
-   * @param protocol The synchronous protocol.
+   * @param protocol The asynchronous protocol.
    * @param <M> The cluster member type.
    */
-  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol) {
+  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol) {
     this(stateMachine, log, cluster, protocol, new CopycatConfig());
   }
 
   /**
-   * Constructs a synchronous Copycat replica with a user-defined configuration.
+   * Constructs an asynchronous Copycat replica with a user-defined configuration.
    *
    * @param stateMachine The Copycat state machine.
    * @param log The Copycat log.
    * @param cluster The Copycat cluster configuration.
-   * @param protocol The synchronous protocol.
+   * @param protocol The asynchronous protocol.
    * @param config The replica configuration.
    * @param <M> The cluster member type.
    */
-  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, AsyncProtocol<M> protocol, CopycatConfig config) {
-    super(new StateContext(stateMachine, log, cluster, protocol, config), cluster, config);
+  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+    this(new StateContext(stateMachine, log, cluster, protocol, config), cluster, config);
   }
 
   private Copycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
-    super(state, cluster, config);
-  }
-
-  /**
-   * Copycat builder.
-   */
-  public static class Builder extends Replica.Builder<Copycat, Protocol<?>> {
-    public Builder() {
-      super((builder) -> new Copycat(new StateContext(builder.stateMachine, builder.log, builder.cluster, builder.protocol, builder.config), builder.cluster, builder.config));
-    }
+    this.state = state;
+    this.cluster = cluster;
+    this.config = config;
+    this.events = new DefaultEvents(state.events());
   }
 
   /**
@@ -165,53 +166,343 @@ public class Copycat extends Replica {
   }
 
   /**
-   * Starts the replica.
+   * Returns the replica configuration.
+   *
+   * @return The replica configuration.
    */
-  public void start() {
-    CountDownLatch latch = new CountDownLatch(1);
-    state.start().thenRun(latch::countDown);
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new CopycatException(e);
-    };
+  public CopycatConfig config() {
+    return config;
   }
 
   /**
-   * Stops the replica.
+   * Returns the cluster configuration.
+   *
+   * @return The cluster configuration.
    */
-  public void stop() {
-    CountDownLatch latch = new CountDownLatch(1);
-    state.stop().thenRun(latch::countDown);
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new CopycatException(e);
-    };
+  @SuppressWarnings("unchecked")
+  public <M extends Member> Cluster<M> cluster() {
+    return (Cluster<M>) cluster;
   }
 
   /**
-   * Submits an operation to the cluster.
+   * Returns the context events.
+   *
+   * @return Context events.
+   */
+  public Events on() {
+    return events;
+  }
+
+  /**
+   * Returns the context for a specific event.
+   *
+   * @param event The event for which to return the context.
+   * @return The event context.
+   * @throws NullPointerException if {@code event} is null
+   */
+  public <T extends Event> EventContext<T> on(Class<T> event) {
+    return events.event(Assert.isNotNull(event, "Event cannot be null"));
+  }
+
+  /**
+   * Returns the event handlers registry.
+   *
+   * @return The event handlers registry.
+   */
+  public EventHandlers events() {
+    return state.events();
+  }
+
+  /**
+   * Returns an event handler registry for a specific event.
+   *
+   * @param event The event for which to return the registry.
+   * @return An event handler registry.
+   * @throws NullPointerException if {@code event} is null
+   */
+  public <T extends Event> EventHandlerRegistry<T> event(Class<T> event) {
+    return state.events().event(Assert.isNotNull(event, "Event cannot be null"));
+  }
+
+  /**
+   * Returns the current replica state.
+   *
+   * @return The current replica state.
+   */
+  public CopycatState state() {
+    return state.state();
+  }
+
+  /**
+   * Returns the current leader URI.
+   *
+   * @return The current leader URI.
+   */
+  public String leader() {
+    return state.currentLeader();
+  }
+
+  /**
+   * Returns a boolean indicating whether the node is the current leader.
+   *
+   * @return Indicates whether the node is the current leader.
+   */
+  public boolean isLeader() {
+    return state.isLeader();
+  }
+
+  /**
+   * Starts the context.
+   *
+   * @return A completable future to be completed once the context has started.
+   */
+  public CompletableFuture<Void> start() {
+    return state.start();
+  }
+
+  /**
+   * Stops the context.
+   *
+   * @return A completable future that will be completed when the context has started.
+   */
+  public CompletableFuture<Void> stop() {
+    return state.stop();
+  }
+
+  /**
+   * Submits a operation to the cluster.
    *
    * @param operation The name of the operation to submit.
    * @param args An ordered list of operation arguments.
-   * @return The operation result.
+   * @return A completable future to be completed once the result is received.
    * @throws NullPointerException if {@code operation} is null
    */
-  @SuppressWarnings("unchecked")
-  public <R> R submit(final String operation, final Object... args) {
-    final CountDownLatch latch = new CountDownLatch(1);
-    AtomicReference<R> result = new AtomicReference<>();
-    state.submit(Assert.isNotNull(operation, "operation cannot be null"), args).whenComplete(
-        (r, error) -> {
-          latch.countDown();
-          result.set((R) r);
-        });
-    try {
-      latch.await(30, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      throw new CopycatException(e);
-    }
-    return result.get();
+  public <R> CompletableFuture<R> submit(final String operation, final Object... args) {
+    return state.submit(Assert.isNotNull(operation, "operation cannot be null"), args);
   }
+
+  @Override
+  public String toString() {
+    return getClass().getSimpleName();
+  }
+
+  /**
+   * Asynchronous Copycat builder.
+   */
+  @SuppressWarnings("rawtypes")
+  public static class Builder {
+    CopycatConfig config = new CopycatConfig();
+    Cluster cluster;
+    Protocol protocol;
+    StateMachine stateMachine;
+    Log log = new InMemoryLog();
+
+    private Builder() {
+    }
+
+    /**
+     * Builds the copycat instance.
+     *
+     * @return The copycat instance.
+     */
+    public Copycat build() {
+      return new Copycat(stateMachine, log, cluster, protocol, config);
+    }
+
+    @Override
+    public String toString() {
+      return getClass().getSimpleName();
+    }
+
+    /**
+     * Sets the copycat cluster.
+     *
+     * @param cluster The copycat cluster.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code cluster} is null
+     */
+    public Builder withCluster(Cluster<?> cluster) {
+      this.cluster = Assert.isNotNull(cluster, "cluster");
+      return this;
+    }
+
+    /**
+     * Sets the copycat configuration.
+     *
+     * @param config The copycat configuration.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code config} is null
+     */
+    public Builder withConfig(CopycatConfig config) {
+      this.config = Assert.isNotNull(config, "config");
+      return this;
+    }
+
+    /**
+     * Sets the correlation strategy.
+     *
+     * @param strategy The correlation strategy.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code strategy} is null
+     */
+    public Builder withCorrelationStrategy(CorrelationStrategy<?> strategy) {
+      config.setCorrelationStrategy(strategy);
+      return this;
+    }
+
+    /**
+     * Sets the copycat election timeout.
+     *
+     * @param timeout The copycat election timeout.
+     * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code timeout} is not > 0
+     */
+    public Builder withElectionTimeout(long timeout) {
+      config.setElectionTimeout(timeout);
+      return this;
+    }
+
+    /**
+     * Sets the copycat heartbeat interval.
+     *
+     * @param interval The copycat heartbeat interval.
+     * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code interval} is not > 0
+     */
+    public Builder withHeartbeatInterval(long interval) {
+      config.setHeartbeatInterval(interval);
+      return this;
+    }
+
+    /**
+     * Sets the copycat log.
+     *
+     * @param log The copycat log.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code log} is null
+     */
+    public Builder withLog(Log log) {
+      this.log = Assert.isNotNull(log, "log");
+      return this;
+    }
+
+    /**
+     * Sets the max log size.
+     *
+     * @param maxSize The max log size.
+     * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code maxSize} is not > 0
+     */
+    public Builder withMaxLogSize(int maxSize) {
+      config.setMaxLogSize(maxSize);
+      return this;
+    }
+
+    /**
+     * Sets the cluster protocol.
+     *
+     * @param protocol The cluster protocol.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code protocol} is null
+     */
+    public Builder withProtocol(Protocol<?> protocol) {
+      this.protocol = Assert.isNotNull(protocol, "protocol");
+      return this;
+    }
+
+    /**
+     * Sets the read quorum size.
+     *
+     * @param quorumSize The read quorum size.
+     * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code quorumSize} is not > -1
+     */
+    public Builder withReadQuorumSize(int quorumSize) {
+      config.setQueryQuorumSize(quorumSize);
+      return this;
+    }
+
+    /**
+     * Sets the read quorum strategy.
+     *
+     * @param quorumStrategy The read quorum strategy.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code quorumStrategy} is null
+     */
+    public Builder withReadQuorumStrategy(QuorumStrategy quorumStrategy) {
+      config.setQueryQuorumStrategy(quorumStrategy);
+      return this;
+    }
+
+    /**
+     * Sets whether to require quorums during reads.
+     *
+     * @param requireQuorum Whether to require quorums during reads.
+     * @return The copycat builder.
+     */
+    public Builder withRequireReadQuorum(boolean requireQuorum) {
+      config.setRequireQueryQuorum(requireQuorum);
+      return this;
+    }
+
+    /**
+     * Sets whether to require quorums during writes.
+     *
+     * @param requireQuorum Whether to require quorums during writes.
+     * @return The copycat builder.
+     */
+    public Builder withRequireWriteQuorum(boolean requireQuorum) {
+      config.setRequireCommandQuorum(requireQuorum);
+      return this;
+    }
+
+    /**
+     * Sets the copycat state machine.
+     *
+     * @param stateMachine The state machine.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code stateMachine} is null
+     */
+    public Builder withStateMachine(StateMachine stateMachine) {
+      this.stateMachine = Assert.isNotNull(stateMachine, "stateMachine");
+      return this;
+    }
+
+    /**
+     * Sets the timer strategy.
+     *
+     * @param strategy The timer strategy.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code strategy} is null
+     */
+    public Builder withTimerStrategy(TimerStrategy strategy) {
+      config.setTimerStrategy(strategy);
+      return this;
+    }
+
+    /**
+     * Sets the write quorum size.
+     *
+     * @param quorumSize The write quorum size.
+     * @return The copycat builder.
+     * @throws IllegalArgumentException if {@code quorumSize} is not > -1
+     */
+    public Builder withWriteQuorumSize(int quorumSize) {
+      config.setCommandQuorumSize(quorumSize);
+      return this;
+    }
+
+    /**
+     * Sets the write quorum strategy.
+     *
+     * @param quorumStrategy The write quorum strategy.
+     * @return The copycat builder.
+     * @throws NullPointerException if {@code quorumStrategy} is null
+     */
+    public Builder withWriteQuorumStrategy(QuorumStrategy quorumStrategy) {
+      config.setCommandQuorumStrategy(quorumStrategy);
+      return this;
+    }
+  }
+
 }

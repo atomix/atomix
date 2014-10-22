@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,9 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Synchronous local protocol client implementation.
+ * Local protocol client.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -36,49 +38,59 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public PingResponse ping(PingRequest request) {
+  public CompletableFuture<PingResponse> ping(PingRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address: %s", id);
+      CompletableFuture<PingResponse> future = new CompletableFuture<>();
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      return future;
     }
     return server.ping(request);
   }
 
   @Override
-  public SyncResponse sync(SyncRequest request) {
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address: %s", id);
+      CompletableFuture<SyncResponse> future = new CompletableFuture<>();
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      return future;
     }
     return server.sync(request);
   }
 
   @Override
-  public PollResponse poll(PollRequest request) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address: %s", id);
+      CompletableFuture<PollResponse> future = new CompletableFuture<>();
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      return future;
     }
     return server.poll(request);
   }
 
   @Override
-  public SubmitResponse submit(SubmitRequest request) {
+  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     LocalProtocolServer server = registry.get(id);
     if (server == null) {
-      throw new ProtocolException("Invalid server address: %s", id);
+      CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      return future;
     }
     return server.submit(request);
   }
 
   @Override
-  public void connect() {
+  public CompletableFuture<Void> connect() {
     LOGGER.debug("{} connecting to {}", this, id);
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public void close() {
+  public CompletableFuture<Void> close() {
     LOGGER.debug("{} closing connection to {}", this, id);
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override

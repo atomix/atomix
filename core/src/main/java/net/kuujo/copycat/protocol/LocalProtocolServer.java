@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,9 +21,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Synchronous local protocol server.
+ * Local protocol server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -42,36 +44,38 @@ public class LocalProtocolServer implements ProtocolServer {
     this.requestHandler = handler;
   }
 
-  PingResponse ping(PingRequest request) {
+  CompletableFuture<PingResponse> ping(PingRequest request) {
     Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.ping(request);
   }
 
-  SyncResponse sync(SyncRequest request) {
+  CompletableFuture<SyncResponse> sync(SyncRequest request) {
     Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.sync(request);
   }
 
-  PollResponse poll(PollRequest request) {
+  CompletableFuture<PollResponse> poll(PollRequest request) {
     Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.poll(request);
   }
 
-  SubmitResponse submit(SubmitRequest request) {
+  CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     Assert.isNotNull(requestHandler, "No protocol handler provided");
     return requestHandler.submit(request);
   }
 
   @Override
-  public void listen() {
+  public CompletableFuture<Void> listen() {
     LOGGER.debug("{} listening at {}", this, id);
     registry.put(id, this);
+    return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override
-  public void close() {
+  public CompletableFuture<Void> close() {
     LOGGER.debug("{} closing server at {}", this, id);
     registry.remove(id);
+    return CompletableFuture.completedFuture((Void) null);
   }
 
   @Override

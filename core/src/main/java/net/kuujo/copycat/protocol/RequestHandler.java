@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,7 +29,7 @@ public interface RequestHandler {
    * @param request The ping request.
    * @return A ping response future.
    */
-  PingResponse ping(PingRequest request);
+  CompletableFuture<PingResponse> ping(PingRequest request);
 
   /**
    * Sends or handles a protocol sync request.
@@ -38,7 +37,7 @@ public interface RequestHandler {
    * @param request The sync request.
    * @return A sync response future.
    */
-  SyncResponse sync(SyncRequest request);
+  CompletableFuture<SyncResponse> sync(SyncRequest request);
 
   /**
    * Sends or handles a protocol poll request.
@@ -46,7 +45,7 @@ public interface RequestHandler {
    * @param request The poll request.
    * @return A poll response future.
    */
-  PollResponse poll(PollRequest request);
+  CompletableFuture<PollResponse> poll(PollRequest request);
 
   /**
    * Sends or handles a protocol submit request.
@@ -54,6 +53,6 @@ public interface RequestHandler {
    * @param request The submit request.
    * @return A submit response future.
    */
-  SubmitResponse submit(SubmitRequest request);
+  CompletableFuture<SubmitResponse> submit(SubmitRequest request);
 
 }

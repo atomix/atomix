@@ -19,8 +19,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
-import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.test.TestCluster;
 import net.kuujo.copycat.test.TestLog;
 import net.kuujo.copycat.test.TestNode;
@@ -43,7 +43,7 @@ public class ConfigurationTest {
    * Tests that the leader's expanded configuration is logged and replicated.
    */
   public void testLeaderReplicatesExpandedConfiguration() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz")
@@ -119,7 +119,7 @@ public class ConfigurationTest {
    * Tests that the leader's reduced cluster configuration is logged and replicated.
    */
   public void testLeaderReplicatesReducedConfiguration() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz", "foobarbaz")

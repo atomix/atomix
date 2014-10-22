@@ -3,7 +3,7 @@ package net.kuujo.copycat.keyvaluestore;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.kuujo.copycat.AsyncCopycat;
+import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Query;
 import net.kuujo.copycat.StateMachine;
@@ -19,7 +19,7 @@ public class KeyValueStore implements StateMachine {
     clusterConfig.setLocalMember("tcp://localhost:8080");
     clusterConfig.setRemoteMembers("tcp://localhost:8081", "tcp://localhost:8082");
 
-    AsyncCopycat.builder()
+    Copycat.builder()
       .withStateMachine(new KeyValueStore())
       .withLog(new InMemoryLog())
       .withCluster(new Cluster(clusterConfig))

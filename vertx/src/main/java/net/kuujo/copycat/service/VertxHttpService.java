@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.AsyncCopycat;
+import net.kuujo.copycat.Copycat;
 
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
@@ -37,25 +37,25 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxHttpService extends AbstractAsyncService {
+public class VertxHttpService extends AbstractService {
   private final Vertx vertx;
   private HttpServer server;
   private String host;
   private int port;
 
-  public VertxHttpService(AsyncCopycat copycat) {
+  public VertxHttpService(Copycat copycat) {
     super(copycat);
     this.vertx = new DefaultVertx();
   }
 
-  public VertxHttpService(AsyncCopycat copycat, String host, int port) {
+  public VertxHttpService(Copycat copycat, String host, int port) {
     super(copycat);
     this.host = host;
     this.port = port;
     this.vertx = new DefaultVertx();
   }
 
-  public VertxHttpService(AsyncCopycat copycat, String host, int port, Vertx vertx) {
+  public VertxHttpService(Copycat copycat, String host, int port, Vertx vertx) {
     super(copycat);
     this.host = host;
     this.port = port;

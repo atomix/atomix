@@ -21,8 +21,8 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.state.*;
-import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +36,7 @@ public class TestNode {
   private final TestNodeEvents events;
   private StateContext context;
   private Cluster cluster;
-  private AsyncProtocol protocol = new AsyncLocalProtocol();
+  private Protocol protocol = new LocalProtocol();
   private CopycatConfig config = new CopycatConfig();
   private CopycatState state = CopycatState.FOLLOWER;
   private TestStateMachine stateMachine = new TestStateMachine();
@@ -100,7 +100,7 @@ public class TestNode {
    * @param protocol The test node protocol.
    * @return The test node.
    */
-  public TestNode withProtocol(AsyncProtocol protocol) {
+  public TestNode withProtocol(Protocol protocol) {
     this.protocol = protocol;
     return this;
   }
@@ -128,7 +128,7 @@ public class TestNode {
    *
    * @return The node protocol.
    */
-  public AsyncProtocol protocol() {
+  public Protocol protocol() {
     return protocol;
   }
 

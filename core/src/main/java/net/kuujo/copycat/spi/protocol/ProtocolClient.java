@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,6 +16,8 @@ package net.kuujo.copycat.spi.protocol;
 
 import net.kuujo.copycat.protocol.RequestHandler;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Protocol client.
  *
@@ -26,12 +27,16 @@ public interface ProtocolClient extends RequestHandler {
 
   /**
    * Connects the client.
+   *
+   * @return A completable future to be completed once the client has connected.
    */
-  void connect();
+  CompletableFuture<Void> connect();
 
   /**
    * Closes the client.
+   *
+   * @return A completable future to be completed once the client has disconnected.
    */
-  void close();
+  CompletableFuture<Void> close();
 
 }

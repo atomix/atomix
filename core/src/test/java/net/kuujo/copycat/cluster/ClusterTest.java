@@ -15,7 +15,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.internal.cluster.ClusterManager;
-import net.kuujo.copycat.protocol.AsyncLocalProtocol;
+import net.kuujo.copycat.protocol.LocalProtocol;
 import org.testng.annotations.Test;
 
 import java.util.HashSet;
@@ -128,7 +128,7 @@ public class ClusterTest {
     remoteMembers.add(remoteMember2);
     config.setRemoteMembers(remoteMembers);
     Cluster<Member> cluster = new LocalCluster(config);
-    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster, new AsyncLocalProtocol());
+    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster, new LocalProtocol());
     assertEquals(localMember, clusterManager.localNode().member());
     assertEquals(2, clusterManager.remoteNodes().size());
     assertEquals(remoteMember1, clusterManager.remoteNode("bar").member());
@@ -146,7 +146,7 @@ public class ClusterTest {
     remoteMembers.add(remoteMember2);
     config.setRemoteMembers(remoteMembers);
     Cluster<Member> cluster = new LocalCluster(config);
-    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster, new AsyncLocalProtocol());
+    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster, new LocalProtocol());
     assertEquals(localMember, clusterManager.localNode().member());
     assertEquals(2, clusterManager.remoteNodes().size());
     assertEquals(remoteMember1, clusterManager.remoteNode("bar").member());
@@ -168,7 +168,7 @@ public class ClusterTest {
     remoteMembers.add(remoteMember2);
     config.setRemoteMembers(remoteMembers);
     Cluster<Member> cluster = new LocalCluster(config);
-    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster, new AsyncLocalProtocol());
+    ClusterManager<Member> clusterManager = new ClusterManager<>(cluster, new LocalProtocol());
     assertEquals(localMember, clusterManager.localNode().member());
     assertEquals(2, clusterManager.remoteNodes().size());
     assertEquals(remoteMember1, clusterManager.remoteNode("bar").member());

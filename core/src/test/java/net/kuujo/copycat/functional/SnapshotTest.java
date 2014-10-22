@@ -8,8 +8,8 @@ import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.log.Entry;
-import net.kuujo.copycat.protocol.AsyncLocalProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
+import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.test.TestCluster;
 import net.kuujo.copycat.test.TestLog;
 import net.kuujo.copycat.test.TestNode;
@@ -18,8 +18,6 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -35,7 +33,7 @@ public class SnapshotTest {
    * Tests that the leader takes a snapshot of its state machine and compacts its log.
    */
   public void testLeaderTakesSnapshotAndCompactsLog() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz")
@@ -131,7 +129,7 @@ public class SnapshotTest {
    * Tests that a follower takes a snapshot of its state machine and compacts its log.
    */
   public void testFollowerTakesSnapshotAndCompactsLog() {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode()
       .withCluster("foo", "bar", "baz")
@@ -227,7 +225,7 @@ public class SnapshotTest {
    * Tests that the leader replicates its snapshot to far out of sync followers.
    */
   public void testLeaderReplicatesSnapshotToOutOfSyncFollowers() throws Exception {
-    AsyncProtocol<Member> protocol = new AsyncLocalProtocol();
+    Protocol<Member> protocol = new LocalProtocol();
 
     TestLog log1 = new TestLog();
     log1.appendEntry(new ConfigurationEntry(1, new ClusterConfig()

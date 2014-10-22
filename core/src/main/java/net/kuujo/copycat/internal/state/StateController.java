@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class StateController implements AsyncRequestHandler {
+abstract class StateController implements RequestHandler {
   protected StateContext context;
   private final AtomicBoolean transition = new AtomicBoolean();
 

@@ -16,7 +16,7 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocolClient implements AsyncProtocolClient {
+public class VertxEventBusProtocolClient implements ProtocolClient {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;

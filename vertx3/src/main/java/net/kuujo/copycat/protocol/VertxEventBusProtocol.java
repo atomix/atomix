@@ -18,9 +18,9 @@ package net.kuujo.copycat.protocol;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
 import net.kuujo.copycat.cluster.EventBusMember;
-import net.kuujo.copycat.spi.protocol.AsyncProtocol;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolClient;
-import net.kuujo.copycat.spi.protocol.AsyncProtocolServer;
+import net.kuujo.copycat.spi.protocol.Protocol;
+import net.kuujo.copycat.spi.protocol.ProtocolClient;
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.CountDownLatch;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocol implements AsyncProtocol<EventBusMember> {
+public class VertxEventBusProtocol implements Protocol<EventBusMember> {
   private String host;
   private int port;
   private Vertx vertx;
@@ -154,7 +154,7 @@ public class VertxEventBusProtocol implements AsyncProtocol<EventBusMember> {
   }
 
   @Override
-  public synchronized AsyncProtocolServer createServer(EventBusMember member) {
+  public synchronized ProtocolServer createServer(EventBusMember member) {
     if (vertx != null) {
       return new VertxEventBusProtocolServer(member.address(), vertx);
     } else {
@@ -163,7 +163,7 @@ public class VertxEventBusProtocol implements AsyncProtocol<EventBusMember> {
   }
 
   @Override
-  public synchronized AsyncProtocolClient createClient(EventBusMember member) {
+  public synchronized ProtocolClient createClient(EventBusMember member) {
     if (vertx != null) {
       return new VertxEventBusProtocolClient(member.address(), vertx);
     } else {

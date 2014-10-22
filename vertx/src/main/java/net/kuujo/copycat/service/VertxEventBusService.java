@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.AsyncCopycat;
+import net.kuujo.copycat.Copycat;
 
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -33,24 +33,24 @@ import org.vertx.java.core.json.JsonObject;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusService extends AbstractAsyncService {
+public class VertxEventBusService extends AbstractService {
   private String address;
   private String host = "localhost";
   private int port;
   private Vertx vertx;
 
-  public VertxEventBusService(AsyncCopycat copycat) {
+  public VertxEventBusService(Copycat copycat) {
     super(copycat);
   }
 
-  public VertxEventBusService(AsyncCopycat copycat, String host, int port, String address) {
+  public VertxEventBusService(Copycat copycat, String host, int port, String address) {
     super(copycat);
     this.host = host;
     this.port = port;
     this.address = address;
   }
 
-  public VertxEventBusService(AsyncCopycat copycat, Vertx vertx, String address) {
+  public VertxEventBusService(Copycat copycat, Vertx vertx, String address) {
     super(copycat);
     this.vertx = vertx;
     this.address = address;
