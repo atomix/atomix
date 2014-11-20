@@ -14,15 +14,6 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.Query;
-import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.internal.util.Assert;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.annotation.Annotation;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -30,6 +21,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.Query;
+import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.Reflection;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * State machine executor.
@@ -57,12 +58,12 @@ public final class StateMachineExecutor {
     while (clazz != Object.class) {
       for (Method method : clazz.getDeclaredMethods()) {
         // Check whether this method is a "command" method.
-        Command command = findAnnotation(method, Command.class);
+        Command command = Reflection.findAnnotation(method, Command.class);
         if (command != null) {
           addCommandMethod(method, command);
         } else {
           // Check whether this method is a "query" method.
-          Query query = findAnnotation(method, Query.class);
+          Query query = Reflection.findAnnotation(method, Query.class);
           if (query != null) {
             addQueryMethod(method, query);
           }
@@ -70,48 +71,6 @@ public final class StateMachineExecutor {
       }
       clazz = clazz.getSuperclass();
     }
-  }
-
-  /**
-   * Finds an annotation on the method or one of its parent classes or interfaces.
-   */
-  private <A extends Annotation> A findAnnotation(Method method, Class<A> annotationType) {
-    A annotation = method.getAnnotation(annotationType);
-    if (annotation != null) {
-      return annotation;
-    }
-
-    Class<?> clazz = method.getDeclaringClass().getSuperclass();
-    while (clazz != Object.class) {
-      annotation = findMethodAnnotationInInterface(method, clazz, annotationType);
-      if (annotation != null) {
-        return annotation;
-      }
-      clazz = clazz.getSuperclass();
-    }
-    return null;
-  }
-
-  /**
-   * Finds an annotation in an interface.
-   */
-  private <A extends Annotation> A findMethodAnnotationInInterface(Method method, Class<?> clazz, Class<A> annotationType) {
-    try {
-      Method matchMethod = clazz.getDeclaredMethod(method.getName(), method.getParameterTypes());
-      A annotation = matchMethod.getAnnotation(annotationType);
-      if (annotation != null) {
-        return annotation;
-      }
-    } catch (NoSuchMethodException e) {
-    }
-
-    for (Class<?> i : clazz.getInterfaces()) {
-      A annotation = findMethodAnnotationInInterface(method, i, annotationType);
-      if (annotation != null) {
-        return annotation;
-      }
-    }
-    return null;
   }
 
   /**
