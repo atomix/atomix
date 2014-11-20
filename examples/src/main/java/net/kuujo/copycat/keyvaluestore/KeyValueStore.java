@@ -21,13 +21,8 @@ public class KeyValueStore implements StateMachine {
       new TcpMember("localhost", 8080)).withRemoteMembers(new TcpMember("localhost", 8081),
       new TcpMember("localhost", 8082));
 
-    Copycat.builder()
-      .withStateMachine(new KeyValueStore())
-      .withLog(new InMemoryLog())
-      .withCluster(new Cluster(clusterConfig))
-      .withProtocol(new NettyTcpProtocol())
-      .build()
-      .start();
+    new Copycat(new KeyValueStore(), new InMemoryLog(), new Cluster(clusterConfig),
+      new NettyTcpProtocol()).start();
   }
 
   @Query

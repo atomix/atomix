@@ -94,12 +94,8 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
         }
       }
 
-      instances.add(Copycat.builder()
-          .withStateMachine(new TestStateMachine())
-          .withLog(new InMemoryLog())
-          .withCluster(new Cluster<Member>(config))
-          .withProtocol(protocol)
-          .build());
+      instances.add(new Copycat(new TestStateMachine(), new InMemoryLog(), new Cluster<Member>(
+        config), protocol));
     }
     return instances;
   }
