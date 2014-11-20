@@ -29,11 +29,11 @@ package net.kuujo.copycat;
  * operation type.<p>
  *
  * Commands are methods that alter the state machine's state. Commands are annotated with the
- * {@link net.kuujo.copycat.Command} annotation. Command submissions will  always be forwarded
+ * {@link net.kuujo.copycat.Command @Command} annotation. Command submissions will  always be forwarded
  * through the cluster leader and replicated before being applied to the state machine.<p>
  *
  * Queries are methods that do not alter the state machine's tate. Queries are annotated with
- * the {@link net.kuujo.copycat.Query} annotation. Query submissions do not have to be logged
+ * the {@link net.kuujo.copycat.Query @Query} annotation. Query submissions do not have to be logged
  * or replicated and can optionally be performed on follower nodes.<p>
  *
  * All state machine implementations support snapshotting. Snapshot support methods are default
