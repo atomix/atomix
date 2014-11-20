@@ -16,7 +16,9 @@ package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.Protocol;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,9 +55,12 @@ public class ClusterManager<M extends Member> extends Observable implements Obse
   private final Set<RemoteNode<M>> remoteNodes;
   private final Map<String, Node<M>> nodes;
 
+  /**
+   * @throws NullPointerException if {@code cluster} or {@code protocol} are null
+   */
   public ClusterManager(Cluster<M> cluster, Protocol<M> protocol) {
     this.cluster = cluster.copy();
-    this.protocol = protocol;
+    this.protocol = Assert.isNotNull(protocol, "protocol");
     this.localNode = new LocalNode<>(this.cluster.localMember(), protocol);
     this.remoteNodes = new HashSet<>(this.cluster.remoteMembers().size());
     this.nodes = new HashMap<>(this.cluster.members().size());

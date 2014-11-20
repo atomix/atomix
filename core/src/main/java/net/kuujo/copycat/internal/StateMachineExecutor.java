@@ -18,6 +18,8 @@ import net.kuujo.copycat.Command;
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.Query;
 import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.internal.util.Assert;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,8 +41,11 @@ public final class StateMachineExecutor {
   private final StateMachine stateMachine;
   private final Map<String, Operation> operations = new HashMap<>();
 
+  /**
+   * @throws NullPointerException if {@code stateMachine} is null
+   */
   public StateMachineExecutor(StateMachine stateMachine) {
-    this.stateMachine = stateMachine;
+    this.stateMachine = Assert.isNotNull(stateMachine, "stateMachine");
     init();
   }
 

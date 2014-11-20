@@ -32,6 +32,7 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SubmitRequest;
 import net.kuujo.copycat.spi.protocol.Protocol;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,11 +61,14 @@ public final class StateContext {
   private volatile long commitIndex = 0;
   private volatile long lastApplied = 0;
 
+  /**
+   * @throws NullPointerException if any arguments are null
+   */
   public <M extends Member> StateContext(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
     this.stateMachineExecutor = new StateMachineExecutor(stateMachine);
-    this.log = log;
-    this.config = config;
-    this.cluster = cluster;
+    this.log = Assert.isNotNull(log, "log");
+    this.cluster = Assert.isNotNull(cluster, "cluster");
+    this.config = Assert.isNotNull(config, "config");
     this.clusterManager = new ClusterManager<>(cluster, protocol);
   }
 

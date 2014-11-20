@@ -128,6 +128,7 @@ public class Copycat {
    * @param cluster The Copycat cluster configuration.
    * @param protocol The asynchronous protocol.
    * @param <M> The cluster member type.
+   * @throws NullPointerException if any arguments are null
    */
   public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster,
       Protocol<M> protocol) {
@@ -143,6 +144,7 @@ public class Copycat {
    * @param protocol The asynchronous protocol.
    * @param config The replica configuration.
    * @param <M> The cluster member type.
+   * @throws NullPointerException if any arguments are null
    */
   public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster,
       Protocol<M> protocol, CopycatConfig config) {
