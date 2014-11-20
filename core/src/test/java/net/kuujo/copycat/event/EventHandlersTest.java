@@ -1,16 +1,16 @@
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.event.DefaultEventHandlers;
-import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
-
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.internal.event.DefaultEventHandlers;
+
+import org.testng.Assert;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * Default event handlers test.
@@ -22,13 +22,8 @@ public class EventHandlersTest {
   private DefaultEventHandlers handlers;
 
   @BeforeMethod
-  public void beforeMethod() {
+  protected void beforeMethod() {
     handlers = new DefaultEventHandlers();
-  }
-
-  @AfterMethod
-  public void afterMethod() {
-    handlers = null;
   }
 
   /**

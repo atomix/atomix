@@ -47,7 +47,7 @@ public class TestNode {
   private long commitIndex;
   private long lastApplied;
 
-  public <M extends Member> TestNode() {
+  public TestNode() {
     this.events = new TestNodeEvents(this);
   }
 

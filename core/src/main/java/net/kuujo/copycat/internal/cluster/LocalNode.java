@@ -29,7 +29,6 @@ import net.kuujo.copycat.spi.protocol.ProtocolServer;
 public class LocalNode<M extends Member> extends Node<M> {
   private final ProtocolServer server;
 
-  @SuppressWarnings("unchecked")
   public LocalNode(M member, Protocol<M> protocol) {
     super(member);
     this.server = protocol.createServer(member);

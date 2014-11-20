@@ -49,18 +49,19 @@ public abstract class AbstractLogTest {
   protected void deleteLog() throws Throwable {}
 
   @BeforeMethod
-  public void beforeMethod() throws Throwable {
+  protected void beforeMethod() throws Throwable {
     log = createLog();
     log.open();
   }
 
   @AfterMethod
-  public void afterMethod() throws Throwable {
+  protected void afterMethod() throws Throwable {
     try {
       log.close();
     } catch (Exception ignore) {
+    } finally {
+      log.delete();
     }
-    log.delete();
   }
 
   public void testAppendEntries() throws Exception {

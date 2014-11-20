@@ -1,13 +1,13 @@
 package net.kuujo.copycat.event;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
 import net.kuujo.copycat.internal.event.DefaultEvents;
+
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Events context test.
@@ -20,15 +20,9 @@ public class EventContextTest {
   private Events events;
 
   @BeforeMethod
-  public void beforeMethod() {
+  protected void beforeMethod() {
     handlers = new DefaultEventHandlers();
     events = new DefaultEvents(handlers);
-  }
-
-  @AfterMethod
-  public void afterMethod() {
-    handlers = null;
-    events = null;
   }
 
   /**

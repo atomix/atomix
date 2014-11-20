@@ -22,20 +22,20 @@ import java.util.Set;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.jodah.concurrentunit.Waiter;
-import net.kuujo.copycat.AsyncCopycat;
 import net.kuujo.copycat.Command;
+import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.Query;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.InMemoryLog;
-import net.kuujo.copycat.protocol.AsyncLocalProtocol;
+import net.kuujo.copycat.protocol.LocalProtocol;
 
 import org.testng.annotations.Test;
 
 /**
- * Copycat test.
+ * Functional test support.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -44,10 +44,10 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
   /**
    * Starts a cluster of contexts.
    */
-  protected void startCluster(Set<AsyncCopycat> copycats) throws Throwable {
+  protected void startCluster(Set<Copycat> copycats) throws Throwable {
     Waiter waiter = new Waiter();
     waiter.expectResumes(copycats.size());
-    for (AsyncCopycat copycat : copycats) {
+    for (Copycat copycat : copycats) {
       copycat.start().whenComplete((result, error) -> {
         waiter.assertNull(error);
         waiter.resume();
@@ -57,10 +57,10 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
     waiter.await(10000);
   }
 
-  protected void stopCluster(Set<AsyncCopycat> copycats) throws Throwable {
+  protected void stopCluster(Set<Copycat> copycats) throws Throwable {
     Waiter waiter = new Waiter();
     waiter.expectResumes(copycats.size());
-    for (AsyncCopycat copycat : copycats) {
+    for (Copycat copycat : copycats) {
       copycat.stop().whenComplete((v, error) -> {
         waiter.assertNull(error);
         waiter.resume();
@@ -73,8 +73,8 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
   /**
    * Starts a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<AsyncCopycat> startCluster(int numInstances) throws Throwable {
-    Set<AsyncCopycat> contexts = createCluster(numInstances);
+  protected Set<Copycat> startCluster(int numInstances) throws Throwable {
+    Set<Copycat> contexts = createCluster(numInstances);
     startCluster(contexts);
     return contexts;
   }
@@ -82,9 +82,9 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
   /**
    * Creates a cluster of uniquely named CopyCat contexts.
    */
-  protected Set<AsyncCopycat> createCluster(int numInstances) {
-    AsyncLocalProtocol protocol = new AsyncLocalProtocol();
-    Set<AsyncCopycat> instances = new HashSet<>(numInstances);
+  protected Set<Copycat> createCluster(int numInstances) {
+    LocalProtocol protocol = new LocalProtocol();
+    Set<Copycat> instances = new HashSet<>(numInstances);
     for (int i = 1; i <= numInstances; i++) {
       LocalClusterConfig config = new LocalClusterConfig();
       config.setLocalMember(String.valueOf(i));
@@ -94,7 +94,7 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
         }
       }
 
-      instances.add(AsyncCopycat.builder()
+      instances.add(Copycat.builder()
           .withStateMachine(new TestStateMachine())
           .withLog(new InMemoryLog())
           .withCluster(new Cluster<Member>(config))
