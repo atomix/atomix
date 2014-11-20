@@ -1,5 +1,9 @@
 package net.kuujo.copycat.protocol;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
+
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MemberConfig;
@@ -7,14 +11,10 @@ import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.log.Entry;
+
 import org.testng.Assert;
-import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Protocol reader/writer test.
@@ -30,12 +30,6 @@ public class ProtocolReaderWriterTest {
   public void beforeMethod() {
     reader = new ProtocolReader();
     writer = new ProtocolWriter();
-  }
-
-  @AfterMethod
-  public void afterMethod() {
-    reader = null;
-    writer = null;
   }
 
   /**

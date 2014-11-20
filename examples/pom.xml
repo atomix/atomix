@@ -31,7 +31,7 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-vertx</artifactId>
+      <artifactId>copycat-netty</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
