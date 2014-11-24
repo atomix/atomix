@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.internal.log;
 
+import java.util.Arrays;
+
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.log.EntryType;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.log.EntryType;
-
-import java.util.Arrays;
 
 /**
  * Snapshot log entry.
@@ -32,14 +32,14 @@ import java.util.Arrays;
 @SuppressWarnings("rawtypes")
 @EntryType(id=5, serializer=SnapshotEntry.Serializer.class)
 public class SnapshotEntry extends CopycatEntry {
-  private ClusterConfig cluster;
+  private Cluster cluster;
   private byte[] data;
 
   private SnapshotEntry() {
     super();
   }
 
-  public SnapshotEntry(long term, ClusterConfig cluster, byte[] data) {
+  public SnapshotEntry(long term, Cluster cluster, byte[] data) {
     super(term);
     this.cluster = cluster;
     this.data = data;
@@ -50,8 +50,7 @@ public class SnapshotEntry extends CopycatEntry {
    *
    * @return The snapshot cluster configuration.
    */
-  @SuppressWarnings("unchecked")
-  public <M extends Member> ClusterConfig<M> cluster() {
+  public Cluster cluster() {
     return cluster;
   }
 
@@ -94,11 +93,10 @@ public class SnapshotEntry extends CopycatEntry {
    */
   public static class Serializer extends com.esotericsoftware.kryo.Serializer<SnapshotEntry> {
     @Override
-    @SuppressWarnings("unchecked")
     public SnapshotEntry read(Kryo kryo, Input input, Class<SnapshotEntry> type) {
       SnapshotEntry entry = new SnapshotEntry();
       entry.term = input.readLong();
-      entry.cluster = (ClusterConfig) kryo.readClassAndObject(input);
+      entry.cluster = (Cluster) kryo.readClassAndObject(input);
       int length = input.readInt();
       entry.data = new byte[length];
       input.readBytes(entry.data);

@@ -15,38 +15,36 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.cluster.Member;
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Local protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocol implements Protocol<Member> {
-  private final Map<String, LocalProtocolServer> registry = new HashMap<>(10);
+public class LocalProtocol implements Protocol {
+  private final Map<String, LocalServer> registry = new HashMap<>(10);
 
-  public LocalProtocol() {
+  @Override
+  public ProtocolServer createServer(URI endpoint) {
+    return new LocalServer(endpoint.getHost() == null ? endpoint.toString() : String.format(
+      "%s:%s", endpoint.getHost(), endpoint.getPort()), registry);
   }
 
   @Override
-  public ProtocolServer createServer(Member member) {
-    return new LocalProtocolServer(member.id(), registry);
-  }
-
-  @Override
-  public ProtocolClient createClient(Member member) {
-    return new LocalProtocolClient(member.id(), registry);
+  public ProtocolClient createClient(URI endpoint) {
+    return new LocalClient(endpoint.getHost() == null ? endpoint.toString() : String.format(
+      "%s:%s", endpoint.getHost(), endpoint.getPort()), registry);
   }
 
   @Override
   public String toString() {
-    return "AsyncLocalProtocol";
+    return "LocalProtocol";
   }
-
 }

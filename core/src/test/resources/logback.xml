@@ -9,4 +9,6 @@
   <root level="INFO">
     <appender-ref ref="STDOUT" />
   </root>
+  
+  <logger name="net.kuujo.copycat" level="INFO"/>
 </configuration>

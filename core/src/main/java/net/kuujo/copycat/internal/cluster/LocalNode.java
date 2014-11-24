@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.ClusterMember;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
@@ -26,12 +26,12 @@ import net.kuujo.copycat.spi.protocol.ProtocolServer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalNode<M extends Member> extends Node<M> {
+public class LocalNode extends Node {
   private final ProtocolServer server;
 
-  public LocalNode(M member, Protocol<M> protocol) {
+  public LocalNode(ClusterMember member, Protocol protocol) {
     super(member);
-    this.server = protocol.createServer(member);
+    this.server = protocol.createServer(member.endpoint());
   }
 
   /**
@@ -45,7 +45,7 @@ public class LocalNode<M extends Member> extends Node<M> {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof LocalNode && ((Node<?>) object).member().equals(member());
+    return object instanceof LocalNode && ((Node) object).member().equals(member());
   }
 
   @Override

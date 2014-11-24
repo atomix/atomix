@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.ClusterMember;
 
 /**
  * Leader elect event.<p>
@@ -25,12 +25,11 @@ import net.kuujo.copycat.cluster.Member;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SuppressWarnings("rawtypes")
 public class LeaderElectEvent implements Event {
   private final long term;
-  private final Member leader;
+  private final ClusterMember leader;
 
-  public LeaderElectEvent(long term, Member leader) {
+  public LeaderElectEvent(long term, ClusterMember leader) {
     this.term = term;
     this.leader = leader;
   }
@@ -49,9 +48,8 @@ public class LeaderElectEvent implements Event {
    *
    * @return The leader URI.
    */
-  @SuppressWarnings("unchecked")
-  public <M extends Member> M leader() {
-    return (M) leader;
+  public ClusterMember leader() {
+    return leader;
   }
 
   @Override

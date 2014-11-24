@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.ClusterMember;
 
 /**
  * Cluster node.<p>
@@ -24,10 +24,10 @@ import net.kuujo.copycat.cluster.Member;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Node<M extends Member> {
-  private final M member;
+public abstract class Node {
+  private final ClusterMember member;
 
-  protected Node(M member) {
+  protected Node(ClusterMember member) {
     this.member = member;
   }
 
@@ -36,7 +36,7 @@ public abstract class Node<M extends Member> {
    *
    * @return The node's underlying member instance.
    */
-  public M member() {
+  public ClusterMember member() {
     return member;
   }
 

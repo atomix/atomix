@@ -14,12 +14,14 @@
  */
 package net.kuujo.copycat.internal.state;
 
+import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.LeaderElectEvent;
 import net.kuujo.copycat.event.StartEvent;
 import net.kuujo.copycat.event.StateChangeEvent;
@@ -36,9 +38,6 @@ import net.kuujo.copycat.spi.protocol.Protocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Raft state context.
  *
@@ -46,9 +45,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public final class StateContext {
   private static final Logger LOGGER = LoggerFactory.getLogger(StateContext.class);
-  @SuppressWarnings("rawtypes")
   private final Cluster cluster;
-  @SuppressWarnings("rawtypes")
   private final ClusterManager clusterManager;
   private final StateMachineExecutor stateMachineExecutor;
   private final Log log;
@@ -64,12 +61,12 @@ public final class StateContext {
   /**
    * @throws NullPointerException if any arguments are null
    */
-  public <M extends Member> StateContext(StateMachine stateMachine, Log log, Cluster<M> cluster, Protocol<M> protocol, CopycatConfig config) {
+  public StateContext(StateMachine stateMachine, Log log, Cluster cluster, Protocol protocol, CopycatConfig config) {
     this.stateMachineExecutor = new StateMachineExecutor(stateMachine);
     this.log = Assert.isNotNull(log, "log");
     this.cluster = Assert.isNotNull(cluster, "cluster");
     this.config = Assert.isNotNull(config, "config");
-    this.clusterManager = new ClusterManager<>(cluster, protocol);
+    this.clusterManager = new ClusterManager(cluster, protocol);
   }
 
   /**
@@ -95,7 +92,6 @@ public final class StateContext {
    *
    * @return The copycat cluster.
    */
-  @SuppressWarnings("rawtypes")
   public Cluster cluster() {
     return cluster;
   }
@@ -105,7 +101,6 @@ public final class StateContext {
    *
    * @return The copycat cluster manager.
    */
-  @SuppressWarnings("rawtypes")
   public ClusterManager clusterManager() {
     return clusterManager;
   }

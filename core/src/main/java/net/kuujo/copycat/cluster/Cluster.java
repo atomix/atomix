@@ -14,180 +14,230 @@
  */
 package net.kuujo.copycat.cluster;
 
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.util.Copyable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 /**
- * Immutable cluster configuration.<p>
+ * Immutable cluster configuration.
+ * <p>
  *
- * The {@code Cluster} is an immutable cluster configuration that is ultimately based on a mutable configuration. Each
- * {@code Cluster} is related to a specific {@link net.kuujo.copycat.cluster.Member} type and
- * {@link net.kuujo.copycat.spi.protocol.Protocol}. This allows Copycat's communication model to be effectively
- * altered based on the protocol implementation. For instance, for HTTP protocols, an {@code HttpMember} will be required
- * by the {@code HttpCluster} in order to provide the {@code host} and {@code port} required for operating the TCP
- * protocol.<p>
+ * The {@code Cluster} is an immutable cluster configuration that is ultimately based on a mutable
+ * configuration. Each {@code Cluster} is related to a specific
+ * {@link net.kuujo.copycat.cluster.Endpoint member} type and
+ * {@link net.kuujo.copycat.spi.protocol.Protocol protocol}. This allows Copycat's communication
+ * model to be effectively altered based on the protocol implementation. For instance, for HTTP
+ * protocols, an {@code HttpMember} will be required by the {@code HttpCluster} in order to provide
+ * the {@code host} and {@code port} required for operating the TCP protocol.
+ * <p>
  *
  * All Copycat clusters are modifiable even while the cluster is running. When the underlying
- * {@link net.kuujo.copycat.cluster.ClusterConfig} is changed by the user, the {@code Cluster} membership will be
- * automatically updated. Additionally, when the {@code Cluster} membership changes, Copycat will detect the change
- * via an {@link java.util.Observer} and update the Copycat cluster's internal configuration safely. However, it's
- * important to note that changes to the {@code Cluster} or its underlying {@link net.kuujo.copycat.cluster.ClusterConfig}
- * may not necessarily be represented in the actual Copycat cluster. Copycat directs all cluster membership changes
- * through the cluster leader and does so in a safe manner. This means that cluster configuration changes must occur
- * only on the leader node for the time being (this will be changed in the future), and configuration changes on follower
- * nodes will be essentially ignored unless they occur prior to starting the cluster.<p>
+ * {@link net.kuujo.copycat.cluster.ClusterConfig} is changed by the user, the {@code Cluster}
+ * membership will be automatically updated. Additionally, when the {@code Cluster} membership
+ * changes, Copycat will detect the change via an {@link java.util.Observer} and update the Copycat
+ * cluster's internal configuration safely. However, it's important to note that changes to the
+ * {@code Cluster} or its underlying {@link net.kuujo.copycat.cluster.ClusterConfig} may not
+ * necessarily be represented in the actual Copycat cluster. Copycat directs all cluster membership
+ * changes through the cluster leader and does so in a safe manner. This means that cluster
+ * configuration changes must occur only on the leader node for the time being (this will be changed
+ * in the future), and configuration changes on follower nodes will be essentially ignored unless
+ * they occur prior to starting the cluster.
+ * <p>
  *
- * Copycat core provides a {@link net.kuujo.copycat.cluster.LocalCluster} for performing inter-thread communication.
- * This cluster type should be used in testing environments only.
+ * Copycat core provides a {@link net.kuujo.copycat.cluster.LocalCluster LocalCluster} for
+ * performing inter-thread communication. This cluster type should be used in testing environments
+ * only.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Cluster<M extends Member> extends Observable implements Observer, Copyable<Cluster<M>> {
-  private static final Logger LOGGER = LoggerFactory.getLogger(Cluster.class);
-  protected final ClusterConfig<M> config;
-  private final M localMember;
-  private final Set<M> remoteMembers;
-  private final Map<String, M> members;
+public class Cluster extends Observable implements Copyable<Cluster>, Serializable {
+  private static final long serialVersionUID = -1278905577220144523L;
 
-  public Cluster(ClusterConfig<M> config) {
-    this.config = Assert.isNotNull(config, "config");
-    this.localMember = config.getLocalMember();
-    this.members = new HashMap<>(config.getMembers().size());
-    this.members.put(localMember.id(), localMember);
-    this.remoteMembers = new HashSet<>(config.getRemoteMembers().size());
-    this.config.addObserver(this);
-    clusterChanged(config);
-  }
+  private final ClusterMember localMember;
+  private final Map<String, ClusterMember> remoteMembers;
 
-  @Override
-  @SuppressWarnings("unchecked")
-  public Cluster<M> copy() {
-    return new Cluster(config.copy());
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public void update(Observable o, Object arg) {
-    LOGGER.info("{} - Configuration change detected, updating membership", this);
-    clusterChanged((ClusterConfig<M>) o);
+  public Cluster() {
+    localMember = null;
+    remoteMembers = null;
   }
 
   /**
-   * Updates the cluster when the configuration changes.
+   * Copy constructor.
    */
-  private void clusterChanged(ClusterConfig<M> config) {
-    // Add any remote members that don't already exist in the cluster.
-    config.getMembers().forEach(member -> {
-      if (!member.equals(localMember) && !members.containsKey(member.id())) {
-        remoteMembers.add(member);
-        members.put(member.id(), member);
-      }
+  private Cluster(ClusterMember localMember, Map<String, ClusterMember> remoteMembers) {
+    this.localMember = localMember;
+    this.remoteMembers = remoteMembers;
+  }
+
+  public Cluster(String localEndpoint, List<String> remoteEndpoints) {
+    localMember = new ClusterMember(localEndpoint);
+    remoteMembers = new ConcurrentHashMap<>();
+    addRemoteMembers(remoteEndpoints);
+  }
+
+  @SafeVarargs
+  public Cluster(String localEndpoint, String... remoteEndpoints) {
+    this(localEndpoint, Arrays.asList(remoteEndpoints));
+  }
+
+  /**
+   * Adds a remote member to this cluster.
+   *
+   * @param endpoint The endpoint of the remote member to add
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code endpoint} is null
+   */
+  public void addRemoteMember(String endpoint) {
+    ClusterMember member = new ClusterMember(endpoint);
+    remoteMembers.put(member.id(), member);
+    notifyChanged();
+  }
+
+  public void addRemoteMembers(List<String> remoteEndpoints) {
+    Assert.isNotNull(remoteEndpoints, "remoteEndpoints");
+    remoteEndpoints.stream().forEach(e -> {
+      ClusterMember member = new ClusterMember(e);
+      remoteMembers.put(member.id(), member);
     });
-
-    Iterator<M> iterator = remoteMembers.iterator();
-    while (iterator.hasNext()) {
-      M member = iterator.next();
-      boolean exists = false;
-      for (M m : config.getMembers()) {
-        if (m.equals(member)) {
-          exists = true;
-          break;
-        }
-      }
-      if (!exists) {
-        iterator.remove();
-        members.remove(member.id());
-      }
-    }
-
-    setChanged();
-    notifyObservers();
-    clearChanged();
+    notifyChanged();
   }
 
-  /**
-   * Returns the current cluster configuration.
-   *
-   * @return The current cluster configuration.
-   */
-  public ClusterConfig<M> config() {
-    return config;
+  public boolean containsMember(String memberId) {
+    return localMember.id().equals(memberId) || remoteMembers.keySet().contains(memberId);
   }
 
-  /**
-   * Returns a member by ID.
-   *
-   * @param id The unique member ID.
-   * @return The cluster member if it exists, otherwise <code>null</code>
-   */
-  public M member(String id) {
-    return members.get(id);
-  }
-
-  /**
-   * Returns a set of all members in the cluster.
-   *
-   * @return A set of all members in the cluster.
-   */
-  public Set<M> members() {
-    Set<M> members = new HashSet<>(remoteMembers);
-    members.add(localMember);
-    return members;
+  @Override
+  public Cluster copy() {
+    return new Cluster(localMember, remoteMembers);
   }
 
   /**
    * Returns the local cluster member.
    *
-   * @return The local cluster member.
+   * @return The local member.
    */
-  public M localMember() {
+  public ClusterMember localMember() {
     return localMember;
   }
 
   /**
-   * Returns a remote member by ID.
-   *
-   * @param id The remote member ID.
-   * @return The remote member if it exists in the cluster, otherwise <code>null</code>
+   * Returns the endpoints of the remote cluster members.
    */
-  public M remoteMember(String id) {
-    M member = members.get(id);
-    return member != localMember ? member : null;
+  public List<String> remoteEndpoints() {
+    return remoteMembers.values()
+      .stream()
+      .map(m -> m.endpoint().toString())
+      .collect(Collectors.toList());
   }
 
   /**
-   * Returns a set of all remote members in the cluster.
-   *
-   * @return A set of all remote members in the cluster.
+   * Returns the remote node for the {@code id}.
    */
-  public Set<M> remoteMembers() {
-    return remoteMembers;
+  public ClusterMember remoteMember(String memberId) {
+    return remoteMembers.get(memberId);
   }
 
-  @Override
-  public boolean equals(Object object) {
-    if (getClass().isInstance(object)) {
-      Cluster<?> config = (Cluster<?>) object;
-      return config.localMember().equals(localMember) && config.remoteMembers().equals(remoteMembers);
-    }
-    return false;
+  /**
+   * Returns the remote cluster member ids.
+   */
+  public Set<String> remoteMemberIds() {
+    return Collections.unmodifiableSet(remoteMembers.keySet());
+  }
+
+  /**
+   * Returns an unmodifiable set of remote cluster members.
+   */
+  public Collection<ClusterMember> remoteMembers() {
+    return Collections.unmodifiableCollection(remoteMembers.values());
+  }
+
+  /**
+   * Removes a remote member from this cluster configuration.
+   *
+   * @param member The remote member to remove.
+   * @return The updated configuration.
+   * @throws NullPointerException if {@code member} is null
+   */
+  public void removeRemoteMember(String memberId) {
+    remoteMembers.remove(Assert.isNotNull(memberId, "memberId"));
+    notifyChanged();
+  }
+
+  public int size() {
+    return remoteMembers.size() + 1;
+  }
+
+  /**
+   * Synchronizes with the {@code cluster}.
+   */
+  public synchronized void syncWith(Cluster cluster) {
+    // Add new members
+    long addedMembers = cluster.remoteMembers.entrySet()
+      .stream()
+      .filter(e -> !remoteMembers.containsKey(e.getKey()))
+      .map(e -> remoteMembers.put(e.getKey(), e.getValue()))
+      .count();
+
+    // Remove absent members
+    List<String> absentMembers = remoteMembers.keySet()
+      .stream()
+      .filter(id -> !cluster.remoteMembers.keySet().contains(id))
+      .collect(Collectors.toList());
+    absentMembers.stream().forEach(m -> remoteMembers.remove(m));
+
+    if (addedMembers > 0 || !absentMembers.isEmpty())
+      notifyChanged();
   }
 
   @Override
   public int hashCode() {
-    int hashCode = 23;
-    hashCode = 37 * hashCode + localMember.hashCode();
-    hashCode = 37 * hashCode + remoteMembers.hashCode();
-    return hashCode;
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((localMember == null) ? 0 : localMember.hashCode());
+    result = prime * result + ((remoteMembers == null) ? 0 : remoteMembers.hashCode());
+    return result;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj)
+      return true;
+    if (obj == null)
+      return false;
+    if (getClass() != obj.getClass())
+      return false;
+    Cluster other = (Cluster) obj;
+    if (localMember == null) {
+      if (other.localMember != null)
+        return false;
+    } else if (!localMember.equals(other.localMember))
+      return false;
+    if (remoteMembers == null) {
+      if (other.remoteMembers != null)
+        return false;
+    } else if (!remoteMembers.equals(other.remoteMembers))
+      return false;
+    return true;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[config=%s]", getClass().getSimpleName(), config);
+    return String.format("Cluster[localMember=%s, remoteNode=%s]", localMember, remoteMembers);
   }
 
+  private void notifyChanged() {
+    setChanged();
+    notifyObservers();
+    clearChanged();
+  }
 }

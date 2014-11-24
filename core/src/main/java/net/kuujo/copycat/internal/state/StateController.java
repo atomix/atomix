@@ -361,8 +361,8 @@ abstract class StateController implements RequestHandler {
   protected void applyConfig(long index, ConfigurationEntry entry) {
     try {
       logger().debug("{} - Apply configuration change: {}", context.clusterManager().localNode(), entry.cluster());
-      context.clusterManager().cluster().update(entry.cluster(), null);
-      context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster().getMembers()));
+      context.clusterManager().cluster().syncWith(entry.cluster());
+      context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster()));
     } catch (Exception e) {
     } finally {
       context.lastApplied(index);
@@ -389,8 +389,8 @@ abstract class StateController implements RequestHandler {
       }
 
       // Set the local cluster configuration according to the snapshot cluster membership.
-      context.clusterManager().cluster().update(entry.cluster(), null);
-      context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster().getMembers()));
+      context.clusterManager().cluster().syncWith(entry.cluster());
+      context.events().membershipChange().handle(new MembershipChangeEvent(entry.cluster()));
 
       // Finally, if necessary, increment the current term.
       context.currentTerm(Math.max(context.currentTerm(), entry.term()));
@@ -406,7 +406,7 @@ abstract class StateController implements RequestHandler {
   protected SnapshotEntry createSnapshot() {
     byte[] snapshot = context.stateMachineExecutor().stateMachine().takeSnapshot();
     if (snapshot != null) {
-      return new SnapshotEntry(context.currentTerm(), context.clusterManager().cluster().config().copy(), snapshot);
+      return new SnapshotEntry(context.currentTerm(), context.clusterManager().cluster().copy(), snapshot);
     }
     return null;
   }
@@ -554,7 +554,6 @@ abstract class StateController implements RequestHandler {
 
     // If the cluster has a leader then locate the leader and forward the operation.
     if (context.currentLeader() != null) {
-      @SuppressWarnings("rawtypes")
       RemoteNode leader = context.clusterManager().remoteNode(context.currentLeader());
       if (leader != null) {
         logger().debug("{} - Forwarding {} to leader {}", context.clusterManager().localNode(), request, leader);

@@ -35,7 +35,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxTcpProtocolClient implements ProtocolClient {
+public class VertxTcpClient implements ProtocolClient {
   private static final String DELIMITER = "\\x00";
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
@@ -61,7 +61,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
     }
   }
 
-  public VertxTcpProtocolClient(String host, int port, VertxTcpProtocol protocol) {
+  public VertxTcpClient(String host, int port, VertxTcpProtocol protocol) {
     this.host = host;
     this.port = port;
     this.protocol = protocol;
@@ -91,7 +91,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
    * @param trustAll Whether to trust all server certs.
    * @return The TCP protocol.
    */
-  public VertxTcpProtocolClient withTrustAll(boolean trustAll) {
+  public VertxTcpClient withTrustAll(boolean trustAll) {
     this.trustAll = trustAll;
     return this;
   }

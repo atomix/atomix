@@ -16,7 +16,15 @@
 package net.kuujo.copycat.protocol;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -25,27 +33,29 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
-import javax.net.ssl.SSLException;
+import java.net.URI;
 import java.security.cert.CertificateException;
 import java.util.concurrent.CompletableFuture;
+
+import javax.net.ssl.SSLException;
+
+import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 /**
  * Netty TCP protocol server.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocolServer implements ProtocolServer {
+public class NettyTcpServer implements ProtocolServer {
   private final NettyTcpProtocol protocol;
-  private final TcpMember member;
+  private final URI endpoint;
   private RequestHandler handler;
   private Channel channel;
 
-  public NettyTcpProtocolServer(NettyTcpProtocol protocol, TcpMember member) {
+  public NettyTcpServer(NettyTcpProtocol protocol, URI endpoint) {
     this.protocol = protocol;
-    this.member = member;
+    this.endpoint = endpoint;
   }
 
   @Override
@@ -87,7 +97,7 @@ public class NettyTcpProtocolServer implements ProtocolServer {
         pipeline.addLast(
             new ObjectEncoder(),
             new ObjectDecoder(ClassResolvers.softCachingConcurrentResolver(getClass().getClassLoader())),
-            new TcpProtocolServerHandler(NettyTcpProtocolServer.this)
+            new TcpProtocolServerHandler(NettyTcpServer.this)
         );
       }
     })
@@ -113,7 +123,7 @@ public class NettyTcpProtocolServer implements ProtocolServer {
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
     // Bind and start to accept incoming connections.
-    bootstrap.bind(member.host(), member.port()).addListener(new ChannelFutureListener() {
+    bootstrap.bind(endpoint.getHost(), endpoint.getPort()).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         channelFuture.channel().closeFuture().addListener(new ChannelFutureListener() {
@@ -158,9 +168,9 @@ public class NettyTcpProtocolServer implements ProtocolServer {
    * Server request handler.
    */
   private static class TcpProtocolServerHandler extends ChannelInboundHandlerAdapter {
-    private final NettyTcpProtocolServer server;
+    private final NettyTcpServer server;
 
-    private TcpProtocolServerHandler(NettyTcpProtocolServer server) {
+    private TcpProtocolServerHandler(NettyTcpServer server) {
       this.server = server;
     }
 

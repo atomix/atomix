@@ -69,8 +69,6 @@
 
   <modules>
     <module>core</module>
-    <module>tcp</module>
-    <module>http</module>
     <module>netty</module>
     <module>vertx</module>
     <module>vertx3</module>

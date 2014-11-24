@@ -17,7 +17,6 @@ package net.kuujo.copycat;
 import java.util.concurrent.CompletableFuture;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.event.Event;
 import net.kuujo.copycat.event.EventContext;
 import net.kuujo.copycat.event.EventHandlerRegistry;
@@ -116,7 +115,7 @@ import net.kuujo.copycat.spi.protocol.Protocol;
  */
 public class Copycat {
   protected final StateContext state;
-  protected final Cluster<?> cluster;
+  protected final Cluster cluster;
   protected final CopycatConfig config;
   protected final Events events;
 
@@ -130,8 +129,7 @@ public class Copycat {
    * @param <M> The cluster member type.
    * @throws NullPointerException if any arguments are null
    */
-  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster,
-      Protocol<M> protocol) {
+  public Copycat(StateMachine stateMachine, Log log, Cluster cluster, Protocol protocol) {
     this(stateMachine, log, cluster, protocol, new CopycatConfig());
   }
 
@@ -146,12 +144,12 @@ public class Copycat {
    * @param <M> The cluster member type.
    * @throws NullPointerException if any arguments are null
    */
-  public <M extends Member> Copycat(StateMachine stateMachine, Log log, Cluster<M> cluster,
-      Protocol<M> protocol, CopycatConfig config) {
+  public Copycat(StateMachine stateMachine, Log log, Cluster cluster,
+      Protocol protocol, CopycatConfig config) {
     this(new StateContext(stateMachine, log, cluster, protocol, config), cluster, config);
   }
 
-  private Copycat(StateContext state, Cluster<?> cluster, CopycatConfig config) {
+  private Copycat(StateContext state, Cluster cluster, CopycatConfig config) {
     this.state = state;
     this.cluster = cluster;
     this.config = config;
@@ -172,9 +170,8 @@ public class Copycat {
    *
    * @return The cluster configuration.
    */
-  @SuppressWarnings("unchecked")
-  public <M extends Member> Cluster<M> cluster() {
-    return (Cluster<M>) cluster;
+  public Cluster cluster() {
+    return cluster;
   }
 
   /**

@@ -14,26 +14,26 @@
  */
 package net.kuujo.copycat.spi.protocol;
 
-import net.kuujo.copycat.cluster.Member;
+import java.net.URI;
 
 /**
- * Copycat protocol.<p>
+ * Copycat protocol.
+ * <p>
  *
- * Protocols are used by Copycat to communicate between replicas.
- * Copycat's protocol implementation is pluggable, meaning users can
- * use any protocol they wish to facilitate communication between nodes.
+ * Protocols are used by Copycat to communicate between replicas. Copycat's protocol implementation
+ * is pluggable, meaning users can use any protocol they wish to facilitate communication between
+ * nodes.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol<M extends Member> {
-
+public interface Protocol {
   /**
    * Creates a protocol server.
    *
    * @param member The member configuration.
    * @return The protocol server.
    */
-  ProtocolServer createServer(M member);
+  ProtocolServer createServer(URI endpoint);
 
   /**
    * Creates a protocol client.
@@ -41,6 +41,5 @@ public interface Protocol<M extends Member> {
    * @param member The member configuration.
    * @return The protocol client.
    */
-  ProtocolClient createClient(M member);
-
+  ProtocolClient createClient(URI endpoint);
 }

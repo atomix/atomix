@@ -15,28 +15,27 @@
  */
 package net.kuujo.copycat.internal.log;
 
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.log.EntryType;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.log.EntryType;
 
 /**
  * Cluster configuration entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SuppressWarnings("rawtypes")
-@EntryType(id=4, serializer=ConfigurationEntry.Serializer.class)
+@EntryType(id = 4, serializer = ConfigurationEntry.Serializer.class)
 public class ConfigurationEntry extends CopycatEntry {
-  private ClusterConfig cluster;
+  private Cluster cluster;
 
   private ConfigurationEntry() {
     super();
   }
 
-  public ConfigurationEntry(long term, ClusterConfig cluster) {
+  public ConfigurationEntry(long term, Cluster cluster) {
     super(term);
     this.cluster = cluster;
   }
@@ -46,8 +45,7 @@ public class ConfigurationEntry extends CopycatEntry {
    * 
    * @return A set of cluster member addresses.
    */
-  @SuppressWarnings("unchecked")
-  public <M extends Member> ClusterConfig<M> cluster() {
+  public Cluster cluster() {
     return cluster;
   }
 
@@ -63,7 +61,7 @@ public class ConfigurationEntry extends CopycatEntry {
   @Override
   public int hashCode() {
     int hashCode = 23;
-    hashCode = 37 * hashCode + (int)(term ^ (term >>> 32));
+    hashCode = 37 * hashCode + (int) (term ^ (term >>> 32));
     hashCode = 37 * hashCode + cluster.hashCode();
     return hashCode;
   }
@@ -80,18 +78,17 @@ public class ConfigurationEntry extends CopycatEntry {
    */
   public static class Serializer extends com.esotericsoftware.kryo.Serializer<ConfigurationEntry> {
     @Override
-    @SuppressWarnings("unchecked")
     public ConfigurationEntry read(Kryo kryo, Input input, Class<ConfigurationEntry> type) {
       ConfigurationEntry entry = new ConfigurationEntry();
       entry.term = input.readLong();
-      entry.cluster = (ClusterConfig) kryo.readClassAndObject(input);
+      entry.cluster = (Cluster) kryo.readClassAndObject(input);
       return entry;
     }
+
     @Override
     public void write(Kryo kryo, Output output, ConfigurationEntry entry) {
       output.writeLong(entry.term);
       kryo.writeClassAndObject(output, entry.cluster);
     }
   }
-
 }

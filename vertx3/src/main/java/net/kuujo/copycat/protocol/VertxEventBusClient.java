@@ -15,12 +15,13 @@
  */
 package net.kuujo.copycat.protocol;
 
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.Message;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import org.vertx.java.core.AsyncResult;
-import org.vertx.java.core.Handler;
-import org.vertx.java.core.Vertx;
-import org.vertx.java.core.eventbus.Message;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -29,13 +30,13 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocolClient implements ProtocolClient {
+public class VertxEventBusClient implements ProtocolClient {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
   private Vertx vertx;
 
-  public VertxEventBusProtocolClient(String address, Vertx vertx) {
+  public VertxEventBusClient(String address, Vertx vertx) {
     this.address = Assert.isNotNull(address, "Vert.x event bus address cannot be null");
     this.vertx = Assert.isNotNull(vertx, "Vert.x instance cannot be null");
   }
@@ -43,7 +44,8 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   @Override
   public CompletableFuture<PingResponse> ping(final PingRequest request) {
     final CompletableFuture<PingResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
+    vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
       public void handle(AsyncResult<Message<byte[]>> result) {
         if (result.failed()) {
@@ -59,7 +61,8 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   @Override
   public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
     final CompletableFuture<SyncResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
+    vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
       public void handle(AsyncResult<Message<byte[]>> result) {
         if (result.failed()) {
@@ -75,7 +78,8 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   @Override
   public CompletableFuture<PollResponse> poll(final PollRequest request) {
     final CompletableFuture<PollResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
+    vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
       public void handle(AsyncResult<Message<byte[]>> result) {
         if (result.failed()) {
@@ -91,7 +95,8 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   @Override
   public CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
     final CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
+    DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
+    vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
       public void handle(AsyncResult<Message<byte[]>> result) {
         if (result.failed()) {

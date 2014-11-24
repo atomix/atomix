@@ -15,17 +15,22 @@
  */
 package net.kuujo.copycat.test;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.state.*;
+import net.kuujo.copycat.cluster.ClusterMember;
+import net.kuujo.copycat.internal.state.CandidateController;
+import net.kuujo.copycat.internal.state.FollowerController;
+import net.kuujo.copycat.internal.state.LeaderController;
+import net.kuujo.copycat.internal.state.NoneController;
+import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.spi.protocol.Protocol;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Test node.
@@ -58,28 +63,11 @@ public class TestNode {
    * @return The test node.
    */
   public TestNode withCluster(String... members) {
-    ClusterConfig<Member> config = new ClusterConfig<>();
-    config.setLocalMember(new Member(members[0]));
+    List<String> remoteMembers = new ArrayList<>();
     for (int i = 1; i < members.length; i++) {
-      config.addRemoteMember(new Member(members[i]));
+      remoteMembers.add(members[i]);
     }
-    this.cluster = new Cluster<>(config);
-    return this;
-  }
-
-  /**
-   * Sets the test node cluster.
-   *
-   * @param members The test node cluster members.
-   * @return The test node.
-   */
-  public <M extends Member> TestNode withCluster(M... members) {
-    ClusterConfig<Member> config = new ClusterConfig<>();
-    config.setLocalMember(members[0]);
-    for (int i = 1; i < members.length; i++) {
-      config.addRemoteMember(members[i]);
-    }
-    this.cluster = new Cluster<>(config);
+    this.cluster = new Cluster(members[0], remoteMembers);
     return this;
   }
 
@@ -89,7 +77,7 @@ public class TestNode {
    * @param cluster The test node cluster.
    * @return The test node.
    */
-  public <M extends Member> TestNode withCluster(Cluster<M> cluster) {
+  public TestNode withCluster(Cluster cluster) {
     this.cluster = cluster;
     return this;
   }
@@ -119,7 +107,7 @@ public class TestNode {
    *
    * @return The node configuration.
    */
-  public Member member() {
+  public ClusterMember member() {
     return cluster.localMember();
   }
 
@@ -271,7 +259,7 @@ public class TestNode {
   /**
    * Starts the node.
    */
-  public <M extends Member> void start() {
+  public void start() {
     context = new StateContext(stateMachine, log, cluster, protocol, config);
     context.currentLeader(leader);
     context.currentTerm(term);

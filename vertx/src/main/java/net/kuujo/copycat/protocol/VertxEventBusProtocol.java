@@ -15,24 +15,25 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.cluster.EventBusMember;
+import java.net.URI;
+import java.util.concurrent.CountDownLatch;
+
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
+
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.impl.DefaultVertx;
-
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Vert.x event bus protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocol implements Protocol<EventBusMember> {
+public class VertxEventBusProtocol implements Protocol {
   private String host;
   private int port;
   private Vertx vertx;
@@ -157,21 +158,12 @@ public class VertxEventBusProtocol implements Protocol<EventBusMember> {
   }
 
   @Override
-  public synchronized ProtocolServer createServer(EventBusMember member) {
-    if (vertx != null) {
-      return new VertxEventBusProtocolServer(member.address(), vertx);
-    } else {
-      return new VertxEventBusProtocolServer(member.address(), createVertx());
-    }
+  public synchronized ProtocolServer createServer(URI endpoint) {
+    return new VertxEventBusServer(endpoint.toString(), vertx == null ? createVertx() : vertx);
   }
 
   @Override
-  public synchronized ProtocolClient createClient(EventBusMember member) {
-    if (vertx != null) {
-      return new VertxEventBusProtocolClient(member.address(), vertx);
-    } else {
-      return new VertxEventBusProtocolClient(member.address(), createVertx());
-    }
+  public synchronized ProtocolClient createClient(URI endpoint) {
+    return new VertxEventBusClient(endpoint.toString(), vertx == null ? createVertx() : vertx);
   }
-
 }

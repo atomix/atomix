@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 class NodeReplicator {
   private static final Logger LOGGER = LoggerFactory.getLogger(NodeReplicator.class);
   private static final int BATCH_SIZE = 100;
-  private final RemoteNode<?> node;
+  private final RemoteNode node;
   private final StateContext state;
   private final Log log;
   private volatile long nextIndex;
@@ -51,7 +51,7 @@ class NodeReplicator {
   private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
   private final Map<Long, CompletableFuture<Long>> replicateFutures = new ConcurrentHashMap<>(1024);
 
-  public NodeReplicator(RemoteNode<?> node, StateContext state) {
+  public NodeReplicator(RemoteNode node, StateContext state) {
     this.node = node;
     this.state = state;
     this.log = state.log();
@@ -64,7 +64,7 @@ class NodeReplicator {
    *
    * @return The replica node.
    */
-  RemoteNode<?> node() {
+  RemoteNode node() {
     return node;
   }
 

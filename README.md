@@ -48,7 +48,6 @@ taking place on Copycat**
    * [Taking snapshots](#taking-snapshots)
    * [Configuring the replica](#configuring-the-replica)
    * [Configuring the cluster](#configuring-the-cluster)
-   * [Creating a dynamic cluster](#creating-a-dynamic-cluster)
    * [Creating the Copycat](#creating-the-copycat)
    * [Setting the log type](#setting-the-log-type)
    * [Submitting commands to the cluster](#submitting-commands-to-the-cluster)
@@ -127,47 +126,36 @@ too large, Copycat will take a snapshot of the state machine state and compact t
 Log log = new MemoryMappedFileLog("data.log");
 ```
 
-To configure the Copycat cluster, we simply create a `ClusterConfig` from which
-we can create a `Cluster`.
+To configure the Copycat cluster, we simply create a `Cluster` passing in our local and remote endpoints:
 
 ```java
-TcpClusterConfig config = new TcpClusterConfig();
-config.setLocalMember(new TcpMember("localhost", 1234));
-config.setRemoteMembers(new TcpMember("localhost", 2345), new TcpMember("localhost", 4567));
-
-TcpCluster cluster = new TcpCluster(config);
+Cluster cluster = new Cluster("tcp://localhost:1234", "tcp://localhost:2345", "tcp://localhost:4567");
 ```
 
-Note that the cluster configuration identifies a particular protocol, `tcp`. These are
-the endpoints the nodes within the Copycat cluster use to communicate with one another.
+These are the endpoints the nodes within the Copycat cluster use to communicate with one another.
 Copycat provides a number of different [protocol](#protocols) and [service](#services)
 implementations.
 
 Additionally, Copycat cluster membership is dynamic, and the `Cluster` is `Observable`.
-This means that if the `ClusterConfig` is changed while the cluster is running, Copycat
-will pick up the membership change and replicate the cluster configuration in a safe manner.
+This means that if the `Cluster` is changed, Copycat will pick up the membership change and safely replicate the cluster configuration to other members.
 
-Now that the cluster has been set up, we need a protocol over which it can communicate
-with other Copycat nodes. Copycat's protocol framework is pluggable, meaning Copycat
-can communicate over a variety of wire-level protocols. Additionally, Copycat's API
-is designed to operate in both synchronous and asynchronuos environments. In this
-case, we'll use an asynchronous protocol.
+Now that the cluster has been set up, we need a protocol over which it can communicate with other Copycat nodes. Copycat's protocol framework is pluggable, meaning Copycat can communicate over a variety of wire-level protocols. Additionally, Copycat's API is designed to operate in both synchronous and asynchronous environments. In this case, we'll use an asynchronous protocol.
 
 ```java
-AsyncProtocol protocol = new VertxTcpProtocol();
+Protocol protocol = new VertxTcpProtocol();
 ```
 
-Now that the cluster and protocol have been set up, we simply create a `AsyncCopycat` instance.
+Now that the cluster and protocol have been set up, we simply create a `Copycat` instance.
 
 ```java
-AsyncCopycat copycat = new AsyncCopycat(new KeyValueStore(), log, cluster);
+Copycat copycat = new Copycat(new KeyValueStore(), log, cluster, protocol);
 ```
 
 We can expose the Copycat cluster as an HTTP service by using a `Service`. We'll use
 the `VertxHttpService` to expose the cluster via an HTTP server.
 
 ```java
-AsyncService service = new VertxHttpService(copycat, "localhost", 8080);
+Service service = new VertxHttpService(copycat, "localhost", 8080);
 service.start();
 ```
 
@@ -181,22 +169,17 @@ public class StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore imple
     // Create the local file log.
     Log log = new ChronicleLog("data.log");
 
-    // Configure the cluster.
-    TcpClusterConfig config = new TcpClusterConfig();
-    config.setLocalMember(new TcpMember("localhost", 1234));
-    config.setRemoteMembers(new TcpMember("localhost", 2345), new TcpMember("localhost", 4567));
-
     // Create the cluster.
-    TcpCluster cluster = new TcpCluster(config);
+    Cluster cluster = new Cluster("tcp://localhost:1234", "tcp://localhost:2345", "tcp://localhost:4567");
 
     // Create the protocol.
-    AsyncProtocol protocol = new VertxTcpProtocol();
+    Protocol protocol = new VertxTcpProtocol();
 
     // Create a state machine instance.
     StateMachine stateMachine = new StronglyConsistentFaultTolerantAndTotallyAwesomeKeyValueStore();
 
     // Create a Copycat instance.
-    AsyncCopycat copycat = new AsyncCopycat(stateMachine, log, cluster, protocol);
+    Copycat copycat = new Copycat(stateMachine, log, cluster, protocol);
 
     // Create an HTTP service and start it.
     VertxHttpService service = new VertxHttpService(copycat, "localhost", 8080);
@@ -262,7 +245,7 @@ submitting commands via the HTTP service, simply construct a `Copycat`
 instance and submit commands directly to the cluster via the copycat.
 
 ```java
-AsyncCopycat copycat = new AsyncCopycat(new KeyValueStore(), log, cluster, protocol);
+Copycat copycat = new Copycat(new KeyValueStore(), log, cluster, protocol);
 
 // Set a key in the key-value store.
 copycat.submit("set", "foo", "Hello world!").thenRun(() -> {
@@ -396,51 +379,14 @@ to be multi-threaded since Copycat only sets a timeout a couple time a second. D
 a thread-based timer strategy
 
 ### Configuring the [cluster](#cluster-configurations)
-When a Copycat cluster is first started, the [cluster configuration](#cluster-configurations)
-must be explicitly provided by the user. However, as the cluster runs, explicit cluster
-configurations may no longer be required. This is because once a cluster leader has been
-elected, the leader will replicate its cluster configuration to the rest of the cluster,
-and the user-defined configuration will be replaced by an internal configuration.
+When a Copycat cluster is first started, its local and remote endpoints must be explicitly provided by the user. However, as the cluster runs, explicit cluster configurations may no longer be required. This is because once a cluster leader has been elected, the leader will replicate its cluster configuration to the rest of the cluster, and Copycat will maintain the cluster's state automatically.
 
-To configure the Copycat cluster, create a `ClusterConfig` of the desired cluster type.
-
-```java
-ClusterConfig<Member> config = new ClusterConfig<>();
-```
-
-Each cluster configuration must contain a *local* member and a set of *remote* members.
-To define the *local* member, pass the member address to the cluster configuration
-constructor or call the `setLocalMember` method.
-
-```java
-config.setLocalMember(new Member("foo"));
-```
-
-[The protocol used by Copycat is pluggable](#protocols), so member configuration formats may
-differ depending on the protocol you're using.
-
-To set remote cluster members, use the `setRemoteMembers` or `addRemoteMember` method:
-
-```java
-config.addRemoteMember(new Member("bar"));
-config.addRemoteMember(new Member("baz"));
-```
-
-### Creating a [dynamic cluster](#cluster-configurations)
-The Copycat cluster configuration is `Observable`, and once the local node is elected
-leader, it will begin observing the configuration for changes.
-
-Once the local node has been started, simply adding or removing nodes from the observable
-`ClusterConfig` may cause the replica's configuration to be updated. However,
-it's important to remember that as with commands, configuration changes must go through
-the cluster leader and be replicated to the rest of the cluster. This allows Copycat
-to ensure that logs remain consistent while nodes are added or removed, but it also
-means that cluster configuration changes may not be propagated for some period of
-time after the `ClusterConfig` is updated.
+Once the local node has been started, simply adding or removing nodes to the 
+`Cluster` may cause the replica's configuration to be updated. However, it's important to remember that as with commands, configuration changes must go through the cluster leader and be replicated to the rest of the cluster. This allows Copycat to ensure that logs remain consistent while nodes are added or removed, but it also means that cluster configuration changes may not be propagated for some period of time after the `Cluster` is updated.
 
 ### Creating the Copycat
 Copycat replicas are run via a `Copycat`. The Copycat instance is a container
-for the replica's `Log`, `StateMachine`, and `ClusterConfig`. To start the replica,
+for the replica's `Log`, `StateMachine`, and `Cluster`. To start the replica,
 simply call the `start()` method.
 
 ```java
@@ -448,10 +394,7 @@ Copycat copycat = new Copycat(stateMachine, log, cluster, protocol);
 copycat.start();
 ```
 
-The `Copycat` `start` method blocks until the replica is started.
-
-The `AsyncCopycat` `start` method returns a `CompletableFuture` which will be completed once
-the Copycat replica has started.
+The `start` method returns a `CompletableFuture` which will be completed once the Copycat replica has started.
 
 ```java
 copycat.start().thenRun(() -> System.out.println("Started!"));
@@ -474,7 +417,7 @@ copycat.start();
 
 ### Submitting [operations](#operations) to the cluster
 To submit commands to the Copycat cluster, simply call the `submit` method
-on any `Copycat` or `AsyncCopycat` object.
+on any `Copycat` object.
 
 ```java
 copycat.submit("get", "foo").thenAccept((result) -> System.out.println(result));
@@ -618,24 +561,6 @@ public interface ProtocolClient {
 }
 ```
 
-### Configuring the cluster with custom protocols
-
-Custom protocols should usually implement a custom extension of `Cluster` and
-`ClusterConfig` as well. For instance, `TcpProtocol` also implements `TcpCluster`
-and `TcpClusterConfig` for configuring the TCP cluster with `TcpMember` instances.
-
-```java
-TcpClusterConfig config = new TcpClusterConfig();
-config.setLocalMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(1234)));
-config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(2345)));
-config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(3456)));
-
-TcpCluster cluster = new TcpCluster(config);
-```
-
-For the local replica, the protocol's server is used to receive messages. For remote
-replicas, each protocol instance's client is used to send messages to those replicas.
-
 ## Built-in protocols
 Copycat maintains several built-in protocols, some of which are implemented on top
 of asynchronous frameworks like [Netty](http://netty.io) and [Vert.x](http://vertx.io).
@@ -645,11 +570,7 @@ The `local` protocol is a simple protocol that communicates between copycats usi
 direct method calls. This protocol is intended purely for testing.
 
 ```java
-LocalClusterConfig config = new LocalClusterConfig()
-  .withLocalMember(new Member("foo"))
-  .withRemoteMembers(new Member("bar"), new Member("baz"));
-LocalCluster cluster = new LocalCluster(config);
-
+Cluster cluster = new Cluster("foo", "bar", "baz");
 Copycat copycat = new Copycat(new MyStateMachine(), log, cluster, protocol);
 ```
 
@@ -661,13 +582,8 @@ dependency. Once the `copycat-netty` library is available on your classpath,
 Copycat will automatically find the Netty `tcp` protocol.
 
 ```java
-TcpClusterConfig config = new TcpClusterConfig();
-config.setLocalMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(1234)));
-config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(2345)));
-config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(3456)));
-
-TcpCluster cluster = new TcpCluster(config);
-cluster.protocol().setThreads(3);
+NettyTcpProtocol protocol = new NettyTcpProtocol();
+protocol.setThreads(3);
 ```
 
 The TCP protocol also provides additional options:
@@ -688,15 +604,6 @@ in an existing `Vertx` instance.
 
 In order to use Vert.x protocols, you must add the `copycat-vertx` project as a dependency.
 
-```java
-EventBusClusterConfig config = new EventBusClusterConfig();
-config.setLocalMember(new EventBusMember("foo"));
-config.addRemoteMember(new EventBusMember("bar"));
-config.addRemoteMember(new EventBusMember("baz"));
-
-EventBusCluster cluster = new EventBusCluster(config);
-```
-
 *Note that Copycat now provides a prototyped Vert.x 3 event bus protocol*
 
 ### Vert.x TCP Protocol
@@ -707,15 +614,9 @@ simply use an ordinary TCP address.
 In order to use Vert.x protocols, you must add the `copycat-vertx` project as a dependency.
 
 ```java
-TcpClusterConfig config = new TcpClusterConfig();
-config.setLocalMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(1234)));
-config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(2345)));
-config.addRemoteMember(new TcpMember(new TcpMemberConfig().setHost("localhost").setPort(3456)));
-
-TcpCluster cluster = new TcpCluster(config);
-
-cluster.protocol().setSendBufferSize(1000);
-cluster.protocol().setReceiveBufferSize(2000);
+VertxTcpProtocol protocol = new VertxTcpProtocol();
+protocol.setSendBufferSize(1000);
+protocol.setReceiveBufferSize(2000);
 ```
 
 The Vert.x `tcp` protocol has several additional options.
@@ -756,14 +657,10 @@ Copycat provides a simple helper class for wrapping a `Copycat` in an
 service. To wrap a copycat, use the `Copycat` class.
 
 ```java
-TcpClusterConfig config = new TcpClusterConfig();
-config.setLocalMember(new TcpMember("localhost", 1234));
-config.setRemoteMembers(new TcpMember("localhost", 2345), new TcpMember("localhost", 3456));
-TcpCluster cluster = new TcpCluster(config);
+Cluster cluster = new Cluster("tcp://localhost:1234", "tcp://localhost:2345", "tcp://localhost:4567");
+Copycat copycat = new Copycat(new MyStateMachine(), log, cluster, protocol);
 
-AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol)
-
-AsyncService service = new HttpService(copycat, "localhost", 8080);
+Service service = new HttpService(copycat, "localhost", 8080);
 service.start();
 ```
 
@@ -776,16 +673,16 @@ project as a dependency.
 The Vert.x event bus service receives submissions over the Vert.x event bus.
 
 ```java
-AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol);
-AsyncService service = new VertxEventBusService(copycat, "some-address");
+Copycat copycat = new Copycat(new MyStateMachine(), log, cluster, protocol);
+Service service = new VertxEventBusService(copycat, "some-address");
 service.start();
 ```
 
 ### Vert.x TCP Service
 The Vert.x TCP service uses a delimited JSON-based protocol:
 ```java
-AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol);
-AsyncService service = new VertxTcpService(copycat, "localhost", 5000);
+Copycat copycat = new Copycat(new MyStateMachine(), log, cluster, protocol);
+Service service = new VertxTcpService(copycat, "localhost", 5000);
 service.start();
 ```
 
@@ -795,8 +692,8 @@ to the command path. For instance, to submit the `read` command with `{"key":"fo
 execute a `POST` request to the `/read` path using a JSON body containing command arguments.
 
 ```java
-AsyncCopycat copycat = new AsyncCopycat(new MyStateMachine(), log, cluster, protocol);
-AsyncService service = new VertxHttpService(copycat, "localhost", 8080);
+Copycat copycat = new Copycat(new MyStateMachine(), log, cluster, protocol);
+Service service = new VertxHttpService(copycat, "localhost", 8080);
 service.start();
 ```
 

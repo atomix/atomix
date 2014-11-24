@@ -15,18 +15,21 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.log.ConfigurationEntry;
-import net.kuujo.copycat.internal.log.OperationEntry;
-import net.kuujo.copycat.internal.log.SnapshotEntry;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotEquals;
+import static org.testng.Assert.assertTrue;
 
 import java.util.Arrays;
 
-import static org.testng.Assert.*;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.internal.log.ConfigurationEntry;
+import net.kuujo.copycat.internal.log.OperationEntry;
+import net.kuujo.copycat.internal.log.SnapshotEntry;
+
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * Tests log implementations.
@@ -34,7 +37,6 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-@SuppressWarnings("unchecked")
 public abstract class AbstractLogTest {
   protected Log log;
 
@@ -46,7 +48,8 @@ public abstract class AbstractLogTest {
   /**
    * Deletes the test log instance.
    */
-  protected void deleteLog() throws Throwable {}
+  protected void deleteLog() throws Throwable {
+  }
 
   @BeforeMethod
   protected void beforeMethod() throws Throwable {
@@ -91,9 +94,7 @@ public abstract class AbstractLogTest {
   public void testCompactEndOfLog() throws Exception {
     appendEntries();
     log.compact(5,
-      new SnapshotEntry(1, new ClusterConfig()
-        .withLocalMember(new Member("foo"))
-        .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
+      new SnapshotEntry(1, new Cluster("foo", "bar", "baz"), "Hello world!".getBytes()));
 
     assertEquals(log.firstIndex(), 5);
     assertEquals(log.lastIndex(), 5);
@@ -105,9 +106,7 @@ public abstract class AbstractLogTest {
   public void testCompactMiddleOfLog() throws Exception {
     appendEntries();
     log.compact(3,
-      new SnapshotEntry(1, new ClusterConfig()
-        .withLocalMember(new Member("foo"))
-        .withRemoteMembers(new Member("bar"), new Member("baz")), "Hello world!".getBytes()));
+      new SnapshotEntry(1, new Cluster("foo", "bar", "baz"), "Hello world!".getBytes()));
 
     assertEquals(log.firstIndex(), 3);
     assertEquals(log.lastIndex(), 5);
@@ -206,12 +205,8 @@ public abstract class AbstractLogTest {
   }
 
   private void appendEntries() {
-    log.appendEntry(new SnapshotEntry(1, new ClusterConfig()
-      .withLocalMember(new Member("foo"))
-      .withRemoteMembers(new Member("bar"), new Member("baz")), new byte[10]));
-    log.appendEntry(new ConfigurationEntry(1, new ClusterConfig()
-      .withLocalMember(new Member("foo"))
-      .withRemoteMembers(new Member("bar"), new Member("baz"))));
+    log.appendEntry(new SnapshotEntry(1, new Cluster("foo", "bar", "baz"), new byte[10]));
+    log.appendEntry(new ConfigurationEntry(1, new Cluster("foo", "bar", "baz")));
     log.appendEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")));
     log.appendEntry(new OperationEntry(1, "bar", Arrays.asList("bar", "baz")));
     log.appendEntry(new OperationEntry(1, "baz", Arrays.asList("bar", "baz")));

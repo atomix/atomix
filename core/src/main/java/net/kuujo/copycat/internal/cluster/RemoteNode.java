@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.ClusterMember;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
@@ -26,13 +26,12 @@ import net.kuujo.copycat.spi.protocol.ProtocolClient;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RemoteNode<M extends Member> extends Node<M> {
+public class RemoteNode extends Node {
   private final ProtocolClient client;
 
-  @SuppressWarnings("unchecked")
-  public RemoteNode(M member, Protocol<M> protocol) {
+  public RemoteNode(ClusterMember member, Protocol protocol) {
     super(member);
-    this.client = protocol.createClient(member);
+    this.client = protocol.createClient(member.endpoint());
   }
 
   /**
@@ -46,7 +45,7 @@ public class RemoteNode<M extends Member> extends Node<M> {
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof RemoteNode && ((Node<?>) object).member().equals(member());
+    return object instanceof RemoteNode && ((Node) object).member().equals(member());
   }
 
   @Override

@@ -33,7 +33,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxTcpProtocolServer implements ProtocolServer {
+public class VertxTcpServer implements ProtocolServer {
   private final ProtocolReader reader = new ProtocolReader();
   private final ProtocolWriter writer = new ProtocolWriter();
   private static final String DELIMITER = "\\x00";
@@ -45,7 +45,7 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   private NetServer server;
   private RequestHandler requestHandler;
 
-  public VertxTcpProtocolServer(String host, int port, VertxTcpProtocol protocol) {
+  public VertxTcpServer(String host, int port, VertxTcpProtocol protocol) {
     this.host = host;
     this.port = port;
     this.protocol = protocol;
@@ -75,7 +75,7 @@ public class VertxTcpProtocolServer implements ProtocolServer {
    * @param required Whether client authentication is required.
    * @return The TCP protocol.
    */
-  public VertxTcpProtocolServer withClientAuthRequired(boolean required) {
+  public VertxTcpServer withClientAuthRequired(boolean required) {
     this.clientAuthRequired = required;
     return this;
   }

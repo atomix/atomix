@@ -15,9 +15,7 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.cluster.Member;
-
-import java.util.Set;
+import net.kuujo.copycat.cluster.Cluster;
 
 /**
  * Cluster membership change event.<p>
@@ -28,26 +26,23 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SuppressWarnings("rawtypes")
 public class MembershipChangeEvent implements Event {
-  private final Set<Member> members;
+  private final Cluster cluster;
 
-  public MembershipChangeEvent(Set<Member> members) {
-    this.members = members;
+  public MembershipChangeEvent(Cluster cluster) {
+    this.cluster = cluster;
   }
 
   /**
-   * Returns the changed cluster membership.
-   *
-   * @return The changed cluster membership.
+   * Returns the cluster whose membership changed.
    */
-  public Set<Member> members() {
-    return members;
+  public Cluster cluser() {
+    return cluster;
   }
-
+  
   @Override
   public String toString() {
-    return String.format("MembershipChangeEvent[members=%s]", members);
+    return String.format("MembershipChangeEvent[cluster=%s]", cluster);
   }
 
 }

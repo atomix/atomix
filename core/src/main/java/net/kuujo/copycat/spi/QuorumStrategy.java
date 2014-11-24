@@ -22,8 +22,7 @@ import net.kuujo.copycat.cluster.Cluster;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-@SuppressWarnings("rawtypes")
-public interface QuorumStrategy<C extends Cluster> {
+public interface QuorumStrategy {
 
   /**
    * Calculates the quorum size.
@@ -31,6 +30,6 @@ public interface QuorumStrategy<C extends Cluster> {
    * @param cluster The current cluster configuration.
    * @return The quorum size.
    */
-  int calculateQuorumSize(C cluster);
+  int calculateQuorumSize(Cluster cluster);
 
 }

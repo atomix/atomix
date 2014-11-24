@@ -8,8 +8,6 @@ import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.Query;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.TcpMember;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.protocol.NettyTcpProtocol;
 
@@ -17,12 +15,9 @@ public class KeyValueStore implements StateMachine {
   private Map<String, Object> data = new HashMap<>();
 
   public static void main(String[] args) {
-    ClusterConfig clusterConfig = new ClusterConfig().withLocalMember(
-      new TcpMember("localhost", 8080)).withRemoteMembers(new TcpMember("localhost", 8081),
-      new TcpMember("localhost", 8082));
-
-    new Copycat(new KeyValueStore(), new InMemoryLog(), new Cluster(clusterConfig),
-      new NettyTcpProtocol()).start();
+    Cluster cluster = new Cluster("tcp://localhost:8080", "tcp://localhost:8081",
+      "tcp://localhost:8082");
+    new Copycat(new KeyValueStore(), new InMemoryLog(), cluster, new NettyTcpProtocol()).start();
   }
 
   @Query

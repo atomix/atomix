@@ -28,13 +28,13 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocolServer implements ProtocolServer {
-  private static final Logger LOGGER = LoggerFactory.getLogger(LocalProtocolServer.class);
+public class LocalServer implements ProtocolServer {
+  private static final Logger LOGGER = LoggerFactory.getLogger(LocalServer.class);
   private final String id;
-  private final Map<String, LocalProtocolServer> registry;
+  private final Map<String, LocalServer> registry;
   private RequestHandler requestHandler;
 
-  public LocalProtocolServer(String id, Map<String, LocalProtocolServer> registry) {
+  public LocalServer(String id, Map<String, LocalServer> registry) {
     this.id = id;
     this.registry = registry;
   }

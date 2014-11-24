@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.cluster.TcpMember;
+import java.net.URI;
+
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
@@ -25,7 +26,7 @@ import net.kuujo.copycat.spi.protocol.ProtocolServer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxTcpProtocol implements Protocol<TcpMember> {
+public class VertxTcpProtocol implements Protocol {
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
   private boolean useSsl;
@@ -301,13 +302,12 @@ public class VertxTcpProtocol implements Protocol<TcpMember> {
   }
 
   @Override
-  public ProtocolServer createServer(TcpMember member) {
-    return new VertxTcpProtocolServer(member.host(), member.port(), this);
+  public ProtocolServer createServer(URI endpoint) {
+    return new VertxTcpServer(endpoint.getHost(), endpoint.getPort(), this);
   }
 
   @Override
-  public ProtocolClient createClient(TcpMember member) {
-    return new VertxTcpProtocolClient(member.host(), member.port(), this);
+  public ProtocolClient createClient(URI endpoint) {
+    return new VertxTcpClient(endpoint.getHost(), endpoint.getPort(), this);
   }
-
 }

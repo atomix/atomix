@@ -14,9 +14,10 @@
  */
 package net.kuujo.copycat.functional;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.protocol.LocalProtocol;
@@ -25,10 +26,10 @@ import net.kuujo.copycat.test.TestCluster;
 import net.kuujo.copycat.test.TestLog;
 import net.kuujo.copycat.test.TestNode;
 import net.kuujo.copycat.test.TestStateMachine;
-import org.testng.Assert;
-import org.testng.annotations.Test;
 
-import java.util.Arrays;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * Leader election tests.
@@ -36,304 +37,254 @@ import java.util.Arrays;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-@SuppressWarnings("unchecked")
 public class LeaderElectionTest {
+  private Protocol protocol;
+  private TestCluster cluster;
+
+  @BeforeMethod
+  protected void beforeMethod() {
+    protocol = new LocalProtocol();
+    cluster = new TestCluster();
+  }
+
+  @AfterMethod
+  protected void afterMethod() {
+    cluster.stop();
+  }
 
   /**
    * Tests that a leader is elected in a single-node cluster.
    */
   public void testSingleNodeClusterLeaderIsElected() {
-    Protocol<Member> protocol = new LocalProtocol();
-    TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode().withCluster("foo").withProtocol(protocol);
+    TestNode node1 = new TestNode().withCluster("foo");
     cluster.addNode(node1);
     cluster.start();
     node1.await().electedLeader();
-    Assert.assertTrue(node1.instance().isLeader());
-    cluster.stop();
+    assertTrue(node1.instance().isLeader());
   }
 
   /**
    * Tests that a leader is elected in a double-node cluster.
    */
   public void testTwoNodeClusterLeaderIsElected() {
-    Protocol<Member> protocol = new LocalProtocol();
-    TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode().withCluster("foo", "bar").withProtocol(protocol);
-    cluster.addNode(node1);
     TestNode node2 = new TestNode().withCluster("bar", "foo").withProtocol(protocol);
-    cluster.addNode(node2);
+    cluster.addNodes(node1, node2);
     cluster.start();
     node1.await().leaderElected();
-    Assert.assertTrue(node1.instance().isLeader() || node2.instance().isLeader());
-    cluster.stop();
+    assertTrue(node1.instance().isLeader() || node2.instance().isLeader());
   }
 
   /**
    * Tests that a leader is elected in a triple-node cluster.
    */
   public void testThreeNodeClusterLeaderIsElected() {
-    Protocol<Member> protocol = new LocalProtocol();
-    TestCluster cluster = new TestCluster();
     TestNode node1 = new TestNode().withCluster("foo", "bar", "baz").withProtocol(protocol);
-    cluster.addNode(node1);
     TestNode node2 = new TestNode().withCluster("bar", "foo", "baz").withProtocol(protocol);
-    cluster.addNode(node2);
     TestNode node3 = new TestNode().withCluster("baz", "foo", "bar").withProtocol(protocol);
-    cluster.addNode(node3);
+    cluster.addNodes(node1, node2, node3);
     cluster.start();
     node1.await().leaderElected();
-    Assert.assertTrue(node1.instance().isLeader() || node2.instance().isLeader() || node3.instance().isLeader());
-    cluster.stop();
+    assertTrue(node1.instance().isLeader() || node2.instance().isLeader()
+      || node3.instance().isLeader());
   }
 
   /**
    * Tests that the candidate with the most up-to-date log is elected on startup.
    */
   public void testCandidateWithMostUpToDateLogIsElectedOnStartup() {
-    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode()
-      .withCluster("foo", "bar", "baz")
+    TestNode node1 = new TestNode().withCluster("foo", "bar", "baz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("foo"))
-          .withRemoteMembers(new Member("bar"), new Member("baz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(new ConfigurationEntry(1, new Cluster("foo", "bar", "baz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.CANDIDATE)
       .withCommitIndex(6)
       .withLastApplied(6);
-    cluster.addNode(node1);
-
-    TestNode node2 = new TestNode()
-      .withCluster("bar", "foo", "baz")
+    TestNode node2 = new TestNode().withCluster("bar", "foo", "baz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("bar"))
-          .withRemoteMembers(new Member("foo"), new Member("baz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(new ConfigurationEntry(1, new Cluster("bar", "foo", "baz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.CANDIDATE)
       .withCommitIndex(5)
       .withLastApplied(5);
-    cluster.addNode(node2);
-
+    cluster.addNodes(node1, node2);
     cluster.start();
 
     node1.await().electedLeader();
-    Assert.assertTrue(node1.instance().isLeader());
-    cluster.stop();
+    assertTrue(node1.instance().isLeader());
   }
 
   /**
    * Test candidate with most up-to-date log elected after failure.
    */
   public void testCandidateWithMostUpToDateLogIsElectedAfterFailure() {
-    Protocol<Member> protocol = new LocalProtocol();
     TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode()
-      .withCluster("foo", "bar", "baz")
+    TestNode node1 = new TestNode().withCluster("foo", "bar", "baz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("foo"))
-          .withRemoteMembers(new Member("bar"), new Member("baz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(new ConfigurationEntry(1, new Cluster("foo", "bar", "baz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(5)
       .withLastApplied(5)
       .withVotedFor(null);
-    cluster.addNode(node1);
-
-    TestNode node2 = new TestNode()
-      .withCluster("bar", "foo", "baz")
+    TestNode node2 = new TestNode().withCluster("bar", "foo", "baz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader("baz")
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("bar"))
-          .withRemoteMembers(new Member("foo"), new Member("baz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(new ConfigurationEntry(1, new Cluster("bar", "foo", "baz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
       .withLastApplied(6)
       .withVotedFor(null);
-    cluster.addNode(node2);
-
+    cluster.addNodes(node1, node2);
     cluster.start();
 
     node2.await().electedLeader();
-    Assert.assertTrue(node2.instance().isLeader());
-    cluster.stop();
+    assertTrue(node2.instance().isLeader());
   }
 
   /**
    * Tests that candidates restart an election during a split vote.
    */
   public void testCandidatesIncrementTermAndRestartElectionDuringSplitVote() {
-    Protocol<Member> protocol = new LocalProtocol();
-    TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode()
-      .withCluster("foo", "bar", "baz")
+    TestNode node1 = new TestNode().withCluster("foo", "bar", "baz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("foo"))
-          .withRemoteMembers(new Member("bar"), new Member("baz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(new ConfigurationEntry(1, new Cluster("foo", "bar", "baz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.CANDIDATE)
       .withCommitIndex(6)
       .withLastApplied(6)
       .withVotedFor("foo");
-    cluster.addNode(node1);
-
     TestNode node2 = new TestNode()
-      .withCluster("bar", "foo", "baz")
-      .withProtocol(protocol)
+      .withCluster("bar", "foo", "baz").withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("bar"))
-          .withRemoteMembers(new Member("foo"), new Member("baz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(new ConfigurationEntry(1, new Cluster("bar", "foo", "baz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.CANDIDATE)
       .withCommitIndex(5)
       .withLastApplied(5)
       .withVotedFor("bar");
-    cluster.addNode(node2);
-
+    cluster.addNodes(node1, node2);
     cluster.start();
 
     node1.await().electedLeader();
-    Assert.assertTrue(node1.instance().isLeader());
-    Assert.assertTrue(node1.instance().currentTerm() > 3);
-    cluster.stop();
+    assertTrue(node1.instance().isLeader());
+    assertTrue(node1.instance().currentTerm() > 3);
   }
 
   /**
    * Tests that only a single leader is elected when more than one node is equal in terms of state.
    */
   public void testThatOneLeaderElectedWhenTwoNodesAreEqual() {
-    Protocol<Member> protocol = new LocalProtocol();
-    TestCluster cluster = new TestCluster();
-    TestNode node1 = new TestNode()
-      .withCluster("foo", "bar", "baz", "foobar", "barbaz")
+    TestNode node1 = new TestNode().withCluster("foo", "bar", "baz", "foobar", "barbaz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("foo"))
-          .withRemoteMembers(new Member("bar"), new Member("baz"), new Member("foobar"), new Member("barbaz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(
+          new ConfigurationEntry(1, new Cluster("foo", "bar", "baz", "foobar", "barbaz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
       .withLastApplied(6);
-    cluster.addNode(node1);
-
-    TestNode node2 = new TestNode()
-      .withCluster("bar", "foo", "baz", "foobar", "barbaz")
+    TestNode node2 = new TestNode().withCluster("bar", "foo", "baz", "foobar", "barbaz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("bar"))
-          .withRemoteMembers(new Member("foo"), new Member("baz"), new Member("foobar"), new Member("barbaz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(
+          new ConfigurationEntry(1, new Cluster("bar", "foo", "baz", "foobar", "barbaz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
       .withLastApplied(6);
-    cluster.addNode(node2);
-
-    TestNode node3 = new TestNode()
-      .withCluster("baz", "bar", "foo", "foobar", "barbaz")
+    TestNode node3 = new TestNode().withCluster("baz", "bar", "foo", "foobar", "barbaz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("baz"))
-          .withRemoteMembers(new Member("bar"), new Member("foo"), new Member("foobar"), new Member("barbaz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(
+          new ConfigurationEntry(1, new Cluster("baz", "bar", "foo", "foobar", "barbaz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
       .withLastApplied(6);
-    cluster.addNode(node3);
-
-    TestNode node4 = new TestNode()
-      .withCluster("foobar", "foo", "bar", "baz", "barbaz")
+    TestNode node4 = new TestNode().withCluster("foobar", "foo", "bar", "baz", "barbaz")
       .withProtocol(protocol)
       .withTerm(3)
       .withLeader(null)
       .withStateMachine(new TestStateMachine())
-      .withLog(new TestLog()
-        .withEntry(new ConfigurationEntry(1, new ClusterConfig()
-          .withLocalMember(new Member("foobar"))
-          .withRemoteMembers(new Member("bar"), new Member("baz"), new Member("foo"), new Member("barbaz"))))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(1, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz")))
-        .withEntry(new OperationEntry(2, "foo", Arrays.asList("bar", "baz"))))
+      .withLog(
+        new TestLog().withEntry(
+          new ConfigurationEntry(1, new Cluster("foobar", "bar", "baz", "foo", "barbaz")))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(1, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz"))
+          .withEntry(new OperationEntry(2, "foo", "bar", "baz")))
       .withState(CopycatState.FOLLOWER)
       .withCommitIndex(6)
       .withLastApplied(6);
-    cluster.addNode(node4);
-
+    cluster.addNodes(node1, node2, node3, node4);
     cluster.start();
 
     node1.await().leaderElected();
@@ -345,8 +296,6 @@ public class LeaderElectionTest {
       }
     }
 
-    Assert.assertEquals(1, leaderCount);
-    cluster.stop();
+    assertEquals(1, leaderCount);
   }
-
 }

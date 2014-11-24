@@ -49,16 +49,6 @@
       <artifactId>copycat</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-tcp</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-http</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
 
   <build>

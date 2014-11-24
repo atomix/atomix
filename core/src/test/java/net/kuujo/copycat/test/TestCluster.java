@@ -16,6 +16,7 @@
 package net.kuujo.copycat.test;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -37,6 +38,17 @@ public class TestCluster {
     return this;
   }
 
+  /**
+   * Adds a test node to the cluster.
+   *
+   * @param node The test node to add.
+   * @return The test cluster.
+   */
+  public TestCluster addNodes(TestNode... node) {
+    Arrays.stream(node).forEach(n -> nodes.add(n));
+    return this;
+  }
+  
   /**
    * Removes a test node from the cluster.
    *

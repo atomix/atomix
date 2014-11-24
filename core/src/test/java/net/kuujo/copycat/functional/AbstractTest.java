@@ -15,8 +15,10 @@
  */
 package net.kuujo.copycat.functional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -27,8 +29,6 @@ import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.Query;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.LocalClusterConfig;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.protocol.LocalProtocol;
 
@@ -40,7 +40,7 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public abstract class FunctionalTest extends ConcurrentTestCase {
+public abstract class AbstractTest extends ConcurrentTestCase {
   /**
    * Starts a cluster of contexts.
    */
@@ -86,17 +86,17 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
     LocalProtocol protocol = new LocalProtocol();
     Set<Copycat> instances = new HashSet<>(numInstances);
     for (int i = 1; i <= numInstances; i++) {
-      LocalClusterConfig config = new LocalClusterConfig();
-      config.setLocalMember(String.valueOf(i));
+      List<String> remoteEndpoints = new ArrayList<>();
       for (int j = 1; j <= numInstances; j++) {
         if (j != i) {
-          config.addRemoteMember(String.valueOf(j));
+          remoteEndpoints.add(String.valueOf(j));
         }
       }
 
-      instances.add(new Copycat(new TestStateMachine(), new InMemoryLog(), new Cluster<Member>(
-        config), protocol));
+      Cluster cluster = new Cluster("localhost", remoteEndpoints);
+      instances.add(new Copycat(new TestStateMachine(), new InMemoryLog(), cluster, protocol));
     }
+
     return instances;
   }
 
@@ -110,7 +110,6 @@ public abstract class FunctionalTest extends ConcurrentTestCase {
 
     @Override
     public void installSnapshot(byte[] snapshot) {
-
     }
 
     @Command

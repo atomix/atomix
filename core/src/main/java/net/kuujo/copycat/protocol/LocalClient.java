@@ -27,22 +27,22 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocolClient implements ProtocolClient {
-  private static final Logger LOGGER = LoggerFactory.getLogger(LocalProtocolClient.class);
+public class LocalClient implements ProtocolClient {
+  private static final Logger LOGGER = LoggerFactory.getLogger(LocalClient.class);
   private final String id;
-  private final Map<String, LocalProtocolServer> registry;
+  private final Map<String, LocalServer> registry;
 
-  public LocalProtocolClient(String id, Map<String, LocalProtocolServer> registry) {
+  public LocalClient(String id, Map<String, LocalServer> registry) {
     this.id = id;
     this.registry = registry;
   }
 
   @Override
   public CompletableFuture<PingResponse> ping(PingRequest request) {
-    LocalProtocolServer server = registry.get(id);
+    LocalServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<PingResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      future.completeExceptionally(new ProtocolException("Failed to resolve server address: %s", id));
       return future;
     }
     return server.ping(request);
@@ -50,10 +50,10 @@ public class LocalProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    LocalProtocolServer server = registry.get(id);
+    LocalServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<SyncResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      future.completeExceptionally(new ProtocolException("Failed to resolve server address: %s", id));
       return future;
     }
     return server.sync(request);
@@ -61,10 +61,10 @@ public class LocalProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    LocalProtocolServer server = registry.get(id);
+    LocalServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<PollResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      future.completeExceptionally(new ProtocolException("Failed to resolve server address: %s", id));
       return future;
     }
     return server.poll(request);
@@ -72,10 +72,10 @@ public class LocalProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
-    LocalProtocolServer server = registry.get(id);
+    LocalServer server = registry.get(id);
     if (server == null) {
       CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("Invalid server address: %s", id));
+      future.completeExceptionally(new ProtocolException("Failed to resolve server address: %s", id));
       return future;
     }
     return server.submit(request);

@@ -15,13 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.spi.CorrelationStrategy;
-import net.kuujo.copycat.spi.QuorumStrategy;
-import net.kuujo.copycat.spi.TimerStrategy;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -33,6 +26,12 @@ import java.util.concurrent.ThreadFactory;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.spi.CorrelationStrategy;
+import net.kuujo.copycat.spi.QuorumStrategy;
+import net.kuujo.copycat.spi.TimerStrategy;
 
 /**
  * Copycat replica configuration.<p>
@@ -137,16 +136,17 @@ public class CopycatConfig {
     }
   }
 
+  @SuppressWarnings("serial")
   private final Map<String, PropertyWrapper<?>> processors = new HashMap<String, PropertyWrapper<?>>() {{
     put(ELECTION_TIMEOUT, new PropertyWrapper<Long>(null, Long::valueOf, CopycatConfig.this::setElectionTimeout));
     put(HEARTBEAT_INTERVAL, new PropertyWrapper<Long>(null, Long::valueOf, CopycatConfig.this::setHeartbeatInterval));
     put(COMMAND_QUORUM, new PropertyWrapper<Boolean>(null, Boolean::parseBoolean, CopycatConfig.this::setRequireCommandQuorum));
     put(COMMAND_QUORUM_SIZE, new PropertyWrapper<Integer>(null, Integer::valueOf, CopycatConfig.this::setCommandQuorumSize));
-    put(COMMAND_QUORUM_STRATEGY, new PropertyWrapper<QuorumStrategy<?>>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setCommandQuorumStrategy));
+    put(COMMAND_QUORUM_STRATEGY, new PropertyWrapper<QuorumStrategy>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setCommandQuorumStrategy));
     put(COMMAND_CONSISTENT_EXECUTION, new PropertyWrapper<>(null, Boolean::parseBoolean, CopycatConfig.this::setConsistentCommandExecution));
     put(QUERY_QUORUM, new PropertyWrapper<Boolean>(null, Boolean::parseBoolean, CopycatConfig.this::setRequireQueryQuorum));
     put(QUERY_QUORUM_SIZE, new PropertyWrapper<Integer>(null, Integer::valueOf, CopycatConfig.this::setQueryQuorumSize));
-    put(QUERY_QUORUM_STRATEGY, new PropertyWrapper<QuorumStrategy<?>>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setQueryQuorumStrategy));
+    put(QUERY_QUORUM_STRATEGY, new PropertyWrapper<QuorumStrategy>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setQueryQuorumStrategy));
     put(QUERY_CONSISTENT_EXECUTION, new PropertyWrapper<>(null, Boolean::parseBoolean, CopycatConfig.this::setConsistentQueryExecution));
     put(MAX_LOG_SIZE, new PropertyWrapper<Long>(null, Long::valueOf, CopycatConfig.this::setElectionTimeout));
     put(CORRELATION_STRATEGY, new PropertyWrapper<CorrelationStrategy<?>>(null, new ClassLoaderProcessor<>(), CopycatConfig.this::setCorrelationStrategy));
@@ -154,7 +154,7 @@ public class CopycatConfig {
   }};
 
   private static final ThreadFactory THREAD_FACTORY = new NamedThreadFactory("config-timer-%s");
-  private static final QuorumStrategy<?> DEFAULT_QUORUM_STRATEGY = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
+  private static final QuorumStrategy DEFAULT_QUORUM_STRATEGY = (cluster) -> (int) Math.floor(cluster.size() / 2) + 1;
   private static final CorrelationStrategy<?> DEFAULT_CORRELATION_STRATEGY = () -> UUID.randomUUID().toString();
 
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor(THREAD_FACTORY);
@@ -164,12 +164,10 @@ public class CopycatConfig {
   private long heartbeatInterval = 500;
   private boolean requireCommandQuorum = true;
   private int commandQuorumSize = -1;
-  @SuppressWarnings("rawtypes")
   private QuorumStrategy commandQuorumStrategy = DEFAULT_QUORUM_STRATEGY;
   private boolean consistentCommandExecution = true;
   private boolean requireQueryQuorum = true;
   private int queryQuorumSize = -1;
-  @SuppressWarnings("rawtypes")
   private QuorumStrategy queryQuorumStrategy = DEFAULT_QUORUM_STRATEGY;
   private boolean consistentQueryExecution = true;
   private int maxLogSize = 32 * 1024^2;
@@ -393,7 +391,7 @@ public class CopycatConfig {
    * @param strategy The cluster command quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public void setCommandQuorumStrategy(QuorumStrategy<?> strategy) {
+  public void setCommandQuorumStrategy(QuorumStrategy strategy) {
     this.commandQuorumStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
@@ -409,8 +407,7 @@ public class CopycatConfig {
    *
    * @return The cluster command quorum calculation strategy.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public <C extends Cluster> QuorumStrategy<C> getCommandQuorumStrategy() {
+  public QuorumStrategy getCommandQuorumStrategy() {
     return commandQuorumStrategy;
   }
 
@@ -428,7 +425,7 @@ public class CopycatConfig {
    * @return The copycat configuration.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public CopycatConfig withCommandQuorumStrategy(QuorumStrategy<?> strategy) {
+  public CopycatConfig withCommandQuorumStrategy(QuorumStrategy strategy) {
     this.commandQuorumStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }
@@ -581,7 +578,7 @@ public class CopycatConfig {
    * @param strategy The cluster query quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public void setQueryQuorumStrategy(QuorumStrategy<?> strategy) {
+  public void setQueryQuorumStrategy(QuorumStrategy strategy) {
     this.queryQuorumStrategy = Assert.isNotNull(strategy, "strategy");
   }
 
@@ -595,8 +592,7 @@ public class CopycatConfig {
    *
    * @return The cluster query quorum calculation strategy.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public <C extends Cluster> QuorumStrategy<C> getQueryQuorumStrategy() {
+  public QuorumStrategy getQueryQuorumStrategy() {
     return queryQuorumStrategy;
   }
 
@@ -612,7 +608,7 @@ public class CopycatConfig {
    * @return The Copycat configuration.
    * @throws NullPointerException if {@code strategy} is null
    */
-  public CopycatConfig withQueryQuorumStrategn(QuorumStrategy<?> strategy) {
+  public CopycatConfig withQueryQuorumStrategn(QuorumStrategy strategy) {
     this.queryQuorumStrategy = Assert.isNotNull(strategy, "strategy");
     return this;
   }

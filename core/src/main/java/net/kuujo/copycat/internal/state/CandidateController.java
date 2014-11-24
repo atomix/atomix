@@ -14,6 +14,11 @@
  */
 package net.kuujo.copycat.internal.state;
 
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.internal.cluster.RemoteNode;
 import net.kuujo.copycat.internal.log.CopycatEntry;
@@ -23,14 +28,9 @@ import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Candidate state.<p>
@@ -68,7 +68,6 @@ public class CandidateController extends StateController {
   /**
    * Resets the election timer.
    */
-  @SuppressWarnings("unchecked")
   private synchronized void resetTimer() {
     // Cancel the current timer task and purge the election timer of cancelled tasks.
     if (currentTimer != null) {
@@ -115,7 +114,7 @@ public class CandidateController extends StateController {
     // of the cluster and poll each member for a vote.
     LOGGER.info("{} - Polling members {}", context.clusterManager().localNode(), context.clusterManager().cluster().remoteMembers());
     final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
-    for (RemoteNode<?> node : (Set<RemoteNode<?>>) context.clusterManager().remoteNodes()) {
+    for (RemoteNode node : context.clusterManager().remoteNodes()) {
       final ProtocolClient client = node.client();
       client.connect().whenComplete((result1, error1) -> {
         if (error1 != null) {

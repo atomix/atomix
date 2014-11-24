@@ -15,13 +15,21 @@
  */
 package net.kuujo.copycat.internal.replication;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.internal.cluster.ClusterManager;
 import net.kuujo.copycat.internal.state.StateContext;
 import net.kuujo.copycat.internal.util.Quorum;
-
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Cluster replicator.
@@ -39,8 +47,8 @@ public class ClusterReplicator implements Replicator, Observer {
 
   public ClusterReplicator(StateContext state) {
     this.state = state;
-    this.replicaMap = new HashMap<>(state.cluster().members().size());
-    this.replicas = new ArrayList<>(state.cluster().members().size());
+    this.replicaMap = new HashMap<>(state.cluster().size());
+    this.replicas = new ArrayList<>(state.cluster().size());
     init();
   }
 
@@ -71,13 +79,13 @@ public class ClusterReplicator implements Replicator, Observer {
 
   @Override
   public void update(Observable o, Object arg) {
-    clusterChanged((ClusterManager<?>) o);
+    clusterChanged((ClusterManager) o);
   }
 
   /**
    * Called when the replicator cluster configuration has changed.
    */
-  private synchronized void clusterChanged(ClusterManager<?> clusterManager) {
+  private synchronized void clusterChanged(ClusterManager clusterManager) {
     clusterManager.remoteNodes().forEach(node -> {
       if (!replicaMap.containsKey(node.member().id())) {
         NodeReplicator replica = new NodeReplicator(node, state);

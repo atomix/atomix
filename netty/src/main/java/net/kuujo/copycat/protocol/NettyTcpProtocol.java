@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.cluster.TcpMember;
+import java.net.URI;
+
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
@@ -25,7 +26,7 @@ import net.kuujo.copycat.spi.protocol.ProtocolServer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocol implements Protocol<TcpMember> {
+public class NettyTcpProtocol implements Protocol {
   private int threads = 1;
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;
@@ -268,13 +269,13 @@ public class NettyTcpProtocol implements Protocol<TcpMember> {
   }
 
   @Override
-  public ProtocolServer createServer(TcpMember member) {
-    return new NettyTcpProtocolServer(this, member);
+  public ProtocolServer createServer(URI endpoint) {
+    return new NettyTcpServer(this, endpoint);
   }
 
   @Override
-  public ProtocolClient createClient(TcpMember member) {
-    return new NettyTcpProtocolClient(this, member);
+  public ProtocolClient createClient(URI endpoint) {
+    return new NettyTcpClient(this, endpoint);
   }
 
   @Override

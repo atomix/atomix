@@ -1,11 +1,12 @@
 package net.kuujo.copycat.event;
 
+import static org.testng.Assert.assertEquals;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 import net.kuujo.copycat.internal.event.DefaultEventHandlers;
 import net.kuujo.copycat.internal.event.DefaultEvents;
 
-import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -32,11 +33,11 @@ public class EventContextTest {
     AtomicInteger counter = new AtomicInteger();
     events.start().runOnce((event) -> counter.incrementAndGet());
     handlers.start().handle(new StartEvent());
-    Assert.assertEquals(1, counter.get());
+    assertEquals(1, counter.get());
     handlers.start().handle(new StartEvent());
-    Assert.assertEquals(1, counter.get());
+    assertEquals(1, counter.get());
     handlers.start().handle(new StartEvent());
-    Assert.assertEquals(1, counter.get());
+    assertEquals(1, counter.get());
   }
 
   /**
@@ -46,11 +47,11 @@ public class EventContextTest {
     AtomicInteger counter = new AtomicInteger();
     events.start().run((event) -> counter.incrementAndGet());
     handlers.start().handle(new StartEvent());
-    Assert.assertEquals(1, counter.get());
+    assertEquals(1, counter.get());
     handlers.start().handle(new StartEvent());
-    Assert.assertEquals(2, counter.get());
+    assertEquals(2, counter.get());
     handlers.start().handle(new StartEvent());
-    Assert.assertEquals(3, counter.get());
+    assertEquals(3, counter.get());
   }
 
 }

@@ -1,18 +1,17 @@
 package net.kuujo.copycat.protocol;
 
+import static org.testng.Assert.assertEquals;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MemberConfig;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.log.ConfigurationEntry;
 import net.kuujo.copycat.internal.log.OperationEntry;
 import net.kuujo.copycat.internal.log.SnapshotEntry;
 import net.kuujo.copycat.log.Entry;
 
-import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -38,12 +37,12 @@ public class ProtocolReaderWriterTest {
   public void testWriteReadPingRequest() {
     PingRequest request = new PingRequest(UUID.randomUUID().toString(), 1, "foo", 4, 1, 3);
     PingRequest result = reader.readRequest(writer.writeRequest(request));
-    Assert.assertEquals(result.id(), request.id());
-    Assert.assertEquals(result.term(), request.term());
-    Assert.assertEquals(result.leader(), request.leader());
-    Assert.assertEquals(result.logIndex(), request.logIndex());
-    Assert.assertEquals(result.logTerm(), request.logTerm());
-    Assert.assertEquals(result.commitIndex(), request.commitIndex());
+    assertEquals(result.id(), request.id());
+    assertEquals(result.term(), request.term());
+    assertEquals(result.leader(), request.leader());
+    assertEquals(result.logIndex(), request.logIndex());
+    assertEquals(result.logTerm(), request.logTerm());
+    assertEquals(result.commitIndex(), request.commitIndex());
   }
 
   /**
@@ -52,34 +51,32 @@ public class ProtocolReaderWriterTest {
   public void testWriteReadPingResponse() {
     PingResponse response = new PingResponse(UUID.randomUUID().toString(), 1, true);
     PingResponse result = reader.readResponse(writer.writeResponse(response));
-    Assert.assertEquals(result.id(), response.id());
-    Assert.assertEquals(result.term(), response.term());
-    Assert.assertEquals(result.succeeded(), response.succeeded());
+    assertEquals(result.id(), response.id());
+    assertEquals(result.term(), response.term());
+    assertEquals(result.succeeded(), response.succeeded());
   }
 
   /**
    * Tests writing/reading a sync request.
    */
   public void testWriteReadSyncRequest() {
-    ClusterConfig<Member> clusterConfig = new ClusterConfig<>()
-      .withLocalMember(new Member(new MemberConfig("foo")))
-      .withRemoteMembers(new Member(new MemberConfig("bar")), new Member(new MemberConfig("baz")));
-    SnapshotEntry snapshotEntry = new SnapshotEntry(1, clusterConfig, new byte[50]);
-    ConfigurationEntry configurationEntry = new ConfigurationEntry(1, clusterConfig);
-    OperationEntry operationEntry = new OperationEntry(1, "foo", Arrays.asList("bar", "baz"));
+    Cluster cluster = new Cluster("foo", "bar", "baz");
+    SnapshotEntry snapshotEntry = new SnapshotEntry(1, cluster, new byte[50]);
+    ConfigurationEntry configurationEntry = new ConfigurationEntry(1, cluster);
+    OperationEntry operationEntry = new OperationEntry(1, "foo", "bar", "baz");
     List<Entry> entries = Arrays.asList(snapshotEntry, configurationEntry, operationEntry);
     SyncRequest request = new SyncRequest(UUID.randomUUID().toString(), 1, "foo", 4, 1, entries, 3);
     SyncRequest result = reader.readRequest(writer.writeRequest(request));
-    Assert.assertEquals(result.id(), request.id());
-    Assert.assertEquals(result.term(), request.term());
-    Assert.assertEquals(result.leader(), request.leader());
-    Assert.assertEquals(result.prevLogIndex(), request.prevLogIndex());
-    Assert.assertEquals(result.prevLogTerm(), request.prevLogTerm());
-    Assert.assertEquals(result.entries().size(), request.entries().size());
-    Assert.assertEquals(result.entries().get(0), request.entries().get(0));
-    Assert.assertEquals(result.entries().get(1), request.entries().get(1));
-    Assert.assertEquals(result.entries().get(2), request.entries().get(2));
-    Assert.assertEquals(result.commitIndex(), request.commitIndex());
+    assertEquals(result.id(), request.id());
+    assertEquals(result.term(), request.term());
+    assertEquals(result.leader(), request.leader());
+    assertEquals(result.prevLogIndex(), request.prevLogIndex());
+    assertEquals(result.prevLogTerm(), request.prevLogTerm());
+    assertEquals(result.entries().size(), request.entries().size());
+    assertEquals(result.entries().get(0), request.entries().get(0));
+    assertEquals(result.entries().get(1), request.entries().get(1));
+    assertEquals(result.entries().get(2), request.entries().get(2));
+    assertEquals(result.commitIndex(), request.commitIndex());
   }
 
   /**
@@ -88,10 +85,10 @@ public class ProtocolReaderWriterTest {
   public void testWriteReadSyncResponse() {
     SyncResponse response = new SyncResponse(UUID.randomUUID().toString(), 1, true, 1);
     SyncResponse result = reader.readResponse(writer.writeResponse(response));
-    Assert.assertEquals(result.id(), response.id());
-    Assert.assertEquals(result.term(), response.term());
-    Assert.assertEquals(result.succeeded(), response.succeeded());
-    Assert.assertEquals(result.lastLogIndex(), response.lastLogIndex());
+    assertEquals(result.id(), response.id());
+    assertEquals(result.term(), response.term());
+    assertEquals(result.succeeded(), response.succeeded());
+    assertEquals(result.lastLogIndex(), response.lastLogIndex());
   }
 
   /**
@@ -100,11 +97,11 @@ public class ProtocolReaderWriterTest {
   public void testWriteReadPollRequest() {
     PollRequest request = new PollRequest(UUID.randomUUID().toString(), 1, "foo", 4, 1);
     PollRequest result = reader.readRequest(writer.writeRequest(request));
-    Assert.assertEquals(result.id(), request.id());
-    Assert.assertEquals(result.term(), request.term());
-    Assert.assertEquals(result.candidate(), request.candidate());
-    Assert.assertEquals(result.lastLogIndex(), request.lastLogIndex());
-    Assert.assertEquals(result.lastLogTerm(), request.lastLogTerm());
+    assertEquals(result.id(), request.id());
+    assertEquals(result.term(), request.term());
+    assertEquals(result.candidate(), request.candidate());
+    assertEquals(result.lastLogIndex(), request.lastLogIndex());
+    assertEquals(result.lastLogTerm(), request.lastLogTerm());
   }
 
   /**
@@ -113,20 +110,21 @@ public class ProtocolReaderWriterTest {
   public void testWriteReadPollResponse() {
     PollResponse response = new PollResponse(UUID.randomUUID().toString(), 1, true);
     PollResponse result = reader.readResponse(writer.writeResponse(response));
-    Assert.assertEquals(result.id(), response.id());
-    Assert.assertEquals(result.term(), response.term());
-    Assert.assertEquals(result.voteGranted(), response.voteGranted());
+    assertEquals(result.id(), response.id());
+    assertEquals(result.term(), response.term());
+    assertEquals(result.voteGranted(), response.voteGranted());
   }
 
   /**
    * Tests writing/reading a submit request.
    */
   public void testWriteReadSubmitRequest() {
-    SubmitRequest request = new SubmitRequest(UUID.randomUUID().toString(), "foo", Arrays.asList("bar", "baz"));
+    SubmitRequest request = new SubmitRequest(UUID.randomUUID().toString(), "foo", Arrays.asList(
+      "bar", "baz"));
     SubmitRequest result = reader.readRequest(writer.writeRequest(request));
-    Assert.assertEquals(result.id(), request.id());
-    Assert.assertEquals(result.operation(), request.operation());
-    Assert.assertEquals(result.args(), request.args());
+    assertEquals(result.id(), request.id());
+    assertEquals(result.operation(), request.operation());
+    assertEquals(result.args(), request.args());
   }
 
   /**
@@ -135,8 +133,8 @@ public class ProtocolReaderWriterTest {
   public void testWriteReadSubmitResponse() {
     SubmitResponse response = new SubmitResponse(UUID.randomUUID().toString(), "Hello world!");
     SubmitResponse result = reader.readResponse(writer.writeResponse(response));
-    Assert.assertEquals(result.id(), response.id());
-    Assert.assertEquals(result.result(), response.result());
+    assertEquals(result.id(), response.id());
+    assertEquals(result.result(), response.result());
   }
 
 }
