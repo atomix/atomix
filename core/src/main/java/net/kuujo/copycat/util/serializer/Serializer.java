@@ -12,20 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.util.serializer;
+
+import java.nio.ByteBuffer;
 
 /**
- * Log entry.
+ * Serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Entry {
+public interface Serializer<T> {
 
   /**
-   * Returns the entry term.
+   * Returns the serialized type.
    *
-   * @return The term under which the entry was logged.
+   * @return The type serialized by this serializer.
    */
-  long term();
+  Class<T> type();
+
+  /**
+   * Serializes the given object to a {@link ByteBuffer}
+   *
+   * @param object The object to serialize.
+   * @param buffer The buffer to which to write the object.
+   */
+  void serialize(T object, ByteBuffer buffer);
 
 }

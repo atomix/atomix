@@ -16,8 +16,8 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -27,14 +27,14 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventLog extends Managed {
+public interface EventLog<T> extends Managed {
 
   /**
    * Returns a new event log.
    *
    * @return A new event log.
    */
-  static EventLog log() {
+  static <T> EventLog<T> log() {
     return null;
   }
 
@@ -45,9 +45,25 @@ public interface EventLog extends Managed {
    * @param log The log configuration.
    * @return A new event log.
    */
-  static EventLog log(ClusterConfig cluster, LogConfig log) {
+  static <T> EventLog<T> log(ClusterConfig cluster, LogConfig log) {
     return null;
   }
+
+  /**
+   * Registers a log entry serializer.
+   *
+   * @param serializer The log entry serializer to register.
+   * @return The event log.
+   */
+  EventLog<T> registerSerializer(Serializer<? extends T> serializer);
+
+  /**
+   * Unregisters a log entry serializer.
+   *
+   * @param serializer The log entry serializer to unregister.
+   * @return The event log
+   */
+  EventLog<T> unregisterSerializer(Serializer<? extends T> serializer);
 
   /**
    * Returns the event log cluster.
@@ -62,7 +78,7 @@ public interface EventLog extends Managed {
    * @param consumer A consumer with which to consume committed log entries.
    * @return The event log.
    */
-  EventLog consumer(Consumer<Entry> consumer);
+  EventLog<T> consumer(Consumer<T> consumer);
 
   /**
    * Commits an entry to the event log.
@@ -70,7 +86,7 @@ public interface EventLog extends Managed {
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
-  CompletableFuture<Long> commit(Entry entry);
+  CompletableFuture<Long> commit(T entry);
 
   /**
    * Replays all entries in the event log.
@@ -78,14 +94,6 @@ public interface EventLog extends Managed {
    * @return A completable future to be completed once all entries have been replayed.
    */
   CompletableFuture<Long> replay();
-
-  /**
-   * Replays the event log from the given index.
-   *
-   * @param index The index from which to replay the log.
-   * @return A completable future to be completed once the entries have been replayed.
-   */
-  CompletableFuture<Long> replay(long index);
 
   /**
    * Compacts the log.

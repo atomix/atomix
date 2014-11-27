@@ -15,17 +15,9 @@
 package net.kuujo.copycat.log;
 
 /**
- * Log entry.
+ * System log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Entry {
-
-  /**
-   * Returns the entry term.
-   *
-   * @return The term under which the entry was logged.
-   */
-  long term();
-
+public interface SystemEntry extends Entry {
 }

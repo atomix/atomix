@@ -15,17 +15,24 @@
 package net.kuujo.copycat.log;
 
 /**
- * Log entry.
+ * User log entry.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Entry {
+public interface UserEntry extends Entry {
 
   /**
-   * Returns the entry term.
+   * Returns the user entry index.
    *
-   * @return The term under which the entry was logged.
+   * @return The user entry index.
    */
-  long term();
+  long index();
+
+  /**
+   * Returns the wrapped log entry.
+   *
+   * @return The wrapped log entry.
+   */
+  Object entry();
 
 }
