@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,33 +14,25 @@
  */
 package net.kuujo.copycat.protocol;
 
-import java.io.Serializable;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * A base request.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SuppressWarnings("serial")
-public abstract class Request implements Serializable {
-  private final Object id;
-
-  protected Request(Object id) {
-    this.id = id;
-  }
+public interface ProtocolClient {
 
   /**
-   * Returns the request correlation ID.
+   * Connects the protocol client.
    *
-   * @return The request correlation ID.
+   * @return A completable future to be completed once the client is connected.
    */
-  public Object id() {
-    return id;
-  }
+  CompletableFuture<Void> connect();
 
-  @Override
-  public String toString() {
-    return String.format("Request[id=%s]", id);
-  }
+  /**
+   * Closes the protocol client.
+   *
+   * @return A completable future to be completed once the client is closed.
+   */
+  CompletableFuture<Void> close();
 
 }

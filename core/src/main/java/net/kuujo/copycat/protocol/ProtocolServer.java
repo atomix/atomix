@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,24 +14,25 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.CopycatException;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * A response exception.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SuppressWarnings("serial")
-public class ProtocolException extends CopycatException {
-  public ProtocolException(String message, Object... args) {
-    super(message, args);
-  }
+public interface ProtocolServer {
 
-  public ProtocolException(Throwable cause, String message, Object... args) {
-    super(cause, message, args);
-  }
+  /**
+   * Starts the server.
+   *
+   * @return A completable future to be completed once the server is started.
+   */
+  CompletableFuture<Void> listen();
 
-  public ProtocolException(Throwable cause) {
-    super(cause);
-  }
+  /**
+   * Closes the server.
+   *
+   * @return A completable future to be completed once the server is closed.
+   */
+  CompletableFuture<Void> close();
+
 }
