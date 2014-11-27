@@ -14,313 +14,254 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Observable;
-import java.util.Set;
+import net.kuujo.copycat.Copyable;
+import net.kuujo.copycat.spi.Protocol;
+import net.kuujo.copycat.spi.QuorumStrategy;
 
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.util.Copyable;
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Cluster configuration.
- * <p>
- *
- * The {@code ClusterConfig} is a mutable configuration that underlies each
- * {@link net.kuujo.copycat.cluster.Cluster} instance. {@code ClusterConfig} is an
- * {@link java.util.Observable} type and is automatically observed for changes by any
- * {@link net.kuujo.copycat.cluster.Cluster} instance. This means that when a change to a
- * {@code ClusterConfig} is made, the owning {@link net.kuujo.copycat.cluster.Cluster} (if any) is
- * notified and automatically updates its immutable internal configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterConfig<M extends Member> extends Observable implements Copyable<ClusterConfig<M>>, Serializable {
-  protected M localMember;
-  protected Set<M> remoteMembers = new HashSet<>(6);
-
-  public ClusterConfig() {}
+public interface ClusterConfig extends Copyable<ClusterConfig> {
 
   /**
-   * @throws NullPointerException if {@code cluster} is null
-   */
-  public ClusterConfig(ClusterConfig<M> cluster) {
-    this.localMember = Assert.isNotNull(cluster, "cluster").localMember;
-    this.remoteMembers = new HashSet<>(cluster.remoteMembers);
-  }
-
-  /**
-   * @throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
-   */
-  public ClusterConfig(M localMember, M... remoteMembers) {
-    this(localMember, Arrays.asList(Assert.isNotNull(remoteMembers, "remoteMembers")));
-  }
-
-  /**
-   * @throws NullPointerException if {@code localMember} or {@code remoteMembers} are null
-   */
-  public ClusterConfig(M localMember, Collection<M> remoteMembers) {
-    this.localMember = Assert.isNotNull(localMember, "localMember");
-    this.remoteMembers = new HashSet<>(Assert.isNotNull(remoteMembers, "remoteMembers"));
-  }
-
-  /**
-   * Notifies observers and then resets the changed state.
-   */
-  private void notifyAndReset() {
-    setChanged();
-    notifyObservers();
-    clearChanged();
-  }
-
-  @Override
-  public ClusterConfig<M> copy() {
-    return new ClusterConfig<>(localMember, remoteMembers);
-  }
-
-  /**
-   * Constructs a cluster configuration from an existing cluster.
+   * Sets the cluster election timeout.
    *
-   * @param cluster The cluster from which to construct the configuration.
-   * @throws NullPointerException if {@code cluster} is null
+   * @param electionTimeout The cluster election timeout in milliseconds.
    */
-  public ClusterConfig(Cluster<M> cluster) {
-    localMember = Assert.isNotNull(cluster, "cluster").localMember();
-    remoteMembers = cluster.remoteMembers();
-  }
+  void setElectionTimeout(long electionTimeout);
 
   /**
-   * Sets the local cluster member.
+   * Sets the cluster election timeout.
    *
-   * @param member The local cluster member.
-   * @throws NullPointerException if {@code member} is null
+   * @param electionTimeout The cluster election timeout.
+   * @param unit The timeout unit.
    */
-  public final void setLocalMember(M member) {
-    localMember = Assert.isNotNull(member, "member");
-  }
+  void setElectionTimeout(long electionTimeout, TimeUnit unit);
 
   /**
-   * Returns the local cluster member.
+   * Returns the cluster election timeout in milliseconds.
    *
-   * @return The local cluster member.
+   * @return The cluster election timeout in milliseconds.
    */
-  public final M getLocalMember() {
-    return localMember;
-  }
+  long getElectionTimeout();
 
   /**
-   * Sets the local cluster member, returning the configuration for method chaining.
+   * Sets the cluster election timeout, returning the cluster configuration for method chaining.
    *
-   * @param member The local cluster member.
+   * @param electionTimeout The cluster election timeout in milliseconds.
    * @return The cluster configuration.
-   * @throws NullPointerException if {@code member} is null
    */
-  public final ClusterConfig<M> withLocalMember(M member) {
-    localMember = Assert.isNotNull(member, "member");
-    return this;
-  }
+  ClusterConfig withElectionTimeout(long electionTimeout);
 
   /**
-   * Sets the remote cluster members.
+   * Sets the cluster election timeout, returning the cluster configuration for method chaining.
    *
-   * @param members A collection of remote cluster member configurations.
-   * @throws NullPointerException if {@code members} is null
-   */
-  @SafeVarargs
-  public final void setRemoteMembers(M... members) {
-    remoteMembers = new HashSet<>(Arrays.asList(Assert.isNotNull(members, "members")));
-    notifyAndReset();
-  }
-
-  /**
-   * Sets the remote cluster members.
-   *
-   * @param members A collection of remote cluster member configurations.
-   * @throws NullPointerException if {@code members} is null
-   */
-  public final void setRemoteMembers(Collection<M> members) {
-    remoteMembers = new HashSet<>(Assert.isNotNull(members, "members"));
-    notifyAndReset();
-  }
-
-  /**
-   * Adds a remote member to this cluster configuration.
-   *
-   * @param member The remote member to add.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code member} is null
-   */
-  public final ClusterConfig<M> addRemoteMember(M member) {
-    remoteMembers.add(Assert.isNotNull(member, "member"));
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Adds the collection of remote members to this cluster configuration.
-   *
-   * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code members} is null
-   */
-  @SafeVarargs
-  public final ClusterConfig<M> addRemoteMembers(M... members) {
-    remoteMembers.addAll(Arrays.asList(Assert.isNotNull(members, "members")));
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Adds the collection of remote members to this cluster configuration.
-   *
-   * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code members} is null
-   */
-  public final ClusterConfig<M> addRemoteMembers(Collection<M> members) {
-    remoteMembers.addAll(Assert.isNotNull(members, "members"));
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Adds the set of remote cluster members from the given configuration.
-   *
-   * @param cluster The cluster configuration with which to add members to this configuration.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code cluster} is null
-   */
-  public final ClusterConfig<M> addRemoteMembers(ClusterConfig<M> cluster) {
-    Assert.isNotNull(cluster, "cluster");
-    remoteMembers.addAll(cluster.remoteMembers);
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Removes a remote member from this cluster configuration.
-   *
-   * @param member The remote member to remove.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code member} is null
-   */
-  public final ClusterConfig<M> removeRemoteMember(M member) {
-    remoteMembers.remove(Assert.isNotNull(member, "member"));
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Removes the collection of remote members from this cluster configuration.
-   *
-   * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code members} is null
-   */
-  @SafeVarargs
-  public final ClusterConfig<M> removeRemoteMembers(M... members) {
-    remoteMembers.removeAll(Arrays.asList(Assert.isNotNull(members, "members")));
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Removes the collection of remote members from this cluster configuration.
-   *
-   * @param members A collection of remote cluster member configurations.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code members} is null
-   */
-  public final ClusterConfig<M> removeRemoteMembers(Collection<M> members) {
-    remoteMembers.removeAll(Assert.isNotNull(members, "members"));
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Removes the set of remote members from the given cluster configuration.
-   *
-   * @param cluster The cluster configuration with which to remove members from this configuration.
-   * @return The updated configuration.
-   * @throws NullPointerException if {@code cluster} is null
-   */
-  public final ClusterConfig<M> removeRemoteMembers(ClusterConfig<M> cluster) {
-    remoteMembers.removeAll(cluster.remoteMembers);
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Returns the set of remote cluster members.
-   *
-   * @return A set of remote cluster member configurations.
-   */
-  public final Set<M> getRemoteMembers() {
-    return remoteMembers;
-  }
-
-  /**
-   * Sets the remote cluster members, returning the configuration for method chaining.
-   *
-   * @param members A list of remote cluster member configurations.
-   * @return The cluster configuration
-   * @throws NullPointerException if {@code members} is null
-   */
-  @SafeVarargs
-  public final ClusterConfig<M> withRemoteMembers(M... members) {
-    this.remoteMembers = new HashSet<>(Arrays.asList(Assert.isNotNull(members, "members")));
-    notifyAndReset();
-    return this;
-  }
-
-  /**
-   * Sets the remote cluster members, returning the configuration for method chaining.
-   *
-   * @param members A collection of remote cluster member configurations.
+   * @param electionTimeout The cluster election timeout.
+   * @param unit The timeout unit.
    * @return The cluster configuration.
-   * @throws NullPointerException if {@code members} is null
    */
-  public final ClusterConfig<M> withRemoteMembers(Collection<M> members) {
-    this.remoteMembers = new HashSet<>(Assert.isNotNull(members, "members"));
-    notifyAndReset();
-    return this;
-  }
+  ClusterConfig withElectionTimeout(long electionTimeout, TimeUnit unit);
 
   /**
-   * Returns a set of all cluster members.
+   * Sets the cluster heartbeat interval.
    *
-   * @return A set of all members in the cluster.
+   * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
    */
-  public final Set<M> getMembers() {
-    Set<M> members = new HashSet<>(remoteMembers);
-    members.add(localMember);
-    return members;
-  }
+  void setHeartbeatInterval(long heartbeatInterval);
 
-  @Override
-  public boolean equals(Object object) {
-    if (getClass().isInstance(object)) {
-      ClusterConfig<?> config = (ClusterConfig<?>) object;
-      return config.getLocalMember().equals(localMember)
-          && config.getRemoteMembers().equals(remoteMembers);
-    }
-    return false;
-  }
+  /**
+   * Sets the cluster heartbeat interval.
+   *
+   * @param heartbeatInterval The cluster heartbeat interval.
+   * @param unit The heartbeat interval unit.
+   */
+  void setHeartbeatInterval(long heartbeatInterval, TimeUnit unit);
 
-  @Override
-  public int hashCode() {
-    int hashCode = 23;
-    hashCode = 37 * hashCode + localMember.hashCode();
-    hashCode = 37 * hashCode + remoteMembers.hashCode();
-    return hashCode;
-  }
+  /**
+   * Returns the cluster heartbeat interval.
+   *
+   * @return The interval at which nodes send heartbeats to each other.
+   */
+  long getHeartbeatInterval();
 
-  @Override
-  public String toString() {
-    return String.format("%s[localMember=%s, remoteMembers=%s]", getClass().getSimpleName(),
-        localMember, remoteMembers);
-  }
+  /**
+   * Sets the cluster heartbeat interval, returning the cluster configuration for method chaining.
+   *
+   * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
+   * @return The cluster configuration.
+   */
+  ClusterConfig withHeartbeatInterval(long heartbeatInterval);
+
+  /**
+   * Sets the cluster heartbeat interval, returning the cluster configuration for method chaining.
+   *
+   * @param heartbeatInterval The cluster heartbeat interval.
+   * @param unit The heartbeat interval unit.
+   * @return The cluster configuration.
+   */
+  ClusterConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit);
+
+  /**
+   * Sets the cluster protocol.
+   *
+   * @param protocol The protocol over which nodes in the cluster communicate.
+   */
+  void setProtocol(Protocol protocol);
+
+  /**
+   * Returns the cluster protocol.
+   *
+   * @return The protocol over which nodes in the cluster communicate.
+   */
+  Protocol getProtocol();
+
+  /**
+   * Sets the cluster protocol, returning the cluster configuration for method chaining.
+   *
+   * @param protocol The protocol over which nodes in the cluster communicate.
+   * @return The cluster configuration.
+   */
+  ClusterConfig withProtocol(Protocol protocol);
+
+  /**
+   * Sets the default cluster quorum strategy.
+   *
+   * @param quorumStrategy The default cluster quorum strategy.
+   */
+  void setDefaultQuorumStrategy(QuorumStrategy quorumStrategy);
+
+  /**
+   * Returns the default cluster quorum strategy.
+   *
+   * @return The default cluster quorum strategy.
+   */
+  QuorumStrategy getDefaultQuorumStrategy();
+
+  /**
+   * Sets the default cluster quorum strategy, returning the cluster configuration for method chaining.
+   *
+   * @param quorumStrategy The default cluster quorum strategy.
+   * @return The cluster configuration.
+   */
+  ClusterConfig withDefaultQuorumStrategy(QuorumStrategy quorumStrategy);
+
+  /**
+   * Returns a set of all cluster member URIs, including the local member.
+   *
+   * @return A set of all cluster member URIs.
+   */
+  Set<String> getMembers();
+
+  /**
+   * Sets the local cluster member URI.
+   *
+   * @param uri The local cluster member URI.
+   */
+  void setLocalMember(String uri);
+
+  /**
+   * Returns the local cluster member URI.
+   *
+   * @return The local cluster member URI.
+   */
+  String getLocalMember();
+
+  /**
+   * Sets the local cluster member URI, returning the cluster configuration for method chaining.
+   *
+   * @param uri The local cluster member URI.
+   * @return The cluster configuration.
+   */
+  ClusterConfig withLocalMember(String uri);
+
+  /**
+   * Sets all remote cluster member URIs.
+   *
+   * @param uris A collection of remote cluster member URIs.
+   */
+  void setRemoteMembers(String... uris);
+
+  /**
+   * Sets all remote cluster member URIs.
+   *
+   * @param uris A collection of remote cluster member URIs.
+   */
+  void setRemoteMembers(Collection<String> uris);
+
+  /**
+   * Returns a set of all remote cluster member URIs.
+   *
+   * @return A set of all remote cluster member URIs.
+   */
+  Set<String> getRemoteMembers();
+
+  /**
+   * Adds a remote member to the cluster, returning the cluster configuration for method chaining.
+   *
+   * @param uri The remote member URI to add.
+   * @return The cluster configuration.
+   */
+  ClusterConfig addRemoteMember(String uri);
+
+  /**
+   * Sets all remote cluster member URIs, returning the cluster configuration for method chaining.
+   *
+   * @param uris A collection of remote cluster member URIs.
+   * @return The cluster configuration.
+   */
+  ClusterConfig withRemoteMembers(String... uris);
+
+  /**
+   * Sets all remote cluster member URIs, returning the cluster configuration for method chaining.
+   *
+   * @param uris A collection of remote cluster member URIs.
+   * @return The cluster configuration.
+   */
+  ClusterConfig withRemoteMembers(Collection<String> uris);
+
+  /**
+   * Adds a collection of remote member URIs to the configuration, returning the cluster configuration for method chaining.
+   *
+   * @param uris A collection of remote cluster member URIs to add.
+   * @return The cluster configuration.
+   */
+  ClusterConfig addRemoteMembers(String... uris);
+
+  /**
+   * Adds a collection of remote member URIs to the configuration, returning the cluster configuration for method chaining.
+   *
+   * @param uris A collection of remote cluster member URIs to add.
+   * @return The cluster configuration.
+   */
+  ClusterConfig addRemoteMembers(Collection<String> uris);
+
+  /**
+   * Removes a collection of remote member URIs from the configuration, returning the cluster configuration for method chaining.
+   *
+   * @param uris A collection of remote cluster member URIs to remove.
+   * @return The cluster configuration.
+   */
+  ClusterConfig removeRemoteMembers(String... uris);
+
+  /**
+   * Removes a collection of remote member URIs from the configuration, returning the cluster configuration for method chaining.
+   *
+   * @param uris A collection of remote cluster member URIs to remove.
+   * @return The cluster configuration.
+   */
+  ClusterConfig removeRemoteMembers(Collection<String> uris);
+
+  /**
+   * Clears all remote member URIs from the configuration, returning the cluster configuration for method chaining.
+   *
+   * @return The cluster configuration.
+   */
+  ClusterConfig clearRemoteMembers();
 
 }
