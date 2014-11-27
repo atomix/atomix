@@ -63,20 +63,20 @@ public interface Cluster extends Configurable<Cluster, ClusterConfig> {
    *
    * @return A set of cluster members.
    */
-  Set<String> members();
+  Set<Member> members();
 
   /**
    * Returns the local cluster member URI.
    *
    * @return The local cluster member URI.
    */
-  String localMember();
+  Member localMember();
 
   /**
    * Returns a set of remote cluster members.
    *
    * @return A set of remote cluster members.
    */
-  Set<String> remoteMembers();
+  Set<Member> remoteMembers();
 
 }
