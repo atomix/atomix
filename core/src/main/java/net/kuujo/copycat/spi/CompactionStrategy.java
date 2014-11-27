@@ -12,31 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi.protocol;
+package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.protocol.RequestHandler;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.log.Log;
 
 /**
- * Protocol client.
+ * Log compaction strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends RequestHandler {
+public interface CompactionStrategy {
 
   /**
-   * Connects the client.
+   * Compacts the given log.
    *
-   * @return A completable future to be completed once the client has connected.
+   * @param log The log to compact.
    */
-  CompletableFuture<Void> connect();
-
-  /**
-   * Closes the client.
-   *
-   * @return A completable future to be completed once the client has disconnected.
-   */
-  CompletableFuture<Void> close();
+  void compact(Log log);
 
 }

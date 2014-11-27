@@ -12,38 +12,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi.protocol;
+package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.protocol.RequestHandler;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.log.Entry;
 
 /**
- * Protocol server.
+ * Cluster partitioner.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolServer {
+public interface Partitioner {
 
   /**
-   * Registers a server request handler.
+   * Returns the index of a partition for the given entry.
    *
-   * @param handler A request handler to handle requests received by the server.
+   * @param entry The entry to partition.
+   * @param numPartitions The number of partitions.
+   * @return The index of the partition for the given entry.
    */
-  void requestHandler(RequestHandler handler);
-
-  /**
-   * Starts the server listening.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> listen();
-
-  /**
-   * Closes the server.
-   *
-   * @return A callback to be called once complete.
-   */
-  CompletableFuture<Void> close();
+  int partition(Entry entry, int numPartitions);
 
 }

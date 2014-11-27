@@ -15,22 +15,22 @@
 package net.kuujo.copycat.spi;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.protocol.Proposal;
 
 /**
- * Quorum calculator strategy.
+ * Replication quorum strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-@SuppressWarnings("rawtypes")
-public interface QuorumStrategy<C extends Cluster> {
+public interface QuorumStrategy {
 
   /**
-   * Calculates the quorum size.
+   * Calculates the quorum size for the given cluster.
    *
-   * @param cluster The current cluster configuration.
+   * @param cluster The cluster for which to calculate the quorum size.
+   * @param proposal The value proposal for which to calculate the quorum size.
    * @return The quorum size.
    */
-  int calculateQuorumSize(C cluster);
+  int calculateQuorumSize(Cluster cluster, Proposal proposal);
 
 }
