@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,31 +14,10 @@
  */
 package net.kuujo.copycat.log;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-import com.esotericsoftware.kryo.Serializer;
-
 /**
- * Entry type annotation.
+ * Log type.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@SuppressWarnings("rawtypes")
-public @interface EntryType {
-
-  /**
-   * Indicates the unique entry type ID.
-   */
-  int id();
-
-  /**
-   * The entry type serializer implementation.
-   */
-  Class<? extends Serializer> serializer();
-
+public interface LogType {
 }

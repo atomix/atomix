@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,11 +18,43 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * Log.
+ * Primary log interface.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Log {
+
+  /**
+   * Returns the log configuration.
+   *
+   * @return The log configuration.
+   */
+  LogConfig config();
+
+  /**
+   * Returns the current size of the log.
+   *
+   * @return The current size of the log.
+   * @throws IllegalStateException if the log is not open
+   */
+  long size();
+
+  /**
+   * Returns a boolean indicating whether the log is empty.
+   *
+   * @return Indicates whether the log is empty.
+   * @throws IllegalStateException if the log is not open
+   */
+  boolean isEmpty();
+
+  /**
+   * Appends an entry to the log.
+   *
+   * @param entry The entry to append.
+   * @return The appended entry's index.
+   */
+  long appendEntry(Entry entry);
+
   /**
    * Appends a list of entries to the log.
    *
@@ -45,46 +76,24 @@ public interface Log {
   List<Long> appendEntries(List<Entry> entries);
 
   /**
-   * Appends an entry to the log.
+   * Returns a log entry by index.
    *
-   * @param entry The entry to append.
-   * @return The appended entry index.
-   * @throws NullPointerException if {@code entry} is null
+   * @param index The index from which to retrieve the entry.
+   * @return The log entry.
    * @throws IllegalStateException if the log is not open
    */
-  long appendEntry(Entry entry);
+  <T extends Entry> T getEntry(long index);
 
   /**
-   * Closes the log.
+   * Returns a list of entries from the log.
    *
-   * @throws IOException If the log file could not be closed.
-   * @throws IllegalStateException if the log is not open
+   * @param from The index at which to start, inclusive.
+   * @param to The index at which to end, inclusive.
+   * @return A list of log entries.
+   * @throws java.lang.IndexOutOfBoundsException if {@code from} or {@code to} represent a range that is
+   *         out of bounds
    */
-  void close() throws IOException;
-
-  /**
-   * Returns a boolean indicating whether the log contains an entry.
-   *
-   * @param index The index for which to search the log.
-   * @return Indicates whether the log contains an entry at the given index.
-   * @throws IllegalStateException if the log is not open
-   */
-  boolean containsEntry(long index);
-
-  /**
-   * Deletes the log.
-   *
-   * @throws IOException If the log file could not be deleted.
-   */
-  void delete() throws IOException;
-
-  /**
-   * Returns the first entry in the log.
-   *
-   * @return The first entry in the log.
-   * @throws IllegalStateException if the log is not open
-   */
-  <T extends Entry> T firstEntry();
+  <T extends Entry> List<T> getEntries(long from, long to);
 
   /**
    * Returns the first index in the log.
@@ -95,48 +104,12 @@ public interface Log {
   long firstIndex();
 
   /**
-   * Returns a list of entries from the log.
+   * Returns the first entry in the log.
    *
-   * @param from The index at which to start, inclusive.
-   * @param to The index at which to end, inclusive.
-   * @return A list of log entries.
-   * @throws LogIndexOutOfBoundsException if {@code from} or {@code to} represent a range that is
-   *         out of bounds
-   */
-  <T extends Entry> List<T> getEntries(long from, long to);
-
-  /**
-   * Returns a log entry by index.
-   *
-   * @param index The index from which to retrieve the entry.
-   * @return The log entry.
+   * @return The first entry in the log.
    * @throws IllegalStateException if the log is not open
    */
-  <T extends Entry> T getEntry(long index);
-
-  /**
-   * Returns a boolean indicating whether the log is empty.
-   *
-   * @return Indicates whether the log is empty.
-   * @throws IllegalStateException if the log is not open
-   */
-  boolean isEmpty();
-
-  /**
-   * Returns whether the log is open or not.
-   * 
-   * @return true if the log is open
-   * @throws IllegalStateException if the log is not open
-   */
-  boolean isOpen();
-
-  /**
-   * Returns the last entry in the log.
-   *
-   * @return The last entry in the log.
-   * @throws IllegalStateException if the log is not open
-   */
-  <T extends Entry> T lastEntry();
+  <T extends Entry> T firstEntry();
 
   /**
    * Returns the last index in the log.
@@ -147,12 +120,12 @@ public interface Log {
   long lastIndex();
 
   /**
-   * Opens the log.
+   * Returns the last entry in the log.
    *
-   * @throws IOException If the log could not be opened.
-   * @throws IllegalStateException if the log is already open
+   * @return The last entry in the log.
+   * @throws IllegalStateException if the log is not open
    */
-  void open() throws IOException;
+  <T extends Entry> T lastEntry();
 
   /**
    * Removes all entries after the given index, exclusive.
@@ -161,14 +134,6 @@ public interface Log {
    * @throws IllegalStateException if the log is not open
    */
   void removeAfter(long index);
-
-  /**
-   * Returns the current size of the log.
-   *
-   * @return The current size of the log.
-   * @throws IllegalStateException if the log is not open
-   */
-  long size();
 
   /**
    * Forces the log to sync to disk (if the log is persistent).
@@ -181,11 +146,33 @@ public interface Log {
   /**
    * Compacts the log.
    *
-   * @param index The index at which to compact the log, inclusive.
-   * @param entry A snapshot entry to place at the start of the compacted log.
    * @throws NullPointerException if {@code entry} is null
    * @throws IOException If the snapshot persistence failed.
    */
-  void compact(long index, Entry entry) throws IOException;
+  void compact() throws IOException;
+
+  /**
+   * Opens the log.
+   *
+   * @throws IOException If the log could not be opened.
+   * @throws IllegalStateException if the log is already open
+   */
+  void open() throws IOException;
+
+  /**
+   * Returns whether the log is open or not.
+   *
+   * @return true if the log is open
+   * @throws IllegalStateException if the log is not open
+   */
+  boolean isOpen();
+
+  /**
+   * Closes the log.
+   *
+   * @throws IOException If the log file could not be closed.
+   * @throws IllegalStateException if the log is not open
+   */
+  void close() throws IOException;
 
 }
