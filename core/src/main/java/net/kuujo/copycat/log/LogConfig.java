@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.Copyable;
 import net.kuujo.copycat.spi.CompactionStrategy;
 
 import java.io.File;
@@ -23,7 +24,7 @@ import java.io.File;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LogConfig {
+public interface LogConfig extends Copyable<LogConfig> {
 
   /**
    * Sets the log type.

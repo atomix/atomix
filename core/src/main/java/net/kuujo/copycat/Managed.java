@@ -12,34 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.service;
+package net.kuujo.copycat;
 
 import java.util.concurrent.CompletableFuture;
 
-import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.spi.service.Service;
-
 /**
- * Base service implementation.
+ * Interface for types that can be asynchronously opened and closed.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractService implements Service {
-  protected Copycat copycat;
-
-  protected AbstractService(Copycat copycat) {
-    this.copycat = copycat;
-  }
+public interface Managed {
 
   /**
-   * Handles a command submission.
+   * Opens the managed object.
+   *
+   * @return A completable future to be completed once the object has been opened.
    */
-  protected <T> CompletableFuture<T> submit(String command, Object... args) {
-    if (copycat == null) {
-      CompletableFuture<T> future = new CompletableFuture<>();
-      future.completeExceptionally(new ServiceException("No submit handlers registered"));
-      return future;
-    }
-    return copycat.submit(command, args);
-  }
+  CompletableFuture<Void> open();
+
+  /**
+   * Closes the managed object.
+   *
+   * @return A completable future to be completed once the object has been closed.
+   */
+  CompletableFuture<Void> close();
+
 }

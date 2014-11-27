@@ -6,7 +6,6 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,10 +16,9 @@ package net.kuujo.copycat;
 
 /**
  * A base CopyCat exception.
- * 
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@SuppressWarnings("serial")
 public class CopycatException extends RuntimeException {
   public CopycatException(String message, Object... args) {
     super(String.format(message, args));
