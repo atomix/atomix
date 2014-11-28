@@ -14,28 +14,29 @@
  */
 package net.kuujo.copycat.util.serializer;
 
-import java.nio.ByteBuffer;
-
 /**
  * Serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Serializer<T> {
+public interface Serializer {
 
   /**
-   * Returns the serialized type.
+   * Reads an object.
    *
-   * @return The type serialized by this serializer.
+   * @param bytes The object bytes.
+   * @param <T> The object type.
+   * @return The object.
    */
-  Class<T> type();
+  <T> T readObject(byte[] bytes);
 
   /**
-   * Serializes the given object to a {@link ByteBuffer}
+   * Writes an object.
    *
-   * @param object The object to serialize.
-   * @param buffer The buffer to which to write the object.
+   * @param object The object to write.
+   * @param <T> The object type.
+   * @return The object bytes.
    */
-  void serialize(T object, ByteBuffer buffer);
+  <T> byte[] writeObject(T object);
 
 }
