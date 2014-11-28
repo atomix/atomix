@@ -15,20 +15,20 @@
 package net.kuujo.copycat;
 
 /**
- * Base Copycat exception.
+ * Copycat configuration exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatException extends RuntimeException {
-  public CopycatException(String message, Object... args) {
+public class ConfigurationException extends CopycatException {
+  public ConfigurationException(String message, Object... args) {
     super(String.format(message, args));
   }
 
-  public CopycatException(Throwable cause, String message, Object... args) {
+  public ConfigurationException(Throwable cause, String message, Object... args) {
     super(String.format(message, args), cause);
   }
 
-  public CopycatException(Throwable cause) {
+  public ConfigurationException(Throwable cause) {
     super(cause);
   }
 }
