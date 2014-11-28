@@ -20,7 +20,7 @@ import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+import java.util.function.Consumer;
 
 /**
  * Replicated event log.
@@ -63,7 +63,7 @@ public interface CopycatLog<T> extends Managed {
    * @param consumer A consumer with which to consume committed log entries.
    * @return The event log.
    */
-  CopycatLog<T> consumer(Function<T, ?> consumer);
+  CopycatLog<T> consumer(Consumer<T> consumer);
 
   /**
    * Commits an entry to the event log.
