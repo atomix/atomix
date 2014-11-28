@@ -19,7 +19,7 @@ import java.util.concurrent.CompletableFuture;
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient {
+public interface ProtocolClient extends ProtocolHandler {
 
   /**
    * Connects the protocol client.

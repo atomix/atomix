@@ -37,7 +37,7 @@ public interface CommitRequest extends Request {
    *
    * @return The entry to be committed.
    */
-  Entry entry();
+  <T> T entry();
 
   /**
    * Commit request builder.

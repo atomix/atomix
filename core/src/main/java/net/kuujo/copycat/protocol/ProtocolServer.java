@@ -22,6 +22,13 @@ import java.util.concurrent.CompletableFuture;
 public interface ProtocolServer {
 
   /**
+   * Registers a protocol handler.
+   *
+   * @param handler The protocol handler.
+   */
+  void handler(ProtocolHandler handler);
+
+  /**
    * Starts the server.
    *
    * @return A completable future to be completed once the server is started.
