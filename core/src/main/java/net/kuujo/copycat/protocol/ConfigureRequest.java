@@ -21,7 +21,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ConfigureRequest extends Request {
+public class ConfigureRequest extends AbstractRequest {
 
   /**
    * Returns a new configure request builder.
@@ -29,20 +29,27 @@ public interface ConfigureRequest extends Request {
    * @return A new configure request builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
+
+  private ClusterConfig config;
 
   /**
    * Returns the request configuration.
    *
    * @return The request configuration.
    */
-  ClusterConfig config();
+  public ClusterConfig config() {
+    return config;
+  }
 
   /**
    * Configure request builder.
    */
-  static interface Builder extends Request.Builder<Builder, ConfigureRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, ConfigureRequest> {
+    private Builder() {
+      super(new ConfigureRequest());
+    }
 
     /**
      * Sets the request cluster configuration.
@@ -50,7 +57,10 @@ public interface ConfigureRequest extends Request {
      * @param config The request cluster configuration.
      * @return The configure request builder.
      */
-    Builder withConfig(ClusterConfig config);
+    public Builder withConfig(ClusterConfig config) {
+      request.config = config;
+      return this;
+    }
 
   }
 

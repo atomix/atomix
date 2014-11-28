@@ -19,7 +19,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface PollResponse extends Response {
+public class PollResponse extends AbstractResponse {
 
   /**
    * Returns a new poll response builder.
@@ -30,24 +30,34 @@ public interface PollResponse extends Response {
     return null;
   }
 
+  private long term;
+  private boolean voted;
+
   /**
    * Returns the responding node's current term.
    *
    * @return The responding node's current term.
    */
-  long term();
+  public long term() {
+    return term;
+  }
 
   /**
    * Returns a boolean indicating whether the vote was granted.
    *
    * @return Indicates whether the vote was granted.
    */
-  boolean voted();
+  public boolean voted() {
+    return voted;
+  }
 
   /**
    * Poll response builder.
    */
-  static interface Builder extends Response.Builder<Builder, PollResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, PollResponse> {
+    private Builder() {
+      super(new PollResponse());
+    }
 
     /**
      * Sets the response term.
@@ -55,15 +65,21 @@ public interface PollResponse extends Response {
      * @param term The response term.
      * @return The poll response builder.
      */
-    Builder withTerm(long term);
+    public Builder withTerm(long term) {
+      response.term = term;
+      return this;
+    }
 
     /**
      * Sets whether the vote was granted.
      *
-     * @param granted Whether the vote was granted.
+     * @param voted Whether the vote was granted.
      * @return The poll response builder.
      */
-    Builder withVoted(boolean granted);
+    public Builder withVoted(boolean voted) {
+      response.voted = voted;
+      return this;
+    }
 
   }
 

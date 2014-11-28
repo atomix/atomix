@@ -19,7 +19,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface SyncResponse extends Response {
+public class SyncResponse extends AbstractResponse {
 
   /**
    * Returns a new sync response builder.
@@ -27,34 +27,47 @@ public interface SyncResponse extends Response {
    * @return A new sync response builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
+
+  private long term;
+  private boolean succeeded;
+  private long logIndex;
 
   /**
    * Returns the requesting node's current term.
    *
    * @return The requesting node's current term.
    */
-  long term();
+  public long term() {
+    return term;
+  }
 
   /**
    * Returns a boolean indicating whether the sync was successful.
    *
    * @return Indicates whether the sync was successful.
    */
-  boolean succeeded();
+  public boolean succeeded() {
+    return succeeded;
+  }
 
   /**
    * Returns the last index of the replica's log.
    *
    * @return The last index of the responding replica's log.
    */
-  long logIndex();
+  public long logIndex() {
+    return logIndex;
+  }
 
   /**
    * Sync response builder.
    */
-  static interface Builder extends Response.Builder<Builder, SyncResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, SyncResponse> {
+    private Builder() {
+      super(new SyncResponse());
+    }
 
     /**
      * Sets the response term.
@@ -62,7 +75,10 @@ public interface SyncResponse extends Response {
      * @param term The response term.
      * @return The sync response builder.
      */
-    Builder withTerm(long term);
+    public Builder withTerm(long term) {
+      response.term = term;
+      return this;
+    }
 
     /**
      * Sets whether the request succeeded.
@@ -70,7 +86,10 @@ public interface SyncResponse extends Response {
      * @param succeeded Whether the sync request succeeded.
      * @return The sync response builder.
      */
-    Builder withSucceeded(boolean succeeded);
+    public Builder withSucceeded(boolean succeeded) {
+      response.succeeded = succeeded;
+      return this;
+    }
 
     /**
      * Sets the last index of the replica's log.
@@ -78,7 +97,10 @@ public interface SyncResponse extends Response {
      * @param index The last index of the replica's log.
      * @return The sync response builder.
      */
-    Builder withLogIndex(long index);
+    public Builder withLogIndex(long index) {
+      response.logIndex = index;
+      return this;
+    }
 
   }
 

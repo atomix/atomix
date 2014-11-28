@@ -15,23 +15,68 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Abstract request implementation.
+ * Abstract response implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractResponse implements Request {
-  private Object id;
-
-  protected AbstractResponse() {
-  }
-
-  protected AbstractResponse(Object id) {
-    this.id = id;
-  }
+abstract class AbstractResponse implements Response {
+  protected Object id;
+  protected Status status;
+  protected Throwable error;
 
   @Override
   public Object id() {
     return id;
+  }
+
+  @Override
+  public Status status() {
+    return status;
+  }
+
+  @Override
+  public Throwable error() {
+    return error;
+  }
+
+  /**
+   * Abstract response builder.
+   *
+   * @param <T> The builder type.
+   * @param <U> The response type.
+   */
+  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractResponse> implements Response.Builder<T, U> {
+    protected final U response;
+
+    protected Builder(U response) {
+      this.response = response;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T withId(Object id) {
+      response.id = id;
+      return (T) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T withStatus(Status status) {
+      response.status = status;
+      return (T) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T withError(Throwable error) {
+      response.error = error;
+      return (T) this;
+    }
+
+    @Override
+    public U build() {
+      return response;
+    }
   }
 
 }

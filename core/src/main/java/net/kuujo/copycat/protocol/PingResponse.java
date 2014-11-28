@@ -19,7 +19,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface PingResponse extends Response {
+public class PingResponse extends AbstractResponse {
 
   /**
    * Returns a new ping response builder.
@@ -27,28 +27,37 @@ public interface PingResponse extends Response {
    * @return A new ping response builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
+
+  private long term;
+  private boolean succeeded;
 
   /**
    * Returns the requesting node's current term.
    *
    * @return The requesting node's current term.
    */
-  long term();
+  public long term() {
+    return term;
+  }
 
   /**
    * Returns a boolean indicating whether the sync was successful.
    *
    * @return Indicates whether the sync was successful.
    */
-  boolean succeeded();
-
+  public boolean succeeded() {
+    return succeeded;
+  }
 
   /**
    * Ping response builder.
    */
-  static interface Builder extends Response.Builder<Builder, PingResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, PingResponse> {
+    private Builder() {
+      super(new PingResponse());
+    }
 
     /**
      * Sets the response term.
@@ -56,7 +65,10 @@ public interface PingResponse extends Response {
      * @param term The response term.
      * @return The ping response builder.
      */
-    Builder withTerm(long term);
+    public Builder withTerm(long term) {
+      response.term = term;
+      return this;
+    }
 
     /**
      * Sets whether the request succeeded.
@@ -64,7 +76,10 @@ public interface PingResponse extends Response {
      * @param succeeded Whether the request succeeded.
      * @return The ping response builder.
      */
-    Builder withSucceeded(boolean succeeded);
+    public Builder withSucceeded(boolean succeeded) {
+      response.succeeded = succeeded;
+      return this;
+    }
 
   }
 

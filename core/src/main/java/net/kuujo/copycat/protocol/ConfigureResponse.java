@@ -19,7 +19,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ConfigureResponse extends Response {
+public class ConfigureResponse extends AbstractResponse {
 
   /**
    * Returns a new configure response builder.
@@ -27,13 +27,16 @@ public interface ConfigureResponse extends Response {
    * @return A new configure response builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
 
   /**
    * Configure response builder.
    */
-  static interface Builder extends Response.Builder<Builder, ConfigureResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, ConfigureResponse> {
+    private Builder() {
+      super(new ConfigureResponse());
+    }
   }
 
 }

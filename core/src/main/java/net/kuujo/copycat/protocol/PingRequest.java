@@ -19,7 +19,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface PingRequest extends Request {
+public class PingRequest extends AbstractRequest {
 
   /**
    * Returns a new ping request builder.
@@ -27,48 +27,67 @@ public interface PingRequest extends Request {
    * @return A new ping request builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
+
+  private long term;
+  private String leader;
+  private long logIndex;
+  private long logTerm;
+  private long commitIndex;
 
   /**
    * Returns the requesting node's current term.
    *
    * @return The requesting node's current term.
    */
-  long term();
+  public long term() {
+    return term;
+  }
 
   /**
    * Returns the requesting leader address.
    *
    * @return The leader's address.
    */
-  String leader();
+  public String leader() {
+    return leader;
+  }
 
   /**
    * Returns the index of the entry in the leader's log.
    *
    * @return The index of the entry in the leader's log.
    */
-  long logIndex();
+  public long logIndex() {
+    return logIndex;
+  }
 
   /**
    * Returns the term of the entry in the leader's log.
    *
    * @return The term of the entry in the leader's log.
    */
-  long logTerm();
+  public long logTerm() {
+    return logTerm;
+  }
 
   /**
    * Returns the leader's commit index.
    *
    * @return The leader commit index.
    */
-  long commitIndex();
+  public long commitIndex() {
+    return commitIndex;
+  }
 
   /**
    * Ping request builder.
    */
-  static interface Builder extends Request.Builder<Builder, PingRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, PingRequest> {
+    private Builder() {
+      super(new PingRequest());
+    }
 
     /**
      * Sets the request term.
@@ -76,7 +95,10 @@ public interface PingRequest extends Request {
      * @param term The request term.
      * @return The ping request builder.
      */
-    Builder withTerm(long term);
+    public Builder withTerm(long term) {
+      request.term = term;
+      return this;
+    }
 
     /**
      * Sets the request leader.
@@ -84,7 +106,10 @@ public interface PingRequest extends Request {
      * @param leader The request leader.
      * @return The ping request builder.
      */
-    Builder withLeader(String leader);
+    public Builder withLeader(String leader) {
+      request.leader = leader;
+      return this;
+    }
 
     /**
      * Sets the request last log index.
@@ -92,7 +117,10 @@ public interface PingRequest extends Request {
      * @param index The request last log index.
      * @return The ping request builder.
      */
-    Builder withLogIndex(long index);
+    public Builder withLogIndex(long index) {
+      request.logIndex = index;
+      return this;
+    }
 
     /**
      * Sets the request last log term.
@@ -100,7 +128,10 @@ public interface PingRequest extends Request {
      * @param term The request last log term.
      * @return The ping request builder.
      */
-    Builder withLogTerm(long term);
+    public Builder withLogTerm(long term) {
+      request.logTerm = term;
+      return this;
+    }
 
     /**
      * Sets the request commit index.
@@ -108,7 +139,10 @@ public interface PingRequest extends Request {
      * @param index The request commit index.
      * @return The ping request builder.
      */
-    Builder withCommitIndex(long index);
+    public Builder withCommitIndex(long index) {
+      request.commitIndex = index;
+      return this;
+    }
 
   }
 

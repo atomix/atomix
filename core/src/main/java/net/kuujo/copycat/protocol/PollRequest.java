@@ -19,7 +19,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface PollRequest extends Request {
+public class PollRequest extends AbstractRequest {
 
   /**
    * Returns a new poll request builder.
@@ -30,38 +30,54 @@ public interface PollRequest extends Request {
     return null;
   }
 
+  private long term;
+  private String candidate;
+  private long logIndex;
+  private long logTerm;
+
   /**
    * Returns the requesting node's current term.
    *
    * @return The requesting node's current term.
    */
-  long term();
+  public long term() {
+    return term;
+  }
 
   /**
    * Returns the candidate's address.
    *
    * @return The candidate's address.
    */
-  String candidate();
+  public String candidate() {
+    return candidate;
+  }
 
   /**
    * Returns the candidate's last log index.
    *
    * @return The candidate's last log index.
    */
-  long logIndex();
+  public long logIndex() {
+    return logIndex;
+  }
 
   /**
    * Returns the candidate's last log term.
    *
    * @return The candidate's last log term.
    */
-  long logTerm();
+  public long logTerm() {
+    return logTerm;
+  }
 
   /**
    * Poll request builder.
    */
-  static interface Builder extends Request.Builder<Builder, PollRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, PollRequest> {
+    private Builder() {
+      super(new PollRequest());
+    }
 
     /**
      * Sets the request term.
@@ -69,7 +85,10 @@ public interface PollRequest extends Request {
      * @param term The request term.
      * @return The poll request builder.
      */
-    Builder withTerm(long term);
+    public Builder withTerm(long term) {
+      request.term = term;
+      return this;
+    }
 
     /**
      * Sets the request leader.
@@ -77,7 +96,10 @@ public interface PollRequest extends Request {
      * @param candidate The request candidate.
      * @return The poll request builder.
      */
-    Builder withCandidate(String candidate);
+    public Builder withCandidate(String candidate) {
+      request.candidate = candidate;
+      return this;
+    }
 
     /**
      * Sets the request last log index.
@@ -85,7 +107,10 @@ public interface PollRequest extends Request {
      * @param index The request last log index.
      * @return The poll request builder.
      */
-    Builder withLogIndex(long index);
+    public Builder withLogIndex(long index) {
+      request.logIndex = index;
+      return this;
+    }
 
     /**
      * Sets the request last log term.
@@ -93,7 +118,10 @@ public interface PollRequest extends Request {
      * @param term The request last log term.
      * @return The poll request builder.
      */
-    Builder withLogTerm(long term);
+    public Builder withLogTerm(long term) {
+      request.logTerm = term;
+      return this;
+    }
 
   }
 

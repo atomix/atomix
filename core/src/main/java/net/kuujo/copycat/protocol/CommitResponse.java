@@ -19,7 +19,7 @@ package net.kuujo.copycat.protocol;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CommitResponse extends Response {
+public class CommitResponse extends AbstractResponse {
 
   /**
    * Returns a new commit response builder.
@@ -27,13 +27,16 @@ public interface CommitResponse extends Response {
    * @return A new commit response builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
 
   /**
    * Commit response builder.
    */
-  static interface Builder extends Response.Builder<Builder, CommitResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, CommitResponse> {
+    private Builder() {
+      super(new CommitResponse());
+    }
   }
 
 }

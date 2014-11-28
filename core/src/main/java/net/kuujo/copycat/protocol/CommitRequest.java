@@ -21,7 +21,7 @@ import net.kuujo.copycat.log.Entry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CommitRequest extends Request {
+public class CommitRequest extends AbstractRequest {
 
   /**
    * Returns a new commit request builder.
@@ -29,20 +29,28 @@ public interface CommitRequest extends Request {
    * @return A new commit request builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
+
+  private Object entry;
 
   /**
    * Returns the entry to be committed.
    *
    * @return The entry to be committed.
    */
-  <T> T entry();
+  @SuppressWarnings("unchecked")
+  public <T> T entry() {
+    return (T) entry;
+  }
 
   /**
    * Commit request builder.
    */
-  static interface Builder extends Request.Builder<Builder, CommitRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, CommitRequest> {
+    private Builder() {
+      super(new CommitRequest());
+    }
 
     /**
      * Sets the commit request entry.
@@ -50,7 +58,10 @@ public interface CommitRequest extends Request {
      * @param entry The commit request entry.
      * @return The commit request builder.
      */
-    Builder withEntry(Entry entry);
+    public Builder withEntry(Entry entry) {
+      request.entry = entry;
+      return this;
+    }
 
   }
 

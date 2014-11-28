@@ -16,6 +16,7 @@ package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.log.Entry;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -23,7 +24,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface SyncRequest extends Request {
+public class SyncRequest extends AbstractRequest {
 
   /**
    * Returns a new sync request builder.
@@ -31,55 +32,77 @@ public interface SyncRequest extends Request {
    * @return A new sync request builder.
    */
   static Builder builder() {
-    return null;
+    return new Builder();
   }
+
+  private long term;
+  private String leader;
+  private long logIndex;
+  private long logTerm;
+  private List<Entry> entries;
+  private long commitIndex;
 
   /**
    * Returns the requesting node's current term.
    *
    * @return The requesting node's current term.
    */
-  long term();
+  public long term() {
+    return term;
+  }
 
   /**
    * Returns the requesting leader address.
    *
    * @return The leader's address.
    */
-  String leader();
+  public String leader() {
+    return leader;
+  }
 
   /**
    * Returns the index of the log entry preceding the new entry.
    *
    * @return The index of the log entry preceding the new entry.
    */
-  long logIndex();
+  public long logIndex() {
+    return logIndex;
+  }
 
   /**
    * Returns the term of the log entry preceding the new entry.
    *
    * @return The index of the term preceding the new entry.
    */
-  long logTerm();
+  public long logTerm() {
+    return logTerm;
+  }
 
   /**
    * Returns the log entries to append.
    *
    * @return A list of log entries.
    */
-  List<Entry> entries();
+  public List<Entry> entries() {
+    return entries;
+  }
 
   /**
    * Returns the leader's commit index.
    *
    * @return The leader commit index.
    */
-  long commitIndex();
+  public long commitIndex() {
+    return commitIndex;
+  }
 
   /**
    * Sync request builder.
    */
-  static interface Builder extends Request.Builder<Builder, SyncRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, SyncRequest> {
+    private Builder() {
+      super(new SyncRequest());
+    }
 
     /**
      * Sets the request term.
@@ -87,7 +110,10 @@ public interface SyncRequest extends Request {
      * @param term The request term.
      * @return The sync request builder.
      */
-    Builder withTerm(long term);
+    public Builder withTerm(long term) {
+      request.term = term;
+      return this;
+    }
 
     /**
      * Sets the request leader.
@@ -95,7 +121,10 @@ public interface SyncRequest extends Request {
      * @param leader The request leader.
      * @return The sync request builder.
      */
-    Builder withLeader(String leader);
+    public Builder withLeader(String leader) {
+      request.leader = leader;
+      return this;
+    }
 
     /**
      * Sets the request last log index.
@@ -103,7 +132,10 @@ public interface SyncRequest extends Request {
      * @param index The request last log index.
      * @return The sync request builder.
      */
-    Builder withLogIndex(long index);
+    public Builder withLogIndex(long index) {
+      request.logIndex = index;
+      return this;
+    }
 
     /**
      * Sets the request last log term.
@@ -111,7 +143,10 @@ public interface SyncRequest extends Request {
      * @param term The request last log term.
      * @return The sync request builder.
      */
-    Builder withLogTerm(long term);
+    public Builder withLogTerm(long term) {
+      request.logTerm = term;
+      return this;
+    }
 
     /**
      * Sets the request entries.
@@ -119,7 +154,9 @@ public interface SyncRequest extends Request {
      * @param entries The request entries.
      * @return The sync request builder.
      */
-    Builder withEntries(Entry... entries);
+    public Builder withEntries(Entry... entries) {
+      return withEntries(Arrays.asList(entries));
+    }
 
     /**
      * Sets the request entries.
@@ -127,7 +164,10 @@ public interface SyncRequest extends Request {
      * @param entries The request entries.
      * @return The sync request builder.
      */
-    Builder withEntries(List<Entry> entries);
+    public Builder withEntries(List<Entry> entries) {
+      request.entries = entries;
+      return this;
+    }
 
     /**
      * Sets the request commit index.
@@ -135,7 +175,10 @@ public interface SyncRequest extends Request {
      * @param index The request commit index.
      * @return The sync request builder.
      */
-    Builder withCommitIndex(long index);
+    public Builder withCommitIndex(long index) {
+      request.commitIndex = index;
+      return this;
+    }
 
   }
 
