@@ -15,7 +15,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Configurable;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.util.Set;
 
@@ -50,13 +49,6 @@ public interface Cluster extends Configurable<Cluster, ClusterConfig> {
    * @return The cluster heartbeat interval.
    */
   long heartbeatInterval();
-
-  /**
-   * Returns the cluster protocol.
-   *
-   * @return The cluster protocol.
-   */
-  Protocol protocol();
 
   /**
    * Returns a set of cluster members.

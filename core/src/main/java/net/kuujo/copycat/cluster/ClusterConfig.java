@@ -15,7 +15,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Copyable;
-import net.kuujo.copycat.spi.Protocol;
 import net.kuujo.copycat.spi.QuorumStrategy;
 
 import java.util.Collection;
@@ -106,28 +105,6 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @return The cluster configuration.
    */
   ClusterConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit);
-
-  /**
-   * Sets the cluster protocol.
-   *
-   * @param protocol The protocol over which nodes in the cluster communicate.
-   */
-  void setProtocol(Protocol protocol);
-
-  /**
-   * Returns the cluster protocol.
-   *
-   * @return The protocol over which nodes in the cluster communicate.
-   */
-  Protocol getProtocol();
-
-  /**
-   * Sets the cluster protocol, returning the cluster configuration for method chaining.
-   *
-   * @param protocol The protocol over which nodes in the cluster communicate.
-   * @return The cluster configuration.
-   */
-  ClusterConfig withProtocol(Protocol protocol);
 
   /**
    * Sets the default cluster quorum strategy.

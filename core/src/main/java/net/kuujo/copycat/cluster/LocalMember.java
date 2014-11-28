@@ -17,16 +17,16 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.protocol.ProtocolServer;
 
 /**
- * Internal local node.
+ * Local cluster member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LocalNode extends Node {
+public interface LocalMember extends Member {
 
   /**
-   * Returns the local node server.
+   * Returns the local member protocol server.
    *
-   * @return The local node server.
+   * @return The local member protocol server.
    */
   ProtocolServer server();
 

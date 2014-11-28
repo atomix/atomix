@@ -14,10 +14,20 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.protocol.ProtocolClient;
+
 /**
- * Internal node.
+ * Internal remote member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Node extends Member {
+public interface RemoteMember extends Member {
+
+  /**
+   * Returns the remote member protocol client.
+   *
+   * @return The remote member protocol client.
+   */
+  ProtocolClient client();
+
 }
