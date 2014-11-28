@@ -15,6 +15,9 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,10 +40,13 @@ public interface Copycat extends Configurable<Copycat, CopycatConfig>, Managed {
   /**
    * Returns a new Copycat instance.
    *
+   * @param protocol The cluster protocol.
+   * @param cluster The cluster configuration.
    * @param config The Copycat configuration.
+   * @param log The log configuration.
    * @return A new Copycat instance.
    */
-  static Copycat copycat(CopycatConfig config) {
+  static Copycat copycat(Protocol protocol, ClusterConfig cluster, CopycatConfig config, LogConfig log) {
     return null;
   }
 
