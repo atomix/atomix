@@ -80,12 +80,4 @@ public interface CopycatLog<T> extends Managed {
    */
   CompletableFuture<Long> replay();
 
-  /**
-   * Compacts the log.
-   *
-   * @return A completable future to be completed once the log has been compacted. The future will be supplied with
-   * the index of the first entry in the log.
-   */
-  CompletableFuture<Long> compact();
-
 }
