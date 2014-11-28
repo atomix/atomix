@@ -21,7 +21,7 @@ import net.kuujo.copycat.log.Entry;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Partitioner {
+public interface Partitioner<T> {
 
   /**
    * Returns the index of a partition for the given entry.
@@ -30,6 +30,6 @@ public interface Partitioner {
    * @param numPartitions The number of partitions.
    * @return The index of the partition for the given entry.
    */
-  int partition(Entry entry, int numPartitions);
+  int partition(T entry, int numPartitions);
 
 }
