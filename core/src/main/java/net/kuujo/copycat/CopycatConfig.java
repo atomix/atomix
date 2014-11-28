@@ -21,7 +21,15 @@ import net.kuujo.copycat.spi.QuorumStrategy;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatConfig extends Copyable<CopycatConfig> {
+public class CopycatConfig implements Copyable<CopycatConfig> {
+  private boolean requireCommandQuorum = true;
+  private int commandQuorumSize;
+  private QuorumStrategy commandQuorumStrategy;
+  private boolean consistentCommandExecution;
+  private boolean requireQueryQuorum = true;
+  private int queryQuorumSize;
+  private QuorumStrategy queryQuorumStrategy;
+  private boolean consistentQueryExecution;
 
   /**
    * Sets whether a quorum replication is required for command operations.<p>
@@ -35,7 +43,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @param require Indicates whether a quorum replication should be required for commands.
    */
-  void setRequireCommandQuorum(boolean require);
+  public void setRequireCommandQuorum(boolean require) {
+    this.requireCommandQuorum = require;
+  }
 
   /**
    * Returns a boolean indicating whether a quorum replication is required for command
@@ -50,7 +60,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return Indicates whether a quorum replication is required for command operations.
    */
-  boolean isRequireCommandQuorum();
+  public boolean isRequireCommandQuorum() {
+    return requireCommandQuorum;
+  }
 
   /**
    * Sets whether a quorum replication is required for command operations, returning the
@@ -66,7 +78,10 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param require Indicates whether a quorum replication should be required for commands.
    * @return The Copycat configuration.
    */
-  CopycatConfig withRequireCommandQuorum(boolean require);
+  public CopycatConfig withRequireCommandQuorum(boolean require) {
+    setRequireCommandQuorum(require);
+    return this;
+  }
 
   /**
    * Sets the fixed required command quorum size.<p>
@@ -78,7 +93,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param quorumSize The required command quorum size.
    * @throws IllegalArgumentException if {@code quorumSize} is not >= -1
    */
-  void setCommandQuorumSize(int quorumSize);
+  public void setCommandQuorumSize(int quorumSize) {
+    this.commandQuorumSize = quorumSize;
+  }
 
   /**
    * Returns the required command quorum size.<p>
@@ -89,7 +106,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return The required command quorum size. Defaults to <code>-1</code>
    */
-  int getCommandQuorumSize();
+  public int getCommandQuorumSize() {
+    return commandQuorumSize;
+  }
 
   /**
    * Sets the required command quorum size, returning the configuration for method chaining.<p>
@@ -102,7 +121,10 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @return The copycat configuration.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
-  CopycatConfig withCommandQuorumSize(int quorumSize);
+  public CopycatConfig withCommandQuorumSize(int quorumSize) {
+    setCommandQuorumSize(quorumSize);
+    return this;
+  }
 
   /**
    * Sets the cluster command quorum strategy.<p>
@@ -117,7 +139,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param strategy The cluster command quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
-  void setCommandQuorumStrategy(QuorumStrategy strategy);
+  public void setCommandQuorumStrategy(QuorumStrategy strategy) {
+    this.commandQuorumStrategy = strategy;
+  }
 
   /**
    * Returns the cluster command quorum strategy.<p>
@@ -131,7 +155,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return The cluster command quorum calculation strategy.
    */
-  QuorumStrategy getCommandQuorumStrategy();
+  public QuorumStrategy getCommandQuorumStrategy() {
+    return commandQuorumStrategy;
+  }
 
   /**
    * Sets the cluster command quorum strategy, returning the configuration for method chaining.<p>
@@ -147,7 +173,10 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @return The copycat configuration.
    * @throws NullPointerException if {@code strategy} is null
    */
-  CopycatConfig withCommandQuorumStrategy(QuorumStrategy strategy);
+  public CopycatConfig withCommandQuorumStrategy(QuorumStrategy strategy) {
+    setCommandQuorumStrategy(strategy);
+    return this;
+  }
 
   /**
    * Sets whether to use consistent command execution.<p>
@@ -158,7 +187,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @param consistent Whether to use consistent command execution.
    */
-  void setConsistentCommandExecution(boolean consistent);
+  public void setConsistentCommandExecution(boolean consistent) {
+    this.consistentCommandExecution = consistent;
+  }
 
   /**
    * Returns whether consistent command execution is enabled.<p>
@@ -169,7 +200,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return Indicates whether consistent command execution is enabled.
    */
-  boolean isConsistentCommandExecution();
+  public boolean isConsistentCommandExecution() {
+    return consistentCommandExecution;
+  }
 
   /**
    * Sets whether to use consistent command execution, returning the configuration for method chaining.
@@ -177,7 +210,10 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param consistent Whether to use consistent command execution.
    * @return The Copycat configuration.
    */
-  CopycatConfig withConsistentCommandExecution(boolean consistent);
+  public CopycatConfig withConsistentCommandExecution(boolean consistent) {
+    setConsistentCommandExecution(consistent);
+    return this;
+  }
 
   /**
    * Sets whether a quorum synchronization is required for query operations.<p>
@@ -190,7 +226,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param require Indicates whether a quorum synchronization should be required for query
    *          operations.
    */
-  void setRequireQueryQuorum(boolean require);
+  public void setRequireQueryQuorum(boolean require) {
+    this.requireQueryQuorum = require;
+  }
 
   /**
    * Returns a boolean indicating whether a quorum synchronization is required for query
@@ -203,7 +241,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return Indicates whether a quorum synchronization is required for query operations.
    */
-  boolean isRequireQueryQuorum();
+  public boolean isRequireQueryQuorum() {
+    return requireQueryQuorum;
+  }
 
   /**
    * Sets whether a quorum synchronization is required for query operations, returning
@@ -218,7 +258,10 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *          operations.
    * @return The replica configuration.
    */
-  CopycatConfig withRequireQueryQuorum(boolean require);
+  public CopycatConfig withRequireQueryQuorum(boolean require) {
+    setRequireQueryQuorum(require);
+    return this;
+  }
 
   /**
    * Sets the required query quorum size.<p>
@@ -230,7 +273,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param quorumSize The required query quorum size.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
-  void setQueryQuorumSize(int quorumSize);
+  public void setQueryQuorumSize(int quorumSize) {
+    this.queryQuorumSize = quorumSize;
+  }
 
   /**
    * Returns the required query quorum size.<p>
@@ -241,7 +286,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return The required query quorum size. Defaults to <code>null</code>
    */
-  int getQueryQuorumSize();
+  public int getQueryQuorumSize() {
+    return queryQuorumSize;
+  }
 
   /**
    * Sets the required query quorum size, returning the configuration for method chaining.<p>
@@ -254,7 +301,10 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @return The copycat configuration.
    * @throws IllegalArgumentException if {@code quorumSize} is not > -1
    */
-  CopycatConfig withQueryQuorumSize(int quorumSize);
+  public CopycatConfig withQueryQuorumSize(int quorumSize) {
+    setQueryQuorumSize(quorumSize);
+    return this;
+  }
 
   /**
    * Sets the cluster query quorum strategy.<p>
@@ -267,7 +317,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param strategy The cluster query quorum calculation strategy.
    * @throws NullPointerException if {@code strategy} is null
    */
-  void setQueryQuorumStrategy(QuorumStrategy strategy);
+  public void setQueryQuorumStrategy(QuorumStrategy strategy) {
+    this.queryQuorumStrategy = strategy;
+  }
 
   /**
    * Returns the cluster query quorum strategy.<p>
@@ -279,7 +331,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return The cluster query quorum calculation strategy.
    */
-  QuorumStrategy getQueryQuorumStrategy();
+  public QuorumStrategy getQueryQuorumStrategy() {
+    return queryQuorumStrategy;
+  }
 
   /**
    * Sets the cluster query quorum strategy, returning the configuration for method chaining.<p>
@@ -293,7 +347,10 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @return The Copycat configuration.
    * @throws NullPointerException if {@code strategy} is null
    */
-  CopycatConfig withQueryQuorumStrategy(QuorumStrategy strategy);
+  public CopycatConfig withQueryQuorumStrategy(QuorumStrategy strategy) {
+    setQueryQuorumStrategy(strategy);
+    return this;
+  }
 
   /**
    * Sets whether to use consistent query execution.<p>
@@ -304,7 +361,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @param consistent Whether to use consistent query execution.
    */
-  void setConsistentQueryExecution(boolean consistent);
+  public void setConsistentQueryExecution(boolean consistent) {
+    this.consistentQueryExecution = consistent;
+  }
 
   /**
    * Returns whether consistent query execution is enabled.<p>
@@ -315,7 +374,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    *
    * @return Indicates whether consistent query execution is enabled.
    */
-  boolean isConsistentQueryExecution();
+  public boolean isConsistentQueryExecution() {
+    return consistentQueryExecution;
+  }
 
   /**
    * Sets whether to use consistent query execution, returning the configuration for method chaining.<p>
@@ -327,6 +388,9 @@ public interface CopycatConfig extends Copyable<CopycatConfig> {
    * @param consistent Whether to use consistent query execution.
    * @return The Copycat configuration.
    */
-  CopycatConfig withConsistentQueryExecution(boolean consistent);
+  public CopycatConfig withConsistentQueryExecution(boolean consistent) {
+    setConsistentQueryExecution(consistent);
+    return this;
+  }
 
 }
