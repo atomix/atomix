@@ -14,41 +14,31 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Member;
-
 /**
- * Copycat context.
+ * Copycat state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatContext {
+public enum CopycatState {
 
   /**
-   * Returns the current Copycat state.
-   *
-   * @return The current Copycat state.
+   * Start state.
    */
-  CopycatState state();
+  START,
 
   /**
-   * Returns the current cluster term.
-   *
-   * @return The current cluster term.
+   * Follower state.
    */
-  long term();
+  FOLLOWER,
 
   /**
-   * Returns the current cluster leader.
-   *
-   * @return The current cluster leader.
+   * Candidate state.
    */
-  Member leader();
+  CANDIDATE,
 
   /**
-   * Returns a boolean indicating whether the local node is the current cluster leader.
-   *
-   * @return Indicates whether the local node is the current cluster leader.
+   * Leader state.
    */
-  boolean isLeader();
+  LEADER
 
 }

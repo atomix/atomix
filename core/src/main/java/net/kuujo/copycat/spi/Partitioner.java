@@ -14,8 +14,6 @@
  */
 package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.log.Entry;
-
 /**
  * Cluster partitioner.
  *
