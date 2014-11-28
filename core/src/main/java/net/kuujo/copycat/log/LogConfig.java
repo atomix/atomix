@@ -20,6 +20,7 @@ import net.kuujo.copycat.spi.SyncStrategy;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.io.File;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Log configuration.
@@ -31,6 +32,7 @@ public class LogConfig implements Copyable<LogConfig> {
   private File logDirectory;
   private Serializer serializer;
   private CompactionStrategy compactionStrategy;
+  private long compactionFrequency = 60000;
   private SyncStrategy syncStrategy;
 
   /**
@@ -166,6 +168,57 @@ public class LogConfig implements Copyable<LogConfig> {
    */
   public LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy) {
     setCompactionStrategy(compactionStrategy);
+    return this;
+  }
+
+  /**
+   * Sets the log compaction frequency.
+   *
+   * @param frequency The frequency at which to compact the log.
+   */
+  public void setCompactionFrequency(long frequency) {
+    this.compactionFrequency = frequency;
+  }
+
+  /**
+   * Sets the log compaction frequency.
+   *
+   * @param frequency The frequency at which to compact the log.
+   * @param unit The frequency time unit.
+   */
+  public void setCompactionFrequency(long frequency, TimeUnit unit) {
+    setCompactionFrequency(unit.toMillis(frequency));
+  }
+
+  /**
+   * Returns the log compaction frequency.
+   *
+   * @return The frequency at which the log is compacted.
+   */
+  public long getCompactionFrequency() {
+    return compactionFrequency;
+  }
+
+  /**
+   * Sets the log compaction frequency, returning the log configuration for method chaining.
+   *
+   * @param frequency The frequency at which to compact the log.
+   * @return The log configuration.
+   */
+  public LogConfig withCompactionFrequency(long frequency) {
+    setCompactionFrequency(frequency);
+    return this;
+  }
+
+  /**
+   * Sets the log compaction frequency, returning the log configuration for method chaining.
+   *
+   * @param frequency The frequency at which to compact the log.
+   * @param unit The frequency time unit.
+   * @return The log configuration.
+   */
+  public LogConfig withCompactionFrequency(long frequency, TimeUnit unit) {
+    setCompactionFrequency(frequency, unit);
     return this;
   }
 
