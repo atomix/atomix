@@ -14,22 +14,23 @@
  */
 package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.log.Log;
 
 /**
- * Replication quorum strategy.
+ * Log sync strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface QuorumStrategy {
+public interface SyncStrategy {
 
   /**
-   * Calculates the quorum size for the given cluster.
+   * Syncs the log.
    *
-   * @param cluster The cluster for which to calculate the quorum size.
-   * @return The quorum size.
+   * @param log The log to sync.
+   * @param context The current Copycat context.
    */
-  int calculateQuorumSize(Cluster cluster);
+  void sync(Log log, CopycatContext context);
 
 }

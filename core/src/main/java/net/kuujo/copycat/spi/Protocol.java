@@ -29,7 +29,7 @@ public interface Protocol {
    *
    * @return The protocol context.
    */
-  Context context();
+  ProtocolContext context();
 
   /**
    * Returns a boolean indicating whether the given URI is valid.

@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Context {
+public interface ProtocolContext {
 
   /**
    * Schedules a task for execution.
