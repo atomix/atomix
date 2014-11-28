@@ -17,8 +17,7 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.Copyable;
 import net.kuujo.copycat.spi.QuorumStrategy;
 
-import java.util.Collection;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,14 +25,21 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ClusterConfig extends Copyable<ClusterConfig> {
+public class ClusterConfig implements Copyable<ClusterConfig> {
+  private long electionTimeout;
+  private long heartbeatInterval;
+  private QuorumStrategy quorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
+  private String localMember;
+  private Set<String> remoteMembers = new HashSet<>(10);
 
   /**
    * Sets the cluster election timeout.
    *
    * @param electionTimeout The cluster election timeout in milliseconds.
    */
-  void setElectionTimeout(long electionTimeout);
+  public void setElectionTimeout(long electionTimeout) {
+    this.electionTimeout = electionTimeout;
+  }
 
   /**
    * Sets the cluster election timeout.
@@ -41,14 +47,18 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param electionTimeout The cluster election timeout.
    * @param unit The timeout unit.
    */
-  void setElectionTimeout(long electionTimeout, TimeUnit unit);
+  public void setElectionTimeout(long electionTimeout, TimeUnit unit) {
+    this.electionTimeout = unit.toMillis(electionTimeout);
+  }
 
   /**
    * Returns the cluster election timeout in milliseconds.
    *
    * @return The cluster election timeout in milliseconds.
    */
-  long getElectionTimeout();
+  public long getElectionTimeout() {
+    return electionTimeout;
+  }
 
   /**
    * Sets the cluster election timeout, returning the cluster configuration for method chaining.
@@ -56,7 +66,10 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param electionTimeout The cluster election timeout in milliseconds.
    * @return The cluster configuration.
    */
-  ClusterConfig withElectionTimeout(long electionTimeout);
+  public ClusterConfig withElectionTimeout(long electionTimeout) {
+    setElectionTimeout(electionTimeout);
+    return this;
+  }
 
   /**
    * Sets the cluster election timeout, returning the cluster configuration for method chaining.
@@ -65,14 +78,19 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param unit The timeout unit.
    * @return The cluster configuration.
    */
-  ClusterConfig withElectionTimeout(long electionTimeout, TimeUnit unit);
+  public ClusterConfig withElectionTimeout(long electionTimeout, TimeUnit unit) {
+    setElectionTimeout(electionTimeout, unit);
+    return this;
+  }
 
   /**
    * Sets the cluster heartbeat interval.
    *
    * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
    */
-  void setHeartbeatInterval(long heartbeatInterval);
+  public void setHeartbeatInterval(long heartbeatInterval) {
+    this.heartbeatInterval = heartbeatInterval;
+  }
 
   /**
    * Sets the cluster heartbeat interval.
@@ -80,14 +98,18 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param heartbeatInterval The cluster heartbeat interval.
    * @param unit The heartbeat interval unit.
    */
-  void setHeartbeatInterval(long heartbeatInterval, TimeUnit unit);
+  public void setHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
+    this.heartbeatInterval = unit.toMillis(heartbeatInterval);
+  }
 
   /**
    * Returns the cluster heartbeat interval.
    *
    * @return The interval at which nodes send heartbeats to each other.
    */
-  long getHeartbeatInterval();
+  public long getHeartbeatInterval() {
+    return heartbeatInterval;
+  }
 
   /**
    * Sets the cluster heartbeat interval, returning the cluster configuration for method chaining.
@@ -95,7 +117,10 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
    * @return The cluster configuration.
    */
-  ClusterConfig withHeartbeatInterval(long heartbeatInterval);
+  public ClusterConfig withHeartbeatInterval(long heartbeatInterval) {
+    setHeartbeatInterval(heartbeatInterval);
+    return this;
+  }
 
   /**
    * Sets the cluster heartbeat interval, returning the cluster configuration for method chaining.
@@ -104,21 +129,28 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param unit The heartbeat interval unit.
    * @return The cluster configuration.
    */
-  ClusterConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit);
+  public ClusterConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
+    setHeartbeatInterval(heartbeatInterval, unit);
+    return this;
+  }
 
   /**
    * Sets the default cluster quorum strategy.
    *
    * @param quorumStrategy The default cluster quorum strategy.
    */
-  void setDefaultQuorumStrategy(QuorumStrategy quorumStrategy);
+  public void setDefaultQuorumStrategy(QuorumStrategy quorumStrategy) {
+    this.quorumStrategy = quorumStrategy;
+  }
 
   /**
    * Returns the default cluster quorum strategy.
    *
    * @return The default cluster quorum strategy.
    */
-  QuorumStrategy getDefaultQuorumStrategy();
+  public QuorumStrategy getDefaultQuorumStrategy() {
+    return quorumStrategy;
+  }
 
   /**
    * Sets the default cluster quorum strategy, returning the cluster configuration for method chaining.
@@ -126,28 +158,39 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param quorumStrategy The default cluster quorum strategy.
    * @return The cluster configuration.
    */
-  ClusterConfig withDefaultQuorumStrategy(QuorumStrategy quorumStrategy);
+  public ClusterConfig withDefaultQuorumStrategy(QuorumStrategy quorumStrategy) {
+    setDefaultQuorumStrategy(quorumStrategy);
+    return this;
+  }
 
   /**
    * Returns a set of all cluster member URIs, including the local member.
    *
    * @return A set of all cluster member URIs.
    */
-  Set<String> getMembers();
+  public Set<String> getMembers() {
+    Set<String> members = new HashSet<>(remoteMembers);
+    members.add(localMember);
+    return members;
+  }
 
   /**
    * Sets the local cluster member URI.
    *
    * @param uri The local cluster member URI.
    */
-  void setLocalMember(String uri);
+  public void setLocalMember(String uri) {
+    this.localMember = uri;
+  }
 
   /**
    * Returns the local cluster member URI.
    *
    * @return The local cluster member URI.
    */
-  String getLocalMember();
+  public String getLocalMember() {
+    return localMember;
+  }
 
   /**
    * Sets the local cluster member URI, returning the cluster configuration for method chaining.
@@ -155,28 +198,37 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uri The local cluster member URI.
    * @return The cluster configuration.
    */
-  ClusterConfig withLocalMember(String uri);
+  public ClusterConfig withLocalMember(String uri) {
+    setLocalMember(uri);
+    return this;
+  }
 
   /**
    * Sets all remote cluster member URIs.
    *
    * @param uris A collection of remote cluster member URIs.
    */
-  void setRemoteMembers(String... uris);
+  public void setRemoteMembers(String... uris) {
+    setRemoteMembers(new ArrayList<>(Arrays.asList(uris)));
+  }
 
   /**
    * Sets all remote cluster member URIs.
    *
    * @param uris A collection of remote cluster member URIs.
    */
-  void setRemoteMembers(Collection<String> uris);
+  public void setRemoteMembers(Collection<String> uris) {
+    this.remoteMembers = new HashSet<>(uris);
+  }
 
   /**
    * Returns a set of all remote cluster member URIs.
    *
    * @return A set of all remote cluster member URIs.
    */
-  Set<String> getRemoteMembers();
+  public Set<String> getRemoteMembers() {
+    return remoteMembers;
+  }
 
   /**
    * Adds a remote member to the cluster, returning the cluster configuration for method chaining.
@@ -184,7 +236,10 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uri The remote member URI to add.
    * @return The cluster configuration.
    */
-  ClusterConfig addRemoteMember(String uri);
+  public ClusterConfig addRemoteMember(String uri) {
+    remoteMembers.add(uri);
+    return this;
+  }
 
   /**
    * Sets all remote cluster member URIs, returning the cluster configuration for method chaining.
@@ -192,7 +247,10 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uris A collection of remote cluster member URIs.
    * @return The cluster configuration.
    */
-  ClusterConfig withRemoteMembers(String... uris);
+  public ClusterConfig withRemoteMembers(String... uris) {
+    setRemoteMembers(uris);
+    return this;
+  }
 
   /**
    * Sets all remote cluster member URIs, returning the cluster configuration for method chaining.
@@ -200,7 +258,10 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uris A collection of remote cluster member URIs.
    * @return The cluster configuration.
    */
-  ClusterConfig withRemoteMembers(Collection<String> uris);
+  public ClusterConfig withRemoteMembers(Collection<String> uris) {
+    setRemoteMembers(uris);
+    return this;
+  }
 
   /**
    * Adds a collection of remote member URIs to the configuration, returning the cluster configuration for method chaining.
@@ -208,7 +269,12 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uris A collection of remote cluster member URIs to add.
    * @return The cluster configuration.
    */
-  ClusterConfig addRemoteMembers(String... uris);
+  public ClusterConfig addRemoteMembers(String... uris) {
+    for (String uri : uris) {
+      remoteMembers.add(uri);
+    }
+    return this;
+  }
 
   /**
    * Adds a collection of remote member URIs to the configuration, returning the cluster configuration for method chaining.
@@ -216,7 +282,12 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uris A collection of remote cluster member URIs to add.
    * @return The cluster configuration.
    */
-  ClusterConfig addRemoteMembers(Collection<String> uris);
+  public ClusterConfig addRemoteMembers(Collection<String> uris) {
+    for (String uri : uris) {
+      remoteMembers.add(uri);
+    }
+    return this;
+  }
 
   /**
    * Removes a collection of remote member URIs from the configuration, returning the cluster configuration for method chaining.
@@ -224,7 +295,12 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uris A collection of remote cluster member URIs to remove.
    * @return The cluster configuration.
    */
-  ClusterConfig removeRemoteMembers(String... uris);
+  public ClusterConfig removeRemoteMembers(String... uris) {
+    for (String uri : uris) {
+      remoteMembers.remove(uri);
+    }
+    return this;
+  }
 
   /**
    * Removes a collection of remote member URIs from the configuration, returning the cluster configuration for method chaining.
@@ -232,13 +308,21 @@ public interface ClusterConfig extends Copyable<ClusterConfig> {
    * @param uris A collection of remote cluster member URIs to remove.
    * @return The cluster configuration.
    */
-  ClusterConfig removeRemoteMembers(Collection<String> uris);
+  public ClusterConfig removeRemoteMembers(Collection<String> uris) {
+    for (String uri : uris) {
+      remoteMembers.remove(uri);
+    }
+    return this;
+  }
 
   /**
    * Clears all remote member URIs from the configuration, returning the cluster configuration for method chaining.
    *
    * @return The cluster configuration.
    */
-  ClusterConfig clearRemoteMembers();
+  public ClusterConfig clearRemoteMembers() {
+    remoteMembers.clear();
+    return this;
+  }
 
 }
