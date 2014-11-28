@@ -26,21 +26,30 @@ import java.io.File;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LogConfig extends Copyable<LogConfig> {
+public class LogConfig implements Copyable<LogConfig> {
+  private LogType logType;
+  private File logDirectory;
+  private Serializer serializer;
+  private CompactionStrategy compactionStrategy;
+  private SyncStrategy syncStrategy;
 
   /**
    * Sets the log type.
    *
    * @param type The log type.
    */
-  void setLogType(LogType type);
+  public void setLogType(LogType type) {
+    this.logType = type;
+  }
 
   /**
    * Returns the log type.
    *
    * @return The log type.
    */
-  LogType getLogType();
+  public LogType getLogType() {
+    return logType;
+  }
 
   /**
    * Sets the log type.
@@ -48,28 +57,37 @@ public interface LogConfig extends Copyable<LogConfig> {
    * @param type The log type.
    * @return The log builder.
    */
-  LogConfig withLogType(LogType type);
+  public LogConfig withLogType(LogType type) {
+    setLogType(type);
+    return this;
+  }
 
   /**
    * Sets the log directory.
    *
    * @param directory The log directory.
    */
-  void setLogDirectory(String directory);
+  public void setLogDirectory(String directory) {
+    this.logDirectory = new File(directory);
+  }
 
   /**
    * Sets the log directory.
    *
    * @param directory The log directory.
    */
-  void setLogDirectory(File directory);
+  public void setLogDirectory(File directory) {
+    this.logDirectory = directory;
+  }
 
   /**
    * Returns the log directory.
    *
    * @return The log directory.
    */
-  File getLogDirectory();
+  public File getLogDirectory() {
+    return logDirectory;
+  }
 
   /**
    * Sets the log directory.
@@ -77,7 +95,10 @@ public interface LogConfig extends Copyable<LogConfig> {
    * @param directory The log directory.
    * @return The log builder.
    */
-  LogConfig withLogDirectory(String directory);
+  public LogConfig withLogDirectory(String directory) {
+    setLogDirectory(directory);
+    return this;
+  }
 
   /**
    * Sets the log directory.
@@ -85,21 +106,28 @@ public interface LogConfig extends Copyable<LogConfig> {
    * @param directory The log directory.
    * @return The log builder.
    */
-  LogConfig withLogDirectory(File directory);
+  public LogConfig withLogDirectory(File directory) {
+    setLogDirectory(directory);
+    return this;
+  }
 
   /**
    * Sets the log serializer.
    *
    * @param serializer The log serializer.
    */
-  void setSerializer(Serializer serializer);
+  public void setSerializer(Serializer serializer) {
+    this.serializer = serializer;
+  }
 
   /**
    * Returns the log serializer.
    *
    * @return The log serializer.
    */
-  Serializer getSerializer();
+  public Serializer getSerializer() {
+    return serializer;
+  }
 
   /**
    * Sets the log serializer, returning the log configuration for method chaining.
@@ -107,21 +135,28 @@ public interface LogConfig extends Copyable<LogConfig> {
    * @param serializer The log serializer.
    * @return The log configuration.
    */
-  LogConfig withSerializer(Serializer serializer);
+  public LogConfig withSerializer(Serializer serializer) {
+    setSerializer(serializer);
+    return this;
+  }
 
   /**
    * Sets the log compaction strategy.
    *
    * @param compactionStrategy The log compaction strategy.
    */
-  void setCompactionStrategy(CompactionStrategy compactionStrategy);
+  public void setCompactionStrategy(CompactionStrategy compactionStrategy) {
+    this.compactionStrategy = compactionStrategy;
+  }
 
   /**
    * Returns the log compaction strategy.
    *
    * @return The log compaction strategy.
    */
-  CompactionStrategy getCompactionStrategy();
+  public CompactionStrategy getCompactionStrategy() {
+    return compactionStrategy;
+  }
 
   /**
    * Sets the log compaction strategy.
@@ -129,21 +164,28 @@ public interface LogConfig extends Copyable<LogConfig> {
    * @param compactionStrategy The log compaction strategy.
    * @return The log builder.
    */
-  LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy);
+  public LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy) {
+    setCompactionStrategy(compactionStrategy);
+    return this;
+  }
 
   /**
    * Sets the log sync strategy.
    *
    * @param syncStrategy The log sync strategy.
    */
-  void setSyncStrategy(SyncStrategy syncStrategy);
+  public void setSyncStrategy(SyncStrategy syncStrategy) {
+    this.syncStrategy = syncStrategy;
+  }
 
   /**
    * Returns the log sync strategy.
    *
    * @return The log sync strategy.
    */
-  SyncStrategy getSyncStrategy();
+  public SyncStrategy getSyncStrategy() {
+    return syncStrategy;
+  }
 
   /**
    * Sets the log sync strategy, returning the log configuration for method chaining.
@@ -151,6 +193,9 @@ public interface LogConfig extends Copyable<LogConfig> {
    * @param syncStrategy The log sync strategy.
    * @return The log configuration.
    */
-  LogConfig withSyncStrategy(SyncStrategy syncStrategy);
+  public LogConfig withSyncStrategy(SyncStrategy syncStrategy) {
+    setSyncStrategy(syncStrategy);
+    return this;
+  }
 
 }
