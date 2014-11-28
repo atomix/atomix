@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.service;
 
-import net.kuujo.copycat.Copycat;
-
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;

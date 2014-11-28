@@ -16,6 +16,7 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.cluster.TcpMember;
+import net.kuujo.copycat.spi.Protocol;
 import net.kuujo.copycat.spi.protocol.Protocol;
 import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import net.kuujo.copycat.spi.protocol.ProtocolServer;
