@@ -14,10 +14,37 @@
  */
 package net.kuujo.copycat.log;
 
+import java.util.List;
+import java.util.Map;
+
 /**
- * System log entry.
+ * Snapshot manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface SystemEntry extends Entry {
+public interface SnapshotManager {
+
+  /**
+   * Returns a list of all available snapshots.
+   *
+   * @return A list of all available snapshots.
+   */
+  List<SnapshotInfo> listSnapshots();
+
+  /**
+   * Loads a snapshot by ID.
+   *
+   * @param id The unique snapshot ID.
+   * @return The loaded snapshot.
+   */
+  Map<String, Object> readSnapshot(String id);
+
+  /**
+   * Stores a new snapshot.
+   *
+   * @param snapshot The snapshot to store.
+   * @return The stored snapshot info.
+   */
+  SnapshotInfo writeSnapshot(Map<String, Object> snapshot);
+
 }

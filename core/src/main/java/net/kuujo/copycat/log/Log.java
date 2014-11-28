@@ -144,14 +144,6 @@ public interface Log {
   void sync() throws IOException;
 
   /**
-   * Compacts the log.
-   *
-   * @throws NullPointerException if {@code entry} is null
-   * @throws IOException If the snapshot persistence failed.
-   */
-  void compact() throws IOException;
-
-  /**
    * Opens the log.
    *
    * @throws IOException If the log could not be opened.

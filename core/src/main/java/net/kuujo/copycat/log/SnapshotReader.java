@@ -15,24 +15,17 @@
 package net.kuujo.copycat.log;
 
 /**
- * User log entry.
+ * Copycat state reader.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface UserEntry extends Entry {
+public interface SnapshotReader {
 
   /**
-   * Returns the user entry index.
+   * Reads a snapshot from the cluster state log.
    *
-   * @return The user entry index.
+   * @return The last snapshot in the cluster state log.
    */
-  long index();
-
-  /**
-   * Returns the wrapped log entry.
-   *
-   * @return The wrapped log entry.
-   */
-  Object entry();
+  Snapshot readSnapshot();
 
 }

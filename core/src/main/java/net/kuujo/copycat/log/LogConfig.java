@@ -16,6 +16,8 @@ package net.kuujo.copycat.log;
 
 import net.kuujo.copycat.Copyable;
 import net.kuujo.copycat.spi.CompactionStrategy;
+import net.kuujo.copycat.spi.SyncStrategy;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.io.File;
 
@@ -86,6 +88,28 @@ public interface LogConfig extends Copyable<LogConfig> {
   LogConfig withLogDirectory(File directory);
 
   /**
+   * Sets the log serializer.
+   *
+   * @param serializer The log serializer.
+   */
+  void setSerializer(Serializer serializer);
+
+  /**
+   * Returns the log serializer.
+   *
+   * @return The log serializer.
+   */
+  Serializer getSerializer();
+
+  /**
+   * Sets the log serializer, returning the log configuration for method chaining.
+   *
+   * @param serializer The log serializer.
+   * @return The log configuration.
+   */
+  LogConfig withSerializer(Serializer serializer);
+
+  /**
    * Sets the log compaction strategy.
    *
    * @param compactionStrategy The log compaction strategy.
@@ -106,5 +130,27 @@ public interface LogConfig extends Copyable<LogConfig> {
    * @return The log builder.
    */
   LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy);
+
+  /**
+   * Sets the log sync strategy.
+   *
+   * @param syncStrategy The log sync strategy.
+   */
+  void setSyncStrategy(SyncStrategy syncStrategy);
+
+  /**
+   * Returns the log sync strategy.
+   *
+   * @return The log sync strategy.
+   */
+  SyncStrategy getSyncStrategy();
+
+  /**
+   * Sets the log sync strategy, returning the log configuration for method chaining.
+   *
+   * @param syncStrategy The log sync strategy.
+   * @return The log configuration.
+   */
+  LogConfig withSyncStrategy(SyncStrategy syncStrategy);
 
 }
