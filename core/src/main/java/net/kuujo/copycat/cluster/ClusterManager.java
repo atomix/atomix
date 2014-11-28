@@ -41,25 +41,25 @@ public interface ClusterManager {
   Cluster cluster();
 
   /**
-   * Returns a set of all nodes in the cluster.
+   * Returns a set of all members in the cluster.
    *
-   * @return A set of all nodes in the cluster.
+   * @return A set of all members in the cluster.
    */
-  Set<Member> nodes();
+  Set<Member> members();
 
   /**
-   * Returns the local cluster node.
+   * Returns the local cluster member.
    *
-   * @return The local cluster node.
+   * @return The local cluster member.
    */
-  LocalMember localNode();
+  LocalMember localMember();
 
   /**
-   * Returns a set of all remote nodes in the cluster.
+   * Returns a set of all remote members in the cluster.
    *
-   * @return A set of all remote nodes in the cluster.
+   * @return A set of all remote members in the cluster.
    */
-  Set<RemoteMember> remoteNodes();
+  Set<RemoteMember> remoteMembers();
 
   /**
    * Polls the members of the cluster.
