@@ -30,12 +30,34 @@ public class CommitResponse extends AbstractResponse {
     return new Builder();
   }
 
+  private Object result;
+
+  /**
+   * Returns the commit result.
+   *
+   * @return The commit result.
+   */
+  public Object result() {
+    return result;
+  }
+
   /**
    * Commit response builder.
    */
   public static class Builder extends AbstractResponse.Builder<Builder, CommitResponse> {
     private Builder() {
       super(new CommitResponse());
+    }
+
+    /**
+     * Sets the commit response result.
+     *
+     * @param result The response result.
+     * @return The response builder.
+     */
+    public Builder withResult(Object result) {
+      response.result = result;
+      return this;
     }
   }
 
