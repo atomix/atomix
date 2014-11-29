@@ -26,7 +26,7 @@ public class CommitResponse extends AbstractResponse {
    *
    * @return A new commit response builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 

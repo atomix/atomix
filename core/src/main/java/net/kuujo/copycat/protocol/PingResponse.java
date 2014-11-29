@@ -26,7 +26,7 @@ public class PingResponse extends AbstractResponse {
    *
    * @return A new ping response builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 

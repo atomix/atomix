@@ -26,7 +26,7 @@ public class ConfigureResponse extends AbstractResponse {
    *
    * @return A new configure response builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 

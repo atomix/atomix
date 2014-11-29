@@ -26,7 +26,7 @@ public class SyncResponse extends AbstractResponse {
    *
    * @return A new sync response builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 

@@ -28,7 +28,7 @@ public class ConfigureRequest extends AbstractRequest {
    *
    * @return A new configure request builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 

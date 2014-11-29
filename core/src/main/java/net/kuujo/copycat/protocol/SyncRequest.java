@@ -31,7 +31,7 @@ public class SyncRequest extends AbstractRequest {
    *
    * @return A new sync request builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 

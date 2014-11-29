@@ -26,7 +26,7 @@ public class PollResponse extends AbstractResponse {
    *
    * @return A new poll response builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return null;
   }
 

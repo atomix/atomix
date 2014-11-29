@@ -26,7 +26,7 @@ public class PingRequest extends AbstractRequest {
    *
    * @return A new ping request builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 

@@ -28,7 +28,7 @@ public class CommitRequest extends AbstractRequest {
    *
    * @return A new commit request builder.
    */
-  static Builder builder() {
+  public static Builder builder() {
     return new Builder();
   }
 
@@ -58,7 +58,7 @@ public class CommitRequest extends AbstractRequest {
      * @param entry The commit request entry.
      * @return The commit request builder.
      */
-    public Builder withEntry(Entry entry) {
+    public Builder withEntry(Object entry) {
       request.entry = entry;
       return this;
     }
