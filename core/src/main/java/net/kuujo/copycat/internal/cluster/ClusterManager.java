@@ -12,8 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.internal.cluster;
 
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.spi.Protocol;
 
 import java.util.Set;
@@ -46,6 +48,14 @@ public interface ClusterManager {
    * @return A set of all members in the cluster.
    */
   Set<Member> members();
+
+  /**
+   * Returns a cluster member by URI.
+   *
+   * @param uri The cluster member URI.
+   * @return The cluster member.
+   */
+  Member member(String uri);
 
   /**
    * Returns the local cluster member.

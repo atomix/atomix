@@ -26,8 +26,8 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ClusterConfig implements Copyable<ClusterConfig> {
-  private long electionTimeout;
-  private long heartbeatInterval;
+  private long electionTimeout = 300;
+  private long heartbeatInterval = 150;
   private QuorumStrategy quorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
   private String localMember;
   private Set<String> remoteMembers = new HashSet<>(10);

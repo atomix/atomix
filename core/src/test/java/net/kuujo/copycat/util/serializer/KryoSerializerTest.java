@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.util.serializer;
 
-import net.kuujo.copycat.util.serializer.impl.KryoSerializer;
+import net.kuujo.copycat.util.serializer.internal.KryoSerializer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

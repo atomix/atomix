@@ -28,4 +28,11 @@ public interface Entry {
    */
   long term();
 
+  /**
+   * Returns the log entry value.
+   *
+   * @return The log entry value.
+   */
+  Object entry();
+
 }
