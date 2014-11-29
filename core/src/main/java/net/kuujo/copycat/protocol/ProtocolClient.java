@@ -17,9 +17,11 @@ package net.kuujo.copycat.protocol;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Protocol client.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolClient extends ProtocolHandler {
+public interface ProtocolClient extends ProtocolWriter {
 
   /**
    * Connects the protocol client.

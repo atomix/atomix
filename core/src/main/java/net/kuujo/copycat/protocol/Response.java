@@ -21,6 +21,9 @@ package net.kuujo.copycat.protocol;
  */
 public interface Response {
 
+  /**
+   * Response status.
+   */
   public static enum Status {
 
     /**
@@ -33,6 +36,13 @@ public interface Response {
      */
     ERROR
   }
+
+  /**
+   * Returns the response type.
+   *
+   * @return The response type.
+   */
+  ResponseType type();
 
   /**
    * Returns the response ID.

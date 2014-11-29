@@ -17,16 +17,11 @@ package net.kuujo.copycat.protocol;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Protocol server.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolServer {
-
-  /**
-   * Registers a protocol handler.
-   *
-   * @param handler The protocol handler.
-   */
-  void handler(ProtocolHandler handler);
+public interface ProtocolServer extends ProtocolReader {
 
   /**
    * Starts the server.

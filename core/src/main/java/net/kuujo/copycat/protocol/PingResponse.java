@@ -30,8 +30,14 @@ public class PingResponse extends AbstractResponse {
     return new Builder();
   }
 
+  private static final ResponseType type = new ResponseType(PingResponse.class, 1);
   private long term;
   private boolean succeeded;
+
+  @Override
+  public ResponseType type() {
+    return type;
+  }
 
   /**
    * Returns the requesting node's current term.
@@ -49,6 +55,11 @@ public class PingResponse extends AbstractResponse {
    */
   public boolean succeeded() {
     return succeeded;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, term=%d, succeeded=%b]", getClass().getSimpleName(), id, term, succeeded);
   }
 
   /**

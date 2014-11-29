@@ -15,66 +15,43 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Request types.
+ * Protocol response type.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-enum Requests {
+public final class ResponseType {
+  private Class<? extends Response> type;
+  private int id;
 
-  /**
-   * Configure request.
-   */
-  CONFIGURE(0, ConfigureRequest.class),
+  public ResponseType() {
+  }
 
-  /**
-   * Ping request.
-   */
-  PING(2, PingRequest.class),
-
-  /**
-   * Poll request.
-   */
-  POLL(4, PollRequest.class),
-
-  /**
-   * Sync request.
-   */
-  SYNC(6, SyncRequest.class),
-
-  /**
-   * Commit request.
-   */
-  COMMIT(8, CommitRequest.class);
-
-  private final int id;
-  private final Class<? extends Request> type;
-
-  private Requests(int id, Class<? extends Request> type) {
-    this.id = id;
+  public ResponseType(Class<? extends Response> type, int id) {
     this.type = type;
+    this.id = id;
   }
 
   /**
-   * Returns the request ID.
+   * Returns the response type class.
    *
-   * @return The request ID.
+   * @return The response type class.
+   */
+  public Class<? extends Response> type() {
+    return type;
+  }
+
+  /**
+   * Returns the response type ID.
+   *
+   * @return The response type ID.
    */
   public int id() {
     return id;
   }
 
-  /**
-   * Returns the request type.
-   *
-   * @return The request type.
-   */
-  public Class<? extends Request> type() {
-    return type;
-  }
-
   @Override
   public String toString() {
-    return String.format("Request[%s]", name());
+    return String.format("ResponseType[type=%s, id=%d]", type, id);
   }
 
 }

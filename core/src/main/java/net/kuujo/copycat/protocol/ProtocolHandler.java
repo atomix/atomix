@@ -14,53 +14,19 @@
  */
 package net.kuujo.copycat.protocol;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Protocol handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolHandler {
+public interface ProtocolHandler<T extends Request, U extends Response> {
 
   /**
-   * Sends or handles a protocol configure request.
+   * Handles a request.
    *
-   * @param request The configure request.
-   * @return A configure response future.
+   * @param request The request to handle.
+   * @return The request response.
    */
-  CompletableFuture<ConfigureResponse> configure(ConfigureRequest request);
-
-  /**
-   * Sends or handles a protocol ping request.
-   *
-   * @param request The ping request.
-   * @return A ping response future.
-   */
-  CompletableFuture<PingResponse> ping(PingRequest request);
-
-  /**
-   * Sends or handles a protocol sync request.
-   *
-   * @param request The sync request.
-   * @return A sync response future.
-   */
-  CompletableFuture<SyncResponse> sync(SyncRequest request);
-
-  /**
-   * Sends or handles a protocol poll request.
-   *
-   * @param request The poll request.
-   * @return A poll response future.
-   */
-  CompletableFuture<PollResponse> poll(PollRequest request);
-
-  /**
-   * Sends or handles a protocol submit request.
-   *
-   * @param request The submit request.
-   * @return A submit response future.
-   */
-  CompletableFuture<CommitResponse> submit(CommitRequest request);
+  U handle(T request);
 
 }

@@ -14,8 +14,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.log.Entry;
-
 /**
  * Protocol commit request.
  *
@@ -32,7 +30,13 @@ public class CommitRequest extends AbstractRequest {
     return new Builder();
   }
 
+  private static final RequestType type = new RequestType(CommitRequest.class, 8);
   private Object entry;
+
+  @Override
+  public RequestType type() {
+    return type;
+  }
 
   /**
    * Returns the entry to be committed.
@@ -42,6 +46,11 @@ public class CommitRequest extends AbstractRequest {
   @SuppressWarnings("unchecked")
   public <T> T entry() {
     return (T) entry;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, entry=%s]", getClass().getSimpleName(), id, entry);
   }
 
   /**

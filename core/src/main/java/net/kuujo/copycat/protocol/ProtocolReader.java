@@ -14,67 +14,20 @@
  */
 package net.kuujo.copycat.protocol;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.ByteBufferInput;
-
-import java.nio.ByteBuffer;
-
 /**
  * Protocol reader.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ProtocolReader {
-  private final Kryo kryo;
-  private final ByteBuffer buffer = ByteBuffer.allocate(4096);
-  private final ByteBufferInput input = new ByteBufferInput(buffer);
-
-  public ProtocolReader() {
-    this.kryo = new Kryo();
-    kryo.register(Requests.CONFIGURE.type(), Requests.CONFIGURE.id());
-    kryo.register(Responses.CONFIGURE.type(), Responses.CONFIGURE.id());
-    kryo.register(Requests.PING.type(), Requests.PING.id());
-    kryo.register(Responses.PING.type(), Responses.PING.id());
-    kryo.register(Requests.POLL.type(), Requests.POLL.id());
-    kryo.register(Responses.POLL.type(), Responses.POLL.id());
-    kryo.register(Requests.SYNC.type(), Requests.SYNC.id());
-    kryo.register(Responses.SYNC.type(), Responses.SYNC.id());
-    kryo.register(Requests.COMMIT.type(), Requests.COMMIT.id());
-    kryo.register(Responses.COMMIT.type(), Responses.COMMIT.id());
-  }
+public interface ProtocolReader {
 
   /**
-   * Reads a protocol request.
+   * Registers a request handler.
    *
-   * @param bytes The serialized request.
+   * @param requestType The request type for which to register the handler.
+   * @param handler The request handler.
    * @param <T> The request type.
-   * @return The request object.
    */
-  @SuppressWarnings("unchecked")
-  public <T extends Request> T readRequest(byte[] bytes) {
-    buffer.put(bytes);
-    buffer.rewind();
-    input.setBuffer(buffer);
-    T request = (T) kryo.readClassAndObject(input);
-    buffer.clear();
-    return request;
-  }
-
-  /**
-   * Reads a protocol response.
-   *
-   * @param bytes The serialized response.
-   * @param <T> The response type.
-   * @return The response object.
-   */
-  @SuppressWarnings("unchecked")
-  public <T extends Response> T readResponse(byte[] bytes) {
-    buffer.put(bytes);
-    buffer.rewind();
-    input.setBuffer(buffer);
-    T response = (T) kryo.readClassAndObject(input);
-    buffer.clear();
-    return response;
-  }
+  <T extends Request> void handler(Class<T> requestType, ProtocolHandler<T, ?> handler);
 
 }

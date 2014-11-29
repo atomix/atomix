@@ -30,7 +30,13 @@ public class CommitResponse extends AbstractResponse {
     return new Builder();
   }
 
+  private static final ResponseType type = new ResponseType(CommitResponse.class, 9);
   private Object result;
+
+  @Override
+  public ResponseType type() {
+    return type;
+  }
 
   /**
    * Returns the commit result.
@@ -39,6 +45,11 @@ public class CommitResponse extends AbstractResponse {
    */
   public Object result() {
     return result;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, result=%s]", getClass().getSimpleName(), id, result);
   }
 
   /**

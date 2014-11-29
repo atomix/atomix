@@ -30,8 +30,14 @@ public class PollResponse extends AbstractResponse {
     return null;
   }
 
+  private static final ResponseType type = new ResponseType(PollResponse.class, 5);
   private long term;
   private boolean voted;
+
+  @Override
+  public ResponseType type() {
+    return type;
+  }
 
   /**
    * Returns the responding node's current term.
@@ -49,6 +55,11 @@ public class PollResponse extends AbstractResponse {
    */
   public boolean voted() {
     return voted;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, term=%d, voted=%b]", getClass().getSimpleName(), id, term, voted);
   }
 
   /**

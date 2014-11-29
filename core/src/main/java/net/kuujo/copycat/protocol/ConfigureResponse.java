@@ -30,6 +30,18 @@ public class ConfigureResponse extends AbstractResponse {
     return new Builder();
   }
 
+  private static final ResponseType type = new ResponseType(ConfigureResponse.class, 3);
+
+  @Override
+  public ResponseType type() {
+    return type;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
+  }
+
   /**
    * Configure response builder.
    */

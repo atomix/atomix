@@ -22,6 +22,13 @@ package net.kuujo.copycat.protocol;
 public interface Request {
 
   /**
+   * Returns the request type.
+   *
+   * @return The request type.
+   */
+  RequestType type();
+
+  /**
    * Returns the request ID.
    *
    * @return The unique request ID.

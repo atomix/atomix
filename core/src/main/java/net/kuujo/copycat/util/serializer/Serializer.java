@@ -14,12 +14,23 @@
  */
 package net.kuujo.copycat.util.serializer;
 
+import net.kuujo.copycat.util.serializer.internal.KryoSerializer;
+
 /**
  * Serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Serializer {
+
+  /**
+   * Returns a serializer instance.
+   *
+   * @return A serializer instance.
+   */
+  static Serializer serializer() {
+    return new KryoSerializer();
+  }
 
   /**
    * Reads an object.

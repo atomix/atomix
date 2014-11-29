@@ -30,9 +30,15 @@ public class SyncResponse extends AbstractResponse {
     return new Builder();
   }
 
+  private static final ResponseType type = new ResponseType(SyncResponse.class, 7);
   private long term;
   private boolean succeeded;
   private long logIndex;
+
+  @Override
+  public ResponseType type() {
+    return type;
+  }
 
   /**
    * Returns the requesting node's current term.
@@ -59,6 +65,11 @@ public class SyncResponse extends AbstractResponse {
    */
   public long logIndex() {
     return logIndex;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), id, term, succeeded, logIndex);
   }
 
   /**

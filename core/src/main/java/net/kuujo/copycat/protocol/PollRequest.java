@@ -30,10 +30,16 @@ public class PollRequest extends AbstractRequest {
     return null;
   }
 
+  private static final RequestType type = new RequestType(PollRequest.class, 4);
   private long term;
   private String candidate;
   private long logIndex;
   private long logTerm;
+
+  @Override
+  public RequestType type() {
+    return type;
+  }
 
   /**
    * Returns the requesting node's current term.
@@ -69,6 +75,11 @@ public class PollRequest extends AbstractRequest {
    */
   public long logTerm() {
     return logTerm;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, term=%d, candidate=%s, logIndex=%d, logTerm=%d]", getClass().getSimpleName(), id, term, candidate, logIndex, logTerm);
   }
 
   /**

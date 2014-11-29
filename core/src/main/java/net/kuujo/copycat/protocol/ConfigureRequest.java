@@ -32,7 +32,13 @@ public class ConfigureRequest extends AbstractRequest {
     return new Builder();
   }
 
+  private static RequestType type = new RequestType(ConfigureRequest.class, 2);
   private ClusterConfig config;
+
+  @Override
+  public RequestType type() {
+    return type;
+  }
 
   /**
    * Returns the request configuration.
@@ -41,6 +47,11 @@ public class ConfigureRequest extends AbstractRequest {
    */
   public ClusterConfig config() {
     return config;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, config=%s]", getClass().getSimpleName(), id, config);
   }
 
   /**

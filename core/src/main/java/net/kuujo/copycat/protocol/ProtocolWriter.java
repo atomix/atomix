@@ -14,59 +14,22 @@
  */
 package net.kuujo.copycat.protocol;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.ByteBufferOutput;
-
-import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Protocol reader.
+ * Protocol writer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ProtocolWriter {
-  private final Kryo kryo;
-  private final ByteBuffer buffer = ByteBuffer.allocate(4096);
-  private final ByteBufferOutput output = new ByteBufferOutput(buffer);
-
-  public ProtocolWriter() {
-    this.kryo = new Kryo();
-    kryo.register(Requests.CONFIGURE.type(), Requests.CONFIGURE.id());
-    kryo.register(Responses.CONFIGURE.type(), Responses.CONFIGURE.id());
-    kryo.register(Requests.PING.type(), Requests.PING.id());
-    kryo.register(Responses.PING.type(), Responses.PING.id());
-    kryo.register(Requests.POLL.type(), Requests.POLL.id());
-    kryo.register(Responses.POLL.type(), Responses.POLL.id());
-    kryo.register(Requests.SYNC.type(), Requests.SYNC.id());
-    kryo.register(Responses.SYNC.type(), Responses.SYNC.id());
-    kryo.register(Requests.COMMIT.type(), Requests.COMMIT.id());
-    kryo.register(Responses.COMMIT.type(), Responses.COMMIT.id());
-  }
+public interface ProtocolWriter {
 
   /**
-   * Writes a protocol request.
+   * Writes a request.
    *
-   * @param request The protocol request.
-   * @return The serialized request.
+   * @param request The request to write.
+   * @param <R> The expected response type.
+   * @return A completable future to be completed with the request response.
    */
-  public byte[] writeRequest(Request request) {
-    kryo.writeClassAndObject(output, request);
-    byte[] bytes = output.toBytes();
-    output.clear();
-    return bytes;
-  }
-
-  /**
-   * Writes a protocol response.
-   *
-   * @param response The protocol response.
-   * @return The serialized response.
-   */
-  public byte[] writeResponse(Response response) {
-    kryo.writeClassAndObject(output, response);
-    byte[] bytes = output.toBytes();
-    output.clear();
-    return bytes;
-  }
+  <R extends Response> CompletableFuture<R> write(Request request);
 
 }

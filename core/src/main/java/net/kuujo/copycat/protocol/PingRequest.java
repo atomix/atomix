@@ -30,11 +30,17 @@ public class PingRequest extends AbstractRequest {
     return new Builder();
   }
 
+  private static final RequestType type = new RequestType(PingRequest.class, 0);
   private long term;
   private String leader;
   private long logIndex;
   private long logTerm;
   private long commitIndex;
+
+  @Override
+  public RequestType type() {
+    return type;
+  }
 
   /**
    * Returns the requesting node's current term.
@@ -79,6 +85,11 @@ public class PingRequest extends AbstractRequest {
    */
   public long commitIndex() {
     return commitIndex;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, commitIndex);
   }
 
   /**

@@ -35,12 +35,18 @@ public class SyncRequest extends AbstractRequest {
     return new Builder();
   }
 
+  private static final RequestType type = new RequestType(SyncRequest.class, 6);
   private long term;
   private String leader;
   private long logIndex;
   private long logTerm;
   private List<Entry> entries;
   private long commitIndex;
+
+  @Override
+  public RequestType type() {
+    return type;
+  }
 
   /**
    * Returns the requesting node's current term.
@@ -94,6 +100,11 @@ public class SyncRequest extends AbstractRequest {
    */
   public long commitIndex() {
     return commitIndex;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[...], commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, commitIndex);
   }
 
   /**
