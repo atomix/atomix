@@ -15,6 +15,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Configurable;
+import net.kuujo.copycat.election.Election;
 
 import java.util.Set;
 
@@ -26,29 +27,25 @@ import java.util.Set;
 public interface Cluster extends Configurable<Cluster, ClusterConfig> {
 
   /**
-   * Returns the cluster configuration underlying this cluster.<p>
+   * Returns the current cluster leader.
    *
-   * Note that altering the underlying configuration will not have any effect on the cluster. Configuration changes
-   * must be done by committing a new configuration to the cluster via the {@link #configure(Object)} method.
-   *
-   * @see {@link #configure(Object)}
-   * @return The underlying cluster configuration.
+   * @return The current cluster leader.
    */
-  ClusterConfig config();
+  Member leader();
 
   /**
-   * Returns the cluster election timeout.
+   * Returns the cluster term.
    *
-   * @return The cluster election timeout.
+   * @return The cluster term.
    */
-  long electionTimeout();
+  long term();
 
   /**
-   * Returns the cluster heartbeat interval.
+   * Returns the cluster election.
    *
-   * @return The cluster heartbeat interval.
+   * @return The cluster election.
    */
-  long heartbeatInterval();
+  Election election();
 
   /**
    * Returns a set of cluster members.
@@ -58,11 +55,19 @@ public interface Cluster extends Configurable<Cluster, ClusterConfig> {
   Set<Member> members();
 
   /**
+   * Returns a member by URI.
+   *
+   * @param uri The unique member URI.
+   * @return The member.
+   */
+  Member member(String uri);
+
+  /**
    * Returns the local cluster member URI.
    *
    * @return The local cluster member URI.
    */
-  Member localMember();
+  LocalMember localMember();
 
   /**
    * Returns a set of remote cluster members.
@@ -70,5 +75,13 @@ public interface Cluster extends Configurable<Cluster, ClusterConfig> {
    * @return A set of remote cluster members.
    */
   Set<Member> remoteMembers();
+
+  /**
+   * Returns a remote member by URI.
+   *
+   * @param uri The remote member URI.
+   * @return The remote member.
+   */
+  Member remoteMember(String uri);
 
 }

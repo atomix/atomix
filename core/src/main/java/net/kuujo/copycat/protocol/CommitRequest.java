@@ -15,28 +15,25 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Protocol commit request.
+ * Protocol submit request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommitRequest extends AbstractRequest {
+  public static final int TYPE = -11;
 
   /**
-   * Returns a new commit request builder.
+   * Returns a new submit request builder.
    *
-   * @return A new commit request builder.
+   * @return A new submit request builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
-  private static final RequestType type = new RequestType(CommitRequest.class, 8);
   private Object entry;
-
-  @Override
-  public RequestType type() {
-    return type;
-  }
+  private boolean consistent = true;
+  private boolean persistent = true;
 
   /**
    * Returns the entry to be committed.
@@ -46,6 +43,24 @@ public class CommitRequest extends AbstractRequest {
   @SuppressWarnings("unchecked")
   public <T> T entry() {
     return (T) entry;
+  }
+
+  /**
+   * Returns a boolean indicating whether the submit is consistent.
+   *
+   * @return Indicates whether the submit is consistent.
+   */
+  public boolean consistent() {
+    return consistent;
+  }
+
+  /**
+   * Returns a boolean indicating whether the submit is persistent.
+   *
+   * @return Indicates whether the submit is persistent.
+   */
+  public boolean persistent() {
+    return persistent;
   }
 
   @Override
@@ -62,13 +77,35 @@ public class CommitRequest extends AbstractRequest {
     }
 
     /**
-     * Sets the commit request entry.
+     * Sets the submit request entry.
      *
-     * @param entry The commit request entry.
-     * @return The commit request builder.
+     * @param entry The submit request entry.
+     * @return The submit request builder.
      */
     public Builder withEntry(Object entry) {
       request.entry = entry;
+      return this;
+    }
+
+    /**
+     * Sets whether the submit is consistent.
+     *
+     * @param consistent Whether the submit is persistent.
+     * @return The submit request builder.
+     */
+    public Builder withConsistent(boolean consistent) {
+      request.consistent = consistent;
+      return this;
+    }
+
+    /**
+     * Sets whether the submit is persistent.
+     *
+     * @param persistent Whether the submit is persistent.
+     * @return The submit request builder.
+     */
+    public Builder withPersistent(boolean persistent) {
+      request.persistent = persistent;
       return this;
     }
 

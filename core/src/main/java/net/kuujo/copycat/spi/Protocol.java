@@ -25,13 +25,6 @@ import java.net.URI;
 public interface Protocol {
 
   /**
-   * Returns the protocol context.
-   *
-   * @return The protocol context.
-   */
-  ProtocolContext context();
-
-  /**
    * Returns a boolean indicating whether the given URI is valid.
    *
    * @param uri The member URI to validate.

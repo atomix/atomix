@@ -20,6 +20,7 @@ package net.kuujo.copycat.protocol;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollRequest extends AbstractRequest {
+  public static final int TYPE = -3;
 
   /**
    * Returns a new poll request builder.
@@ -30,16 +31,10 @@ public class PollRequest extends AbstractRequest {
     return null;
   }
 
-  private static final RequestType type = new RequestType(PollRequest.class, 4);
   private long term;
   private String candidate;
   private long logIndex;
   private long logTerm;
-
-  @Override
-  public RequestType type() {
-    return type;
-  }
 
   /**
    * Returns the requesting node's current term.

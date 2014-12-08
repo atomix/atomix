@@ -20,6 +20,7 @@ package net.kuujo.copycat.protocol;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollResponse extends AbstractResponse {
+  public static final int TYPE = -4;
 
   /**
    * Returns a new poll response builder.
@@ -30,14 +31,8 @@ public class PollResponse extends AbstractResponse {
     return null;
   }
 
-  private static final ResponseType type = new ResponseType(PollResponse.class, 5);
   private long term;
   private boolean voted;
-
-  @Override
-  public ResponseType type() {
-    return type;
-  }
 
   /**
    * Returns the responding node's current term.

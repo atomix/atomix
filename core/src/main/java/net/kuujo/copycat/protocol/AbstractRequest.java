@@ -21,10 +21,16 @@ package net.kuujo.copycat.protocol;
  */
 abstract class AbstractRequest implements Request {
   protected Object id;
+  protected String member;
 
   @Override
   public Object id() {
     return id;
+  }
+
+  @Override
+  public String member() {
+    return member;
   }
 
   /**
@@ -44,6 +50,13 @@ abstract class AbstractRequest implements Request {
     @SuppressWarnings("unchecked")
     public T withId(Object id) {
       request.id = id;
+      return (T) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T withMember(String member) {
+      request.member = member;
       return (T) this;
     }
 

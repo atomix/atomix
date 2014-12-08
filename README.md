@@ -19,16 +19,6 @@ various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io
 **Please note that Copycat is still undergoing heavy development, and until a beta release,
 the API is subject to change.**
 
-This project has been in development for over a year, and it's finally nearing its first release.
-Until then, here are a few items on the TODO list:
-
-* ~~Refactor the cluster/protocol APIs to provide more flexibility~~
-* ~~Separate commands into separate Command (write) and Query (read) operations~~
-* ~~Provide APIs for both synchronous and asynchronous environments~~
-* Develop extensive integration tests for configuration, leader election and replication algorithms
-* Update documentation for new API changes
-* Publish to Maven Central!
-
 Copycat *will* be published to Maven Central once these features are complete. Follow
 the project for updates!
 
@@ -40,3 +30,161 @@ User Manual
 
 **Note: Some of this documentation may be inaccurate due to the rapid development currently
 taking place on Copycat**
+
+### Configuration
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withLocalMember("tcp://123.456.789.0")
+  .withRemoteMembers("tcp://234.567.890.1", "tcp://345.678.901.2");
+Protocol protocol = new NettyTcpProtocol();
+Copycat copycat = Copycat.create(cluster, protocol);
+```
+
+or...
+
+```
+copycat {
+  cluster {
+    address: tcp://123.456.789.0
+    members: [
+      tcp://123.456.789.0
+      tcp://234.567.890.1
+      tcp://345.678.901.2
+    ]
+  }
+  protocol {
+    class: net.kuujo.copycat.protocol.netty.NettyTcpProtocol
+    tcp-keep-alive: true
+  }
+}
+```
+
+or...
+
+```
+copycat.cluster.address = tcp://123.456.789.0
+copycat.cluster.members.1 = tcp://123.456.789.0
+copycat.cluster.members.2 = tcp://234.567.890.1
+copycat.cluster.members.3 = tcp://345.678.901.2
+
+copycat.protocol.class = net.kuujo.copycat.protocol.netty.NettyTcpProtocol
+copycat.protocol.tcp-keep-alive = true
+```
+
+### Event log
+When a new log is created, if a log with the given resource name already exists, the log
+will become a member of the existing cluster, otherwise it will start a new cluster. In this
+way, logs are replicated based on the nodes on which they have been created. If multiple instances
+of the same resource are created from the same Copycat instance, each instance will essentially
+point to the same local replicated log.
+```java
+Copycat copycat = Copycat.create();
+
+copycat.eventLog("events").whenComplete((log, error) -> {
+  log.consumer(entry -> System.out.println("Got event " + entry));
+  log.commit("Hello world!").thenRun(() -> {
+    log.commit("Hello world again!").thenRun(() -> {
+      log.commit("Hello world once more!").thenRun(() -> {
+        log.replay().thenRun(() -> {
+          log.get(2).whenComplete((entry, error) -> {
+            if (error != null) {
+              System.out.println(entry);
+            }
+          });
+        });
+      });
+    });
+  });
+});
+```
+
+```
+Got event Hello world!
+Got event Hello world again!
+Got event Hello world once more!
+Got event Hello world!
+Got event Hello world again!
+Got event Hello world once more!
+Hello world again!
+```
+
+### State machine
+The state machine is a strongly consistent persistent log.
+```java
+Copycat copycat = Copycat.create();
+
+StateModel model = StateModel.builder()
+  .withStartState(State.builder()
+    .addCommand("get", key -> map.get(key))
+    .addCommand("set", args -> map.put(args[0], args[1])
+    .withSnapshotProvider(() -> map)
+    .withSnapshotInstaller(map -> this.map = map)
+    .build())
+  .build();
+
+copycat.stateMachine("state-machine").whenComplete((stateMachine, error) -> {
+  stateMachine.submit("set", new String[]{"foo", "bar"}).thenRun(() -> {
+    stateMachine.submit("get", "foo").whenComplete((result, error) -> {
+      System.out.println("foo is " + result);
+    });
+  });
+});
+```
+
+### Consistent distributed data structures
+```java
+Copycat copcyat = Copycat.create();
+
+copycat.getMap("foo").thenAccept(map -> {
+  map.put("foo", "bar").thenRun(() -> {
+    map.get("foo").thenAccept(result -> {
+      System.out.println("foo is " + result);
+    });
+  });
+});
+
+copycat.getList("bar").thenAccept(list -> {
+  list.add("Hello world!").thenRun(() -> {
+    list.get(0).thenAccept(result -> {
+      System.out.println("list index 0 is " + result);
+    });
+  });
+});
+```
+
+### Messaging
+```java
+Copycat copycat = Copycat.create();
+
+copycat.cluster().localMember().handler(message -> {
+  return CompletableFuture.completedFuture("world!");
+});
+
+copycat.cluster().member("tcp://123.456.789.0").send("Hello").thenAccept(response -> {
+  System.out.println("Hello " + response);
+});
+```
+
+### Remote execution
+```java
+Copycat copycat = Copycat.create();
+
+copycat.cluster.member("tcp://123.456.789.0").execute(() -> {
+  System.out.println("I'm running on tcp://123.456.789.0!");
+});
+
+copycat.cluster.member("tcp://123.456.789.0").submit(() -> "Hello world!").thenAccept(response -> {
+  System.out.println(response);
+});
+```
+
+### Leader election
+```java
+Copycat copycat = Copycat.create();
+
+copycat.election("foo").thenAccept(leader -> {
+  leader.submit(() -> {
+    System.out.println("I'm running on the leader!");
+  });
+});
+```

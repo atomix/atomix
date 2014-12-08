@@ -22,18 +22,18 @@ package net.kuujo.copycat.protocol;
 public interface Request {
 
   /**
-   * Returns the request type.
-   *
-   * @return The request type.
-   */
-  RequestType type();
-
-  /**
    * Returns the request ID.
    *
    * @return The unique request ID.
    */
   Object id();
+
+  /**
+   * Returns the request member.
+   *
+   * @return The request member.
+   */
+  String member();
 
   /**
    * Request builder.
@@ -50,6 +50,14 @@ public interface Request {
      * @return The request builder.
      */
     T withId(Object id);
+
+    /**
+     * Sets the request member.
+     *
+     * @param member The member to which to send the request.
+     * @return The request builder.
+     */
+    T withMember(String member);
 
     /**
      * Builds the request.

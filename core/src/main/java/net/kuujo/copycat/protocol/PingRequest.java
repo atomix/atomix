@@ -20,6 +20,7 @@ package net.kuujo.copycat.protocol;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PingRequest extends AbstractRequest {
+  public static final int TYPE = -1;
 
   /**
    * Returns a new ping request builder.
@@ -30,17 +31,11 @@ public class PingRequest extends AbstractRequest {
     return new Builder();
   }
 
-  private static final RequestType type = new RequestType(PingRequest.class, 0);
   private long term;
   private String leader;
   private long logIndex;
   private long logTerm;
   private long commitIndex;
-
-  @Override
-  public RequestType type() {
-    return type;
-  }
 
   /**
    * Returns the requesting node's current term.
@@ -79,9 +74,9 @@ public class PingRequest extends AbstractRequest {
   }
 
   /**
-   * Returns the leader's commit index.
+   * Returns the leader's submit index.
    *
-   * @return The leader commit index.
+   * @return The leader submit index.
    */
   public long commitIndex() {
     return commitIndex;
@@ -145,9 +140,9 @@ public class PingRequest extends AbstractRequest {
     }
 
     /**
-     * Sets the request commit index.
+     * Sets the request submit index.
      *
-     * @param index The request commit index.
+     * @param index The request submit index.
      * @return The ping request builder.
      */
     public Builder withCommitIndex(long index) {

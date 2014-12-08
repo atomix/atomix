@@ -22,12 +22,7 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-tcp</artifactId>
+      <artifactId>copycat-core</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

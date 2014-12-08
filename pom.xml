@@ -69,8 +69,12 @@
 
   <modules>
     <module>core</module>
-    <module>tcp</module>
-    <module>http</module>
+    <module>api</module>
+    <module>event-log</module>
+    <module>state-log</module>
+    <module>state-machine</module>
+    <module>leader-election</module>
+    <module>collections</module>
     <module>netty</module>
     <module>vertx</module>
     <module>vertx3</module>

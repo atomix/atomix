@@ -24,10 +24,8 @@ public interface ProtocolReader {
   /**
    * Registers a request handler.
    *
-   * @param requestType The request type for which to register the handler.
    * @param handler The request handler.
-   * @param <T> The request type.
    */
-  <T extends Request> void handler(Class<T> requestType, ProtocolHandler<T, ?> handler);
+  void handler(ProtocolHandler handler);
 
 }

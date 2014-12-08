@@ -20,6 +20,7 @@ package net.kuujo.copycat.protocol;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SyncResponse extends AbstractResponse {
+  public static final int TYPE = -6;
 
   /**
    * Returns a new sync response builder.
@@ -30,15 +31,9 @@ public class SyncResponse extends AbstractResponse {
     return new Builder();
   }
 
-  private static final ResponseType type = new ResponseType(SyncResponse.class, 7);
   private long term;
   private boolean succeeded;
   private long logIndex;
-
-  @Override
-  public ResponseType type() {
-    return type;
-  }
 
   /**
    * Returns the requesting node's current term.

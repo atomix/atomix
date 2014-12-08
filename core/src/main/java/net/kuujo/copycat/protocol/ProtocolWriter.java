@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -27,9 +28,8 @@ public interface ProtocolWriter {
    * Writes a request.
    *
    * @param request The request to write.
-   * @param <R> The expected response type.
    * @return A completable future to be completed with the request response.
    */
-  <R extends Response> CompletableFuture<R> write(Request request);
+  CompletableFuture<ByteBuffer> write(ByteBuffer request);
 
 }

@@ -18,7 +18,7 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat</artifactId>
+      <artifactId>copycat-core</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -29,7 +29,7 @@
 
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat</artifactId>
+      <artifactId>copycat-core</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>

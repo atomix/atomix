@@ -20,6 +20,7 @@ package net.kuujo.copycat.protocol;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PingResponse extends AbstractResponse {
+  public static final int TYPE = -2;
 
   /**
    * Returns a new ping response builder.
@@ -30,14 +31,8 @@ public class PingResponse extends AbstractResponse {
     return new Builder();
   }
 
-  private static final ResponseType type = new ResponseType(PingResponse.class, 1);
   private long term;
   private boolean succeeded;
-
-  @Override
-  public ResponseType type() {
-    return type;
-  }
 
   /**
    * Returns the requesting node's current term.

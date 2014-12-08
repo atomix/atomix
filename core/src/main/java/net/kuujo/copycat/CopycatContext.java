@@ -14,14 +14,18 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.spi.ExecutionContext;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Copycat context.
+ * Raft context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatContext {
+public interface CopycatContext extends Managed {
 
   /**
    * Returns the current Copycat state.
@@ -31,24 +35,55 @@ public interface CopycatContext {
   CopycatState state();
 
   /**
-   * Returns the current cluster term.
+   * Returns the Copycat execution context.
    *
-   * @return The current cluster term.
+   * @return The Copycat execution context.
    */
-  long term();
+  ExecutionContext executor();
 
   /**
-   * Returns the current cluster leader.
+   * Returns the Copycat log.
    *
-   * @return The current cluster leader.
+   * @return The Copycat log.
    */
-  Member leader();
+  Log log();
 
   /**
-   * Returns a boolean indicating whether the local node is the current cluster leader.
+   * Configures the context.
    *
-   * @return Indicates whether the local node is the current cluster leader.
+   * @param config The cluster configuration.
+   * @return A completable future to be completed once the context has been configured.
    */
-  boolean isLeader();
+  CompletableFuture<ClusterConfig> configure(ClusterConfig config);
+
+  /**
+   * Commits an entry to the context.
+   *
+   * @param entry The entry to submit.
+   * @param <T> The entry type.
+   * @param <U> The output type.
+   * @return A completable future to be completed once the entry has been committed.
+   */
+  <T, U> CompletableFuture<U> submit(T entry);
+
+  /**
+   * Commits an entry to the context.
+   *
+   * @param entry The entry to submit.
+   * @param options The entry submit options.
+   * @param <T> The entry type.
+   * @param <U> The output type.
+   * @return A completable future to be completed once the entry has been committed.
+   */
+  <T, U> CompletableFuture<U> submit(T entry, SubmitOptions options);
+
+  /**
+   * Registers a log handler.
+   *
+   * @param handler A log handler.
+   * @return The Copycat context.
+   */
+  @SuppressWarnings("rawtypes")
+  CopycatContext handler(EventHandler handler);
 
 }

@@ -25,6 +25,7 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SyncRequest extends AbstractRequest {
+  public static final int TYPE = -5;
 
   /**
    * Returns a new sync request builder.
@@ -35,18 +36,12 @@ public class SyncRequest extends AbstractRequest {
     return new Builder();
   }
 
-  private static final RequestType type = new RequestType(SyncRequest.class, 6);
   private long term;
   private String leader;
   private long logIndex;
   private long logTerm;
   private List<Entry> entries;
   private long commitIndex;
-
-  @Override
-  public RequestType type() {
-    return type;
-  }
 
   /**
    * Returns the requesting node's current term.
@@ -94,9 +89,9 @@ public class SyncRequest extends AbstractRequest {
   }
 
   /**
-   * Returns the leader's commit index.
+   * Returns the leader's submit index.
    *
-   * @return The leader commit index.
+   * @return The leader submit index.
    */
   public long commitIndex() {
     return commitIndex;
@@ -181,9 +176,9 @@ public class SyncRequest extends AbstractRequest {
     }
 
     /**
-     * Sets the request commit index.
+     * Sets the request submit index.
      *
-     * @param index The request commit index.
+     * @param index The request submit index.
      * @return The sync request builder.
      */
     public Builder withCommitIndex(long index) {

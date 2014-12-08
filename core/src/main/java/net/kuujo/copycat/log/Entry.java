@@ -33,6 +33,6 @@ public interface Entry {
    *
    * @return The log entry value.
    */
-  Object entry();
+  Object value();
 
 }

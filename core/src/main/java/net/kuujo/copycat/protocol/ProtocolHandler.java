@@ -14,19 +14,16 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.EventHandler;
+
+import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Protocol handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolHandler<T extends Request, U extends Response> {
-
-  /**
-   * Handles a request.
-   *
-   * @param request The request to handle.
-   * @return The request response.
-   */
-  U handle(T request);
-
+@FunctionalInterface
+public interface ProtocolHandler extends EventHandler<ByteBuffer, CompletableFuture<ByteBuffer>> {
 }

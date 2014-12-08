@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import java.util.Set;
 
 /**
  * Protocol configure request.
@@ -22,6 +22,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ConfigureRequest extends AbstractRequest {
+  public static final int TYPE = -7;
 
   /**
    * Returns a new configure request builder.
@@ -32,26 +33,20 @@ public class ConfigureRequest extends AbstractRequest {
     return new Builder();
   }
 
-  private static RequestType type = new RequestType(ConfigureRequest.class, 2);
-  private ClusterConfig config;
-
-  @Override
-  public RequestType type() {
-    return type;
-  }
+  private Set<String> members;
 
   /**
-   * Returns the request configuration.
+   * Returns the cluster members.
    *
-   * @return The request configuration.
+   * @return The cluster members.
    */
-  public ClusterConfig config() {
-    return config;
+  public Set<String> members() {
+    return members;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, config=%s]", getClass().getSimpleName(), id, config);
+    return String.format("%s[id=%s, members=%s]", getClass().getSimpleName(), id, members);
   }
 
   /**
@@ -63,13 +58,13 @@ public class ConfigureRequest extends AbstractRequest {
     }
 
     /**
-     * Sets the request cluster configuration.
+     * Sets the request member configuration.
      *
-     * @param config The request cluster configuration.
+     * @param members The request member configurations.
      * @return The configure request builder.
      */
-    public Builder withConfig(ClusterConfig config) {
-      request.config = config;
+    public Builder withMembers(Set<String> members) {
+      request.members = members;
       return this;
     }
 

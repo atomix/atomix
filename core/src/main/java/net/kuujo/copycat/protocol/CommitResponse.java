@@ -15,36 +15,32 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Protocol commit response.
+ * Protocol submit response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommitResponse extends AbstractResponse {
+  public static final int TYPE = -12;
 
   /**
-   * Returns a new commit response builder.
+   * Returns a new submit response builder.
    *
-   * @return A new commit response builder.
+   * @return A new submit response builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
-  private static final ResponseType type = new ResponseType(CommitResponse.class, 9);
   private Object result;
 
-  @Override
-  public ResponseType type() {
-    return type;
-  }
-
   /**
-   * Returns the commit result.
+   * Returns the submit result.
    *
-   * @return The commit result.
+   * @return The submit result.
    */
-  public Object result() {
-    return result;
+  @SuppressWarnings("unchecked")
+  public <T> T result() {
+    return (T) result;
   }
 
   @Override
@@ -61,7 +57,7 @@ public class CommitResponse extends AbstractResponse {
     }
 
     /**
-     * Sets the commit response result.
+     * Sets the submit response result.
      *
      * @param result The response result.
      * @return The response builder.

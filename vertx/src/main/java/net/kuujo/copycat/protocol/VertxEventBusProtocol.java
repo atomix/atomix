@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.spi.ProtocolContext;
+import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
@@ -28,7 +28,7 @@ import java.net.URI;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventBusProtocol implements Protocol {
-  private final VertxProtocolContext context;
+  private final VertxExecutionContext context;
   private final Vertx vertx;
 
   public VertxEventBusProtocol(String host, int port) {
@@ -37,11 +37,11 @@ public class VertxEventBusProtocol implements Protocol {
 
   public VertxEventBusProtocol(Vertx vertx) {
     this.vertx = vertx;
-    this.context = new VertxProtocolContext(vertx);
+    this.context = new VertxExecutionContext(vertx);
   }
 
   @Override
-  public ProtocolContext context() {
+  public ExecutionContext context() {
     return context;
   }
 

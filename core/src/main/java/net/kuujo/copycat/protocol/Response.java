@@ -38,18 +38,18 @@ public interface Response {
   }
 
   /**
-   * Returns the response type.
-   *
-   * @return The response type.
-   */
-  ResponseType type();
-
-  /**
    * Returns the response ID.
    *
    * @return The unique response ID.
    */
   Object id();
+
+  /**
+   * Returns the response member.
+   *
+   * @return The member to which to send the response.
+   */
+  String member();
 
   /**
    * Returns the response status.
@@ -80,6 +80,14 @@ public interface Response {
      * @return The response builder.
      */
     T withId(Object id);
+
+    /**
+     * Sets the response member.
+     *
+     * @param member The member to which to send the response.
+     * @return The response builder.
+     */
+    T withMember(String member);
 
     /**
      * Sets the response status.

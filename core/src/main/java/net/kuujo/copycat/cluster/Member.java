@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.Task;
+
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Cluster member.
  *
@@ -22,10 +26,55 @@ package net.kuujo.copycat.cluster;
 public interface Member {
 
   /**
+   * Member state.
+   */
+  public static enum State {
+    LISTENER,
+    PROMOTABLE,
+    MEMBER,
+    LEADER
+  }
+
+  /**
    * Returns the member URI.
    *
    * @return The member URI.
    */
   String uri();
+
+  /**
+   * Returns the member state.
+   *
+   * @return The member state.
+   */
+  State state();
+
+  /**
+   * Sends a message to the member.
+   *
+   * @param topic The message topic.
+   * @param message The message to send.
+   * @param <T> The message type.
+   * @param <U> The response type.
+   * @return A completable future to be completed with the message response.
+   */
+  <T, U> CompletableFuture<U> send(String topic, T message);
+
+  /**
+   * Executes a task on the member.
+   *
+   * @param task The task to execute.
+   * @return A completable future to be completed once the task has been executed.
+   */
+  CompletableFuture<Void> execute(Task<Void> task);
+
+  /**
+   * Submits a task to the member.
+   *
+   * @param task The task to submit on the member.
+   * @param <T> The task return type.
+   * @return A completable future to be completed with the task result.
+   */
+  <T> CompletableFuture<T> submit(Task<T> task);
 
 }

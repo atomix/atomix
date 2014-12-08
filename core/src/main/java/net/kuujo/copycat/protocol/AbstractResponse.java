@@ -21,12 +21,18 @@ package net.kuujo.copycat.protocol;
  */
 abstract class AbstractResponse implements Response {
   protected Object id;
+  protected String member;
   protected Status status;
   protected Throwable error;
 
   @Override
   public Object id() {
     return id;
+  }
+
+  @Override
+  public String member() {
+    return member;
   }
 
   @Override
@@ -56,6 +62,13 @@ abstract class AbstractResponse implements Response {
     @SuppressWarnings("unchecked")
     public T withId(Object id) {
       response.id = id;
+      return (T) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public T withMember(String member) {
+      response.member = member;
       return (T) this;
     }
 

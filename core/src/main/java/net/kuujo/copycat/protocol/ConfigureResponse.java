@@ -20,6 +20,7 @@ package net.kuujo.copycat.protocol;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ConfigureResponse extends AbstractResponse {
+  public static final int TYPE = -8;
 
   /**
    * Returns a new configure response builder.
@@ -28,13 +29,6 @@ public class ConfigureResponse extends AbstractResponse {
    */
   public static Builder builder() {
     return new Builder();
-  }
-
-  private static final ResponseType type = new ResponseType(ConfigureResponse.class, 3);
-
-  @Override
-  public ResponseType type() {
-    return type;
   }
 
   @Override
