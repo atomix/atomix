@@ -14,16 +14,16 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.RaftContext;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.protocol.RaftProtocol;
 
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Router {
 
-  void createRoutes(Cluster cluster, RaftContext context);
+  void createRoutes(Cluster cluster, RaftProtocol protocol);
 
-  void destroyRoutes(Cluster cluster, RaftContext context);
+  void destroyRoutes(Cluster cluster, RaftProtocol protocol);
 
 }

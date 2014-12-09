@@ -16,12 +16,9 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.EventHandler;
-import net.kuujo.copycat.RaftContext;
-import net.kuujo.copycat.cluster.ClusterContext;
 import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.*;
-import net.kuujo.copycat.spi.ExecutionContext;
+import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,17 +27,17 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractState implements RaftContext {
-  protected final DefaultCopycatContext context;
-  private MessageHandler<PingRequest, PingResponse> pingHandler;
-  private MessageHandler<ConfigureRequest, ConfigureResponse> configureHandler;
-  private MessageHandler<PollRequest, PollResponse> pollHandler;
-  private MessageHandler<SyncRequest, SyncResponse> syncHandler;
-  private MessageHandler<CommitRequest, CommitResponse> commitHandler;
-  private EventHandler applyHandler;
-  private EventHandler<CopycatState, CompletableFuture<CopycatState>> transitionHandler;
+abstract class AbstractState implements RaftProtocol {
+  protected final CopycatStateContext context;
+  protected MessageHandler<PingRequest, PingResponse> pingHandler;
+  protected MessageHandler<ConfigureRequest, ConfigureResponse> configureHandler;
+  protected MessageHandler<PollRequest, PollResponse> pollHandler;
+  protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
+  protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
+  protected EventHandler applyHandler;
+  protected EventHandler<CopycatState, CompletableFuture<CopycatState>> transitionHandler;
 
-  public AbstractState(DefaultCopycatContext context) {
+  protected AbstractState(CopycatStateContext context) {
     this.context = context;
   }
 
@@ -53,19 +50,32 @@ public abstract class AbstractState implements RaftContext {
     return future;
   }
 
-  @Override
-  public ClusterContext cluster() {
-    return context.cluster();
+  /**
+   * Returns the Copycat state represented by this state.
+   *
+   * @return The Copycat state represented by this state.
+   */
+  public abstract CopycatState state();
+
+  /**
+   * Returns the state logger.
+   */
+  protected abstract Logger logger();
+
+  /**
+   * Logs a request.
+   */
+  protected final <R extends Request> R logRequest(R request) {
+    logger().debug("{} - Received {}", context.getLocalMember(), request);
+    return request;
   }
 
-  @Override
-  public Log log() {
-    return context.log();
-  }
-
-  @Override
-  public ExecutionContext executor() {
-    return context.executor();
+  /**
+   * Logs a response.
+   */
+  protected final <R extends Response> R logResponse(R response) {
+    logger().debug("{} - Sent {}", context.getLocalMember(), response);
+    return response;
   }
 
   @Override
@@ -123,6 +133,13 @@ public abstract class AbstractState implements RaftContext {
     return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
   }
 
+  /**
+   * Registers an entry apply handler.
+   *
+   * @param handler The entry apply handler.
+   * @return The abstract state.
+   */
+  @SuppressWarnings("rawtypes")
   public AbstractState applyHandler(EventHandler handler) {
     this.applyHandler = handler;
     return this;

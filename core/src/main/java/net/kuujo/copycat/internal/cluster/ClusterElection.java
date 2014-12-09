@@ -15,10 +15,10 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterContext;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionResult;
+import net.kuujo.copycat.internal.CopycatStateContext;
 
 import java.util.Observable;
 import java.util.Observer;
@@ -29,11 +29,11 @@ import java.util.function.Consumer;
  */
 class ClusterElection implements Election, Observer {
   private final Cluster cluster;
-  private ClusterContext context;
+  private CopycatStateContext context;
   private Consumer<ElectionResult> handler;
   private ElectionResult result;
 
-  ClusterElection(Cluster cluster, ClusterContext context) {
+  ClusterElection(Cluster cluster, CopycatStateContext context) {
     this.cluster = cluster;
     this.context = context;
   }
@@ -41,7 +41,7 @@ class ClusterElection implements Election, Observer {
   @Override
   public void update(Observable o, Object arg) {
     if (result == null) {
-      ClusterContext context = (ClusterContext) o;
+      CopycatStateContext context = (CopycatStateContext) o;
       String leader = context.getLeader();
       if (leader != null) {
         long term = context.getTerm();
@@ -56,7 +56,7 @@ class ClusterElection implements Election, Observer {
         }
       }
     }
-    this.context = (ClusterContext) o;
+    this.context = (CopycatStateContext) o;
   }
 
   @Override

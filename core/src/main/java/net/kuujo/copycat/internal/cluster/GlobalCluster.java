@@ -14,12 +14,12 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.RaftContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
+import net.kuujo.copycat.internal.CopycatStateContext;
 import net.kuujo.copycat.protocol.ConfigureRequest;
 import net.kuujo.copycat.protocol.ConfigureResponse;
 import net.kuujo.copycat.protocol.Request;
@@ -41,19 +41,19 @@ public class GlobalCluster implements ManagedCluster, Observer {
   private final Map<String, GlobalRemoteMember> remoteMembers = new HashMap<>();
   private final Set<String> updating = new HashSet<>();
   private final ClusterElection election;
-  private RaftContext context;
+  private CopycatStateContext context;
   private boolean open;
 
-  public GlobalCluster(Protocol protocol, RaftContext context, Router router, ExecutionContext executor) {
+  public GlobalCluster(Protocol protocol, CopycatStateContext context, Router router, ExecutionContext executor) {
     this.protocol = protocol;
     this.router = router;
     this.executor = executor;
-    this.localMember = new GlobalLocalMember(context.cluster().getLocalMember(), protocol, executor);
-    for (String uri : context.cluster().getRemoteMembers()) {
+    this.localMember = new GlobalLocalMember(context.getLocalMember(), protocol, executor);
+    for (String uri : context.getRemoteMembers()) {
       this.remoteMembers.put(uri, new GlobalRemoteMember(uri, protocol, executor));
     }
     this.context = context;
-    this.election = new ClusterElection(this, context.cluster());
+    this.election = new ClusterElection(this, context);
   }
 
   @Override
@@ -61,7 +61,7 @@ public class GlobalCluster implements ManagedCluster, Observer {
     Iterator<Map.Entry<String, GlobalRemoteMember>> entryIterator = remoteMembers.entrySet().iterator();
     while (entryIterator.hasNext()) {
       Map.Entry<String, GlobalRemoteMember> entry = entryIterator.next();
-      if (!context.cluster().getMembers().contains(entry.getKey())) {
+      if (!context.getMembers().contains(entry.getKey())) {
         entryIterator.remove();
         if (open) {
           entry.getValue().close();
@@ -69,7 +69,7 @@ public class GlobalCluster implements ManagedCluster, Observer {
       }
     }
 
-    for (String uri : context.cluster().getMembers()) {
+    for (String uri : context.getMembers()) {
       if (!localMember.uri().equals(uri) && !remoteMembers.containsKey(uri) && !updating.contains(uri)) {
         GlobalRemoteMember member = new GlobalRemoteMember(uri, protocol, executor);
         if (open) {
@@ -87,12 +87,12 @@ public class GlobalCluster implements ManagedCluster, Observer {
 
   @Override
   public GlobalMember leader() {
-    return context.cluster().getLeader() != null ? member(context.cluster().getLeader()) : null;
+    return context.getLeader() != null ? member(context.getLeader()) : null;
   }
 
   @Override
   public long term() {
-    return context.cluster().getTerm();
+    return context.getTerm();
   }
 
   @Override
@@ -179,8 +179,8 @@ public class GlobalCluster implements ManagedCluster, Observer {
       i++;
     }
     return CompletableFuture.allOf(futures).thenRun(() -> {
-      context.cluster().addObserver(this);
-      context.cluster().addObserver(election);
+      context.addObserver(this);
+      context.addObserver(election);
       router.createRoutes(this, context);
     });
   }
@@ -197,8 +197,8 @@ public class GlobalCluster implements ManagedCluster, Observer {
       i++;
     }
     router.destroyRoutes(this, context);
-    context.cluster().deleteObserver(this);
-    context.cluster().deleteObserver(election);
+    context.deleteObserver(this);
+    context.deleteObserver(election);
     return CompletableFuture.allOf(futures);
   }
 

@@ -14,9 +14,9 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.RaftContext;
 import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.election.Election;
+import net.kuujo.copycat.internal.CopycatStateContext;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -28,35 +28,35 @@ import java.util.concurrent.CompletableFuture;
  */
 public class CoordinatedCluster implements ManagedCluster {
   private final Cluster parent;
-  private final RaftContext state;
+  private final CopycatStateContext state;
   private final Router router;
   private LocalMember localMember;
   private Map<String, Member> remoteMembers = new HashMap<>();
   private final ClusterElection election;
 
-  public CoordinatedCluster(Cluster parent, RaftContext state, Router router) {
+  public CoordinatedCluster(Cluster parent, CopycatStateContext state, Router router) {
     this.parent = parent;
     this.state = state;
     this.router = router;
     this.localMember = new CoordinatedLocalMember(parent.localMember(), state.executor());
-    for (String uri : state.cluster().getRemoteMembers()) {
+    for (String uri : state.getRemoteMembers()) {
       this.remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), state.executor()));
     }
-    this.election = new ClusterElection(this, state.cluster());
+    this.election = new ClusterElection(this, state);
   }
 
-  public RaftContext state() {
+  public CopycatStateContext state() {
     return state;
   }
 
   @Override
   public Member leader() {
-    return state.cluster().getLeader() != null ? member(state.cluster().getLeader()) : null;
+    return state.getLeader() != null ? member(state.getLeader()) : null;
   }
 
   @Override
   public long term() {
-    return state.cluster().getTerm();
+    return state.getTerm();
   }
 
   @Override
@@ -111,7 +111,7 @@ public class CoordinatedCluster implements ManagedCluster {
         remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), state.executor()));
       }
     }
-    state.cluster().setMembers(config.getMembers());
+    state.setMembers(config.getMembers());
     return CompletableFuture.completedFuture(this);
   }
 

@@ -14,14 +14,17 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.cluster.MessageHandler;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Raft protocol.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface RaftProtocol {
+public interface RaftProtocol extends Managed {
 
   /**
    * Sends a protocol configure request.
