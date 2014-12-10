@@ -6,43 +6,42 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat;
 
-import java.io.File;
-import java.util.Date;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Cluster snapshot info.
+ * State machine command annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface SnapshotInfo {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface CommandInfo {
 
   /**
-   * Returns the unique snapshot ID.
-   *
-   * @return The unique snapshot ID.
+   * The command name.
    */
-  String id();
+  String name() default "";
 
   /**
-   * Returns the snapshot file.
-   *
-   * @return The snapshot file.
+   * Indicates whether the command is a read-only command.
    */
-  File file();
+  boolean readOnly() default false;
 
   /**
-   * Returns the snapshot timestamp in milliseconds.
-   *
-   * @return The snapshot timestamp.
+   * Indicates whether the command should be consistently executed.
    */
-  Date timestamp();
+  boolean consistent() default true;
 
 }
