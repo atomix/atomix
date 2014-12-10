@@ -38,12 +38,10 @@ public interface LeaderElection extends Resource {
    * @return The state machine.
    */
   static LeaderElection create(String name, ClusterConfig config, Protocol protocol) {
-    ExecutionContext executor = ExecutionContext.create();
-    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), executor);
+    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), ExecutionContext.create());
     try {
-      return coordinator.<LeaderElection>createResource(name, resource -> new InMemoryLog(), (resource, coord, cluster, context) -> {
-        return (LeaderElection) new DefaultLeaderElection(resource, coord, cluster, context).withShutdownTask(coordinator::close);
-      }).get();
+      coordinator.open().get();
+      return new DefaultLeaderElection(name, coordinator);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

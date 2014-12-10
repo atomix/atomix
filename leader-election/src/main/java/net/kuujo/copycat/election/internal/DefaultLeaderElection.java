@@ -1,12 +1,11 @@
 package net.kuujo.copycat.election.internal;
 
 import net.kuujo.copycat.Coordinator;
-import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.log.InMemoryLog;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -22,8 +21,8 @@ public class DefaultLeaderElection extends AbstractResource implements LeaderEle
     }
   };
 
-  public DefaultLeaderElection(String name, Coordinator coordinator, Cluster cluster, CopycatContext context) {
-    super(name, coordinator, cluster, context);
+  public DefaultLeaderElection(String name, Coordinator coordinator) {
+    super(name, coordinator, resource -> new InMemoryLog());
   }
 
   @Override
