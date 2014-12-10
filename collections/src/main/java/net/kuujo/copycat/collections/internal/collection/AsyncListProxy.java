@@ -13,51 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections;
-
-import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.collection.AsyncListState;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncListState;
-import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
+package net.kuujo.copycat.collections.internal.collection;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Asynchronous list.
+ * Asynchronous list proxy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- *
- * @param <T> The list data type.
  */
-public interface AsyncList<T> extends AsyncCollection<T> {
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  static <T> AsyncList<T> create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param config The cluster configuration.
-   * @param protocol The cluster protocol.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), config, protocol));
-  }
+public interface AsyncListProxy<T> extends AsyncCollectionProxy<T> {
 
   /**
    * Gets a entry at a specific index in the list.

@@ -13,20 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections;
-
-import net.kuujo.copycat.Resource;
+package net.kuujo.copycat.collections.internal.collection;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Asynchronous collection.
+ * Asynchronous collection proxy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- *
- * @param <T> The collection data type.
  */
-public interface AsyncCollection<T> extends Resource {
+public interface AsyncCollectionProxy<T> {
 
   /**
    * Adds a entry to the collection.

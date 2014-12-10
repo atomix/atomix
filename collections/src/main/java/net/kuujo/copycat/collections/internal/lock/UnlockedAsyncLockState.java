@@ -6,28 +6,32 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections.internal;
+package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.Coordinator;
-import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.collections.AsyncSet;
+import net.kuujo.copycat.StateContext;
 
 /**
- * Default asynchronous set implementation.
+ * Unlocked asynchronous lock state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncSet<T> extends AbstractAsyncCollection<T> implements AsyncSet<T> {
+public class UnlockedAsyncLockState implements AsyncLockState {
 
-  public DefaultAsyncSet(String name, Coordinator coordinator, Cluster cluster, CopycatContext context) {
-    super(name, coordinator, cluster, context);
+  @Override
+  public void lock(StateContext<AsyncLockState> context) {
+    context.transition(new LockedAsyncLockState());
+  }
+
+  @Override
+  public void unlock(StateContext<AsyncLockState> context) {
+    throw new IllegalStateException("Cannot unlock unlocked lock");
   }
 
 }

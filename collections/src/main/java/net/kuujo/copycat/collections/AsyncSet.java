@@ -15,16 +15,13 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Coordinator;
+import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.DefaultAsyncSet;
-import net.kuujo.copycat.internal.DefaultCoordinator;
+import net.kuujo.copycat.collections.internal.collection.AsyncSetState;
+import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
+import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSetState;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.log.InMemoryLog;
-import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous set.
@@ -57,15 +54,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, ClusterConfig config, Protocol protocol) {
-    ExecutionContext executor = ExecutionContext.create();
-    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), executor);
-    try {
-      return coordinator.<AsyncSet<T>>createResource(name, resource -> new InMemoryLog(), (resource, coord, cluster, context) -> {
-        return (AsyncSet<T>) new DefaultAsyncSet<T>(resource, coord, cluster, context).withShutdownTask(coordinator::close);
-      }).get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new IllegalStateException(e);
-    }
+    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), config, protocol));
   }
 
 

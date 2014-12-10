@@ -13,16 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections;
-
-import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.AsyncMultiMapState;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMapState;
-import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
+package net.kuujo.copycat.collections.internal.map;
 
 import java.util.Collection;
 import java.util.Map;
@@ -30,41 +21,11 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Asynchronous multi-map.
+ * Asynchronous multimap proxy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- *
- * @param <K> The map key type.
- * @param <V> The map entry type.
  */
-public interface AsyncMultiMap<K, V> extends Resource {
-
-  /**
-   * Creates a new asynchronous multimap.
-   *
-   * @param name The asynchronous multimap name.
-   * @param <K> The multimap key type.
-   * @param <V> The multimap entry type.
-   * @return A new asynchronous multimap.
-   */
-  static <K, V> AsyncMultiMap<K, V> create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
-  }
-
-  /**
-   * Creates a new asynchronous multimap.
-   *
-   * @param name The asynchronous multimap name.
-   * @param config The cluster configuration.
-   * @param protocol The cluster protocol.
-   * @param <K> The multimap key type.
-   * @param <V> The multimap entry type.
-   * @return A new asynchronous multimap.
-   */
-  @SuppressWarnings("unchecked")
-  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncMultiMap(StateMachine.create(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), config, protocol));
-  }
+public interface AsyncMultiMapProxy<K, V> {
 
   /**
    * Sets a key entry in the map.

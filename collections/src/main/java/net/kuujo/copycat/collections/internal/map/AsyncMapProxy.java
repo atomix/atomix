@@ -13,16 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections;
-
-import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.AsyncMapState;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMapState;
-import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
+package net.kuujo.copycat.collections.internal.map;
 
 import java.util.Collection;
 import java.util.Map;
@@ -30,41 +21,11 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Asynchronous map.
+ * Asynchronous map proxy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
- *
- * @param <K> The map key type.
- * @param <V> The map entry type.
  */
-public interface AsyncMap<K, V> extends Resource {
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  static <K, V> AsyncMap<K, V> create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
-  }
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param config The cluster configuration.
-   * @param protocol The cluster protocol.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  @SuppressWarnings("unchecked")
-  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncMap(StateMachine.create(name, AsyncMapState.class, new DefaultAsyncMapState<>(), config, protocol));
-  }
+public interface AsyncMapProxy<K, V> {
 
   /**
    * Sets a key entry in the map.

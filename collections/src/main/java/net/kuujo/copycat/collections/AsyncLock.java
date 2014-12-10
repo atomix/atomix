@@ -14,18 +14,16 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Coordinator;
 import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.DefaultAsyncLock;
-import net.kuujo.copycat.internal.DefaultCoordinator;
+import net.kuujo.copycat.collections.internal.lock.AsyncLockState;
+import net.kuujo.copycat.collections.internal.lock.DefaultAsyncLock;
+import net.kuujo.copycat.collections.internal.lock.UnlockedAsyncLockState;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.log.InMemoryLog;
-import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous lock.
@@ -52,17 +50,8 @@ public interface AsyncLock extends Resource {
    * @param protocol The cluster protocol.
    * @return The asynchronous lock.
    */
-  @SuppressWarnings("unchecked")
   static AsyncLock create(String name, ClusterConfig config, Protocol protocol) {
-    ExecutionContext executor = ExecutionContext.create();
-    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), executor);
-    try {
-      return coordinator.<AsyncLock>createResource(name, resource -> new InMemoryLog(), (resource, coord, cluster, context) -> {
-        return (AsyncLock) new DefaultAsyncLock(resource, coord, cluster, context).withShutdownTask(coordinator::close);
-      }).get();
-    } catch (InterruptedException | ExecutionException e) {
-      throw new IllegalStateException(e);
-    }
+    return new DefaultAsyncLock(StateMachine.<AsyncLockState>create(name, AsyncLockState.class, new UnlockedAsyncLockState(), config, protocol));
   }
 
   /**
