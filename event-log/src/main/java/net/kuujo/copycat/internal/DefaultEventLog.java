@@ -16,9 +16,8 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.ActionOptions;
 import net.kuujo.copycat.Coordinator;
-import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.EventLog;
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.log.InMemoryLog;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -31,8 +30,8 @@ import java.util.function.Consumer;
 public class DefaultEventLog<T> extends AbstractResource implements EventLog<T> {
   private Consumer<T> consumer;
 
-  public DefaultEventLog(String name, Coordinator coordinator, Cluster cluster, CopycatContext context) {
-    super(name, coordinator, cluster, context);
+  public DefaultEventLog(String name, Coordinator coordinator) {
+    super(name, coordinator, resource -> new InMemoryLog());
   }
 
   @Override

@@ -54,12 +54,10 @@ public interface EventLog<T> extends Resource {
    */
   @SuppressWarnings("unchecked")
   static <T> EventLog<T> create(String name, ClusterConfig config, Protocol protocol) {
-    ExecutionContext executor = ExecutionContext.create();
-    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), executor);
+    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), ExecutionContext.create());
     try {
-      return coordinator.<EventLog<T>>createResource(name, resource -> new InMemoryLog(), (resource, coord, cluster, context) -> {
-        return (EventLog<T>) new DefaultEventLog<T>(resource, coord, cluster, context).withShutdownTask(coordinator::close);
-      }).get();
+      coordinator.open().get();
+      return new DefaultEventLog<>(name, coordinator);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }
