@@ -16,6 +16,7 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.spi.LogFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,17 +29,17 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractResource implements Resource {
   protected final String name;
-  protected final Cluster cluster;
-  protected final CopycatContext context;
   protected final Coordinator coordinator;
+  protected Cluster cluster;
+  protected CopycatContext context;
+  private final LogFactory logFactory;
   private final List<Task<CompletableFuture<Void>>> startupTasks = new ArrayList<>();
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = new ArrayList<>();
 
-  public AbstractResource(String name, Coordinator coordinator, Cluster cluster, CopycatContext context) {
+  public AbstractResource(String name, Coordinator coordinator, LogFactory logFactory) {
     this.name = name;
     this.coordinator = coordinator;
-    this.cluster = cluster;
-    this.context = context;
+    this.logFactory = logFactory;
   }
 
   /**
@@ -82,20 +83,27 @@ public abstract class AbstractResource implements Resource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      CompletableFuture<Void>[] futures = new CompletableFuture[startupTasks.size()];
-      for (int i = 0; i < startupTasks.size(); i++) {
-        futures[i] = startupTasks.get(i).execute();
+    coordinator.createResource(name, logFactory).whenComplete((context, error) -> {
+      if (error == null) {
+        this.context = context;
+        context.executor().execute(() -> {
+          CompletableFuture<Void>[] futures = new CompletableFuture[startupTasks.size()];
+          for (int i = 0; i < startupTasks.size(); i++) {
+            futures[i] = startupTasks.get(i).execute();
+          }
+          CompletableFuture.allOf(futures).whenComplete((r, e) -> {
+            if (e == null) {
+              future.complete(null);
+            } else {
+              future.completeExceptionally(e);
+            }
+          });
+        });
+      } else {
+        future.completeExceptionally(error);
       }
-      CompletableFuture.allOf(futures).whenComplete((result, error) -> {
-        if (error == null) {
-          future.complete(null);
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
     });
-    return future.thenCompose(v -> context.open());
+    return future;
   }
 
   @Override
