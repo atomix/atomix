@@ -61,7 +61,7 @@ public interface StateMachine<T extends State> extends Resource {
    * @param <U> The proxy type.
    * @return The proxy object.
    */
-  <U extends StateProxy> U createProxy(Class<U> type);
+  <U> U createProxy(Class<U> type);
 
   /**
    * Submits a command to the state machine.

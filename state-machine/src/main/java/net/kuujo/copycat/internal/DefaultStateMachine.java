@@ -104,7 +104,7 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <U extends StateProxy> U createProxy(Class<U> type) {
+  public <U> U createProxy(Class<U> type) {
     return (U) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{type}, handler);
   }
 
