@@ -16,7 +16,7 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.log.InMemoryLog;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -35,8 +35,8 @@ public class DefaultStateLog<T> extends AbstractResource implements StateLog<T> 
   private Consumer<byte[]> installer;
   private boolean open;
 
-  public DefaultStateLog(String name, Coordinator coordinator, Cluster cluster, CopycatContext context) {
-    super(name, coordinator, cluster, context);
+  public DefaultStateLog(String name, Coordinator coordinator) {
+    super(name, coordinator, resource -> new InMemoryLog());
   }
 
   @Override

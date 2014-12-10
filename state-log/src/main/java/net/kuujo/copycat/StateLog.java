@@ -26,7 +26,6 @@ import net.kuujo.copycat.spi.Protocol;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -57,12 +56,10 @@ public interface StateLog<T> extends Resource {
    */
   @SuppressWarnings("unchecked")
   static <T> StateLog<T> create(String name, ClusterConfig config, Protocol protocol) {
-    ExecutionContext executor = ExecutionContext.create();
-    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), executor);
+    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), ExecutionContext.create());
     try {
-      return coordinator.<StateLog<T>>createResource(name, resource -> new InMemoryLog(), (resource, coord, cluster, context) -> {
-        return (StateLog<T>) new DefaultStateLog<T>(resource, coord, cluster, context).withShutdownTask(coordinator::close);
-      }).get();
+      coordinator.open().get();
+      return new DefaultStateLog<>(name, coordinator);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }
