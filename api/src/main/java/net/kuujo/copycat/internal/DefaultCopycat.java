@@ -18,8 +18,13 @@ import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
-import net.kuujo.copycat.collections.internal.*;
-import net.kuujo.copycat.impl.DefaultStateLog;
+import net.kuujo.copycat.collections.internal.collection.*;
+import net.kuujo.copycat.collections.internal.lock.AsyncLockState;
+import net.kuujo.copycat.collections.internal.lock.DefaultAsyncLock;
+import net.kuujo.copycat.collections.internal.lock.UnlockedAsyncLockState;
+import net.kuujo.copycat.collections.internal.map.*;
+import net.kuujo.copycat.election.LeaderElection;
+import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.log.InMemoryLog;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
@@ -45,58 +50,72 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public <T> CompletableFuture<EventLog<T>> eventLog(String name) {
+  public <T> EventLog<T> eventLog(String name) {
     return eventLog(name, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
   }
 
   @Override
-  public <T> CompletableFuture<EventLog<T>> eventLog(String name, ClusterConfig config) {
-    return coordinator.<EventLog<T>>createResource(name, resource -> new InMemoryLog(), DefaultEventLog::new);
+  public <T> EventLog<T> eventLog(String name, ClusterConfig config) {
+    return new DefaultEventLog<>(name, coordinator);
   }
 
   @Override
-  public <T> CompletableFuture<StateLog<T>> stateLog(String name) {
+  public <T> StateLog<T> stateLog(String name) {
     return stateLog(name, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
   }
 
   @Override
-  public <T> CompletableFuture<StateLog<T>> stateLog(String name, ClusterConfig cluster) {
-    return coordinator.<StateLog<T>>createResource(name, resource -> new InMemoryLog(), DefaultStateLog::new);
+  public <T> StateLog<T> stateLog(String name, ClusterConfig cluster) {
+    return new DefaultStateLog<>(name, coordinator);
   }
 
   @Override
-  public CompletableFuture<StateMachine> stateMachine(String name, StateModel model) {
-    return stateMachine(name, model, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
+  public <T extends State> StateMachine<T> stateMachine(String name, Class<T> stateType, T state) {
+    return stateMachine(name, stateType, state, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
   }
 
   @Override
-  public CompletableFuture<StateMachine> stateMachine(String name, StateModel model, ClusterConfig cluster) {
-    return null;
+  public <T extends State> StateMachine<T> stateMachine(String name, Class<T> stateType, T state, ClusterConfig cluster) {
+    return new DefaultStateMachine<>(stateType, state, stateLog(name, cluster));
   }
 
   @Override
-  public <K, V> CompletableFuture<AsyncMap<K, V>> getMap(String name) {
-    return coordinator.<AsyncMap<K, V>>createResource(name, resource -> new InMemoryLog(), DefaultAsyncMap::new);
+  public LeaderElection election(String name) {
+    return election(name, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
   }
 
   @Override
-  public <K, V> CompletableFuture<AsyncMultiMap<K, V>> getMultiMap(String name) {
-    return coordinator.<AsyncMultiMap<K, V>>createResource(name, resource -> new InMemoryLog(), DefaultAsyncMultiMap::new);
+  public LeaderElection election(String name, ClusterConfig cluster) {
+    return new DefaultLeaderElection(name, coordinator);
   }
 
   @Override
-  public <T> CompletableFuture<AsyncList<T>> getList(String name) {
-    return coordinator.<AsyncList<T>>createResource(name, resource -> new InMemoryLog(), DefaultAsyncList::new);
+  @SuppressWarnings("unchecked")
+  public <K, V> AsyncMap<K, V> getMap(String name) {
+    return new DefaultAsyncMap(stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>()));
   }
 
   @Override
-  public <T> CompletableFuture<AsyncSet<T>> getSet(String name) {
-    return coordinator.<AsyncSet<T>>createResource(name, resource -> new InMemoryLog(), DefaultAsyncSet::new);
+  @SuppressWarnings("unchecked")
+  public <K, V> AsyncMultiMap<K, V> getMultiMap(String name) {
+    return new DefaultAsyncMultiMap(stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>()));
   }
 
   @Override
-  public CompletableFuture<AsyncLock> getLock(String name) {
-    return coordinator.<AsyncLock>createResource(name, resource -> new InMemoryLog(), DefaultAsyncLock::new);
+  @SuppressWarnings("unchecked")
+  public <T> AsyncList<T> getList(String name) {
+    return new DefaultAsyncList(stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>()));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T> AsyncSet<T> getSet(String name) {
+    return new DefaultAsyncSet(stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>()));
+  }
+
+  @Override
+  public AsyncLock getLock(String name) {
+    return new DefaultAsyncLock(stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState()));
   }
 
   @Override
