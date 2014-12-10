@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.ExecutionContext;
@@ -27,6 +28,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface CopycatContext extends Managed {
+
+  /**
+   * Returns the Copycat cluster.
+   *
+   * @return The Copycat cluster.
+   */
+  Cluster cluster();
 
   /**
    * Returns the current Copycat state.

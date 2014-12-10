@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 abstract class ActiveState extends AbstractState {
   private final AtomicBoolean transition = new AtomicBoolean();
 
-  protected ActiveState(CopycatStateContext context) {
+  protected ActiveState(DefaultCopycatStateContext context) {
     super(context);
   }
 

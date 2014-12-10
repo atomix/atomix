@@ -59,6 +59,7 @@ public class GlobalRemoteMember extends GlobalMember {
     return send(topic, USER_ADDRESS, message);
   }
 
+  @Override
   <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
     byte[] bytes = serializer.writeObject(message);

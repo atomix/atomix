@@ -17,6 +17,7 @@ package net.kuujo.copycat.internal.cluster;
 import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -28,24 +29,34 @@ import java.util.concurrent.CompletableFuture;
  */
 public class CoordinatedCluster implements ManagedCluster {
   private final Cluster parent;
-  private final CopycatStateContext state;
+  private CopycatStateContext state;
+  private final ExecutionContext executor;
   private final Router router;
   private LocalMember localMember;
   private Map<String, Member> remoteMembers = new HashMap<>();
-  private final ClusterElection election;
+  private ClusterElection election;
 
-  public CoordinatedCluster(Cluster parent, CopycatStateContext state, Router router) {
+  public CoordinatedCluster(Cluster parent, Router router, ExecutionContext executor) {
     this.parent = parent;
-    this.state = state;
     this.router = router;
-    this.localMember = new CoordinatedLocalMember(parent.localMember(), state.executor());
+    this.executor = executor;
+    this.localMember = new CoordinatedLocalMember(parent.localMember(), executor);
     for (String uri : state.getRemoteMembers()) {
-      this.remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), state.executor()));
+      this.remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), executor));
     }
+  }
+
+  /**
+   * Sets the cluster state.
+   */
+  public void setState(CopycatStateContext state) {
     this.election = new ClusterElection(this, state);
   }
 
-  public CopycatStateContext state() {
+  /**
+   * Returns the cluster state.
+   */
+  public CopycatStateContext getState() {
     return state;
   }
 
@@ -108,7 +119,7 @@ public class CoordinatedCluster implements ManagedCluster {
     }
     for (String uri : config.getRemoteMembers()) {
       if (!remoteMembers.containsKey(uri)) {
-        remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), state.executor()));
+        remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), executor));
       }
     }
     state.setMembers(config.getMembers());

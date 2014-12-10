@@ -36,7 +36,7 @@ class FollowerState extends ActiveState {
   private ScheduledFuture<Void> currentTimer;
   private boolean shutdown;
 
-  FollowerState(CopycatStateContext context) {
+  FollowerState(DefaultCopycatStateContext context) {
     super(context);
   }
 

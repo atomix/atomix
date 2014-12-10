@@ -40,7 +40,7 @@ class LeaderState extends ActiveState {
   private ScheduledFuture<Void> currentTimer;
   private Replicator replicator;
 
-  LeaderState(CopycatStateContext context) {
+  LeaderState(DefaultCopycatStateContext context) {
     super(context);
     this.replicator = new Replicator(context);
   }
@@ -357,7 +357,7 @@ class LeaderState extends ActiveState {
    * Log replicator.
    */
   private class Replicator implements Managed, Observer {
-    private final CopycatStateContext context;
+    private final DefaultCopycatStateContext context;
     private final Map<String, Replica> replicaMap;
     private final List<Replica> replicas;
     private Integer readQuorum;
@@ -365,7 +365,7 @@ class LeaderState extends ActiveState {
     private int quorumIndex;
     private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
 
-    private Replicator(CopycatStateContext context) {
+    private Replicator(DefaultCopycatStateContext context) {
       this.context = context;
       this.replicaMap = new HashMap<>(context.getMembers().size());
       this.replicas = new ArrayList<>(context.getMembers().size());
@@ -381,13 +381,13 @@ class LeaderState extends ActiveState {
 
     @Override
     public void update(Observable o, Object arg) {
-      clusterChanged((CopycatStateContext) o);
+      clusterChanged((DefaultCopycatStateContext) o);
     }
 
     /**
      * Called when the cluster configuration changes.
      */
-    private void clusterChanged(CopycatStateContext context) {
+    private void clusterChanged(DefaultCopycatStateContext context) {
       context.getRemoteMembers().forEach(member -> {
         if (!replicaMap.containsKey(member)) {
           Replica replica = new Replica(member, context);
@@ -541,7 +541,7 @@ class LeaderState extends ActiveState {
   private class Replica {
     private static final int BATCH_SIZE = 100;
     private final String member;
-    private final CopycatStateContext context;
+    private final DefaultCopycatStateContext context;
     private volatile long nextIndex;
     private volatile long matchIndex;
     private volatile long sendIndex;
@@ -549,7 +549,7 @@ class LeaderState extends ActiveState {
     private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
     private final Map<Long, CompletableFuture<Long>> replicateFutures = new HashMap<>(1024);
 
-    private Replica(String member, CopycatStateContext context) {
+    private Replica(String member, DefaultCopycatStateContext context) {
       this.member = member;
       this.context = context;
     }

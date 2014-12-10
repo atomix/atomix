@@ -44,16 +44,30 @@ public class GlobalCluster implements ManagedCluster, Observer {
   private CopycatStateContext context;
   private boolean open;
 
-  public GlobalCluster(Protocol protocol, CopycatStateContext context, Router router, ExecutionContext executor) {
+  public GlobalCluster(ClusterConfig config, Protocol protocol, Router router, ExecutionContext executor) {
     this.protocol = protocol;
     this.router = router;
     this.executor = executor;
-    this.localMember = new GlobalLocalMember(context.getLocalMember(), protocol, executor);
-    for (String uri : context.getRemoteMembers()) {
+    this.localMember = new GlobalLocalMember(config.getLocalMember(), protocol, executor);
+    for (String uri : config.getRemoteMembers()) {
       this.remoteMembers.put(uri, new GlobalRemoteMember(uri, protocol, executor));
     }
-    this.context = context;
     this.election = new ClusterElection(this, context);
+  }
+
+  /**
+   * Sets the state context.
+   */
+  public GlobalCluster setState(CopycatStateContext state) {
+    this.context = context;
+    return this;
+  }
+
+  /**
+   * Returns the state context.
+   */
+  public CopycatStateContext getState() {
+    return context;
   }
 
   @Override
@@ -179,8 +193,10 @@ public class GlobalCluster implements ManagedCluster, Observer {
       i++;
     }
     return CompletableFuture.allOf(futures).thenRun(() -> {
-      context.addObserver(this);
-      context.addObserver(election);
+      if (context instanceof Observable) {
+        ((Observable) context).addObserver(this);
+        ((Observable) context).addObserver(election);
+      }
       router.createRoutes(this, context);
     });
   }
@@ -197,8 +213,10 @@ public class GlobalCluster implements ManagedCluster, Observer {
       i++;
     }
     router.destroyRoutes(this, context);
-    context.deleteObserver(this);
-    context.deleteObserver(election);
+    if (context instanceof Observable) {
+      ((Observable) context).deleteObserver(this);
+      ((Observable) context).deleteObserver(election);
+    }
     return CompletableFuture.allOf(futures);
   }
 

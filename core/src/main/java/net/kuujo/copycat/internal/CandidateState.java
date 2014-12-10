@@ -40,7 +40,7 @@ class CandidateState extends ActiveState {
   private Quorum quorum;
   private ScheduledFuture<Void> currentTimer;
 
-  CandidateState(CopycatStateContext context) {
+  CandidateState(DefaultCopycatStateContext context) {
     super(context);
   }
 

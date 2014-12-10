@@ -15,7 +15,7 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.Coordinator;
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
@@ -28,7 +28,6 @@ import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.LogFactory;
 import net.kuujo.copycat.spi.Protocol;
-import net.kuujo.copycat.spi.ResourceFactory;
 
 import java.io.Serializable;
 import java.util.*;
@@ -41,11 +40,11 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DefaultCoordinator implements Coordinator {
   private final GlobalCluster cluster;
-  private final CopycatStateContext context;
+  private final DefaultCopycatStateContext context;
   private final ExecutionContext executor;
   private final Map<String, ResourceInfo> resources = new HashMap<>();
   @SuppressWarnings("rawtypes")
-  private final Map<String, CoordinatedCluster> clusters = new HashMap<>();
+  private final Map<String, DefaultCopycatStateContext> contexts = new HashMap<>();
   private final Router router = new Router() {
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
@@ -66,8 +65,9 @@ public class DefaultCoordinator implements Coordinator {
   };
 
   public DefaultCoordinator(ClusterConfig config, Protocol protocol, Log log, ExecutionContext executor) {
-    this.context = new CopycatStateContext(config, log, executor);
-    this.cluster = new GlobalCluster(protocol, context, router, executor);
+    this.cluster = new GlobalCluster(config, protocol, router, executor);
+    this.context = new DefaultCopycatStateContext(cluster, config, log, executor);
+    cluster.setState(context);
     this.executor = executor;
   }
 
@@ -78,8 +78,8 @@ public class DefaultCoordinator implements Coordinator {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> createResource(String name, LogFactory logFactory, ResourceFactory<T> resourceFactory) {
-    CompletableFuture<T> future = new CompletableFuture<>();
+  public CompletableFuture<CopycatContext> createResource(String name, LogFactory logFactory) {
+    CompletableFuture<CopycatContext> future = new CompletableFuture<>();
     JoinEntry entry = new JoinEntry();
     entry.resource = name;
     entry.owner = cluster.localMember().uri();
@@ -90,13 +90,15 @@ public class DefaultCoordinator implements Coordinator {
     context.commit(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          CoordinatedCluster cluster = clusters.get(name);
-          if (cluster == null) {
-            CopycatStateContext context = new CopycatStateContext(new ClusterConfig().withLocalMember(this.cluster.localMember().uri()), logFactory.createLog(name), ExecutionContext.create());
-            cluster = new CoordinatedCluster(this.cluster, context, new ResourceRouter(name));
-            clusters.put(name, cluster);
+          DefaultCopycatStateContext context = contexts.get(name);
+          if (context == null) {
+            ExecutionContext executor = ExecutionContext.create();
+            CoordinatedCluster cluster = new CoordinatedCluster(this.cluster, new ResourceRouter(name), executor);
+            context = new DefaultCopycatStateContext(cluster, new ClusterConfig().withLocalMember(this.cluster.localMember().uri()), logFactory.createLog(name), ExecutionContext.create());
+            cluster.setState(context);
+            contexts.put(name, context);
           }
-          future.complete(resourceFactory.createResource(name, this, cluster, context));
+          future.complete(context);
         } else {
           future.completeExceptionally(response.error());
         }
@@ -127,8 +129,9 @@ public class DefaultCoordinator implements Coordinator {
       holder = new ResourceInfo(resource, cluster);
       resources.put(resource, holder);
     }
-    CoordinatedCluster cluster = clusters.get(resource);
-    if (cluster != null) {
+    DefaultCopycatStateContext context = contexts.get(resource);
+    if (context != null) {
+      Cluster cluster = context.cluster();
       Set<String> members = new HashSet<>(holder.members);
       members.remove(cluster.localMember().uri());
       cluster.configure(new ClusterConfig()

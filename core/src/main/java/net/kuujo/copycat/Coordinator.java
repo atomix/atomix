@@ -16,7 +16,6 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.spi.LogFactory;
-import net.kuujo.copycat.spi.ResourceFactory;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,11 +36,9 @@ public interface Coordinator extends Managed {
    *
    * @param name The resource name.
    * @param logFactory The resource log factory.
-   * @param resourceFactory The resource factory.
-   * @param <T> The resource entry type.
    * @return A completable future to be completed once the resource has been registered and created.
    */
-   <T extends Resource> CompletableFuture<T> createResource(String name, LogFactory logFactory, ResourceFactory<T> resourceFactory);
+   CompletableFuture<CopycatContext> createResource(String name, LogFactory logFactory);
 
   /**
    * Deletes an existing resource.
