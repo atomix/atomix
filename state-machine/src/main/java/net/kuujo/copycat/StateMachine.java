@@ -50,7 +50,7 @@ public interface StateMachine<T extends State> extends Resource {
    * @param protocol The state machine cluster protocol.
    * @return The state machine.
    */
-  static <T extends State> StateMachine create(String name, Class<T> stateType, T state, ClusterConfig config, Protocol protocol) {
+  static <T extends State> StateMachine<T> create(String name, Class<T> stateType, T state, ClusterConfig config, Protocol protocol) {
     return new DefaultStateMachine<>(stateType, state, StateLog.create(name, config, protocol));
   }
 
@@ -61,7 +61,7 @@ public interface StateMachine<T extends State> extends Resource {
    * @param <U> The proxy type.
    * @return The proxy object.
    */
-  <U extends StateProxy> U createProxy(Class<T> type);
+  <U extends StateProxy> U createProxy(Class<U> type);
 
   /**
    * Submits a command to the state machine.

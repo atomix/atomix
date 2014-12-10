@@ -78,6 +78,9 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
   };
 
   public DefaultStateMachine(Class<T> stateType, T state, StateLog<List<Object>> log) {
+    if (!stateType.isInterface()) {
+      throw new IllegalArgumentException("State type must be an interface");
+    }
     this.stateType = stateType;
     this.state = state;
     this.log = log;
@@ -101,7 +104,7 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <U extends StateProxy> U createProxy(Class<T> type) {
+  public <U extends StateProxy> U createProxy(Class<U> type) {
     return (U) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{type}, handler);
   }
 
@@ -129,7 +132,7 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
    * Registers commands on the state log.
    */
   private void registerCommands() {
-    for (Method method : stateType.getDeclaredMethods()) {
+    for (Method method : stateType.getMethods()) {
       CommandInfo info = method.getAnnotation(CommandInfo.class);
       if (info == null) {
         log.register(method.getName(), createCommand(method));
