@@ -16,17 +16,14 @@ package net.kuujo.copycat.spi;
 
 import net.kuujo.copycat.internal.util.Services;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Copycat protocol context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ExecutionContext {
+public interface ExecutionContext extends Executor {
 
   /**
    * Creates a new context instance.
@@ -48,18 +45,11 @@ public interface ExecutionContext {
   ScheduledFuture<Void> schedule(Runnable task, long delay, TimeUnit unit);
 
   /**
-   * Executes a task on the context.
+   * Executes a task with a return entry.
    *
    * @param task The task to submit.
-   */
-  void execute(Runnable task);
-
-  /**
-   * Executes a task with a return value.
-   *
-   * @param task The task to submit.
-   * @param <T> The task return value type.
-   * @return A completable future to be completed once the task return value is available.
+   * @param <T> The task return entry type.
+   * @return A completable future to be completed once the task return entry is available.
    */
   <T> CompletableFuture<T> submit(Callable<T> task);
 

@@ -15,7 +15,7 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Protocol submit response.
+ * Protocol commit response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -23,9 +23,9 @@ public class CommitResponse extends AbstractResponse {
   public static final int TYPE = -12;
 
   /**
-   * Returns a new submit response builder.
+   * Returns a new commit response builder.
    *
-   * @return A new submit response builder.
+   * @return A new commit response builder.
    */
   public static Builder builder() {
     return new Builder();
@@ -34,9 +34,9 @@ public class CommitResponse extends AbstractResponse {
   private Object result;
 
   /**
-   * Returns the submit result.
+   * Returns the commit result.
    *
-   * @return The submit result.
+   * @return The commit result.
    */
   @SuppressWarnings("unchecked")
   public <T> T result() {
@@ -57,7 +57,7 @@ public class CommitResponse extends AbstractResponse {
     }
 
     /**
-     * Sets the submit response result.
+     * Sets the commit response result.
      *
      * @param result The response result.
      * @return The response builder.

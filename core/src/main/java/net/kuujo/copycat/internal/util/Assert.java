@@ -23,10 +23,10 @@ public final class Assert {
   private Assert() {}
 
   /**
-   * Validates that a value is not null.
+   * Validates that a entry is not null.
    *
-   * @param value The value to validate.
-   * @throws NullPointerException if {@code value} is null
+   * @param value The entry to validate.
+   * @throws NullPointerException if {@code entry} is null
    */
   public static <T> T isNotNull(T value, String parameterName) {
     if (value == null) {
@@ -36,12 +36,12 @@ public final class Assert {
   }
 
   /**
-   * Validates that a value is null.
+   * Validates that a entry is null.
    *
-   * @param value The value to validate.
+   * @param value The entry to validate.
    * @param message The exception message.
    * @param args A list of message string formatting arguments.
-   * @throws NullPointerException if {@code value} is null
+   * @throws NullPointerException if {@code entry} is null
    */
   public static <T> T isNull(T value, String message, Object... args) {
     if (value != null) {
@@ -67,7 +67,7 @@ public final class Assert {
   /**
    * Validates that a condition applies.
    *
-   * @param value The resulting value to passthrough
+   * @param value The resulting entry to passthrough
    * @param condition The condition to assert.
    * @param message The failure exception message.
    * @param args A list of message string formatting arguments.

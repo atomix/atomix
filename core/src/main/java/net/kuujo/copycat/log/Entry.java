@@ -19,20 +19,23 @@ package net.kuujo.copycat.log;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Entry {
+public abstract class Entry {
+  private long term;
+
+  protected Entry() {
+  }
+
+  protected Entry(long term) {
+    this.term = term;
+  }
 
   /**
    * Returns the entry term.
    *
    * @return The term under which the entry was logged.
    */
-  long term();
-
-  /**
-   * Returns the log entry value.
-   *
-   * @return The log entry value.
-   */
-  Object value();
+  public long term() {
+    return term;
+  }
 
 }

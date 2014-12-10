@@ -34,23 +34,23 @@ public final class Configs {
   }
 
   /**
-   * Loads a configuration value from the given path.
+   * Loads a configuration entry from the given path.
    *
-   * @param path The configuration path from which to load the value.
-   * @param <T> The configuration value type.
-   * @return The configuration value.
+   * @param path The configuration path from which to load the entry.
+   * @param <T> The configuration entry type.
+   * @return The configuration entry.
    */
   public static <T> T load(String path) {
     return load(path, null);
   }
 
   /**
-   * Loads a configuration value from the path, returning a default value if the path does not exist.
+   * Loads a configuration entry from the path, returning a default entry if the path does not exist.
    *
-   * @param path The configuration path from which to load the value.
-   * @param defaultValue The default value to return if the given path does not exist.
-   * @param <T> The configuration value type.
-   * @return The configuration value.
+   * @param path The configuration path from which to load the entry.
+   * @param defaultValue The default entry to return if the given path does not exist.
+   * @param <T> The configuration entry type.
+   * @return The configuration entry.
    */
   @SuppressWarnings("unchecked")
   public static <T> T load(String path, T defaultValue) {

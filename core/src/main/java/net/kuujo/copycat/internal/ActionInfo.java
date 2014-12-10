@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,30 +15,23 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.CopycatState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import net.kuujo.copycat.Action;
+import net.kuujo.copycat.ActionOptions;
 
 /**
- * Start state.
+ * Action info.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class StartState extends AbstractState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(StartState.class);
+class ActionInfo {
+  final String name;
+  final Action action;
+  final ActionOptions options;
 
-  StartState(CopycatStateContext context) {
-    super(context);
-  }
-
-  @Override
-  public CopycatState state() {
-    return CopycatState.START;
-  }
-
-  @Override
-  protected Logger logger() {
-    return LOGGER;
+  public ActionInfo(String name, Action action, ActionOptions options) {
+    this.name = name;
+    this.action = action;
+    this.options = options;
   }
 
 }

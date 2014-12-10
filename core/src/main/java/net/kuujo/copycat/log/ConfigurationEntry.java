@@ -6,38 +6,39 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.CopycatState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Set;
 
 /**
- * Start state.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class StartState extends AbstractState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(StartState.class);
+public class ConfigurationEntry extends Entry {
+  private Set<String> members;
 
-  StartState(CopycatStateContext context) {
-    super(context);
+  public ConfigurationEntry() {
+    super();
   }
 
-  @Override
-  public CopycatState state() {
-    return CopycatState.START;
+  public ConfigurationEntry(long term, Set<String> members) {
+    super(term);
+    this.members = members;
   }
 
-  @Override
-  protected Logger logger() {
-    return LOGGER;
+  /**
+   * Returns the configuration members.
+   *
+   * @return The configuration members.
+   */
+  public Set<String> members() {
+    return members;
   }
 
 }

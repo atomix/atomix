@@ -15,34 +15,68 @@
 package net.kuujo.copycat;
 
 /**
+ * Action options.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SubmitOptions {
+public class ActionOptions {
   private boolean consistent = true;
   private boolean persistent = true;
 
+  /**
+   * Sets whether the action should be executed with consistency.
+   *
+   * @param consistent Whether to execute the action with consistency.
+   */
   public void setConsistent(boolean consistent) {
     this.consistent = consistent;
   }
 
+  /**
+   * Returns whether to execute the action with consistency.
+   *
+   * @return Whether to execute the action with consistency.
+   */
   public boolean isConsistent() {
     return consistent;
   }
 
-  public SubmitOptions withConsistent(boolean consistent) {
+  /**
+   * Sets whether the action should be executed with consistency, returning the options for method chaining.
+   *
+   * @param consistent Whether to execute the action with consistency.
+   * @return The action options.
+   */
+  public ActionOptions withConsistent(boolean consistent) {
     this.consistent = consistent;
     return this;
   }
 
+  /**
+   * Sets whether the action should be persisted to the log.
+   *
+   * @param persistent Whether to persist the action to the log.
+   */
   public void setPersistent(boolean persistent) {
     this.persistent = persistent;
   }
 
+  /**
+   * Returns whether to persist the action to the log.
+   *
+   * @return Whether to persist the action to the log.
+   */
   public boolean isPersistent() {
     return persistent;
   }
 
-  public SubmitOptions withPersistent(boolean persistent) {
+  /**
+   * Sets whether the action should be persisted to the log, returning the options for method chaining.
+   *
+   * @param persistent Whether to persist the action to the log.
+   * @return The action options.
+   */
+  public ActionOptions withPersistent(boolean persistent) {
     this.persistent = persistent;
     return this;
   }

@@ -34,7 +34,6 @@ abstract class AbstractState implements RaftProtocol {
   protected MessageHandler<PollRequest, PollResponse> pollHandler;
   protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
-  protected EventHandler applyHandler;
   protected EventHandler<CopycatState, CompletableFuture<CopycatState>> transitionHandler;
 
   protected AbstractState(CopycatStateContext context) {
@@ -131,18 +130,6 @@ abstract class AbstractState implements RaftProtocol {
   @Override
   public CompletableFuture<CommitResponse> commit(CommitRequest request) {
     return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
-  }
-
-  /**
-   * Registers an entry apply handler.
-   *
-   * @param handler The entry apply handler.
-   * @return The abstract state.
-   */
-  @SuppressWarnings("rawtypes")
-  public AbstractState applyHandler(EventHandler handler) {
-    this.applyHandler = handler;
-    return this;
   }
 
   /**

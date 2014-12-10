@@ -15,57 +15,47 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Protocol submit request.
+ * Protocol commit request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommitRequest extends AbstractRequest {
-  public static final int TYPE = -11;
+  public static final int TYPE = -13;
 
   /**
-   * Returns a new submit request builder.
+   * Returns a new commit request builder.
    *
-   * @return A new submit request builder.
+   * @return A new commit request builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
+  private String action;
   private Object entry;
-  private boolean consistent = true;
-  private boolean persistent = true;
 
   /**
-   * Returns the entry to be committed.
+   * Returns commit action.
    *
-   * @return The entry to be committed.
+   * @return The commit action.
+   */
+  public String action() {
+    return action;
+  }
+
+  /**
+   * Returns the commit entry.
+   *
+   * @return The commit entry.
    */
   @SuppressWarnings("unchecked")
   public <T> T entry() {
     return (T) entry;
   }
 
-  /**
-   * Returns a boolean indicating whether the submit is consistent.
-   *
-   * @return Indicates whether the submit is consistent.
-   */
-  public boolean consistent() {
-    return consistent;
-  }
-
-  /**
-   * Returns a boolean indicating whether the submit is persistent.
-   *
-   * @return Indicates whether the submit is persistent.
-   */
-  public boolean persistent() {
-    return persistent;
-  }
-
   @Override
   public String toString() {
-    return String.format("%s[id=%s, entry=%s]", getClass().getSimpleName(), id, entry);
+    return String.format("%s[id=%s, action=%s]", getClass().getSimpleName(), id, action);
   }
 
   /**
@@ -77,35 +67,24 @@ public class CommitRequest extends AbstractRequest {
     }
 
     /**
-     * Sets the submit request entry.
+     * Sets the request action.
      *
-     * @param entry The submit request entry.
-     * @return The submit request builder.
+     * @param action The request action.
+     * @return The request builder.
+     */
+    public Builder withAction(String action) {
+      request.action = action;
+      return this;
+    }
+
+    /**
+     * Sets the request entry.
+     *
+     * @param entry The request entry.
+     * @return The request builder.
      */
     public Builder withEntry(Object entry) {
       request.entry = entry;
-      return this;
-    }
-
-    /**
-     * Sets whether the submit is consistent.
-     *
-     * @param consistent Whether the submit is persistent.
-     * @return The submit request builder.
-     */
-    public Builder withConsistent(boolean consistent) {
-      request.consistent = consistent;
-      return this;
-    }
-
-    /**
-     * Sets whether the submit is persistent.
-     *
-     * @param persistent Whether the submit is persistent.
-     * @return The submit request builder.
-     */
-    public Builder withPersistent(boolean persistent) {
-      request.persistent = persistent;
       return this;
     }
 

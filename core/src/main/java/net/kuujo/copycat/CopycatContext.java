@@ -17,6 +17,7 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.util.Tuple;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -49,6 +50,35 @@ public interface CopycatContext extends Managed {
   Log log();
 
   /**
+   * Registers an action.
+   *
+   * @param name The action to register.
+   * @param action The action function.
+   * @param <T> The action output type.
+   * @return The Copycat context.
+   */
+  <T, U> CopycatContext register(String name, Action<T, U> action);
+
+  /**
+   * Registers an action.
+   *
+   * @param name The action to register.
+   * @param action The action function.
+   * @param options The action options.
+   * @param <T> The action output type.
+   * @return The Copycat context.
+   */
+  <T, U> CopycatContext register(String name, Action<T, U> action, ActionOptions options);
+
+  /**
+   * Unregisters an action.
+   *
+   * @param name The action to unregister.
+   * @return The Copycat context.
+   */
+  CopycatContext unregister(String name);
+
+  /**
    * Configures the context.
    *
    * @param config The cluster configuration.
@@ -57,33 +87,13 @@ public interface CopycatContext extends Managed {
   CompletableFuture<ClusterConfig> configure(ClusterConfig config);
 
   /**
-   * Commits an entry to the context.
+   * Submits a named action to the context.
    *
+   * @param action The action to submit.
    * @param entry The entry to submit.
-   * @param <T> The entry type.
-   * @param <U> The output type.
-   * @return A completable future to be completed once the entry has been committed.
+   * @param <T> The output type.
+   * @return A completable future to be completed once the action has been committed.
    */
-  <T, U> CompletableFuture<U> submit(T entry);
-
-  /**
-   * Commits an entry to the context.
-   *
-   * @param entry The entry to submit.
-   * @param options The entry submit options.
-   * @param <T> The entry type.
-   * @param <U> The output type.
-   * @return A completable future to be completed once the entry has been committed.
-   */
-  <T, U> CompletableFuture<U> submit(T entry, SubmitOptions options);
-
-  /**
-   * Registers a log handler.
-   *
-   * @param handler A log handler.
-   * @return The Copycat context.
-   */
-  @SuppressWarnings("rawtypes")
-  CopycatContext handler(EventHandler handler);
+  <T, U> CompletableFuture<U> submit(String action, T entry);
 
 }

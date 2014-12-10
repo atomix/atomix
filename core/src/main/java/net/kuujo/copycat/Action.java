@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,36 +16,20 @@
 package net.kuujo.copycat;
 
 /**
+ * Log action.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommandOptions {
-  private boolean consistent = true;
-  private boolean persistent = true;
+@FunctionalInterface
+public interface Action<T, U> {
 
-  public void setConsistent(boolean consistent) {
-    this.consistent = consistent;
-  }
-
-  public boolean isConsistent() {
-    return consistent;
-  }
-
-  public CommandOptions withConsistent(boolean consistent) {
-    this.consistent = consistent;
-    return this;
-  }
-
-  public void setPersistent(boolean persistent) {
-    this.persistent = persistent;
-  }
-
-  public boolean isPersistent() {
-    return persistent;
-  }
-
-  public CommandOptions withPersistent(boolean persistent) {
-    this.persistent = persistent;
-    return this;
-  }
+  /**
+   * Executes the action.
+   *
+   * @param index The action index.
+   * @param entry The action entry.
+   * @return The action result.
+   */
+  U execute(Long index, T entry);
 
 }

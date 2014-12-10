@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.Action;
+import net.kuujo.copycat.ActionOptions;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.EventHandler;
-import net.kuujo.copycat.SubmitOptions;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.election.Election;
@@ -26,10 +26,7 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.spi.ExecutionContext;
 
-import java.util.HashSet;
-import java.util.Observable;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -46,8 +43,7 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
   private MessageHandler<PollRequest, PollResponse> pollHandler;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
-  @SuppressWarnings("rawtypes")
-  private EventHandler applyHandler;
+  private final Map<String, ActionInfo> actions = new HashMap<>();
   private final String localMember;
   private final Set<String> remoteMembers;
   private Election.Status status;
@@ -56,12 +52,16 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
   private String lastVotedFor;
   private long commitIndex;
   private long lastApplied;
+  private long electionTimeout = 500;
+  private long heartbeatInterval = 250;
 
   public CopycatStateContext(ClusterConfig cluster, Log log, ExecutionContext executor) {
     this.localMember = cluster.getLocalMember();
     this.remoteMembers = cluster.getRemoteMembers();
     this.log = log;
     this.executor = executor;
+    this.electionTimeout = cluster.getElectionTimeout();
+    this.heartbeatInterval = cluster.getHeartbeatInterval();
   }
 
   /**
@@ -151,12 +151,14 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
     if (this.leader == null) {
       if (leader != null) {
         this.leader = leader;
+        this.lastVotedFor = null;
         this.status = Election.Status.COMPLETE;
         triggerChangeEvent();
       }
     } else if (leader != null) {
       if (!this.leader.equals(leader)) {
         this.leader = leader;
+        this.lastVotedFor = null;
         this.status = Election.Status.COMPLETE;
         triggerChangeEvent();
       }
@@ -211,10 +213,10 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
    */
   public CopycatStateContext setLastVotedFor(String candidate) {
     // If we've already voted for another candidate in this term then the last voted for candidate cannot be overridden.
-    if (lastVotedFor != null) {
+    if (lastVotedFor != null && candidate != null) {
       throw new IllegalStateException("Already voted for another candidate");
     }
-    if (leader != null) {
+    if (leader != null && candidate != null) {
       throw new IllegalStateException("Cannot cast vote - leader already exists");
     }
     this.lastVotedFor = candidate;
@@ -280,6 +282,46 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
     return lastApplied;
   }
 
+  /**
+   * Sets the state election timeout.
+   *
+   * @param electionTimeout The state election timeout.
+   * @return The Copycat state context.
+   */
+  public CopycatStateContext setElectionTimeout(long electionTimeout) {
+    this.electionTimeout = electionTimeout;
+    return this;
+  }
+
+  /**
+   * Returns the state election timeout.
+   *
+   * @return The state election timeout.
+   */
+  public long getElectionTimeout() {
+    return electionTimeout;
+  }
+
+  /**
+   * Sets the state heartbeat interval.
+   *
+   * @param heartbeatInterval The state heartbeat interval.
+   * @return The Copycat state context.
+   */
+  public CopycatStateContext setHeartbeatInterval(long heartbeatInterval) {
+    this.heartbeatInterval = heartbeatInterval;
+    return this;
+  }
+
+  /**
+   * Returns the state heartbeat interval.
+   *
+   * @return The state heartbeat interval.
+   */
+  public long getHeartbeatInterval() {
+    return heartbeatInterval;
+  }
+
   @Override
   public CopycatState state() {
     return state.state();
@@ -292,7 +334,7 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
 
   @Override
   public Log log() {
-    return null;
+    return log;
   }
 
   @Override
@@ -318,18 +360,40 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
   }
 
   @Override
-  public <T, U> CompletableFuture<U> submit(T entry) {
-    return submit(entry, new SubmitOptions());
+  public <T, U> CopycatContext register(String name, Action<T, U> action) {
+    actions.put(name, new ActionInfo(name, action, new ActionOptions()));
+    return this;
   }
 
   @Override
-  public <T, U> CompletableFuture<U> submit(T entry, SubmitOptions options) {
+  public <T, U> CopycatContext register(String name, Action<T, U> action, ActionOptions options) {
+    actions.put(name, new ActionInfo(name, action, options));
+    return this;
+  }
+
+  @Override
+  public CopycatContext unregister(String name) {
+    actions.remove(name);
+    return this;
+  }
+
+  /**
+   * Returns action info for an action.
+   *
+   * @param name The action name for which to return action info.
+   * @return The action info.
+   */
+  ActionInfo action(String name) {
+    return actions.get(name);
+  }
+
+  @Override
+  public <T, U> CompletableFuture<U> submit(String action, T entry) {
     CompletableFuture<U> future = new CompletableFuture<>();
     CommitRequest request = CommitRequest.builder()
       .withId(UUID.randomUUID().toString())
+      .withMember(getLocalMember())
       .withEntry(entry)
-      .withConsistent(options.isConsistent())
-      .withPersistent(options.isPersistent())
       .build();
     commit(request).whenComplete((response, error) -> {
       if (error == null) {
@@ -405,13 +469,6 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
     return state.commit(request);
   }
 
-  @Override
-  @SuppressWarnings("rawtypes")
-  public CopycatContext handler(EventHandler handler) {
-    this.applyHandler = handler;
-    return this;
-  }
-
   /**
    * Transition handler.
    */
@@ -464,7 +521,6 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
     state.configureHandler(configureHandler);
     state.pollHandler(pollHandler);
     state.commitHandler(commitHandler);
-    state.applyHandler(applyHandler);
     state.transitionHandler(this::transition);
   }
 
@@ -477,7 +533,6 @@ public class CopycatStateContext extends Observable implements CopycatContext, R
     state.configureHandler(null);
     state.pollHandler(null);
     state.commitHandler(null);
-    state.applyHandler(null);
     state.transitionHandler(null);
   }
 
