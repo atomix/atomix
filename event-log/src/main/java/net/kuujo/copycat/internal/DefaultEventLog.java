@@ -14,12 +14,11 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.ActionOptions;
 import net.kuujo.copycat.Coordinator;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.EventLog;
-import net.kuujo.copycat.SubmitOptions;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.internal.util.FluentList;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -34,15 +33,6 @@ public class DefaultEventLog<T> extends AbstractResource implements EventLog<T> 
 
   public DefaultEventLog(String name, Coordinator coordinator, Cluster cluster, CopycatContext context) {
     super(name, coordinator, cluster, context);
-    context.handler(this::handle);
-  }
-
-  @SuppressWarnings("unchecked")
-  private Object handle(Object entry) {
-    if (consumer != null) {
-      consumer.accept((T) entry);
-    }
-    return null;
   }
 
   @Override
@@ -67,8 +57,7 @@ public class DefaultEventLog<T> extends AbstractResource implements EventLog<T> 
 
   @Override
   public CompletableFuture<Long> commit(T entry) {
-    return context.submit(new FluentList().add("add").add(entry), new SubmitOptions().withConsistent(true)
-      .withPersistent(true));
+    return context.submit("commit", entry);
   }
 
   @Override
@@ -103,6 +92,26 @@ public class DefaultEventLog<T> extends AbstractResource implements EventLog<T> 
       }
     });
     return future;
+  }
+
+  /**
+   * Handles a commit.
+   */
+  private long handleCommit(Long index, T entry) {
+    return index;
+  }
+
+  @Override
+  public CompletableFuture<Void> open() {
+    return super.open().thenRunAsync(() -> {
+      context.register("commit", this::handleCommit, new ActionOptions().withConsistent(true).withPersistent(true));
+    }, context.executor());
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    context.unregister("commit");
+    return super.close();
   }
 
 }
