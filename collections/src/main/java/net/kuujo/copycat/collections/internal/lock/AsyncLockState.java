@@ -27,11 +27,15 @@ public interface AsyncLockState extends State {
 
   /**
    * Locks the lock.
+   *
+   * @param context The lock state context.
    */
   void lock(StateContext<AsyncLockState> context);
 
   /**
    * Unlocks the lock.
+   *
+   * @param context The lock state context.
    */
   void unlock(StateContext<AsyncLockState> context);
 

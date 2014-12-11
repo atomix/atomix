@@ -16,11 +16,60 @@
 package net.kuujo.copycat.collections.internal.collection;
 
 import net.kuujo.copycat.State;
+import net.kuujo.copycat.StateContext;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Asynchronous collection state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCollectionState<T> extends State {
+public interface AsyncCollectionState<T extends AsyncCollectionState<T, U>, U> extends State {
+
+  /**
+   * Adds a entry to the collection.
+   *
+   * @param value The entry to add.
+   * @param context The state context.
+   */
+  boolean add(U value, StateContext<T> context);
+
+  /**
+   * Removes a entry from the collection.
+   *
+   * @param value The entry to remove.
+   * @param context The state context.
+   */
+  boolean remove(U value, StateContext<T> context);
+
+  /**
+   * Checks whether the collection contains a entry.
+   *
+   * @param value The entry to check.
+   * @param context The state context.
+   */
+  boolean contains(Object value, StateContext<T> context);
+
+  /**
+   * Gets the current collection size.
+   *
+   * @param context The state context.
+   */
+  int size(StateContext<T> context);
+
+  /**
+   * Checks whether the collection is empty.
+   *
+   * @param context The state context.
+   */
+  boolean isEmpty(StateContext<T> context);
+
+  /**
+   * Clears all values from the collection.
+   *
+   * @param context The state context.
+   */
+  void clear(StateContext<T> context);
+
 }

@@ -15,10 +15,48 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
+import net.kuujo.copycat.StateContext;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Default asynchronous list state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncListState<T> implements AsyncListState<T> {
+public class DefaultAsyncListState<T> extends AbstractAsyncCollectionState<AsyncListState<T>, T> implements AsyncListState<T> {
+
+  @Override
+  protected List<T> createCollection() {
+    return new ArrayList<>();
+  }
+
+  /**
+   * Gets the list from the current state context.
+   */
+  private List<T> getList(StateContext<AsyncListState<T>> context) {
+    List<T> list = context.get("value");
+    if (list == null) {
+      list = createCollection();
+      context.put("value", list);
+    }
+    return list;
+  }
+
+  @Override
+  public T get(int index, StateContext<AsyncListState<T>> context) {
+    return getList(context).get(index);
+  }
+
+  @Override
+  public void set(int index, T value, StateContext<AsyncListState<T>> context) {
+    getList(context).set(index, value);
+  }
+
+  @Override
+  public T remove(int index, StateContext<AsyncListState<T>> context) {
+    return getList(context).remove(index);
+  }
+
 }

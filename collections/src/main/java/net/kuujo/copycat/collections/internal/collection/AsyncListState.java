@@ -15,10 +15,38 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
+import net.kuujo.copycat.StateContext;
+
 /**
  * Asynchronous list state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncListState<T> extends AsyncCollectionState<T> {
+public interface AsyncListState<T> extends AsyncCollectionState<AsyncListState<T>, T> {
+
+  /**
+   * Gets a entry at a specific index in the list.
+   *
+   * @param index The index of the entry to get.
+   * @param context The state context.
+   */
+  T get(int index, StateContext<AsyncListState<T>> context);
+
+  /**
+   * Sets an index in the list.
+   *
+   * @param index The index to set.
+   * @param value The entry to set.
+   * @param context The state context.
+   */
+  void set(int index, T value, StateContext<AsyncListState<T>> context);
+
+  /**
+   * Removes an index in the list.
+   *
+   * @param index The index to remove.
+   * @param context The state context.
+   */
+  T remove(int index, StateContext<AsyncListState<T>> context);
+
 }

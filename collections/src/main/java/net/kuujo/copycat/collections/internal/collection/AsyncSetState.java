@@ -20,5 +20,5 @@ package net.kuujo.copycat.collections.internal.collection;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncSetState<T> extends AsyncCollectionState<T> {
+public interface AsyncSetState<T> extends AsyncCollectionState<AsyncSetState<T>, T> {
 }
