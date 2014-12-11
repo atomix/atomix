@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.netty;
 
-import net.kuujo.copycat2.spi.Context;
+import net.kuujo.copycat.spi.Context;
 
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;

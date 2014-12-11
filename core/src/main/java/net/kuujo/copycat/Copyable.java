@@ -20,4 +20,12 @@ package net.kuujo.copycat;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Copyable<T extends Copyable<T>> {
+
+  /**
+   * Copies the object.
+   *
+   * @return The copied object.
+   */
+  T copy();
+
 }

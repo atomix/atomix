@@ -15,6 +15,7 @@
 package net.kuujo.copycat.log;
 
 import net.kuujo.copycat.Copyable;
+import net.kuujo.copycat.Service;
 import net.kuujo.copycat.spi.CompactionStrategy;
 import net.kuujo.copycat.spi.SyncStrategy;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -27,13 +28,30 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LogConfig implements Copyable<LogConfig> {
+public class LogConfig implements Copyable<LogConfig>, Service {
   private LogType logType;
   private File logDirectory;
   private Serializer serializer;
   private CompactionStrategy compactionStrategy;
   private long compactionFrequency = 60000;
   private SyncStrategy syncStrategy;
+
+  public LogConfig() {
+  }
+
+  private LogConfig(LogConfig config) {
+    logType = config.getLogType();
+    logDirectory = config.getLogDirectory();
+    serializer = config.getSerializer();
+    compactionStrategy = config.getCompactionStrategy();
+    compactionFrequency = config.compactionFrequency;
+    syncStrategy = config.getSyncStrategy();
+  }
+
+  @Override
+  public LogConfig copy() {
+    return null;
+  }
 
   /**
    * Sets the log type.

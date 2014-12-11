@@ -14,12 +14,10 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.ActionOptions;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncLock;
-import net.kuujo.copycat.internal.util.FluentList;
 
 import java.util.concurrent.CompletableFuture;
 

@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat.util.serializer;
 
+import net.kuujo.copycat.Service;
 import net.kuujo.copycat.util.serializer.internal.KryoSerializer;
 
 /**
@@ -21,7 +22,7 @@ import net.kuujo.copycat.util.serializer.internal.KryoSerializer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Serializer {
+public interface Serializer extends Service {
 
   /**
    * Returns a serializer instance.

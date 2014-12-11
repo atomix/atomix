@@ -64,6 +64,26 @@ public final class Services {
   }
 
   /**
+   * Loads a service, applying the service configuration to the given class.
+   *
+   * @param path The path to the service configuration.
+   * @param type The service type.
+   * @param <T> The service type.
+   * @return The service instance.
+   */
+  public static <T> T load(String path, Class<T> type) {
+    Config config = ConfigFactory.load(COPYCAT_CONFIG);
+    if (!config.hasPath(path)) {
+      throw new ConfigurationException(String.format("Missing configuration path %s", path));
+    }
+    try {
+      return applyProperties(path, type.newInstance(), config.getObject(path));
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException(String.format("Failed to instantiate service %s", type));
+    }
+  }
+
+  /**
    * Loads a service object from a class name.
    *
    * @param className The service class name.
