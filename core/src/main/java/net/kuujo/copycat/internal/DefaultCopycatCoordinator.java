@@ -14,8 +14,8 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.Coordinator;
 import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.CopycatCoordinator;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
@@ -30,15 +30,20 @@ import net.kuujo.copycat.spi.LogFactory;
 import net.kuujo.copycat.spi.Protocol;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Copycat coordinator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultCoordinator implements Coordinator {
+public class DefaultCopycatCoordinator implements CopycatCoordinator {
   private final GlobalCluster cluster;
   private final DefaultCopycatStateContext context;
   private final ExecutionContext executor;
@@ -64,7 +69,7 @@ public class DefaultCoordinator implements Coordinator {
     }
   };
 
-  public DefaultCoordinator(ClusterConfig config, Protocol protocol, Log log, ExecutionContext executor) {
+  public DefaultCopycatCoordinator(ClusterConfig config, Protocol protocol, Log log, ExecutionContext executor) {
     this.cluster = new GlobalCluster(config, protocol, router, executor);
     this.context = new DefaultCopycatStateContext(cluster, config, log, executor);
     cluster.setState(context);
@@ -78,29 +83,53 @@ public class DefaultCoordinator implements Coordinator {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<CopycatContext> createResource(String name, LogFactory logFactory) {
+  public CompletableFuture<CopycatContext> join(String name, LogFactory logFactory) {
     CompletableFuture<CopycatContext> future = new CompletableFuture<>();
-    JoinEntry entry = new JoinEntry();
+    ResourceEntry entry = new ResourceEntry();
     entry.resource = name;
     entry.owner = cluster.localMember().uri();
-    CommitRequest request = CommitRequest.builder()
-      .withId(UUID.randomUUID().toString())
-      .withEntry(entry)
-      .build();
-    context.commit(request).whenComplete((response, error) -> {
+    context.<ResourceEntry, Set<String>>submit("join", entry).whenComplete((members, error) -> {
       if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          DefaultCopycatStateContext context = contexts.get(name);
-          if (context == null) {
-            ExecutionContext executor = ExecutionContext.create();
-            CoordinatedCluster cluster = new CoordinatedCluster(this.cluster, new ResourceRouter(name), executor);
-            context = new DefaultCopycatStateContext(cluster, new ClusterConfig().withLocalMember(this.cluster.localMember().uri()), logFactory.createLog(name), ExecutionContext.create());
-            cluster.setState(context);
-            contexts.put(name, context);
+        DefaultCopycatStateContext context = contexts.get(name);
+        if (context == null) {
+          ExecutionContext executor = ExecutionContext.create();
+          members.remove(this.cluster.localMember().uri());
+          CoordinatedCluster cluster = new CoordinatedCluster(this.cluster, new ResourceRouter(name), executor);
+          context = new DefaultCopycatStateContext(cluster, new ClusterConfig().withLocalMember(this.cluster.localMember().uri()).withRemoteMembers(members), logFactory.createLog(name), ExecutionContext.create());
+          cluster.setState(context);
+          contexts.put(name, context);
+        }
+        future.complete(context);
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
+  }
+
+  @Override
+  public CompletableFuture<Void> leave(String name) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    ResourceEntry entry = new ResourceEntry();
+    entry.resource = name;
+    entry.owner = cluster.localMember().uri();
+    context.<ResourceEntry, Boolean>submit("leave", entry).whenComplete((removed, error) -> {
+      if (error == null) {
+        if (removed) {
+          DefaultCopycatStateContext context = contexts.remove(name);
+          if (context != null) {
+            context.close().whenComplete((r, e) -> {
+              if (e == null) {
+                future.complete(null);
+              } else {
+                future.completeExceptionally(e);
+              }
+            });
+          } else {
+            future.complete(null);
           }
-          future.complete(context);
         } else {
-          future.completeExceptionally(response.error());
+          future.complete(null);
         }
       } else {
         future.completeExceptionally(error);
@@ -110,57 +139,116 @@ public class DefaultCoordinator implements Coordinator {
   }
 
   @Override
-  public CompletableFuture<Void> deleteResource(String name) {
-    return CompletableFuture.completedFuture(null);
+  public CompletableFuture<Void> delete(String name) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    ResourceEntry entry = new ResourceEntry();
+    entry.resource = name;
+    entry.owner = cluster.localMember().uri();
+    context.<ResourceEntry, Boolean>submit("delete", entry).whenComplete((removed, error) -> {
+      if (error == null) {
+        if (removed) {
+          DefaultCopycatStateContext context = contexts.remove(name);
+          if (context != null) {
+            context.close().whenComplete((r, e) -> {
+              if (e == null) {
+                future.complete(null);
+              } else {
+                future.completeExceptionally(e);
+              }
+            });
+          } else {
+            future.complete(null);
+          }
+        } else {
+          future.complete(null);
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
   }
 
   /**
    * Handles a join action.
    */
-  private Set<String> join(Long index, JoinEntry entry) {
-    String resource = ((ResourceEntry) entry).resource;
-    String owner = ((ResourceEntry) entry).owner;
+  private Set<String> handleJoin(Long index, ResourceEntry entry) {
+    String resource = entry.resource;
+    String owner = entry.owner;
     ResourceInfo holder = resources.get(resource);
     if (holder != null) {
-      holder.members.add(owner);
+      AtomicInteger count = holder.members.get(owner);
+      if (count == null) {
+        count = new AtomicInteger();
+        holder.members.put(owner, count);
+      }
+      count.incrementAndGet();
     } else {
-      Set<String> cluster = new HashSet<>(50);
-      cluster.add(owner);
-      holder = new ResourceInfo(resource, cluster);
+      holder = new ResourceInfo(resource);
+      holder.members.put(owner, new AtomicInteger(1));
       resources.put(resource, holder);
     }
+
     DefaultCopycatStateContext context = contexts.get(resource);
-    if (context != null) {
+    if (context != null && context.cluster().member(owner) == null) {
       Cluster cluster = context.cluster();
-      Set<String> members = new HashSet<>(holder.members);
+      Set<String> members = new HashSet<>(holder.members.keySet());
       members.remove(cluster.localMember().uri());
       cluster.configure(new ClusterConfig()
         .withLocalMember(cluster.localMember().uri())
         .withRemoteMembers(members));
     }
-    return holder.members;
+    return holder.members.keySet();
   }
 
   /**
    * Handles a leave action.
    */
-  private boolean leave(Long index, LeaveEntry entry) {
-    String resource = ((ResourceEntry) entry).resource;
-    ResourceInfo info = resources.remove(resource);
-    return info != null;
+  private boolean handleLeave(Long index, ResourceEntry entry) {
+    String resource = entry.resource;
+    String owner = entry.owner;
+    ResourceInfo holder = resources.get(resource);
+    if (holder != null) {
+      AtomicInteger count = holder.members.get(owner);
+      if (count != null && count.decrementAndGet() == 0) {
+        holder.members.remove(owner);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Handles a delete action.
+   */
+  private boolean handleDelete(Long index, ResourceEntry entry) {
+    String resource = entry.resource;
+    ResourceInfo holder = resources.remove(resource);
+    DefaultCopycatStateContext context = contexts.remove(resource);
+    if (context != null) {
+      try {
+        context.close().get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+      return true;
+    }
+    return false;
   }
 
   @Override
   public CompletableFuture<Void> open() {
     return CompletableFuture.allOf(cluster.open(), context.open()).thenRun(() -> {
-      context.register("join", this::join).register("leave", this::leave);
+      context.register("join", this::handleJoin)
+        .register("leave", this::handleLeave)
+        .register("delete", this::handleDelete);
     });
   }
 
   @Override
   public CompletableFuture<Void> close() {
     return CompletableFuture.anyOf(cluster.close(), context.close()).thenRun(() -> {
-      context.unregister("join").unregister("leave");
+      context.unregister("join").unregister("leave").unregister("delete");
     });
   }
 
@@ -173,21 +261,9 @@ public class DefaultCoordinator implements Coordinator {
   /**
    * Base resource entry.
    */
-  private abstract static class ResourceEntry implements CoordinatorEntry {
-    protected String resource;
-    protected String owner;
-  }
-
-  /**
-   * Join resource entry.
-   */
-  private static class JoinEntry extends ResourceEntry {
-  }
-
-  /**
-   * Leave resource entry.
-   */
-  private static class LeaveEntry extends ResourceEntry {
+  private static class ResourceEntry implements CoordinatorEntry {
+    private String resource;
+    private String owner;
   }
 
   /**
@@ -195,10 +271,9 @@ public class DefaultCoordinator implements Coordinator {
    */
   private static class ResourceInfo {
     private final String resource;
-    private final Set<String> members;
-    private ResourceInfo(String resource, Set<String> members) {
+    private final Map<String, AtomicInteger> members = new HashMap<>();
+    private ResourceInfo(String resource) {
       this.resource = resource;
-      this.members = members;
     }
   }
 

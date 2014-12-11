@@ -29,13 +29,13 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultStateLog<T> extends AbstractResource implements StateLog<T> {
+public class DefaultStateLog<T> extends AbstractCopycatResource implements StateLog<T> {
   private final Map<String, CommandInfo> commands = new HashMap<>();
   private Supplier<byte[]> snapshotter;
   private Consumer<byte[]> installer;
   private boolean open;
 
-  public DefaultStateLog(String name, Coordinator coordinator) {
+  public DefaultStateLog(String name, CopycatCoordinator coordinator) {
     super(name, coordinator, resource -> new InMemoryLog());
   }
 

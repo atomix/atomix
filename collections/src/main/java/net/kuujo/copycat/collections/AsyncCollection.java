@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.CopycatResource;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <T> The collection data type.
  */
-public interface AsyncCollection<T> extends Resource {
+public interface AsyncCollection<T> extends CopycatResource {
 
   /**
    * Adds a entry to the collection.

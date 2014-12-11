@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateMachine<T extends State> extends Resource {
+public interface StateMachine<T extends State> extends CopycatResource {
 
   /**
    * Creates a new state machine.

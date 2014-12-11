@@ -15,7 +15,7 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.internal.DefaultCoordinator;
+import net.kuujo.copycat.internal.DefaultCopycatCoordinator;
 import net.kuujo.copycat.internal.DefaultEventLog;
 import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.log.InMemoryLog;
@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventLog<T> extends Resource {
+public interface EventLog<T> extends CopycatResource {
 
   /**
    * Creates a new event log.
@@ -54,10 +54,12 @@ public interface EventLog<T> extends Resource {
    */
   @SuppressWarnings("unchecked")
   static <T> EventLog<T> create(String name, ClusterConfig config, Protocol protocol) {
-    Coordinator coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), ExecutionContext.create());
+    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(config, protocol, new InMemoryLog(), ExecutionContext.create());
     try {
       coordinator.open().get();
-      return new DefaultEventLog<>(name, coordinator);
+      DefaultEventLog<T> eventLog = new DefaultEventLog<>(name, coordinator);
+      eventLog.withShutdownTask(coordinator::close);
+      return eventLog;
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

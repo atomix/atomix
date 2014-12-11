@@ -1,10 +1,10 @@
 package net.kuujo.copycat.election.internal;
 
-import net.kuujo.copycat.Coordinator;
+import net.kuujo.copycat.CopycatCoordinator;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
-import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.internal.AbstractCopycatResource;
 import net.kuujo.copycat.log.InMemoryLog;
 
 import java.util.concurrent.CompletableFuture;
@@ -13,7 +13,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultLeaderElection extends AbstractResource implements LeaderElection {
+public class DefaultLeaderElection extends AbstractCopycatResource implements LeaderElection {
   private Consumer<Member> handler;
   private final Consumer<ElectionResult> electionHandler = result -> {
     if (handler != null) {
@@ -21,7 +21,7 @@ public class DefaultLeaderElection extends AbstractResource implements LeaderEle
     }
   };
 
-  public DefaultLeaderElection(String name, Coordinator coordinator) {
+  public DefaultLeaderElection(String name, CopycatCoordinator coordinator) {
     super(name, coordinator, resource -> new InMemoryLog());
   }
 

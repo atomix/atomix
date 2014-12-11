@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.CopycatResource;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.map.AsyncMapState;
@@ -37,7 +37,7 @@ import java.util.concurrent.CompletableFuture;
  * @param <K> The map key type.
  * @param <V> The map entry type.
  */
-public interface AsyncMap<K, V> extends Resource {
+public interface AsyncMap<K, V> extends CopycatResource {
 
   /**
    * Creates a new asynchronous map.

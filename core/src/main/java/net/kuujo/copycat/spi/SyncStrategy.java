@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.internal.AbstractCopycatResource;
 import net.kuujo.copycat.log.Log;
 
 /**
@@ -31,6 +31,6 @@ public interface SyncStrategy {
    * @param log The log to sync.
    * @param context The current Copycat context.
    */
-  void sync(Log log, AbstractResource context);
+  void sync(Log log, AbstractCopycatResource context);
 
 }

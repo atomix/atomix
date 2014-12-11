@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.CopycatResource;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.lock.AsyncLockState;
@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLock extends Resource {
+public interface AsyncLock extends CopycatResource {
 
   /**
    * Creates a new asynchronous lock.

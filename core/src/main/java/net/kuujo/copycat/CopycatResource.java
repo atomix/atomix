@@ -15,37 +15,42 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.spi.LogFactory;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Copycat resource.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Coordinator extends Managed {
+public interface CopycatResource extends Managed {
 
   /**
-   * Return the coordinator cluster.
+   * Returns the resource name.
    *
-   * @return The coordinator cluster.
+   * @return The resource name.
+   */
+  String name();
+
+  /**
+   * Returns the resource cluster.
+   *
+   * @return The resource cluster.
    */
   Cluster cluster();
 
   /**
-   * Creates a new resource.
+   * Returns the current resource state.
    *
-   * @param name The resource name.
-   * @param logFactory The resource log factory.
-   * @return A completable future to be completed once the resource has been registered and created.
+   * @return The current resource state.
    */
-   CompletableFuture<CopycatContext> createResource(String name, LogFactory logFactory);
+  CopycatState state();
 
   /**
-   * Deletes an existing resource.
+   * Deletes the resource.
    *
-   * @param name The resource name.
    * @return A completable future to be completed once the resource has been deleted.
    */
-  CompletableFuture<Void> deleteResource(String name);
+  CompletableFuture<Void> delete();
 
 }

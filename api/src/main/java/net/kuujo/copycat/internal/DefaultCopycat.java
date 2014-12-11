@@ -37,11 +37,11 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultCopycat implements Copycat {
-  private final Coordinator coordinator;
+  private final CopycatCoordinator coordinator;
   private boolean open;
 
   public DefaultCopycat(ClusterConfig config, Protocol protocol, ExecutionContext context) {
-    this.coordinator = new DefaultCoordinator(config, protocol, new InMemoryLog(), context);
+    this.coordinator = new DefaultCopycatCoordinator(config, protocol, new InMemoryLog(), context);
   }
 
   @Override

@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.log.Log;
 
 /**
@@ -30,7 +30,7 @@ public interface CompactionStrategy {
    * @param log The log to compact.
    * @param context The current Copycat context.
    */
-  void compact(Log log, AbstractResource context);
+  void compact(Log log, CopycatContext context);
 
   /**
    * Recovers the given log.
@@ -38,6 +38,6 @@ public interface CompactionStrategy {
    * @param log The log to recover.
    * @param context The current Copycat context.
    */
-  void recover(Log log, AbstractResource context);
+  void recover(Log log, CopycatContext context);
 
 }

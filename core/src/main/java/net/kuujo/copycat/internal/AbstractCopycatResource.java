@@ -27,16 +27,16 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractResource implements Resource {
+public abstract class AbstractCopycatResource implements CopycatResource {
   protected final String name;
-  protected final Coordinator coordinator;
+  protected final CopycatCoordinator coordinator;
   protected Cluster cluster;
   protected CopycatContext context;
   private final LogFactory logFactory;
   private final List<Task<CompletableFuture<Void>>> startupTasks = new ArrayList<>();
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = new ArrayList<>();
 
-  public AbstractResource(String name, Coordinator coordinator, LogFactory logFactory) {
+  public AbstractCopycatResource(String name, CopycatCoordinator coordinator, LogFactory logFactory) {
     this.name = name;
     this.coordinator = coordinator;
     this.logFactory = logFactory;
@@ -48,7 +48,7 @@ public abstract class AbstractResource implements Resource {
    * @param task The startup task to add.
    * @return The Copycat context.
    */
-  public AbstractResource withStartupTask(Task<CompletableFuture<Void>> task) {
+  public AbstractCopycatResource withStartupTask(Task<CompletableFuture<Void>> task) {
     startupTasks.add(task);
     return this;
   }
@@ -59,7 +59,7 @@ public abstract class AbstractResource implements Resource {
    * @param task The shutdown task to remove.
    * @return The Copycat context.
    */
-  public AbstractResource withShutdownTask(Task<CompletableFuture<Void>> task) {
+  public AbstractCopycatResource withShutdownTask(Task<CompletableFuture<Void>> task) {
     shutdownTasks.add(task);
     return this;
   }
@@ -83,7 +83,7 @@ public abstract class AbstractResource implements Resource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    coordinator.createResource(name, logFactory).whenComplete((context, error) -> {
+    coordinator.join(name, logFactory).whenComplete((context, error) -> {
       if (error == null) {
         this.context = context;
         context.executor().execute(() -> {
@@ -110,25 +110,31 @@ public abstract class AbstractResource implements Resource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      CompletableFuture<Void>[] futures = new CompletableFuture[shutdownTasks.size()];
-      for (int i = 0; i < shutdownTasks.size(); i++) {
-        futures[i] = shutdownTasks.get(i).execute();
+    coordinator.leave(name).whenComplete((result, error) -> {
+      if (error == null) {
+        context.executor().execute(() -> {
+          CompletableFuture<Void>[] futures = new CompletableFuture[shutdownTasks.size()];
+          for (int i = 0; i < shutdownTasks.size(); i++) {
+            futures[i] = shutdownTasks.get(i).execute();
+          }
+          CompletableFuture.allOf(futures).whenComplete((r, e) -> {
+            if (e == null) {
+              future.complete(null);
+            } else {
+              future.completeExceptionally(e);
+            }
+          });
+        });
+      } else {
+        future.completeExceptionally(error);
       }
-      CompletableFuture.allOf(futures).whenComplete((result, error) -> {
-        if (error == null) {
-          future.complete(null);
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
     });
     return future.thenCompose(v -> context.close());
   }
 
   @Override
   public CompletableFuture<Void> delete() {
-    return coordinator.deleteResource(name);
+    return coordinator.delete(name);
   }
 
 }
