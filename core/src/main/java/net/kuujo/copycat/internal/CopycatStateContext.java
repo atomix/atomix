@@ -16,7 +16,9 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.election.Election;
+import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.RaftProtocol;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.Set;
 
@@ -27,6 +29,27 @@ import java.util.Set;
  */
 public interface CopycatStateContext extends RaftProtocol {
 
+  /**
+   * Returns info for a named action.
+   *
+   * @param name The action name.
+   * @return The action info.
+   */
+  ActionInfo action(String name);
+
+  /**
+   * Returns the state log.
+   *
+   * @return The state log.
+   */
+  Log log();
+
+  /**
+   * Returns the context executor.
+   *
+   * @return The context executor.
+   */
+  ExecutionContext executor();
 
   /**
    * Returns the local cluster member.

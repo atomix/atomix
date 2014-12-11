@@ -23,6 +23,7 @@ import net.kuujo.copycat.ActionOptions;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SuppressWarnings("rawtypes")
 class ActionInfo {
   final String name;
   final Action action;

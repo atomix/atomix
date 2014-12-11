@@ -291,13 +291,8 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
     return this;
   }
 
-  /**
-   * Returns action info for an action.
-   *
-   * @param name The action name for which to return action info.
-   * @return The action info.
-   */
-  ActionInfo action(String name) {
+  @Override
+  public ActionInfo action(String name) {
     return actions.get(name);
   }
 
