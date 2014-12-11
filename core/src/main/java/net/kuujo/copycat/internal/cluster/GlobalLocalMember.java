@@ -19,8 +19,6 @@ import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -38,7 +36,7 @@ import java.util.concurrent.CompletionStage;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class GlobalLocalMember extends GlobalMember implements LocalMember {
+public class GlobalLocalMember extends GlobalMember implements InternalLocalMember {
   private static final int USER_ADDRESS = -1;
   private static final int SYSTEM_ADDRESS = 0;
   private final ProtocolServer server;
@@ -77,12 +75,13 @@ public class GlobalLocalMember extends GlobalMember implements LocalMember {
   }
 
   @Override
-  public <T, U> GlobalLocalMember handler(String topic, MessageHandler<T, U> handler) {
+  public <T, U> LocalMember handler(String topic, MessageHandler<T, U> handler) {
     return handler != null ? register(topic, USER_ADDRESS, handler) : unregister(topic, USER_ADDRESS);
   }
 
+  @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
-  <T, U> CompletableFuture<U> send(String topic, int address, T message) {
+  public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
     context.execute(() -> {
       Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
@@ -106,18 +105,9 @@ public class GlobalLocalMember extends GlobalMember implements LocalMember {
     return future;
   }
 
-  /**
-   * Registers a message handler.
-   *
-   * @param topic The message topic.
-   * @param address The handler address.
-   * @param handler The message handler.
-   * @param <T> The message type.
-   * @param <U> The return type.
-   * @return The local member.
-   */
+  @Override
   @SuppressWarnings("rawtypes")
-  <T, U> GlobalLocalMember register(String topic, int address, MessageHandler<T, U> handler) {
+  public <T, U> InternalLocalMember register(String topic, int address, MessageHandler<T, U> handler) {
     Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
     if (handlers == null) {
       handlers = new HashMap<>();
@@ -127,17 +117,9 @@ public class GlobalLocalMember extends GlobalMember implements LocalMember {
     return this;
   }
 
-  /**
-   * Registers a message handler.
-   *
-   * @param topic The message topic.
-   * @param address The handler address.
-   * @param <T> The message type.
-   * @param <U> The return type.
-   * @return The local member.
-   */
+  @Override
   @SuppressWarnings("rawtypes")
-  <T, U> GlobalLocalMember unregister(String topic, int address) {
+  public InternalLocalMember unregister(String topic, int address) {
     Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
     if (handlers != null) {
       handlers.remove(address);
@@ -191,17 +173,12 @@ public class GlobalLocalMember extends GlobalMember implements LocalMember {
   }
 
   @Override
+  @SuppressWarnings("rawtypes")
   public CompletableFuture<Void> open() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.listen().whenComplete((result, error) -> {
       server.handler(this::handle);
-      this.<SubmitRequest, SubmitResponse>register("submit", SYSTEM_ADDRESS, request -> {
-        CompletableFuture<SubmitResponse> responseFuture = new CompletableFuture<>();
-        context.execute(() -> {
-          responseFuture.complete(SubmitResponse.builder().setResult(request.task().execute()).build());
-        });
-        return responseFuture;
-      });
+      this.<Task, Object>register("submit", SYSTEM_ADDRESS, request -> context.submit(request::execute));
       context.execute(() -> {
         if (error == null) {
           future.complete(null);

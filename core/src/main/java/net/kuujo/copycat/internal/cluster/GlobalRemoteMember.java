@@ -17,8 +17,6 @@ package net.kuujo.copycat.internal.cluster;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.SubmitRequest;
-import net.kuujo.copycat.protocol.SubmitResponse;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -60,7 +58,7 @@ public class GlobalRemoteMember extends GlobalMember {
   }
 
   @Override
-  <T, U> CompletableFuture<U> send(String topic, int address, T message) {
+  public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
     byte[] bytes = serializer.writeObject(message);
     byte[] topicBytes = topic.getBytes();
@@ -89,15 +87,7 @@ public class GlobalRemoteMember extends GlobalMember {
   @Override
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    this.<SubmitRequest, SubmitResponse>send("submit", SYSTEM_ADDRESS, SubmitRequest.builder().withTask(task).build()).whenComplete((response, error) -> {
-      if (error == null) {
-        future.complete((T) response.result());
-      } else {
-        future.completeExceptionally(error);
-      }
-    });
-    return future;
+    return this.<Task<T>, T>send("submit", SYSTEM_ADDRESS, task);
   }
 
   @Override

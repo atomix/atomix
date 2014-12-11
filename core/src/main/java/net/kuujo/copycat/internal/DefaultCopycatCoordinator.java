@@ -19,12 +19,11 @@ import net.kuujo.copycat.CopycatCoordinator;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.cluster.CoordinatedCluster;
-import net.kuujo.copycat.internal.cluster.GlobalCluster;
-import net.kuujo.copycat.internal.cluster.Router;
-import net.kuujo.copycat.internal.cluster.Topics;
+import net.kuujo.copycat.internal.cluster.*;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.protocol.RaftProtocol;
+import net.kuujo.copycat.protocol.Request;
+import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.LogFactory;
 import net.kuujo.copycat.spi.Protocol;
@@ -53,19 +52,41 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
   private final Router router = new Router() {
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().handler(Topics.CONFIGURE, protocol::configure);
-      cluster.localMember().handler(Topics.PING, protocol::ping);
-      cluster.localMember().handler(Topics.POLL, protocol::poll);
-      cluster.localMember().handler(Topics.SYNC, protocol::sync);
-      cluster.localMember().handler(Topics.COMMIT, protocol::commit);
+      GlobalCluster globalCluster = (GlobalCluster) cluster;
+      protocol.configureHandler(request -> handleOutboundRequest(Topics.CONFIGURE, request, globalCluster));
+      protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, globalCluster));
+      protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, globalCluster));
+      protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, globalCluster));
+      protocol.commitHandler(request -> handleOutboundRequest(Topics.COMMIT, request, globalCluster));
+      globalCluster.localMember().register(Topics.CONFIGURE, 0, protocol::configure);
+      globalCluster.localMember().register(Topics.PING, 0, protocol::ping);
+      globalCluster.localMember().register(Topics.POLL, 0, protocol::poll);
+      globalCluster.localMember().register(Topics.SYNC, 0, protocol::sync);
+      globalCluster.localMember().register(Topics.COMMIT, 0, protocol::commit);
+    }
+    private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(String topic, T request, GlobalCluster cluster) {
+      String uri = request.member();
+      if (uri == null) {
+        CompletableFuture<U> future = new CompletableFuture<>();
+        future.completeExceptionally(new IllegalStateException("Null request member"));
+        return future;
+      }
+      InternalMember member = cluster.member(uri);
+      if (member == null) {
+        CompletableFuture<U> future = new CompletableFuture<>();
+        future.completeExceptionally(new IllegalStateException("Invalid request URI"));
+        return future;
+      }
+      return member.send(topic, 0, request);
     }
     @Override
     public void destroyRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().handler(Topics.CONFIGURE, null);
-      cluster.localMember().handler(Topics.PING, null);
-      cluster.localMember().handler(Topics.POLL, null);
-      cluster.localMember().handler(Topics.SYNC, null);
-      cluster.localMember().handler(Topics.COMMIT, null);
+      GlobalCluster globalCluster = (GlobalCluster) cluster;
+      globalCluster.localMember().unregister(Topics.CONFIGURE, 0);
+      globalCluster.localMember().unregister(Topics.PING, 0);
+      globalCluster.localMember().unregister(Topics.POLL, 0);
+      globalCluster.localMember().unregister(Topics.SYNC, 0);
+      globalCluster.localMember().unregister(Topics.COMMIT, 0);
     }
   };
 
@@ -94,7 +115,7 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
         if (context == null) {
           ExecutionContext executor = ExecutionContext.create();
           members.remove(this.cluster.localMember().uri());
-          CoordinatedCluster cluster = new CoordinatedCluster(this.cluster, new ResourceRouter(name), executor);
+          CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this.cluster, new ResourceRouter(name), executor);
           context = new DefaultCopycatStateContext(cluster, new ClusterConfig().withLocalMember(this.cluster.localMember().uri()).withRemoteMembers(members), logFactory.createLog(name), ExecutionContext.create());
           cluster.setState(context);
           contexts.put(name, context);
@@ -289,43 +310,25 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
 
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().<Request, Response>handler(name, request -> handleInboundRequest(request, protocol));
-      protocol.configureHandler(request -> handleOutboundRequest(request, cluster));
-      protocol.pingHandler(request -> handleOutboundRequest(request, cluster));
-      protocol.pollHandler(request -> handleOutboundRequest(request, cluster));
-      protocol.syncHandler(request -> handleOutboundRequest(request, cluster));
-      protocol.commitHandler(request -> handleOutboundRequest(request, cluster));
-    }
-
-    /**
-     * Handles an inbound protocol request.
-     */
-    @SuppressWarnings("unchecked")
-    private <T extends Request, U extends Response> CompletableFuture<U> handleInboundRequest(T request, RaftProtocol protocol) {
-      if (request instanceof ConfigureRequest) {
-        return (CompletableFuture<U>) protocol.configure((ConfigureRequest) request);
-      } else if (request instanceof PingRequest) {
-        return (CompletableFuture<U>) protocol.ping((PingRequest) request);
-      } else if (request instanceof PollRequest) {
-        return (CompletableFuture<U>) protocol.poll((PollRequest) request);
-      } else if (request instanceof SyncRequest) {
-        return (CompletableFuture<U>) protocol.sync((SyncRequest) request);
-      } else if (request instanceof CommitRequest) {
-        return (CompletableFuture<U>) protocol.commit((CommitRequest) request);
-      } else {
-        CompletableFuture<U> future = new CompletableFuture<>();
-        future.completeExceptionally(new IllegalStateException(String.format("Invalid request type %s", request.getClass())));
-        return future;
-      }
+      cluster.localMember().handler(Topics.CONFIGURE, protocol::configure);
+      cluster.localMember().handler(Topics.PING, protocol::ping);
+      cluster.localMember().handler(Topics.POLL, protocol::poll);
+      cluster.localMember().handler(Topics.SYNC, protocol::sync);
+      cluster.localMember().handler(Topics.COMMIT, protocol::commit);
+      protocol.configureHandler(request -> handleOutboundRequest(Topics.CONFIGURE, request, cluster));
+      protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
+      protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
+      protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
+      protocol.commitHandler(request -> handleOutboundRequest(Topics.COMMIT, request, cluster));
     }
 
     /**
      * Handles an outbound protocol request.
      */
-    private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(T request, Cluster cluster) {
+    private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(String topic, T request, Cluster cluster) {
       Member member = cluster.member(request.member());
       if (member != null) {
-        return member.send(name, request);
+        return member.send(topic, request);
       }
       CompletableFuture<U> future = new CompletableFuture<>();
       future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s", request.member())));

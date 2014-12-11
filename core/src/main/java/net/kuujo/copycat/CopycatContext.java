@@ -18,7 +18,6 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.ExecutionContext;
-import net.kuujo.copycat.util.Tuple;
 
 import java.util.concurrent.CompletableFuture;
 

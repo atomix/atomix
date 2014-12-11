@@ -28,7 +28,8 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatedCluster implements ManagedCluster {
-  private final Cluster parent;
+  private final int id;
+  private final InternalCluster parent;
   private CopycatStateContext state;
   private final ExecutionContext executor;
   private final Router router;
@@ -36,13 +37,14 @@ public class CoordinatedCluster implements ManagedCluster {
   private Map<String, Member> remoteMembers = new HashMap<>();
   private ClusterElection election;
 
-  public CoordinatedCluster(Cluster parent, Router router, ExecutionContext executor) {
+  public CoordinatedCluster(int id, InternalCluster parent, Router router, ExecutionContext executor) {
+    this.id = id;
     this.parent = parent;
     this.router = router;
     this.executor = executor;
-    this.localMember = new CoordinatedLocalMember(parent.localMember(), executor);
+    this.localMember = new CoordinatedLocalMember(id, parent.localMember(), executor);
     for (String uri : state.getRemoteMembers()) {
-      this.remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), executor));
+      this.remoteMembers.put(uri, new CoordinatedMember(id, parent.member(uri), executor));
     }
   }
 
@@ -50,6 +52,7 @@ public class CoordinatedCluster implements ManagedCluster {
    * Sets the cluster state.
    */
   public void setState(CopycatStateContext state) {
+    this.state = state;
     this.election = new ClusterElection(this, state);
   }
 
@@ -119,7 +122,7 @@ public class CoordinatedCluster implements ManagedCluster {
     }
     for (String uri : config.getRemoteMembers()) {
       if (!remoteMembers.containsKey(uri)) {
-        remoteMembers.put(uri, new CoordinatedMember(parent.member(uri), executor));
+        remoteMembers.put(uri, new CoordinatedMember(id, parent.member(uri), executor));
       }
     }
     state.setMembers(config.getMembers());

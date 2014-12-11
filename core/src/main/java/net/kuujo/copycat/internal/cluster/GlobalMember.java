@@ -16,14 +16,12 @@ package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.ManagedMember;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Internal member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class GlobalMember implements ManagedMember {
+public abstract class GlobalMember implements ManagedMember, InternalMember {
   private final String uri;
   private State state;
 
@@ -44,7 +42,5 @@ public abstract class GlobalMember implements ManagedMember {
   public void state(State state) {
     this.state = state;
   }
-
-  abstract <T, U> CompletableFuture<U> send(String topic, int address, T message);
 
 }

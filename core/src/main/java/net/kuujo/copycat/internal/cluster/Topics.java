@@ -42,8 +42,13 @@ public class Topics {
   public static final String SYNC = "sync";
 
   /**
-   * Member submit topic.
+   * Member commit topic.
    */
   public static final String COMMIT = "commit";
+
+  /**
+   * Member submit topic.
+   */
+  public static final String SUBMIT = "submit";
 
 }

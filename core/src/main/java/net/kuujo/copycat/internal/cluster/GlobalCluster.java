@@ -21,8 +21,6 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
 import net.kuujo.copycat.protocol.ConfigureRequest;
-import net.kuujo.copycat.protocol.ConfigureResponse;
-import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
@@ -31,9 +29,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
+ * Global cluster.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class GlobalCluster implements ManagedCluster, Observer {
+public class GlobalCluster implements ManagedCluster, InternalCluster, Observer {
   private final Protocol protocol;
   private final Router router;
   private final ExecutionContext executor;
@@ -59,7 +59,7 @@ public class GlobalCluster implements ManagedCluster, Observer {
    * Sets the state context.
    */
   public GlobalCluster setState(CopycatStateContext state) {
-    this.context = context;
+    this.context = state;
     return this;
   }
 
@@ -100,7 +100,7 @@ public class GlobalCluster implements ManagedCluster, Observer {
   }
 
   @Override
-  public GlobalMember leader() {
+  public InternalMember leader() {
     return context.getLeader() != null ? member(context.getLeader()) : null;
   }
 
@@ -122,7 +122,7 @@ public class GlobalCluster implements ManagedCluster, Observer {
   }
 
   @Override
-  public GlobalMember member(String uri) {
+  public InternalMember member(String uri) {
     GlobalMember member = remoteMembers.get(uri);
     if (member != null) {
       return member;
@@ -150,7 +150,7 @@ public class GlobalCluster implements ManagedCluster, Observer {
   @Override
   public CompletableFuture<Cluster> configure(ClusterConfig configuration) {
     CompletableFuture<Cluster> future = new CompletableFuture<>();
-    this.<ConfigureRequest, ConfigureResponse>send("configure", ConfigureRequest.builder()
+    context.configure(ConfigureRequest.builder()
       .withId(UUID.randomUUID().toString())
       .withMember(localMember.uri())
       .withMembers(configuration.getMembers())
@@ -165,19 +165,6 @@ public class GlobalCluster implements ManagedCluster, Observer {
         future.completeExceptionally(error);
       }
     });
-    return future;
-  }
-
-  /**
-   * Sends a message to the member of the given URI.
-   */
-  private <T extends Request, U extends Response> CompletableFuture<U> send(String topic, T request) {
-    GlobalMember member = member(request.member());
-    if (member != null) {
-      return member.send(topic, 0, request);
-    }
-    CompletableFuture<U> future = new CompletableFuture<>();
-    future.completeExceptionally(new IllegalStateException(String.format("Invalid member URI %s", request.member())));
     return future;
   }
 

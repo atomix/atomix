@@ -22,7 +22,7 @@ package net.kuujo.copycat.protocol;
 abstract class AbstractResponse implements Response {
   protected Object id;
   protected String member;
-  protected Status status;
+  protected Status status = Status.OK;
   protected Throwable error;
 
   @Override

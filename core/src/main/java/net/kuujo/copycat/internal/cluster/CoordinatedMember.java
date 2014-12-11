@@ -26,10 +26,12 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatedMember implements Member {
-  private final Member parent;
+  protected final int id;
+  private final InternalMember parent;
   protected final ExecutionContext context;
 
-  protected CoordinatedMember(Member parent, ExecutionContext context) {
+  protected CoordinatedMember(int id, InternalMember parent, ExecutionContext context) {
+    this.id = id;
     this.parent = parent;
     this.context = context;
   }
@@ -46,7 +48,7 @@ public class CoordinatedMember implements Member {
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    return parent.send(topic, message);
+    return parent.send(topic, id, message);
   }
 
   @Override

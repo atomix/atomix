@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,31 +15,19 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.LocalMember;
-import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.cluster.Cluster;
 
 /**
- * Internal local cluster member.
+ * Internal cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember {
-  private final InternalLocalMember parent;
-
-  public CoordinatedLocalMember(int id, InternalLocalMember parent, ExecutionContext context) {
-    super(id, parent, context);
-    this.parent = parent;
-  }
+public interface InternalCluster extends Cluster {
 
   @Override
-  public <T, U> LocalMember handler(String topic, MessageHandler<T, U> handler) {
-    if (handler != null) {
-      parent.register(topic, id, handler);
-    } else {
-      parent.unregister(topic, id);
-    }
-    return this;
-  }
+  InternalLocalMember localMember();
+
+  @Override
+  InternalMember member(String uri);
 
 }
