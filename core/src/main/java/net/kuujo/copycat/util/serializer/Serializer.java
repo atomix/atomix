@@ -17,6 +17,8 @@ package net.kuujo.copycat.util.serializer;
 import net.kuujo.copycat.Service;
 import net.kuujo.copycat.util.serializer.internal.KryoSerializer;
 
+import java.nio.ByteBuffer;
+
 /**
  * Serializer.
  *
@@ -36,11 +38,11 @@ public interface Serializer extends Service {
   /**
    * Reads an object.
    *
-   * @param bytes The object bytes.
+   * @param buffer The object buffer.
    * @param <T> The object type.
    * @return The object.
    */
-  <T> T readObject(byte[] bytes);
+  <T> T readObject(ByteBuffer buffer);
 
   /**
    * Writes an object.
@@ -49,6 +51,6 @@ public interface Serializer extends Service {
    * @param <T> The object type.
    * @return The object bytes.
    */
-  <T> byte[] writeObject(T object);
+  <T> ByteBuffer writeObject(T object);
 
 }

@@ -17,11 +17,19 @@ package net.kuujo.copycat.spi;
 import net.kuujo.copycat.log.Log;
 
 /**
+ * Log factory.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
 public interface LogFactory {
 
+  /**
+   * Creates a new log instance.
+   *
+   * @param resourceName The log resource name.
+   * @return The log instance.
+   */
   Log createLog(String resourceName);
 
 }

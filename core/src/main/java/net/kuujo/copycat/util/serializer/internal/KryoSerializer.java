@@ -28,27 +28,23 @@ import java.nio.ByteBuffer;
  */
 public class KryoSerializer implements Serializer {
   private final Kryo kryo = new Kryo();
-  private final ByteBuffer buffer = ByteBuffer.allocate(4096);
-  private final ByteBufferInput input = new ByteBufferInput(buffer);
-  private final ByteBufferOutput output = new ByteBufferOutput(buffer);
+  private final ByteBufferInput input = new ByteBufferInput();
+  private final ByteBufferOutput output = new ByteBufferOutput();
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T readObject(byte[] bytes) {
-    buffer.put(bytes);
-    buffer.rewind();
+  public <T> T readObject(ByteBuffer buffer) {
     input.setBuffer(buffer);
-    T object = (T) kryo.readClassAndObject(input);
-    buffer.clear();
-    return object;
+    return (T) kryo.readClassAndObject(input);
   }
 
   @Override
-  public <T> byte[] writeObject(T object) {
+  public <T> ByteBuffer writeObject(T object) {
+    ByteBuffer buffer = ByteBuffer.allocate(4096);
+    output.setBuffer(buffer);
     kryo.writeClassAndObject(output, object);
-    byte[] bytes = output.toBytes();
-    output.clear();
-    return bytes;
+    buffer.rewind();
+    return buffer.compact();
   }
 
 }

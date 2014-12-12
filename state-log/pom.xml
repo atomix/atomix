@@ -26,11 +26,20 @@
   <artifactId>copycat-state-log</artifactId>
   <name>Copycat State Log</name>
 
+  <properties>
+    <chronicle.version>3.2.2</chronicle.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-core</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.openhft</groupId>
+      <artifactId>chronicle</artifactId>
+      <version>${chronicle.version}</version>
     </dependency>
   </dependencies>
 

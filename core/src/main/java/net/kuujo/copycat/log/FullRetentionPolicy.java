@@ -6,38 +6,27 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.spi.RetentionPolicy;
 
 /**
- * Log compaction strategy.
+ * Always retains logs.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CompactionStrategy {
+public class FullRetentionPolicy implements RetentionPolicy {
 
-  /**
-   * Compacts the given log.
-   *
-   * @param log The log to compact.
-   * @param context The current Copycat context.
-   */
-  void compact(Log log, CopycatContext context);
-
-  /**
-   * Recovers the given log.
-   *
-   * @param log The log to recover.
-   * @param context The current Copycat context.
-   */
-  void recover(Log log, CopycatContext context);
+  @Override
+  public boolean retain(LogSegment segment) {
+    return true;
+  }
 
 }

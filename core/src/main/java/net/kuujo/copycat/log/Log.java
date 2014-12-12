@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,157 +15,75 @@
  */
 package net.kuujo.copycat.log;
 
-import java.io.IOException;
-import java.util.List;
+import java.io.File;
+import java.util.Collection;
 
 /**
- * Primary log interface.
+ * Log manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Log {
+public interface Log extends Logger {
 
   /**
-   * Returns the log configuration.
+   * Returns the log base file.
    *
-   * @return The log configuration.
+   * @return The log base file.
    */
-  LogConfig config();
+  File base();
 
   /**
-   * Returns the current size of the log.
+   * Returns the log directory.
    *
-   * @return The current size of the log.
-   * @throws IllegalStateException if the log is not open
+   * @return The log directory.
    */
-  long size();
+  File directory();
 
   /**
-   * Returns a boolean indicating whether the log is empty.
+   * Returns a collection of log segments.
    *
-   * @return Indicates whether the log is empty.
-   * @throws IllegalStateException if the log is not open
+   * @return A collection of log segments.
+   * @throws java.lang.IllegalStateException If the log is not open.
    */
-  boolean isEmpty();
+  Collection<LogSegment> segments();
 
   /**
-   * Appends an entry to the log.
+   * Returns the current log segment.
    *
-   * @param entry The entry to append.
-   * @return The appended entry's index.
+   * @return The current log segment.
    */
-  long appendEntry(Entry entry);
+  LogSegment segment();
 
   /**
-   * Appends a list of entries to the log.
+   * Returns the log segment for the given index.
    *
-   * @param entries A list of entries to append to the log.
-   * @return A list of appended entry indices.
-   * @throws NullPointerException if {@code entries} is null
-   * @throws IllegalStateException if the log is not open
+   * @param index The index for which to return the segment.
+   * @return The log segment.
+   * @throws java.lang.IllegalStateException If the log is not open.
    */
-  List<Long> appendEntries(Entry... entries);
+  LogSegment segment(long index);
 
   /**
-   * Appends a list of entries to the log.
+   * Forces a rotation of the logs.
    *
-   * @param entries A list of entries to append to the log.
-   * @return A list of appended entry indices.
-   * @throws NullPointerException if {@code entries} is null
-   * @throws IllegalStateException if the log is not open
+   * @return The new log segment.
    */
-  List<Long> appendEntries(List<Entry> entries);
+  LogSegment rotate();
 
   /**
-   * Returns a log entry by index.
+   * Returns the first log segment.
    *
-   * @param index The index from which to retrieve the entry.
-   * @return The log entry.
-   * @throws IllegalStateException if the log is not open
+   * @return The first log segment.
+   * @throws java.lang.IllegalStateException If the log is not open.
    */
-  <T extends Entry> T getEntry(long index);
+  LogSegment firstSegment();
 
   /**
-   * Returns a list of entries from the log.
+   * Returns the last log segment.
    *
-   * @param from The index at which to start, inclusive.
-   * @param to The index at which to end, inclusive.
-   * @return A list of log entries.
-   * @throws java.lang.IndexOutOfBoundsException if {@code from} or {@code to} represent a range that is
-   *         out of bounds
+   * @return The last log segment.
+   * @throws java.lang.IllegalStateException If the log is not open.
    */
-  <T extends Entry> List<T> getEntries(long from, long to);
-
-  /**
-   * Returns the first index in the log.
-   *
-   * @return The first index in the log.
-   * @throws IllegalStateException if the log is not open
-   */
-  long firstIndex();
-
-  /**
-   * Returns the first entry in the log.
-   *
-   * @return The first entry in the log.
-   * @throws IllegalStateException if the log is not open
-   */
-  <T extends Entry> T firstEntry();
-
-  /**
-   * Returns the last index in the log.
-   *
-   * @return The last index in the log.
-   * @throws IllegalStateException if the log is not open
-   */
-  long lastIndex();
-
-  /**
-   * Returns the last entry in the log.
-   *
-   * @return The last entry in the log.
-   * @throws IllegalStateException if the log is not open
-   */
-  <T extends Entry> T lastEntry();
-
-  /**
-   * Removes all entries after the given index, exclusive.
-   *
-   * @param index The index after which to remove entries.
-   * @throws IllegalStateException if the log is not open
-   */
-  void removeAfter(long index);
-
-  /**
-   * Forces the log to sync to disk (if the log is persistent).
-   *
-   * @throws IOException If the log file could not be synced.
-   * @throws IllegalStateException if the log is not open
-   */
-  void sync() throws IOException;
-
-  /**
-   * Opens the log.
-   *
-   * @throws IOException If the log could not be opened.
-   * @throws IllegalStateException if the log is already open
-   */
-  void open() throws IOException;
-
-  /**
-   * Returns whether the log is open or not.
-   *
-   * @return true if the log is open
-   * @throws IllegalStateException if the log is not open
-   */
-  boolean isOpen();
-
-  /**
-   * Closes the log.
-   *
-   * @throws IOException If the log file could not be closed.
-   * @throws IllegalStateException if the log is not open
-   */
-  void close() throws IOException;
+  LogSegment lastSegment();
 
 }

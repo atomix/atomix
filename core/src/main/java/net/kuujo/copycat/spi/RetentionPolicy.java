@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.spi;
 
-import java.util.UUID;
-
-import org.testng.annotations.Test;
+import net.kuujo.copycat.log.LogSegment;
 
 /**
- * File log test.
+ * Log retention policy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
-public class ChronicleLogTest extends AbstractLogTest {
-  @Override
-  protected Log createLog() {
-    return new ChronicleLog(String.format("target/test-logs/%s", UUID.randomUUID()));
-  }
+public interface RetentionPolicy {
 
-  @Override
-  protected void deleteLog() throws Throwable {
-    log.delete();
-  }
+  /**
+   * Returns a boolean value indicating whether the given log segment should be retained.
+   *
+   * @param segment The segment to check.
+   * @return Indicates whether the given log segment should be retained.
+   */
+  boolean retain(LogSegment segment);
+
 }

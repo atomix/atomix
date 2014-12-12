@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,71 +16,33 @@
 package net.kuujo.copycat.log;
 
 import net.kuujo.copycat.Copyable;
-import net.kuujo.copycat.Service;
 import net.kuujo.copycat.spi.CompactionStrategy;
-import net.kuujo.copycat.spi.SyncStrategy;
-import net.kuujo.copycat.util.serializer.Serializer;
+import net.kuujo.copycat.spi.RetentionPolicy;
 
 import java.io.File;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Log configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LogConfig implements Copyable<LogConfig>, Service {
-  private LogType logType;
-  private File logDirectory;
-  private Serializer serializer;
-  private CompactionStrategy compactionStrategy;
-  private long compactionFrequency = 60000;
-  private SyncStrategy syncStrategy;
+public class LogConfig implements Copyable<LogConfig> {
+  private File directory = new File(System.getProperty("java.io.tmpdir"), "copycat");
+  private int segmentSize = 1024 * 1024;
+  private long flushInterval = Long.MAX_VALUE;
+  private long compactInterval = 30 * 60 * 1000;
+  private CompactionStrategy compactionStrategy = log -> {};
+  private RetentionPolicy retentionPolicy = log -> true;
 
   public LogConfig() {
   }
 
   private LogConfig(LogConfig config) {
-    logType = config.getLogType();
-    logDirectory = config.getLogDirectory();
-    serializer = config.getSerializer();
-    compactionStrategy = config.getCompactionStrategy();
-    compactionFrequency = config.compactionFrequency;
-    syncStrategy = config.getSyncStrategy();
   }
 
   @Override
   public LogConfig copy() {
-    return null;
-  }
-
-  /**
-   * Sets the log type.
-   *
-   * @param type The log type.
-   */
-  public void setLogType(LogType type) {
-    this.logType = type;
-  }
-
-  /**
-   * Returns the log type.
-   *
-   * @return The log type.
-   */
-  public LogType getLogType() {
-    return logType;
-  }
-
-  /**
-   * Sets the log type.
-   *
-   * @param type The log type.
-   * @return The log builder.
-   */
-  public LogConfig withLogType(LogType type) {
-    setLogType(type);
-    return this;
+    return new LogConfig(this);
   }
 
   /**
@@ -87,8 +50,8 @@ public class LogConfig implements Copyable<LogConfig>, Service {
    *
    * @param directory The log directory.
    */
-  public void setLogDirectory(String directory) {
-    this.logDirectory = new File(directory);
+  public void setDirectory(String directory) {
+    this.directory = new File(directory);
   }
 
   /**
@@ -96,8 +59,8 @@ public class LogConfig implements Copyable<LogConfig>, Service {
    *
    * @param directory The log directory.
    */
-  public void setLogDirectory(File directory) {
-    this.logDirectory = directory;
+  public void setDirectory(File directory) {
+    this.directory = directory;
   }
 
   /**
@@ -105,58 +68,116 @@ public class LogConfig implements Copyable<LogConfig>, Service {
    *
    * @return The log directory.
    */
-  public File getLogDirectory() {
-    return logDirectory;
+  public File getDirectory() {
+    return directory;
   }
 
   /**
-   * Sets the log directory.
+   * Sets the log directory, returning the log configuration for method chaining.
    *
    * @param directory The log directory.
-   * @return The log builder.
-   */
-  public LogConfig withLogDirectory(String directory) {
-    setLogDirectory(directory);
-    return this;
-  }
-
-  /**
-   * Sets the log directory.
-   *
-   * @param directory The log directory.
-   * @return The log builder.
-   */
-  public LogConfig withLogDirectory(File directory) {
-    setLogDirectory(directory);
-    return this;
-  }
-
-  /**
-   * Sets the log serializer.
-   *
-   * @param serializer The log serializer.
-   */
-  public void setSerializer(Serializer serializer) {
-    this.serializer = serializer;
-  }
-
-  /**
-   * Returns the log serializer.
-   *
-   * @return The log serializer.
-   */
-  public Serializer getSerializer() {
-    return serializer;
-  }
-
-  /**
-   * Sets the log serializer, returning the log configuration for method chaining.
-   *
-   * @param serializer The log serializer.
    * @return The log configuration.
    */
-  public LogConfig withSerializer(Serializer serializer) {
-    setSerializer(serializer);
+  public LogConfig withDirectory(String directory) {
+    this.directory = new File(directory);
+    return this;
+  }
+
+  /**
+   * Sets the log directory, returning the log configuration for method chaining.
+   *
+   * @param directory The log directory.
+   * @return The log configuration.
+   */
+  public LogConfig withDirectory(File directory) {
+    this.directory = directory;
+    return this;
+  }
+
+  /**
+   * Sets the log segment size.
+   *
+   * @param segmentSize The log segment size.
+   */
+  public void setSegmentSize(int segmentSize) {
+    this.segmentSize = segmentSize;
+  }
+
+  /**
+   * Returns the log segment size.
+   *
+   * @return The log segment size.
+   */
+  public int getSegmentSize() {
+    return segmentSize;
+  }
+
+  /**
+   * Sets the log segment size, returning the log configuration for method chaining.
+   *
+   * @param segmentSize The log segment size.
+   * @return The log configuration.
+   */
+  public LogConfig withSegmentSize(int segmentSize) {
+    this.segmentSize = segmentSize;
+    return this;
+  }
+
+  /**
+   * Sets the log flush interval.
+   *
+   * @param flushInterval The log flush interval.
+   */
+  public void setFlushInterval(long flushInterval) {
+    this.flushInterval = flushInterval;
+  }
+
+  /**
+   * Returns the log flush interval.
+   *
+   * @return The log flush interval.
+   */
+  public long getFlushInterval() {
+    return flushInterval;
+  }
+
+  /**
+   * Sets the log flush interval, returning the log configuration for method chaining.
+   *
+   * @param flushInterval The log flush interval.
+   * @return The log configuration.
+   */
+  public LogConfig withFlushInterval(long flushInterval) {
+    this.flushInterval = flushInterval;
+    return this;
+  }
+
+  /**
+   * Sets the log compact interval.
+   *
+   * @param compactInterval The log compact interval.
+   */
+  public void setCompactInterval(long compactInterval) {
+    this.compactInterval = compactInterval;
+  }
+
+  /**
+   * Returns the log compact interval.
+   *
+   * @return The log compact interval.
+   */
+  public long getCompactInterval() {
+    return compactInterval;
+  }
+
+  /**
+   * Sets the log compact interval, returning the log configuration for method chaining.
+   *
+   * @param compactInterval The log compact interval.
+   * @return The log configuration.
+   */
+  public LogConfig withCompactInterval(long compactInterval) {
+    this.compactInterval = compactInterval;
     return this;
   }
 
@@ -179,93 +200,42 @@ public class LogConfig implements Copyable<LogConfig>, Service {
   }
 
   /**
-   * Sets the log compaction strategy.
+   * Sets the log compaction strategy, returning the log configuration for method chaining.
    *
    * @param compactionStrategy The log compaction strategy.
-   * @return The log builder.
+   * @return The log configuration.
    */
   public LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy) {
-    setCompactionStrategy(compactionStrategy);
+    this.compactionStrategy = compactionStrategy;
     return this;
   }
 
   /**
-   * Sets the log compaction frequency.
+   * Sets the log retention policy.
    *
-   * @param frequency The frequency at which to compact the log.
+   * @param retentionPolicy The log retention policy.
    */
-  public void setCompactionFrequency(long frequency) {
-    this.compactionFrequency = frequency;
+  public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
+    this.retentionPolicy = retentionPolicy;
   }
 
   /**
-   * Sets the log compaction frequency.
+   * Returns the log retention policy.
    *
-   * @param frequency The frequency at which to compact the log.
-   * @param unit The frequency time unit.
+   * @return The log retention policy.
    */
-  public void setCompactionFrequency(long frequency, TimeUnit unit) {
-    setCompactionFrequency(unit.toMillis(frequency));
+  public RetentionPolicy getRetentionPolicy() {
+    return retentionPolicy;
   }
 
   /**
-   * Returns the log compaction frequency.
+   * Sets the log retention policy, returning the log configuration for method chaining.
    *
-   * @return The frequency at which the log is compacted.
-   */
-  public long getCompactionFrequency() {
-    return compactionFrequency;
-  }
-
-  /**
-   * Sets the log compaction frequency, returning the log configuration for method chaining.
-   *
-   * @param frequency The frequency at which to compact the log.
+   * @param retentionPolicy The log retention policy.
    * @return The log configuration.
    */
-  public LogConfig withCompactionFrequency(long frequency) {
-    setCompactionFrequency(frequency);
-    return this;
-  }
-
-  /**
-   * Sets the log compaction frequency, returning the log configuration for method chaining.
-   *
-   * @param frequency The frequency at which to compact the log.
-   * @param unit The frequency time unit.
-   * @return The log configuration.
-   */
-  public LogConfig withCompactionFrequency(long frequency, TimeUnit unit) {
-    setCompactionFrequency(frequency, unit);
-    return this;
-  }
-
-  /**
-   * Sets the log sync strategy.
-   *
-   * @param syncStrategy The log sync strategy.
-   */
-  public void setSyncStrategy(SyncStrategy syncStrategy) {
-    this.syncStrategy = syncStrategy;
-  }
-
-  /**
-   * Returns the log sync strategy.
-   *
-   * @return The log sync strategy.
-   */
-  public SyncStrategy getSyncStrategy() {
-    return syncStrategy;
-  }
-
-  /**
-   * Sets the log sync strategy, returning the log configuration for method chaining.
-   *
-   * @param syncStrategy The log sync strategy.
-   * @return The log configuration.
-   */
-  public LogConfig withSyncStrategy(SyncStrategy syncStrategy) {
-    setSyncStrategy(syncStrategy);
+  public LogConfig withRetentionPolicy(RetentionPolicy retentionPolicy) {
+    this.retentionPolicy = retentionPolicy;
     return this;
   }
 

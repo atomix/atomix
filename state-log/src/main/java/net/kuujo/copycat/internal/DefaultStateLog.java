@@ -17,7 +17,9 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.LogConfig;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -31,12 +33,12 @@ import java.util.function.Supplier;
  */
 public class DefaultStateLog<T> extends AbstractCopycatResource implements StateLog<T> {
   private final Map<String, CommandInfo> commands = new HashMap<>();
-  private Supplier<byte[]> snapshotter;
-  private Consumer<byte[]> installer;
+  private Supplier<ByteBuffer> snapshotter;
+  private Consumer<ByteBuffer> installer;
   private boolean open;
 
-  public DefaultStateLog(String name, CopycatCoordinator coordinator) {
-    super(name, coordinator, resource -> new InMemoryLog());
+  public DefaultStateLog(String name, CopycatCoordinator coordinator, LogConfig config) {
+    super(name, coordinator, resource -> new InMemoryLog(resource, config));
   }
 
   @Override
@@ -63,13 +65,13 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
   }
 
   @Override
-  public StateLog<T> snapshotter(Supplier<byte[]> snapshotter) {
+  public StateLog<T> snapshotter(Supplier<ByteBuffer> snapshotter) {
     this.snapshotter = snapshotter;
     return this;
   }
 
   @Override
-  public StateLog<T> installer(Consumer<byte[]> installer) {
+  public StateLog<T> installer(Consumer<ByteBuffer> installer) {
     this.installer = installer;
     return this;
   }
@@ -83,7 +85,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
     for (CommandInfo command : commands.values()) {
-      context.register(command.name, (index, entry) -> command.command.execute(entry), new ActionOptions()
+      context.register(command.name, command::execute, new ActionOptions()
         .withConsistent(true)
         .withPersistent(command.options.isReadOnly()));
     }
@@ -108,7 +110,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
    * State command info.
    */
   @SuppressWarnings("rawtypes")
-  private static class CommandInfo {
+  private class CommandInfo {
     private final String name;
     private final Command command;
     private final CommandOptions options;
@@ -117,6 +119,11 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
       this.name = name;
       this.command = command;
       this.options = options;
+    }
+
+    @SuppressWarnings("unchecked")
+    private Object execute(Long index, Object entry) {
+      return command.execute(entry);
     }
   }
 
