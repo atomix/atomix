@@ -80,17 +80,17 @@ point to the same local replicated log.
 ```java
 Copycat copycat = Copycat.create();
 
-copycat.eventLog("events").whenComplete((log, error) -> {
-  log.consumer(entry -> System.out.println("Got event " + entry));
-  log.commit("Hello world!").thenRun(() -> {
-    log.commit("Hello world again!").thenRun(() -> {
-      log.commit("Hello world once more!").thenRun(() -> {
-        log.replay().thenRun(() -> {
-          log.get(2).whenComplete((entry, error) -> {
-            if (error != null) {
-              System.out.println(entry);
-            }
-          });
+EventLog log = copycat.eventLog("events");
+
+eventLog.consumer(entry -> System.out.println("Got event " + entry));
+log.commit("Hello world!").thenRun(() -> {
+  log.commit("Hello world again!").thenRun(() -> {
+    log.commit("Hello world once more!").thenRun(() -> {
+      log.replay().thenRun(() -> {
+        log.get(2).whenComplete((entry, error) -> {
+          if (error != null) {
+            System.out.println(entry);
+          }
         });
       });
     });
@@ -110,46 +110,70 @@ Hello world again!
 
 ### State machine
 The state machine is a strongly consistent persistent log.
+
+```java
+public interface MyState {
+
+  void put(String key, Object value);
+
+  Object get(String key);
+
+}
+```
+
+```java
+public interface MyStateProxy {
+
+  CompletableFuture<Void> put(String key, Object value);
+
+  CompletableFuture<Object> get(String key);
+
+}
+```
+
 ```java
 Copycat copycat = Copycat.create();
 
-StateModel model = StateModel.builder()
-  .withStartState(State.builder()
-    .addCommand("get", key -> map.get(key))
-    .addCommand("set", args -> map.put(args[0], args[1])
-    .withSnapshotProvider(() -> map)
-    .withSnapshotInstaller(map -> this.map = map)
-    .build())
-  .build();
+StateMachine stateMachine = model.stateMachine("state", MyState.class, new MyInitialState());
 
-copycat.stateMachine("state-machine").whenComplete((stateMachine, error) -> {
-  stateMachine.submit("set", new String[]{"foo", "bar"}).thenRun(() -> {
-    stateMachine.submit("get", "foo").whenComplete((result, error) -> {
-      System.out.println("foo is " + result);
-    });
+MyStateProxy asyncProxy = stateMachine.createProxy(MyStateProxy.class);
+asyncProxy.put("foo", "Hello world!").thenRun(() -> {
+  asyncProxy.get("foo").thenAccept(result -> {
+    System.out.println("foo is " + result);
   });
 });
+
+MyState syncProxy = stateMachine.createProxy(MyStateProxy.class);
+syncProxy.put("foo", "Hello world!");
+Object result = syncProxy.get("foo");
+System.out.println("foo is " + result);
 ```
 
 ### Consistent distributed data structures
 ```java
 Copycat copcyat = Copycat.create();
 
-copycat.getMap("foo").thenAccept(map -> {
-  map.put("foo", "bar").thenRun(() -> {
-    map.get("foo").thenAccept(result -> {
-      System.out.println("foo is " + result);
-    });
+AsyncMap<String, String> asyncMap = copycat.getMap("foo");
+asyncMap.put("foo", "bar").thenRun(() -> {
+  asyncMap.get("foo").thenAccept(result -> {
+    System.out.println("foo is " + result);
   });
 });
 
-copycat.getList("bar").thenAccept(list -> {
-  list.add("Hello world!").thenRun(() -> {
-    list.get(0).thenAccept(result -> {
-      System.out.println("list index 0 is " + result);
-    });
+Map<String, String> map = copycat.getSyncMap("foo");
+map.put("foo", "bar");
+System.out.println("foo is " + map.get("foo"));
+
+AsyncList<String> asyncList = copycat.getList("bar");
+asyncList.add("Hello world!").thenRun(() -> {
+  asyncList.get(0).thenAccept(result -> {
+    System.out.println("list index 0 is " + result);
   });
 });
+
+List<String> list = copycat.getSyncList("bar");
+list.add("Hello world!");
+System.out.println("list index 0 is " + list.get(0));
 ```
 
 ### Messaging
@@ -182,7 +206,7 @@ copycat.cluster.member("tcp://123.456.789.0").submit(() -> "Hello world!").thenA
 ```java
 Copycat copycat = Copycat.create();
 
-copycat.election("foo").thenAccept(leader -> {
+copycat.election("foo").handler(leader -> {
   leader.submit(() -> {
     System.out.println("I'm running on the leader!");
   });

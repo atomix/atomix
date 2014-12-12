@@ -19,6 +19,7 @@ import net.kuujo.copycat.internal.DefaultCopycatCoordinator;
 import net.kuujo.copycat.internal.DefaultEventLog;
 import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 
@@ -54,7 +55,7 @@ public interface EventLog<T> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <T> EventLog<T> create(String name, ClusterConfig config, Protocol protocol) {
-    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(config, protocol, new InMemoryLog(), ExecutionContext.create());
+    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(config, protocol, new InMemoryLog("coordinator", new LogConfig()), ExecutionContext.create());
     try {
       coordinator.open().get();
       DefaultEventLog<T> eventLog = new DefaultEventLog<>(name, coordinator);
