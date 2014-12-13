@@ -17,6 +17,7 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -33,10 +34,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultStateMachine<T extends State> implements StateMachine<T> {
+public class DefaultStateMachine<T> implements StateMachine<T> {
+  private static final Serializer serializer = Serializer.serializer();
   private final Class<T> stateType;
   private T state;
-  private final StateLog<List<Object>> log;
+  private final StateLog log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
   private StateContext<T> context = new StateContext<T>() {
     private final Map<String, Object> data = new HashMap<>(1024);
@@ -77,7 +79,7 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
     }
   };
 
-  public DefaultStateMachine(Class<T> stateType, T state, StateLog<List<Object>> log) {
+  public DefaultStateMachine(Class<T> stateType, T state, StateLog log) {
     if (!stateType.isInterface()) {
       throw new IllegalArgumentException("State type must be an interface");
     }
@@ -110,7 +112,7 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
 
   @Override
   public <U> CompletableFuture<U> submit(String command, Object... args) {
-    return log.submit(command, Arrays.asList(args));
+    return log.submit(command, serializer.writeObject(Arrays.asList(args))).thenApply(serializer::readObject);
   }
 
   @Override
@@ -148,7 +150,7 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
    * @param method The method for which to create the state log command.
    * @return The generated state log command.
    */
-  private Command<List<Object>, ?> createCommand(Method method) {
+  private Command createCommand(Method method) {
     Integer tempIndex = null;
     Class<?>[] paramTypes = method.getParameterTypes();
     for (int i = 0; i < paramTypes.length; i++) {
@@ -159,8 +161,9 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
     final Integer contextIndex = tempIndex;
 
     return entry -> {
-      Object[] emptyArgs = new Object[entry.size() + (contextIndex != null ? 1 : 0)];
-      Object[] args = entry.toArray(emptyArgs);
+      List<Object> values = serializer.readObject(entry);
+      Object[] emptyArgs = new Object[values.size() + (contextIndex != null ? 1 : 0)];
+      Object[] args = values.toArray(emptyArgs);
       if (contextIndex != null) {
         Object lastArg = null;
         for (int i = 0; i < args.length; i++) {
@@ -175,7 +178,7 @@ public class DefaultStateMachine<T extends State> implements StateMachine<T> {
       }
 
       try {
-        return method.invoke(state, entry.toArray(new Object[entry.size() + (contextIndex != null ? 1 : 0)]));
+        return serializer.writeObject(method.invoke(state, values.toArray(new Object[values.size() + (contextIndex != null ? 1 : 0)])));
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new IllegalStateException(e);
       }

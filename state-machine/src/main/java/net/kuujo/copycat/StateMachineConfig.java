@@ -16,9 +16,18 @@
 package net.kuujo.copycat;
 
 /**
- * State.
+ * State machine configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State {
+public class StateMachineConfig extends StateLogConfig {
+
+  public StateMachineConfig() {
+    super();
+  }
+
+  public StateMachineConfig(String resource) {
+    super(resource);
+  }
+
 }

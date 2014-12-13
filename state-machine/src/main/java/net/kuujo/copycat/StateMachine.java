@@ -17,7 +17,6 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.DefaultStateMachine;
-import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateMachine<T extends State> extends CopycatResource {
+public interface StateMachine<T> extends CopycatResource {
 
   /**
    * Creates a new state machine.
@@ -37,7 +36,7 @@ public interface StateMachine<T extends State> extends CopycatResource {
    * @param state The state machine state.
    * @return The state machine.
    */
-  static <T extends State> StateMachine<T> create(String name, Class<T> stateType, T state) {
+  static <T> StateMachine<T> create(String name, Class<T> stateType, T state) {
     return new DefaultStateMachine<>(stateType, state, StateLog.create(name));
   }
 
@@ -47,13 +46,13 @@ public interface StateMachine<T extends State> extends CopycatResource {
    * @param name The state machine resource name.
    * @param stateType The state machine state type.
    * @param state The state machine state.
-   * @param config The state machine cluster configuration.
+   * @param cluster The state machine cluster configuration.
    * @param protocol The state machine cluster protocol.
-   * @param log The state machine log configuration.
+   * @param config The state machine configuration.
    * @return The state machine.
    */
-  static <T extends State> StateMachine<T> create(String name, Class<T> stateType, T state, ClusterConfig config, Protocol protocol, LogConfig log) {
-    return new DefaultStateMachine<>(stateType, state, StateLog.create(name, config, protocol, log));
+  static <T> StateMachine<T> create(String name, Class<T> stateType, T state, ClusterConfig cluster, Protocol protocol, StateMachineConfig config) {
+    return new DefaultStateMachine<>(stateType, state, StateLog.create(name, cluster, protocol, config));
   }
 
   /**

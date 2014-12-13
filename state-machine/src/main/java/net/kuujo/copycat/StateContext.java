@@ -20,7 +20,7 @@ package net.kuujo.copycat;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateContext<T extends State> {
+public interface StateContext<T> {
 
   /**
    * Returns the current state.
