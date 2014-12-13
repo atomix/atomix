@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -26,6 +25,7 @@ import org.vertx.java.core.net.NetServer;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -34,8 +34,6 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxTcpProtocolServer implements ProtocolServer {
-  private final ProtocolReader reader = new ProtocolReader();
-  private final ProtocolWriter writer = new ProtocolWriter();
   private static final String DELIMITER = "\\x00";
   private Vertx vertx;
   private final String host;
@@ -43,7 +41,7 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   private boolean clientAuthRequired;
   private final VertxTcpProtocol protocol;
   private NetServer server;
-  private RequestHandler requestHandler;
+  private ProtocolHandler handler;
 
   public VertxTcpProtocolServer(String host, int port, VertxTcpProtocol protocol) {
     this.host = host;
@@ -81,8 +79,8 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void requestHandler(RequestHandler handler) {
-    this.requestHandler = handler;
+  public void handler(ProtocolHandler handler) {
+    this.handler = handler;
   }
 
   @Override
@@ -117,16 +115,7 @@ public class VertxTcpProtocolServer implements ProtocolServer {
               JsonObject json = new JsonObject(buffer.toString());
               Object id = json.getValue("id");
               try {
-                Request request = reader.readRequest(json.getBinary("request"));
-                if (request instanceof PingRequest) {
-                  handlePingRequest(id, socket, (PingRequest) request);
-                } else if (request instanceof AppendRequest) {
-                  handleSyncRequest(id, socket, (AppendRequest) request);
-                } else if (request instanceof PollRequest) {
-                  handlePollRequest(id, socket, (PollRequest) request);
-                } else if (request instanceof SubmitRequest) {
-                  handleSubmitRequest(id, socket, (SubmitRequest) request);
-                }
+                handleRequest(id, socket, ByteBuffer.wrap(json.getBinary("request")));
               } catch (Exception e) {
                 respond(socket, id, null, e);
               }
@@ -150,49 +139,22 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   }
 
   /**
-   * Handles a ping request.
+   * Handles a request.
    */
-  private void handlePingRequest(final Object id, final NetSocket socket, PingRequest request) {
-    if (requestHandler != null) {
-      requestHandler.ping(request).whenComplete((response, error) -> respond(socket, id, response, error));
-    }
-  }
-
-  /**
-   * Handles a append request.
-   */
-  private void handleSyncRequest(final Object id, final NetSocket socket, AppendRequest request) {
-    if (requestHandler != null) {
-      requestHandler.sync(request).whenComplete((response, error) -> respond(socket, id, response, error));
-    }
-  }
-
-  /**
-   * Handles a vote request.
-   */
-  private void handlePollRequest(final Object id, final NetSocket socket, PollRequest request) {
-    if (requestHandler != null) {
-      requestHandler.poll(request).whenComplete((response, error) -> respond(socket, id, response, error));
-    }
-  }
-
-  /**
-   * Handles a commit request.
-   */
-  private void handleSubmitRequest(final Object id, final NetSocket socket, SubmitRequest request) {
-    if (requestHandler != null) {
-      requestHandler.submit(request).whenComplete((response, error) -> respond(socket, id, response, error));
+  private void handleRequest(final Object id, final NetSocket socket, ByteBuffer request) {
+    if (handler != null) {
+      handler.handle(request).whenComplete((response, error) -> respond(socket, id, response, error));
     }
   }
 
   /**
    * Responds to a request from the given socket.
    */
-  private void respond(NetSocket socket, Object id, Response response, Throwable error) {
+  private void respond(NetSocket socket, Object id, ByteBuffer response, Throwable error) {
     if (error != null) {
       socket.write(new JsonObject().putString("status", "error").putValue("id", id).putString("message", error.getMessage()).encode() + DELIMITER);
     } else {
-      socket.write(new JsonObject().putString("status", "ok").putValue("id", id).putBinary("response", writer.writeResponse(response)).encode() + DELIMITER);
+      socket.write(new JsonObject().putString("status", "ok").putValue("id", id).putBinary("response", response.array()).encode() + DELIMITER);
     }
   }
 

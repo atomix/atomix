@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
@@ -26,6 +25,7 @@ import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -37,8 +37,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public class VertxTcpProtocolClient implements ProtocolClient {
   private static final String DELIMITER = "\\x00";
-  private final ProtocolReader reader = new ProtocolReader();
-  private final ProtocolWriter writer = new ProtocolWriter();
   private Vertx vertx;
   private final String host;
   private final int port;
@@ -51,11 +49,10 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   /**
    * Holder for response handlers.
    */
-  @SuppressWarnings("rawtypes")
   private static class ResponseHolder {
-    private final CompletableFuture future;
+    private final CompletableFuture<ByteBuffer> future;
     private final long timer;
-    private ResponseHolder(long timerId, CompletableFuture future) {
+    private ResponseHolder(long timerId, CompletableFuture<ByteBuffer> future) {
       this.timer = timerId;
       this.future = future;
     }
@@ -97,35 +94,10 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<PingResponse> ping(PingRequest request) {
-    return sendRequest(request);
-  }
-
-  @Override
-  public CompletableFuture<AppendResponse> sync(AppendRequest request) {
-    return sendRequest(request);
-  }
-
-  @Override
-  public CompletableFuture<PollResponse> poll(PollRequest request) {
-    return sendRequest(request);
-  }
-
-  @Override
-  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
-    return sendRequest(request);
-  }
-
-  /**
-   * Sends a request.
-   */
-  private <T extends Response> CompletableFuture<T> sendRequest(Request request) {
-    CompletableFuture<T> future = new CompletableFuture<>();
+  public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     if (socket != null) {
-      socket.write(new JsonObject().putValue("id", request.id())
-          .putBinary("request", writer.writeRequest(request))
-          .encode() + DELIMITER);
-      storeFuture(request.id(), future);
+      socket.write(new Buffer(request.array()).appendString(DELIMITER));
     } else {
       future.completeExceptionally(new ProtocolException("Client not connected"));
     }
@@ -136,7 +108,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
    * Handles an identifiable response.
    */
   @SuppressWarnings("unchecked")
-  private void handleResponse(Object id, Response response) {
+  private void handleResponse(Object id, ByteBuffer response) {
     ResponseHolder holder = responses.remove(id);
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
@@ -158,12 +130,9 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   /**
    * Stores a response callback by ID.
    */
-  private <T extends Response> void storeFuture(final Object id, CompletableFuture<T> future) {
-    long timerId = vertx.setTimer(30000, new Handler<Long>() {
-      @Override
-      public void handle(Long timerID) {
-        handleError(id, new ProtocolException("Request timed out"));
-      }
+  private <T extends Response> void storeFuture(final Object id, CompletableFuture<ByteBuffer> future) {
+    long timerId = vertx.setTimer(5000, timer -> {
+      handleError(id, new ProtocolException("Request timed out"));
     });
     ResponseHolder holder = new ResponseHolder(timerId, future);
     responses.put(id, holder);
@@ -203,7 +172,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
                 JsonObject response = new JsonObject(buffer.toString());
                 Object id = response.getValue("id");
                 if (response.getString("status").equals("ok")) {
-                  handleResponse(id, reader.readResponse(response.getBinary("response")));
+                  handleResponse(id, ByteBuffer.wrap(response.getBinary("response")));
                 } else {
                   handleError(id, new ProtocolException(response.getString("message")));
                 }

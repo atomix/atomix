@@ -16,12 +16,12 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -30,8 +30,6 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventBusProtocolClient implements ProtocolClient {
-  private final ProtocolReader reader = new ProtocolReader();
-  private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
   private Vertx vertx;
 
@@ -41,64 +39,13 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<PingResponse> ping(final PingRequest request) {
-    final CompletableFuture<PingResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
-      @Override
-      public void handle(AsyncResult<Message<byte[]>> result) {
-        if (result.failed()) {
-          future.completeExceptionally(result.cause());
-        } else {
-          future.complete(reader.readResponse(result.result().body()));
-        }
-      }
-    });
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<AppendResponse> sync(final AppendRequest request) {
-    final CompletableFuture<AppendResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
-      @Override
-      public void handle(AsyncResult<Message<byte[]>> result) {
-        if (result.failed()) {
-          future.completeExceptionally(result.cause());
-        } else {
-          future.complete(reader.readResponse(result.result().body()));
-        }
-      }
-    });
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<PollResponse> poll(final PollRequest request) {
-    final CompletableFuture<PollResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
-      @Override
-      public void handle(AsyncResult<Message<byte[]>> result) {
-        if (result.failed()) {
-          future.completeExceptionally(result.cause());
-        } else {
-          future.complete(reader.readResponse(result.result().body()));
-        }
-      }
-    });
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
-    final CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, writer.writeRequest(request), 5000, new Handler<AsyncResult<Message<byte[]>>>() {
-      @Override
-      public void handle(AsyncResult<Message<byte[]>> result) {
-        if (result.failed()) {
-          future.completeExceptionally(result.cause());
-        } else {
-          future.complete(reader.readResponse(result.result().body()));
-        }
+  public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
+    final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+    vertx.eventBus().sendWithTimeout(address, request.array(), 5000, (Handler<AsyncResult<Message<byte[]>>>) result -> {
+      if (result.succeeded()) {
+        future.complete(ByteBuffer.wrap(result.result().body()));
+      } else {
+        future.completeExceptionally(result.cause());
       }
     });
     return future;
