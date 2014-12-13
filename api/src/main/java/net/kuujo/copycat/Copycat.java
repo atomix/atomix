@@ -35,7 +35,38 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create() {
-    return copycat(Services.load("copycat.cluster", ClusterConfig.class), Services.load("copycat.log", CopycatConfig.class));
+    return create(Services.load("copycat.cluster", ClusterConfig.class), Services.load("copycat.log", CopycatConfig.class), null);
+  }
+
+  /**
+   * Creates a new Copycat instance.
+   *
+   * @param context The user execution context.
+   * @return The Copycat instance.
+   */
+  static Copycat create(ExecutionContext context) {
+    return create(Services.load("copycat.cluster", ClusterConfig.class), Services.load("copycat.log", CopycatConfig.class), context);
+  }
+
+  /**
+   * Creates a new Copycat instance.
+   *
+   * @param cluster The global cluster configuration.
+   * @return The Copycat instance.
+   */
+  static Copycat create(ClusterConfig cluster) {
+    return create(cluster, Services.load("copycat.log", CopycatConfig.class), null);
+  }
+
+  /**
+   * Creates a new Copycat instance.
+   *
+   * @param cluster The global cluster configuration.
+   * @param context The user execution context.
+   * @return The Copycat instance.
+   */
+  static Copycat create(ClusterConfig cluster, ExecutionContext context) {
+    return create(cluster, Services.load("copycat.log", CopycatConfig.class), context);
   }
 
   /**
@@ -45,8 +76,20 @@ public interface Copycat extends Managed {
    * @param config The log configuration.
    * @return The Copycat instance.
    */
-  static Copycat copycat(ClusterConfig cluster, CopycatConfig config) {
-    return new DefaultCopycat(cluster, config, ExecutionContext.create());
+  static Copycat create(ClusterConfig cluster, CopycatConfig config) {
+    return create(cluster, config, null);
+  }
+
+  /**
+   * Creates a new Copycat instance.
+   *
+   * @param cluster The global cluster configuration.
+   * @param config The log configuration.
+   * @param context The user execution context.
+   * @return The Copycat instance.
+   */
+  static Copycat create(ClusterConfig cluster, CopycatConfig config, ExecutionContext context) {
+    return new DefaultCopycat(cluster, config, context != null ? context : ExecutionContext.create());
   }
 
   /**
