@@ -17,8 +17,11 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.ActionOptions;
 import net.kuujo.copycat.CopycatCoordinator;
 import net.kuujo.copycat.EventLog;
-import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.EventLogConfig;
+import net.kuujo.copycat.log.ChronicleLog;
+import net.kuujo.copycat.log.LogConfig;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -27,23 +30,29 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultEventLog<T> extends AbstractCopycatResource implements EventLog<T> {
-  private Consumer<T> consumer;
+public class DefaultEventLog extends AbstractCopycatResource implements EventLog {
+  private Consumer<ByteBuffer> consumer;
 
-  public DefaultEventLog(String name, CopycatCoordinator coordinator) {
-    super(name, coordinator, resource -> new InMemoryLog());
+  public DefaultEventLog(String name, CopycatCoordinator coordinator, EventLogConfig config) {
+    super(name, coordinator, resource -> new ChronicleLog(name, new LogConfig()
+      .withDirectory(config.getDirectory())
+      .withSegmentSize(config.getSegmentSize())
+      .withSegmentInterval(config.getSegmentInterval())
+      .withFlushOnWrite(config.isFlushOnWrite())
+      .withFlushInterval(config.getFlushInterval())
+      .withRetentionPolicy(config.getRetentionPolicy())));
   }
 
   @Override
-  public EventLog<T> consumer(Consumer<T> consumer) {
+  public EventLog consumer(Consumer<ByteBuffer> consumer) {
     this.consumer = consumer;
     return this;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<T> get(long index) {
-    CompletableFuture<T> future = new CompletableFuture<>();
+  public CompletableFuture<ByteBuffer> get(long index) {
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     context.executor().execute(() -> {
       try {
         future.complete(context.log().getEntry(index));
@@ -55,7 +64,7 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
   }
 
   @Override
-  public CompletableFuture<Long> commit(T entry) {
+  public CompletableFuture<Long> commit(ByteBuffer entry) {
     return context.submit("commit", entry);
   }
 
@@ -96,7 +105,7 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
   /**
    * Handles a commit.
    */
-  private long handleCommit(Long index, T entry) {
+  private long handleCommit(Long index, ByteBuffer entry) {
     return index;
   }
 
