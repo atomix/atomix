@@ -20,6 +20,7 @@ import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.DefaultCopycat;
 import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 
@@ -62,7 +63,7 @@ public interface Copycat extends Managed {
    *
    * @param name The name of the event log to create.
    * @param <T> The event log entry type.
-   * @return A completable future to be completed once the event log has been created.
+   * @return The event log.
    */
   <T> EventLog<T> eventLog(String name);
 
@@ -70,18 +71,18 @@ public interface Copycat extends Managed {
    * Creates a new event log.
    *
    * @param name The name of the event log to create.
-   * @param cluster The initial event log cluster configuration.
+   * @param log The event log configuration.
    * @param <T> The event log entry type.
-   * @return A completable future to be completed once the event log has been created.
+   * @return The event log.
    */
-  <T> EventLog<T> eventLog(String name, ClusterConfig cluster);
+  <T> EventLog<T> eventLog(String name, LogConfig log);
 
   /**
    * Creates a new state log.
    *
    * @param name The name of the state log to create.
    * @param <T> The state log entry type.
-   * @return A completable future to be completed once the state log has been created.
+   * @return The state log.
    */
   <T> StateLog<T> stateLog(String name);
 
@@ -89,11 +90,11 @@ public interface Copycat extends Managed {
    * Creates a new state log.
    *
    * @param name The name of the state log to create.
-   * @param cluster The initial state log cluster configuration.
+   * @param log The state log configuration.
    * @param <T> The state log entry type.
-   * @return A completable future to be completed once the state log has been created.
+   * @return The state log.
    */
-  <T> StateLog<T> stateLog(String name, ClusterConfig cluster);
+  <T> StateLog<T> stateLog(String name, LogConfig log);
 
   /**
    * Creates a new replicated state machine.
@@ -109,10 +110,10 @@ public interface Copycat extends Managed {
    *
    * @param name The name of the state machine to create.
    * @param state The state machine's initial state.
-   * @param cluster The initial state machine cluster configuration.
+   * @param log The state machine's log configuration.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T extends State> StateMachine<T> stateMachine(String name, Class<T> stateType, T state, ClusterConfig cluster);
+  <T extends State> StateMachine<T> stateMachine(String name, Class<T> stateType, T state, LogConfig log);
 
   /**
    * Creates a new leader election.
@@ -126,20 +127,31 @@ public interface Copycat extends Managed {
    * Creates a new leader election.
    *
    * @param name The leader election name.
-   * @param cluster The initial ELECTION cluster configuration.
+   * @param log The election log configuration.
    * @return A completable future to be completed once the leader election has been created.
    */
-  LeaderElection election(String name, ClusterConfig cluster);
+  LeaderElection election(String name, LogConfig log);
 
   /**
    * Returns a named asynchronous map.
    *
    * @param name The map name.
    * @param <K> The map key type.
-   * @param <V> The map entry type.
+   * @param <V> The map value type.
    * @return An asynchronous map.
    */
   <K, V> AsyncMap<K, V> getMap(String name);
+
+  /**
+   * Returns a name asynchronous map.
+   *
+   * @param name The map name.
+   * @param log The map log configuration.
+   * @param <K> The map key type.
+   * @param <V> The map value type.
+   * @return
+   */
+  <K, V> AsyncMap<K, V> getMap(String name, LogConfig log);
 
   /**
    * Returns a named asynchronous multimap.
@@ -152,6 +164,17 @@ public interface Copycat extends Managed {
   <K, V> AsyncMultiMap<K, V> getMultiMap(String name);
 
   /**
+   * Returns a named asynchronous multimap.
+   *
+   * @param name The multimap name.
+   * @param log The log configuration.
+   * @param <K> The map key type.
+   * @param <V> The map value type.
+   * @return An asynchronous multimap.
+   */
+  <K, V> AsyncMultiMap<K, V> getMultiMap(String name, LogConfig log);
+
+  /**
    * Returns a named asynchronous list.
    *
    * @param name The list name.
@@ -159,6 +182,16 @@ public interface Copycat extends Managed {
    * @return An asynchronous list.
    */
   <T> AsyncList<T> getList(String name);
+
+  /**
+   * Returns a named asynchronous list.
+   *
+   * @param name The list name.
+   * @param log The log configuration.
+   * @param <T> The list entry type.
+   * @return An asynchronous list.
+   */
+  <T> AsyncList<T> getList(String name, LogConfig log);
 
   /**
    * Returns a named asynchronous set.
@@ -170,11 +203,30 @@ public interface Copycat extends Managed {
   <T> AsyncSet<T> getSet(String name);
 
   /**
+   * Returns a named asynchronous set.
+   *
+   * @param name The set name.
+   * @param log The log configuration.
+   * @param <T> The set entry type.
+   * @return An asynchronous set.
+   */
+  <T> AsyncSet<T> getSet(String name, LogConfig log);
+
+  /**
    * Returns a named asynchronous lock.
    *
    * @param name The lock name.
    * @return An asynchronous lock.
    */
   AsyncLock getLock(String name);
+
+  /**
+   * Returns a named asynchronous lock.
+   *
+   * @param name The lock name.
+   * @param log The log configuration.
+   * @return An asynchronous lock.
+   */
+  AsyncLock getLock(String name, LogConfig log);
 
 }

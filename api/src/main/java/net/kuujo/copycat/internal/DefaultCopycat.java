@@ -25,7 +25,7 @@ import net.kuujo.copycat.collections.internal.lock.UnlockedAsyncLockState;
 import net.kuujo.copycat.collections.internal.map.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
-import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 
@@ -41,7 +41,7 @@ public class DefaultCopycat implements Copycat {
   private boolean open;
 
   public DefaultCopycat(ClusterConfig config, Protocol protocol, ExecutionContext context) {
-    this.coordinator = new DefaultCopycatCoordinator(config, protocol, new InMemoryLog(), context);
+    this.coordinator = new DefaultCopycatCoordinator(config, protocol, new BufferedLog(), context);
   }
 
   @Override
