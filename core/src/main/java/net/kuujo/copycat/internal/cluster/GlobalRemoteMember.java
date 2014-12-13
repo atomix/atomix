@@ -60,17 +60,17 @@ public class GlobalRemoteMember extends GlobalMember {
   @Override
   public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
-    byte[] bytes = serializer.writeObject(message);
+    ByteBuffer buffer = serializer.writeObject(message);
     byte[] topicBytes = topic.getBytes();
-    ByteBuffer request = ByteBuffer.allocateDirect(bytes.length + topicBytes.length + 8);
+    ByteBuffer request = ByteBuffer.allocateDirect(buffer.capacity() + topicBytes.length + 8);
     request.putInt(topicBytes.length);
     request.put(topicBytes);
     request.putInt(address);
-    request.put(bytes);
+    request.put(buffer);
     client.write(request).whenComplete((response, error) -> {
       context.execute(() -> {
         if (error == null) {
-          future.complete(serializer.readObject(response.array()));
+          future.complete(serializer.readObject(response));
         } else {
           future.completeExceptionally(error);
         }

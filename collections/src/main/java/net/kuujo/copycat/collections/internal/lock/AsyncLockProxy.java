@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.StateProxy;
-import net.kuujo.copycat.collections.AsyncLock;
-
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -25,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLockProxy extends StateProxy {
+public interface AsyncLockProxy {
 
   /**
    * Acquires the log.

@@ -52,7 +52,7 @@ public interface AsyncLock extends CopycatResource {
    * @return The asynchronous lock.
    */
   static AsyncLock create(String name, ClusterConfig cluster, Protocol protocol, AsyncLockConfig config) {
-    return new DefaultAsyncLock(StateMachine.<AsyncLockState>create(name, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, protocol, config));
+    return new DefaultAsyncLock(StateMachine.create(name, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, protocol, config));
   }
 
   /**

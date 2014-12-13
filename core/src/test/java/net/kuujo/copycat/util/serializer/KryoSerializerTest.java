@@ -18,6 +18,7 @@ import net.kuujo.copycat.util.serializer.internal.KryoSerializer;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 /**
@@ -48,8 +49,8 @@ public class KryoSerializerTest {
     Serializer serializer = new KryoSerializer();
     for (int i = 0; i < 1000; i++) {
       TestType1 testInput = new TestType1(random.nextLong(), "Hello world!", random.nextInt(1) == 1);
-      byte[] bytes = serializer.writeObject(testInput);
-      TestType1 testOutput = serializer.readObject(bytes);
+      ByteBuffer buffer = serializer.writeObject(testInput);
+      TestType1 testOutput = serializer.readObject(buffer);
       Assert.assertEquals(testOutput.foo, testInput.foo);
       Assert.assertEquals(testOutput.bar, testInput.bar);
       Assert.assertEquals(testOutput.baz, testInput.baz);

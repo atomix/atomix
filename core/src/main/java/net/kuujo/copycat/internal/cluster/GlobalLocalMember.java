@@ -148,16 +148,11 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
       int address = request.getInt();
       MessageHandler handler = handlers.get(address);
       if (handler != null) {
-        byte[] bytes = new byte[request.remaining()];
-        request.get(bytes);
-        Object message = serializer.readObject(bytes);
+        Object message = serializer.readObject(request);
         context.execute(() -> {
           ((CompletionStage<?>) handler.handle(message)).whenComplete((result, error) -> {
             if (error == null) {
-              byte[] responseBytes = serializer.writeObject(message);
-              ByteBuffer response = ByteBuffer.allocateDirect(responseBytes.length);
-              response.put(responseBytes);
-              future.complete(response);
+              future.complete(serializer.writeObject(message));
             } else {
               future.completeExceptionally(error);
             }

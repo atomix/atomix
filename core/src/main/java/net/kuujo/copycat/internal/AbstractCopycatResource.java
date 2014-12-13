@@ -36,7 +36,7 @@ public abstract class AbstractCopycatResource implements CopycatResource {
   private final List<Task<CompletableFuture<Void>>> startupTasks = new ArrayList<>();
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = new ArrayList<>();
 
-  public AbstractCopycatResource(String name, CopycatCoordinator coordinator, LogFactory logFactory) {
+  protected AbstractCopycatResource(String name, CopycatCoordinator coordinator, LogFactory logFactory) {
     this.name = name;
     this.coordinator = coordinator;
     this.logFactory = logFactory;

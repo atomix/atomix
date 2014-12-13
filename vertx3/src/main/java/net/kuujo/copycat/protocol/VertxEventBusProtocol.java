@@ -20,7 +20,6 @@ import io.vertx.core.VertxOptions;
 import net.kuujo.copycat.spi.Protocol;
 
 import java.net.URI;
-import java.util.concurrent.CountDownLatch;
 
 /**
  * Vert.x event bus protocol implementation.
@@ -135,7 +134,6 @@ public class VertxEventBusProtocol implements Protocol {
    * Creates a Vert.x instance.
    */
   private Vertx createVertx() {
-    final CountDownLatch latch = new CountDownLatch(1);
     VertxOptions options = new VertxOptions();
     options.setClusterPort(port);
     options.setClusterHost(host);

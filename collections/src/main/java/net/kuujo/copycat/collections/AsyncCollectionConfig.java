@@ -18,7 +18,7 @@ package net.kuujo.copycat.collections;
 import net.kuujo.copycat.StateMachineConfig;
 
 /**
- * Colleciton configuration.
+ * Collection configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

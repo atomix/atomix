@@ -533,8 +533,6 @@ class LeaderState extends ActiveState {
      * Sends a append request.
      */
     private void doSync(final long prevIndex, final ByteBuffer prevEntry, final List<ByteBuffer> entries) {
-      final long commitIndex = context.getCommitIndex();
-
       AppendRequest request = AppendRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withMember(member)

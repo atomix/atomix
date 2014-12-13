@@ -27,7 +27,6 @@ import java.net.URI;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventBusProtocol implements Protocol {
-  private final VertxExecutionContext context;
   private final Vertx vertx;
 
   public VertxEventBusProtocol(String host, int port) {
@@ -36,7 +35,6 @@ public class VertxEventBusProtocol implements Protocol {
 
   public VertxEventBusProtocol(Vertx vertx) {
     this.vertx = vertx;
-    this.context = new VertxExecutionContext(vertx);
   }
 
   @Override

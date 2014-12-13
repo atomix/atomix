@@ -287,9 +287,7 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
    * @return The cluster configuration.
    */
   public ClusterConfig addRemoteMembers(String... uris) {
-    for (String uri : uris) {
-      remoteMembers.add(uri);
-    }
+    remoteMembers.addAll(Arrays.asList(uris));
     return this;
   }
 

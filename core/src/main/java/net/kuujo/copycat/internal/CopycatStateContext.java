@@ -175,7 +175,7 @@ public interface CopycatStateContext extends RaftProtocol {
   /**
    * Returns the state last applied index.
    *
-   * @return The state last applied inex.
+   * @return The state last applied index.
    */
   long getLastApplied();
 

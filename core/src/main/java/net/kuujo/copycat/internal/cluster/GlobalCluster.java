@@ -17,7 +17,6 @@ package net.kuujo.copycat.internal.cluster;
 import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
-import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 
