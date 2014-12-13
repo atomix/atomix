@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
  */
 class FollowerState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(FollowerState.class);
-  private ScheduledFuture<Void> currentTimer;
+  private ScheduledFuture<?> currentTimer;
   private boolean shutdown;
 
   FollowerState(DefaultCopycatStateContext context) {

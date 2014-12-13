@@ -36,7 +36,7 @@ import java.util.function.BiFunction;
  */
 class LeaderState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(LeaderState.class);
-  private ScheduledFuture<Void> currentTimer;
+  private ScheduledFuture<?> currentTimer;
   private Replicator replicator;
 
   LeaderState(DefaultCopycatStateContext context) {

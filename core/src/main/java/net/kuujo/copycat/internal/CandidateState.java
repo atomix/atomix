@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 class CandidateState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(CandidateState.class);
   private Quorum quorum;
-  private ScheduledFuture<Void> currentTimer;
+  private ScheduledFuture<?> currentTimer;
 
   CandidateState(DefaultCopycatStateContext context) {
     super(context);
