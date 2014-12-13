@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 import java.io.File;
@@ -38,7 +39,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   private long lastFlush;
 
   protected AbstractLog(String name, LogConfig config) {
-    this.config = config;
+    this.config = config.copy();
     this.directory = config.getDirectory();
     this.base = new File(config.getDirectory(), name);
   }
@@ -129,19 +130,6 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   }
 
   @Override
-  public LogSegment rotate() {
-    assertIsOpen();
-    long nextIndex = currentSegment.lastIndex() + 1;
-    currentSegment.flush();
-    currentSegment.unlock();
-    currentSegment = createSegment(nextIndex);
-    currentSegment.lock();
-    lastFlush = System.currentTimeMillis();
-    checkRetention();
-    return currentSegment;
-  }
-
-  @Override
   public boolean isOpen() {
     return currentSegment != null;
   }
@@ -206,9 +194,18 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   }
 
   @Override
+  public void compact(long index) {
+    assertIsOpen();
+    LogSegment segment = segment(index);
+    Assert.index(index, segment != null, "Invalid log index %d", index);
+    segment.compact(index);
+  }
+
+  @Override
   public void compact(long index, ByteBuffer entry) {
     assertIsOpen();
     LogSegment segment = segment(index);
+    Assert.index(index, segment != null, "Invalid log index %d", index);
     segment.compact(index, entry);
   }
 
@@ -216,6 +213,12 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   public void flush() {
     assertIsOpen();
     currentSegment.flush();
+  }
+
+  @Override
+  public void flush(boolean force) {
+    assertIsOpen();
+    currentSegment.flush(force);
   }
 
   @Override
@@ -247,8 +250,14 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    * Checks whether the current segment needs to be rolled over to a new segment.
    */
   private void checkRollOver() {
-    if (currentSegment.size() > config.getSegmentSize()) {
-      rotate();
+    if (currentSegment.size() > config.getSegmentSize() && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval()) {
+      long nextIndex = currentSegment.lastIndex() + 1;
+      currentSegment.flush();
+      currentSegment.unlock();
+      currentSegment = createSegment(nextIndex);
+      currentSegment.lock();
+      lastFlush = System.currentTimeMillis();
+      checkRetention();
     }
   }
 
@@ -271,7 +280,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    */
   private void checkFlush() {
     if (System.currentTimeMillis() - lastFlush > config.getFlushInterval()) {
-      currentSegment.flush();
+      flush(true);
     }
   }
 

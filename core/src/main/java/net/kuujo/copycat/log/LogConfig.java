@@ -16,7 +16,7 @@
 package net.kuujo.copycat.log;
 
 import net.kuujo.copycat.Copyable;
-import net.kuujo.copycat.spi.CompactionStrategy;
+import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.RetentionPolicy;
 
 import java.io.File;
@@ -29,15 +29,25 @@ import java.io.File;
 public class LogConfig implements Copyable<LogConfig> {
   private File directory = new File(System.getProperty("java.io.tmpdir"), "copycat");
   private int segmentSize = 1024 * 1024;
+  private long segmentInterval = Long.MAX_VALUE;
+  private boolean flushOnWrite = false;
   private long flushInterval = Long.MAX_VALUE;
-  private long compactInterval = 30 * 60 * 1000;
-  private CompactionStrategy compactionStrategy = log -> {};
   private RetentionPolicy retentionPolicy = log -> true;
 
   public LogConfig() {
   }
 
+  public LogConfig(String resource) {
+    Services.apply(resource, this);
+  }
+
   private LogConfig(LogConfig config) {
+    this.directory = config.directory;
+    this.segmentSize = config.segmentSize;
+    this.segmentInterval = config.segmentInterval;
+    this.flushOnWrite = config.flushOnWrite;
+    this.flushInterval = config.flushInterval;
+    this.retentionPolicy = config.retentionPolicy;
   }
 
   @Override
@@ -124,6 +134,64 @@ public class LogConfig implements Copyable<LogConfig> {
   }
 
   /**
+   * Sets the log segment interval.
+   *
+   * @param segmentInterval The log segment interval.
+   */
+  public void setSegmentInterval(long segmentInterval) {
+    this.segmentInterval = segmentInterval;
+  }
+
+  /**
+   * Returns the log segment interval.
+   *
+   * @return The log segment interval.
+   */
+  public long getSegmentInterval() {
+    return segmentInterval;
+  }
+
+  /**
+   * Sets the log segment interval, returning the log configuration for method chaining.
+   *
+   * @param segmentInterval The log segment interval.
+   * @return The log configuration.
+   */
+  public LogConfig withSegmentInterval(long segmentInterval) {
+    this.segmentInterval = segmentInterval;
+    return this;
+  }
+
+  /**
+   * Sets whether to flush the log to disk on every write.
+   *
+   * @param flushOnWrite Whether to flush the log to disk on every write.
+   */
+  public void setFlushOnWrite(boolean flushOnWrite) {
+    this.flushOnWrite = flushOnWrite;
+  }
+
+  /**
+   * Returns whether to flush the log to disk on every write.
+   *
+   * @return Whether to flush the log to disk on every write.
+   */
+  public boolean isFlushOnWrite() {
+    return flushOnWrite;
+  }
+
+  /**
+   * Sets whether to flush the log to disk on every write, returning the log configuration for method chaining.
+   *
+   * @param flushOnWrite Whether to flush the log to disk on every write.
+   * @return The log configuration.
+   */
+  public LogConfig withFlushOnWrite(boolean flushOnWrite) {
+    this.flushOnWrite = flushOnWrite;
+    return this;
+  }
+
+  /**
    * Sets the log flush interval.
    *
    * @param flushInterval The log flush interval.
@@ -149,64 +217,6 @@ public class LogConfig implements Copyable<LogConfig> {
    */
   public LogConfig withFlushInterval(long flushInterval) {
     this.flushInterval = flushInterval;
-    return this;
-  }
-
-  /**
-   * Sets the log compact interval.
-   *
-   * @param compactInterval The log compact interval.
-   */
-  public void setCompactInterval(long compactInterval) {
-    this.compactInterval = compactInterval;
-  }
-
-  /**
-   * Returns the log compact interval.
-   *
-   * @return The log compact interval.
-   */
-  public long getCompactInterval() {
-    return compactInterval;
-  }
-
-  /**
-   * Sets the log compact interval, returning the log configuration for method chaining.
-   *
-   * @param compactInterval The log compact interval.
-   * @return The log configuration.
-   */
-  public LogConfig withCompactInterval(long compactInterval) {
-    this.compactInterval = compactInterval;
-    return this;
-  }
-
-  /**
-   * Sets the log compaction strategy.
-   *
-   * @param compactionStrategy The log compaction strategy.
-   */
-  public void setCompactionStrategy(CompactionStrategy compactionStrategy) {
-    this.compactionStrategy = compactionStrategy;
-  }
-
-  /**
-   * Returns the log compaction strategy.
-   *
-   * @return The log compaction strategy.
-   */
-  public CompactionStrategy getCompactionStrategy() {
-    return compactionStrategy;
-  }
-
-  /**
-   * Sets the log compaction strategy, returning the log configuration for method chaining.
-   *
-   * @param compactionStrategy The log compaction strategy.
-   * @return The log configuration.
-   */
-  public LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy) {
-    this.compactionStrategy = compactionStrategy;
     return this;
   }
 

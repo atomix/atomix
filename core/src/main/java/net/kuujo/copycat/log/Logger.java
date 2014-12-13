@@ -121,6 +121,13 @@ public interface Logger {
    * Compacts the log at the given index, appending the given entry.
    *
    * @param index The index at which to compact the log.
+   */
+  void compact(long index);
+
+  /**
+   * Compacts the log at the given index, appending the given entry.
+   *
+   * @param index The index at which to compact the log.
    * @param entry The entry to write to the log at the given index.
    */
   void compact(long index, ByteBuffer entry);
@@ -131,6 +138,13 @@ public interface Logger {
    * @throws java.lang.IllegalStateException If the log is not open.
    */
   void flush();
+
+  /**
+   * Flushes the log to disk, optionally forcing the flush.
+   *
+   * @param force Whether to force the log to be flushed to disk even if the flush is blocked by configuration.
+   */
+  void flush(boolean force);
 
   /**
    * Closes the logger.

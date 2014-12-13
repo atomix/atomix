@@ -117,6 +117,22 @@ public final class Services {
   }
 
   /**
+   * Applies properties to an existing service object.
+   *
+   * @param path The path from which to apply properties.
+   * @param service The service instance.
+   * @param <T> The service type.
+   * @return The service instance.
+   */
+  public static <T> T apply(String path, T service) {
+    Config config = ConfigFactory.load(COPYCAT_CONFIG);
+    if (!config.hasPath(path)) {
+      throw new ConfigurationException(String.format("Missing configuration path %s", path));
+    }
+    return applyProperties(path, service, config.getObject(path));
+  }
+
+  /**
    * Applies configuration properties to the given service object.
    *
    * @param service The service to which to apply properties.

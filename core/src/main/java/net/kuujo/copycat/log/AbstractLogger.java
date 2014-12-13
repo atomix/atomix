@@ -16,7 +16,6 @@
 package net.kuujo.copycat.log;
 
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.log.Logger;
 
 /**
  * Abstract logger.
@@ -37,6 +36,13 @@ public abstract class AbstractLogger implements Logger {
    */
   protected void assertIsNotOpen() {
     Assert.state(!isOpen(), "The log is already open.");
+  }
+
+  /**
+   * Asserts whether the log contains the given index.
+   */
+  protected void assertContainsIndex(long index) {
+    Assert.index(index, containsIndex(index), "Log does not contain index %d", index);
   }
 
 }

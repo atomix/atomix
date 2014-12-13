@@ -79,4 +79,23 @@ public final class Assert {
     }
     return value;
   }
+
+  /**
+   * Validates that an index meets the given condition.
+   *
+   * @param value The value to validate.
+   * @param condition The The condition to assert.
+   * @param message The failure exception message.
+   * @param args A list of message string formatting arguments.
+   * @param <T> The index type.
+   * @return The index.
+   * @throws IllegalArgumentException if {@code condition} is not true
+   */
+  public static <T extends Number> T index(T value, boolean condition, String message, Object... args) {
+    if (!condition) {
+      throw new IndexOutOfBoundsException(String.format(message, args));
+    }
+    return value;
+  }
+
 }

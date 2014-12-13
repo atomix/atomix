@@ -64,13 +64,6 @@ public interface Log extends Logger {
   LogSegment segment(long index);
 
   /**
-   * Forces a rotation of the logs.
-   *
-   * @return The new log segment.
-   */
-  LogSegment rotate();
-
-  /**
    * Returns the first log segment.
    *
    * @return The first log segment.

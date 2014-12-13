@@ -234,27 +234,26 @@ abstract class ActiveState extends AbstractState {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
-      synchronized (context.log()) {
-        long index = request.logIndex();
-        for (Entry entry : request.entries()) {
-          index++;
-          // Replicated snapshot entries are *always* immediately logged and applied to the state machine
-          // since snapshots are only taken of committed state machine state. This will cause all previous
-          // entries to be removed from the log.
-          Entry match = context.log().getEntry(index);
-          if (match != null) {
-            if (entry.term() != match.term()) {
-              logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember());
-              context.log().removeAfter(index - 1);
-              context.log().appendEntry(entry);
-              logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
-            }
-          } else {
+      long index = request.logIndex();
+      for (Entry entry : request.entries()) {
+        index++;
+        // Replicated snapshot entries are *always* immediately logged and applied to the state machine
+        // since snapshots are only taken of committed state machine state. This will cause all previous
+        // entries to be removed from the log.
+        Entry match = context.log().getEntry(index);
+        if (match != null) {
+          if (entry.term() != match.term()) {
+            logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember());
+            context.log().removeAfter(index - 1);
             context.log().appendEntry(entry);
             logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
           }
+        } else {
+          context.log().appendEntry(entry);
+          logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
         }
       }
+      context.log().flush();
     }
     doApplyCommits(request.commitIndex());
     return SyncResponse.builder()

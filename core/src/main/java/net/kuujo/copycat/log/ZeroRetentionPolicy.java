@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.log.LogSegment;
 import net.kuujo.copycat.spi.RetentionPolicy;
 
 /**

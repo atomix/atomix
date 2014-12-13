@@ -23,9 +23,9 @@ import java.util.Collections;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InMemoryLog extends AbstractLog {
+public class BufferedLog extends AbstractLog {
 
-  public InMemoryLog(String name, LogConfig config) {
+  public BufferedLog(String name, LogConfig config) {
     super(name, config);
   }
 
@@ -37,7 +37,7 @@ public class InMemoryLog extends AbstractLog {
 
   @Override
   protected LogSegment createSegment(long segmentNumber) {
-    return new InMemoryLogSegment(this, segmentNumber);
+    return new BufferedLogSegment(this, segmentNumber);
   }
 
 }

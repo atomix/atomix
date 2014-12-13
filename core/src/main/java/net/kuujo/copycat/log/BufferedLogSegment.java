@@ -31,8 +31,8 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class InMemoryLogSegment extends AbstractLogger implements LogSegment {
-  private final InMemoryLog parent;
+public class BufferedLogSegment extends AbstractLogger implements LogSegment {
+  private final BufferedLog parent;
   private final long segment;
   private final Lock lock = new ReentrantLock();
   private final AtomicBoolean locked = new AtomicBoolean();
@@ -40,7 +40,7 @@ public class InMemoryLogSegment extends AbstractLogger implements LogSegment {
   private TreeMap<Long, ByteBuffer> log;
   private int size;
 
-  InMemoryLogSegment(InMemoryLog parent, long segment) {
+  BufferedLogSegment(BufferedLog parent, long segment) {
     this.parent = parent;
     this.segment = segment;
   }
@@ -143,19 +143,15 @@ public class InMemoryLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
+    assertContainsIndex(index);
     return log.get(index);
   }
 
   @Override
   public List<ByteBuffer> getEntries(long from, long to) {
     assertIsOpen();
-    if (log.isEmpty()) {
-      throw new IndexOutOfBoundsException("Log is empty");
-    } else if (from < log.firstKey()) {
-      throw new IndexOutOfBoundsException("From index out of bounds.");
-    } else if (to > log.lastKey()) {
-      throw new IndexOutOfBoundsException("To index out of bounds.");
-    }
+    assertContainsIndex(from);
+    assertContainsIndex(to);
 
     List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
     for (long i = from; i <= to; i++) {
@@ -170,11 +166,29 @@ public class InMemoryLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
+    assertContainsIndex(index);
+    for (long i = index + 1; i <= log.lastKey(); i++) {
+      ByteBuffer value = log.remove(i);
+      if (value != null) {
+        size -= value.limit();
+      }
+    }
+  }
+
+  @Override
+  public void compact(long index) {
+    assertIsOpen();
     if (!log.isEmpty()) {
-      for (long i = index + 1; i <= log.lastKey(); i++) {
-        ByteBuffer value = log.remove(i);
-        if (value != null) {
-          size -= value.limit();
+      if (index < log.firstKey()) {
+        throw new IllegalArgumentException("Log does not contain index " + index);
+      } else if (index > log.lastKey()) {
+        log.clear();
+      } else {
+        for (long i = log.firstKey(); i < index; i++) {
+          ByteBuffer value = log.remove(i);
+          if (value != null) {
+            size -= value.limit();
+          }
         }
       }
     }
@@ -183,12 +197,10 @@ public class InMemoryLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void compact(long index, ByteBuffer entry) {
     assertIsOpen();
-    if (!containsIndex(index)) {
-      throw new IllegalArgumentException("Log does not contain index " + index);
-    }
+    assertContainsIndex(index);
     log.put(index, entry);
     if (log.firstKey() != index) {
-      for (long i = index - 1; i > log.firstKey(); i++) {
+      for (long i = log.firstKey(); i < index; i++) {
         ByteBuffer value = log.remove(i);
         if (value != null) {
           size -= value.limit();
@@ -199,6 +211,11 @@ public class InMemoryLogSegment extends AbstractLogger implements LogSegment {
 
   @Override
   public void flush() {
+    assertIsOpen();
+  }
+
+  @Override
+  public void flush(boolean force) {
     assertIsOpen();
   }
 
