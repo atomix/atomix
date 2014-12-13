@@ -6,6 +6,8 @@ import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.AbstractCopycatResource;
 import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.log.ZeroRetentionPolicy;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -22,7 +24,7 @@ public class DefaultLeaderElection extends AbstractCopycatResource implements Le
   };
 
   public DefaultLeaderElection(String name, CopycatCoordinator coordinator) {
-    super(name, coordinator, resource -> new BufferedLog());
+    super(name, coordinator, resource -> new BufferedLog(name, new LogConfig().withRetentionPolicy(new ZeroRetentionPolicy())));
   }
 
   @Override

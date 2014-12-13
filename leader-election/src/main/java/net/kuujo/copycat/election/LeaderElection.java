@@ -27,7 +27,7 @@ public interface LeaderElection extends CopycatResource {
    * @return The state machine.
    */
   static LeaderElection create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load("copycat.log", LogConfig.class));
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"));
   }
 
   /**
@@ -36,10 +36,9 @@ public interface LeaderElection extends CopycatResource {
    * @param name The election name.
    * @param config The Copycat cluster.
    * @param protocol The Copycat cluster protocol.
-   * @param log The Copycat log configuration.
    * @return The state machine.
    */
-  static LeaderElection create(String name, ClusterConfig config, Protocol protocol, LogConfig log) {
+  static LeaderElection create(String name, ClusterConfig config, Protocol protocol) {
     CopycatCoordinator coordinator = new DefaultCopycatCoordinator(config, protocol, new BufferedLog("coordinator", new LogConfig()), ExecutionContext.create());
     try {
       coordinator.open().get();
