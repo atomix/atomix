@@ -19,7 +19,7 @@ import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.AsyncLock;
 import net.kuujo.copycat.protocol.VertxEventBusProtocol;
-import net.kuujo.copycat2.VertxExecutionContext;
+import net.kuujo.copycat.VertxExecutionContext;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;

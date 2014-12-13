@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat2;
+package net.kuujo.copycat;
 
 import net.kuujo.copycat.spi.ExecutionContext;
 import org.vertx.java.core.Vertx;
