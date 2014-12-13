@@ -5,7 +5,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.AbstractCopycatResource;
-import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.BufferedLog;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -22,7 +22,7 @@ public class DefaultLeaderElection extends AbstractCopycatResource implements Le
   };
 
   public DefaultLeaderElection(String name, CopycatCoordinator coordinator) {
-    super(name, coordinator, resource -> new InMemoryLog());
+    super(name, coordinator, resource -> new BufferedLog());
   }
 
   @Override

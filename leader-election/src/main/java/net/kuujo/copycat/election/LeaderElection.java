@@ -7,7 +7,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.internal.DefaultCopycatCoordinator;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
@@ -40,7 +40,7 @@ public interface LeaderElection extends CopycatResource {
    * @return The state machine.
    */
   static LeaderElection create(String name, ClusterConfig config, Protocol protocol, LogConfig log) {
-    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(config, protocol, new InMemoryLog("coordinator", new LogConfig()), ExecutionContext.create());
+    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(config, protocol, new BufferedLog("coordinator", new LogConfig()), ExecutionContext.create());
     try {
       coordinator.open().get();
       DefaultLeaderElection election = new DefaultLeaderElection(name, coordinator);
