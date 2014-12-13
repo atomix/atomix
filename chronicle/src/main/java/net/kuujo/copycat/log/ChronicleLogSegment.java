@@ -181,6 +181,8 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
+    assertContainsIndex(index);
+
     if (tailer.index(index - segment)) {
       do {
         ByteBuffer entry = extractEntry(tailer, index);
@@ -195,6 +197,8 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public List<ByteBuffer> getEntries(long from, long to) {
     assertIsOpen();
+    assertContainsIndex(from);
+    assertContainsIndex(to);
     List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
     long currentIndex = from - segment;
     if (tailer.index(currentIndex)) {
@@ -231,6 +235,7 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
+    assertContainsIndex(index);
     long currentIndex = index - segment;
     while (excerpt.index(currentIndex)) {
       if (excerpt.readLong() > index) {
@@ -241,11 +246,14 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
+  public void compact(long index) {
+    compact(index, null);
+  }
+
+  @Override
   public void compact(long index, ByteBuffer entry) {
     assertIsOpen();
-    if (!containsIndex(index)) {
-      throw new IllegalArgumentException("Invalid compaction index " + index);
-    }
+    assertContainsIndex(index);
 
     if (index > firstIndex) {
       // Create a new log file using the most recent timestamp.
@@ -256,13 +264,17 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
 
       // Create a new chronicle for the new log file.
       try (Chronicle chronicle = new IndexedChronicle(tempBaseFile.getAbsolutePath()); ExcerptAppender appender = chronicle.createAppender()) {
-        appender.startExcerpt();
-        appender.writeLong(index);
-        appender.writeByte(ACTIVE);
-        appender.writeInt(entry.limit());
-        appender.write(entry);
-        appender.finish();
-        newSize += entry.limit() + 13; // 13 bytes for index, status, and length
+
+        // If an entry is to replace the existing entry at the given index, write the new entry first.
+        if (entry != null) {
+          appender.startExcerpt();
+          appender.writeLong(index);
+          appender.writeByte(ACTIVE);
+          appender.writeInt(entry.limit());
+          appender.write(entry);
+          appender.finish();
+          newSize += entry.limit() + 13; // 13 bytes for index, status, and length
+        }
 
         // Iterate through entries greater than the given index and copy them to the new chronicle.
         long currentIndex = index - segment;
@@ -318,8 +330,17 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
 
   @Override
   public void flush() {
+    flush(false);
+  }
+
+  @Override
+  public void flush(boolean force) {
     assertIsOpen();
-    appender.nextSynchronous(true);
+    if (force || parent.config.isFlushOnWrite()) {
+      excerpt.flush();
+      appender.flush();
+      tailer.flush();
+    }
   }
 
   @Override
