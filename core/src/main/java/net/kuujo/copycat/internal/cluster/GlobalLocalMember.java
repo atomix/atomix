@@ -49,7 +49,7 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
     super(uri);
     try {
       URI realUri = new URI(uri);
-      if (!protocol.validUri(realUri)) {
+      if (!protocol.isValidUri(realUri)) {
         throw new ProtocolException(String.format("Invalid protocol URI %s", uri));
       }
       this.server = protocol.createServer(realUri);

@@ -21,7 +21,6 @@ import net.kuujo.copycat.collections.internal.lock.AsyncLockState;
 import net.kuujo.copycat.collections.internal.lock.DefaultAsyncLock;
 import net.kuujo.copycat.collections.internal.lock.UnlockedAsyncLockState;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -39,7 +38,7 @@ public interface AsyncLock extends CopycatResource {
    * @return A new asynchronous lock.
    */
   static AsyncLock create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.lock.%s", name), AsyncLockConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.lock.%s", name), AsyncLockConfig.class));
   }
 
   /**
@@ -47,12 +46,11 @@ public interface AsyncLock extends CopycatResource {
    *
    * @param name The asynchronous lock name.
    * @param cluster The cluster configuration.
-   * @param protocol The cluster protocol.
    * @param config The lock configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, ClusterConfig cluster, Protocol protocol, AsyncLockConfig config) {
-    return new DefaultAsyncLock(StateMachine.create(name, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, protocol, config));
+  static AsyncLock create(String name, ClusterConfig cluster, AsyncLockConfig config) {
+    return new DefaultAsyncLock(StateMachine.create(name, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, config));
   }
 
   /**

@@ -12,24 +12,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.spi;
+package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.spi.Protocol;
+
+import java.net.URI;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Replication quorum strategy.
+ * Local protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface QuorumStrategy {
+public class LocalProtocol implements Protocol {
+  private final Map<String, LocalProtocolServer> registry = new ConcurrentHashMap<>();
 
-  /**
-   * Calculates the quorum size for the given cluster.
-   *
-   * @param cluster The cluster for which to calculate the quorum size.
-   * @return The quorum size.
-   */
-  int calculateQuorumSize(Cluster cluster);
+  @Override
+  public ProtocolClient createClient(URI uri) {
+    return new LocalProtocolClient(uri.getAuthority(), registry);
+  }
+
+  @Override
+  public ProtocolServer createServer(URI uri) {
+    return new LocalProtocolServer(uri.getAuthority(), registry);
+  }
 
 }

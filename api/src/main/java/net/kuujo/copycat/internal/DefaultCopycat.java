@@ -27,7 +27,6 @@ import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.spi.ExecutionContext;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -40,8 +39,8 @@ public class DefaultCopycat implements Copycat {
   private final CopycatCoordinator coordinator;
   private boolean open;
 
-  public DefaultCopycat(ClusterConfig cluster, Protocol protocol, CopycatConfig config, ExecutionContext context) {
-    this.coordinator = new DefaultCopycatCoordinator(cluster, protocol, new BufferedLog("copycat", config), context);
+  public DefaultCopycat(ClusterConfig cluster, CopycatConfig config, ExecutionContext context) {
+    this.coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", config), context);
   }
 
   @Override

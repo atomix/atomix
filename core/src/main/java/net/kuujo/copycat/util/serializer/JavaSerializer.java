@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util.serializer.internal;
+package net.kuujo.copycat.util.serializer;
 
 import net.kuujo.copycat.util.serializer.SerializationException;
 import net.kuujo.copycat.util.serializer.Serializer;

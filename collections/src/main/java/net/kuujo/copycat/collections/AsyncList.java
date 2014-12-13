@@ -21,7 +21,6 @@ import net.kuujo.copycat.collections.internal.collection.AsyncListState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncListState;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -42,7 +41,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @return The asynchronous list.
    */
   static <T> AsyncList<T> create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class));
   }
 
   /**
@@ -50,14 +49,13 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    *
    * @param name The asynchronous list name.
    * @param cluster The cluster configuration.
-   * @param protocol The cluster protocol.
    * @param config The list configuration.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
   @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig cluster, Protocol protocol, AsyncListConfig config) {
-    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), cluster, protocol, config));
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config) {
+    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config));
   }
 
   /**

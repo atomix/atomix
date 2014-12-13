@@ -22,7 +22,6 @@ import net.kuujo.copycat.collections.internal.map.AsyncMultiMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMapState;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.util.Collection;
 import java.util.Map;
@@ -48,7 +47,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    * @return A new asynchronous multimap.
    */
   static <K, V> AsyncMultiMap<K, V> create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class));
   }
 
   /**
@@ -56,15 +55,14 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    *
    * @param name The asynchronous multimap name.
    * @param cluster The cluster configuration.
-   * @param protocol The cluster protocol.
    * @param config The multimap configuration.
    * @param <K> The multimap key type.
    * @param <V> The multimap entry type.
    * @return A new asynchronous multimap.
    */
   @SuppressWarnings("unchecked")
-  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, Protocol protocol, AsyncMultiMapConfig config) {
-    return new DefaultAsyncMultiMap(StateMachine.create(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), cluster, protocol, config));
+  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, AsyncMultiMapConfig config) {
+    return new DefaultAsyncMultiMap(StateMachine.create(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), cluster, config));
   }
 
   /**

@@ -26,14 +26,6 @@
       <artifactId>chronicle</artifactId>
       <version>${chronicle.version}</version>
     </dependency>
-
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-core</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>

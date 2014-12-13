@@ -17,7 +17,6 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.DefaultStateMachine;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -47,12 +46,11 @@ public interface StateMachine<T> extends CopycatResource {
    * @param stateType The state machine state type.
    * @param state The state machine state.
    * @param cluster The state machine cluster configuration.
-   * @param protocol The state machine cluster protocol.
    * @param config The state machine configuration.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, Class<T> stateType, T state, ClusterConfig cluster, Protocol protocol, StateMachineConfig config) {
-    return new DefaultStateMachine<>(stateType, state, StateLog.create(name, cluster, protocol, config));
+  static <T> StateMachine<T> create(String name, Class<T> stateType, T state, ClusterConfig cluster, StateMachineConfig config) {
+    return new DefaultStateMachine<>(stateType, state, StateLog.create(name, cluster, config));
   }
 
   /**

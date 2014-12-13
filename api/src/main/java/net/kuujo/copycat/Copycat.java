@@ -21,7 +21,6 @@ import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.DefaultCopycat;
 import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.ExecutionContext;
-import net.kuujo.copycat.spi.Protocol;
 
 /**
  * Copycat.
@@ -36,19 +35,18 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create() {
-    return copycat(Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load("copycat.log", CopycatConfig.class));
+    return copycat(Services.load("copycat.cluster", ClusterConfig.class), Services.load("copycat.log", CopycatConfig.class));
   }
 
   /**
    * Creates a new Copycat instance.
    *
    * @param cluster The global cluster configuration.
-   * @param protocol The cluster protocol.
    * @param config The log configuration.
    * @return The Copycat instance.
    */
-  static Copycat copycat(ClusterConfig cluster, Protocol protocol, CopycatConfig config) {
-    return new DefaultCopycat(cluster, protocol, config, ExecutionContext.create());
+  static Copycat copycat(ClusterConfig cluster, CopycatConfig config) {
+    return new DefaultCopycat(cluster, config, ExecutionContext.create());
   }
 
   /**

@@ -33,7 +33,7 @@ public interface Protocol extends Service {
    * @param uri The member URI to validate.
    * @return Indicates whether the given URI is valid.
    */
-  default boolean validUri(URI uri) {
+  default boolean isValidUri(URI uri) {
     return true;
   }
 

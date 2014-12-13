@@ -26,7 +26,6 @@ import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.LogFactory;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -90,8 +89,8 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
     }
   };
 
-  public DefaultCopycatCoordinator(ClusterConfig config, Protocol protocol, Log log, ExecutionContext executor) {
-    this.cluster = new GlobalCluster(config, protocol, router, executor);
+  public DefaultCopycatCoordinator(ClusterConfig config, Log log, ExecutionContext executor) {
+    this.cluster = new GlobalCluster(config, router, executor);
     this.context = new DefaultCopycatStateContext(cluster, config, log, executor);
     cluster.setState(context);
     this.executor = executor;

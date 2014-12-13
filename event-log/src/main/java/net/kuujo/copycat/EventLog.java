@@ -21,7 +21,6 @@ import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +41,7 @@ public interface EventLog extends CopycatResource {
    * @return A new event log instance.
    */
   static EventLog create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), new EventLogConfig());
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig());
   }
 
   /**
@@ -53,7 +52,7 @@ public interface EventLog extends CopycatResource {
    * @return The event log.
    */
   static EventLog create(String name, EventLogConfig config) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), config);
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config);
   }
 
   /**
@@ -61,13 +60,12 @@ public interface EventLog extends CopycatResource {
    *
    * @param name The log name.
    * @param cluster The event log cluster.
-   * @param protocol The event log cluster protocol.
    * @param config The log configuration.
    * @return A new event log instance.
    */
   @SuppressWarnings("unchecked")
-  static EventLog create(String name, ClusterConfig cluster, Protocol protocol, EventLogConfig config) {
-    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, protocol, new BufferedLog("copycat", new LogConfig()), ExecutionContext.create());
+  static EventLog create(String name, ClusterConfig cluster, EventLogConfig config) {
+    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", new LogConfig()), ExecutionContext.create());
     try {
       coordinator.open().get();
       DefaultEventLog eventLog = new DefaultEventLog(name, coordinator, config);

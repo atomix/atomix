@@ -22,7 +22,6 @@ import net.kuujo.copycat.collections.internal.map.AsyncMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMapState;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.util.Collection;
 import java.util.Map;
@@ -48,7 +47,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    * @return A new asynchronous map.
    */
   static <K, V> AsyncMap<K, V> create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class));
   }
 
   /**
@@ -56,15 +55,14 @@ public interface AsyncMap<K, V> extends CopycatResource {
    *
    * @param name The asynchronous map name.
    * @param cluster The cluster configuration.
-   * @param protocol The cluster protocol.
    * @param config The map configuration.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return A new asynchronous map.
    */
   @SuppressWarnings("unchecked")
-  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, Protocol protocol, AsyncMapConfig config) {
-    return new DefaultAsyncMap(StateMachine.create(name, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, protocol, config));
+  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, AsyncMapConfig config) {
+    return new DefaultAsyncMap(StateMachine.create(name, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, config));
   }
 
   /**

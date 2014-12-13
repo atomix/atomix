@@ -16,8 +16,12 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Copyable;
 import net.kuujo.copycat.Service;
-import net.kuujo.copycat.spi.QuorumStrategy;
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.spi.Protocol;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -27,9 +31,9 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ClusterConfig implements Copyable<ClusterConfig>, Service {
+  private Protocol protocol = new LocalProtocol();
   private long electionTimeout = 300;
   private long heartbeatInterval = 150;
-  private QuorumStrategy quorumStrategy = (cluster) -> (int) Math.floor(cluster.members().size() / 2) + 1;
   private String localMember;
   private Set<String> remoteMembers = new HashSet<>(10);
 
@@ -37,9 +41,9 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
   }
 
   private ClusterConfig(ClusterConfig config) {
+    protocol = config.protocol;
     electionTimeout = config.electionTimeout;
     heartbeatInterval = config.heartbeatInterval;
-    quorumStrategy = config.quorumStrategy;
     localMember = config.getLocalMember();
     remoteMembers = config.getRemoteMembers();
   }
@@ -47,6 +51,35 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
   @Override
   public ClusterConfig copy() {
     return new ClusterConfig(this);
+  }
+
+  /**
+   * Sets the cluster protocol.
+   *
+   * @param protocol The cluster protocol.
+   */
+  public void setProtocol(Protocol protocol) {
+    this.protocol = Assert.isNotNull(protocol, "protocol");
+  }
+
+  /**
+   * Returns the cluster protocol.
+   *
+   * @return The cluster protocol.
+   */
+  public Protocol getProtocol() {
+    return protocol;
+  }
+
+  /**
+   * Sets the cluster protocol, returning the configuration for method chaining.
+   *
+   * @param protocol The cluster protocol.
+   * @return The cluster configuration.
+   */
+  public ClusterConfig withProtocol(Protocol protocol) {
+    this.protocol = Assert.isNotNull(protocol, "protocol");
+    return this;
   }
 
   /**
@@ -152,35 +185,6 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
   }
 
   /**
-   * Sets the default cluster quorum strategy.
-   *
-   * @param quorumStrategy The default cluster quorum strategy.
-   */
-  public void setDefaultQuorumStrategy(QuorumStrategy quorumStrategy) {
-    this.quorumStrategy = quorumStrategy;
-  }
-
-  /**
-   * Returns the default cluster quorum strategy.
-   *
-   * @return The default cluster quorum strategy.
-   */
-  public QuorumStrategy getDefaultQuorumStrategy() {
-    return quorumStrategy;
-  }
-
-  /**
-   * Sets the default cluster quorum strategy, returning the cluster configuration for method chaining.
-   *
-   * @param quorumStrategy The default cluster quorum strategy.
-   * @return The cluster configuration.
-   */
-  public ClusterConfig withDefaultQuorumStrategy(QuorumStrategy quorumStrategy) {
-    setDefaultQuorumStrategy(quorumStrategy);
-    return this;
-  }
-
-  /**
    * Returns a set of all cluster member URIs, including the local member.
    *
    * @return A set of all cluster member URIs.
@@ -197,7 +201,11 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
    * @param uri The local cluster member URI.
    */
   public void setLocalMember(String uri) {
-    this.localMember = uri;
+    try {
+      this.localMember = Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri");
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
   }
 
   /**
@@ -235,7 +243,15 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
    * @param uris A collection of remote cluster member URIs.
    */
   public void setRemoteMembers(Collection<String> uris) {
-    this.remoteMembers = new HashSet<>(uris);
+    Assert.isNotNull(uris, "uris");
+    remoteMembers = new HashSet<>(uris.size());
+    for (String uri : uris) {
+      try {
+        remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
+      } catch (URISyntaxException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
   }
 
   /**
@@ -254,7 +270,11 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
    * @return The cluster configuration.
    */
   public ClusterConfig addRemoteMember(String uri) {
-    remoteMembers.add(uri);
+    try {
+      remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
+    } catch (URISyntaxException e) {
+      throw new IllegalArgumentException(e);
+    }
     return this;
   }
 
@@ -287,7 +307,13 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
    * @return The cluster configuration.
    */
   public ClusterConfig addRemoteMembers(String... uris) {
-    remoteMembers.addAll(Arrays.asList(uris));
+    for (String uri : uris) {
+      try {
+        remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
+      } catch (URISyntaxException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
     return this;
   }
 
@@ -298,8 +324,13 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
    * @return The cluster configuration.
    */
   public ClusterConfig addRemoteMembers(Collection<String> uris) {
+    Assert.isNotNull(uris, "uris");
     for (String uri : uris) {
-      remoteMembers.add(uri);
+      try {
+        remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
+      } catch (URISyntaxException e) {
+        throw new IllegalArgumentException(e);
+      }
     }
     return this;
   }

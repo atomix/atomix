@@ -40,8 +40,8 @@ public class GlobalCluster implements ManagedCluster, InternalCluster, Observer 
   private MessageHandler<ClusterConfig, ClusterConfig> configureHandler;
   private boolean open;
 
-  public GlobalCluster(ClusterConfig config, Protocol protocol, Router router, ExecutionContext executor) {
-    this.protocol = protocol;
+  public GlobalCluster(ClusterConfig config, Router router, ExecutionContext executor) {
+    this.protocol = config.getProtocol();
     this.router = router;
     this.executor = executor;
     this.localMember = new GlobalLocalMember(config.getLocalMember(), protocol, executor);

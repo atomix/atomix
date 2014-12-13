@@ -21,7 +21,6 @@ import net.kuujo.copycat.collections.internal.collection.AsyncSetState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSetState;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.Protocol;
 
 /**
  * Asynchronous set.
@@ -40,7 +39,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    * @return The asynchronous set.
    */
   static <T> AsyncSet<T> create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class));
   }
 
   /**
@@ -48,14 +47,13 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    *
    * @param name The asynchronous set name.
    * @param cluster The cluster configuration.
-   * @param protocol The cluster protocol.
    * @param config The set configuration.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
   @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, Protocol protocol, AsyncSetConfig config) {
-    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, protocol, config));
+  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, AsyncSetConfig config) {
+    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, config));
   }
 
 

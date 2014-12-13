@@ -22,7 +22,6 @@ import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -44,7 +43,7 @@ public interface StateLog extends CopycatResource {
    * @return A new state log instance.
    */
   static StateLog create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), new StateLogConfig());
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new StateLogConfig());
   }
 
   /**
@@ -55,7 +54,7 @@ public interface StateLog extends CopycatResource {
    * @return A new state log instance.
    */
   static StateLog create(String name, StateLogConfig config) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), config);
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config);
   }
 
   /**
@@ -63,13 +62,12 @@ public interface StateLog extends CopycatResource {
    *
    * @param name The log name.
    * @param cluster The state log cluster.
-   * @param protocol The state log cluster protocol.
    * @param config The state log configuration.
    * @return A new state log instance.
    */
   @SuppressWarnings("unchecked")
-  static StateLog create(String name, ClusterConfig cluster, Protocol protocol, StateLogConfig config) {
-    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, protocol, new BufferedLog("coordinator", new LogConfig()), ExecutionContext.create());
+  static StateLog create(String name, ClusterConfig cluster, StateLogConfig config) {
+    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", new LogConfig()), ExecutionContext.create());
     try {
       coordinator.open().get();
       DefaultStateLog stateLog = new DefaultStateLog(name, coordinator, config);

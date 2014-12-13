@@ -12,13 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol.internal;
+package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.internal.ThreadExecutionContext;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.ProtocolHandler;
-import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.nio.ByteBuffer;

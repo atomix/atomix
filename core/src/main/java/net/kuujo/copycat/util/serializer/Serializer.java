@@ -15,7 +15,6 @@
 package net.kuujo.copycat.util.serializer;
 
 import net.kuujo.copycat.Service;
-import net.kuujo.copycat.util.serializer.internal.JavaSerializer;
 
 import java.nio.ByteBuffer;
 
