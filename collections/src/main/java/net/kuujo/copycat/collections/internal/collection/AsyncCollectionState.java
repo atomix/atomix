@@ -15,17 +15,14 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.State;
 import net.kuujo.copycat.StateContext;
-
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Asynchronous collection state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncCollectionState<T extends AsyncCollectionState<T, U>, U> extends State {
+public interface AsyncCollectionState<T extends AsyncCollectionState<T, U>, U> {
 
   /**
    * Adds a entry to the collection.

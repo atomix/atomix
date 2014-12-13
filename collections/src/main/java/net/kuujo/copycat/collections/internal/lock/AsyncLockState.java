@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.State;
 import net.kuujo.copycat.StateContext;
 
 /**
@@ -23,7 +22,7 @@ import net.kuujo.copycat.StateContext;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLockState extends State {
+public interface AsyncLockState {
 
   /**
    * Locks the lock.

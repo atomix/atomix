@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.State;
 import net.kuujo.copycat.StateContext;
 
 import java.util.Collection;
@@ -27,7 +26,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncMapState<K, V> extends State {
+public interface AsyncMapState<K, V> {
 
   /**
    * Sets a key entry in the map.
