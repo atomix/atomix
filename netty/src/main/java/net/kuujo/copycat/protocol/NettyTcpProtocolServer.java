@@ -25,10 +25,9 @@ import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
-import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
 import javax.net.ssl.SSLException;
+import java.nio.ByteBuffer;
 import java.security.cert.CertificateException;
 import java.util.concurrent.CompletableFuture;
 
@@ -38,18 +37,20 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyTcpProtocolServer implements ProtocolServer {
+  private final String host;
+  private final int port;
   private final NettyTcpProtocol protocol;
-  private final TcpMember member;
-  private RequestHandler handler;
+  private ProtocolHandler handler;
   private Channel channel;
 
-  public NettyTcpProtocolServer(NettyTcpProtocol protocol, TcpMember member) {
+  public NettyTcpProtocolServer(String host, int port, NettyTcpProtocol protocol) {
+    this.host = host;
+    this.port = port;
     this.protocol = protocol;
-    this.member = member;
   }
 
   @Override
-  public void requestHandler(RequestHandler handler) {
+  public void handler(ProtocolHandler handler) {
     this.handler = handler;
   }
 
@@ -113,7 +114,7 @@ public class NettyTcpProtocolServer implements ProtocolServer {
     bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
     // Bind and start to accept incoming connections.
-    bootstrap.bind(member.host(), member.port()).addListener(new ChannelFutureListener() {
+    bootstrap.bind(host, port).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         channelFuture.channel().closeFuture().addListener(new ChannelFutureListener() {
@@ -166,15 +167,15 @@ public class NettyTcpProtocolServer implements ProtocolServer {
 
     @Override
     public void channelRead(final ChannelHandlerContext context, Object message) {
-      final Request request = (Request) message;
-      if (request instanceof PingRequest) {
-        context.channel().eventLoop().submit(() -> server.handler.ping((PingRequest) request).thenAccept(context::writeAndFlush));
-      } else if (request instanceof AppendRequest) {
-        context.channel().eventLoop().submit(() -> server.handler.sync((AppendRequest) request).thenAccept(context::writeAndFlush));
-      } else if (request instanceof PollRequest) {
-        context.channel().eventLoop().submit(() -> server.handler.poll((PollRequest) request).thenAccept(context::writeAndFlush));
-      } else if (request instanceof SubmitRequest) {
-        context.channel().eventLoop().submit(() -> server.handler.submit((SubmitRequest) request).thenAccept(context::writeAndFlush));
+      ByteBuffer request = ByteBuffer.wrap((byte[]) message);
+      long requestId = request.getLong();
+      if (server.handler != null) {
+        context.channel().eventLoop().submit(() -> server.handler.handle(request.slice()).whenComplete((result, error) -> {
+          ByteBuffer response = ByteBuffer.allocate(8 + result.capacity());
+          response.putLong(requestId);
+          response.put(result);
+          context.writeAndFlush(response.array());
+        }));
       }
     }
 

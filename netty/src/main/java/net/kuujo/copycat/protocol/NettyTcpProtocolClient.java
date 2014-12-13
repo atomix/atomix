@@ -20,15 +20,11 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import net.kuujo.copycat.cluster.TcpMember;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
 
 import javax.net.ssl.SSLException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -39,74 +35,30 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyTcpProtocolClient implements ProtocolClient {
+  private final String host;
+  private final int port;
   private final NettyTcpProtocol protocol;
-  private final TcpMember member;
   private Channel channel;
-  private final Map<Object, CompletableFuture<? extends Response>> responseFutures = new HashMap<>(1000);
+  private final Map<Object, CompletableFuture<ByteBuffer>> responseFutures = new HashMap<>(1000);
+  private long requestId;
 
-  public NettyTcpProtocolClient(NettyTcpProtocol protocol, TcpMember member) {
+  public NettyTcpProtocolClient(String host, int port, NettyTcpProtocol protocol) {
+    this.host = host;
+    this.port = port;
     this.protocol = protocol;
-    this.member = member;
   }
 
   @Override
-  public CompletableFuture<PingResponse> ping(final PingRequest request) {
-    final CompletableFuture<PingResponse> future = new CompletableFuture<>();
+  public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
+    final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     if (channel != null) {
-      channel.writeAndFlush(request).addListener((channelFuture) -> {
+      long requestId = ++this.requestId;
+      ByteBuffer requestBuffer = ByteBuffer.allocateDirect(8 + request.capacity());
+      requestBuffer.putLong(requestId);
+      requestBuffer.put(request);
+      channel.writeAndFlush(requestBuffer.array()).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
-          responseFutures.put(request.id(), future);
-        } else {
-          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
-        }
-      });
-    } else {
-      future.completeExceptionally(new ProtocolException("Client not connected"));
-    }
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<AppendResponse> sync(final AppendRequest request) {
-    final CompletableFuture<AppendResponse> future = new CompletableFuture<>();
-    if (channel != null) {
-      channel.writeAndFlush(request).addListener((channelFuture) -> {
-        if (channelFuture.isSuccess()) {
-          responseFutures.put(request.id(), future);
-        } else {
-          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
-        }
-      });
-    } else {
-      future.completeExceptionally(new ProtocolException("Client not connected"));
-    }
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<PollResponse> poll(final PollRequest request) {
-    final CompletableFuture<PollResponse> future = new CompletableFuture<>();
-    if (channel != null) {
-      channel.writeAndFlush(request).addListener((channelFuture) -> {
-        if (channelFuture.isSuccess()) {
-          responseFutures.put(request.id(), future);
-        } else {
-          future.completeExceptionally(new ProtocolException(channelFuture.cause()));
-        }
-      });
-    } else {
-      future.completeExceptionally(new ProtocolException("Client not connected"));
-    }
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
-    final CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
-    if (channel != null) {
-      channel.writeAndFlush(request).addListener((channelFuture) -> {
-        if (channelFuture.isSuccess()) {
-          responseFutures.put(request.id(), future);
+          responseFutures.put(requestId, future);
         } else {
           future.completeExceptionally(new ProtocolException(channelFuture.cause()));
         }
@@ -146,12 +98,10 @@ public class NettyTcpProtocolClient implements ProtocolClient {
         protected void initChannel(SocketChannel channel) throws Exception {
           ChannelPipeline pipeline = channel.pipeline();
           if (sslContext != null) {
-            pipeline.addLast(sslContext.newHandler(channel.alloc(), member.host(), member.port()));
+            pipeline.addLast(sslContext.newHandler(channel.alloc(), host, port));
           }
           pipeline.addLast(
-              new ObjectEncoder(),
-              new ObjectDecoder(ClassResolvers.softCachingConcurrentResolver(getClass().getClassLoader())),
-              new TcpProtocolClientHandler(NettyTcpProtocolClient.this)
+            new TcpProtocolClientHandler(NettyTcpProtocolClient.this)
           );
         }
       });
@@ -173,7 +123,7 @@ public class NettyTcpProtocolClient implements ProtocolClient {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, protocol.getConnectTimeout());
 
-    bootstrap.connect(member.host(), member.port()).addListener(new ChannelFutureListener() {
+    bootstrap.connect(host, port).addListener(new ChannelFutureListener() {
       @Override
       public void operationComplete(ChannelFuture channelFuture) throws Exception {
         if (channelFuture.isSuccess()) {
@@ -221,10 +171,10 @@ public class NettyTcpProtocolClient implements ProtocolClient {
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void channelRead(final ChannelHandlerContext context, Object message) {
-      Response response = (Response) message;
-      CompletableFuture responseFuture = client.responseFutures.remove(response.id());
+      ByteBuffer response = ByteBuffer.wrap((byte[]) message);
+      CompletableFuture responseFuture = client.responseFutures.remove(response.getLong());
       if (responseFuture != null) {
-        responseFuture.complete(response);
+        responseFuture.complete(response.slice());
       }
     }
   }
