@@ -11,16 +11,10 @@
   <name>Copycat Core</name>
 
   <properties>
-    <kryo.version>2.24.0</kryo.version>
     <typesafe.config.version>1.2.1</typesafe.config.version>
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>com.esotericsoftware.kryo</groupId>
-      <artifactId>kryo</artifactId>
-      <version>${kryo.version}</version>
-    </dependency>
     <dependency>
       <groupId>com.typesafe</groupId>
       <artifactId>config</artifactId>

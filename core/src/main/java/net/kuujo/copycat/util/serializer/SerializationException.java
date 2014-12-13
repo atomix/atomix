@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,43 +15,23 @@
  */
 package net.kuujo.copycat.util.serializer;
 
-import net.kuujo.copycat.Service;
-import net.kuujo.copycat.util.serializer.internal.JavaSerializer;
-
-import java.nio.ByteBuffer;
+import net.kuujo.copycat.CopycatException;
 
 /**
- * Serializer.
+ * Copycat serialization exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Serializer extends Service {
-
-  /**
-   * Returns a serializer instance.
-   *
-   * @return A serializer instance.
-   */
-  static Serializer serializer() {
-    return new JavaSerializer();
+public class SerializationException extends CopycatException {
+  public SerializationException(String message, Object... args) {
+    super(String.format(message, args));
   }
 
-  /**
-   * Reads an object.
-   *
-   * @param buffer The object buffer.
-   * @param <T> The object type.
-   * @return The object.
-   */
-  <T> T readObject(ByteBuffer buffer);
+  public SerializationException(Throwable cause, String message, Object... args) {
+    super(String.format(message, args), cause);
+  }
 
-  /**
-   * Writes an object.
-   *
-   * @param object The object to write.
-   * @param <T> The object type.
-   * @return The object bytes.
-   */
-  <T> ByteBuffer writeObject(T object);
-
+  public SerializationException(Throwable cause) {
+    super(cause);
+  }
 }
