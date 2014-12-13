@@ -42,7 +42,7 @@ public interface ExecutionContext extends Executor {
    * @param unit The delay time unit.
    * @return The unique scheduled task ID.
    */
-  ScheduledFuture<Void> schedule(Runnable task, long delay, TimeUnit unit);
+  ScheduledFuture<?> schedule(Runnable task, long delay, TimeUnit unit);
 
   /**
    * Executes a task with a return entry.

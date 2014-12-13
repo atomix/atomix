@@ -33,7 +33,7 @@ public class VertxExecutionContext implements ExecutionContext {
   }
 
   @Override
-  public ScheduledFuture<Void> schedule(Runnable task, long delay, TimeUnit unit) {
+  public ScheduledFuture<?> schedule(Runnable task, long delay, TimeUnit unit) {
     return new VertxScheduledFuture(task, delay, unit);
   }
 
