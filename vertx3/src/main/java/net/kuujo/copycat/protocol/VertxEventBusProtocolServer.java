@@ -19,8 +19,9 @@ import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
 import io.vertx.core.eventbus.MessageConsumer;
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
+import io.vertx.core.eventbus.ReplyFailure;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -29,35 +30,18 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventBusProtocolServer implements ProtocolServer {
-  private final ProtocolReader reader = new ProtocolReader();
-  private final ProtocolWriter writer = new ProtocolWriter();
   private final String address;
   private Vertx vertx;
   private MessageConsumer<byte[]> consumer;
-  private RequestHandler requestHandler;
+  private ProtocolHandler handler;
 
   private final Handler<Message<byte[]>> messageHandler = new Handler<Message<byte[]>>() {
     @Override
     public void handle(Message<byte[]> message) {
-      if (requestHandler != null) {
-        Request request = reader.readRequest(message.body());
-        if (request instanceof PingRequest) {
-          requestHandler.ping((PingRequest) request).whenComplete((response, error) -> {
-            message.reply(writer.writeResponse(response));
-          });
-        } else if (request instanceof AppendRequest) {
-          requestHandler.sync((AppendRequest) request).whenComplete((response, error) -> {
-            message.reply(writer.writeResponse(response));
-          });
-        } else if (request instanceof PollRequest) {
-          requestHandler.poll((PollRequest) request).whenComplete((response, error) -> {
-            message.reply(writer.writeResponse(response));
-          });
-        } else if (request instanceof SubmitRequest) {
-          requestHandler.submit((SubmitRequest) request).whenComplete((response, error) -> {
-            message.reply(writer.writeResponse(response));
-          });
-        }
+      if (handler != null) {
+        handler.handle(ByteBuffer.wrap(message.body()));
+      } else {
+        message.fail(ReplyFailure.NO_HANDLERS.toInt(), "No handler registered");
       }
     }
   };
@@ -68,8 +52,8 @@ public class VertxEventBusProtocolServer implements ProtocolServer {
   }
 
   @Override
-  public void requestHandler(RequestHandler handler) {
-    this.requestHandler = handler;
+  public void handler(ProtocolHandler handler) {
+    this.handler = handler;
   }
 
   @Override

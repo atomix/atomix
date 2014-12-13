@@ -17,12 +17,9 @@ package net.kuujo.copycat.protocol;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import net.kuujo.copycat.cluster.EventBusMember;
 import net.kuujo.copycat.spi.Protocol;
-import net.kuujo.copycat.spi.protocol.Protocol;
-import net.kuujo.copycat.spi.protocol.ProtocolClient;
-import net.kuujo.copycat.spi.protocol.ProtocolServer;
 
+import java.net.URI;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -30,7 +27,7 @@ import java.util.concurrent.CountDownLatch;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocol implements Protocol<EventBusMember> {
+public class VertxEventBusProtocol implements Protocol {
   private String host;
   private int port;
   private Vertx vertx;
@@ -142,33 +139,25 @@ public class VertxEventBusProtocol implements Protocol<EventBusMember> {
     VertxOptions options = new VertxOptions();
     options.setClusterPort(port);
     options.setClusterHost(host);
-    Vertx.vertxAsync(options, (result) -> {
-      vertx = result.result();
-      latch.countDown();
-    });
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      throw new ProtocolException(e);
-    }
+    vertx = Vertx.vertx(options);
     return vertx;
   }
 
   @Override
-  public synchronized ProtocolServer createServer(EventBusMember member) {
+  public synchronized ProtocolServer createServer(URI uri) {
     if (vertx != null) {
-      return new VertxEventBusProtocolServer(member.address(), vertx);
+      return new VertxEventBusProtocolServer(uri.getAuthority(), vertx);
     } else {
-      return new VertxEventBusProtocolServer(member.address(), createVertx());
+      return new VertxEventBusProtocolServer(uri.getAuthority(), createVertx());
     }
   }
 
   @Override
-  public synchronized ProtocolClient createClient(EventBusMember member) {
+  public synchronized ProtocolClient createClient(URI uri) {
     if (vertx != null) {
-      return new VertxEventBusProtocolClient(member.address(), vertx);
+      return new VertxEventBusProtocolClient(uri.getAuthority(), vertx);
     } else {
-      return new VertxEventBusProtocolClient(member.address(), createVertx());
+      return new VertxEventBusProtocolClient(uri.getAuthority(), createVertx());
     }
   }
 
