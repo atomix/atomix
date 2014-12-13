@@ -39,19 +39,20 @@ public interface AsyncLock extends CopycatResource {
    * @return A new asynchronous lock.
    */
   static AsyncLock create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"));
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.lock.%s", name), AsyncLockConfig.class));
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
-   * @param config The cluster configuration.
+   * @param cluster The cluster configuration.
    * @param protocol The cluster protocol.
+   * @param config The lock configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncLock(StateMachine.<AsyncLockState>create(name, AsyncLockState.class, new UnlockedAsyncLockState(), config, protocol));
+  static AsyncLock create(String name, ClusterConfig cluster, Protocol protocol, AsyncLockConfig config) {
+    return new DefaultAsyncLock(StateMachine.<AsyncLockState>create(name, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, protocol, config));
   }
 
   /**

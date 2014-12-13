@@ -42,21 +42,22 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @return The asynchronous list.
    */
   static <T> AsyncList<T> create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class));
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
-   * @param config The cluster configuration.
+   * @param cluster The cluster configuration.
    * @param protocol The cluster protocol.
+   * @param config The list configuration.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
   @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), config, protocol));
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, Protocol protocol, AsyncListConfig config) {
+    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), cluster, protocol, config));
   }
 
   /**

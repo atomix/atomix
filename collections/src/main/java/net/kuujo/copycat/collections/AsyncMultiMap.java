@@ -48,22 +48,23 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    * @return A new asynchronous multimap.
    */
   static <K, V> AsyncMultiMap<K, V> create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class));
   }
 
   /**
    * Creates a new asynchronous multimap.
    *
    * @param name The asynchronous multimap name.
-   * @param config The cluster configuration.
+   * @param cluster The cluster configuration.
    * @param protocol The cluster protocol.
+   * @param config The multimap configuration.
    * @param <K> The multimap key type.
    * @param <V> The multimap entry type.
    * @return A new asynchronous multimap.
    */
   @SuppressWarnings("unchecked")
-  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncMultiMap(StateMachine.create(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), config, protocol));
+  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, Protocol protocol, AsyncMultiMapConfig config) {
+    return new DefaultAsyncMultiMap(StateMachine.create(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), cluster, protocol, config));
   }
 
   /**

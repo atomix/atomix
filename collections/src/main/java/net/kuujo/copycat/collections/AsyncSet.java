@@ -40,21 +40,22 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    * @return The asynchronous set.
    */
   static <T> AsyncSet<T> create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class));
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
-   * @param config The cluster configuration.
+   * @param cluster The cluster configuration.
    * @param protocol The cluster protocol.
+   * @param config The set configuration.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
   @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), config, protocol));
+  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, Protocol protocol, AsyncSetConfig config) {
+    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, protocol, config));
   }
 
 

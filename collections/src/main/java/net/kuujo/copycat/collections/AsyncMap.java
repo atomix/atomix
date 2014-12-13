@@ -48,22 +48,23 @@ public interface AsyncMap<K, V> extends CopycatResource {
    * @return A new asynchronous map.
    */
   static <K, V> AsyncMap<K, V> create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class));
   }
 
   /**
    * Creates a new asynchronous map.
    *
    * @param name The asynchronous map name.
-   * @param config The cluster configuration.
+   * @param cluster The cluster configuration.
    * @param protocol The cluster protocol.
+   * @param config The map configuration.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return A new asynchronous map.
    */
   @SuppressWarnings("unchecked")
-  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig config, Protocol protocol) {
-    return new DefaultAsyncMap(StateMachine.create(name, AsyncMapState.class, new DefaultAsyncMapState<>(), config, protocol));
+  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, Protocol protocol, AsyncMapConfig config) {
+    return new DefaultAsyncMap(StateMachine.create(name, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, protocol, config));
   }
 
   /**
