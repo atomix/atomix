@@ -45,16 +45,16 @@ or...
 ```
 copycat {
   cluster {
-    address: tcp://123.456.789.0
+    protocol {
+      class: net.kuujo.copycat.protocol.netty.NettyTcpProtocol
+      tcp-keep-alive: true
+    }
+    local-member: tcp://123.456.789.0
     members: [
       tcp://123.456.789.0
       tcp://234.567.890.1
       tcp://345.678.901.2
     ]
-  }
-  protocol {
-    class: net.kuujo.copycat.protocol.netty.NettyTcpProtocol
-    tcp-keep-alive: true
   }
 }
 ```
@@ -62,7 +62,7 @@ copycat {
 or...
 
 ```
-copycat.cluster.address = tcp://123.456.789.0
+copycat.cluster.localMember = tcp://123.456.789.0
 copycat.cluster.members.1 = tcp://123.456.789.0
 copycat.cluster.members.2 = tcp://234.567.890.1
 copycat.cluster.members.3 = tcp://345.678.901.2
@@ -106,6 +106,28 @@ Got event Hello world!
 Got event Hello world again!
 Got event Hello world once more!
 Hello world again!
+```
+
+### State log
+The state log is a strongly consistent log that supports snapshots.
+
+```java
+Copycat copycat = Copycat.create();
+
+StateLog log = copycat.stateLog("state");
+
+final Map<String, String> map = new HashMap<>();
+
+log.register("put", entry -> map.put(entry.key, entry.value));
+log.register("get", entry -> map.get(entry.key));
+
+log.open().thenRun(() -> {
+  log.submit("put", "foo", "Hello world!").thenRun(() -> {
+    log.submit("get", "foo").thenAccept(result -> {
+      System.out.println("foo is " + result);
+    });
+  });
+});
 ```
 
 ### State machine
