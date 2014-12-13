@@ -20,7 +20,9 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.spi.ExecutionContext;
 
+import java.nio.ByteBuffer;
 import java.util.Set;
+import java.util.function.BiFunction;
 
 /**
  * Copycat state context.
@@ -30,12 +32,11 @@ import java.util.Set;
 public interface CopycatStateContext extends RaftProtocol {
 
   /**
-   * Returns info for a named action.
+   * Returns the log consumer.
    *
-   * @param name The action name.
-   * @return The action info.
+   * @return The log consumer.
    */
-  ActionInfo action(String name);
+  BiFunction<Long, ByteBuffer, ByteBuffer> consumer();
 
   /**
    * Returns the state log.

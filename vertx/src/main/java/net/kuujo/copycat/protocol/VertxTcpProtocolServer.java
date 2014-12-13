@@ -120,8 +120,8 @@ public class VertxTcpProtocolServer implements ProtocolServer {
                 Request request = reader.readRequest(json.getBinary("request"));
                 if (request instanceof PingRequest) {
                   handlePingRequest(id, socket, (PingRequest) request);
-                } else if (request instanceof SyncRequest) {
-                  handleSyncRequest(id, socket, (SyncRequest) request);
+                } else if (request instanceof AppendRequest) {
+                  handleSyncRequest(id, socket, (AppendRequest) request);
                 } else if (request instanceof PollRequest) {
                   handlePollRequest(id, socket, (PollRequest) request);
                 } else if (request instanceof SubmitRequest) {
@@ -159,9 +159,9 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   }
 
   /**
-   * Handles a sync request.
+   * Handles a append request.
    */
-  private void handleSyncRequest(final Object id, final NetSocket socket, SyncRequest request) {
+  private void handleSyncRequest(final Object id, final NetSocket socket, AppendRequest request) {
     if (requestHandler != null) {
       requestHandler.sync(request).whenComplete((response, error) -> respond(socket, id, response, error));
     }
@@ -177,7 +177,7 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   }
 
   /**
-   * Handles a submit request.
+   * Handles a commit request.
    */
   private void handleSubmitRequest(final Object id, final NetSocket socket, SubmitRequest request) {
     if (requestHandler != null) {

@@ -39,7 +39,7 @@ public interface AsyncLock extends CopycatResource {
    * @return A new asynchronous lock.
    */
   static AsyncLock create(String name) {
-    return create(name, Services.load("cluster"), Services.load("protocol"));
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"));
   }
 
   /**

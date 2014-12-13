@@ -14,18 +14,22 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
+
 /**
- * Protocol ping request.
+ * Protocol append request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PingRequest extends AbstractRequest {
-  public static final int TYPE = -1;
+public class AppendRequest extends AbstractRequest {
+  public static final int TYPE = -5;
 
   /**
-   * Returns a new ping request builder.
+   * Returns a new append request builder.
    *
-   * @return A new ping request builder.
+   * @return A new append request builder.
    */
   public static Builder builder() {
     return new Builder();
@@ -35,6 +39,7 @@ public class PingRequest extends AbstractRequest {
   private String leader;
   private long logIndex;
   private long logTerm;
+  private List<ByteBuffer> entries;
   private long commitIndex;
 
   /**
@@ -56,21 +61,30 @@ public class PingRequest extends AbstractRequest {
   }
 
   /**
-   * Returns the index of the entry in the leader's log.
+   * Returns the index of the log entry preceding the new entry.
    *
-   * @return The index of the entry in the leader's log.
+   * @return The index of the log entry preceding the new entry.
    */
   public long logIndex() {
     return logIndex;
   }
 
   /**
-   * Returns the term of the entry in the leader's log.
+   * Returns the term of the log entry preceding the new entry.
    *
-   * @return The term of the entry in the leader's log.
+   * @return The index of the term preceding the new entry.
    */
   public long logTerm() {
     return logTerm;
+  }
+
+  /**
+   * Returns the log entries to append.
+   *
+   * @return A list of log entries.
+   */
+  public List<ByteBuffer> entries() {
+    return entries;
   }
 
   /**
@@ -84,22 +98,22 @@ public class PingRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, commitIndex);
+    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[...], commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, commitIndex);
   }
 
   /**
-   * Ping request builder.
+   * Append request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, PingRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, AppendRequest> {
     private Builder() {
-      super(new PingRequest());
+      super(new AppendRequest());
     }
 
     /**
      * Sets the request term.
      *
      * @param term The request term.
-     * @return The ping request builder.
+     * @return The append request builder.
      */
     public Builder withTerm(long term) {
       request.term = term;
@@ -110,7 +124,7 @@ public class PingRequest extends AbstractRequest {
      * Sets the request leader.
      *
      * @param leader The request leader.
-     * @return The ping request builder.
+     * @return The append request builder.
      */
     public Builder withLeader(String leader) {
       request.leader = leader;
@@ -121,7 +135,7 @@ public class PingRequest extends AbstractRequest {
      * Sets the request last log index.
      *
      * @param index The request last log index.
-     * @return The ping request builder.
+     * @return The append request builder.
      */
     public Builder withLogIndex(long index) {
       request.logIndex = index;
@@ -132,7 +146,7 @@ public class PingRequest extends AbstractRequest {
      * Sets the request last log term.
      *
      * @param term The request last log term.
-     * @return The ping request builder.
+     * @return The append request builder.
      */
     public Builder withLogTerm(long term) {
       request.logTerm = term;
@@ -140,10 +154,31 @@ public class PingRequest extends AbstractRequest {
     }
 
     /**
+     * Sets the request entries.
+     *
+     * @param entries The request entries.
+     * @return The append request builder.
+     */
+    public Builder withEntries(ByteBuffer... entries) {
+      return withEntries(Arrays.asList(entries));
+    }
+
+    /**
+     * Sets the request entries.
+     *
+     * @param entries The request entries.
+     * @return The append request builder.
+     */
+    public Builder withEntries(List<ByteBuffer> entries) {
+      request.entries = entries;
+      return this;
+    }
+
+    /**
      * Sets the request commit index.
      *
      * @param index The request commit index.
-     * @return The ping request builder.
+     * @return The append request builder.
      */
     public Builder withCommitIndex(long index) {
       request.commitIndex = index;

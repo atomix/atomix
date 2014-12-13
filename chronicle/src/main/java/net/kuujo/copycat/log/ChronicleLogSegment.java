@@ -133,6 +133,11 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
+  public boolean isEmpty() {
+    return size() > 0;
+  }
+
+  @Override
   public long appendEntry(ByteBuffer entry) {
     assertIsOpen();
     long index = lastIndex + 1;

@@ -71,7 +71,7 @@ public interface Member {
   /**
    * Submits a task to the member.
    *
-   * @param task The task to submit on the member.
+   * @param task The task to commit on the member.
    * @param <T> The task return type.
    * @return A completable future to be completed with the task result.
    */

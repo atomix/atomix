@@ -45,8 +45,8 @@ public class VertxEventBusProtocolServer implements ProtocolServer {
           requestHandler.ping((PingRequest) request).whenComplete((response, error) -> {
             message.reply(writer.writeResponse(response));
           });
-        } else if (request instanceof SyncRequest) {
-          requestHandler.sync((SyncRequest) request).whenComplete((response, error) -> {
+        } else if (request instanceof AppendRequest) {
+          requestHandler.sync((AppendRequest) request).whenComplete((response, error) -> {
             message.reply(writer.writeResponse(response));
           });
         } else if (request instanceof PollRequest) {

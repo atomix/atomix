@@ -16,7 +16,6 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.internal.util.Quorum;
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
@@ -24,6 +23,7 @@ import net.kuujo.copycat.protocol.PollResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
@@ -109,12 +109,12 @@ class CandidateState extends ActiveState {
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
     final long lastIndex = context.log().lastIndex();
-    Entry lastEntry = context.log().getEntry(lastIndex);
+    ByteBuffer lastEntry = context.log().getEntry(lastIndex);
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.
     LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getRemoteMembers());
-    final long lastTerm = lastEntry != null ? lastEntry.term() : 0;
+    final long lastTerm = lastEntry != null ? lastEntry.getLong() : 0;
     for (String member : context.getMembers()) {
       LOGGER.debug("{} - Polling {}", context.getLocalMember(), member);
       PollRequest request = PollRequest.builder()

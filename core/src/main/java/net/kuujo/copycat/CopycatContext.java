@@ -15,11 +15,12 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.ExecutionContext;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * Raft context.
@@ -57,50 +58,26 @@ public interface CopycatContext extends Managed {
   Log log();
 
   /**
-   * Registers an action.
+   * Registers an entry consumer on the context.
    *
-   * @param name The action to register.
-   * @param action The action function.
-   * @param <T> The action output type.
+   * @param consumer The entry consumer.
    * @return The Copycat context.
    */
-  <T, U> CopycatContext register(String name, Action<T, U> action);
+  CopycatContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer);
 
   /**
-   * Registers an action.
+   * Submits a synchronous entry to the context.
    *
-   * @param name The action to register.
-   * @param action The action function.
-   * @param options The action options.
-   * @param <T> The action output type.
-   * @return The Copycat context.
+   * @return A completable future to be completed once the cluster has been synchronized.
    */
-  <T, U> CopycatContext register(String name, Action<T, U> action, ActionOptions options);
+  CompletableFuture<Void> sync();
 
   /**
-   * Unregisters an action.
+   * Submits a persistent entry to the context.
    *
-   * @param name The action to unregister.
-   * @return The Copycat context.
+   * @param entry The entry to commit.
+   * @return A completable future to be completed once the entry has been committed.
    */
-  CopycatContext unregister(String name);
-
-  /**
-   * Configures the context.
-   *
-   * @param config The cluster configuration.
-   * @return A completable future to be completed once the context has been configured.
-   */
-  CompletableFuture<ClusterConfig> configure(ClusterConfig config);
-
-  /**
-   * Submits a named action to the context.
-   *
-   * @param action The action to submit.
-   * @param entry The entry to submit.
-   * @param <T> The output type.
-   * @return A completable future to be completed once the action has been committed.
-   */
-  <T, U> CompletableFuture<U> submit(String action, T entry);
+  CompletableFuture<ByteBuffer> commit(ByteBuffer entry);
 
 }

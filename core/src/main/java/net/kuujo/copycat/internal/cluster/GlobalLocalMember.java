@@ -178,7 +178,7 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.listen().whenComplete((result, error) -> {
       server.handler(this::handle);
-      this.<Task, Object>register("submit", SYSTEM_ADDRESS, request -> context.submit(request::execute));
+      this.<Task, Object>register("commit", SYSTEM_ADDRESS, request -> context.submit(request::execute));
       context.execute(() -> {
         if (error == null) {
           future.complete(null);
@@ -194,7 +194,7 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.close().whenComplete((result, error) -> {
-      unregister("submit", SYSTEM_ADDRESS);
+      unregister("commit", SYSTEM_ADDRESS);
       context.execute(() -> {
         if (error == null) {
           future.complete(null);

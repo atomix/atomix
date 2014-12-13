@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.nio.ByteBuffer;
+
 /**
  * Protocol commit request.
  *
@@ -31,31 +33,20 @@ public class CommitRequest extends AbstractRequest {
     return new Builder();
   }
 
-  private String action;
-  private Object entry;
-
-  /**
-   * Returns commit action.
-   *
-   * @return The commit action.
-   */
-  public String action() {
-    return action;
-  }
+  private ByteBuffer entry;
 
   /**
    * Returns the commit entry.
    *
    * @return The commit entry.
    */
-  @SuppressWarnings("unchecked")
-  public <T> T entry() {
-    return (T) entry;
+  public ByteBuffer entry() {
+    return entry;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, action=%s]", getClass().getSimpleName(), id, action);
+    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
   }
 
   /**
@@ -67,23 +58,12 @@ public class CommitRequest extends AbstractRequest {
     }
 
     /**
-     * Sets the request action.
-     *
-     * @param action The request action.
-     * @return The request builder.
-     */
-    public Builder withAction(String action) {
-      request.action = action;
-      return this;
-    }
-
-    /**
      * Sets the request entry.
      *
      * @param entry The request entry.
      * @return The request builder.
      */
-    public Builder withEntry(Object entry) {
+    public Builder withEntry(ByteBuffer entry) {
       request.entry = entry;
       return this;
     }

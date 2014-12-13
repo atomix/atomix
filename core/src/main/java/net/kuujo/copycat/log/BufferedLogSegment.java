@@ -107,6 +107,11 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
+  public boolean isEmpty() {
+    return size() > 0;
+  }
+
+  @Override
   public long appendEntry(ByteBuffer entry) {
     Assert.isNotNull(entry, "entry");
     assertIsOpen();

@@ -87,7 +87,7 @@ public class GlobalRemoteMember extends GlobalMember {
   @Override
   @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    return this.<Task<T>, T>send("submit", SYSTEM_ADDRESS, task);
+    return this.<Task<T>, T>send("commit", SYSTEM_ADDRESS, task);
   }
 
   @Override

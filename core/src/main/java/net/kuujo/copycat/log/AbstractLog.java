@@ -141,6 +141,11 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   }
 
   @Override
+  public boolean isEmpty() {
+    return size() > 0;
+  }
+
+  @Override
   public long appendEntry(ByteBuffer entry) {
     assertIsOpen();
     checkRollOver();

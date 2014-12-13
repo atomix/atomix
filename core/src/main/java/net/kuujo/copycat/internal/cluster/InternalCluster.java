@@ -16,6 +16,8 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MessageHandler;
 
 /**
  * Internal cluster.
@@ -29,5 +31,13 @@ public interface InternalCluster extends Cluster {
 
   @Override
   InternalMember member(String uri);
+
+  /**
+   * Registers a configure handler.
+   *
+   * @param handler The configure handler.
+   * @return The internal cluster.
+   */
+  InternalCluster configureHandler(MessageHandler<ClusterConfig, ClusterConfig> handler);
 
 }

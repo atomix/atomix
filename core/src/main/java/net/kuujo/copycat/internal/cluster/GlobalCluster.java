@@ -14,13 +14,9 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.ManagedCluster;
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
-import net.kuujo.copycat.protocol.ConfigureRequest;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
@@ -42,6 +38,7 @@ public class GlobalCluster implements ManagedCluster, InternalCluster, Observer 
   private final Set<String> updating = new HashSet<>();
   private final ClusterElection election;
   private CopycatStateContext context;
+  private MessageHandler<ClusterConfig, ClusterConfig> configureHandler;
   private boolean open;
 
   public GlobalCluster(ClusterConfig config, Protocol protocol, Router router, ExecutionContext executor) {
@@ -150,22 +147,22 @@ public class GlobalCluster implements ManagedCluster, InternalCluster, Observer 
   @Override
   public CompletableFuture<Cluster> configure(ClusterConfig configuration) {
     CompletableFuture<Cluster> future = new CompletableFuture<>();
-    context.configure(ConfigureRequest.builder()
-      .withId(UUID.randomUUID().toString())
-      .withMember(localMember.uri())
-      .withMembers(configuration.getMembers())
-      .build()).whenComplete((result, error) -> {
-      if (error == null) {
-        if (result.status().equals(Response.Status.OK)) {
+    if (configureHandler != null) {
+      configureHandler.handle(configuration).whenComplete((result, error) -> {
+        if (error == null) {
           future.complete(this);
         } else {
-          future.completeExceptionally(result.error());
+          future.completeExceptionally(error);
         }
-      } else {
-        future.completeExceptionally(error);
-      }
-    });
+      });
+    }
     return future;
+  }
+
+  @Override
+  public InternalCluster configureHandler(MessageHandler<ClusterConfig, ClusterConfig> handler) {
+    this.configureHandler = handler;
+    return this;
   }
 
   @Override

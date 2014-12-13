@@ -15,10 +15,10 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.protocol.AppendRequest;
+import net.kuujo.copycat.protocol.AppendResponse;
 import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -104,9 +104,9 @@ class FollowerState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+  public CompletableFuture<AppendResponse> append(AppendRequest request) {
     resetTimer();
-    return super.sync(request);
+    return super.append(request);
   }
 
   /**

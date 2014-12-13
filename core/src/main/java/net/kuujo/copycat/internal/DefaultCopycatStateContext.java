@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.Action;
-import net.kuujo.copycat.ActionOptions;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
@@ -27,8 +25,13 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.spi.ExecutionContext;
 
-import java.util.*;
+import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Observable;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * Raft state context.
@@ -40,12 +43,12 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   private final ExecutionContext executor;
   private final Log log;
   private AbstractState state;
+  private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
   private MessageHandler<PingRequest, PingResponse> pingHandler;
-  private MessageHandler<ConfigureRequest, ConfigureResponse> configureHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
+  private MessageHandler<AppendRequest, AppendResponse> appendHandler;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
-  private final Map<String, ActionInfo> actions = new HashMap<>();
   private final String localMember;
   private final Set<String> remoteMembers;
   private Election.Status status;
@@ -247,22 +250,32 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   }
 
   @Override
+  public CopycatContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
+    this.consumer = consumer;
+    return this;
+  }
+
+  @Override
+  public BiFunction<Long, ByteBuffer, ByteBuffer> consumer() {
+    return consumer;
+  }
+
+  @Override
   public Log log() {
     return log;
   }
 
   @Override
-  public CompletableFuture<ClusterConfig> configure(ClusterConfig config) {
-    CompletableFuture<ClusterConfig> future = new CompletableFuture<>();
-    ConfigureRequest request = ConfigureRequest.builder()
+  public CompletableFuture<Void> sync() {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    SyncRequest request = SyncRequest.builder()
       .withId(UUID.randomUUID().toString())
-      .withMember(localMember)
-      .withMembers(config.getMembers())
+      .withMember(getLocalMember())
       .build();
-    configure(request).whenComplete((response, error) -> {
+    sync(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(config);
+          future.complete(null);
         } else {
           future.completeExceptionally(response.error());
         }
@@ -274,31 +287,8 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   }
 
   @Override
-  public <T, U> CopycatContext register(String name, Action<T, U> action) {
-    actions.put(name, new ActionInfo(name, action, new ActionOptions()));
-    return this;
-  }
-
-  @Override
-  public <T, U> CopycatContext register(String name, Action<T, U> action, ActionOptions options) {
-    actions.put(name, new ActionInfo(name, action, options));
-    return this;
-  }
-
-  @Override
-  public CopycatContext unregister(String name) {
-    actions.remove(name);
-    return this;
-  }
-
-  @Override
-  public ActionInfo action(String name) {
-    return actions.get(name);
-  }
-
-  @Override
-  public <T, U> CompletableFuture<U> submit(String action, T entry) {
-    CompletableFuture<U> future = new CompletableFuture<>();
+  public CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     CommitRequest request = CommitRequest.builder()
       .withId(UUID.randomUUID().toString())
       .withMember(getLocalMember())
@@ -343,15 +333,15 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   }
 
   @Override
-  public DefaultCopycatStateContext configureHandler(MessageHandler<ConfigureRequest, ConfigureResponse> handler) {
-    this.configureHandler = handler;
+  public DefaultCopycatStateContext appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
+    this.appendHandler = handler;
     return this;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<ConfigureResponse> configure(ConfigureRequest request) {
-    return state.configure(request);
+  public CompletableFuture<AppendResponse> append(AppendRequest request) {
+    return state.append(request);
   }
 
   @Override
@@ -361,7 +351,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
     return state.sync(request);
   }
@@ -426,9 +415,9 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
    */
   private void registerHandlers(AbstractState state) {
     state.pingHandler(pingHandler);
-    state.syncHandler(syncHandler);
-    state.configureHandler(configureHandler);
+    state.appendHandler(appendHandler);
     state.pollHandler(pollHandler);
+    state.syncHandler(syncHandler);
     state.commitHandler(commitHandler);
     state.transitionHandler(this::transition);
   }
@@ -438,9 +427,9 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
    */
   private void unregisterHandlers(AbstractState state) {
     state.pingHandler(null);
-    state.syncHandler(null);
-    state.configureHandler(null);
+    state.appendHandler(null);
     state.pollHandler(null);
+    state.syncHandler(null);
     state.commitHandler(null);
     state.transitionHandler(null);
   }

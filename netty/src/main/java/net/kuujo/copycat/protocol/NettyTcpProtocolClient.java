@@ -67,8 +67,8 @@ public class NettyTcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
-    final CompletableFuture<SyncResponse> future = new CompletableFuture<>();
+  public CompletableFuture<AppendResponse> sync(final AppendRequest request) {
+    final CompletableFuture<AppendResponse> future = new CompletableFuture<>();
     if (channel != null) {
       channel.writeAndFlush(request).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {

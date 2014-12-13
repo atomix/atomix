@@ -16,13 +16,12 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.log.ActionEntry;
-import net.kuujo.copycat.log.ConfigurationEntry;
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.*;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
 
 /**
  * Abstract active state.
@@ -112,7 +111,7 @@ abstract class ActiveState extends AbstractState {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    Entry entry = context.log().getEntry(request.logIndex());
+    ByteBuffer entry = context.log().getEntry(request.logIndex());
     if (entry == null) {
       logger().warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember(), request);
       return PingResponse.builder()
@@ -121,7 +120,7 @@ abstract class ActiveState extends AbstractState {
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .build();
-    } else if (entry.term() != request.logTerm()) {
+    } else if (entry.getLong() != request.logTerm()) {
       logger().warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember(), request);
       return PingResponse.builder()
         .withId(request.id())
@@ -141,8 +140,8 @@ abstract class ActiveState extends AbstractState {
   }
 
   @Override
-  public synchronized CompletableFuture<SyncResponse> sync(final SyncRequest request) {
-    CompletableFuture<SyncResponse> future = CompletableFuture.completedFuture(logResponse(handleSync(logRequest(request))));
+  public synchronized CompletableFuture<AppendResponse> append(final AppendRequest request) {
+    CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleSync(logRequest(request))));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
     if (transition.get()) {
@@ -152,9 +151,9 @@ abstract class ActiveState extends AbstractState {
   }
 
   /**
-   * Starts the sync process.
+   * Starts the append process.
    */
-  private synchronized SyncResponse handleSync(SyncRequest request) {
+  private synchronized AppendResponse handleSync(AppendRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
@@ -168,7 +167,7 @@ abstract class ActiveState extends AbstractState {
     // the updated term and step down.
     if (request.term() < context.getTerm()) {
       logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember(), request, context.getTerm());
-      return SyncResponse.builder()
+      return AppendResponse.builder()
         .withId(request.id())
         .withMember(context.getLocalMember())
         .withTerm(context.getTerm())
@@ -185,10 +184,10 @@ abstract class ActiveState extends AbstractState {
   /**
    * Checks the previous log entry for consistency.
    */
-  private synchronized SyncResponse doCheckPreviousEntry(SyncRequest request) {
+  private synchronized AppendResponse doCheckPreviousEntry(AppendRequest request) {
     if (request.logIndex() > context.log().lastIndex()) {
       logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
-      return SyncResponse.builder()
+      return AppendResponse.builder()
         .withId(request.id())
         .withMember(context.getLocalMember())
         .withTerm(context.getTerm())
@@ -203,19 +202,19 @@ abstract class ActiveState extends AbstractState {
     // decrement this node's nextIndex and ultimately retry with the
     // leader's previous log entry so that the inconsistent entry
     // can be overwritten.
-    Entry entry = context.log().getEntry(request.logIndex());
+    ByteBuffer entry = context.log().getEntry(request.logIndex());
     if (entry == null) {
       logger().warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember(), request);
-      return SyncResponse.builder()
+      return AppendResponse.builder()
         .withId(request.id())
         .withMember(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
         .build();
-    } else if (entry.term() != request.logTerm()) {
+    } else if (entry.getLong() != request.logTerm()) {
       logger().warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember(), request);
-      return SyncResponse.builder()
+      return AppendResponse.builder()
         .withId(request.id())
         .withMember(context.getLocalMember())
         .withTerm(context.getTerm())
@@ -230,19 +229,20 @@ abstract class ActiveState extends AbstractState {
   /**
    * Appends entries to the local log.
    */
-  private synchronized SyncResponse doAppendEntries(SyncRequest request) {
+  private synchronized AppendResponse doAppendEntries(AppendRequest request) {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
       long index = request.logIndex();
-      for (Entry entry : request.entries()) {
+      for (ByteBuffer entry : request.entries()) {
         index++;
         // Replicated snapshot entries are *always* immediately logged and applied to the state machine
         // since snapshots are only taken of committed state machine state. This will cause all previous
         // entries to be removed from the log.
-        Entry match = context.log().getEntry(index);
+        ByteBuffer match = context.log().getEntry(index);
         if (match != null) {
-          if (entry.term() != match.term()) {
+          // Compare the term of the received entry with the matching entry in the log.
+          if (entry.getLong() != match.getLong()) {
             logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember());
             context.log().removeAfter(index - 1);
             context.log().appendEntry(entry);
@@ -256,7 +256,7 @@ abstract class ActiveState extends AbstractState {
       context.log().flush();
     }
     doApplyCommits(request.commitIndex());
-    return SyncResponse.builder()
+    return AppendResponse.builder()
       .withId(request.id())
       .withMember(context.getLocalMember())
       .withTerm(context.getTerm())
@@ -289,9 +289,6 @@ abstract class ActiveState extends AbstractState {
           // Apply the entry to the state machine.
           applyEntry(i);
         }
-
-        // Once entries have been applied check whether we need to compact the log.
-        compactLog();
       }
     }
   }
@@ -302,35 +299,30 @@ abstract class ActiveState extends AbstractState {
   @SuppressWarnings("unchecked")
   protected void applyEntry(long index) {
     if (context.getLastApplied() == index-1) {
-      Entry entry = context.log().getEntry(index);
+      ByteBuffer entry = context.log().getEntry(index);
 
       // Ensure that the entry exists.
       if (entry == null) {
         throw new IllegalStateException("null entry cannot be applied to state machine");
       }
 
-      if (entry instanceof ConfigurationEntry) {
-        context.setMembers(((ConfigurationEntry) entry).members());
-      } else if (entry instanceof ActionEntry) {
-        ActionEntry actionEntry = (ActionEntry) entry;
-        ActionInfo action = context.action(actionEntry.action());
-        if (action != null) {
-          try {
-            action.action.execute(index, actionEntry.entry());
-          } catch (Exception e) {
-            logger().warn(e.getMessage());
-          }
-        }
-      }
-      context.setLastApplied(index);
-    }
-  }
+      // Extract a view of the entry after the entry term.
+      entry.position(8);
+      ByteBuffer userEntry = entry.slice();
 
-  /**
-   * Compacts the log.
-   */
-  protected void compactLog() {
-    // TODO
+      BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
+      if (consumer != null) {
+        try {
+          consumer.apply(index, userEntry);
+        } catch (Exception e) {
+          logger().warn(e.getMessage());
+        } finally {
+          context.setLastApplied(index);
+        }
+      } else {
+        context.setLastApplied(index);
+      }
+    }
   }
 
   @Override
@@ -363,7 +355,7 @@ abstract class ActiveState extends AbstractState {
         .withVoted(false)
         .build();
     }
-    // If the requesting candidate is ourself then always vote for ourself. Votes
+    // If the requesting candidate is our self then always vote for our self. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
     else if (request.candidate().equals(context.getLocalMember())) {
@@ -403,7 +395,7 @@ abstract class ActiveState extends AbstractState {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
         long lastIndex = context.log().lastIndex();
-        Entry entry = context.log().getEntry(lastIndex);
+        ByteBuffer entry = context.log().getEntry(lastIndex);
         if (entry == null) {
           context.setLastVotedFor(request.candidate());
           logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
@@ -415,7 +407,7 @@ abstract class ActiveState extends AbstractState {
             .build();
         }
 
-        long lastTerm = entry.term();
+        long lastTerm = entry.getLong();
         if (request.logIndex() >= lastIndex) {
           if (request.logTerm() >= lastTerm) {
             context.setLastVotedFor(request.candidate());
@@ -456,6 +448,18 @@ abstract class ActiveState extends AbstractState {
         .withVoted(false)
         .build();
     }
+  }
+
+  @Override
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    logRequest(request);
+
+    return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
+      .withId(request.id())
+      .withMember(context.getLocalMember())
+      .withStatus(Response.Status.ERROR)
+      .withError(new IllegalStateException("Not the leader"))
+      .build()));
   }
 
   @Override

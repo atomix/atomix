@@ -46,6 +46,13 @@ public interface Logger {
   int size();
 
   /**
+   * Returns a boolean indicating whether the logger is empty.
+   *
+   * @return Indicates whether the logger is empty.
+   */
+  boolean isEmpty();
+
+  /**
    * Appends an entry to the logger.
    *
    * @param entry The entry to append.

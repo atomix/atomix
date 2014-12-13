@@ -33,7 +33,7 @@ import java.util.function.Supplier;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultStateLog extends AbstractCopycatResource implements StateLog {
-  private final Map<String, CommandInfo> commands = new HashMap<>();
+  private final Map<Integer, CommandInfo> commands = new HashMap<>();
   private final StateLogConfig config;
   private Supplier<ByteBuffer> snapshotter;
   private Consumer<ByteBuffer> installer;
@@ -58,14 +58,14 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
   @Override
   public StateLog register(String name, Command command, CommandOptions options) {
     Assert.state(open, "Cannot register command on open state log");
-    commands.put(name, new CommandInfo(name, command, options));
+    commands.put(name.hashCode(), new CommandInfo(name, command, options));
     return this;
   }
 
   @Override
   public StateLog unregister(String name) {
     Assert.state(open, "Cannot unregister command on open state log");
-    commands.remove(name);
+    commands.remove(name.hashCode());
     return this;
   }
 
@@ -86,7 +86,53 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
   @Override
   public CompletableFuture<ByteBuffer> submit(String command, ByteBuffer entry) {
     Assert.state(open, "State log not open");
-    return context.submit(command, entry);
+    CommandInfo commandInfo = commands.get(command.hashCode());
+    if (commandInfo == null) {
+      CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+      future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command)));
+      return future;
+    }
+    if (commandInfo.options.isReadOnly()) {
+      if (commandInfo.options.isConsistent()) {
+        ByteBuffer queryEntry = ByteBuffer.allocateDirect(4 + entry.capacity());
+        queryEntry.putInt(command.hashCode());
+        queryEntry.put(entry);
+        return cluster.leader().<ByteBuffer, ByteBuffer>send("query", queryEntry);
+      } else {
+        return CompletableFuture.completedFuture(commandInfo.command.execute(entry));
+      }
+    } else {
+      ByteBuffer commandEntry = ByteBuffer.allocateDirect(8 + entry.capacity());
+      commandEntry.putInt(1); // Entry type
+      commandEntry.putInt(command.hashCode());
+      commandEntry.put(entry);
+      return context.commit(commandEntry);
+    }
+  }
+
+  /**
+   * Consumes a log entry.
+   *
+   * @param index The entry index.
+   * @param entry The log entry.
+   * @return The entry output.
+   */
+  private ByteBuffer consume(Long index, ByteBuffer entry) {
+    int entryType = entry.getInt();
+    switch (entryType) {
+      case 0: // Snapshot entry
+        installSnapshot(entry.slice());
+        return ByteBuffer.allocate(0);
+      case 1: // Command entry
+        int commandCode = entry.getInt();
+        CommandInfo commandInfo = commands.get(commandCode);
+        if (commandInfo != null) {
+          commandInfo.execute(index, entry.slice());
+        }
+        return ByteBuffer.allocate(0);
+      default:
+        throw new IllegalArgumentException("Invalid entry type");
+    }
   }
 
   /**
@@ -108,14 +154,19 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
     }
   }
 
+  /**
+   * Installs a snapshot.
+   */
+  private void installSnapshot(ByteBuffer snapshot) {
+    if (installer != null) {
+      installer.accept(snapshot);
+    }
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
-    for (CommandInfo command : commands.values()) {
-      context.register(command.name, command::execute, new ActionOptions()
-        .withConsistent(true)
-        .withPersistent(command.options.isReadOnly()));
-    }
+    context.consumer(this::consume);
     open = true;
     return super.open().whenComplete((result, error) -> {
       if (error != null) {
@@ -130,9 +181,7 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
   @Override
   public CompletableFuture<Void> close() {
     open = false;
-    for (String command : commands.keySet()) {
-      context.unregister(command);
-    }
+    context.consumer(null);
     return super.close();
   }
 

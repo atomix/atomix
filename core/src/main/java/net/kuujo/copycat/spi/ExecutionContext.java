@@ -38,7 +38,7 @@ public interface ExecutionContext extends Executor {
    * Schedules a task for execution.
    *
    * @param task The task to schedule.
-   * @param delay The delay after which to submit the task.
+   * @param delay The delay after which to commit the task.
    * @param unit The delay time unit.
    * @return The unique scheduled task ID.
    */
@@ -47,7 +47,7 @@ public interface ExecutionContext extends Executor {
   /**
    * Executes a task with a return entry.
    *
-   * @param task The task to submit.
+   * @param task The task to commit.
    * @param <T> The task return entry type.
    * @return A completable future to be completed once the task return entry is available.
    */

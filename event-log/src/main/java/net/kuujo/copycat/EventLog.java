@@ -97,7 +97,7 @@ public interface EventLog extends CopycatResource {
   /**
    * Commits an entry to the log.
    *
-   * @param entry The entry to submit.
+   * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
   CompletableFuture<Long> commit(ByteBuffer entry);

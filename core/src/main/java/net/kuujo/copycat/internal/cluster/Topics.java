@@ -37,6 +37,11 @@ public class Topics {
   public static final String POLL = "poll";
 
   /**
+   * Member append topic.
+   */
+  public static final String APPEND = "append";
+
+  /**
    * Member sync topic.
    */
   public static final String SYNC = "sync";
@@ -45,10 +50,5 @@ public class Topics {
    * Member commit topic.
    */
   public static final String COMMIT = "commit";
-
-  /**
-   * Member submit topic.
-   */
-  public static final String SUBMIT = "submit";
 
 }

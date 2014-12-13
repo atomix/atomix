@@ -28,7 +28,7 @@ import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.LogFactory;
 import net.kuujo.copycat.spi.Protocol;
 
-import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,14 +53,14 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
       GlobalCluster globalCluster = (GlobalCluster) cluster;
-      protocol.configureHandler(request -> handleOutboundRequest(Topics.CONFIGURE, request, globalCluster));
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, globalCluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, globalCluster));
-      protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, globalCluster));
+      protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, globalCluster));
+      protocol.appendHandler(request -> handleOutboundRequest(Topics.SYNC, request, globalCluster));
       protocol.commitHandler(request -> handleOutboundRequest(Topics.COMMIT, request, globalCluster));
-      globalCluster.localMember().register(Topics.CONFIGURE, 0, protocol::configure);
       globalCluster.localMember().register(Topics.PING, 0, protocol::ping);
       globalCluster.localMember().register(Topics.POLL, 0, protocol::poll);
+      globalCluster.localMember().register(Topics.APPEND, 0, protocol::append);
       globalCluster.localMember().register(Topics.SYNC, 0, protocol::sync);
       globalCluster.localMember().register(Topics.COMMIT, 0, protocol::commit);
     }
@@ -102,21 +102,48 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
     return cluster;
   }
 
+  /**
+   * Consumes an entry from the log.
+   */
+  private ByteBuffer consume(Long index, ByteBuffer entry) {
+    int entryType = entry.getInt();
+    int nameLength = entry.getInt();
+    byte[] nameBytes = new byte[nameLength];
+    entry.get(nameBytes);
+    String name = new String(nameBytes);
+    int sourceLength = entry.getInt();
+    byte[] sourceBytes = new byte[sourceLength];
+    entry.get(sourceBytes);
+    String source = new String(sourceBytes);
+    switch (entryType) {
+      case 1:
+        return handleJoin(name, source);
+      case 2:
+        return handleLeave(name, source);
+      case 3:
+        return handleDelete(name, source);
+      default:
+        throw new IllegalStateException("Unknown entry type");
+    }
+  }
+
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<CopycatContext> join(String name, LogFactory logFactory) {
     CompletableFuture<CopycatContext> future = new CompletableFuture<>();
-    ResourceEntry entry = new ResourceEntry();
-    entry.resource = name;
-    entry.owner = cluster.localMember().uri();
-    context.<ResourceEntry, Set<String>>submit("join", entry).whenComplete((members, error) -> {
+    ByteBuffer entry = ByteBuffer.allocate(4 + 4 + name.getBytes().length + 4 + cluster.localMember().uri().getBytes().length);
+    entry.putInt(1); // Entry type
+    entry.putInt(name.getBytes().length);
+    entry.put(name.getBytes());
+    entry.putInt(cluster.localMember().uri().getBytes().length);
+    entry.put(cluster.localMember().uri().getBytes());
+    context.commit(entry).whenComplete((members, error) -> {
       if (error == null) {
         DefaultCopycatStateContext context = contexts.get(name);
         if (context == null) {
           ExecutionContext executor = ExecutionContext.create();
-          members.remove(this.cluster.localMember().uri());
           CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this.cluster, new ResourceRouter(name), executor);
-          context = new DefaultCopycatStateContext(cluster, new ClusterConfig().withLocalMember(this.cluster.localMember().uri()).withRemoteMembers(members), logFactory.createLog(name), ExecutionContext.create());
+          context = new DefaultCopycatStateContext(cluster, new ClusterConfig().withLocalMember(this.cluster.localMember().uri()), logFactory.createLog(name), ExecutionContext.create());
           cluster.setState(context);
           contexts.put(name, context);
         }
@@ -131,12 +158,16 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
   @Override
   public CompletableFuture<Void> leave(String name) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    ResourceEntry entry = new ResourceEntry();
-    entry.resource = name;
-    entry.owner = cluster.localMember().uri();
-    context.<ResourceEntry, Boolean>submit("leave", entry).whenComplete((removed, error) -> {
+    ByteBuffer entry = ByteBuffer.allocate(4 + 4 + name.getBytes().length + 4 + cluster.localMember().uri().getBytes().length);
+    entry.putInt(2); // Entry type
+    entry.putInt(name.getBytes().length);
+    entry.put(name.getBytes());
+    entry.putInt(cluster.localMember().uri().getBytes().length);
+    entry.put(cluster.localMember().uri().getBytes());
+    context.commit(entry).whenComplete((result, error) -> {
       if (error == null) {
-        if (removed) {
+        int removed = result.getInt();
+        if (removed == 1) {
           DefaultCopycatStateContext context = contexts.remove(name);
           if (context != null) {
             context.close().whenComplete((r, e) -> {
@@ -162,12 +193,18 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
   @Override
   public CompletableFuture<Void> delete(String name) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    ResourceEntry entry = new ResourceEntry();
-    entry.resource = name;
-    entry.owner = cluster.localMember().uri();
-    context.<ResourceEntry, Boolean>submit("delete", entry).whenComplete((removed, error) -> {
+    ByteBuffer entry = ByteBuffer.allocate(4 + 4 + name.getBytes().length + 4 + cluster.localMember()
+      .uri()
+      .getBytes().length);
+    entry.putInt(3); // Entry type
+    entry.putInt(name.getBytes().length);
+    entry.put(name.getBytes());
+    entry.putInt(cluster.localMember().uri().getBytes().length);
+    entry.put(cluster.localMember().uri().getBytes());
+    context.commit(entry).whenComplete((result, error) -> {
       if (error == null) {
-        if (removed) {
+        int removed = result.getInt();
+        if (removed == 1) {
           DefaultCopycatStateContext context = contexts.remove(name);
           if (context != null) {
             context.close().whenComplete((r, e) -> {
@@ -193,9 +230,7 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
   /**
    * Handles a join action.
    */
-  private Set<String> handleJoin(Long index, ResourceEntry entry) {
-    String resource = entry.resource;
-    String owner = entry.owner;
+  private ByteBuffer handleJoin(String resource, String owner) {
     ResourceInfo holder = resources.get(resource);
     if (holder != null) {
       AtomicInteger count = holder.members.get(owner);
@@ -219,32 +254,33 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
         .withLocalMember(cluster.localMember().uri())
         .withRemoteMembers(members));
     }
-    return holder.members.keySet();
+    return ByteBuffer.wrap(new byte[0]);
   }
 
   /**
    * Handles a leave action.
    */
-  private boolean handleLeave(Long index, ResourceEntry entry) {
-    String resource = entry.resource;
-    String owner = entry.owner;
+  private ByteBuffer handleLeave(String resource, String owner) {
+    ByteBuffer buffer = ByteBuffer.allocateDirect(4);
     ResourceInfo holder = resources.get(resource);
     if (holder != null) {
       AtomicInteger count = holder.members.get(owner);
       if (count != null && count.decrementAndGet() == 0) {
         holder.members.remove(owner);
-        return true;
+        buffer.putInt(1);
+        return buffer;
       }
     }
-    return false;
+    buffer.putInt(0);
+    return buffer;
   }
 
   /**
    * Handles a delete action.
    */
-  private boolean handleDelete(Long index, ResourceEntry entry) {
-    String resource = entry.resource;
-    ResourceInfo holder = resources.remove(resource);
+  private ByteBuffer handleDelete(String resource, String owner) {
+    ByteBuffer buffer = ByteBuffer.allocateDirect(4);
+    resources.remove(resource);
     DefaultCopycatStateContext context = contexts.remove(resource);
     if (context != null) {
       try {
@@ -252,39 +288,56 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
       } catch (InterruptedException | ExecutionException e) {
         throw new RuntimeException(e);
       }
-      return true;
+      buffer.putInt(1);
+      return buffer;
     }
-    return false;
+    buffer.putInt(0);
+    return buffer;
+  }
+
+  /**
+   * Handles a cluster configuration change.
+   */
+  private CompletableFuture<ClusterConfig> configure(ClusterConfig config) {
+    CompletableFuture<ClusterConfig> future = new CompletableFuture<>();
+    int length = 4;
+    for (String uri : config.getRemoteMembers()) {
+      length += 4 + uri.getBytes().length;
+    }
+    ByteBuffer buffer = ByteBuffer.allocateDirect(length);
+    buffer.putInt(0); // Entry type
+    for (String uri : config.getRemoteMembers()) {
+      buffer.putInt(uri.getBytes().length);
+      buffer.put(uri.getBytes());
+    }
+    context.commit(buffer).whenComplete((result, error) -> {
+      if (error == null) {
+        int succeeded = result.getInt();
+        if (succeeded == 1) {
+          context.setMembers(config.getMembers());
+        }
+        future.complete(config);
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
   }
 
   @Override
   public CompletableFuture<Void> open() {
     return CompletableFuture.allOf(cluster.open(), context.open()).thenRun(() -> {
-      context.register("join", this::handleJoin)
-        .register("leave", this::handleLeave)
-        .register("delete", this::handleDelete);
+      context.consumer(this::consume);
+      cluster.configureHandler(this::configure);
     });
   }
 
   @Override
   public CompletableFuture<Void> close() {
     return CompletableFuture.anyOf(cluster.close(), context.close()).thenRun(() -> {
-      context.unregister("join").unregister("leave").unregister("delete");
+      context.consumer(null);
+      cluster.configureHandler(null);
     });
-  }
-
-  /**
-   * Coordinator entry.
-   */
-  private static interface CoordinatorEntry extends Serializable {
-  }
-
-  /**
-   * Base resource entry.
-   */
-  private static class ResourceEntry implements CoordinatorEntry {
-    private String resource;
-    private String owner;
   }
 
   /**
@@ -310,14 +363,14 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
 
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().handler(Topics.CONFIGURE, protocol::configure);
       cluster.localMember().handler(Topics.PING, protocol::ping);
       cluster.localMember().handler(Topics.POLL, protocol::poll);
+      cluster.localMember().handler(Topics.APPEND, protocol::append);
       cluster.localMember().handler(Topics.SYNC, protocol::sync);
       cluster.localMember().handler(Topics.COMMIT, protocol::commit);
-      protocol.configureHandler(request -> handleOutboundRequest(Topics.CONFIGURE, request, cluster));
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
+      protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
       protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
       protocol.commitHandler(request -> handleOutboundRequest(Topics.COMMIT, request, cluster));
     }
@@ -338,9 +391,9 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
     @Override
     public void destroyRoutes(Cluster cluster, RaftProtocol protocol) {
       cluster.localMember().<Request, Response>handler(name, null);
-      protocol.configureHandler(null);
       protocol.pingHandler(null);
       protocol.pollHandler(null);
+      protocol.appendHandler(null);
       protocol.syncHandler(null);
       protocol.commitHandler(null);
     }

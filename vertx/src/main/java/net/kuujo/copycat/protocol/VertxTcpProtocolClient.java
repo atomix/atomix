@@ -102,7 +102,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+  public CompletableFuture<AppendResponse> sync(AppendRequest request) {
     return sendRequest(request);
   }
 

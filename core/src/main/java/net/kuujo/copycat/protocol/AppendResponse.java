@@ -15,17 +15,17 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Protocol ping response.
+ * Protocol append response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PingResponse extends AbstractResponse {
-  public static final int TYPE = -2;
+public class AppendResponse extends AbstractResponse {
+  public static final int TYPE = -6;
 
   /**
-   * Returns a new ping response builder.
+   * Returns a new append response builder.
    *
-   * @return A new ping response builder.
+   * @return A new append response builder.
    */
   public static Builder builder() {
     return new Builder();
@@ -33,6 +33,7 @@ public class PingResponse extends AbstractResponse {
 
   private long term;
   private boolean succeeded;
+  private long logIndex;
 
   /**
    * Returns the requesting node's current term.
@@ -52,24 +53,33 @@ public class PingResponse extends AbstractResponse {
     return succeeded;
   }
 
+  /**
+   * Returns the last index of the replica's log.
+   *
+   * @return The last index of the responding replica's log.
+   */
+  public long logIndex() {
+    return logIndex;
+  }
+
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, succeeded=%b]", getClass().getSimpleName(), id, term, succeeded);
+    return String.format("%s[id=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), id, term, succeeded, logIndex);
   }
 
   /**
-   * Ping response builder.
+   * Append response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, PingResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, AppendResponse> {
     private Builder() {
-      super(new PingResponse());
+      super(new AppendResponse());
     }
 
     /**
      * Sets the response term.
      *
      * @param term The response term.
-     * @return The ping response builder.
+     * @return The append response builder.
      */
     public Builder withTerm(long term) {
       response.term = term;
@@ -79,11 +89,22 @@ public class PingResponse extends AbstractResponse {
     /**
      * Sets whether the request succeeded.
      *
-     * @param succeeded Whether the request succeeded.
-     * @return The ping response builder.
+     * @param succeeded Whether the append request succeeded.
+     * @return The append response builder.
      */
     public Builder withSucceeded(boolean succeeded) {
       response.succeeded = succeeded;
+      return this;
+    }
+
+    /**
+     * Sets the last index of the replica's log.
+     *
+     * @param index The last index of the replica's log.
+     * @return The append response builder.
+     */
+    public Builder withLogIndex(long index) {
+      response.logIndex = index;
       return this;
     }
 

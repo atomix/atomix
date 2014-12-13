@@ -30,10 +30,10 @@ import java.util.concurrent.CompletableFuture;
 abstract class AbstractState implements RaftProtocol {
   protected final CopycatStateContext context;
   protected MessageHandler<PingRequest, PingResponse> pingHandler;
-  protected MessageHandler<ConfigureRequest, ConfigureResponse> configureHandler;
   protected MessageHandler<PollRequest, PollResponse> pollHandler;
-  protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
+  protected MessageHandler<AppendRequest, AppendResponse> appendHandler;
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
+  protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
   protected EventHandler<CopycatState, CompletableFuture<CopycatState>> transitionHandler;
 
   protected AbstractState(CopycatStateContext context) {
@@ -100,18 +100,18 @@ abstract class AbstractState implements RaftProtocol {
   }
 
   @Override
-  public AbstractState configureHandler(MessageHandler<ConfigureRequest, ConfigureResponse> handler) {
-    this.configureHandler = handler;
+  public AbstractState appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
+    this.appendHandler = handler;
     return this;
   }
 
   @Override
-  public CompletableFuture<ConfigureResponse> configure(ConfigureRequest request) {
+  public CompletableFuture<AppendResponse> append(AppendRequest request) {
     return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
   }
 
   @Override
-  public AbstractState syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
+  public RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
     this.syncHandler = handler;
     return this;
   }

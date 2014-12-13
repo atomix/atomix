@@ -14,7 +14,6 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.ActionOptions;
 import net.kuujo.copycat.CopycatCoordinator;
 import net.kuujo.copycat.EventLog;
 import net.kuujo.copycat.EventLogConfig;
@@ -65,7 +64,7 @@ public class DefaultEventLog extends AbstractCopycatResource implements EventLog
 
   @Override
   public CompletableFuture<Long> commit(ByteBuffer entry) {
-    return context.submit("commit", entry);
+    return context.commit(entry).thenApply(ByteBuffer::getLong);
   }
 
   @Override
@@ -103,22 +102,24 @@ public class DefaultEventLog extends AbstractCopycatResource implements EventLog
   }
 
   /**
-   * Handles a commit.
+   * Handles a log write.
    */
-  private long handleCommit(Long index, ByteBuffer entry) {
-    return index;
+  private ByteBuffer consume(Long index, ByteBuffer entry) {
+    ByteBuffer result = ByteBuffer.allocateDirect(8);
+    result.putLong(index);
+    return result;
   }
 
   @Override
   public CompletableFuture<Void> open() {
     return super.open().thenRunAsync(() -> {
-      context.register("commit", this::handleCommit, new ActionOptions().withConsistent(true).withPersistent(true));
+      context.consumer(this::consume);
     }, context.executor());
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    context.unregister("commit");
+    context.consumer(null);
     return super.close();
   }
 

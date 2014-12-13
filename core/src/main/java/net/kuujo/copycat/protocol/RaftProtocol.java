@@ -27,22 +27,6 @@ import java.util.concurrent.CompletableFuture;
 public interface RaftProtocol extends Managed {
 
   /**
-   * Sends a protocol configure request.
-   *
-   * @param request The protocol configure request.
-   * @return A completable future to be completed with the configure response.
-   */
-  CompletableFuture<ConfigureResponse> configure(ConfigureRequest request);
-
-  /**
-   * Registers a protocol configure request handler.
-   *
-   * @param handler A protocol configure request handler.
-   * @return The Raft protocol.
-   */
-  RaftProtocol configureHandler(MessageHandler<ConfigureRequest, ConfigureResponse> handler);
-
-  /**
    * Sends a protocol ping request.
    *
    * @param request The protocol ping request.
@@ -73,6 +57,22 @@ public interface RaftProtocol extends Managed {
    * @return The Raft protocol.
    */
   RaftProtocol pollHandler(MessageHandler<PollRequest, PollResponse> handler);
+
+  /**
+   * Sends a protocol append request.
+   *
+   * @param request The protocol append request.
+   * @return A completable future to be completed with the append response.
+   */
+  CompletableFuture<AppendResponse> append(AppendRequest request);
+
+  /**
+   * Registers a protocol append request handler.
+   *
+   * @param handler A protocol append request handler.
+   * @return The Raft protocol.
+   */
+  RaftProtocol appendHandler(MessageHandler<AppendRequest, AppendResponse> handler);
 
   /**
    * Sends a protocol sync request.

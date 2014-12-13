@@ -18,17 +18,16 @@ import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.internal.util.Quorum;
-import net.kuujo.copycat.log.ActionEntry;
-import net.kuujo.copycat.log.ConfigurationEntry;
-import net.kuujo.copycat.log.Entry;
 import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 /**
  * Leader state.
@@ -106,89 +105,6 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<ConfigureResponse> configure(ConfigureRequest request) {
-    CompletableFuture<ConfigureResponse> future = new CompletableFuture<>();
-
-    // All cluster configuration changes must go through the leader. In order to
-    // perform cluster configuration changes, the leader observes the local cluster
-    // configuration if it is indeed observable. We have to be very careful about
-    // the order in which cluster configuration changes occur. If two configuration
-    // changes are taking place at the same time, one can overwrite the other.
-    // Additionally, if a new cluster configuration immediately overwrites an old
-    // configuration without first replicating a joint old/new configuration,
-    // a dual-majority can result, meaning logs will ultimately become out of sync.
-    // In order to avoid this, we need to perform a two-step configuration change:
-    // - First log the combined current cluster configuration and new cluster
-    // configuration. For instance, if a node was added to the cluster, log the
-    // new configuration. If a node was removed, log the old configuration.
-    // - Once the joint cluster configuration has been replicated, log and
-    // sync the new configuration.
-    // This two-step process ensures log consistency by ensuring that two majorities
-    // cannot result from adding and removing too many nodes at once.
-    LOGGER.debug("{} - Detected configuration change", context.getLocalMember());
-
-    // First, store a copy of both the current internal cluster configuration and
-    // the user defined cluster configuration. This ensures that mutable configurations
-    // are not changed during the reconfiguration process which can be asynchronous.
-    // Note also that we create a copy of the configuration in order to ensure that
-    // polymorphic types are properly reconstructed.
-    final Set<String> activeMembers = new HashSet<>(context.getMembers());
-
-    // If another cluster configuration change is occurring right now, it's possible
-    // that the two configuration changes could overlap one another. In order to
-    // avoid this, we wait until all entries up to the current log index have been
-    // committed before beginning the configuration change. This ensures that any
-    // previous configuration changes have completed.
-    LOGGER.debug("{} - Committing all entries for configuration change", context.getLocalMember());
-    replicator.syncAll().whenComplete((commitIndex, commitError) -> {
-      // First we need to create a joint old/new cluster configuration entry.
-      // We copy the internal configuration again for safety from modifications.
-      Set<String> jointMembers = new HashSet<>(activeMembers);
-      jointMembers.addAll(request.members());
-
-      // Append the joint configuration to the log. This will be replicated to
-      // followers and applied to their internal cluster managers.
-      ConfigurationEntry jointEntry = new ConfigurationEntry(context.getTerm(), jointMembers);
-      long jointIndex = context.log().appendEntry(jointEntry);
-      LOGGER.debug("{} - Appended {} to log at index {}", context.getLocalMember(), jointEntry, jointIndex);
-
-      // Immediately after the entry is appended to the log, apply the joint
-      // configuration. Cluster membership changes do not wait for commitment.
-      // Since we're using a joint consensus, it's safe to work with all members
-      // of both the old and new configuration without causing split elections.
-      context.setMembers(jointMembers);
-      LOGGER.debug("{} - Updated internal cluster configuration {}", context.getLocalMember(), jointMembers);
-
-      // Once the cluster is updated, the replicator will be notified and update its
-      // internal connections. Then we commit the joint configuration and allow
-      // it to be replicated to all the nodes in the updated cluster.
-      LOGGER.debug("{} - Committing all entries for configuration change", context.getLocalMember());
-      replicator.sync(jointIndex).whenComplete((commitIndex2, commitError2) -> {
-        // Now that we've gotten to this point, we know that the combined cluster
-        // membership has been replicated to a majority of the cluster.
-        // Append the new user configuration to the log and force all replicas
-        // to be synchronized.
-        ConfigurationEntry configEntry = new ConfigurationEntry(context.getTerm(), request.members());
-        long configIndex = context.log().appendEntry(configEntry);
-        LOGGER.debug("{} - Appended {} to log at index {}", context.getLocalMember(), configEntry, configIndex);
-
-        // Again, once we've appended the new configuration to the log, update
-        // the local internal configuration.
-        context.setMembers(request.members());
-        LOGGER.debug("{} - Updated internal cluster configuration {}", context.getLocalMember(), context.getMembers());
-
-        // Note again that when the cluster membership changes, the replicator will
-        // be notified and remove any replicas that are no longer a part of the cluster.
-        // Now that the cluster and replicator have been updated, we can commit the
-        // new configuration.
-        LOGGER.debug("{} - Committing all entries for configuration change", context.getLocalMember());
-        replicator.syncAll();
-      });
-    });
-    return future;
-  }
-
-  @Override
   public CompletableFuture<PingResponse> ping(final PingRequest request) {
     if (request.term() > context.getTerm()) {
       return super.ping(request);
@@ -206,11 +122,11 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
+  public CompletableFuture<AppendResponse> append(final AppendRequest request) {
     if (request.term() > context.getTerm()) {
-      return super.sync(request);
+      return super.append(request);
     } else if (request.term() < context.getTerm()) {
-      return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
         .withId(logRequest(request).id())
         .withMember(context.getLocalMember())
         .withTerm(context.getTerm())
@@ -219,8 +135,42 @@ class LeaderState extends ActiveState {
         .build()));
     } else {
       transition(CopycatState.FOLLOWER);
-      return super.sync(request);
+      return super.append(request);
     }
+  }
+
+  @Override
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    logRequest(request);
+
+    CompletableFuture<SyncResponse> future = new CompletableFuture<>();
+    long lastIndex = context.log().lastIndex();
+    LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), lastIndex);
+    replicator.ping(lastIndex).whenComplete((index, error) -> {
+      if (error == null) {
+        try {
+          future.complete(logResponse(SyncResponse.builder()
+            .withId(request.id())
+            .withMember(context.getLocalMember())
+            .build()));
+        } catch (Exception e) {
+          future.complete(SyncResponse.builder()
+            .withId(request.id())
+            .withMember(context.getLocalMember())
+            .withStatus(Response.Status.ERROR)
+            .withError(e)
+            .build());
+        }
+      } else {
+        future.complete(SyncResponse.builder()
+          .withId(request.id())
+          .withMember(context.getLocalMember())
+          .withStatus(Response.Status.ERROR)
+          .withError(error)
+          .build());
+      }
+    });
+    return future;
   }
 
   @Override
@@ -229,54 +179,21 @@ class LeaderState extends ActiveState {
     logRequest(request);
 
     CompletableFuture<CommitResponse> future = new CompletableFuture<>();
-
-    ActionInfo action = context.action(request.action());
-    if (action == null) {
-      future.completeExceptionally(new IllegalStateException(String.format("Invalid action %s", request.action())));
-      return future;
-    }
-
-
-    if (action.options.isPersistent()) {
-      ActionEntry entry = new ActionEntry(context.getTerm(), request.action(), request.entry());
-      long index = context.log().appendEntry(entry);
-      LOGGER.debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
-      if (action.options.isConsistent()) {
-        LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
-        replicator.sync(index).whenComplete((resultIndex, error) -> {
-          if (error == null) {
-            try {
-              future.complete(logResponse(CommitResponse.builder()
-                .withId(request.id())
-                .withMember(context.getLocalMember())
-                .withResult(action.action.execute(index, request.entry()))
-                .build()));
-            } catch (Exception e) {
-              future.complete(CommitResponse.builder()
-                .withId(request.id())
-                .withMember(context.getLocalMember())
-                .withStatus(Response.Status.ERROR)
-                .withError(e)
-                .build());
-            } finally {
-              context.setLastApplied(index);
-              compactLog();
-            }
-          } else {
-            future.complete(CommitResponse.builder()
-              .withId(request.id())
-              .withMember(context.getLocalMember())
-              .withStatus(Response.Status.ERROR)
-              .withError(error)
-              .build());
-          }
-        });
-      } else {
+    ByteBuffer entry = request.entry();
+    BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
+    ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 8);
+    logEntry.putLong(context.getTerm());
+    logEntry.put(entry);
+    long index = context.log().appendEntry(logEntry);
+    LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember(), index);
+    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
+    replicator.sync(index).whenComplete((resultIndex, error) -> {
+      if (error == null) {
         try {
           future.complete(logResponse(CommitResponse.builder()
             .withId(request.id())
             .withMember(context.getLocalMember())
-            .withResult(action.action.execute(index, request.entry()))
+            .withResult(consumer != null ? consumer.apply(index, entry) : null)
             .build()));
         } catch (Exception e) {
           future.complete(CommitResponse.builder()
@@ -287,53 +204,16 @@ class LeaderState extends ActiveState {
             .build());
         } finally {
           context.setLastApplied(index);
-          compactLog();
         }
-      }
-    } else if (action.options.isConsistent()) {
-      long lastIndex = context.log().lastIndex();
-      LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), lastIndex);
-      replicator.ping(lastIndex).whenComplete((index, error) -> {
-        if (error == null) {
-          try {
-            future.complete(logResponse(CommitResponse.builder()
-              .withId(request.id())
-              .withMember(context.getLocalMember())
-              .withResult(action.action.execute(null, request.entry()))
-              .build()));
-          } catch (Exception e) {
-            future.complete(CommitResponse.builder()
-              .withId(request.id())
-              .withMember(context.getLocalMember())
-              .withStatus(Response.Status.ERROR)
-              .withError(e)
-              .build());
-          }
-        } else {
-          future.complete(CommitResponse.builder()
-            .withId(request.id())
-            .withMember(context.getLocalMember())
-            .withStatus(Response.Status.ERROR)
-            .withError(error)
-            .build());
-        }
-      });
-    } else {
-      try {
-        future.complete(CommitResponse.builder()
-          .withId(request.id())
-          .withMember(context.getLocalMember())
-          .withResult(action.action.execute(null, request.entry()))
-          .build());
-      } catch (Exception e) {
+      } else {
         future.complete(CommitResponse.builder()
           .withId(request.id())
           .withMember(context.getLocalMember())
           .withStatus(Response.Status.ERROR)
-          .withError(e)
+          .withError(error)
           .build());
       }
-    }
+    });
     return future;
   }
 
@@ -572,7 +452,7 @@ class LeaderState extends ActiveState {
         .withTerm(context.getTerm())
         .withLeader(context.getLocalMember())
         .withLogIndex(index)
-        .withLogTerm(context.log().getEntry(index) != null ? context.log().getEntry(index).term() : 0)
+        .withLogTerm(context.log().getEntry(index) != null ? context.log().getEntry(index).getLong() : 0)
         .withCommitIndex(context.getCommitIndex())
         .build();
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
@@ -632,13 +512,13 @@ class LeaderState extends ActiveState {
      */
     private synchronized void doSync() {
       final long prevIndex = sendIndex - 1;
-      final Entry prevEntry = context.log().getEntry(prevIndex);
+      final ByteBuffer prevEntry = context.log().getEntry(prevIndex);
 
       // Create a list of up to ten entries to send to the follower.
       // We can only send one snapshot entry in any given request. So, if any of
       // the entries are snapshot entries, send all entries up to the snapshot and
       // then send snapshot entries individually.
-      List<Entry> entries = new ArrayList<>(BATCH_SIZE);
+      List<ByteBuffer> entries = new ArrayList<>(BATCH_SIZE);
       long lastIndex = Math.min(sendIndex + BATCH_SIZE - 1, context.log().lastIndex());
       for (long i = sendIndex; i <= lastIndex; i++) {
         entries.add(context.log().getEntry(i));
@@ -650,18 +530,18 @@ class LeaderState extends ActiveState {
     }
 
     /**
-     * Sends a sync request.
+     * Sends a append request.
      */
-    private void doSync(final long prevIndex, final Entry prevEntry, final List<Entry> entries) {
+    private void doSync(final long prevIndex, final ByteBuffer prevEntry, final List<ByteBuffer> entries) {
       final long commitIndex = context.getCommitIndex();
 
-      SyncRequest request = SyncRequest.builder()
+      AppendRequest request = AppendRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withMember(member)
         .withTerm(context.getTerm())
         .withLeader(context.getLocalMember())
         .withLogIndex(prevIndex)
-        .withLogTerm(prevEntry != null ? prevEntry.term() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.getLong() : 0)
         .withEntries(entries)
         .withCommitIndex(context.getCommitIndex())
         .build();
@@ -669,7 +549,7 @@ class LeaderState extends ActiveState {
       sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
-      syncHandler.handle(request).whenComplete((response, error) -> {
+      appendHandler.handle(request).whenComplete((response, error) -> {
         if (error != null) {
           triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), error);
         } else {

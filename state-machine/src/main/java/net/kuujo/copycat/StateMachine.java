@@ -68,7 +68,7 @@ public interface StateMachine<T extends State> extends CopycatResource {
   /**
    * Submits a command to the state machine.
    *
-   * @param command The command to submit.
+   * @param command The command to commit.
    * @param args The command arguments.
    * @param <U> The command output type.
    * @return A completable future to be completed with the command result.

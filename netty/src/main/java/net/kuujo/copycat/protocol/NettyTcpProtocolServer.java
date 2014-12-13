@@ -169,8 +169,8 @@ public class NettyTcpProtocolServer implements ProtocolServer {
       final Request request = (Request) message;
       if (request instanceof PingRequest) {
         context.channel().eventLoop().submit(() -> server.handler.ping((PingRequest) request).thenAccept(context::writeAndFlush));
-      } else if (request instanceof SyncRequest) {
-        context.channel().eventLoop().submit(() -> server.handler.sync((SyncRequest) request).thenAccept(context::writeAndFlush));
+      } else if (request instanceof AppendRequest) {
+        context.channel().eventLoop().submit(() -> server.handler.sync((AppendRequest) request).thenAccept(context::writeAndFlush));
       } else if (request instanceof PollRequest) {
         context.channel().eventLoop().submit(() -> server.handler.poll((PollRequest) request).thenAccept(context::writeAndFlush));
       } else if (request instanceof SubmitRequest) {

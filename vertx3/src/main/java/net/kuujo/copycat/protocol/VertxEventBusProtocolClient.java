@@ -59,8 +59,8 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(final SyncRequest request) {
-    final CompletableFuture<SyncResponse> future = new CompletableFuture<>();
+  public CompletableFuture<AppendResponse> sync(final AppendRequest request) {
+    final CompletableFuture<AppendResponse> future = new CompletableFuture<>();
     DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
     vertx.eventBus().send(address, writer.writeRequest(request), options, new Handler<AsyncResult<Message<byte[]>>>() {
       @Override
