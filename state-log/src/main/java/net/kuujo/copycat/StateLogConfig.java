@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.internal.util.Services;
+
 import java.io.File;
 
 /**
@@ -23,15 +25,27 @@ import java.io.File;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateLogConfig implements Copyable<StateLogConfig> {
-  private File logDirectory;
-  private int maxSize;
+  private File directory = new File(System.getProperty("java.io.tmpdir"), "copycat");
+  private long maxSize = Long.MAX_VALUE;
+  private int maxSegments = 2;
+  private int segmentSize = 1024 * 1024;
+  private long segmentInterval = Long.MAX_VALUE;
+  private boolean flushOnWrite = true;
+  private long flushInterval = Long.MAX_VALUE;
 
   public StateLogConfig() {
-    this.logDirectory = new File(System.getProperty("java.io.tempdir"), "copycat");
+  }
+
+  public StateLogConfig(String resource) {
+    Services.apply(resource, this);
   }
 
   private StateLogConfig(StateLogConfig config) {
-    this.logDirectory = config.getLogDirectory();
+    this.directory = config.directory;
+    this.segmentSize = config.segmentSize;
+    this.segmentInterval = config.segmentInterval;
+    this.flushOnWrite = config.flushOnWrite;
+    this.flushInterval = config.flushInterval;
   }
 
   @Override
@@ -40,80 +54,225 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
   }
 
   /**
-   * Sets the state log directory.
+   * Sets the log directory.
    *
-   * @param logDirectory The state log directory.
+   * @param directory The log directory.
    */
-  public void setLogDirectory(String logDirectory) {
-    this.logDirectory = new File(logDirectory);
+  public void setDirectory(String directory) {
+    this.directory = new File(directory);
   }
 
   /**
-   * Sets the state log directory.
+   * Sets the log directory.
    *
-   * @param logDirectory The state log directory.
+   * @param directory The log directory.
    */
-  public void setLogDirectory(File logDirectory) {
-    this.logDirectory = logDirectory;
+  public void setDirectory(File directory) {
+    this.directory = directory;
   }
 
   /**
-   * Returns the state log directory.
+   * Returns the log directory.
    *
-   * @return The state log directory.
+   * @return The log directory.
    */
-  public File getLogDirectory() {
-    return logDirectory;
+  public File getDirectory() {
+    return directory;
   }
 
   /**
-   * Sets the state log directory, returning the configuration for method chaining.
+   * Sets the log directory, returning the log configuration for method chaining.
    *
-   * @param logDirectory The state log directory.
-   * @return The state log configuration.
+   * @param directory The log directory.
+   * @return The log configuration.
    */
-  public StateLogConfig withLogDirectory(String logDirectory) {
-    this.logDirectory = new File(logDirectory);
+  public StateLogConfig withDirectory(String directory) {
+    this.directory = new File(directory);
     return this;
   }
 
   /**
-   * Sets the state log directory, returning the configuration for method chaining.
+   * Sets the log directory, returning the log configuration for method chaining.
    *
-   * @param logDirectory The state log directory.
-   * @return The state log configuration.
+   * @param directory The log directory.
+   * @return The log configuration.
    */
-  public StateLogConfig withLogDirectory(File logDirectory) {
-    this.logDirectory = logDirectory;
+  public StateLogConfig withDirectory(File directory) {
+    this.directory = directory;
     return this;
   }
 
   /**
-   * Sets the state log maximum size.
+   * Sets the maximum log size prior to compaction.
    *
-   * @param maxSize The maximum state log size.
+   * @param maxSize The maximum log size.
    */
-  public void setMaxSize(int maxSize) {
+  public void setMaxSize(long maxSize) {
     this.maxSize = maxSize;
   }
 
   /**
-   * Returns the state log maximum size.
+   * Returns the maximum log size prior to compaction.
    *
-   * @return The maximum state log size.
+   * @return The maximum log size.
    */
-  public int getMaxSize() {
+  public long getMaxSize() {
     return maxSize;
   }
 
   /**
-   * Sets the state log maximum size, returning the configuration for method chaining.
+   * Sets the maximum log size prior to compaction, returning the log configuration for method chaining.
    *
-   * @param maxSize The maximum state log size.
+   * @param maxSize The maximum log size.
    * @return The state log configuration.
    */
-  public StateLogConfig withMaxSize(int maxSize) {
+  public StateLogConfig withMaxSize(long maxSize) {
     this.maxSize = maxSize;
+    return this;
+  }
+
+  /**
+   * Sets the maximum number of log segments prior to compaction.
+   *
+   * @param maxSegments The maximum number of log segments.
+   */
+  public void setMaxSegments(int maxSegments) {
+    this.maxSegments = maxSegments;
+  }
+
+  /**
+   * Returns the maximum number of log segments prior to compaction.
+   *
+   * @return The maximum number of log segments.
+   */
+  public int getMaxSegments() {
+    return maxSegments;
+  }
+
+  /**
+   * Sets the maximum number of log segments prior to compaction, returning the log configuration for method chaining.
+   *
+   * @param maxSegments The maximum number of log segments.
+   * @return The state log configuration.
+   */
+  public StateLogConfig withMaxSegments(int maxSegments) {
+    this.maxSegments = maxSegments;
+    return this;
+  }
+
+  /**
+   * Sets the log segment size.
+   *
+   * @param segmentSize The log segment size.
+   */
+  public void setSegmentSize(int segmentSize) {
+    this.segmentSize = segmentSize;
+  }
+
+  /**
+   * Returns the log segment size.
+   *
+   * @return The log segment size.
+   */
+  public int getSegmentSize() {
+    return segmentSize;
+  }
+
+  /**
+   * Sets the log segment size, returning the log configuration for method chaining.
+   *
+   * @param segmentSize The log segment size.
+   * @return The log configuration.
+   */
+  public StateLogConfig withSegmentSize(int segmentSize) {
+    this.segmentSize = segmentSize;
+    return this;
+  }
+
+  /**
+   * Sets the log segment interval.
+   *
+   * @param segmentInterval The log segment interval.
+   */
+  public void setSegmentInterval(long segmentInterval) {
+    this.segmentInterval = segmentInterval;
+  }
+
+  /**
+   * Returns the log segment interval.
+   *
+   * @return The log segment interval.
+   */
+  public long getSegmentInterval() {
+    return segmentInterval;
+  }
+
+  /**
+   * Sets the log segment interval, returning the log configuration for method chaining.
+   *
+   * @param segmentInterval The log segment interval.
+   * @return The log configuration.
+   */
+  public StateLogConfig withSegmentInterval(long segmentInterval) {
+    this.segmentInterval = segmentInterval;
+    return this;
+  }
+
+  /**
+   * Sets whether to flush the log to disk on every write.
+   *
+   * @param flushOnWrite Whether to flush the log to disk on every write.
+   */
+  public void setFlushOnWrite(boolean flushOnWrite) {
+    this.flushOnWrite = flushOnWrite;
+  }
+
+  /**
+   * Returns whether to flush the log to disk on every write.
+   *
+   * @return Whether to flush the log to disk on every write.
+   */
+  public boolean isFlushOnWrite() {
+    return flushOnWrite;
+  }
+
+  /**
+   * Sets whether to flush the log to disk on every write, returning the log configuration for method chaining.
+   *
+   * @param flushOnWrite Whether to flush the log to disk on every write.
+   * @return The log configuration.
+   */
+  public StateLogConfig withFlushOnWrite(boolean flushOnWrite) {
+    this.flushOnWrite = flushOnWrite;
+    return this;
+  }
+
+  /**
+   * Sets the log flush interval.
+   *
+   * @param flushInterval The log flush interval.
+   */
+  public void setFlushInterval(long flushInterval) {
+    this.flushInterval = flushInterval;
+  }
+
+  /**
+   * Returns the log flush interval.
+   *
+   * @return The log flush interval.
+   */
+  public long getFlushInterval() {
+    return flushInterval;
+  }
+
+  /**
+   * Sets the log flush interval, returning the log configuration for method chaining.
+   *
+   * @param flushInterval The log flush interval.
+   * @return The log configuration.
+   */
+  public StateLogConfig withFlushInterval(long flushInterval) {
+    this.flushInterval = flushInterval;
     return this;
   }
 

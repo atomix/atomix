@@ -19,7 +19,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.DefaultCopycatCoordinator;
 import net.kuujo.copycat.internal.DefaultStateLog;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.log.InMemoryLog;
+import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateLog<T> extends CopycatResource {
+public interface StateLog extends CopycatResource {
 
   /**
    * Creates a new state log.
@@ -43,37 +43,36 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The log name.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), Services.load("copycat.log", LogConfig.class));
+  static StateLog create(String name) {
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), new StateLogConfig());
   }
 
   /**
    * Creates a new state log.
    *
    * @param name The log name.
-   * @param log The state logger configuration.
+   * @param config The state log configuration.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, LogConfig log) {
-    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), log);
+  static StateLog create(String name, StateLogConfig config) {
+    return create(name, Services.load("copycat.cluster"), Services.load("copycat.protocol"), config);
   }
 
   /**
    * Creates a new state log.
    *
    * @param name The log name.
-   * @param config The state log cluster.
+   * @param cluster The state log cluster.
    * @param protocol The state log cluster protocol.
-   * @param log The state logger configuration.
-   * @param <T> The state log entry type.
+   * @param config The state log configuration.
    * @return A new state log instance.
    */
   @SuppressWarnings("unchecked")
-  static <T> StateLog<T> create(String name, ClusterConfig config, Protocol protocol, LogConfig log) {
-    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(config, protocol, new InMemoryLog("coordinator", log), ExecutionContext.create());
+  static StateLog create(String name, ClusterConfig cluster, Protocol protocol, StateLogConfig config) {
+    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, protocol, new BufferedLog("coordinator", new LogConfig()), ExecutionContext.create());
     try {
       coordinator.open().get();
-      DefaultStateLog<T> stateLog = new DefaultStateLog<>(name, coordinator, log);
+      DefaultStateLog stateLog = new DefaultStateLog(name, coordinator, config);
       stateLog.withShutdownTask(coordinator::close);
       return stateLog;
     } catch (InterruptedException | ExecutionException e) {
@@ -86,10 +85,9 @@ public interface StateLog<T> extends CopycatResource {
    *
    * @param name The command name.
    * @param command The command function.
-   * @param <U> The command output type.
    * @return The state log.
    */
-  <U> StateLog<T> register(String name, Command<T, U> command);
+  StateLog register(String name, Command command);
 
   /**
    * Registers a state command with options.
@@ -97,10 +95,9 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The command name.
    * @param command The command function.
    * @param options The command options.
-   * @param <U> The command output type.
    * @return The state log.
    */
-  <U> StateLog<T> register(String name, Command<T, U> command, CommandOptions options);
+  StateLog register(String name, Command command, CommandOptions options);
 
   /**
    * Unregisters a state command.
@@ -108,7 +105,7 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The command name.
    * @return The state log.
    */
-  StateLog<T> unregister(String name);
+  StateLog unregister(String name);
 
   /**
    * Registers a state log snapshot provider.
@@ -116,7 +113,7 @@ public interface StateLog<T> extends CopycatResource {
    * @param snapshotter The snapshot provider.
    * @return The state log.
    */
-  StateLog<T> snapshotter(Supplier<ByteBuffer> snapshotter);
+  StateLog snapshotter(Supplier<ByteBuffer> snapshotter);
 
   /**
    * Registers a state log snapshot installer.
@@ -124,16 +121,15 @@ public interface StateLog<T> extends CopycatResource {
    * @param installer The snapshot installer.
    * @return The state log.
    */
-  StateLog<T> installer(Consumer<ByteBuffer> installer);
+  StateLog installer(Consumer<ByteBuffer> installer);
 
   /**
    * Submits a state command to the log.
    *
    * @param command The command name.
    * @param entry The command entry.
-   * @param <U> The expected command output type.
    * @return A completable future to be completed once the command output is received.
    */
-  <U> CompletableFuture<U> submit(String command, T entry);
+  CompletableFuture<ByteBuffer> submit(String command, ByteBuffer entry);
 
 }
