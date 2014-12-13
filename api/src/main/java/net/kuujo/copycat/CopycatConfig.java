@@ -15,76 +15,21 @@
  */
 package net.kuujo.copycat;
 
-import java.io.File;
+import net.kuujo.copycat.log.LogConfig;
 
 /**
  * Copycat configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatConfig implements Copyable<CopycatConfig> {
-  private File logDirectory;
+public class CopycatConfig extends LogConfig {
 
   public CopycatConfig() {
-    logDirectory = new File(System.getProperty("java.io.tempdir"), "copycat");
+    super();
   }
 
-  private CopycatConfig(CopycatConfig config) {
-    logDirectory = config.getLogDirectory();
-  }
-
-  @Override
-  public CopycatConfig copy() {
-    return new CopycatConfig(this);
-  }
-
-  /**
-   * Sets the Copycat log directory.
-   *
-   * @param logDirectory The Copycat log directory.
-   */
-  public void setLogDirectory(String logDirectory) {
-    this.logDirectory = new File(logDirectory);
-  }
-
-  /**
-   * Sets the Copycat log directory.
-   *
-   * @param logDirectory The Copycat log directory.
-   */
-  public void setLogDirectory(File logDirectory) {
-    this.logDirectory = logDirectory;
-  }
-
-  /**
-   * Returns the Copycat log directory.
-   *
-   * @return The Copycat log directory.
-   */
-  public File getLogDirectory() {
-    return logDirectory;
-  }
-
-  /**
-   * Sets the Copycat log directory, returning the configuration for method chaining.
-   *
-   * @param logDirectory The Copycat log directory.
-   * @return The Copycat configuration.
-   */
-  public CopycatConfig withLogDirectory(String logDirectory) {
-    this.logDirectory = new File(logDirectory);
-    return this;
-  }
-
-  /**
-   * Sets the Copycat log directory, returning the configuration for method chaining.
-   *
-   * @param logDirectory The Copycat log directory.
-   * @return The Copycat configuration.
-   */
-  public CopycatConfig withLogDirectory(File logDirectory) {
-    this.logDirectory = logDirectory;
-    return this;
+  public CopycatConfig(String resource) {
+    super(resource);
   }
 
 }

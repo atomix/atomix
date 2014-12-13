@@ -40,8 +40,8 @@ public class DefaultCopycat implements Copycat {
   private final CopycatCoordinator coordinator;
   private boolean open;
 
-  public DefaultCopycat(ClusterConfig config, Protocol protocol, ExecutionContext context) {
-    this.coordinator = new DefaultCopycatCoordinator(config, protocol, new BufferedLog(), context);
+  public DefaultCopycat(ClusterConfig cluster, Protocol protocol, CopycatConfig config, ExecutionContext context) {
+    this.coordinator = new DefaultCopycatCoordinator(cluster, protocol, new BufferedLog("copycat", config), context);
   }
 
   @Override
@@ -50,42 +50,37 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public <T> EventLog<T> eventLog(String name) {
-    return eventLog(name, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
+  public EventLog eventLog(String name) {
+    return eventLog(name, new EventLogConfig());
   }
 
   @Override
-  public <T> EventLog<T> eventLog(String name, ClusterConfig config) {
-    return new DefaultEventLog<>(name, coordinator);
+  public EventLog eventLog(String name, EventLogConfig config) {
+    return new DefaultEventLog(name, coordinator, config);
   }
 
   @Override
-  public <T> StateLog<T> stateLog(String name) {
-    return stateLog(name, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
+  public StateLog stateLog(String name) {
+    return stateLog(name, new StateLogConfig());
   }
 
   @Override
-  public <T> StateLog<T> stateLog(String name, ClusterConfig cluster) {
-    return new DefaultStateLog<>(name, coordinator);
+  public StateLog stateLog(String name, StateLogConfig config) {
+    return new DefaultStateLog(name, coordinator, config);
   }
 
   @Override
-  public <T extends State> StateMachine<T> stateMachine(String name, Class<T> stateType, T state) {
-    return stateMachine(name, stateType, state, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
+  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T state) {
+    return stateMachine(name, stateType, state, new StateMachineConfig());
   }
 
   @Override
-  public <T extends State> StateMachine<T> stateMachine(String name, Class<T> stateType, T state, ClusterConfig cluster) {
-    return new DefaultStateMachine<>(stateType, state, stateLog(name, cluster));
+  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T state, StateMachineConfig config) {
+    return new DefaultStateMachine<>(stateType, state, stateLog(name, config));
   }
 
   @Override
   public LeaderElection election(String name) {
-    return election(name, new ClusterConfig().withLocalMember(coordinator.cluster().localMember().uri()));
-  }
-
-  @Override
-  public LeaderElection election(String name, ClusterConfig cluster) {
     return new DefaultLeaderElection(name, coordinator);
   }
 
@@ -97,8 +92,20 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   @SuppressWarnings("unchecked")
+  public <K, V> AsyncMap<K, V> getMap(String name, AsyncMapConfig config) {
+    return new DefaultAsyncMap(stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>(), config));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public <K, V> AsyncMultiMap<K, V> getMultiMap(String name) {
     return new DefaultAsyncMultiMap(stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>()));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <K, V> AsyncMultiMap<K, V> getMultiMap(String name, AsyncMultiMapConfig config) {
+    return new DefaultAsyncMultiMap(stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), config));
   }
 
   @Override
@@ -109,13 +116,30 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   @SuppressWarnings("unchecked")
+  public <T> AsyncList<T> getList(String name, AsyncListConfig config) {
+    return new DefaultAsyncList(stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>(), config));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public <T> AsyncSet<T> getSet(String name) {
     return new DefaultAsyncSet(stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>()));
   }
 
   @Override
+  @SuppressWarnings("unchecked")
+  public <T> AsyncSet<T> getSet(String name, AsyncSetConfig config) {
+    return new DefaultAsyncSet(stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>(), config));
+  }
+
+  @Override
   public AsyncLock getLock(String name) {
     return new DefaultAsyncLock(stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState()));
+  }
+
+  @Override
+  public AsyncLock getLock(String name, AsyncLockConfig config) {
+    return new DefaultAsyncLock(stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState(), config));
   }
 
   @Override
