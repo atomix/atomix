@@ -93,7 +93,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     int i = 1;
     for (Map.Entry<String, MemberCoordinator> entry : remoteMembers.entrySet()) {
       futures[i++] = entry.getValue().open();
-      i++;
     }
     return CompletableFuture.allOf(futures);
   }
@@ -106,7 +105,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     int i = 1;
     for (Map.Entry<String, MemberCoordinator> entry : remoteMembers.entrySet()) {
       futures[i++] = entry.getValue().close();
-      i++;
     }
     return CompletableFuture.allOf(futures);
   }
