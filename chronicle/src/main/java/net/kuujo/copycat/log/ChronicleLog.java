@@ -38,7 +38,7 @@ public class ChronicleLog extends AbstractLog {
   protected Collection<LogSegment> loadSegments() {
     Map<Long, LogSegment> segments = new HashMap<>();
     base.getAbsoluteFile().getParentFile().mkdirs();
-    for (File file : directory.listFiles(File::isFile)) {
+    for (File file : directory().listFiles(File::isFile)) {
       if (file.getName().startsWith(base.getName() + "-") && !segments.containsKey(Long.valueOf(file.getName().substring(0, file.getName().indexOf(".", base.getName().length()))))) {
         try {
           Long segmentNumber = Long.valueOf(file.getName().substring(0, file.getName().indexOf(".", base.getName().length())));
