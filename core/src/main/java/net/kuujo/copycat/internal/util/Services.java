@@ -21,6 +21,7 @@ import java.beans.BeanInfo;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -148,11 +149,18 @@ public final class Services {
         if (method != null) {
           try {
             ConfigValue value = config.get(descriptor.getName());
-            if (value.valueType() == ConfigValueType.NULL) {
+            if (value == null || value.valueType() == ConfigValueType.NULL) {
               continue;
             }
-            method.invoke(service, value.unwrapped());
-          } catch (IllegalAccessException | InvocationTargetException e) {
+            Class<?> type = descriptor.getPropertyType();
+            if (type == Class.class) {
+              method.invoke(service, Thread.currentThread().getContextClassLoader().loadClass(value.unwrapped().toString()));
+            } else if (type == File.class) {
+              method.invoke(service, new File(value.unwrapped().toString()));
+            } else {
+              method.invoke(service, value.unwrapped());
+            }
+          } catch (IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
             throw new ConfigurationException(String.format("Failed to apply configuration value at path %s.%s", path, descriptor.getName()), e);
           }
         }
