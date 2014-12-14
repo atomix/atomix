@@ -31,11 +31,6 @@
       <artifactId>copycat-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-chronicle</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
 
   <build>
