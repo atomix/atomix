@@ -15,7 +15,10 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.util.serializer.JavaSerializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 /**
  * Copycat configuration.
@@ -23,6 +26,7 @@ import net.kuujo.copycat.log.LogConfig;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatConfig extends LogConfig {
+  private Serializer serializer = new JavaSerializer();
 
   public CopycatConfig() {
     super();
@@ -30,6 +34,35 @@ public class CopycatConfig extends LogConfig {
 
   public CopycatConfig(String resource) {
     super(resource);
+  }
+
+  /**
+   * Sets the copycat log serializer.
+   *
+   * @param serializer The copycat log serializer.
+   */
+  public void setSerializer(Serializer serializer) {
+    this.serializer = Assert.isNotNull(serializer, "serializer");
+  }
+
+  /**
+   * Returns the copycat log serializer.
+   *
+   * @return The copycat log serializer.
+   */
+  public Serializer getSerializer() {
+    return serializer;
+  }
+
+  /**
+   * Sets the copycat log serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The copycat log serializer.
+   * @return The copycat configuration.
+   */
+  public CopycatConfig withSerializer(Serializer serializer) {
+    this.serializer = Assert.isNotNull(serializer, "serializer");
+    return this;
   }
 
 }
