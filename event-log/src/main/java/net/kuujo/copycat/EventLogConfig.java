@@ -15,8 +15,11 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.RetentionPolicy;
+import net.kuujo.copycat.util.serializer.JavaSerializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.io.File;
 
@@ -26,6 +29,7 @@ import java.io.File;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EventLogConfig implements Copyable<EventLogConfig> {
+  private Serializer serializer = new JavaSerializer();
   private File directory = new File(System.getProperty("java.io.tmpdir"), "copycat");
   private int segmentSize = 1024 * 1024;
   private long segmentInterval = Long.MAX_VALUE;
@@ -55,12 +59,41 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
   }
 
   /**
+   * Sets the event log serializer.
+   *
+   * @param serializer The event log serializer.
+   */
+  public void setSerializer(Serializer serializer) {
+    this.serializer = Assert.isNotNull(serializer, "serializer");
+  }
+
+  /**
+   * Returns the event log serializer.
+   *
+   * @return The event log serializer.
+   */
+  public Serializer getSerializer() {
+    return serializer;
+  }
+
+  /**
+   * Sets the event log serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The event log serializer.
+   * @return The event log configuration.
+   */
+  public EventLogConfig withSerializer(Serializer serializer) {
+    this.serializer = Assert.isNotNull(serializer, "serializer");
+    return this;
+  }
+
+  /**
    * Sets the log directory.
    *
    * @param directory The log directory.
    */
   public void setDirectory(String directory) {
-    this.directory = new File(directory);
+    this.directory = new File(Assert.isNotNull(directory, "directory"));
   }
 
   /**
@@ -69,7 +102,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @param directory The log directory.
    */
   public void setDirectory(File directory) {
-    this.directory = directory;
+    this.directory = Assert.isNotNull(directory, "directory");
   }
 
   /**
@@ -88,7 +121,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @return The log configuration.
    */
   public EventLogConfig withDirectory(String directory) {
-    this.directory = new File(directory);
+    this.directory = new File(Assert.isNotNull(directory, "directory"));
     return this;
   }
 
@@ -99,7 +132,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @return The log configuration.
    */
   public EventLogConfig withDirectory(File directory) {
-    this.directory = directory;
+    this.directory = Assert.isNotNull(directory, "directory");
     return this;
   }
 
@@ -109,7 +142,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @param segmentSize The log segment size.
    */
   public void setSegmentSize(int segmentSize) {
-    this.segmentSize = segmentSize;
+    this.segmentSize = Assert.arg(segmentSize, segmentSize > 0, "segment size must be greater than 0");
   }
 
   /**
@@ -128,7 +161,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @return The log configuration.
    */
   public EventLogConfig withSegmentSize(int segmentSize) {
-    this.segmentSize = segmentSize;
+    this.segmentSize = Assert.arg(segmentSize, segmentSize > 0, "segment size must be greater than 0");
     return this;
   }
 
@@ -138,7 +171,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @param segmentInterval The log segment interval.
    */
   public void setSegmentInterval(long segmentInterval) {
-    this.segmentInterval = segmentInterval;
+    this.segmentInterval = Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be greater than 0");
   }
 
   /**
@@ -157,7 +190,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @return The log configuration.
    */
   public EventLogConfig withSegmentInterval(long segmentInterval) {
-    this.segmentInterval = segmentInterval;
+    this.segmentInterval = Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be greater than 0");
     return this;
   }
 
@@ -196,7 +229,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @param flushInterval The log flush interval.
    */
   public void setFlushInterval(long flushInterval) {
-    this.flushInterval = flushInterval;
+    this.flushInterval = Assert.arg(flushInterval, flushInterval > 0, "flush interval must be greater than 0");
   }
 
   /**
@@ -215,7 +248,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @return The log configuration.
    */
   public EventLogConfig withFlushInterval(long flushInterval) {
-    this.flushInterval = flushInterval;
+    this.flushInterval = Assert.arg(flushInterval, flushInterval > 0, "flush interval must be greater than 0");
     return this;
   }
 
@@ -225,7 +258,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @param retentionPolicy The log retention policy.
    */
   public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
-    this.retentionPolicy = retentionPolicy;
+    this.retentionPolicy = Assert.isNotNull(retentionPolicy, "retentionPolicy");
   }
 
   /**
@@ -244,7 +277,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
    * @return The log configuration.
    */
   public EventLogConfig withRetentionPolicy(RetentionPolicy retentionPolicy) {
-    this.retentionPolicy = retentionPolicy;
+    this.retentionPolicy = Assert.isNotNull(retentionPolicy, "retentionPolicy");
     return this;
   }
 

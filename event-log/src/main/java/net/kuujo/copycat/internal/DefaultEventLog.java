@@ -19,6 +19,8 @@ import net.kuujo.copycat.EventLog;
 import net.kuujo.copycat.EventLogConfig;
 import net.kuujo.copycat.log.ChronicleLog;
 import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -29,10 +31,12 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultEventLog extends AbstractCopycatResource implements EventLog {
-  private Consumer<ByteBuffer> consumer;
+public class DefaultEventLog<T> extends AbstractCopycatResource implements EventLog<T> {
+  private final Serializer serializer;
+  private final ExecutionContext executor;
+  private Consumer<T> consumer;
 
-  public DefaultEventLog(String name, CopycatCoordinator coordinator, EventLogConfig config) {
+  public DefaultEventLog(String name, CopycatCoordinator coordinator, EventLogConfig config, ExecutionContext executor) {
     super(name, coordinator, resource -> new ChronicleLog(name, new LogConfig()
       .withDirectory(config.getDirectory())
       .withSegmentSize(config.getSegmentSize())
@@ -40,47 +44,48 @@ public class DefaultEventLog extends AbstractCopycatResource implements EventLog
       .withFlushOnWrite(config.isFlushOnWrite())
       .withFlushInterval(config.getFlushInterval())
       .withRetentionPolicy(config.getRetentionPolicy())));
+    this.serializer = config.getSerializer();
+    this.executor = executor;
   }
 
   @Override
-  public EventLog consumer(Consumer<ByteBuffer> consumer) {
+  public EventLog<T> consumer(Consumer<T> consumer) {
     this.consumer = consumer;
     return this;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<ByteBuffer> get(long index) {
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+  public <U extends T> CompletableFuture<U> get(long index) {
+    CompletableFuture<U> future = new CompletableFuture<>();
     context.executor().execute(() -> {
-      try {
-        future.complete(context.log().getEntry(index));
-      } catch (Exception e) {
-        future.completeExceptionally(e);
+      if (!context.log().containsIndex(index)) {
+        executor.execute(() -> {
+          future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index)));
+        });
+      } else {
+        ByteBuffer buffer = context.log().getEntry(index);
+        if (buffer != null) {
+          U entry = serializer.readObject(buffer);
+          executor.execute(() -> future.complete(entry));
+        } else {
+          executor.execute(() -> future.complete(null));
+        }
       }
     });
     return future;
   }
 
   @Override
-  public CompletableFuture<Long> commit(ByteBuffer entry) {
-    return context.commit(entry).thenApply(ByteBuffer::getLong);
+  public CompletableFuture<Long> commit(T entry) {
+    return context.commit(serializer.writeObject(entry)).thenApply(ByteBuffer::getLong);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> replay() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      if (consumer != null) {
-        for (long i = context.log().firstIndex(); i <= context.log().lastIndex(); i++) {
-          consumer.accept(context.log().getEntry(i));
-        }
-        future.complete(null);
-      } else {
-        future.completeExceptionally(new IllegalStateException("No consumer registered"));
-      }
-    });
+    context.executor().execute(() -> replay(context.log().firstIndex(), future));
     return future;
   }
 
@@ -88,17 +93,23 @@ public class DefaultEventLog extends AbstractCopycatResource implements EventLog
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> replay(long index) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      if (consumer != null) {
-        for (long i = index; i <= context.log().lastIndex(); i++) {
-          consumer.accept(context.log().getEntry(i));
-        }
-        future.complete(null);
-      } else {
-        future.completeExceptionally(new IllegalStateException("No consumer registered"));
-      }
-    });
+    context.executor().execute(() -> replay(index, future));
     return future;
+  }
+
+  /**
+   * Handles asynchronous replay of the log. The log is read on the internal context and the consumer
+   * is called on the user's context.
+   */
+  private void replay(long index, CompletableFuture<Void> future) {
+    if (context.log().containsIndex(index)) {
+      executor.execute(() -> {
+        consumer.accept(serializer.readObject(context.log().getEntry(index)));
+        context.executor().execute(() -> replay(index, future));
+      });
+    } else {
+      executor.execute(() -> future.complete(null));
+    }
   }
 
   /**
@@ -107,6 +118,9 @@ public class DefaultEventLog extends AbstractCopycatResource implements EventLog
   private ByteBuffer consume(Long index, ByteBuffer entry) {
     ByteBuffer result = ByteBuffer.allocateDirect(8);
     result.putLong(index);
+    if (consumer != null) {
+      consumer.accept(serializer.readObject(entry));
+    }
     return result;
   }
 

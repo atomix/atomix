@@ -300,12 +300,12 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
   private CompletableFuture<ClusterConfig> configure(ClusterConfig config) {
     CompletableFuture<ClusterConfig> future = new CompletableFuture<>();
     int length = 4;
-    for (String uri : config.getRemoteMembers()) {
+    for (String uri : config.getMembers()) {
       length += 4 + uri.getBytes().length;
     }
     ByteBuffer buffer = ByteBuffer.allocateDirect(length);
     buffer.putInt(0); // Entry type
-    for (String uri : config.getRemoteMembers()) {
+    for (String uri : config.getMembers()) {
       buffer.putInt(uri.getBytes().length);
       buffer.put(uri.getBytes());
     }

@@ -37,10 +37,12 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DefaultCopycat implements Copycat {
   private final CopycatCoordinator coordinator;
+  private final ExecutionContext executor;
   private boolean open;
 
-  public DefaultCopycat(ClusterConfig cluster, CopycatConfig config, ExecutionContext context) {
-    this.coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", config), context);
+  public DefaultCopycat(ClusterConfig cluster, CopycatConfig config, ExecutionContext executor) {
+    this.coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", config), ExecutionContext.create());
+    this.executor = executor;
   }
 
   @Override
@@ -49,13 +51,13 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public EventLog eventLog(String name) {
+  public <T> EventLog<T> eventLog(String name) {
     return eventLog(name, new EventLogConfig());
   }
 
   @Override
-  public EventLog eventLog(String name, EventLogConfig config) {
-    return new DefaultEventLog(name, coordinator, config);
+  public <T> EventLog<T> eventLog(String name, EventLogConfig config) {
+    return new DefaultEventLog<>(name, coordinator, config, executor);
   }
 
   @Override

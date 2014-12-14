@@ -22,7 +22,6 @@ import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -32,7 +31,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventLog extends CopycatResource {
+public interface EventLog<T> extends CopycatResource {
 
   /**
    * Creates a new event log.
@@ -40,8 +39,19 @@ public interface EventLog extends CopycatResource {
    * @param name The log name.
    * @return A new event log instance.
    */
-  static EventLog create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig());
+  static <T> EventLog<T> create(String name) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new event log.
+   *
+   * @param name The log name.
+   * @param context The user execution context.
+   * @return A new event log instance.
+   */
+  static <T> EventLog<T> create(String name, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), context);
   }
 
   /**
@@ -51,8 +61,32 @@ public interface EventLog extends CopycatResource {
    * @param config The log configuration.
    * @return The event log.
    */
-  static EventLog create(String name, EventLogConfig config) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config);
+  static <T> EventLog<T> create(String name, EventLogConfig config) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new event log.
+   *
+   * @param name The log name.
+   * @param config The log configuration.
+   * @param context The user execution context.
+   * @return A new event log instance.
+   */
+  static <T> EventLog<T> create(String name, EventLogConfig config, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+  }
+
+  /**
+   * Creates a new event log.
+   *
+   * @param name The log name.
+   * @param cluster The event log cluster.
+   * @param context The user execution context.
+   * @return A new event log instance.
+   */
+  static <T> EventLog<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, cluster, new EventLogConfig(), context);
   }
 
   /**
@@ -61,14 +95,15 @@ public interface EventLog extends CopycatResource {
    * @param name The log name.
    * @param cluster The event log cluster.
    * @param config The log configuration.
+   * @param context The user execution context.
    * @return A new event log instance.
    */
   @SuppressWarnings("unchecked")
-  static EventLog create(String name, ClusterConfig cluster, EventLogConfig config) {
+  static <T> EventLog<T> create(String name, ClusterConfig cluster, EventLogConfig config, ExecutionContext context) {
     CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", new LogConfig()), ExecutionContext.create());
     try {
       coordinator.open().get();
-      DefaultEventLog eventLog = new DefaultEventLog(name, coordinator, config);
+      DefaultEventLog<T> eventLog = new DefaultEventLog<>(name, coordinator, config, context);
       eventLog.withShutdownTask(coordinator::close);
       return eventLog;
     } catch (InterruptedException | ExecutionException e) {
@@ -82,7 +117,7 @@ public interface EventLog extends CopycatResource {
    * @param consumer The log entry consumer.
    * @return The event log.
    */
-  EventLog consumer(Consumer<ByteBuffer> consumer);
+  EventLog<T> consumer(Consumer<T> consumer);
 
   /**
    * Gets an entry from the log by index.
@@ -90,7 +125,7 @@ public interface EventLog extends CopycatResource {
    * @param index The index of the entry to get.
    * @return A completable future to be completed once the entry has been loaded.
    */
-  CompletableFuture<ByteBuffer> get(long index);
+  <U extends T> CompletableFuture<U> get(long index);
 
   /**
    * Commits an entry to the log.
@@ -98,7 +133,7 @@ public interface EventLog extends CopycatResource {
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
-  CompletableFuture<Long> commit(ByteBuffer entry);
+  CompletableFuture<Long> commit(T entry);
 
   /**
    * Replays all entries in the log.

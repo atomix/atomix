@@ -105,7 +105,7 @@ public interface Copycat extends Managed {
    * @param name The name of the event log to create.
    * @return The event log.
    */
-  EventLog eventLog(String name);
+  <T> EventLog<T> eventLog(String name);
 
   /**
    * Creates a new event log.
@@ -114,7 +114,7 @@ public interface Copycat extends Managed {
    * @param config The event log configuration.
    * @return The event log.
    */
-  EventLog eventLog(String name, EventLogConfig config);
+  <T> EventLog<T> eventLog(String name, EventLogConfig config);
 
   /**
    * Creates a new state log.
