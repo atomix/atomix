@@ -14,9 +14,12 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.CopycatResource;
+import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.spi.LogFactory;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,17 +32,17 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractCopycatResource implements CopycatResource {
   protected final String name;
-  protected final CopycatCoordinator coordinator;
-  protected Cluster cluster;
-  protected CopycatContext context;
-  private final LogFactory logFactory;
+  protected final CopycatContext context;
+  protected final Cluster cluster;
+  protected final ExecutionContext executor;
   private final List<Task<CompletableFuture<Void>>> startupTasks = new ArrayList<>();
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = new ArrayList<>();
 
-  protected AbstractCopycatResource(String name, CopycatCoordinator coordinator, LogFactory logFactory) {
+  protected AbstractCopycatResource(String name, CopycatContext context, Cluster cluster, ExecutionContext executor) {
     this.name = name;
-    this.coordinator = coordinator;
-    this.logFactory = logFactory;
+    this.context = context;
+    this.cluster = cluster;
+    this.executor = executor;
   }
 
   /**
@@ -83,9 +86,8 @@ public abstract class AbstractCopycatResource implements CopycatResource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    coordinator.join(name, logFactory).whenComplete((context, error) -> {
+    CompletableFuture.allOf(cluster.open(), context.open()).whenComplete((result, error) -> {
       if (error == null) {
-        this.context = context;
         context.executor().execute(() -> {
           CompletableFuture<Void>[] futures = new CompletableFuture[startupTasks.size()];
           for (int i = 0; i < startupTasks.size(); i++) {
@@ -93,9 +95,9 @@ public abstract class AbstractCopycatResource implements CopycatResource {
           }
           CompletableFuture.allOf(futures).whenComplete((r, e) -> {
             if (e == null) {
-              future.complete(null);
+              executor.execute(() -> future.complete(null));
             } else {
-              future.completeExceptionally(e);
+              executor.execute(() -> future.completeExceptionally(e));
             }
           });
         });
@@ -110,7 +112,7 @@ public abstract class AbstractCopycatResource implements CopycatResource {
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    coordinator.leave(name).whenComplete((result, error) -> {
+    CompletableFuture.allOf(cluster.close(), context.close()).whenComplete((result, error) -> {
       if (error == null) {
         context.executor().execute(() -> {
           CompletableFuture<Void>[] futures = new CompletableFuture[shutdownTasks.size()];
@@ -119,9 +121,9 @@ public abstract class AbstractCopycatResource implements CopycatResource {
           }
           CompletableFuture.allOf(futures).whenComplete((r, e) -> {
             if (e == null) {
-              future.complete(null);
+              executor.execute(() -> future.complete(null));
             } else {
-              future.completeExceptionally(e);
+              executor.execute(() -> future.completeExceptionally(e));
             }
           });
         });
@@ -134,7 +136,8 @@ public abstract class AbstractCopycatResource implements CopycatResource {
 
   @Override
   public CompletableFuture<Void> delete() {
-    return coordinator.delete(name);
+    context.log().delete();
+    return CompletableFuture.completedFuture(null);
   }
 
 }

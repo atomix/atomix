@@ -14,11 +14,10 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.CopycatCoordinator;
+import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.EventLog;
 import net.kuujo.copycat.EventLogConfig;
-import net.kuujo.copycat.log.ChronicleLog;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -36,14 +35,13 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
   private final ExecutionContext executor;
   private Consumer<T> consumer;
 
-  public DefaultEventLog(String name, CopycatCoordinator coordinator, EventLogConfig config, ExecutionContext executor) {
-    super(name, coordinator, resource -> new ChronicleLog(name, new LogConfig()
-      .withDirectory(config.getDirectory())
-      .withSegmentSize(config.getSegmentSize())
+  public DefaultEventLog(String name, CopycatContext context, Cluster cluster, EventLogConfig config, ExecutionContext executor) {
+    super(name, context, cluster, executor);
+    context.log().config().withSegmentSize(config.getSegmentSize())
       .withSegmentInterval(config.getSegmentInterval())
       .withFlushOnWrite(config.isFlushOnWrite())
       .withFlushInterval(config.getFlushInterval())
-      .withRetentionPolicy(config.getRetentionPolicy())));
+      .withRetentionPolicy(config.getRetentionPolicy());
     this.serializer = config.getSerializer();
     this.executor = executor;
   }

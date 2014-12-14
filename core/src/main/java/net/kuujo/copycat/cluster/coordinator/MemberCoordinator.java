@@ -13,18 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal.cluster;
+package net.kuujo.copycat.cluster.coordinator;
 
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.Managed;
+import net.kuujo.copycat.Task;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Internal cluster member.
+ * Cluster member coordinator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface InternalMember extends Member {
+public interface MemberCoordinator extends Managed {
+
+  /**
+   * Returns the member URI.
+   *
+   * @return The member URI.
+   */
+  String uri();
 
   /**
    * Sends an internal message.
@@ -35,5 +43,24 @@ public interface InternalMember extends Member {
    * @return A completable future to be completed with the message result.
    */
   <T, U>CompletableFuture<U> send(String topic, int address, T message);
+
+  /**
+   * Executes a task on the member.
+   *
+   * @param address The internal address to which to send the task.
+   * @param task The task to execute.
+   * @return A completable future to be completed once the task has been executed.
+   */
+  CompletableFuture<Void> execute(int address, Task<Void> task);
+
+  /**
+   * Submits a task to the member.
+   *
+   * @param address The internal address to which to send the task.
+   * @param task The task to commit on the member.
+   * @param <T> The task return type.
+   * @return A completable future to be completed with the task result.
+   */
+  <T> CompletableFuture<T> submit(int address, Task<T> task);
 
 }

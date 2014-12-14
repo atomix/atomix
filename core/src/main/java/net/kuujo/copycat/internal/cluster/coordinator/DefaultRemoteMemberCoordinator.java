@@ -6,13 +6,14 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal.cluster;
+package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -27,18 +28,18 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default remote member implementation.
+ * Default remote member coordinator implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class GlobalRemoteMember extends GlobalMember {
+public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   private static final int USER_ADDRESS = -1;
   private static final int SYSTEM_ADDRESS = 0;
   private final ProtocolClient client;
   private final ExecutionContext context;
   private final Serializer serializer = Serializer.serializer();
 
-  GlobalRemoteMember(String uri, Protocol protocol, ExecutionContext context) {
+  DefaultRemoteMemberCoordinator(String uri, Protocol protocol, ExecutionContext context) {
     super(uri);
     try {
       URI realUri = new URI(uri);
@@ -53,41 +54,47 @@ public class GlobalRemoteMember extends GlobalMember {
   }
 
   @Override
-  public <T, U> CompletableFuture<U> send(String topic, T message) {
-    return send(topic, USER_ADDRESS, message);
-  }
-
-  @Override
   public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
     ByteBuffer buffer = serializer.writeObject(message);
     byte[] topicBytes = topic.getBytes();
-    ByteBuffer request = ByteBuffer.allocateDirect(buffer.capacity() + topicBytes.length + 8);
+    ByteBuffer request = ByteBuffer.allocateDirect(4 + buffer.capacity() + topicBytes.length + 8);
+    request.putInt(1); // Request type
     request.putInt(topicBytes.length);
     request.put(topicBytes);
     request.putInt(address);
     request.put(buffer);
     client.write(request).whenComplete((response, error) -> {
-      context.execute(() -> {
-        if (error == null) {
-          future.complete(serializer.readObject(response));
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
+      if (error == null) {
+        context.execute(() -> future.complete(serializer.readObject(response)));
+      } else {
+        context.execute(() -> future.completeExceptionally(error));
+      }
     });
     return future;
   }
 
   @Override
-  public CompletableFuture<Void> execute(Task<Void> task) {
-    return submit(task);
+  public CompletableFuture<Void> execute(int address, Task<Void> task) {
+    return submit(address, task);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public <T> CompletableFuture<T> submit(Task<T> task) {
-    return this.<Task<T>, T>send("commit", SYSTEM_ADDRESS, task);
+  public <T> CompletableFuture<T> submit(int address, Task<T> task) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    ByteBuffer buffer = serializer.writeObject(task);
+    ByteBuffer request = ByteBuffer.allocateDirect(8 + buffer.capacity());
+    request.putInt(0); // Request type
+    request.putInt(address); // Context address
+    request.put(buffer);
+    client.write(request).whenComplete((response, error) -> {
+      if (error == null) {
+        context.execute(() -> future.complete(serializer.readObject(response)));
+      } else {
+        context.execute(() -> future.completeExceptionally(error));
+      }
+    });
+    return future;
   }
 
   @Override

@@ -6,41 +6,32 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal.cluster;
+package net.kuujo.copycat.internal.cluster.coordinator;
 
-import net.kuujo.copycat.cluster.ManagedMember;
+import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 
 /**
- * Internal member.
+ * Base member coordinator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class GlobalMember implements ManagedMember, InternalMember {
+abstract class AbstractMemberCoordinator implements MemberCoordinator {
   private final String uri;
-  private State state;
 
-  protected GlobalMember(String uri) {
+  protected AbstractMemberCoordinator(String uri) {
     this.uri = uri;
   }
 
   @Override
   public String uri() {
     return uri;
-  }
-
-  @Override
-  public State state() {
-    return state;
-  }
-
-  public void state(State state) {
-    this.state = state;
   }
 
 }

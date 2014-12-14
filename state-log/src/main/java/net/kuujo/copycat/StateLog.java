@@ -16,14 +16,12 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.internal.DefaultCopycatCoordinator;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.DefaultStateLog;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
@@ -113,12 +111,10 @@ public interface StateLog<T> extends CopycatResource {
    * @return A new state log instance.
    */
   static <T> StateLog<T> create(String name, ClusterConfig cluster, StateLogConfig config, ExecutionContext context) {
-    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", new LogConfig()), ExecutionContext.create());
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
-      DefaultStateLog<T> stateLog = new DefaultStateLog<>(name, coordinator, config, context);
-      stateLog.withShutdownTask(coordinator::close);
-      return stateLog;
+      return coordinator.<StateLog<T>>createResource(name,  (c, o) -> (StateLog<T>) new DefaultStateLog<>(name, o, c, config, context).withShutdownTask(coordinator::close));
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

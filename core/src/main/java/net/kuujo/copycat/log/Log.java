@@ -26,6 +26,13 @@ import java.util.Collection;
 public interface Log extends Logger {
 
   /**
+   * Return the log configuration.
+   *
+   * @return The log configuration.
+   */
+  LogConfig config();
+
+  /**
    * Returns the log base file.
    *
    * @return The log base file.

@@ -17,7 +17,6 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.election.Election;
@@ -39,7 +38,6 @@ import java.util.function.BiFunction;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultCopycatStateContext extends Observable implements CopycatContext, CopycatStateContext {
-  private final Cluster cluster;
   private final ExecutionContext executor;
   private final Log log;
   private AbstractState state;
@@ -60,19 +58,13 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
 
-  public DefaultCopycatStateContext(Cluster cluster, ClusterConfig config, Log log, ExecutionContext executor) {
-    this.cluster = cluster;
+  public DefaultCopycatStateContext(ClusterConfig config, Log log, ExecutionContext executor) {
     this.localMember = config.getLocalMember();
     this.remoteMembers = config.getRemoteMembers();
     this.log = log;
     this.executor = executor;
     this.electionTimeout = config.getElectionTimeout();
     this.heartbeatInterval = config.getHeartbeatInterval();
-  }
-
-  @Override
-  public Cluster cluster() {
-    return cluster;
   }
 
   @Override

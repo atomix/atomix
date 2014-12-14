@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal.cluster;
+package net.kuujo.copycat.cluster.coordinator;
 
-import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 /**
- * Internal local cluster member.
+ * Local member coordinator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface InternalLocalMember extends InternalMember, LocalMember {
+public interface LocalMemberCoordinator extends MemberCoordinator {
 
   /**
    * Registers a message handler.
@@ -31,17 +31,26 @@ public interface InternalLocalMember extends InternalMember, LocalMember {
    * @param topic The topic for which to register the handler.
    * @param address The internal address at which to register the handler.
    * @param handler The handler to register.
-   * @return The internal local member.
+   * @return The local member coordinator.
    */
-  <T, U> InternalLocalMember register(String topic, int address, MessageHandler<T, U> handler);
+  <T, U> LocalMemberCoordinator register(String topic, int address, MessageHandler<T, U> handler);
 
   /**
    * Unregisters a message handler.
    *
    * @param topic The topic for which to unregister the handler.
    * @param address The internal address at which to unregister the handler.
-   * @return The internal local member.
+   * @return The local member coordinator.
    */
-  InternalLocalMember unregister(String topic, int address);
+  LocalMemberCoordinator unregister(String topic, int address);
+
+  /**
+   * Registers an execution context for the given address.
+   *
+   * @param address The address for which to register the context.
+   * @param context The execution context.
+   * @return The local member coordinator.
+   */
+  LocalMemberCoordinator executor(int address, ExecutionContext context);
 
 }

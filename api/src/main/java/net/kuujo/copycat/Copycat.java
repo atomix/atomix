@@ -14,7 +14,6 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
@@ -91,13 +90,6 @@ public interface Copycat extends Managed {
   static Copycat create(ClusterConfig cluster, CopycatConfig config, ExecutionContext context) {
     return new DefaultCopycat(cluster, config, context != null ? context : ExecutionContext.create());
   }
-
-  /**
-   * Returns the Copycat cluster.
-   *
-   * @return The Copycat cluster.
-   */
-  Cluster cluster();
 
   /**
    * Creates a new event log.

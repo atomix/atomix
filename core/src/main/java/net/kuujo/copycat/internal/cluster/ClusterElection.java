@@ -80,6 +80,14 @@ class ClusterElection implements Election, Observer {
     return this;
   }
 
+  void open() {
+    ((Observable) context).addObserver(this);
+  }
+
+  void close() {
+    ((Observable) context).deleteObserver(this);
+  }
+
   /**
    * Cluster election result.
    */

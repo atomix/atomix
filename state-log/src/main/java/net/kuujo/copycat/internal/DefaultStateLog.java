@@ -16,9 +16,8 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -45,15 +44,15 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
   private long commitIndex;
   private boolean open;
 
-  public DefaultStateLog(String name, CopycatCoordinator coordinator, StateLogConfig config, ExecutionContext context) {
-    super(name, coordinator, resource -> new BufferedLog(resource, new LogConfig()
-      .withDirectory(config.getDirectory())
+  public DefaultStateLog(String name, CopycatContext context, Cluster cluster, StateLogConfig config, ExecutionContext executor) {
+    super(name, context, cluster, executor);
+    context.log().config()
       .withSegmentSize(config.getSegmentSize())
       .withSegmentInterval(config.getSegmentInterval())
       .withFlushOnWrite(config.isFlushOnWrite())
-      .withFlushInterval(config.getFlushInterval())));
+      .withFlushInterval(config.getFlushInterval());
     this.serializer = config.getSerializer();
-    this.executor = context;
+    this.executor = executor;
     this.config = config;
   }
 

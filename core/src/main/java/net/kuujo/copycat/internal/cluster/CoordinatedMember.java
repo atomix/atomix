@@ -16,6 +16,7 @@ package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,18 +28,18 @@ import java.util.concurrent.CompletableFuture;
  */
 public class CoordinatedMember implements Member {
   protected final int id;
-  private final InternalMember parent;
+  private final MemberCoordinator coordinator;
   protected final ExecutionContext context;
 
-  protected CoordinatedMember(int id, InternalMember parent, ExecutionContext context) {
+  protected CoordinatedMember(int id, MemberCoordinator coordinator, ExecutionContext context) {
     this.id = id;
-    this.parent = parent;
+    this.coordinator = coordinator;
     this.context = context;
   }
 
   @Override
   public String uri() {
-    return parent.uri();
+    return coordinator.uri();
   }
 
   @Override
@@ -48,17 +49,17 @@ public class CoordinatedMember implements Member {
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    return parent.send(topic, id, message);
+    return coordinator.send(topic, id, message);
   }
 
   @Override
   public CompletableFuture<Void> execute(Task<Void> task) {
-    return parent.execute(task);
+    return coordinator.execute(id, task);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    return parent.submit(task);
+    return coordinator.submit(id, task);
   }
 
 }

@@ -13,21 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal.cluster;
+package net.kuujo.copycat.spi;
 
+import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.CopycatResource;
 import net.kuujo.copycat.cluster.Cluster;
 
 /**
- * Internal cluster.
+ * Copycat resource factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface InternalCluster extends Cluster {
+@FunctionalInterface
+public interface ResourceFactory<T extends CopycatResource> {
 
-  @Override
-  InternalLocalMember localMember();
-
-  @Override
-  InternalMember member(String uri);
+  /**
+   * Creates a new resource.
+   *
+   * @param cluster The resource cluster.
+   * @param context The resource context.
+   * @return The resource instance.
+   */
+  T createResource(Cluster cluster, CopycatContext context);
 
 }

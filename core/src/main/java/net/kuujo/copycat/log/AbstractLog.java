@@ -32,7 +32,6 @@ import java.util.concurrent.ScheduledExecutorService;
 public abstract class AbstractLog extends AbstractLogger implements Log {
   private static final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("log-compactor-%d"));
   protected final LogConfig config;
-  protected final File directory;
   protected final File base;
   protected final TreeMap<Long, LogSegment> segments = new TreeMap<>();
   protected LogSegment currentSegment;
@@ -40,7 +39,6 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
 
   protected AbstractLog(String name, LogConfig config) {
     this.config = config.copy();
-    this.directory = config.getDirectory();
     this.base = new File(config.getDirectory(), name);
   }
 
@@ -66,6 +64,11 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    */
   protected void deleteSegment(long segmentNumber) {
     segments.remove(segmentNumber);
+  }
+
+  @Override
+  public LogConfig config() {
+    return config;
   }
 
   @Override
@@ -114,8 +117,8 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   @Override
   public synchronized void open() {
     assertIsNotOpen();
-    if (!directory.exists()) {
-      directory.mkdirs();
+    if (!config.getDirectory().exists()) {
+      config.getDirectory().mkdirs();
     }
     for (LogSegment segment : loadSegments()) {
       segments.put(segment.segment(), segment);

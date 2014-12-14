@@ -14,31 +14,46 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
+import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
+import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Internal local cluster member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember {
-  private final InternalLocalMember parent;
+public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember, Managed {
+  private final LocalMemberCoordinator coordinator;
 
-  public CoordinatedLocalMember(int id, InternalLocalMember parent, ExecutionContext context) {
-    super(id, parent, context);
-    this.parent = parent;
+  public CoordinatedLocalMember(int id, LocalMemberCoordinator coordinator, ExecutionContext context) {
+    super(id, coordinator, context);
+    this.coordinator = coordinator;
   }
 
   @Override
   public <T, U> LocalMember handler(String topic, MessageHandler<T, U> handler) {
     if (handler != null) {
-      parent.register(topic, id, handler);
+      coordinator.register(topic, id, handler);
     } else {
-      parent.unregister(topic, id);
+      coordinator.unregister(topic, id);
     }
     return this;
   }
 
+  @Override
+  public CompletableFuture<Void> open() {
+    coordinator.executor(id, context);
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    coordinator.executor(id, null);
+    return CompletableFuture.completedFuture(null);
+  }
 }

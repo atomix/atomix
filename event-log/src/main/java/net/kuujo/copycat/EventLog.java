@@ -15,11 +15,10 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.internal.DefaultCopycatCoordinator;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.DefaultEventLog;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -100,12 +99,10 @@ public interface EventLog<T> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <T> EventLog<T> create(String name, ClusterConfig cluster, EventLogConfig config, ExecutionContext context) {
-    CopycatCoordinator coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", new LogConfig()), ExecutionContext.create());
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
-      DefaultEventLog<T> eventLog = new DefaultEventLog<>(name, coordinator, config, context);
-      eventLog.withShutdownTask(coordinator::close);
-      return eventLog;
+      return coordinator.<EventLog<T>>createResource(name,  (c, o) -> (EventLog<T>) new DefaultEventLog<>(name, o, c, config, context).withShutdownTask(coordinator::close));
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

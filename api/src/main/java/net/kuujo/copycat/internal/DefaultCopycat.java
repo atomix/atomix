@@ -15,8 +15,8 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.collections.internal.collection.*;
 import net.kuujo.copycat.collections.internal.lock.AsyncLockState;
@@ -25,7 +25,7 @@ import net.kuujo.copycat.collections.internal.lock.UnlockedAsyncLockState;
 import net.kuujo.copycat.collections.internal.map.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
-import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -36,20 +36,15 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultCopycat implements Copycat {
-  private final CopycatCoordinator coordinator;
+  private final ClusterCoordinator coordinator;
   private final CopycatConfig config;
   private final ExecutionContext executor;
   private boolean open;
 
   public DefaultCopycat(ClusterConfig cluster, CopycatConfig config, ExecutionContext executor) {
-    this.coordinator = new DefaultCopycatCoordinator(cluster, new BufferedLog("copycat", config), ExecutionContext.create());
+    this.coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     this.config = config;
     this.executor = executor;
-  }
-
-  @Override
-  public Cluster cluster() {
-    return coordinator.cluster();
   }
 
   @Override
@@ -59,7 +54,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> EventLog<T> eventLog(String name, EventLogConfig config) {
-    return new DefaultEventLog<>(name, coordinator, config, executor);
+    return coordinator.<EventLog<T>>createResource(name, (c, o) -> new DefaultEventLog<>(name, o, c, config, executor));
   }
 
   @Override
@@ -69,7 +64,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> StateLog<T> stateLog(String name, StateLogConfig config) {
-    return new DefaultStateLog<>(name, coordinator, config, executor);
+    return coordinator.<StateLog<T>>createResource(name, (c, o) -> new DefaultStateLog<T>(name, o, c, config, executor));
   }
 
   @Override
@@ -84,7 +79,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public LeaderElection election(String name) {
-    return new DefaultLeaderElection(name, coordinator);
+    return coordinator.<LeaderElection>createResource(name, (c, o) -> new DefaultLeaderElection(name, o, c, executor));
   }
 
   @Override
@@ -147,11 +142,13 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public CompletableFuture<Void> open() {
+    open = true;
     return coordinator.open();
   }
 
   @Override
   public CompletableFuture<Void> close() {
+    open = false;
     return coordinator.close();
   }
 

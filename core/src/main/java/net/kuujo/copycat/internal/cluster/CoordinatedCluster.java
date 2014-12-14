@@ -14,7 +14,11 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.*;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.LocalMember;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
 import net.kuujo.copycat.spi.ExecutionContext;
@@ -30,50 +34,36 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedCluster implements ManagedCluster {
+public class CoordinatedCluster implements Cluster {
   private final int id;
-  private final InternalCluster parent;
-  private CopycatStateContext state;
+  private final ClusterCoordinator coordinator;
+  private CopycatStateContext context;
   private final ExecutionContext executor;
   private final Router router;
-  private LocalMember localMember;
-  private Map<String, Member> remoteMembers = new HashMap<>();
-  private ClusterElection election;
+  private CoordinatedLocalMember localMember;
+  private Map<String, CoordinatedMember> remoteMembers = new HashMap<>();
+  private final ClusterElection election;
 
-  public CoordinatedCluster(int id, InternalCluster parent, Router router, ExecutionContext executor) {
+  public CoordinatedCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ExecutionContext executor) {
     this.id = id;
-    this.parent = parent;
+    this.coordinator = coordinator;
     this.router = router;
     this.executor = executor;
-    this.localMember = new CoordinatedLocalMember(id, parent.localMember(), executor);
-    for (String uri : state.getRemoteMembers()) {
-      this.remoteMembers.put(uri, new CoordinatedMember(id, parent.member(uri), executor));
+    this.localMember = new CoordinatedLocalMember(id, coordinator.localMember(), executor);
+    for (String uri : context.getRemoteMembers()) {
+      this.remoteMembers.put(uri, new CoordinatedMember(id, coordinator.member(uri), executor));
     }
-  }
-
-  /**
-   * Sets the cluster state.
-   */
-  public void setState(CopycatStateContext state) {
-    this.state = state;
-    this.election = new ClusterElection(this, state);
-  }
-
-  /**
-   * Returns the cluster state.
-   */
-  public CopycatStateContext getState() {
-    return state;
+    this.election = new ClusterElection(this, context);
   }
 
   @Override
   public Member leader() {
-    return state.getLeader() != null ? member(state.getLeader()) : null;
+    return context.getLeader() != null ? member(context.getLeader()) : null;
   }
 
   @Override
   public long term() {
-    return state.getTerm();
+    return context.getTerm();
   }
 
   @Override
@@ -123,13 +113,17 @@ public class CoordinatedCluster implements ManagedCluster {
 
   @Override
   public CompletableFuture<Void> open() {
-    router.createRoutes(this, state);
+    localMember.open();
+    router.createRoutes(this, context);
+    election.open();
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    router.destroyRoutes(this, state);
+    localMember.close();
+    router.destroyRoutes(this, context);
+    election.close();
     return CompletableFuture.completedFuture(null);
   }
 

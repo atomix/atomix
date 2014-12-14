@@ -15,6 +15,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Configurable;
+import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.election.Election;
 
 import java.util.Set;
@@ -24,7 +25,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Cluster extends Configurable<Cluster, ClusterConfig> {
+public interface Cluster extends Configurable<Cluster, ClusterConfig>, Managed {
 
   /**
    * Returns the current cluster leader.

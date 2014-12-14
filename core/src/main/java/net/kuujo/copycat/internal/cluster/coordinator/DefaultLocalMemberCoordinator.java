@@ -6,17 +6,18 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal.cluster;
+package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
+import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.spi.ExecutionContext;
@@ -36,16 +37,17 @@ import java.util.concurrent.CompletionStage;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class GlobalLocalMember extends GlobalMember implements InternalLocalMember {
+public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements LocalMemberCoordinator {
   private static final int USER_ADDRESS = -1;
   private static final int SYSTEM_ADDRESS = 0;
   private final ProtocolServer server;
   private final ExecutionContext context;
+  private final Map<Integer, ExecutionContext> contexts = new HashMap<>();
   @SuppressWarnings("rawtypes")
   private final Map<String, Map<Integer, MessageHandler>> handlers = new HashMap<>();
   private final Serializer serializer = Serializer.serializer();
 
-  public GlobalLocalMember(String uri, Protocol protocol, ExecutionContext context) {
+  public DefaultLocalMemberCoordinator(String uri, Protocol protocol, ExecutionContext context) {
     super(uri);
     try {
       URI realUri = new URI(uri);
@@ -59,35 +61,23 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
     this.context = context;
   }
 
-  @Override
-  public <T, U> CompletableFuture<U> send(String topic, T message) {
-    return send(topic, USER_ADDRESS, message);
-  }
-
-  @Override
-  public CompletableFuture<Void> execute(Task<Void> task) {
-    return context.submit(task::execute);
-  }
-
-  @Override
-  public <T> CompletableFuture<T> submit(Task<T> task) {
-    return context.submit(task::execute);
-  }
-
-  @Override
-  public <T, U> LocalMember handler(String topic, MessageHandler<T, U> handler) {
-    return handler != null ? register(topic, USER_ADDRESS, handler) : unregister(topic, USER_ADDRESS);
+  /**
+   * Returns the execution context for a given address.
+   */
+  private ExecutionContext getContext(int address) {
+    ExecutionContext context = contexts.get(address);
+    return context != null ? context : this.context;
   }
 
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
   public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
-    context.execute(() -> {
-      Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
-      if (handlers != null) {
-        MessageHandler handler = handlers.get(address);
-        if (handler != null) {
+    Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
+    if (handlers != null) {
+      MessageHandler handler = handlers.get(address);
+      if (handler != null) {
+        getContext(address).execute(() -> {
           ((CompletionStage<U>) handler.handle(message)).whenComplete((result, error) -> {
             if (error == null) {
               future.complete(result);
@@ -95,19 +85,19 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
               future.completeExceptionally(error);
             }
           });
-        } else {
-          future.completeExceptionally(new IllegalStateException("No handlers"));
-        }
+        });
       } else {
-        future.completeExceptionally(new IllegalStateException("No handlers"));
+        getContext(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
       }
-    });
+    } else {
+      getContext(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
+    }
     return future;
   }
 
   @Override
   @SuppressWarnings("rawtypes")
-  public <T, U> InternalLocalMember register(String topic, int address, MessageHandler<T, U> handler) {
+  public <T, U> LocalMemberCoordinator register(String topic, int address, MessageHandler<T, U> handler) {
     Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
     if (handlers == null) {
       handlers = new HashMap<>();
@@ -119,7 +109,7 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
 
   @Override
   @SuppressWarnings("rawtypes")
-  public InternalLocalMember unregister(String topic, int address) {
+  public LocalMemberCoordinator unregister(String topic, int address) {
     Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
     if (handlers != null) {
       handlers.remove(address);
@@ -139,32 +129,69 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
   @SuppressWarnings({"unchecked", "rawtypes"})
   private CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    int topicLength = request.getInt();
-    byte[] topicBytes = new byte[topicLength];
-    request.get(topicBytes);
-    String topic = new String(topicBytes);
-    Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
-    if (handlers != null) {
-      int address = request.getInt();
-      MessageHandler handler = handlers.get(address);
-      if (handler != null) {
-        Object message = serializer.readObject(request);
-        context.execute(() -> {
-          ((CompletionStage<?>) handler.handle(message)).whenComplete((result, error) -> {
-            if (error == null) {
-              future.complete(serializer.writeObject(message));
-            } else {
-              future.completeExceptionally(error);
-            }
-          });
+    int type = request.getInt();
+    switch (type) {
+      case 0:
+        int contextAddress = request.getInt();
+        Task task = serializer.readObject(request.slice());
+        getContext(contextAddress).execute(() -> {
+          try {
+            Object result = task.execute();
+            future.complete(serializer.writeObject(result));
+          } catch (Exception e) {
+            future.completeExceptionally(e);
+          }
         });
-      } else {
-        future.completeExceptionally(new IllegalStateException("No handlers"));
-      }
-    } else {
-      future.completeExceptionally(new IllegalStateException("No handlers"));
+        break;
+      case 1:
+        int topicLength = request.getInt();
+        byte[] topicBytes = new byte[topicLength];
+        request.get(topicBytes);
+        String topic = new String(topicBytes);
+        Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
+        if (handlers != null) {
+          int address = request.getInt();
+          MessageHandler handler = handlers.get(address);
+          if (handler != null) {
+            Object message = serializer.readObject(request);
+            getContext(address).execute(() -> {
+              ((CompletionStage<?>) handler.handle(message)).whenComplete((result, error) -> {
+                if (error == null) {
+                  future.complete(serializer.writeObject(message));
+                } else {
+                  future.completeExceptionally(error);
+                }
+              });
+            });
+          } else {
+            future.completeExceptionally(new IllegalStateException("No handlers"));
+          }
+        } else {
+          future.completeExceptionally(new IllegalStateException("No handlers"));
+        }
+        break;
     }
     return future;
+  }
+
+  @Override
+  public CompletableFuture<Void> execute(int address, Task<Void> task) {
+    return getContext(address).submit(task::execute);
+  }
+
+  @Override
+  public <T> CompletableFuture<T> submit(int address, Task<T> task) {
+    return getContext(address).submit(task::execute);
+  }
+
+  @Override
+  public LocalMemberCoordinator executor(int address, ExecutionContext context) {
+    if (context != null) {
+      contexts.put(address, context);
+    } else {
+      contexts.remove(address);
+    }
+    return this;
   }
 
   @Override
@@ -173,7 +200,6 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.listen().whenComplete((result, error) -> {
       server.handler(this::handle);
-      this.<Task, Object>register("commit", SYSTEM_ADDRESS, request -> context.submit(request::execute));
       context.execute(() -> {
         if (error == null) {
           future.complete(null);
@@ -189,7 +215,6 @@ public class GlobalLocalMember extends GlobalMember implements InternalLocalMemb
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.close().whenComplete((result, error) -> {
-      unregister("commit", SYSTEM_ADDRESS);
       context.execute(() -> {
         if (error == null) {
           future.complete(null);
