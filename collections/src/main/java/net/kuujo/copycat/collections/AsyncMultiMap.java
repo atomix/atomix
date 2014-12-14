@@ -22,6 +22,7 @@ import net.kuujo.copycat.collections.internal.map.AsyncMultiMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMapState;
 import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.Collection;
 import java.util.Map;
@@ -47,7 +48,49 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    * @return A new asynchronous multimap.
    */
   static <K, V> AsyncMultiMap<K, V> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous multimap.
+   *
+   * @param name The asynchronous multimap name.
+   * @param cluster The cluster configuration.
+   * @param <K> The multimap key type.
+   * @param <V> The multimap entry type.
+   * @return A new asynchronous multimap.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous multimap.
+   *
+   * @param name The asynchronous multimap name.
+   * @param config The multimap configuration.
+   * @param <K> The multimap key type.
+   * @param <V> The multimap entry type.
+   * @return A new asynchronous multimap.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMultiMap<K, V> create(String name, AsyncMultiMapConfig config) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous multimap.
+   *
+   * @param name The asynchronous multimap name.
+   * @param context The user execution context.
+   * @param <K> The multimap key type.
+   * @param <V> The multimap entry type.
+   * @return A new asynchronous multimap.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMultiMap<K, V> create(String name, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), context);
   }
 
   /**
@@ -62,7 +105,53 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, AsyncMultiMapConfig config) {
-    return new DefaultAsyncMultiMap(StateMachine.create(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), cluster, config));
+    return create(name, cluster, config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous multimap.
+   *
+   * @param name The asynchronous multimap name.
+   * @param cluster The cluster configuration.
+   * @param context The user execution context.
+   * @param <K> The multimap key type.
+   * @param <V> The multimap entry type.
+   * @return A new asynchronous multimap.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, cluster, Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), context);
+  }
+
+  /**
+   * Creates a new asynchronous multimap.
+   *
+   * @param name The asynchronous multimap name.
+   * @param config The multimap configuration.
+   * @param context The user execution context.
+   * @param <K> The multimap key type.
+   * @param <V> The multimap entry type.
+   * @return A new asynchronous multimap.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMultiMap<K, V> create(String name, AsyncMultiMapConfig config, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+  }
+
+  /**
+   * Creates a new asynchronous multimap.
+   *
+   * @param name The asynchronous multimap name.
+   * @param cluster The cluster configuration.
+   * @param config The multimap configuration.
+   * @param context The user execution context.
+   * @param <K> The multimap key type.
+   * @param <V> The multimap entry type.
+   * @return A new asynchronous multimap.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, AsyncMultiMapConfig config, ExecutionContext context) {
+    return new DefaultAsyncMultiMap(StateMachine.create(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), cluster, config, context));
   }
 
   /**

@@ -22,6 +22,7 @@ import net.kuujo.copycat.collections.internal.map.AsyncMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMapState;
 import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.Collection;
 import java.util.Map;
@@ -47,7 +48,49 @@ public interface AsyncMap<K, V> extends CopycatResource {
    * @return A new asynchronous map.
    */
   static <K, V> AsyncMap<K, V> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous map.
+   *
+   * @param name The asynchronous map name.
+   * @param cluster The cluster configuration.
+   * @param <K> The map key type.
+   * @param <V> The map entry type.
+   * @return A new asynchronous map.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous map.
+   *
+   * @param name The asynchronous map name.
+   * @param config The map configuration.
+   * @param <K> The map key type.
+   * @param <V> The map entry type.
+   * @return A new asynchronous map.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMap<K, V> create(String name, AsyncMapConfig config) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous map.
+   *
+   * @param name The asynchronous map name.
+   * @param context The user execution context.
+   * @param <K> The map key type.
+   * @param <V> The map entry type.
+   * @return A new asynchronous map.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMap<K, V> create(String name, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), context);
   }
 
   /**
@@ -62,7 +105,53 @@ public interface AsyncMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, AsyncMapConfig config) {
-    return new DefaultAsyncMap(StateMachine.create(name, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, config));
+    return create(name, cluster, config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous map.
+   *
+   * @param name The asynchronous map name.
+   * @param cluster The cluster configuration.
+   * @param context The user execution context.
+   * @param <K> The map key type.
+   * @param <V> The map entry type.
+   * @return A new asynchronous map.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, cluster, Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), context);
+  }
+
+  /**
+   * Creates a new asynchronous map.
+   *
+   * @param name The asynchronous map name.
+   * @param config The map configuration.
+   * @param context The user execution context.
+   * @param <K> The map key type.
+   * @param <V> The map entry type.
+   * @return A new asynchronous map.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMap<K, V> create(String name, AsyncMapConfig config, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+  }
+
+  /**
+   * Creates a new asynchronous map.
+   *
+   * @param name The asynchronous map name.
+   * @param cluster The cluster configuration.
+   * @param config The map configuration.
+   * @param context The user execution context.
+   * @param <K> The map key type.
+   * @param <V> The map entry type.
+   * @return A new asynchronous map.
+   */
+  @SuppressWarnings("unchecked")
+  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, AsyncMapConfig config, ExecutionContext context) {
+    return new DefaultAsyncMap(StateMachine.create(name, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, config, context));
   }
 
   /**

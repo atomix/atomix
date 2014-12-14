@@ -21,6 +21,7 @@ import net.kuujo.copycat.collections.internal.collection.AsyncListState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncListState;
 import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -41,7 +42,87 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @return The asynchronous list.
    */
   static <T> AsyncList<T> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param cluster The cluster configuration.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param config The list configuration.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncList<T> create(String name, AsyncListConfig config) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param context The user execution context.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncList<T> create(String name, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), context);
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param cluster The cluster configuration.
+   * @param config The list configuration.   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config) {
+    return create(name, cluster, config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param cluster The cluster configuration.
+   * @param context The user execution context.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, cluster, Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), context);
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param config The list configuration.
+   * @param context The user execution context.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncList<T> create(String name, AsyncListConfig config, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
   }
 
   /**
@@ -50,12 +131,13 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @param name The asynchronous list name.
    * @param cluster The cluster configuration.
    * @param config The list configuration.
+   * @param context The user execution context.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
   @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config) {
-    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config));
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config, ExecutionContext context) {
+    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config, context));
   }
 
   /**

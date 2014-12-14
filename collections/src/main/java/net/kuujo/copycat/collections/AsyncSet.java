@@ -21,6 +21,7 @@ import net.kuujo.copycat.collections.internal.collection.AsyncSetState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSetState;
 import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.spi.ExecutionContext;
 
 /**
  * Asynchronous set.
@@ -39,7 +40,46 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    * @return The asynchronous set.
    */
   static <T> AsyncSet<T> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class));
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous set.
+   *
+   * @param name The asynchronous set name.
+   * @param cluster The cluster configuration.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncSet<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous set.
+   *
+   * @param name The asynchronous set name.
+   * @param config The set configuration.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncSet<T> create(String name, AsyncSetConfig config) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new asynchronous set.
+   *
+   * @param name The asynchronous set name.
+   * @param context The user execution context.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncSet<T> create(String name, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), context);
   }
 
   /**
@@ -53,8 +93,50 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, ClusterConfig cluster, AsyncSetConfig config) {
-    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, config));
+    return create(name, cluster, config, ExecutionContext.create());
   }
 
+  /**
+   * Creates a new asynchronous set.
+   *
+   * @param name The asynchronous set name.
+   * @param cluster The cluster configuration.
+   * @param context The user execution context.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, cluster, Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), context);
+  }
+
+  /**
+   * Creates a new asynchronous set.
+   *
+   * @param name The asynchronous set name.
+   * @param config The set configuration.
+   * @param context The user execution context.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncSet<T> create(String name, AsyncSetConfig config, ExecutionContext context) {
+    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+  }
+
+  /**
+   * Creates a new asynchronous set.
+   *
+   * @param name The asynchronous set name.
+   * @param cluster The cluster configuration.
+   * @param config The set configuration.
+   * @param context The user execution context.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
+  @SuppressWarnings("unchecked")
+  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, AsyncSetConfig config, ExecutionContext context) {
+    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, config, context));
+  }
 
 }
