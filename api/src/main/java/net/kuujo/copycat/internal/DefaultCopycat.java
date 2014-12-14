@@ -61,13 +61,13 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public StateLog stateLog(String name) {
+  public <T> StateLog<T> stateLog(String name) {
     return stateLog(name, new StateLogConfig());
   }
 
   @Override
-  public StateLog stateLog(String name, StateLogConfig config) {
-    return new DefaultStateLog(name, coordinator, config);
+  public <T> StateLog<T> stateLog(String name, StateLogConfig config) {
+    return new DefaultStateLog<>(name, coordinator, config, executor);
   }
 
   @Override

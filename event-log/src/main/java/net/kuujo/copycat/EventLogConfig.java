@@ -45,6 +45,7 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
   }
 
   private EventLogConfig(EventLogConfig config) {
+    this.serializer = config.serializer;
     this.directory = config.directory;
     this.segmentSize = config.segmentSize;
     this.segmentInterval = config.segmentInterval;

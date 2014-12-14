@@ -15,7 +15,10 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.util.serializer.JavaSerializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.io.File;
 
@@ -25,6 +28,7 @@ import java.io.File;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateLogConfig implements Copyable<StateLogConfig> {
+  private Serializer serializer = new JavaSerializer();
   private File directory = new File(System.getProperty("java.io.tmpdir"), "copycat");
   private long maxSize = Long.MAX_VALUE;
   private int maxSegments = 2;
@@ -41,7 +45,10 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
   }
 
   private StateLogConfig(StateLogConfig config) {
+    this.serializer = config.serializer;
     this.directory = config.directory;
+    this.maxSize = config.maxSize;
+    this.maxSegments = config.maxSegments;
     this.segmentSize = config.segmentSize;
     this.segmentInterval = config.segmentInterval;
     this.flushOnWrite = config.flushOnWrite;
@@ -54,12 +61,41 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
   }
 
   /**
+   * Sets the state log serializer.
+   *
+   * @param serializer The state log serializer.
+   */
+  public void setSerializer(Serializer serializer) {
+    this.serializer = Assert.isNotNull(serializer, "serializer");
+  }
+
+  /**
+   * Returns the state log serializer.
+   *
+   * @return The state log serializer.
+   */
+  public Serializer getSerializer() {
+    return serializer;
+  }
+
+  /**
+   * Sets the state log serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The state log serializer.
+   * @return The state log configuration.
+   */
+  public StateLogConfig withSerializer(Serializer serializer) {
+    this.serializer = Assert.isNotNull(serializer, "serializer");
+    return this;
+  }
+
+  /**
    * Sets the log directory.
    *
    * @param directory The log directory.
    */
   public void setDirectory(String directory) {
-    this.directory = new File(directory);
+    this.directory = new File(Assert.isNotNull(directory, "directory"));
   }
 
   /**
@@ -68,7 +104,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @param directory The log directory.
    */
   public void setDirectory(File directory) {
-    this.directory = directory;
+    this.directory = Assert.isNotNull(directory, "directory");
   }
 
   /**
@@ -87,18 +123,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @return The log configuration.
    */
   public StateLogConfig withDirectory(String directory) {
-    this.directory = new File(directory);
-    return this;
-  }
-
-  /**
-   * Sets the log directory, returning the log configuration for method chaining.
-   *
-   * @param directory The log directory.
-   * @return The log configuration.
-   */
-  public StateLogConfig withDirectory(File directory) {
-    this.directory = directory;
+    this.directory = new File(Assert.isNotNull(directory, "directory"));
     return this;
   }
 
@@ -108,7 +133,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @param maxSize The maximum log size.
    */
   public void setMaxSize(long maxSize) {
-    this.maxSize = maxSize;
+    this.maxSize = Assert.arg(maxSize, maxSize > 0, "maximum log size must be greater than 0");
   }
 
   /**
@@ -127,7 +152,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @return The state log configuration.
    */
   public StateLogConfig withMaxSize(long maxSize) {
-    this.maxSize = maxSize;
+    this.maxSize = Assert.arg(maxSize, maxSize > 0, "maximum log size must be greater than 0");
     return this;
   }
 
@@ -137,7 +162,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @param maxSegments The maximum number of log segments.
    */
   public void setMaxSegments(int maxSegments) {
-    this.maxSegments = maxSegments;
+    this.maxSegments = Assert.arg(maxSegments, maxSegments > 0, "maximum log segments must be greater than 0");
   }
 
   /**
@@ -156,7 +181,18 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @return The state log configuration.
    */
   public StateLogConfig withMaxSegments(int maxSegments) {
-    this.maxSegments = maxSegments;
+    this.maxSegments = Assert.arg(maxSegments, maxSegments > 0, "maximum log segments must be greater than 0");
+    return this;
+  }
+
+  /**
+   * Sets the log directory, returning the log configuration for method chaining.
+   *
+   * @param directory The log directory.
+   * @return The log configuration.
+   */
+  public StateLogConfig withDirectory(File directory) {
+    this.directory = Assert.isNotNull(directory, "directory");
     return this;
   }
 
@@ -166,7 +202,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @param segmentSize The log segment size.
    */
   public void setSegmentSize(int segmentSize) {
-    this.segmentSize = segmentSize;
+    this.segmentSize = Assert.arg(segmentSize, segmentSize > 0, "segment size must be greater than 0");
   }
 
   /**
@@ -185,7 +221,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @return The log configuration.
    */
   public StateLogConfig withSegmentSize(int segmentSize) {
-    this.segmentSize = segmentSize;
+    this.segmentSize = Assert.arg(segmentSize, segmentSize > 0, "segment size must be greater than 0");
     return this;
   }
 
@@ -195,7 +231,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @param segmentInterval The log segment interval.
    */
   public void setSegmentInterval(long segmentInterval) {
-    this.segmentInterval = segmentInterval;
+    this.segmentInterval = Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be greater than 0");
   }
 
   /**
@@ -214,7 +250,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @return The log configuration.
    */
   public StateLogConfig withSegmentInterval(long segmentInterval) {
-    this.segmentInterval = segmentInterval;
+    this.segmentInterval = Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be greater than 0");
     return this;
   }
 
@@ -253,7 +289,7 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    * @param flushInterval The log flush interval.
    */
   public void setFlushInterval(long flushInterval) {
-    this.flushInterval = flushInterval;
+    this.flushInterval = Assert.arg(flushInterval, flushInterval > 0, "flush interval must be greater than 0");
   }
 
   /**
@@ -263,17 +299,6 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    */
   public long getFlushInterval() {
     return flushInterval;
-  }
-
-  /**
-   * Sets the log flush interval, returning the log configuration for method chaining.
-   *
-   * @param flushInterval The log flush interval.
-   * @return The log configuration.
-   */
-  public StateLogConfig withFlushInterval(long flushInterval) {
-    this.flushInterval = flushInterval;
-    return this;
   }
 
 }

@@ -19,7 +19,10 @@ import net.kuujo.copycat.*;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.util.serializer.Serializer;
 
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,81 +35,92 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultStateLog extends AbstractCopycatResource implements StateLog {
+public class DefaultStateLog<T> extends AbstractCopycatResource implements StateLog<T> {
+  private final Serializer serializer;
+  private final ExecutionContext executor;
   private final Map<Integer, CommandInfo> commands = new HashMap<>();
   private final StateLogConfig config;
-  private Supplier<ByteBuffer> snapshotter;
-  private Consumer<ByteBuffer> installer;
+  private Supplier snapshotter;
+  private Consumer installer;
   private long commitIndex;
   private boolean open;
 
-  public DefaultStateLog(String name, CopycatCoordinator coordinator, StateLogConfig config) {
+  public DefaultStateLog(String name, CopycatCoordinator coordinator, StateLogConfig config, ExecutionContext context) {
     super(name, coordinator, resource -> new BufferedLog(resource, new LogConfig()
       .withDirectory(config.getDirectory())
       .withSegmentSize(config.getSegmentSize())
       .withSegmentInterval(config.getSegmentInterval())
       .withFlushOnWrite(config.isFlushOnWrite())
       .withFlushInterval(config.getFlushInterval())));
+    this.serializer = config.getSerializer();
+    this.executor = context;
     this.config = config;
   }
 
   @Override
-  public StateLog register(String name, Command command) {
+  public <U extends T, V> StateLog<T> register(String name, Command<U, V> command) {
     return register(name, command, new CommandOptions());
   }
 
   @Override
-  public StateLog register(String name, Command command, CommandOptions options) {
+  public <U extends T, V> StateLog<T> register(String name, Command<U, V> command, CommandOptions options) {
     Assert.state(open, "Cannot register command on open state log");
     commands.put(name.hashCode(), new CommandInfo(name, command, options));
     return this;
   }
 
   @Override
-  public StateLog unregister(String name) {
+  public StateLog<T> unregister(String name) {
     Assert.state(open, "Cannot unregister command on open state log");
     commands.remove(name.hashCode());
     return this;
   }
 
   @Override
-  public StateLog snapshotter(Supplier<ByteBuffer> snapshotter) {
+  public <U> StateLog<T> snapshotter(Supplier<U> snapshotter) {
     Assert.state(open, "Cannot modify state log once opened");
     this.snapshotter = snapshotter;
     return this;
   }
 
   @Override
-  public StateLog installer(Consumer<ByteBuffer> installer) {
+  public <U> StateLog<T> installer(Consumer<U> installer) {
     Assert.state(open, "Cannot modify state log once opened");
     this.installer = installer;
     return this;
   }
 
   @Override
-  public CompletableFuture<ByteBuffer> submit(String command, ByteBuffer entry) {
+  @SuppressWarnings("unchecked")
+  public <U> CompletableFuture<U> submit(String command, T entry) {
     Assert.state(open, "State log not open");
-    CommandInfo commandInfo = commands.get(command.hashCode());
+    CommandInfo<T, U> commandInfo = commands.get(command.hashCode());
     if (commandInfo == null) {
-      CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+      CompletableFuture<U> future = new CompletableFuture<>();
       future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command)));
       return future;
     }
     if (commandInfo.options.isReadOnly()) {
       if (commandInfo.options.isConsistent()) {
-        ByteBuffer queryEntry = ByteBuffer.allocateDirect(4 + entry.capacity());
-        queryEntry.putInt(command.hashCode());
-        queryEntry.put(entry);
-        return cluster.leader().<ByteBuffer, ByteBuffer>send("query", queryEntry);
+        CompletableFuture<U> future = new CompletableFuture<>();
+        cluster.leader().<T, U>send("query", entry).whenCompleteAsync((result, error) -> {
+          if (error == null) {
+            future.complete(result);
+          } else {
+            future.completeExceptionally(error);
+          }
+        }, executor);
+        return future;
       } else {
-        return CompletableFuture.completedFuture(commandInfo.command.execute(entry));
+        return CompletableFuture.completedFuture((U) commandInfo.command.execute(entry));
       }
     } else {
-      ByteBuffer commandEntry = ByteBuffer.allocateDirect(8 + entry.capacity());
+      ByteBuffer buffer = serializer.writeObject(entry);
+      ByteBuffer commandEntry = ByteBuffer.allocateDirect(8 + buffer.capacity());
       commandEntry.putInt(1); // Entry type
       commandEntry.putInt(command.hashCode());
-      commandEntry.put(entry);
-      return context.commit(commandEntry);
+      commandEntry.put(buffer);
+      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
     }
   }
 
@@ -117,6 +131,7 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
    * @param entry The log entry.
    * @return The entry output.
    */
+  @SuppressWarnings({"unchecked", "rawtypes"})
   private ByteBuffer consume(Long index, ByteBuffer entry) {
     int entryType = entry.getInt();
     switch (entryType) {
@@ -127,12 +142,29 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
         int commandCode = entry.getInt();
         CommandInfo commandInfo = commands.get(commandCode);
         if (commandInfo != null) {
-          commandInfo.execute(index, entry.slice());
+          commandInfo.execute(index, serializer.readObject(entry.slice()));
         }
         return ByteBuffer.allocate(0);
       default:
         throw new IllegalArgumentException("Invalid entry type");
     }
+  }
+
+  /**
+   * Queries the state log.
+   *
+   * @param query The query with which to query state.
+   * @return The query result.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  private CompletableFuture<Object> query(Query query) {
+    CommandInfo commandInfo = commands.get(query.command.hashCode());
+    if (commandInfo == null) {
+      CompletableFuture<Object> future = new CompletableFuture<>();
+      future.completeExceptionally(new IllegalStateException("Invalid command " + query.command));
+      return future;
+    }
+    return context.sync().thenApply(v -> commandInfo.command.execute(query.entry));
   }
 
   /**
@@ -149,17 +181,17 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
    */
   private void takeSnapshot() {
     if (snapshotter != null) {
-      ByteBuffer snapshot = snapshotter.get();
-      context.log().compact(commitIndex, snapshot);
+      context.log().compact(commitIndex, serializer.writeObject(snapshotter.get()));
     }
   }
 
   /**
    * Installs a snapshot.
    */
+  @SuppressWarnings("unchecked")
   private void installSnapshot(ByteBuffer snapshot) {
     if (installer != null) {
-      installer.accept(snapshot);
+      installer.accept(serializer.readObject(snapshot));
     }
   }
 
@@ -172,6 +204,7 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
       if (error != null) {
         open = false;
       } else {
+        cluster.localMember().handler("query", this::query);
         commitIndex = context.log().firstIndex() - 1;
         takeSnapshot();
       }
@@ -182,27 +215,44 @@ public class DefaultStateLog extends AbstractCopycatResource implements StateLog
   public CompletableFuture<Void> close() {
     open = false;
     context.consumer(null);
+    cluster.localMember().handler("query", null);
     return super.close();
+  }
+
+  /**
+   * Query sent between followers and leaders.
+   */
+  private class Query implements Serializable {
+    private final String command;
+    private final Object entry;
+    private Query() {
+      command = null;
+      entry = null;
+    }
+    private Query(String command, Object entry) {
+      this.command = command;
+      this.entry = entry;
+    }
   }
 
   /**
    * State command info.
    */
   @SuppressWarnings("rawtypes")
-  private class CommandInfo {
+  private class CommandInfo<T, U> {
     private final String name;
-    private final Command command;
+    private final Command<T, U> command;
     private final CommandOptions options;
 
-    private CommandInfo(String name, Command command, CommandOptions options) {
+    private CommandInfo(String name, Command<T, U> command, CommandOptions options) {
       this.name = name;
       this.command = command;
       this.options = options;
     }
 
     @SuppressWarnings("unchecked")
-    private ByteBuffer execute(Long index, ByteBuffer entry) {
-      ByteBuffer result = command.execute(entry);
+    private U execute(Long index, T entry) {
+      U result = command.execute(entry);
       commitIndex++;
       checkSnapshot();
       return result;

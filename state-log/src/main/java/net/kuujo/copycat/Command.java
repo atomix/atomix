@@ -15,15 +15,13 @@
  */
 package net.kuujo.copycat;
 
-import java.nio.ByteBuffer;
-
 /**
  * State command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface Command {
+public interface Command<T, U> {
 
   /**
    * Executes the command.
@@ -31,6 +29,6 @@ public interface Command {
    * @param entry The log entry.
    * @return The command output.
    */
-  ByteBuffer execute(ByteBuffer entry);
+  U execute(T entry);
 
 }

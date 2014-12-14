@@ -122,7 +122,7 @@ public interface Copycat extends Managed {
    * @param name The name of the state log to create.
    * @return The state log.
    */
-  StateLog stateLog(String name);
+  <T> StateLog<T> stateLog(String name);
 
   /**
    * Creates a new state log.
@@ -131,7 +131,7 @@ public interface Copycat extends Managed {
    * @param config The state log configuration.
    * @return The state log.
    */
-  StateLog stateLog(String name, StateLogConfig config);
+  <T> StateLog<T> stateLog(String name, StateLogConfig config);
 
   /**
    * Creates a new replicated state machine.
