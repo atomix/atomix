@@ -38,8 +38,7 @@ public interface StateMachine<T> extends CopycatResource {
    * @return The state machine.
    */
   static <T> StateMachine<T> create(String name, Class<T> stateType, T initialState) {
-    return create(name, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), new StateMachineConfig(), ExecutionContext
-      .create());
+    return create(name, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), new StateMachineConfig(), ExecutionContext.create());
   }
 
   /**
@@ -52,8 +51,7 @@ public interface StateMachine<T> extends CopycatResource {
    * @return The state machine.
    */
   static <T> StateMachine<T> create(String name, Class<T> stateType, T initialState, StateMachineConfig config) {
-    return create(name, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext
-      .create());
+    return create(name, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
   }
 
   /**

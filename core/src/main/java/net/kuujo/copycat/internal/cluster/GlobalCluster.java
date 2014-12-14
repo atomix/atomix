@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class GlobalCluster implements ManagedCluster, InternalCluster, Observer {
+public class GlobalCluster implements ManagedCluster, InternalCluster {
   private final Protocol protocol;
   private final Router router;
   private final ExecutionContext executor;
@@ -64,35 +64,6 @@ public class GlobalCluster implements ManagedCluster, InternalCluster, Observer 
    */
   public CopycatStateContext getState() {
     return context;
-  }
-
-  @Override
-  public void update(Observable o, Object arg) {
-    Iterator<Map.Entry<String, GlobalRemoteMember>> entryIterator = remoteMembers.entrySet().iterator();
-    while (entryIterator.hasNext()) {
-      Map.Entry<String, GlobalRemoteMember> entry = entryIterator.next();
-      if (!context.getMembers().contains(entry.getKey())) {
-        entryIterator.remove();
-        if (open) {
-          entry.getValue().close();
-        }
-      }
-    }
-
-    for (String uri : context.getMembers()) {
-      if (!localMember.uri().equals(uri) && !remoteMembers.containsKey(uri) && !updating.contains(uri)) {
-        GlobalRemoteMember member = new GlobalRemoteMember(uri, protocol, executor);
-        if (open) {
-          updating.add(member.uri());
-          member.open().whenComplete((result, error) -> {
-            if (error == null) {
-              remoteMembers.put(uri, member);
-            }
-            updating.remove(uri);
-          });
-        }
-      }
-    }
   }
 
   @Override
@@ -163,7 +134,6 @@ public class GlobalCluster implements ManagedCluster, InternalCluster, Observer 
     }
     return CompletableFuture.allOf(futures).thenRun(() -> {
       if (context instanceof Observable) {
-        ((Observable) context).addObserver(this);
         ((Observable) context).addObserver(election);
       }
       router.createRoutes(this, context);
@@ -183,7 +153,6 @@ public class GlobalCluster implements ManagedCluster, InternalCluster, Observer 
     }
     router.destroyRoutes(this, context);
     if (context instanceof Observable) {
-      ((Observable) context).deleteObserver(this);
       ((Observable) context).deleteObserver(election);
     }
     return CompletableFuture.allOf(futures);
