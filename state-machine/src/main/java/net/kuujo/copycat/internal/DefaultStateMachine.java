@@ -17,7 +17,6 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -35,10 +34,9 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultStateMachine<T> implements StateMachine<T> {
-  private static final Serializer serializer = Serializer.serializer();
   private final Class<T> stateType;
   private T state;
-  private final StateLog log;
+  private final StateLog<List<Object>> log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
   private StateContext<T> context = new StateContext<T>() {
     private final Map<String, Object> data = new HashMap<>(1024);
@@ -112,7 +110,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
 
   @Override
   public <U> CompletableFuture<U> submit(String command, Object... args) {
-    return log.submit(command, serializer.writeObject(Arrays.asList(args))).thenApply(serializer::readObject);
+    return log.submit(command, Arrays.asList(args));
   }
 
   @Override
@@ -150,7 +148,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
    * @param method The method for which to create the state log command.
    * @return The generated state log command.
    */
-  private Command createCommand(Method method) {
+  private Command<List<Object>, Object> createCommand(Method method) {
     Integer tempIndex = null;
     Class<?>[] paramTypes = method.getParameterTypes();
     for (int i = 0; i < paramTypes.length; i++) {
@@ -160,8 +158,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
     }
     final Integer contextIndex = tempIndex;
 
-    return entry -> {
-      List<Object> values = serializer.readObject(entry);
+    return values -> {
       Object[] emptyArgs = new Object[values.size() + (contextIndex != null ? 1 : 0)];
       Object[] args = values.toArray(emptyArgs);
       if (contextIndex != null) {
@@ -178,7 +175,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
       }
 
       try {
-        return serializer.writeObject(method.invoke(state, values.toArray(new Object[values.size() + (contextIndex != null ? 1 : 0)])));
+        return method.invoke(state, values.toArray(new Object[values.size() + (contextIndex != null ? 1 : 0)]));
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new IllegalStateException(e);
       }

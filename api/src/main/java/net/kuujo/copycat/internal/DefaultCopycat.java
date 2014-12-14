@@ -73,13 +73,13 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T state) {
-    return stateMachine(name, stateType, state, new StateMachineConfig());
+  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState) {
+    return stateMachine(name, stateType, initialState, new StateMachineConfig());
   }
 
   @Override
-  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T state, StateMachineConfig config) {
-    return new DefaultStateMachine<>(stateType, state, stateLog(name, config));
+  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config) {
+    return new DefaultStateMachine<>(stateType, initialState, stateLog(name, config));
   }
 
   @Override

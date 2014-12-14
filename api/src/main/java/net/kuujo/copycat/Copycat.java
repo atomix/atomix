@@ -137,20 +137,20 @@ public interface Copycat extends Managed {
    * Creates a new replicated state machine.
    *
    * @param name The name of the state machine to create.
-   * @param state The state machine's initial state.
+   * @param initialState The state machine's initial state.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T state);
+  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState);
 
   /**
    * Creates a new replicated state machine.
    *
    * @param name The name of the state machine to create.
-   * @param state The state machine's initial state.
+   * @param initialState The state machine's initial state.
    * @param config The state machine's log configuration.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T state, StateMachineConfig config);
+  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config);
 
   /**
    * Creates a new leader election.
