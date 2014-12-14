@@ -22,11 +22,6 @@ package net.kuujo.copycat.internal.cluster;
 public class Topics {
 
   /**
-   * Cluster configure topic.
-   */
-  public static final String CONFIGURE = "configure";
-
-  /**
    * Member ping topic.
    */
   public static final String PING = "ping";

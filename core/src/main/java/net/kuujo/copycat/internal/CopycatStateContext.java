@@ -60,30 +60,6 @@ public interface CopycatStateContext extends RaftProtocol {
   String getLocalMember();
 
   /**
-   * Adds a member to the state cluster.
-   *
-   * @param uri The URI of the member to add.
-   * @return The Copycat state context.
-   */
-  CopycatStateContext addMember(String uri);
-
-  /**
-   * Removes a member from the state cluster.
-   *
-   * @param uri The URI of the member to remove.
-   * @return The Copycat state context.
-   */
-  CopycatStateContext removeMember(String uri);
-
-  /**
-   * Sets all members on the state cluster.
-   *
-   * @param members A set of members in the state cluster.
-   * @return The Copycat state context.
-   */
-  CopycatStateContext setMembers(Set<String> members);
-
-  /**
    * Returns a set of all members in the state cluster.
    *
    * @return A set of all members in the state cluster.

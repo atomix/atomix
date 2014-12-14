@@ -146,22 +146,8 @@ public class GlobalCluster implements ManagedCluster, InternalCluster, Observer 
   @Override
   public CompletableFuture<Cluster> configure(ClusterConfig configuration) {
     CompletableFuture<Cluster> future = new CompletableFuture<>();
-    if (configureHandler != null) {
-      configureHandler.handle(configuration).whenComplete((result, error) -> {
-        if (error == null) {
-          future.complete(this);
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
-    }
+    future.completeExceptionally(new UnsupportedOperationException("Configuration changes not supported"));
     return future;
-  }
-
-  @Override
-  public InternalCluster configureHandler(MessageHandler<ClusterConfig, ClusterConfig> handler) {
-    this.configureHandler = handler;
-    return this;
   }
 
   @Override

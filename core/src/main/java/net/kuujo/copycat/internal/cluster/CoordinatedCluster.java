@@ -19,7 +19,10 @@ import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
 import net.kuujo.copycat.spi.ExecutionContext;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -113,20 +116,9 @@ public class CoordinatedCluster implements ManagedCluster {
 
   @Override
   public CompletableFuture<Cluster> configure(ClusterConfig config) {
-    Iterator<Map.Entry<String, Member>> entryIterator = remoteMembers.entrySet().iterator();
-    while (entryIterator.hasNext()) {
-      Map.Entry<String, Member> entry = entryIterator.next();
-      if (!config.getMembers().contains(entry.getKey())) {
-        entryIterator.remove();
-      }
-    }
-    for (String uri : config.getRemoteMembers()) {
-      if (!remoteMembers.containsKey(uri)) {
-        remoteMembers.put(uri, new CoordinatedMember(id, parent.member(uri), executor));
-      }
-    }
-    state.setMembers(config.getMembers());
-    return CompletableFuture.completedFuture(this);
+    CompletableFuture<Cluster> future = new CompletableFuture<>();
+    future.completeExceptionally(new UnsupportedOperationException("Configuration changes not supported"));
+    return future;
   }
 
   @Override

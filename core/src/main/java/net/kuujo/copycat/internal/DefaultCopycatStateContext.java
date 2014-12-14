@@ -81,30 +81,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   }
 
   @Override
-  public CopycatStateContext addMember(String uri) {
-    if (!localMember.equals(uri) && remoteMembers.add(uri)) {
-      triggerChangeEvent();
-    }
-    return this;
-  }
-
-  @Override
-  public CopycatStateContext removeMember(String uri) {
-    if (!localMember.equals(uri) && remoteMembers.remove(uri)) {
-      triggerChangeEvent();
-    }
-    return this;
-  }
-
-  @Override
-  public CopycatStateContext setMembers(Set<String> members) {
-    members.remove(localMember);
-    remoteMembers.clear();
-    remoteMembers.addAll(members);
-    return this;
-  }
-
-  @Override
   public Set<String> getMembers() {
     Set<String> members = new HashSet<>(remoteMembers);
     members.add(localMember);

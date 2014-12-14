@@ -81,9 +81,9 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
     @Override
     public void destroyRoutes(Cluster cluster, RaftProtocol protocol) {
       GlobalCluster globalCluster = (GlobalCluster) cluster;
-      globalCluster.localMember().unregister(Topics.CONFIGURE, 0);
       globalCluster.localMember().unregister(Topics.PING, 0);
       globalCluster.localMember().unregister(Topics.POLL, 0);
+      globalCluster.localMember().unregister(Topics.APPEND, 0);
       globalCluster.localMember().unregister(Topics.SYNC, 0);
       globalCluster.localMember().unregister(Topics.COMMIT, 0);
     }
@@ -294,40 +294,10 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
     return buffer;
   }
 
-  /**
-   * Handles a cluster configuration change.
-   */
-  private CompletableFuture<ClusterConfig> configure(ClusterConfig config) {
-    CompletableFuture<ClusterConfig> future = new CompletableFuture<>();
-    int length = 4;
-    for (String uri : config.getMembers()) {
-      length += 4 + uri.getBytes().length;
-    }
-    ByteBuffer buffer = ByteBuffer.allocateDirect(length);
-    buffer.putInt(0); // Entry type
-    for (String uri : config.getMembers()) {
-      buffer.putInt(uri.getBytes().length);
-      buffer.put(uri.getBytes());
-    }
-    context.commit(buffer).whenComplete((result, error) -> {
-      if (error == null) {
-        int succeeded = result.getInt();
-        if (succeeded == 1) {
-          context.setMembers(config.getMembers());
-        }
-        future.complete(config);
-      } else {
-        future.completeExceptionally(error);
-      }
-    });
-    return future;
-  }
-
   @Override
   public CompletableFuture<Void> open() {
     return CompletableFuture.allOf(cluster.open(), context.open()).thenRun(() -> {
       context.consumer(this::consume);
-      cluster.configureHandler(this::configure);
     });
   }
 
@@ -335,7 +305,6 @@ public class DefaultCopycatCoordinator implements CopycatCoordinator {
   public CompletableFuture<Void> close() {
     return CompletableFuture.anyOf(cluster.close(), context.close()).thenRun(() -> {
       context.consumer(null);
-      cluster.configureHandler(null);
     });
   }
 
