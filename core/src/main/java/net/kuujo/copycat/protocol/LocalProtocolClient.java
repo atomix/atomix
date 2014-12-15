@@ -39,6 +39,7 @@ public class LocalProtocolClient implements ProtocolClient {
 
   @Override
   public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
+    request.rewind();
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     context.execute(() -> {
       LocalProtocolServer server = registry.get(address);

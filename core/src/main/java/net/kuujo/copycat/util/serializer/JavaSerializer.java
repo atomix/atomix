@@ -41,8 +41,10 @@ public class JavaSerializer implements Serializer {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T readObject(ByteBuffer buffer) {
-    try (ObjectInputStream objectStream = new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), new ByteArrayInputStream(buffer.array()))) {
+  public synchronized <T> T readObject(ByteBuffer buffer) {
+    byte[] bytes = new byte[buffer.remaining()];
+    buffer.get(bytes);
+    try (ObjectInputStream objectStream = new ClassLoaderObjectInputStream(Thread.currentThread().getContextClassLoader(), new ByteArrayInputStream(bytes))) {
       return (T) objectStream.readObject();
     } catch (IOException | ClassNotFoundException e) {
       throw new SerializationException(e);
@@ -50,7 +52,7 @@ public class JavaSerializer implements Serializer {
   }
 
   @Override
-  public <T> ByteBuffer writeObject(T object) {
+  public synchronized <T> ByteBuffer writeObject(T object) {
     try {
       objectStream.writeObject(object);
       ByteBuffer output = ByteBuffer.wrap(outputStream.toByteArray());

@@ -18,6 +18,8 @@ package net.kuujo.copycat.cluster.coordinator;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.Managed;
 
+import java.util.Set;
+
 /**
  * Cluster coordinator.
  *
@@ -39,6 +41,20 @@ public interface ClusterCoordinator extends Managed {
    * @return The member coordinator.
    */
   MemberCoordinator member(String uri);
+
+  /**
+   * Returns a set of member coordinators.
+   *
+   * @return A set of member coordinators.
+   */
+  Set<MemberCoordinator> members();
+
+  /**
+   * Returns a set of remote member coordinators.
+   *
+   * @return A set of remote member coordinators.
+   */
+  Set<MemberCoordinator> remoteMembers();
 
   /**
    * Creates a cluster resource.

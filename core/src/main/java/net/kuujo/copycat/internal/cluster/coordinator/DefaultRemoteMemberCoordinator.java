@@ -58,7 +58,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
     CompletableFuture<U> future = new CompletableFuture<>();
     ByteBuffer buffer = serializer.writeObject(message);
     byte[] topicBytes = topic.getBytes();
-    ByteBuffer request = ByteBuffer.allocateDirect(4 + buffer.capacity() + topicBytes.length + 8);
+    ByteBuffer request = ByteBuffer.allocateDirect(buffer.capacity() + topicBytes.length + 12);
     request.putInt(1); // Request type
     request.putInt(topicBytes.length);
     request.put(topicBytes);
@@ -83,7 +83,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   public <T> CompletableFuture<T> submit(int address, Task<T> task) {
     CompletableFuture<T> future = new CompletableFuture<>();
     ByteBuffer buffer = serializer.writeObject(task);
-    ByteBuffer request = ByteBuffer.allocateDirect(8 + buffer.capacity());
+    ByteBuffer request = ByteBuffer.allocate(8 + buffer.capacity());
     request.putInt(0); // Request type
     request.putInt(address); // Context address
     request.put(buffer);

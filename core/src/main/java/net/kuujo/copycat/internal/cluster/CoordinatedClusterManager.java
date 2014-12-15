@@ -19,7 +19,7 @@ import net.kuujo.copycat.cluster.ClusterManager;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.internal.CopycatStateContext;
+import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.HashMap;
@@ -34,20 +34,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatedClusterManager implements ClusterManager {
-  private final int id;
-  private final ClusterCoordinator coordinator;
-  private CopycatStateContext context;
-  private final ExecutionContext executor;
   private CoordinatedLocalMember localMember;
   private Map<String, CoordinatedMember> remoteMembers = new HashMap<>();
 
   public CoordinatedClusterManager(int id, ClusterCoordinator coordinator, ExecutionContext executor) {
-    this.id = id;
-    this.coordinator = coordinator;
-    this.executor = executor;
     this.localMember = new CoordinatedLocalMember(id, coordinator.localMember(), executor);
-    for (String uri : context.getRemoteMembers()) {
-      this.remoteMembers.put(uri, new CoordinatedMember(id, coordinator.member(uri), executor));
+    for (MemberCoordinator member : coordinator.remoteMembers()) {
+      this.remoteMembers.put(member.uri(), new CoordinatedMember(id, member, executor));
     }
   }
 

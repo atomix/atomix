@@ -45,12 +45,22 @@ public class LocalProtocolServer implements ProtocolServer {
 
   @SuppressWarnings({"unchecked", "rawtypes"})
   CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
-    if (handler == null) {
-      CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-      future.completeExceptionally(new ProtocolException("No protocol handler registered"));
-      return future;
-    }
-    return handler.handle(request);
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+    context.execute(() -> {
+      if (handler == null) {
+        future.completeExceptionally(new ProtocolException("No protocol handler registered"));
+      } else {
+        handler.handle(request).whenComplete((result, error) -> {
+          if (error == null) {
+            result.rewind();
+            future.complete(result);
+          } else {
+            future.completeExceptionally(error);
+          }
+        });
+      }
+    });
+    return future;
   }
 
   @Override

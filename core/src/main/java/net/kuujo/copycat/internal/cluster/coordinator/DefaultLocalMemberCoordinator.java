@@ -153,11 +153,11 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
           int address = request.getInt();
           MessageHandler handler = handlers.get(address);
           if (handler != null) {
-            Object message = serializer.readObject(request);
+            Object message = serializer.readObject(request.slice());
             getContext(address).execute(() -> {
               ((CompletionStage<?>) handler.handle(message)).whenComplete((result, error) -> {
                 if (error == null) {
-                  future.complete(serializer.writeObject(message));
+                  future.complete(serializer.writeObject(result));
                 } else {
                   future.completeExceptionally(error);
                 }
@@ -216,6 +216,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.close().whenComplete((result, error) -> {
       context.execute(() -> {
+        server.handler(null);
         if (error == null) {
           future.complete(null);
         } else {

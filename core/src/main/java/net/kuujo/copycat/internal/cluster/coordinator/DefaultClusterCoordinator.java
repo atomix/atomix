@@ -36,7 +36,9 @@ import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -70,6 +72,18 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   @Override
   public MemberCoordinator member(String uri) {
     return remoteMembers.get(uri);
+  }
+
+  @Override
+  public Set<MemberCoordinator> members() {
+    Set<MemberCoordinator> members = new HashSet<>(remoteMembers.values());
+    members.add(localMember);
+    return members;
+  }
+
+  @Override
+  public Set<MemberCoordinator> remoteMembers() {
+    return new HashSet<>(remoteMembers.values());
   }
 
   @Override
