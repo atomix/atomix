@@ -294,42 +294,71 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
    * Transition handler.
    */
   private CompletableFuture<CopycatState> transition(CopycatState state) {
-    if (state == this.state.state()) {
+    if (this.state != null && state == this.state.state()) {
       return CompletableFuture.completedFuture(this.state.state());
     }
 
     CompletableFuture<CopycatState> future = new CompletableFuture<>();
-    this.state.close().whenComplete((result, error) -> {
-      unregisterHandlers(this.state);
-      if (error == null) {
-        switch (state) {
-          case START:
-            this.state = new StartState(this);
-            break;
-          case FOLLOWER:
-            this.state = new FollowerState(this);
-            break;
-          case CANDIDATE:
-            this.state = new CandidateState(this);
-            break;
-          case LEADER:
-            this.state = new LeaderState(this);
-            break;
-          default:
-            this.state = new StartState(this);
-            break;
-        }
-
-        this.state.open().whenComplete((result2, error2) -> {
-          if (error2 == null) {
-            registerHandlers(this.state);
-            future.complete(this.state.state());
-          } else {
-            future.completeExceptionally(error2);
+    if (this.state != null) {
+      this.state.close().whenComplete((result, error) -> {
+        unregisterHandlers(this.state);
+        if (error == null) {
+          switch (state) {
+            case START:
+              this.state = new StartState(this);
+              break;
+            case FOLLOWER:
+              this.state = new FollowerState(this);
+              break;
+            case CANDIDATE:
+              this.state = new CandidateState(this);
+              break;
+            case LEADER:
+              this.state = new LeaderState(this);
+              break;
+            default:
+              this.state = new StartState(this);
+              break;
           }
-        });
+
+          registerHandlers(this.state);
+          this.state.open().whenComplete((result2, error2) -> {
+            if (error2 == null) {
+              future.complete(this.state.state());
+            } else {
+              future.completeExceptionally(error2);
+            }
+          });
+        }
+      });
+    } else {
+      switch (state) {
+        case START:
+          this.state = new StartState(this);
+          break;
+        case FOLLOWER:
+          this.state = new FollowerState(this);
+          break;
+        case CANDIDATE:
+          this.state = new CandidateState(this);
+          break;
+        case LEADER:
+          this.state = new LeaderState(this);
+          break;
+        default:
+          this.state = new StartState(this);
+          break;
       }
-    });
+
+      registerHandlers(this.state);
+      this.state.open().whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(this.state.state());
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    }
     return future;
   }
 
@@ -368,12 +397,47 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
 
   @Override
   public CompletableFuture<Void> open() {
-    return transition(CopycatState.START).thenApply((state) -> null);
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    executor.execute(() -> {
+      try {
+        log.open();
+        transition(CopycatState.FOLLOWER).whenComplete((result, error) -> {
+          if (error == null) {
+            future.complete(null);
+          } else {
+            future.completeExceptionally(error);
+          }
+        });
+      } catch (Exception e) {
+        future.completeExceptionally(e);
+      }
+    });
+    return future;
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return transition(CopycatState.START).thenApply((state) -> null);
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    executor.execute(() -> {
+      transition(CopycatState.START).whenComplete((result, error) -> {
+        if (error == null) {
+          try {
+            log.close();
+            future.complete(null);
+          } catch (Exception e) {
+            future.completeExceptionally(e);
+          }
+        } else {
+          try {
+            log.close();
+            future.completeExceptionally(error);
+          } catch (Exception e) {
+            future.completeExceptionally(error);
+          }
+        }
+      });
+    });
+    return future;
   }
 
 }

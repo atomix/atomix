@@ -28,7 +28,7 @@ public class PollRequest extends AbstractRequest {
    * @return A new poll request builder.
    */
   public static Builder builder() {
-    return null;
+    return new Builder();
   }
 
   private long term;

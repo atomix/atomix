@@ -63,7 +63,8 @@ class CandidateState extends ActiveState {
    * Starts the election.
    */
   private void startElection() {
-
+    LOGGER.info("{} - Starting election", context.getLocalMember());
+    resetTimer();
   }
 
   /**
@@ -109,7 +110,7 @@ class CandidateState extends ActiveState {
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
     final long lastIndex = context.log().lastIndex();
-    ByteBuffer lastEntry = context.log().getEntry(lastIndex);
+    ByteBuffer lastEntry = lastIndex > 0 ? context.log().getEntry(lastIndex) : null;
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.

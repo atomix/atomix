@@ -121,12 +121,14 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
       config.getDirectory().mkdirs();
     }
     for (LogSegment segment : loadSegments()) {
+      segment.open();
       segments.put(segment.segment(), segment);
     }
-    if (segments.lastKey() != null) {
+    if (!segments.isEmpty()) {
       currentSegment = segments.lastEntry().getValue();
     } else {
       currentSegment = createSegment(1);
+      currentSegment.open();
       segments.put(1L, currentSegment);
     }
     currentSegment.lock();
@@ -263,6 +265,8 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
       currentSegment.flush();
       currentSegment.unlock();
       currentSegment = createSegment(nextIndex);
+      currentSegment.open();
+      segments.put(nextIndex, currentSegment);
       currentSegment.lock();
       lastFlush = System.currentTimeMillis();
       checkRetention();
