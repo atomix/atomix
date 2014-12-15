@@ -102,7 +102,7 @@ public interface EventLog<T> extends CopycatResource {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
-      return coordinator.<EventLog<T>>createResource(name,  (c, o) -> (EventLog<T>) new DefaultEventLog<>(name, o, c, config, context).withShutdownTask(coordinator::close));
+      return new DefaultEventLog<T>(name, coordinator.getResource(name), config, context).withShutdownTask(coordinator::close);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

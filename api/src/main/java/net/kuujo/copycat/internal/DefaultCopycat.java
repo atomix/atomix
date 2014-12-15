@@ -54,7 +54,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> EventLog<T> eventLog(String name, EventLogConfig config) {
-    return coordinator.<EventLog<T>>createResource(name, (c, o) -> new DefaultEventLog<>(name, o, c, config, executor));
+    return new DefaultEventLog<T>(name, coordinator.getResource(name), config, executor);
   }
 
   @Override
@@ -64,7 +64,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> StateLog<T> stateLog(String name, StateLogConfig config) {
-    return coordinator.<StateLog<T>>createResource(name, (c, o) -> new DefaultStateLog<T>(name, o, c, config, executor));
+    return new DefaultStateLog<T>(name, coordinator.getResource(name), config, executor);
   }
 
   @Override
@@ -79,7 +79,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public LeaderElection election(String name) {
-    return coordinator.<LeaderElection>createResource(name, (c, o) -> new DefaultLeaderElection(name, o, c, executor));
+    return new DefaultLeaderElection(name, coordinator.getResource(name), executor);
   }
 
   @Override

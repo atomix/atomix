@@ -17,7 +17,6 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.EventLog;
 import net.kuujo.copycat.EventLogConfig;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -30,20 +29,18 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultEventLog<T> extends AbstractCopycatResource implements EventLog<T> {
+public class DefaultEventLog<T> extends AbstractCopycatResource<EventLog<T>> implements EventLog<T> {
   private final Serializer serializer;
-  private final ExecutionContext executor;
   private Consumer<T> consumer;
 
-  public DefaultEventLog(String name, CopycatContext context, Cluster cluster, EventLogConfig config, ExecutionContext executor) {
-    super(name, context, cluster, executor);
+  public DefaultEventLog(String name, CopycatContext context, EventLogConfig config, ExecutionContext executor) {
+    super(name, context, executor);
     context.log().config().withSegmentSize(config.getSegmentSize())
       .withSegmentInterval(config.getSegmentInterval())
       .withFlushOnWrite(config.isFlushOnWrite())
       .withFlushInterval(config.getFlushInterval())
       .withRetentionPolicy(config.getRetentionPolicy());
     this.serializer = config.getSerializer();
-    this.executor = executor;
   }
 
   @Override
@@ -56,7 +53,7 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
   @SuppressWarnings("unchecked")
   public <U extends T> CompletableFuture<U> get(long index) {
     CompletableFuture<U> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
+    context.execute(() -> {
       if (!context.log().containsIndex(index)) {
         executor.execute(() -> {
           future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index)));
@@ -76,14 +73,14 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
 
   @Override
   public CompletableFuture<Long> commit(T entry) {
-    return context.commit(serializer.writeObject(entry)).thenApply(ByteBuffer::getLong);
+    return context.commit(serializer.writeObject(entry)).thenApplyAsync(ByteBuffer::getLong, executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> replay() {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> replay(context.log().firstIndex(), future));
+    context.execute(() -> replay(context.log().firstIndex(), future));
     return future;
   }
 
@@ -91,7 +88,7 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> replay(long index) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> replay(index, future));
+    context.execute(() -> replay(index, future));
     return future;
   }
 
@@ -103,7 +100,7 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
     if (context.log().containsIndex(index)) {
       executor.execute(() -> {
         consumer.accept(serializer.readObject(context.log().getEntry(index)));
-        context.executor().execute(() -> replay(index, future));
+        executor.execute(() -> replay(index, future));
       });
     } else {
       executor.execute(() -> future.complete(null));
@@ -126,7 +123,7 @@ public class DefaultEventLog<T> extends AbstractCopycatResource implements Event
   public CompletableFuture<Void> open() {
     return super.open().thenRunAsync(() -> {
       context.consumer(this::consume);
-    }, context.executor());
+    }, executor);
   }
 
   @Override

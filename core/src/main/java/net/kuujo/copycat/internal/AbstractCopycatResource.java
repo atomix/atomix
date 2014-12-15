@@ -30,18 +30,17 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractCopycatResource implements CopycatResource {
+public abstract class AbstractCopycatResource<T extends CopycatResource> implements CopycatResource {
   protected final String name;
   protected final CopycatContext context;
-  protected final Cluster cluster;
   protected final ExecutionContext executor;
   private final List<Task<CompletableFuture<Void>>> startupTasks = new ArrayList<>();
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = new ArrayList<>();
+  private boolean open;
 
-  protected AbstractCopycatResource(String name, CopycatContext context, Cluster cluster, ExecutionContext executor) {
+  protected AbstractCopycatResource(String name, CopycatContext context, ExecutionContext executor) {
     this.name = name;
     this.context = context;
-    this.cluster = cluster;
     this.executor = executor;
   }
 
@@ -51,9 +50,10 @@ public abstract class AbstractCopycatResource implements CopycatResource {
    * @param task The startup task to add.
    * @return The Copycat context.
    */
-  public AbstractCopycatResource withStartupTask(Task<CompletableFuture<Void>> task) {
+  @SuppressWarnings("unchecked")
+  public T withStartupTask(Task<CompletableFuture<Void>> task) {
     startupTasks.add(task);
-    return this;
+    return (T) this;
   }
 
   /**
@@ -62,9 +62,10 @@ public abstract class AbstractCopycatResource implements CopycatResource {
    * @param task The shutdown task to remove.
    * @return The Copycat context.
    */
-  public AbstractCopycatResource withShutdownTask(Task<CompletableFuture<Void>> task) {
+  @SuppressWarnings("unchecked")
+  public T withShutdownTask(Task<CompletableFuture<Void>> task) {
     shutdownTasks.add(task);
-    return this;
+    return (T) this;
   }
 
   @Override
@@ -74,7 +75,7 @@ public abstract class AbstractCopycatResource implements CopycatResource {
 
   @Override
   public Cluster cluster() {
-    return cluster;
+    return context.cluster();
   }
 
   @Override
@@ -85,10 +86,15 @@ public abstract class AbstractCopycatResource implements CopycatResource {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
+    if (open) {
+      return CompletableFuture.completedFuture(null);
+    }
+
+    open = true;
     CompletableFuture<Void> future = new CompletableFuture<>();
-    CompletableFuture.allOf(cluster.open(), context.open()).whenComplete((result, error) -> {
+    context.open().whenComplete((result, error) -> {
       if (error == null) {
-        context.executor().execute(() -> {
+        context.execute(() -> {
           CompletableFuture<Void>[] futures = new CompletableFuture[startupTasks.size()];
           for (int i = 0; i < startupTasks.size(); i++) {
             futures[i] = startupTasks.get(i).execute();
@@ -102,7 +108,7 @@ public abstract class AbstractCopycatResource implements CopycatResource {
           });
         });
       } else {
-        future.completeExceptionally(error);
+        executor.execute(() -> future.completeExceptionally(error));
       }
     });
     return future;
@@ -111,10 +117,15 @@ public abstract class AbstractCopycatResource implements CopycatResource {
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
+    if (!open) {
+      return CompletableFuture.completedFuture(null);
+    }
+
+    open = false;
     CompletableFuture<Void> future = new CompletableFuture<>();
-    CompletableFuture.allOf(cluster.close(), context.close()).whenComplete((result, error) -> {
+    context.close().whenComplete((result, error) -> {
       if (error == null) {
-        context.executor().execute(() -> {
+        context.execute(() -> {
           CompletableFuture<Void>[] futures = new CompletableFuture[shutdownTasks.size()];
           for (int i = 0; i < shutdownTasks.size(); i++) {
             futures[i] = shutdownTasks.get(i).execute();
@@ -128,7 +139,7 @@ public abstract class AbstractCopycatResource implements CopycatResource {
           });
         });
       } else {
-        future.completeExceptionally(error);
+        executor.execute(() -> future.completeExceptionally(error));
       }
     });
     return future.thenCompose(v -> context.close());
@@ -136,8 +147,16 @@ public abstract class AbstractCopycatResource implements CopycatResource {
 
   @Override
   public CompletableFuture<Void> delete() {
-    context.log().delete();
-    return CompletableFuture.completedFuture(null);
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    context.execute(() -> {
+      try {
+        context.log().delete();
+        executor.execute(() -> future.complete(null));
+      } catch (Exception e) {
+        executor.execute(() -> future.completeExceptionally(e));
+      }
+    });
+    return future;
   }
 
 }

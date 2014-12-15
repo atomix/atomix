@@ -1,7 +1,6 @@
 package net.kuujo.copycat.election.internal;
 
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
@@ -15,7 +14,7 @@ import java.util.function.Consumer;
 /**
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultLeaderElection extends AbstractCopycatResource implements LeaderElection {
+public class DefaultLeaderElection extends AbstractCopycatResource<LeaderElection> implements LeaderElection {
   private Consumer<Member> handler;
   private final Consumer<ElectionResult> electionHandler = result -> {
     if (handler != null) {
@@ -23,8 +22,8 @@ public class DefaultLeaderElection extends AbstractCopycatResource implements Le
     }
   };
 
-  public DefaultLeaderElection(String name, CopycatContext context, Cluster cluster, ExecutionContext executor) {
-    super(name, context, cluster, executor);
+  public DefaultLeaderElection(String name, CopycatContext context, ExecutionContext executor) {
+    super(name, context, executor);
     context.log().config()
       .withFlushOnWrite(true)
       .withRetentionPolicy(new ZeroRetentionPolicy());
@@ -39,13 +38,13 @@ public class DefaultLeaderElection extends AbstractCopycatResource implements Le
   @Override
   public CompletableFuture<Void> open() {
     return super.open().thenAccept(result -> {
-      cluster.election().handler(electionHandler);
+      context.cluster().election().handler(electionHandler);
     });
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    cluster.election().handler(null);
+    context.cluster().election().handler(null);
     return super.close();
   }
 

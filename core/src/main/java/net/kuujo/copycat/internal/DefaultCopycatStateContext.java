@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MessageHandler;
@@ -28,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.Observable;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
@@ -37,7 +35,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultCopycatStateContext extends Observable implements CopycatContext, CopycatStateContext {
+public class DefaultCopycatStateContext extends Observable implements CopycatStateContext {
   private final ExecutionContext executor;
   private final Log log;
   private AbstractState state;
@@ -218,7 +216,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   }
 
   @Override
-  public CopycatContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
+  public CopycatStateContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
     this.consumer = consumer;
     return this;
   }
@@ -231,49 +229,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatCon
   @Override
   public Log log() {
     return log;
-  }
-
-  @Override
-  public CompletableFuture<Void> sync() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    SyncRequest request = SyncRequest.builder()
-      .withId(UUID.randomUUID().toString())
-      .withMember(getLocalMember())
-      .build();
-    sync(request).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete(null);
-        } else {
-          future.completeExceptionally(response.error());
-        }
-      } else {
-        future.completeExceptionally(error);
-      }
-    });
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    CommitRequest request = CommitRequest.builder()
-      .withId(UUID.randomUUID().toString())
-      .withMember(getLocalMember())
-      .withEntry(entry)
-      .build();
-    commit(request).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
-        } else {
-          future.completeExceptionally(response.error());
-        }
-      } else {
-        future.completeExceptionally(error);
-      }
-    });
-    return future;
   }
 
   @Override

@@ -15,13 +15,15 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
-import net.kuujo.copycat.CopycatResource;
+import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
+import net.kuujo.copycat.internal.CopycatStateContext;
+import net.kuujo.copycat.internal.DefaultCopycatContext;
 import net.kuujo.copycat.internal.DefaultCopycatStateContext;
 import net.kuujo.copycat.internal.cluster.CoordinatedCluster;
 import net.kuujo.copycat.internal.cluster.Router;
@@ -32,7 +34,6 @@ import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
-import net.kuujo.copycat.spi.ResourceFactory;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,7 +50,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final Protocol protocol;
   private final LocalMemberCoordinator localMember;
   private final Map<String, MemberCoordinator> remoteMembers = new HashMap<>();
-  private final Map<String, Resource> resources = new HashMap<>();
+  private final Map<String, CopycatContext> contexts = new HashMap<>();
 
   public DefaultClusterCoordinator(ClusterConfig config, ExecutionContext context) {
     this.config = config.copy();
@@ -72,17 +73,16 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   }
 
   @Override
-  public <T extends CopycatResource> T createResource(String name, ResourceFactory<T> factory) {
-    Resource resource = resources.get(name);
-    if (resource != null) {
-      return factory.createResource(resource.cluster, resource.context);
+  public synchronized CopycatContext getResource(String name) {
+    CopycatContext context = contexts.get(name);
+    if (context == null) {
+      ExecutionContext executor = ExecutionContext.create();
+      CopycatStateContext state = new DefaultCopycatStateContext(config, Services.load("copycat.log"), executor);
+      CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), executor);
+      context = new DefaultCopycatContext(cluster, state);
+      contexts.put(name, context);
     }
-    ExecutionContext executor = ExecutionContext.create();
-    DefaultCopycatStateContext context = new DefaultCopycatStateContext(config, Services.load("copycat.log"), executor);
-    CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, context, new ResourceRouter(name), executor);
-    resource = new Resource(cluster, context);
-    resources.put(name, resource);
-    return factory.createResource(cluster, context);
+    return context;
   }
 
   @Override
@@ -107,18 +107,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       futures[i++] = entry.getValue().close();
     }
     return CompletableFuture.allOf(futures);
-  }
-
-  /**
-   * Cluster resource.
-   */
-  private static class Resource {
-    private final Cluster cluster;
-    private final DefaultCopycatStateContext context;
-    private Resource(Cluster cluster, DefaultCopycatStateContext context) {
-      this.cluster = cluster;
-      this.context = context;
-    }
   }
 
   /**

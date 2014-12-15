@@ -15,9 +15,8 @@
  */
 package net.kuujo.copycat.cluster.coordinator;
 
-import net.kuujo.copycat.CopycatResource;
+import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.Managed;
-import net.kuujo.copycat.spi.ResourceFactory;
 
 /**
  * Cluster coordinator.
@@ -45,10 +44,8 @@ public interface ClusterCoordinator extends Managed {
    * Creates a cluster resource.
    *
    * @param name The resource name.
-   * @param factory The resource factory.
-   * @param <T> The resource type.
    * @return The resource instance.
    */
-  <T extends CopycatResource> T createResource(String name, ResourceFactory<T> factory);
+  CopycatContext getResource(String name);
 
 }

@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.spi.ExecutionContext;
 
@@ -26,7 +27,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatContext extends Managed {
+public interface CopycatContext extends ExecutionContext, Managed {
 
   /**
    * Returns the current Copycat state.
@@ -36,11 +37,11 @@ public interface CopycatContext extends Managed {
   CopycatState state();
 
   /**
-   * Returns the Copycat execution context.
+   * Returns the Copycat cluster.
    *
-   * @return The Copycat execution context.
+   * @return The Copycat cluster.
    */
-  ExecutionContext executor();
+  Cluster cluster();
 
   /**
    * Returns the Copycat log.

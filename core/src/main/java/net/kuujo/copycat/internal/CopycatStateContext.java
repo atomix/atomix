@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.RaftProtocol;
@@ -30,6 +31,21 @@ import java.util.function.BiFunction;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface CopycatStateContext extends RaftProtocol {
+
+  /**
+   * Returns the Copycat state.
+   *
+   * @return The current Copycat state.
+   */
+  CopycatState state();
+
+  /**
+   * Registers an entry consumer on the context.
+   *
+   * @param consumer The entry consumer.
+   * @return The Copycat context.
+   */
+  CopycatStateContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer);
 
   /**
    * Returns the log consumer.

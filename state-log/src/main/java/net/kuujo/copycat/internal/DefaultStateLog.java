@@ -16,7 +16,6 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -34,7 +33,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultStateLog<T> extends AbstractCopycatResource implements StateLog<T> {
+public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> implements StateLog<T> {
   private final Serializer serializer;
   private final ExecutionContext executor;
   private final Map<Integer, CommandInfo> commands = new HashMap<>();
@@ -44,8 +43,8 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
   private long commitIndex;
   private boolean open;
 
-  public DefaultStateLog(String name, CopycatContext context, Cluster cluster, StateLogConfig config, ExecutionContext executor) {
-    super(name, context, cluster, executor);
+  public DefaultStateLog(String name, CopycatContext context, StateLogConfig config, ExecutionContext executor) {
+    super(name, context, executor);
     context.log().config()
       .withSegmentSize(config.getSegmentSize())
       .withSegmentInterval(config.getSegmentInterval())
@@ -96,13 +95,13 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
     CommandInfo<T, U> commandInfo = commands.get(command.hashCode());
     if (commandInfo == null) {
       CompletableFuture<U> future = new CompletableFuture<>();
-      future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command)));
+      executor.execute(() -> future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command))));
       return future;
     }
     if (commandInfo.options.isReadOnly()) {
       if (commandInfo.options.isConsistent()) {
         CompletableFuture<U> future = new CompletableFuture<>();
-        cluster.leader().<T, U>send("query", entry).whenCompleteAsync((result, error) -> {
+        context.cluster().leader().<T, U>send("query", entry).whenCompleteAsync((result, error) -> {
           if (error == null) {
             future.complete(result);
           } else {
@@ -111,7 +110,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
         }, executor);
         return future;
       } else {
-        return CompletableFuture.completedFuture((U) commandInfo.command.execute(entry));
+        return CompletableFuture.supplyAsync(() -> commandInfo.command.execute(entry), executor);
       }
     } else {
       ByteBuffer buffer = serializer.writeObject(entry);
@@ -200,12 +199,12 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
     context.consumer(this::consume);
     open = true;
     return super.open().whenComplete((result, error) -> {
-      if (error != null) {
-        open = false;
-      } else {
-        cluster.localMember().handler("query", this::query);
+      if (error == null) {
+        context.cluster().localMember().handler("query", this::query);
         commitIndex = context.log().firstIndex() - 1;
         takeSnapshot();
+      } else {
+        open = false;
       }
     });
   }
@@ -214,7 +213,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource implements State
   public CompletableFuture<Void> close() {
     open = false;
     context.consumer(null);
-    cluster.localMember().handler("query", null);
+    context.cluster().localMember().handler("query", null);
     return super.close();
   }
 

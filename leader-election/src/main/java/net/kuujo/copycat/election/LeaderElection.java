@@ -61,7 +61,7 @@ public interface LeaderElection extends CopycatResource {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
-      return coordinator.<LeaderElection>createResource(name,  (c, o) -> (LeaderElection) new DefaultLeaderElection(name, o, c, context).withShutdownTask(coordinator::close));
+      return new DefaultLeaderElection(name, coordinator.getResource(name), context);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }
