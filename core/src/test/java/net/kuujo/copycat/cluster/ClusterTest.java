@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,34 +15,25 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.election.Election;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.spi.Protocol;
+import org.testng.annotations.Test;
 
 /**
- * Copycat cluster.
+ * Cluster test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Cluster extends ClusterManager {
+@Test
+public class ClusterTest {
 
   /**
-   * Returns the current cluster leader.
-   *
-   * @return The current cluster leader.
+   * Tests a user cluster execute method.
    */
-  Member leader();
-
-  /**
-   * Returns the cluster term.
-   *
-   * @return The cluster term.
-   */
-  long term();
-
-  /**
-   * Returns the cluster election.
-   *
-   * @return The cluster election.
-   */
-  Election election();
+  public void testClusterExecute() {
+  }
 
 }
