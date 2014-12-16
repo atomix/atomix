@@ -50,6 +50,6 @@ public interface Serializer extends Service {
    * @param <T> The object type.
    * @return The object bytes.
    */
-  <T> ByteBuffer writeObject(T object);
+  ByteBuffer writeObject(Object object);
 
 }

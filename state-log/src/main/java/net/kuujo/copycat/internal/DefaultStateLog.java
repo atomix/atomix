@@ -194,13 +194,12 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
     context.consumer(this::consume);
     open = true;
     return super.open().whenComplete((result, error) -> {
       if (error == null) {
-        context.cluster().localMember().handler("query", this::query);
+        context.cluster().localMember().registerHandler("query", this::query);
         commitIndex = context.log().firstIndex() - 1;
         takeSnapshot();
       } else {
@@ -213,7 +212,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   public CompletableFuture<Void> close() {
     open = false;
     context.consumer(null);
-    context.cluster().localMember().handler("query", null);
+    context.cluster().localMember().unregisterHandler("query");
     return super.close();
   }
 
@@ -236,20 +235,18 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   /**
    * State command info.
    */
-  @SuppressWarnings("rawtypes")
-  private class CommandInfo<T, U> {
+  private class CommandInfo<TT, U> {
     private final String name;
-    private final Command<T, U> command;
+    private final Command<TT, U> command;
     private final CommandOptions options;
 
-    private CommandInfo(String name, Command<T, U> command, CommandOptions options) {
+    private CommandInfo(String name, Command<TT, U> command, CommandOptions options) {
       this.name = name;
       this.command = command;
       this.options = options;
     }
 
-    @SuppressWarnings("unchecked")
-    private U execute(Long index, T entry) {
+    private U execute(Long index, TT entry) {
       U result = command.execute(entry);
       commitIndex++;
       checkSnapshot();

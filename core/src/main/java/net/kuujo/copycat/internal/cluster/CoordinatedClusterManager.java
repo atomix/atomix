@@ -14,6 +14,12 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterManager;
 import net.kuujo.copycat.cluster.LocalMember;
@@ -22,12 +28,6 @@ import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Internal cluster.
  *
@@ -35,20 +35,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public class CoordinatedClusterManager implements ClusterManager {
   private CoordinatedLocalMember localMember;
-  private Map<String, CoordinatedMember> remoteMembers = new HashMap<>();
+  private final Map<String, CoordinatedMember> remoteMembers = new HashMap<>();
 
   public CoordinatedClusterManager(int id, ClusterCoordinator coordinator, ExecutionContext executor) {
     this.localMember = new CoordinatedLocalMember(id, coordinator.localMember(), executor);
     for (MemberCoordinator member : coordinator.remoteMembers()) {
       this.remoteMembers.put(member.uri(), new CoordinatedMember(id, member, executor));
     }
-  }
-
-  @Override
-  public Set<Member> members() {
-    Set<Member> members = new HashSet<>(remoteMembers.size() + 1);
-    members.add(localMember);
-    return members;
   }
 
   @Override
@@ -68,8 +61,8 @@ public class CoordinatedClusterManager implements ClusterManager {
   }
 
   @Override
-  public Set<Member> remoteMembers() {
-    return new HashSet<>(remoteMembers.values());
+  public Collection<Member> remoteMembers() {
+    return Collections.unmodifiableCollection(remoteMembers.values());
   }
 
   @Override

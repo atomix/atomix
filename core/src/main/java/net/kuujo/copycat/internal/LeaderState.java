@@ -174,7 +174,6 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<CommitResponse> commit(final CommitRequest request) {
     logRequest(request);
 

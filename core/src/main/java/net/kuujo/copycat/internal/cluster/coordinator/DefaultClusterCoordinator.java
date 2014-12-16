@@ -35,11 +35,12 @@ import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default cluster coordinator implementation.
@@ -51,7 +52,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final Protocol protocol;
   private final LocalMemberCoordinator localMember;
   private final Map<String, MemberCoordinator> remoteMembers = new HashMap<>();
-  private final Map<String, CopycatContext> contexts = new HashMap<>();
+  private final Map<String, CopycatContext> contexts = new ConcurrentHashMap<>();
 
   public DefaultClusterCoordinator(ClusterConfig config, ExecutionContext context) {
     this.config = config.copy();
@@ -63,36 +64,36 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   }
 
   @Override
-  public synchronized LocalMemberCoordinator localMember() {
+  public LocalMemberCoordinator localMember() {
     return localMember;
   }
 
   @Override
-  public synchronized MemberCoordinator member(String uri) {
+  public MemberCoordinator member(String uri) {
     return remoteMembers.get(uri);
   }
 
   @Override
-  public synchronized Set<MemberCoordinator> members() {
-    Set<MemberCoordinator> members = new HashSet<>(remoteMembers.values());
-    members.add(localMember);
-    return members;
+  public Collection<MemberCoordinator> remoteMembers() {
+    return Collections.unmodifiableCollection(remoteMembers.values());
   }
 
   @Override
-  public synchronized Set<MemberCoordinator> remoteMembers() {
-    return new HashSet<>(remoteMembers.values());
-  }
-
-  @Override
-  public synchronized CopycatContext getResource(String name) {
+  public CopycatContext getResource(String name) {
     CopycatContext context = contexts.get(name);
     if (context == null) {
-      ExecutionContext executor = ExecutionContext.create();
-      CopycatStateContext state = new DefaultCopycatStateContext(config, Services.load("copycat.log"), executor);
-      CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), executor);
-      context = new DefaultCopycatContext(cluster, state);
-      contexts.put(name, context);
+      synchronized (contexts) {
+        context = contexts.get(name);
+        if (context == null) {
+          ExecutionContext executor = ExecutionContext.create();
+          CopycatStateContext state = new DefaultCopycatStateContext(config,
+            Services.load("copycat.log"), executor);
+          CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state,
+            new ResourceRouter(name), executor);
+          context = new DefaultCopycatContext(cluster, state);
+          contexts.put(name, context);
+        }
+      }
     }
     return context;
   }
@@ -103,8 +104,8 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     CompletableFuture<Void>[] futures = new CompletableFuture[remoteMembers.size() + 1];
     futures[0] = localMember.open();
     int i = 1;
-    for (Map.Entry<String, MemberCoordinator> entry : remoteMembers.entrySet()) {
-      futures[i++] = entry.getValue().open();
+    for (MemberCoordinator remoteMember : remoteMembers.values()) {
+      futures[i++] = remoteMember.open();
     }
     return CompletableFuture.allOf(futures);
   }
@@ -115,8 +116,8 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     CompletableFuture<Void>[] futures = new CompletableFuture[remoteMembers.size() + 1];
     futures[0] = localMember.close();
     int i = 1;
-    for (Map.Entry<String, MemberCoordinator> entry : remoteMembers.entrySet()) {
-      futures[i++] = entry.getValue().close();
+    for (MemberCoordinator remoteMember : remoteMembers.values()) {
+      futures[i++] = remoteMember.close();
     }
     return CompletableFuture.allOf(futures);
   }
@@ -133,11 +134,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().handler(Topics.PING, protocol::ping);
-      cluster.localMember().handler(Topics.POLL, protocol::poll);
-      cluster.localMember().handler(Topics.APPEND, protocol::append);
-      cluster.localMember().handler(Topics.SYNC, protocol::sync);
-      cluster.localMember().handler(Topics.COMMIT, protocol::commit);
+      cluster.localMember().registerHandler(Topics.PING, protocol::ping);
+      cluster.localMember().registerHandler(Topics.POLL, protocol::poll);
+      cluster.localMember().registerHandler(Topics.APPEND, protocol::append);
+      cluster.localMember().registerHandler(Topics.SYNC, protocol::sync);
+      cluster.localMember().registerHandler(Topics.COMMIT, protocol::commit);
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
       protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
@@ -148,19 +149,21 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     /**
      * Handles an outbound protocol request.
      */
-    private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(String topic, T request, Cluster cluster) {
+    private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(
+      String topic, T request, Cluster cluster) {
       Member member = cluster.member(request.member());
       if (member != null) {
         return member.send(topic, request);
       }
       CompletableFuture<U> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s", request.member())));
+      future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s",
+        request.member())));
       return future;
     }
 
     @Override
     public void destroyRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().<Request, Response>handler(name, null);
+      cluster.localMember().unregisterHandler(name);
       protocol.pingHandler(null);
       protocol.pollHandler(null);
       protocol.appendHandler(null);

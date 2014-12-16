@@ -296,7 +296,6 @@ abstract class ActiveState extends AbstractState {
   /**
    * Applies the given entry.
    */
-  @SuppressWarnings("unchecked")
   protected void applyEntry(long index) {
     if (context.getLastApplied() == index-1) {
       ByteBuffer entry = context.log().getEntry(index);

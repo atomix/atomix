@@ -43,7 +43,6 @@ public class LocalProtocolServer implements ProtocolServer {
     this.handler = handler;
   }
 
-  @SuppressWarnings({"unchecked", "rawtypes"})
   CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     context.execute(() -> {

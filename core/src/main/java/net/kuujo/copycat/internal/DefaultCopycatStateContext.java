@@ -238,7 +238,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<PingResponse> ping(PingRequest request) {
     return state.ping(request);
   }
@@ -250,7 +249,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<PollResponse> poll(PollRequest request) {
     return state.poll(request);
   }
@@ -262,7 +260,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<AppendResponse> append(AppendRequest request) {
     return state.append(request);
   }
@@ -285,7 +282,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<CommitResponse> commit(CommitRequest request) {
     return state.commit(request);
   }

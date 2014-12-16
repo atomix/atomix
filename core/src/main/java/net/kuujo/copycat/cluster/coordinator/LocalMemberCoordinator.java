@@ -51,6 +51,13 @@ public interface LocalMemberCoordinator extends MemberCoordinator {
    * @param context The execution context.
    * @return The local member coordinator.
    */
-  LocalMemberCoordinator executor(int address, ExecutionContext context);
+  LocalMemberCoordinator registerExecutor(int address, ExecutionContext context);
 
+  /**
+   * Unregisters an execution context for the given address.
+   *
+   * @param address The address for which to unregister the context.
+   * @return The local member coordinator.
+   */
+  LocalMemberCoordinator unregisterExecutor(int address);
 }
