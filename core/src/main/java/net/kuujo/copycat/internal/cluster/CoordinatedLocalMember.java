@@ -47,13 +47,13 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
 
   @Override
   public CompletableFuture<Void> open() {
-    coordinator.executor(id, context);
+    coordinator.registerExecutor(id, context);
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    coordinator.executor(id, null);
+    coordinator.unregisterExecutor(id);
     return CompletableFuture.completedFuture(null);
   }
 }

@@ -15,6 +15,14 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
@@ -24,27 +32,20 @@ import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
-
 /**
  * Default local member implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements LocalMemberCoordinator {
+public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements
+  LocalMemberCoordinator {
   private static final int USER_ADDRESS = -1;
   private static final int SYSTEM_ADDRESS = 0;
+  
   private final ProtocolServer server;
   private final ExecutionContext context;
-  private final Map<Integer, ExecutionContext> contexts = new HashMap<>();
-  @SuppressWarnings("rawtypes")
-  private final Map<String, Map<Integer, MessageHandler>> handlers = new HashMap<>();
+  private final Map<Integer, ExecutionContext> contexts = new ConcurrentHashMap<>();
+  @SuppressWarnings("rawtypes") private final Map<String, Map<Integer, MessageHandler>> handlers = new ConcurrentHashMap<>();
   private final Serializer serializer = Serializer.serializer();
 
   public DefaultLocalMemberCoordinator(String uri, Protocol protocol, ExecutionContext context) {
@@ -70,7 +71,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
     Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
@@ -87,21 +88,29 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
           });
         });
       } else {
-        getContext(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
+        getContext(address).execute(
+          () -> future.completeExceptionally(new IllegalStateException("No handlers")));
       }
     } else {
-      getContext(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
+      getContext(address).execute(
+        () -> future.completeExceptionally(new IllegalStateException("No handlers")));
     }
     return future;
   }
 
   @Override
   @SuppressWarnings("rawtypes")
-  public <T, U> LocalMemberCoordinator register(String topic, int address, MessageHandler<T, U> handler) {
+  public <T, U> LocalMemberCoordinator register(String topic, int address,
+    MessageHandler<T, U> handler) {
     Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
     if (handlers == null) {
-      handlers = new HashMap<>();
-      this.handlers.put(topic, handlers);
+      synchronized (this.handlers) {
+        handlers = this.handlers.get(topic);
+        if (handlers == null) {
+          handlers = new ConcurrentHashMap<>();
+          this.handlers.put(topic, handlers);
+        }
+      }
     }
     handlers.put(address, handler);
     return this;
@@ -126,7 +135,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
    * @param request The request to handle.
    * @return A completable future to be completed once the response is ready.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   private CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     int type = request.getInt();
@@ -185,12 +194,14 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  public LocalMemberCoordinator executor(int address, ExecutionContext context) {
-    if (context != null) {
-      contexts.put(address, context);
-    } else {
-      contexts.remove(address);
-    }
+  public LocalMemberCoordinator registerExecutor(int address, ExecutionContext context) {
+    contexts.put(address, context);
+    return this;
+  }
+  
+  @Override
+  public LocalMemberCoordinator unregisterExecutor(int address) {
+    contexts.remove(address, context);
     return this;
   }
 
