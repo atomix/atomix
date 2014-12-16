@@ -17,11 +17,13 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -34,13 +36,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultStateMachine<T> implements StateMachine<T> {
+  private final Serializer serializer = Serializer.serializer();
   private final Class<T> stateType;
   private T state;
   private final StateLog<List<Object>> log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
-  private StateContext<T> context = new StateContext<T>() {
-    private final Map<String, Object> data = new HashMap<>(1024);
-
+  private Map<String, Object> data = new HashMap<>(1024);
+  private final StateContext<T> context = new StateContext<T>() {
     @Override
     public T state() {
       return state;
@@ -77,7 +79,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
     }
   };
 
-  public DefaultStateMachine(Class<T> stateType, T state, StateLog log) {
+  public DefaultStateMachine(Class<T> stateType, T state, StateLog<List<Object>> log) {
     if (!stateType.isInterface()) {
       throw new IllegalArgumentException("State type must be an interface");
     }
@@ -113,14 +115,34 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
     return log.submit(command, Arrays.asList(args));
   }
 
+  /**
+   * Takes a snapshot of the state machine state.
+   */
+  private ByteBuffer snapshot() {
+    return serializer.writeObject(data);
+  }
+
+  /**
+   * Installs a snapshot of the state machine state.
+   */
+  private void install(ByteBuffer snapshot) {
+    data = serializer.readObject(snapshot);
+  }
+
   @Override
   public CompletableFuture<Void> open() {
-    return log.open();
+    return log.open().whenComplete((result, error) -> {
+      if (error == null) {
+        log.snapshotter(this::snapshot);
+      }
+    });
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return log.close();
+    return log.close().whenComplete((result, error) -> {
+      log.installer(this::install);
+    });
   }
 
   @Override
