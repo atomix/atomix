@@ -250,8 +250,8 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
 
   @Override
   public void delete() {
-    for (LogSegment segment : segments.values()) {
-      segment.delete();
+    for (Long segment : new HashSet<>(segments.keySet())) {
+      segments.get(segment).delete();
     }
     segments.clear();
   }
@@ -260,7 +260,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    * Checks whether the current segment needs to be rolled over to a new segment.
    */
   private void checkRollOver() {
-    if (currentSegment.size() >= config.getSegmentSize() && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval()) {
+    if (currentSegment.size() >= config.getSegmentSize() || (config.getSegmentInterval() < Long.MAX_VALUE && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval())) {
       long nextIndex = currentSegment.lastIndex() + 1;
       currentSegment.flush();
       currentSegment.unlock();

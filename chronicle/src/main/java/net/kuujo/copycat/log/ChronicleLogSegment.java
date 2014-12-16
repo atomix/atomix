@@ -187,7 +187,6 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
     assertContainsIndex(index);
-
     if (tailer.index(index - segment)) {
       do {
         ByteBuffer entry = extractEntry(tailer, index);
@@ -205,8 +204,8 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
     assertContainsIndex(from);
     assertContainsIndex(to);
     List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
-    long currentIndex = from - segment;
-    if (tailer.index(currentIndex)) {
+    long currentIndex = from;
+    if (tailer.index(from - segment)) {
       do {
         ByteBuffer entry = extractEntry(tailer, currentIndex);
         if (entry != null) {
@@ -224,14 +223,14 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   /**
    * Extracts an entry from the excerpt.
    */
-  private ByteBuffer extractEntry(ExcerptTailer excerpt, long index) {
-    long realIndex = excerpt.readLong();
-    if (realIndex == index && excerpt.readByte() == ACTIVE) {
+  private ByteBuffer extractEntry(ExcerptTailer excerpt, long matchIndex) {
+    long index = excerpt.readLong();
+    if (index == matchIndex && excerpt.readByte() == ACTIVE) {
       int length = excerpt.readInt();
-      ByteBuffer buffer = ByteBuffer.allocateDirect(length);
+      ByteBuffer buffer = ByteBuffer.allocate(length);
       excerpt.read(buffer);
       return buffer;
-    } else if (realIndex > index) {
+    } else if (index > matchIndex) {
       throw new IllegalStateException("Log missing entries");
     }
     return null;
@@ -241,13 +240,14 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   public void removeAfter(long index) {
     assertIsOpen();
     assertContainsIndex(index);
-    long currentIndex = index - segment;
-    while (excerpt.index(currentIndex)) {
-      if (excerpt.readLong() > index) {
-        excerpt.writeByte(DELETED);
+    if (excerpt.index(index - segment)) {
+      while (excerpt.nextIndex()) {
+        if (excerpt.readLong() > index) {
+          excerpt.writeByte(DELETED);
+        }
       }
-      currentIndex++;
     }
+    lastIndex = index;
   }
 
   @Override
