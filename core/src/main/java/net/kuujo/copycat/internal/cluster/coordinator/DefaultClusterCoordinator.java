@@ -136,11 +136,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().handler(Topics.PING, protocol::ping);
-      cluster.localMember().handler(Topics.POLL, protocol::poll);
-      cluster.localMember().handler(Topics.APPEND, protocol::append);
-      cluster.localMember().handler(Topics.SYNC, protocol::sync);
-      cluster.localMember().handler(Topics.COMMIT, protocol::commit);
+      cluster.localMember().registerHandler(Topics.PING, protocol::ping);
+      cluster.localMember().registerHandler(Topics.POLL, protocol::poll);
+      cluster.localMember().registerHandler(Topics.APPEND, protocol::append);
+      cluster.localMember().registerHandler(Topics.SYNC, protocol::sync);
+      cluster.localMember().registerHandler(Topics.COMMIT, protocol::commit);
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
       protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
@@ -165,7 +165,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public void destroyRoutes(Cluster cluster, RaftProtocol protocol) {
-      cluster.localMember().<Request, Response>handler(name, null);
+      cluster.localMember().unregisterHandler(name);
       protocol.pingHandler(null);
       protocol.pollHandler(null);
       protocol.appendHandler(null);

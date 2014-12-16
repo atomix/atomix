@@ -84,7 +84,7 @@ public class ClusterTest extends ConcurrentTestCase {
           context2.execute(() -> {
             coordinator2.open().thenRun(() -> {
               cluster2.open().thenRun(() -> {
-                cluster2.localMember().handler("test", message -> CompletableFuture.completedFuture("world!"));
+                cluster2.localMember().registerHandler("test", message -> CompletableFuture.completedFuture("world!"));
                 context1.execute(() -> {
                   cluster1.member("local://bar").send("test", "Hello").whenComplete((result, error) -> {
                     threadAssertEquals(result, "world!");
