@@ -198,7 +198,8 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
-    for (LogSegment segment : segments.tailMap(segments.floorKey(index)).values()) {
+    Long floorKey = segments.floorKey(index < 1 ? 1 : index);
+    for (LogSegment segment : segments.tailMap(floorKey).values()) {
       segment.removeAfter(index);
     }
   }

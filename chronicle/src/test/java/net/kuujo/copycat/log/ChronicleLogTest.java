@@ -1,12 +1,16 @@
 package net.kuujo.copycat.log;
 
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.UUID;
 
-import static org.testng.Assert.*;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 /**
  * Chronicle log test.
@@ -15,43 +19,56 @@ import static org.testng.Assert.*;
  */
 @Test
 public class ChronicleLogTest {
+  Log log;
+
+  @BeforeMethod
+  protected void beforeMethod() {
+    LogConfig config = new LogConfig().withSegmentSize(1000);
+    String id = UUID.randomUUID().toString();
+    log = new ChronicleLog(id, config);
+    log.open();
+  }
+
+  @AfterMethod
+  protected void afterMethod() {
+    log.close();
+    log.delete();
+  }
+
+  public void shouldOpenAndClose() {
+    LogConfig config = new LogConfig().withSegmentSize(1000);
+    String id = UUID.randomUUID().toString();
+    Log otherLog = new ChronicleLog(id, config);
+
+    try {
+      assertTrue(otherLog.isClosed());
+      assertFalse(otherLog.isOpen());
+      otherLog.open();
+      assertTrue(otherLog.isOpen());
+      assertFalse(otherLog.isClosed());
+      assertTrue(otherLog.isEmpty());
+    } finally {
+      otherLog.close();
+      otherLog.delete();
+    }
+  }
 
   /**
    * Tests log segmenting.
    */
   public void testLogSegments() {
-    LogConfig config = new LogConfig()
-      .withSegmentSize(1000);
-    String id = UUID.randomUUID().toString();
-    Log log = new ChronicleLog(id, config);
-    assertTrue(log.isClosed());
-    assertFalse(log.isOpen());
-    log.open();
-    assertFalse(log.isClosed());
-    assertTrue(log.isOpen());
     assertTrue(log.isEmpty());
     appendEntries(log, 1000);
     assertTrue(log.segments().size() > 1);
     assertFalse(log.isEmpty());
     log.appendEntry(ByteBuffer.wrap("Hello world!".getBytes()));
     assertTrue(log.segments().size() > 1);
-    log.delete();
   }
 
   /**
    * Tests appending and getting entries.
    */
   public void testAppendGetEntries() {
-    LogConfig config = new LogConfig()
-      .withSegmentSize(1000);
-    String id = UUID.randomUUID().toString();
-    Log log = new ChronicleLog(id, config);
-    assertTrue(log.isClosed());
-    assertFalse(log.isOpen());
-    log.open();
-    assertFalse(log.isClosed());
-    assertTrue(log.isOpen());
-    assertTrue(log.isEmpty());
     appendEntries(log, 5);
     assertFalse(log.isEmpty());
     assertFalse(log.containsIndex(0));
@@ -74,23 +91,12 @@ public class ChronicleLogTest {
     assertEquals(new String(entries.get(0).array()), "2");
     assertEquals(new String(entries.get(1).array()), "3");
     assertEquals(new String(entries.get(2).array()), "4");
-    log.delete();
   }
 
   /**
    * Tests replacing entries at the end of the log.
    */
   public void testRemoveReplaceEntries() {
-    LogConfig config = new LogConfig()
-      .withSegmentSize(1000);
-    String id = UUID.randomUUID().toString();
-    Log log = new ChronicleLog(id, config);
-    assertTrue(log.isClosed());
-    assertFalse(log.isOpen());
-    log.open();
-    assertFalse(log.isClosed());
-    assertTrue(log.isOpen());
-    assertTrue(log.isEmpty());
     log.appendEntry(ByteBuffer.wrap("1".getBytes()));
     log.appendEntry(ByteBuffer.wrap("2".getBytes()));
     log.appendEntry(ByteBuffer.wrap("3".getBytes()));
@@ -114,6 +120,13 @@ public class ChronicleLogTest {
     assertEquals(new String(log.getEntry(8).array()), "10");
   }
 
+  public void shouldDeleteAfterIndex0() {
+    log.appendEntry(ByteBuffer.wrap("1".getBytes()));
+    log.removeAfter(0);
+    assertTrue(log.isEmpty());
+    assertEquals(log.size(), 0);
+  }
+
   /**
    * Appends entries to the log.
    */
@@ -122,5 +135,4 @@ public class ChronicleLogTest {
       log.appendEntry(ByteBuffer.wrap("Hello world!".getBytes()));
     }
   }
-
 }

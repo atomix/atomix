@@ -54,9 +54,12 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
 
   ChronicleLogSegment(ChronicleLog parent, long segment) {
     this.parent = parent;
-    this.base = new File(parent.base().getParent(), String.format("%s-%d", parent.base().getName(), segment));
-    this.file = new File(parent.base().getParent(), String.format("%s-%d.log", parent.base().getName(), segment));
-    this.index = new File(parent.base().getParent(), String.format("%s-%d.index", parent.base().getName(), segment));
+    this.base = new File(parent.base().getParent(), String.format("%s-%d", parent.base().getName(),
+      segment));
+    this.file = new File(parent.base().getParent(), String.format("%s-%d.log", parent.base()
+      .getName(), segment));
+    this.index = new File(parent.base().getParent(), String.format("%s-%d.index", parent.base()
+      .getName(), segment));
     this.segment = segment;
   }
 
@@ -83,7 +86,8 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public long timestamp() {
     try {
-      BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+      BasicFileAttributes attributes = Files.readAttributes(file.toPath(),
+        BasicFileAttributes.class);
       return attributes.creationTime().toMillis();
     } catch (IOException e) {
       return 0;
@@ -225,7 +229,10 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
    */
   private ByteBuffer extractEntry(ExcerptTailer excerpt, long matchIndex) {
     long index = excerpt.readLong();
-    if (index == matchIndex && excerpt.readByte() == ACTIVE) {
+    byte status = excerpt.readByte();
+    if (status == DELETED)
+      return null;
+    if (index == matchIndex && status == ACTIVE) {
       int length = excerpt.readInt();
       ByteBuffer buffer = ByteBuffer.allocate(length);
       excerpt.read(buffer);
@@ -239,7 +246,6 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
-    assertContainsIndex(index);
     if (excerpt.index(index - segment)) {
       while (excerpt.nextIndex()) {
         if (excerpt.readLong() > index) {
@@ -268,9 +274,11 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
       int newSize = 0;
 
       // Create a new chronicle for the new log file.
-      try (Chronicle chronicle = new IndexedChronicle(tempBaseFile.getAbsolutePath()); ExcerptAppender appender = chronicle.createAppender()) {
+      try (Chronicle chronicle = new IndexedChronicle(tempBaseFile.getAbsolutePath());
+        ExcerptAppender appender = chronicle.createAppender()) {
 
-        // If an entry is to replace the existing entry at the given index, write the new entry first.
+        // If an entry is to replace the existing entry at the given index, write the new entry
+        // first.
         if (entry != null) {
           appender.startExcerpt();
           appender.writeLong(index);
@@ -305,10 +313,12 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
         this.tailer.close();
         this.chronicle.close();
 
-        // First, create a copy of the existing log files. This can be used to restore the logs during
-        // recovery if the compaction fails.
-        File historyLogFile = new File(base.getParent(), String.format("%s.history.log", base.getName()));
-        File historyIndexFile = new File(base.getParent(), String.format("%s.history.index", base.getName()));
+        // First, create a copy of the existing log files. This can be used to restore the logs
+        // during recovery if the compaction fails.
+        File historyLogFile = new File(base.getParent(), String.format("%s.history.log",
+          base.getName()));
+        File historyIndexFile = new File(base.getParent(), String.format("%s.history.index",
+          base.getName()));
         Files.copy(file().toPath(), historyLogFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
         Files.copy(index().toPath(), historyIndexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
