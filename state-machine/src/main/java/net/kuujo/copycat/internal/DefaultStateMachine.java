@@ -134,6 +134,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
     return log.open().whenComplete((result, error) -> {
       if (error == null) {
         log.snapshotter(this::snapshot);
+        log.installer(this::install);
       }
     });
   }
@@ -141,7 +142,8 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
   @Override
   public CompletableFuture<Void> close() {
     return log.close().whenComplete((result, error) -> {
-      log.installer(this::install);
+      log.snapshotter(null);
+      log.installer(null);
     });
   }
 
