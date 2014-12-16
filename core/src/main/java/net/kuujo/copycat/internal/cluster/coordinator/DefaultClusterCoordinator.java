@@ -48,7 +48,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final ClusterConfig config;
-  private final ExecutionContext context;
   private final Protocol protocol;
   private final LocalMemberCoordinator localMember;
   private final Map<String, MemberCoordinator> remoteMembers = new HashMap<>();
@@ -56,7 +55,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
   public DefaultClusterCoordinator(ClusterConfig config, ExecutionContext context) {
     this.config = config.copy();
-    this.context = context;
     this.protocol = config.getProtocol();
     this.localMember = new DefaultLocalMemberCoordinator(config.getLocalMember(), protocol, context);
     for (String uri : config.getRemoteMembers()) {
@@ -65,24 +63,24 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   }
 
   @Override
-  public LocalMemberCoordinator localMember() {
+  public synchronized LocalMemberCoordinator localMember() {
     return localMember;
   }
 
   @Override
-  public MemberCoordinator member(String uri) {
+  public synchronized MemberCoordinator member(String uri) {
     return remoteMembers.get(uri);
   }
 
   @Override
-  public Set<MemberCoordinator> members() {
+  public synchronized Set<MemberCoordinator> members() {
     Set<MemberCoordinator> members = new HashSet<>(remoteMembers.values());
     members.add(localMember);
     return members;
   }
 
   @Override
-  public Set<MemberCoordinator> remoteMembers() {
+  public synchronized Set<MemberCoordinator> remoteMembers() {
     return new HashSet<>(remoteMembers.values());
   }
 

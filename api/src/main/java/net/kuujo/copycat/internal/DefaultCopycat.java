@@ -48,106 +48,106 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public <T> EventLog<T> eventLog(String name) {
+  public synchronized <T> EventLog<T> eventLog(String name) {
     return eventLog(name, new EventLogConfig().withSerializer(config.getSerializer()));
   }
 
   @Override
-  public <T> EventLog<T> eventLog(String name, EventLogConfig config) {
+  public synchronized <T> EventLog<T> eventLog(String name, EventLogConfig config) {
     return new DefaultEventLog<T>(name, coordinator.getResource(name), config, executor);
   }
 
   @Override
-  public <T> StateLog<T> stateLog(String name) {
+  public synchronized <T> StateLog<T> stateLog(String name) {
     return stateLog(name, new StateLogConfig().withSerializer(config.getSerializer()));
   }
 
   @Override
-  public <T> StateLog<T> stateLog(String name, StateLogConfig config) {
+  public synchronized <T> StateLog<T> stateLog(String name, StateLogConfig config) {
     return new DefaultStateLog<T>(name, coordinator.getResource(name), config, executor);
   }
 
   @Override
-  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState) {
+  public synchronized <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState) {
     return stateMachine(name, stateType, initialState, new StateMachineConfig());
   }
 
   @Override
-  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config) {
+  public synchronized <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config) {
     return new DefaultStateMachine<>(stateType, initialState, stateLog(name, config));
   }
 
   @Override
-  public LeaderElection election(String name) {
+  public synchronized LeaderElection election(String name) {
     return new DefaultLeaderElection(name, coordinator.getResource(name), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <K, V> AsyncMap<K, V> getMap(String name) {
+  public synchronized <K, V> AsyncMap<K, V> getMap(String name) {
     return new DefaultAsyncMap(stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>()));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <K, V> AsyncMap<K, V> getMap(String name, AsyncMapConfig config) {
+  public synchronized <K, V> AsyncMap<K, V> getMap(String name, AsyncMapConfig config) {
     return new DefaultAsyncMap(stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>(), config));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <K, V> AsyncMultiMap<K, V> getMultiMap(String name) {
+  public synchronized <K, V> AsyncMultiMap<K, V> getMultiMap(String name) {
     return new DefaultAsyncMultiMap(stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>()));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <K, V> AsyncMultiMap<K, V> getMultiMap(String name, AsyncMultiMapConfig config) {
+  public synchronized <K, V> AsyncMultiMap<K, V> getMultiMap(String name, AsyncMultiMapConfig config) {
     return new DefaultAsyncMultiMap(stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), config));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> AsyncList<T> getList(String name) {
+  public synchronized <T> AsyncList<T> getList(String name) {
     return new DefaultAsyncList(stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>()));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> AsyncList<T> getList(String name, AsyncListConfig config) {
+  public synchronized <T> AsyncList<T> getList(String name, AsyncListConfig config) {
     return new DefaultAsyncList(stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>(), config));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> AsyncSet<T> getSet(String name) {
+  public synchronized <T> AsyncSet<T> getSet(String name) {
     return new DefaultAsyncSet(stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>()));
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> AsyncSet<T> getSet(String name, AsyncSetConfig config) {
+  public synchronized <T> AsyncSet<T> getSet(String name, AsyncSetConfig config) {
     return new DefaultAsyncSet(stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>(), config));
   }
 
   @Override
-  public AsyncLock getLock(String name) {
+  public synchronized AsyncLock getLock(String name) {
     return new DefaultAsyncLock(stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState()));
   }
 
   @Override
-  public AsyncLock getLock(String name, AsyncLockConfig config) {
+  public synchronized AsyncLock getLock(String name, AsyncLockConfig config) {
     return new DefaultAsyncLock(stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState(), config));
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public synchronized CompletableFuture<Void> open() {
     open = true;
     return coordinator.open();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     open = false;
     return coordinator.close();
   }

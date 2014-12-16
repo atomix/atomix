@@ -115,7 +115,7 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   public long appendEntry(ByteBuffer entry) {
     Assert.isNotNull(entry, "entry");
     assertIsOpen();
-    long index = log.isEmpty() ? 1 : log.lastKey() + 1;
+    long index = log.isEmpty() ? segment : log.lastKey() + 1;
     log.put(index, entry);
     size += entry.limit();
     return index;
@@ -123,8 +123,11 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
 
   @Override
   public List<Long> appendEntries(List<ByteBuffer> entries) {
-    assertIsOpen();
-    return null;
+    List<Long> indices = new ArrayList<>(entries.size());
+    for (ByteBuffer entry : entries) {
+      indices.add(appendEntry(entry));
+    }
+    return indices;
   }
 
   @Override

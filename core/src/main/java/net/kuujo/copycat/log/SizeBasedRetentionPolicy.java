@@ -25,6 +25,13 @@ import net.kuujo.copycat.spi.RetentionPolicy;
 public class SizeBasedRetentionPolicy implements RetentionPolicy {
   private long size;
 
+  public SizeBasedRetentionPolicy() {
+  }
+
+  public SizeBasedRetentionPolicy(long size) {
+    this.size = size;
+  }
+
   /**
    * Sets the retention size.
    *
@@ -49,14 +56,14 @@ public class SizeBasedRetentionPolicy implements RetentionPolicy {
    * @param size The retention size.
    * @return The retention policy.
    */
-  public SizeBasedRetentionPolicy withTime(long size) {
+  public SizeBasedRetentionPolicy withSize(long size) {
     this.size = size;
     return this;
   }
 
   @Override
   public boolean retain(LogSegment segment) {
-    return segment.log().size() > size;
+    return segment.log().size() < size;
   }
 
 }

@@ -147,7 +147,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
 
   @Override
   public boolean isEmpty() {
-    return size() > 0;
+    return size() == 0;
   }
 
   @Override
@@ -260,7 +260,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    * Checks whether the current segment needs to be rolled over to a new segment.
    */
   private void checkRollOver() {
-    if (currentSegment.size() > config.getSegmentSize() && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval()) {
+    if (currentSegment.size() >= config.getSegmentSize() && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval()) {
       long nextIndex = currentSegment.lastIndex() + 1;
       currentSegment.flush();
       currentSegment.unlock();
@@ -278,11 +278,9 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    */
   private void checkRetention() {
     Iterator<Map.Entry<Long, LogSegment>> iterator = segments.entrySet().iterator();
-    while (iterator.hasNext()) {
-      LogSegment segment = iterator.next().getValue();
-      if (iterator.hasNext() && !config.getRetentionPolicy().retain(segment)) {
-        segment.delete();
-        iterator.remove();
+    for (Long segment : new HashSet<>(segments.keySet())) {
+      if (segments.lastKey() != segment && !config.getRetentionPolicy().retain(segments.get(segment))) {
+        segments.remove(segment);
       }
     }
   }

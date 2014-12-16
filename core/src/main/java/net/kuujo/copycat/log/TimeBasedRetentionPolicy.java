@@ -27,6 +27,13 @@ import java.util.concurrent.TimeUnit;
 public class TimeBasedRetentionPolicy implements RetentionPolicy {
   private long time;
 
+  public TimeBasedRetentionPolicy() {
+  }
+
+  public TimeBasedRetentionPolicy(long time, TimeUnit unit) {
+    this.time = unit.toMillis(time);
+  }
+
   /**
    * Sets the retention time in milliseconds.
    *
@@ -80,7 +87,7 @@ public class TimeBasedRetentionPolicy implements RetentionPolicy {
 
   @Override
   public boolean retain(LogSegment segment) {
-    return segment.timestamp() > System.currentTimeMillis() - time;
+    return System.currentTimeMillis() < segment.timestamp() + time;
   }
 
 }
