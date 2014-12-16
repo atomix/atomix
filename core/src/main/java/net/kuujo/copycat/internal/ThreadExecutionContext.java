@@ -42,7 +42,6 @@ public class ThreadExecutionContext implements ExecutionContext {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T> CompletableFuture<T> submit(Callable<T> task) {
     CompletableFuture<T> future = new CompletableFuture<>();
     executor.execute(() -> {

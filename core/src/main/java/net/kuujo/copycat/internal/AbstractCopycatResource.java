@@ -22,6 +22,7 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -34,8 +35,8 @@ public abstract class AbstractCopycatResource<T extends CopycatResource> impleme
   protected final String name;
   protected final CopycatContext context;
   protected final ExecutionContext executor;
-  private final List<Task<CompletableFuture<Void>>> startupTasks = new ArrayList<>();
-  private final List<Task<CompletableFuture<Void>>> shutdownTasks = new ArrayList<>();
+  private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
+  private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
   private boolean open;
 
   protected AbstractCopycatResource(String name, CopycatContext context, ExecutionContext executor) {
@@ -92,25 +93,25 @@ public abstract class AbstractCopycatResource<T extends CopycatResource> impleme
 
     open = true;
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.open().whenComplete((result, error) -> {
-      if (error == null) {
-        context.execute(() -> {
-          CompletableFuture<Void>[] futures = new CompletableFuture[startupTasks.size()];
-          for (int i = 0; i < startupTasks.size(); i++) {
-            futures[i] = startupTasks.get(i).execute();
-          }
-          CompletableFuture.allOf(futures).whenComplete((r, e) -> {
-            if (e == null) {
-              executor.execute(() -> future.complete(null));
-            } else {
-              executor.execute(() -> future.completeExceptionally(e));
-            }
+    context.open().whenComplete(
+      (result, error) -> {
+        if (error == null) {
+          context.execute(() -> {
+            CompletableFuture<Void>[] futures = startupTasks.stream()
+              .map(t -> t.execute())
+              .toArray(size -> new CompletableFuture[size]);
+            CompletableFuture.allOf(futures).whenComplete((r, e) -> {
+              if (e == null) {
+                executor.execute(() -> future.complete(null));
+              } else {
+                executor.execute(() -> future.completeExceptionally(e));
+              }
+            });
           });
-        });
-      } else {
-        executor.execute(() -> future.completeExceptionally(error));
-      }
-    });
+        } else {
+          executor.execute(() -> future.completeExceptionally(error));
+        }
+      });
     return future;
   }
 
@@ -126,10 +127,9 @@ public abstract class AbstractCopycatResource<T extends CopycatResource> impleme
     context.close().whenComplete((result, error) -> {
       if (error == null) {
         context.execute(() -> {
-          CompletableFuture<Void>[] futures = new CompletableFuture[shutdownTasks.size()];
-          for (int i = 0; i < shutdownTasks.size(); i++) {
-            futures[i] = shutdownTasks.get(i).execute();
-          }
+          CompletableFuture<Void>[] futures = shutdownTasks.stream()
+            .map(t -> t.execute())
+            .toArray(size -> new CompletableFuture[size]);
           CompletableFuture.allOf(futures).whenComplete((r, e) -> {
             if (e == null) {
               executor.execute(() -> future.complete(null));

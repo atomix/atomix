@@ -206,7 +206,6 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
   public CompletableFuture<Void> open() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.listen().whenComplete((result, error) -> {

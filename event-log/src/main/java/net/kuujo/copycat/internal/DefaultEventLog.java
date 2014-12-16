@@ -50,7 +50,6 @@ public class DefaultEventLog<T> extends AbstractCopycatResource<EventLog<T>> imp
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <U extends T> CompletableFuture<U> get(long index) {
     CompletableFuture<U> future = new CompletableFuture<>();
     context.execute(() -> {
@@ -77,7 +76,6 @@ public class DefaultEventLog<T> extends AbstractCopycatResource<EventLog<T>> imp
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Void> replay() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     context.execute(() -> replay(context.log().firstIndex(), future));
@@ -85,7 +83,6 @@ public class DefaultEventLog<T> extends AbstractCopycatResource<EventLog<T>> imp
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CompletableFuture<Void> replay(long index) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     context.execute(() -> replay(index, future));

@@ -97,7 +97,6 @@ public interface EventLog<T> extends CopycatResource {
    * @param context The user execution context.
    * @return A new event log instance.
    */
-  @SuppressWarnings("unchecked")
   static <T> EventLog<T> create(String name, ClusterConfig cluster, EventLogConfig config, ExecutionContext context) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     try {
