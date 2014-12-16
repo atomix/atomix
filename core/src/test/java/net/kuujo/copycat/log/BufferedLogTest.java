@@ -41,15 +41,24 @@ public class BufferedLogTest {
     assertTrue(log.isOpen());
     assertEquals(log.segments().size(), 1);
 
+    assertFalse(log.containsIndex(0));
+    assertFalse(log.containsIndex(1));
+
     appendEntries(log, 100);
     assertEquals(log.segments().size(), 1);
     assertEquals(log.size(), 100);
     assertFalse(log.isEmpty());
+    assertFalse(log.containsIndex(0));
+    assertTrue(log.containsIndex(1));
 
     appendEntries(log, 100);
     assertEquals(log.segments().size(), 2);
     assertEquals(log.size(), 200);
     assertFalse(log.isEmpty());
+    assertFalse(log.containsIndex(0));
+    assertTrue(log.containsIndex(1));
+    assertTrue(log.containsIndex(200));
+    assertFalse(log.containsIndex(201));
 
     assertEquals(log.segments().iterator().next().segment(), 1);
     assertEquals(log.segment().segment(), 101);

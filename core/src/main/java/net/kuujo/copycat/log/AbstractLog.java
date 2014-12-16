@@ -180,7 +180,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
 
   @Override
   public boolean containsIndex(long index) {
-    return firstIndex() <= index && index <= lastIndex();
+    return firstIndex() > 0 && firstIndex() <= index && index <= lastIndex();
   }
 
   @Override

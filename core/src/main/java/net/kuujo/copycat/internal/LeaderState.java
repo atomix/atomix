@@ -57,7 +57,7 @@ class LeaderState extends ActiveState {
   @Override
   public CompletableFuture<Void> open() {
     return super.open()
-      .thenRunAsync(this::takeLeadership, context.executor())
+      .thenRun(this::takeLeadership)
       .thenRun(this::applyEntries)
       .thenRun(this::startPingTimer);
   }
@@ -236,55 +236,27 @@ class LeaderState extends ActiveState {
   /**
    * Log replicator.
    */
-  private class Replicator implements Managed, Observer {
+  private class Replicator implements Managed {
     private final DefaultCopycatStateContext context;
     private final Map<String, Replica> replicaMap;
     private final List<Replica> replicas;
-    private Integer readQuorum;
-    private Integer writeQuorum;
+    private int readQuorum;
+    private int writeQuorum;
     private int quorumIndex;
     private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
 
     private Replicator(DefaultCopycatStateContext context) {
       this.context = context;
-      this.replicaMap = new HashMap<>(context.getMembers().size());
-      this.replicas = new ArrayList<>(context.getMembers().size());
-    }
-
-    /**
-     * Recalculates the cluster quorum size.
-     */
-    private void recalculateQuorumSize() {
-      int quorumSize = (int) Math.floor((replicas.size() + 1) / 2) + 1;
-      quorumIndex = quorumSize > 1 ? quorumSize - 2 : 0;
-    }
-
-    @Override
-    public void update(Observable o, Object arg) {
-      clusterChanged((DefaultCopycatStateContext) o);
-    }
-
-    /**
-     * Called when the cluster configuration changes.
-     */
-    private void clusterChanged(DefaultCopycatStateContext context) {
+      this.replicaMap = new HashMap<>(context.getRemoteMembers().size());
+      this.replicas = new ArrayList<>(context.getRemoteMembers().size());
       context.getRemoteMembers().forEach(member -> {
-        if (!replicaMap.containsKey(member)) {
-          Replica replica = new Replica(member, context);
-          replicaMap.put(member, replica);
-          replicas.add(replica);
-          recalculateQuorumSize();
-        }
+        Replica replica = new Replica(member, context);
+        replicaMap.put(member, replica);
+        replicas.add(replica);
       });
-
-      Iterator<Replica> iterator = replicas.iterator();
-      while (iterator.hasNext()) {
-        Replica replica = iterator.next();
-        if (!context.getMembers().contains(replica.member)) {
-          iterator.remove();
-          replicaMap.remove(replica.member);
-        }
-      }
+      this.readQuorum = (int) (Math.floor(context.getMembers().size() / 2) + 1);
+      this.writeQuorum = (int) (Math.floor(context.getMembers().size() / 2) + 1);
+      this.quorumIndex = writeQuorum - 1;
     }
 
     /**
@@ -404,13 +376,11 @@ class LeaderState extends ActiveState {
 
     @Override
     public CompletableFuture<Void> open() {
-      context.addObserver(this);
       return CompletableFuture.completedFuture(null);
     }
 
     @Override
     public CompletableFuture<Void> close() {
-      context.deleteObserver(this);
       return CompletableFuture.completedFuture(null);
     }
   }
@@ -452,7 +422,7 @@ class LeaderState extends ActiveState {
         .withTerm(context.getTerm())
         .withLeader(context.getLocalMember())
         .withLogIndex(index)
-        .withLogTerm(context.log().getEntry(index) != null ? context.log().getEntry(index).getLong() : 0)
+        .withLogTerm(context.log().containsIndex(index) ? context.log().getEntry(index).getLong() : 0)
         .withCommitIndex(context.getCommitIndex())
         .build();
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
