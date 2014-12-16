@@ -15,11 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
+import static org.testng.Assert.assertEquals;
+
 import org.testng.annotations.Test;
-
-import java.nio.ByteBuffer;
-
-import static org.testng.Assert.*;
 
 /**
  * Buffered log test.
@@ -27,72 +25,25 @@ import static org.testng.Assert.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class BufferedLogTest {
-
-  /**
-   * Tests calculation of the log size.
-   */
-  public void testSize() {
-    LogConfig config = new LogConfig()
-      .withSegmentSize(100);
-
-    Log log = new BufferedLog("test", config);
-    log.open();
-    assertTrue(log.isOpen());
-    assertEquals(log.segments().size(), 1);
-
-    assertFalse(log.containsIndex(0));
-    assertFalse(log.containsIndex(1));
-
-    appendEntries(log, 100);
-    assertEquals(log.segments().size(), 1);
-    assertEquals(log.size(), 100);
-    assertFalse(log.isEmpty());
-    assertFalse(log.containsIndex(0));
-    assertTrue(log.containsIndex(1));
-
-    appendEntries(log, 100);
-    assertEquals(log.segments().size(), 2);
-    assertEquals(log.size(), 200);
-    assertFalse(log.isEmpty());
-    assertFalse(log.containsIndex(0));
-    assertTrue(log.containsIndex(1));
-    assertTrue(log.containsIndex(200));
-    assertFalse(log.containsIndex(201));
-
-    assertEquals(log.segments().iterator().next().segment(), 1);
-    assertEquals(log.segment().segment(), 101);
-  }
-
-  /**
-   * Tests that the log rotates segments once the segment size has been reached.
-   */
-  public void testRotateSegments() {
-    LogConfig config = new LogConfig()
-      .withSegmentSize(1000);
-
-    Log log = new BufferedLog("test", config);
-    log.open();
-    assertEquals(log.segments().size(), 1);
-    appendEntries(log, 10000);
-    assertEquals(log.firstIndex(), 1);
-    assertEquals(log.lastIndex(), 10000);
-    assertEquals(log.segments().size(), 10);
+public class BufferedLogTest extends AbstractLogTest {
+  @Override
+  protected Log createLog() throws Throwable {
+    LogConfig config = new LogConfig().withSegmentSize(100);
+    return new BufferedLog("test", config);
   }
 
   /**
    * Tests the buffered log with a zero retention policy.
    */
   public void testWithZeroRetention() {
-    LogConfig config = new LogConfig()
-      .withSegmentSize(1000)
-      .withRetentionPolicy(new ZeroRetentionPolicy());
+    LogConfig config = new LogConfig().withSegmentSize(1000).withRetentionPolicy(
+      new ZeroRetentionPolicy());
 
     Log log = new BufferedLog("test", config);
     log.open();
     assertEquals(log.segments().size(), 1);
     for (int i = 0; i < 10; i++) {
-      appendEntries(log, 1000);
+      appendEntries(1000);
     }
     assertEquals(log.segments().size(), 1);
   }
@@ -101,26 +52,15 @@ public class BufferedLogTest {
    * Tests the buffered log with a size based retention policy.
    */
   public void testWithSizeRetention() {
-    LogConfig config = new LogConfig()
-      .withSegmentSize(1000)
-      .withRetentionPolicy(new SizeBasedRetentionPolicy().withSize(2000));
+    LogConfig config = new LogConfig().withSegmentSize(1000).withRetentionPolicy(
+      new SizeBasedRetentionPolicy().withSize(2000));
 
     Log log = new BufferedLog("test", config);
     log.open();
     assertEquals(log.segments().size(), 1);
-    appendEntries(log, 1999);
+    appendEntries(1999);
     assertEquals(log.segments().size(), 2);
-    appendEntries(log, 1);
+    appendEntries(1);
     assertEquals(log.segments().size(), 2);
   }
-
-  /**
-   * Appends a number of 1 byte entries to the log.l
-   */
-  private void appendEntries(Log log, int numEntries) {
-    for (int i = 0; i < numEntries; i++) {
-      log.appendEntry(ByteBuffer.wrap(new byte[]{1}));
-    }
-  }
-
 }
