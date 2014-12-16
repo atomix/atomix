@@ -52,7 +52,7 @@ public class JavaSerializer implements Serializer {
   }
 
   @Override
-  public synchronized <T> ByteBuffer writeObject(T object) {
+  public synchronized ByteBuffer writeObject(Object object) {
     try {
       objectStream.writeObject(object);
       ByteBuffer output = ByteBuffer.wrap(outputStream.toByteArray());
