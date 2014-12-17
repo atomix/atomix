@@ -28,8 +28,13 @@ import org.testng.annotations.Test;
 public class BufferedLogTest extends AbstractLogTest {
   @Override
   protected Log createLog() throws Throwable {
-    LogConfig config = new LogConfig().withSegmentSize(100);
+    LogConfig config = new LogConfig().withSegmentSize(segmentSize);
     return new BufferedLog("test", config);
+  }
+
+  @Override
+  protected int entrySize() {
+    return 1;
   }
 
   /**

@@ -15,14 +15,18 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 /**
  * Abstract log.
@@ -36,7 +40,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   protected final TreeMap<Long, LogSegment> segments = new TreeMap<>();
   protected LogSegment currentSegment;
   private long lastFlush;
-
+  
   protected AbstractLog(String name, LogConfig config) {
     this.config = config.copy();
     this.base = new File(config.getDirectory(), name);
@@ -234,12 +238,9 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
 
   @Override
   public synchronized void close() {
-    Iterator<Map.Entry<Long, LogSegment>> iterator = segments.entrySet().iterator();
-    while (iterator.hasNext()) {
-      Map.Entry<Long, LogSegment> entry = iterator.next();
-      entry.getValue().close();
-      iterator.remove();
-    }
+    for (LogSegment segment : segments.values())
+      segment.close();
+    segments.clear();
     currentSegment.unlock();
     currentSegment = null;
   }
@@ -251,9 +252,8 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
 
   @Override
   public void delete() {
-    for (Long segment : new HashSet<>(segments.keySet())) {
-      segments.get(segment).delete();
-    }
+    for (LogSegment segment : segments.values())
+      segment.delete();
     segments.clear();
   }
 
@@ -261,7 +261,10 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    * Checks whether the current segment needs to be rolled over to a new segment.
    */
   private void checkRollOver() {
-    if (currentSegment.size() >= config.getSegmentSize() || (config.getSegmentInterval() < Long.MAX_VALUE && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval())) {
+    boolean segmentSizeExceeded = currentSegment.size() >= config.getSegmentSize();
+    boolean segmentExpired = config.getSegmentInterval() < Long.MAX_VALUE && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval();
+    
+    if (segmentSizeExceeded || segmentExpired) {
       long nextIndex = currentSegment.lastIndex() + 1;
       currentSegment.flush();
       currentSegment.unlock();
@@ -278,10 +281,10 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
    * Checks whether any existing segments need to be deleted. Does not allow the last log segment to be checked.
    */
   private void checkRetention() {
-    Iterator<Map.Entry<Long, LogSegment>> iterator = segments.entrySet().iterator();
-    for (Long segment : new HashSet<>(segments.keySet())) {
-      if (segments.lastKey() != segment && !config.getRetentionPolicy().retain(segments.get(segment))) {
-        segments.remove(segment);
+    for (Iterator<Map.Entry<Long, LogSegment>> i = segments.entrySet().iterator(); i.hasNext();) {
+      Map.Entry<Long, LogSegment> entry = i.next();
+      if (segments.lastKey() != entry.getKey() && !config.getRetentionPolicy().retain(entry.getValue())) {
+        i.remove();
       }
     }
   }
