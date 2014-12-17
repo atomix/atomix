@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import static org.testng.Assert.assertEquals;
-
 import org.testng.annotations.Test;
 
 /**
@@ -26,46 +24,16 @@ import org.testng.annotations.Test;
  */
 @Test
 public class BufferedLogTest extends AbstractLogTest {
+
   @Override
-  protected Log createLog() throws Throwable {
+  protected AbstractLog createLog() throws Throwable {
     LogConfig config = new LogConfig().withSegmentSize(segmentSize);
     return new BufferedLog("test", config);
   }
 
   @Override
   protected int entrySize() {
-    return 1;
+    return 4;
   }
 
-  /**
-   * Tests the buffered log with a zero retention policy.
-   */
-  public void testWithZeroRetention() {
-    LogConfig config = new LogConfig().withSegmentSize(1000).withRetentionPolicy(
-      new ZeroRetentionPolicy());
-
-    Log log = new BufferedLog("test", config);
-    log.open();
-    assertEquals(log.segments().size(), 1);
-    for (int i = 0; i < 10; i++) {
-      appendEntries(1000);
-    }
-    assertEquals(log.segments().size(), 1);
-  }
-
-  /**
-   * Tests the buffered log with a size based retention policy.
-   */
-  public void testWithSizeRetention() {
-    LogConfig config = new LogConfig().withSegmentSize(1000).withRetentionPolicy(
-      new SizeBasedRetentionPolicy().withSize(2000));
-
-    Log log = new BufferedLog("test", config);
-    log.open();
-    assertEquals(log.segments().size(), 1);
-    appendEntries(1999);
-    assertEquals(log.segments().size(), 2);
-    appendEntries(1);
-    assertEquals(log.segments().size(), 2);
-  }
 }

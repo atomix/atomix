@@ -16,7 +16,6 @@
 package net.kuujo.copycat.log;
 
 import java.io.File;
-import java.util.Collection;
 
 /**
  * Log manager.
@@ -45,45 +44,5 @@ public interface Log extends Logger {
    * @return The log directory.
    */
   File directory();
-
-  /**
-   * Returns a collection of log segments.
-   *
-   * @return A collection of log segments.
-   * @throws java.lang.IllegalStateException If the log is not open.
-   */
-  Collection<LogSegment> segments();
-
-  /**
-   * Returns the current log segment.
-   *
-   * @return The current log segment.
-   */
-  LogSegment segment();
-
-  /**
-   * Returns the log segment for the given index.
-   *
-   * @param index The index for which to return the segment.
-   * @return The log segment.
-   * @throws java.lang.IllegalStateException If the log is not open.
-   */
-  LogSegment segment(long index);
-
-  /**
-   * Returns the first log segment.
-   *
-   * @return The first log segment.
-   * @throws java.lang.IllegalStateException If the log is not open.
-   */
-  LogSegment firstSegment();
-
-  /**
-   * Returns the last log segment.
-   *
-   * @return The last log segment.
-   * @throws java.lang.IllegalStateException If the log is not open.
-   */
-  LogSegment lastSegment();
 
 }

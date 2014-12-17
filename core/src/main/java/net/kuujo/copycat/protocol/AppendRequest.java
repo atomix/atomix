@@ -37,8 +37,8 @@ public class AppendRequest extends AbstractRequest {
 
   private long term;
   private String leader;
-  private long logIndex;
-  private long logTerm;
+  private Long logIndex;
+  private Long logTerm;
   private List<ByteBuffer> entries;
   private long commitIndex;
 
@@ -65,7 +65,7 @@ public class AppendRequest extends AbstractRequest {
    *
    * @return The index of the log entry preceding the new entry.
    */
-  public long logIndex() {
+  public Long logIndex() {
     return logIndex;
   }
 
@@ -74,7 +74,7 @@ public class AppendRequest extends AbstractRequest {
    *
    * @return The index of the term preceding the new entry.
    */
-  public long logTerm() {
+  public Long logTerm() {
     return logTerm;
   }
 
@@ -137,7 +137,7 @@ public class AppendRequest extends AbstractRequest {
      * @param index The request last log index.
      * @return The append request builder.
      */
-    public Builder withLogIndex(long index) {
+    public Builder withLogIndex(Long index) {
       request.logIndex = index;
       return this;
     }
@@ -148,7 +148,7 @@ public class AppendRequest extends AbstractRequest {
      * @param term The request last log term.
      * @return The append request builder.
      */
-    public Builder withLogTerm(long term) {
+    public Builder withLogTerm(Long term) {
       request.logTerm = term;
       return this;
     }

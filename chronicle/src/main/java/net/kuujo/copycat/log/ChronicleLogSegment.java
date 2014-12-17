@@ -25,9 +25,6 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Chronicle based log segment.
@@ -42,24 +39,19 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   private final File file;
   private final File index;
   private final long segment;
-  private final Lock lock = new ReentrantLock();
-  private final AtomicBoolean locked = new AtomicBoolean();
   private Chronicle chronicle;
   private Excerpt excerpt;
   private ExcerptAppender appender;
   private ExcerptTailer tailer;
-  private long firstIndex;
-  private long lastIndex;
+  private Long firstIndex;
+  private Long lastIndex;
   private int size;
 
   ChronicleLogSegment(ChronicleLog parent, long segment) {
     this.parent = parent;
-    this.base = new File(parent.base().getParent(), String.format("%s-%d", parent.base().getName(),
-      segment));
-    this.file = new File(parent.base().getParent(), String.format("%s-%d.log", parent.base()
-      .getName(), segment));
-    this.index = new File(parent.base().getParent(), String.format("%s-%d.index", parent.base()
-      .getName(), segment));
+    this.base = new File(parent.base().getParent(), String.format("%s-%d", parent.base().getName(), segment));
+    this.file = new File(parent.base().getParent(), String.format("%s-%d.log", parent.base().getName(), segment));
+    this.index = new File(parent.base().getParent(), String.format("%s-%d.index", parent.base().getName(), segment));
     this.segment = segment;
   }
 
@@ -86,8 +78,7 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public long timestamp() {
     try {
-      BasicFileAttributes attributes = Files.readAttributes(file.toPath(),
-        BasicFileAttributes.class);
+      BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
       return attributes.creationTime().toMillis();
     } catch (IOException e) {
       return 0;
@@ -95,31 +86,23 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
-  public void lock() {
-    lock.lock();
-    locked.set(true);
-  }
-
-  @Override
-  public boolean isLocked() {
-    return locked.get();
-  }
-
-  @Override
-  public void unlock() {
-    lock.unlock();
-    locked.set(false);
-  }
-
-  @Override
   public void open() {
     assertIsNotOpen();
-    firstIndex = segment;
     try {
       chronicle = new IndexedChronicle(base.getAbsolutePath());
       excerpt = chronicle.createExcerpt();
       appender = chronicle.createAppender();
       tailer = chronicle.createTailer();
+      if (chronicle.size() > 0) {
+        firstIndex = segment;
+      }
+      try (ExcerptTailer t = tailer.toStart()) {
+        long index = t.readLong();
+        if (firstIndex == null) {
+          firstIndex = index;
+        }
+        lastIndex = index;
+      }
     } catch (IOException e) {
       throw new LogException(e);
     }
@@ -131,9 +114,9 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
-  public int size() {
+  public long size() {
     assertIsOpen();
-    return size;
+    return chronicle.size();
   }
 
   @Override
@@ -152,9 +135,12 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
     appender.write(entry);
     appender.finish();
     lastIndex = index;
-    size += entry.limit() + 13; // 13 bytes for index, status, and length
-    if (firstIndex == 0) {
-      firstIndex = 1;
+    size += entry.capacity() + 13; // 13 bytes for index, status, and length
+    if (firstIndex == null) {
+      firstIndex = segment;
+    }
+    if (lastIndex == null) {
+      lastIndex = segment;
     }
     return index;
   }
@@ -170,13 +156,13 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
-  public long firstIndex() {
+  public Long firstIndex() {
     assertIsOpen();
     return firstIndex;
   }
 
   @Override
-  public long lastIndex() {
+  public Long lastIndex() {
     assertIsOpen();
     return lastIndex;
   }
@@ -184,7 +170,7 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public boolean containsIndex(long index) {
     assertIsOpen();
-    return firstIndex <= index && index <= lastIndex;
+    return firstIndex != null && firstIndex <= index && index <= lastIndex;
   }
 
   @Override
@@ -368,8 +354,8 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
     } finally {
       chronicle = null;
       excerpt = null;
-      firstIndex = 0;
-      lastIndex = 0;
+      firstIndex = null;
+      lastIndex = null;
     }
   }
 

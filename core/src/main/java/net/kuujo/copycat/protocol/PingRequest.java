@@ -33,9 +33,9 @@ public class PingRequest extends AbstractRequest {
 
   private long term;
   private String leader;
-  private long logIndex;
-  private long logTerm;
-  private long commitIndex;
+  private Long logIndex;
+  private Long logTerm;
+  private Long commitIndex;
 
   /**
    * Returns the requesting node's current term.
@@ -60,7 +60,7 @@ public class PingRequest extends AbstractRequest {
    *
    * @return The index of the entry in the leader's log.
    */
-  public long logIndex() {
+  public Long logIndex() {
     return logIndex;
   }
 
@@ -69,7 +69,7 @@ public class PingRequest extends AbstractRequest {
    *
    * @return The term of the entry in the leader's log.
    */
-  public long logTerm() {
+  public Long logTerm() {
     return logTerm;
   }
 
@@ -78,7 +78,7 @@ public class PingRequest extends AbstractRequest {
    *
    * @return The leader commit index.
    */
-  public long commitIndex() {
+  public Long commitIndex() {
     return commitIndex;
   }
 
@@ -123,7 +123,7 @@ public class PingRequest extends AbstractRequest {
      * @param index The request last log index.
      * @return The ping request builder.
      */
-    public Builder withLogIndex(long index) {
+    public Builder withLogIndex(Long index) {
       request.logIndex = index;
       return this;
     }
@@ -134,7 +134,7 @@ public class PingRequest extends AbstractRequest {
      * @param term The request last log term.
      * @return The ping request builder.
      */
-    public Builder withLogTerm(long term) {
+    public Builder withLogTerm(Long term) {
       request.logTerm = term;
       return this;
     }
@@ -145,7 +145,7 @@ public class PingRequest extends AbstractRequest {
      * @param index The request commit index.
      * @return The ping request builder.
      */
-    public Builder withCommitIndex(long index) {
+    public Builder withCommitIndex(Long index) {
       request.commitIndex = index;
       return this;
     }

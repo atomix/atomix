@@ -95,34 +95,42 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
     return base.getParentFile();
   }
 
-  @Override
-  public Collection<LogSegment> segments() {
-    assertIsOpen();
+  /**
+   * Returns a collection of log segments.
+   */
+  Collection<LogSegment> segments() {
     return segments.values();
   }
 
-  @Override
-  public LogSegment segment() {
-    assertIsOpen();
+  /**
+   * Returns the current log segment.
+   */
+  LogSegment segment() {
     return currentSegment;
   }
 
-  @Override
-  public LogSegment segment(long index) {
+  /**
+   * Returns a log segment by index.
+   */
+  LogSegment segment(long index) {
     assertIsOpen();
     Map.Entry<Long, LogSegment> segment = segments.floorEntry(index);
     return segment != null ? segment.getValue() : null;
   }
 
-  @Override
-  public LogSegment firstSegment() {
+  /**
+   * Returns the first log segment.
+   */
+  LogSegment firstSegment() {
     assertIsOpen();
     Map.Entry<Long, LogSegment> segment = segments.firstEntry();
     return segment != null ? segment.getValue() : null;
   }
 
-  @Override
-  public LogSegment lastSegment() {
+  /**
+   * Returns the last log segment.
+   */
+  LogSegment lastSegment() {
     assertIsOpen();
     Map.Entry<Long, LogSegment> segment = segments.lastEntry();
     return segment != null ? segment.getValue() : null;
@@ -145,7 +153,6 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
       currentSegment.open();
       segments.put(1L, currentSegment);
     }
-    currentSegment.lock();
   }
 
   @Override
@@ -154,14 +161,14 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   }
 
   @Override
-  public int size() {
+  public long size() {
     assertIsOpen();
-    return (int) (lastIndex() - firstIndex()) + 1;
+    return segments.values().stream().mapToLong(LogSegment::size).sum();
   }
 
   @Override
   public boolean isEmpty() {
-    return size() == 0;
+    return firstIndex() == null;
   }
 
   @Override
@@ -181,20 +188,21 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   }
 
   @Override
-  public long firstIndex() {
+  public Long firstIndex() {
     assertIsOpen();
     return firstSegment().firstIndex();
   }
 
   @Override
-  public long lastIndex() {
+  public Long lastIndex() {
     assertIsOpen();
     return lastSegment().lastIndex();
   }
 
   @Override
   public boolean containsIndex(long index) {
-    return firstIndex() > 0 && firstIndex() <= index && index <= lastIndex();
+    Long firstIndex = firstIndex();
+    return firstIndex != null && firstIndex <= index && index <= lastIndex();
   }
 
   @Override
@@ -251,7 +259,6 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
     for (LogSegment segment : segments.values())
       segment.close();
     segments.clear();
-    currentSegment.unlock();
     currentSegment = null;
   }
 
@@ -273,15 +280,13 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   private void checkRollOver() {
     boolean segmentSizeExceeded = currentSegment.size() >= config.getSegmentSize();
     boolean segmentExpired = config.getSegmentInterval() < Long.MAX_VALUE && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval();
-    
+
     if (segmentSizeExceeded || segmentExpired) {
       long nextIndex = currentSegment.lastIndex() + 1;
       currentSegment.flush();
-      currentSegment.unlock();System.out.println(nextIndex);
       currentSegment = createSegment(nextIndex);
       currentSegment.open();
       segments.put(nextIndex, currentSegment);
-      currentSegment.lock();
       lastFlush = System.currentTimeMillis();
       checkRetention();
     }
@@ -293,7 +298,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   private void checkRetention() {
     for (Iterator<Map.Entry<Long, LogSegment>> i = segments.entrySet().iterator(); i.hasNext();) {
       Map.Entry<Long, LogSegment> entry = i.next();
-      if (segments.lastKey() != entry.getKey() && !config.getRetentionPolicy().retain(entry.getValue())) {
+      if (!segments.isEmpty() && segments.lastKey() != entry.getKey() && !config.getRetentionPolicy().retain(entry.getValue())) {
         i.remove();
       }
     }

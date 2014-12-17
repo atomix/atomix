@@ -43,7 +43,7 @@ public interface Logger {
    * @return The logger size.
    * @throws java.lang.IllegalStateException If the log is not open.
    */
-  int size();
+  long size();
 
   /**
    * Returns a boolean indicating whether the logger is empty.
@@ -75,18 +75,18 @@ public interface Logger {
   /**
    * Returns the index of the first entry in the log.
    *
-   * @return The index of the first entry in the log.
+   * @return The index of the first entry in the log or {@code null} if the log is empty.
    * @throws java.lang.IllegalStateException If the log is not open.
    */
-  long firstIndex();
+  Long firstIndex();
 
   /**
    * Returns the index of the last entry in the log.
    *
-   * @return The index of the last entry in the log.
+   * @return The index of the last entry in the log or {@code null} if the log is empty.
    * @throws java.lang.IllegalStateException If the log is not open.
    */
-  long lastIndex();
+  Long lastIndex();
 
   /**
    * Returns a boolean indicating whether the log contains an entry at the given index.

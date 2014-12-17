@@ -33,8 +33,8 @@ public class PollRequest extends AbstractRequest {
 
   private long term;
   private String candidate;
-  private long logIndex;
-  private long logTerm;
+  private Long logIndex;
+  private Long logTerm;
 
   /**
    * Returns the requesting node's current term.
@@ -59,7 +59,7 @@ public class PollRequest extends AbstractRequest {
    *
    * @return The candidate's last log index.
    */
-  public long logIndex() {
+  public Long logIndex() {
     return logIndex;
   }
 
@@ -68,7 +68,7 @@ public class PollRequest extends AbstractRequest {
    *
    * @return The candidate's last log term.
    */
-  public long logTerm() {
+  public Long logTerm() {
     return logTerm;
   }
 
@@ -113,7 +113,7 @@ public class PollRequest extends AbstractRequest {
      * @param index The request last log index.
      * @return The poll request builder.
      */
-    public Builder withLogIndex(long index) {
+    public Builder withLogIndex(Long index) {
       request.logIndex = index;
       return this;
     }
@@ -124,7 +124,7 @@ public class PollRequest extends AbstractRequest {
      * @param term The request last log term.
      * @return The poll request builder.
      */
-    public Builder withLogTerm(long term) {
+    public Builder withLogTerm(Long term) {
       request.logTerm = term;
       return this;
     }

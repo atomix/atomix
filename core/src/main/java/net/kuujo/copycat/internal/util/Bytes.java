@@ -12,4 +12,5 @@ public final class Bytes {
   public static ByteBuffer of(String string) {
     return ByteBuffer.wrap(string.getBytes());
   }
+
 }

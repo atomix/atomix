@@ -59,21 +59,4 @@ public interface LogSegment extends Logger {
    */
   long timestamp();
 
-  /**
-   * Locks the log segment.
-   */
-  void lock();
-
-  /**
-   * Returns a boolean indicating whether the segment is locked.
-   *
-   * @return Indicates whether the segment is locked.
-   */
-  boolean isLocked();
-
-  /**
-   * Unlocks the log segment.
-   */
-  void unlock();
-
 }

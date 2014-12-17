@@ -22,9 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * In-memory log segment.
@@ -34,8 +31,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   private final BufferedLog parent;
   private final long segment;
-  private final Lock lock = new ReentrantLock();
-  private final AtomicBoolean locked = new AtomicBoolean();
   private long timestamp;
   private TreeMap<Long, ByteBuffer> log;
   private int size;
@@ -71,28 +66,13 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
-  public void lock() {
-    lock.lock();
-    locked.set(true);
-  }
-
-  @Override
-  public boolean isLocked() {
-    return locked.get();
-  }
-
-  @Override
-  public void unlock() {
-    lock.unlock();
-    locked.set(false);
-  }
-
-  @Override
   public void open() {
     assertIsNotOpen();
-    log = new TreeMap<>();
-    timestamp = System.currentTimeMillis();
-    size = 0;
+    if (log == null) {
+      log = new TreeMap<>();
+      size = 0;
+      timestamp = System.currentTimeMillis();
+    }
   }
 
   @Override
@@ -101,7 +81,7 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
-  public int size() {
+  public long size() {
     assertIsOpen();
     return size;
   }
@@ -131,15 +111,15 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
-  public long firstIndex() {
+  public Long firstIndex() {
     assertIsOpen();
-    return !log.isEmpty() ? log.firstKey() : 0;
+    return !log.isEmpty() ? log.firstKey() : null;
   }
 
   @Override
-  public long lastIndex() {
+  public Long lastIndex() {
     assertIsOpen();
-    return !log.isEmpty() ? log.lastKey() : 0;
+    return !log.isEmpty() ? log.lastKey() : null;
   }
 
   @Override
@@ -230,9 +210,6 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void close() {
     assertIsOpen();
-    log = null;
-    timestamp = 0;
-    size = 0;
   }
 
   @Override
@@ -244,6 +221,7 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   public void delete() {
     if (log != null) {
       log.clear();
+      log = null;
     }
     parent.deleteSegment(segment);
   }

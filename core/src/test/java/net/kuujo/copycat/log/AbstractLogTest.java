@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.internal.util.Bytes;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import java.nio.ByteBuffer;
 
 import static org.testng.Assert.*;
 
@@ -30,14 +31,14 @@ import static org.testng.Assert.*;
  */
 @Test
 public abstract class AbstractLogTest {
-  protected Log log;
+  protected AbstractLog log;
   protected int segmentSize = 100;
   protected int entriesPerSegment = segmentSize / entrySize();
 
   /**
    * Creates a test log instance.
    */
-  protected abstract Log createLog() throws Throwable;
+  protected abstract AbstractLog createLog() throws Throwable;
 
   /**
    * Deletes the test log instance.
@@ -264,7 +265,10 @@ public abstract class AbstractLogTest {
     assertFalse(log.containsIndex(301));
 
     assertEquals(log.segments().iterator().next().segment(), 1);
-    assertEquals(log.segment().segment(), 300);
+    appendEntries(1);
+    assertTrue(log.containsIndex(301));
+    assertEquals(log.lastIndex().longValue(), 301);
+    assertEquals(log.segment().segment(), 301);
   }
 
 //  /**
@@ -295,7 +299,7 @@ public abstract class AbstractLogTest {
    */
   protected void appendEntries(int numEntries) {
     for (int i = 1; i <= numEntries; i++) {
-      log.appendEntry(Bytes.of(String.valueOf(i)));
+      log.appendEntry(ByteBuffer.allocate(4).putInt(i));
     }
   }
 

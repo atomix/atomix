@@ -95,7 +95,7 @@ abstract class ActiveState extends AbstractState {
    * Checks the ping log entry for consistency.
    */
   private PingResponse doCheckPingEntry(PingRequest request) {
-    if (request.logIndex() > context.log().lastIndex()) {
+    if (request.logIndex() != null && context.log().lastIndex() == null || request.logIndex() > context.log().lastIndex()) {
       logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return PingResponse.builder()
         .withId(request.id())
@@ -185,7 +185,7 @@ abstract class ActiveState extends AbstractState {
    * Checks the previous log entry for consistency.
    */
   private synchronized AppendResponse doCheckPreviousEntry(AppendRequest request) {
-    if (request.logIndex() > context.log().lastIndex()) {
+    if (request.logIndex() != null && context.log().lastIndex() == null || request.logIndex() > context.log().lastIndex()) {
       logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return AppendResponse.builder()
         .withId(request.id())
@@ -277,17 +277,19 @@ abstract class ActiveState extends AbstractState {
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
       // Update the local commit index with min(request commit, last log // index)
-      long lastIndex = context.log().lastIndex();
-      context.setCommitIndex(Math.min(Math.max(commitIndex, context.getCommitIndex()), lastIndex));
+      Long lastIndex = context.log().lastIndex();
+      if (lastIndex != null) {
+        context.setCommitIndex(Math.min(Math.max(commitIndex, context.getCommitIndex()), lastIndex));
 
-      // If the updated commit index indicates that commits remain to be
-      // applied to the state machine, iterate entries and apply them.
-      if (context.getCommitIndex() > context.getLastApplied()) {
-        // Starting after the last applied entry, iterate through new entries
-        // and apply them to the state machine up to the commit index.
-        for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
-          // Apply the entry to the state machine.
-          applyEntry(i);
+        // If the updated commit index indicates that commits remain to be
+        // applied to the state machine, iterate entries and apply them.
+        if (context.getCommitIndex() > context.getLastApplied()) {
+          // Starting after the last applied entry, iterate through new entries
+          // and apply them to the state machine up to the commit index.
+          for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
+            // Apply the entry to the state machine.
+            applyEntry(i);
+          }
         }
       }
     }
@@ -393,22 +395,10 @@ abstract class ActiveState extends AbstractState {
       } else {
         // Otherwise, load the last entry in the log. The last entry should be
         // at least as up to date as the candidates entry and term.
-        long lastIndex = context.log().lastIndex();
-        ByteBuffer entry = context.log().getEntry(lastIndex);
-        if (entry == null) {
-          context.setLastVotedFor(request.candidate());
-          logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
-          return PollResponse.builder()
-            .withId(request.id())
-            .withMember(context.getLocalMember())
-            .withTerm(context.getTerm())
-            .withVoted(true)
-            .build();
-        }
-
-        long lastTerm = entry.getLong();
-        if (request.logIndex() >= lastIndex) {
-          if (request.logTerm() >= lastTerm) {
+        Long lastIndex = context.log().lastIndex();
+        if (lastIndex != null) {
+          ByteBuffer entry = context.log().getEntry(lastIndex);
+          if (entry == null) {
             context.setLastVotedFor(request.candidate());
             logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
             return PollResponse.builder()
@@ -417,8 +407,30 @@ abstract class ActiveState extends AbstractState {
               .withTerm(context.getTerm())
               .withVoted(true)
               .build();
+          }
+
+          long lastTerm = entry.getLong();
+          if (request.logIndex() != null && request.logIndex() >= lastIndex) {
+            if (request.logTerm() >= lastTerm) {
+              context.setLastVotedFor(request.candidate());
+              logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
+              return PollResponse.builder()
+                .withId(request.id())
+                .withMember(context.getLocalMember())
+                .withTerm(context.getTerm())
+                .withVoted(true)
+                .build();
+            } else {
+              logger().debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getLocalMember(), request, request.logTerm(), lastTerm);
+              return PollResponse.builder()
+                .withId(request.id())
+                .withMember(context.getLocalMember())
+                .withTerm(context.getTerm())
+                .withVoted(false)
+                .build();
+            }
           } else {
-            logger().debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getLocalMember(), request, request.logTerm(), lastTerm);
+            logger().debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getLocalMember(), request, request.logIndex(), lastIndex);
             return PollResponse.builder()
               .withId(request.id())
               .withMember(context.getLocalMember())
@@ -427,12 +439,13 @@ abstract class ActiveState extends AbstractState {
               .build();
           }
         } else {
-          logger().debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getLocalMember(), request, request.logIndex(), lastIndex);
+          context.setLastVotedFor(request.candidate());
+          logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
           return PollResponse.builder()
             .withId(request.id())
             .withMember(context.getLocalMember())
             .withTerm(context.getTerm())
-            .withVoted(false)
+            .withVoted(true)
             .build();
         }
       }
