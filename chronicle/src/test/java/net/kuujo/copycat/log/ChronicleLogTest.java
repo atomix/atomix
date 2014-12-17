@@ -13,8 +13,13 @@ import org.testng.annotations.Test;
 public class ChronicleLogTest extends AbstractLogTest {
   @Override
   protected Log createLog() throws Throwable {
-    LogConfig config = new LogConfig().withSegmentSize(1000);
+    LogConfig config = new LogConfig().withSegmentSize(segmentSize);
     String id = UUID.randomUUID().toString();
     return new ChronicleLog(id, config);
+  }
+  
+  @Override
+  protected int entrySize() {
+    return 14;
   }
 }
