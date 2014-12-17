@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.log;
 
+import java.io.Closeable;
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -23,7 +24,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Logger {
+public interface Logger extends Closeable {
 
   /**
    * Opens the logger.
@@ -152,11 +153,6 @@ public interface Logger {
    * @param force Whether to force the log to be flushed to disk even if the flush is blocked by configuration.
    */
   void flush(boolean force);
-
-  /**
-   * Closes the logger.
-   */
-  void close();
 
   /**
    * Returns a boolean indicating whether the log is closed.
