@@ -232,7 +232,9 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
-    if (excerpt.index(index - segment)) {
+    if (index < segment) {
+      chronicle.clear();
+    } else if (excerpt.index(index - segment)) {
       while (excerpt.nextIndex()) {
         if (excerpt.readLong() > index) {
           excerpt.writeByte(DELETED);

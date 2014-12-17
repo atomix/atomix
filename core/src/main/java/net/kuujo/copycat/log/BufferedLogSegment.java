@@ -154,11 +154,16 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
-    assertContainsIndex(index);
-    for (long i = index + 1; i <= log.lastKey(); i++) {
-      ByteBuffer value = log.remove(i);
-      if (value != null) {
-        size -= value.limit();
+    if (index < segment) {
+      log.clear();
+      size = 0;
+    } else {
+      assertContainsIndex(index);
+      for (long i = index + 1; i <= log.lastKey(); i++) {
+        ByteBuffer value = log.remove(i);
+        if (value != null) {
+          size -= value.limit();
+        }
       }
     }
   }

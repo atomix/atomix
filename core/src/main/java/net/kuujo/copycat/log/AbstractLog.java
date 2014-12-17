@@ -221,8 +221,13 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   public void removeAfter(long index) {
     assertIsOpen();
     Long floorKey = segments.floorKey(index < 1 ? 1 : index);
-    for (LogSegment segment : segments.tailMap(floorKey).values()) {
+    // Prevent concurrent modification exceptions when deleting removed segments.
+    Map<Long, LogSegment> partitionedSegments = segments.tailMap(floorKey);
+    for (LogSegment segment : Arrays.asList(partitionedSegments.values().toArray(new LogSegment[partitionedSegments.size()]))) {
       segment.removeAfter(index);
+      if (segment.isEmpty()) {
+        segment.delete();
+      }
     }
   }
 
