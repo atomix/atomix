@@ -21,7 +21,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.map.AsyncMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMapState;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.Collection;
@@ -48,7 +47,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    * @return A new asynchronous map.
    */
   static <K, V> AsyncMap<K, V> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), ExecutionContext.create());
+    return create(name, new ClusterConfig(), new AsyncMapConfig(String.format("copycat.map.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -62,7 +61,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), ExecutionContext.create());
+    return create(name, cluster, new AsyncMapConfig(String.format("copycat.map.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -76,7 +75,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMap<K, V> create(String name, AsyncMapConfig config) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+    return create(name, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
@@ -90,7 +89,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMap<K, V> create(String name, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), context);
+    return create(name, new ClusterConfig(), new AsyncMapConfig(String.format("copycat.map.%s", name)), context);
   }
 
   /**
@@ -120,7 +119,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, Services.load(String.format("copycat.map.%s", name), AsyncMapConfig.class), context);
+    return create(name, cluster, new AsyncMapConfig(String.format("copycat.map.%s", name)), context);
   }
 
   /**
@@ -135,7 +134,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMap<K, V> create(String name, AsyncMapConfig config, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+    return create(name, new ClusterConfig(), config, context);
   }
 
   /**

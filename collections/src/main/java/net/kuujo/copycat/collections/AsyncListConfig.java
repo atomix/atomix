@@ -15,6 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
+import com.typesafe.config.Config;
+import net.kuujo.copycat.internal.util.Configs;
+
+import java.util.Map;
+
 /**
  * Asynchronous list configuration.
  *
@@ -23,11 +28,19 @@ package net.kuujo.copycat.collections;
 public class AsyncListConfig extends AsyncCollectionConfig {
 
   public AsyncListConfig() {
-    super();
+    super(Configs.load("copycat.list", "copycat.collection").toConfig());
   }
 
   public AsyncListConfig(String resource) {
-    super(resource);
+    super(Configs.load(resource, "copycat.list", "copycat.collection").toConfig());
+  }
+
+  public AsyncListConfig(Map<String, Object> config) {
+    super(Configs.load(config, "copycat.list", "copycat.collection").toConfig());
+  }
+
+  public AsyncListConfig(Config config) {
+    super(config);
   }
 
 }

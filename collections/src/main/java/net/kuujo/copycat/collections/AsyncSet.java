@@ -20,7 +20,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.collection.AsyncSetState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSetState;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 /**
@@ -40,7 +39,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    * @return The asynchronous set.
    */
   static <T> AsyncSet<T> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), ExecutionContext.create());
+    return create(name, new ClusterConfig(), new AsyncSetConfig(String.format("copycat.set.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -53,7 +52,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), ExecutionContext.create());
+    return create(name, cluster, new AsyncSetConfig(String.format("copycat.set.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -66,7 +65,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, AsyncSetConfig config) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+    return create(name, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
@@ -79,7 +78,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), context);
+    return create(name, new ClusterConfig(), new AsyncSetConfig(String.format("copycat.set.%s", name)), context);
   }
 
   /**
@@ -107,7 +106,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, Services.load(String.format("copycat.set.%s", name), AsyncSetConfig.class), context);
+    return create(name, cluster, new AsyncSetConfig(String.format("copycat.set.%s", name)), context);
   }
 
   /**
@@ -121,7 +120,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, AsyncSetConfig config, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+    return create(name, new ClusterConfig(), config, context);
   }
 
   /**

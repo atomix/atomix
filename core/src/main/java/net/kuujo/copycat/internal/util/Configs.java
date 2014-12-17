@@ -14,8 +14,12 @@
  */
 package net.kuujo.copycat.internal.util;
 
-import com.typesafe.config.Config;
-import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Configuration utilities.
@@ -34,31 +38,109 @@ public final class Configs {
   }
 
   /**
-   * Loads a configuration entry from the given path.
+   * Loads the global Copycat configuration.
    *
-   * @param path The configuration path from which to load the entry.
-   * @param <T> The configuration entry type.
-   * @return The configuration entry.
+   * @return The global Copycat configuration.
    */
-  public static <T> T load(String path) {
-    return load(path, null);
+  public static Config load() {
+    return ConfigFactory.load(COPYCAT_CONFIG);
   }
 
   /**
-   * Loads a configuration entry from the path, returning a default entry if the path does not exist.
+   * Loads a configuration object with fallbacks.
    *
-   * @param path The configuration path from which to load the entry.
-   * @param defaultValue The default entry to return if the given path does not exist.
-   * @param <T> The configuration entry type.
-   * @return The configuration entry.
+   * @param paths A list of configuration paths, ordered by precedence. Configuration options missing
+   *              from the first path will fall back to the second path. Options missing from the second path
+   *              will fall back to the third, and so on.
+   * @return The compiled configuration object.
    */
-  @SuppressWarnings("unchecked")
-  public static <T> T load(String path, T defaultValue) {
-    Config config = ConfigFactory.load(COPYCAT_CONFIG);
-    if (!config.hasPath(path)) {
-      return defaultValue;
+  public static ConfigObject load(String... paths) {
+    return load(new HashMap<>(0), paths);
+  }
+
+  /**
+   * Loads a configuration object with fallbacks.
+   *
+   * @param paths A list of configuration paths, ordered by precedence. Configuration options missing
+   *              from the first path will fall back to the second path. Options missing from the second path
+   *              will fall back to the third, and so on.
+   * @return The compiled configuration object.
+   */
+  public static ConfigObject load(Map<String, Object> base, String... paths) {
+    Config config = load();
+    ConfigObject object = ConfigValueFactory.fromMap(base);
+    ConfigObject lastObject = object;
+    for (String path : paths) {
+      ConfigObject newObject;
+      if (config.hasPath(path)) {
+        ConfigValue value = config.getValue(path);
+        if (value.valueType() == ConfigValueType.OBJECT) {
+          newObject = (ConfigObject) value;
+        } else {
+          newObject = ConfigValueFactory.fromMap(new HashMap<>(0));
+        }
+      } else {
+        newObject = ConfigValueFactory.fromMap(new HashMap<>(0));
+      }
+      object = lastObject.withFallback(newObject);
+      lastObject = newObject;
     }
-    return (T) config.getValue(path).unwrapped();
+    return object;
+  }
+
+  /**
+   * Optionally applies the given configuration path to the given setter.
+   *
+   * @param setter The configuration value setter.
+   * @param config The configuration from which to apply the value.
+   * @param path The path from which to apply the configuration value.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static void apply(Consumer setter, Class<?> type, Config config, String path) {
+    if (config.hasPath(path)) {
+      if (Integer.class.isAssignableFrom(type) || int.class.isAssignableFrom(type)) {
+        setter.accept(config.getInt(path));
+      } else if (Long.class.isAssignableFrom(type) || long.class.isAssignableFrom(type)) {
+        setter.accept(config.getLong(path));
+      } else if (Double.class.isAssignableFrom(type) || double.class.isAssignableFrom(type)) {
+        setter.accept(config.getDouble(path));
+      } else if (Number.class.isAssignableFrom(type)) {
+        setter.accept(config.getNumber(path));
+      } else if (Boolean.class.isAssignableFrom(type) || boolean.class.isAssignableFrom(type)) {
+        setter.accept(config.getBoolean(path));
+      } else if (List.class.isAssignableFrom(type)) {
+        setter.accept(config.getList(path).unwrapped());
+      } else if (Map.class.isAssignableFrom(type)) {
+        setter.accept(config.getObject(path).unwrapped());
+      }
+    }
+  }
+
+  /**
+   * Optionally applies the given configuration path to the given setter.
+   *
+   * @param setter The configuration value setter.
+   * @param config The configuration from which to apply the value.
+   * @param path The path from which to apply the configuration value.
+   * @param defaultValue The default value to apply if the value is not present in the given configuration object.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public static void apply(Consumer setter, Class<?> type, Config config, String path, Object defaultValue) {
+    if (Integer.class.isAssignableFrom(type) || int.class.isAssignableFrom(type)) {
+      setter.accept(config.hasPath(path) ? config.getInt(path) : defaultValue);
+    } else if (Long.class.isAssignableFrom(type) || long.class.isAssignableFrom(type)) {
+      setter.accept(config.hasPath(path) ? config.getLong(path) : defaultValue);
+    } else if (Double.class.isAssignableFrom(type) || double.class.isAssignableFrom(type)) {
+      setter.accept(config.hasPath(path) ? config.getDouble(path) : defaultValue);
+    } else if (Number.class.isAssignableFrom(type)) {
+      setter.accept(config.hasPath(path) ? config.getNumber(path) : defaultValue);
+    } else if (Boolean.class.isAssignableFrom(type) || boolean.class.isAssignableFrom(type)) {
+      setter.accept(config.hasPath(path) ? config.getBoolean(path) : defaultValue);
+    } else if (List.class.isAssignableFrom(type)) {
+      setter.accept(config.hasPath(path) ? config.getList(path).unwrapped() : defaultValue);
+    } else if (Map.class.isAssignableFrom(type)) {
+      setter.accept(config.hasPath(path) ? config.getObject(path).unwrapped() : defaultValue);
+    }
   }
 
 }

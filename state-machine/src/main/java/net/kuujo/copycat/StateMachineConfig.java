@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.util.serializer.JavaSerializer;
-import net.kuujo.copycat.util.serializer.Serializer;
+import com.typesafe.config.Config;
+
+import java.util.Map;
 
 /**
  * State machine configuration.
@@ -25,7 +25,6 @@ import net.kuujo.copycat.util.serializer.Serializer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateMachineConfig extends StateLogConfig {
-  private Serializer serializer = new JavaSerializer();
 
   public StateMachineConfig() {
     super();
@@ -35,33 +34,12 @@ public class StateMachineConfig extends StateLogConfig {
     super(resource);
   }
 
-  /**
-   * Sets the state machine serializer.
-   *
-   * @param serializer The state machine serializer.
-   */
-  public void setSerializer(Serializer serializer) {
-    this.serializer = Assert.isNotNull(serializer, "serializer");
+  public StateMachineConfig(Map<String, Object> config) {
+    super(config);
   }
 
-  /**
-   * Returns the state machine serializer.
-   *
-   * @return The state machine serializer.
-   */
-  public Serializer getSerializer() {
-    return serializer;
-  }
-
-  /**
-   * Sets the state machine serializer, returning the configuration for method chaining.
-   *
-   * @param serializer The state machine serializer.
-   * @return The state machine configuration.
-   */
-  public StateMachineConfig withSerializer(Serializer serializer) {
-    this.serializer = Assert.isNotNull(serializer, "serializer");
-    return this;
+  public StateMachineConfig(Config config) {
+    super(config);
   }
 
 }

@@ -15,7 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
+import com.typesafe.config.Config;
 import net.kuujo.copycat.StateMachineConfig;
+import net.kuujo.copycat.internal.util.Configs;
+
+import java.util.Map;
 
 /**
  * Collection configuration.
@@ -25,11 +29,19 @@ import net.kuujo.copycat.StateMachineConfig;
 public class AsyncCollectionConfig extends StateMachineConfig {
 
   public AsyncCollectionConfig() {
-    super();
+    super(Configs.load("copycat.collection").toConfig());
   }
 
   public AsyncCollectionConfig(String resource) {
-    super(resource);
+    super(Configs.load(resource, "copycat.collection").toConfig());
+  }
+
+  public AsyncCollectionConfig(Map<String, Object> config) {
+    super(Configs.load(config, "copycat.collection").toConfig());
+  }
+
+  public AsyncCollectionConfig(Config config) {
+    super(config);
   }
 
 }

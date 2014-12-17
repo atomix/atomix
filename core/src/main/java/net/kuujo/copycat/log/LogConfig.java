@@ -15,11 +15,15 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.Config;
 import net.kuujo.copycat.Copyable;
+import net.kuujo.copycat.internal.util.Configs;
 import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.RetentionPolicy;
 
 import java.io.File;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Log configuration.
@@ -35,10 +39,26 @@ public class LogConfig implements Copyable<LogConfig> {
   private RetentionPolicy retentionPolicy = log -> true;
 
   public LogConfig() {
+    this(Configs.load("copycat.log").toConfig());
   }
 
   public LogConfig(String resource) {
-    Services.apply(resource, this);
+    this(Configs.load(resource, "copycat.log").toConfig());
+  }
+
+  public LogConfig(Map<String, Object> config) {
+    this(Configs.load(config, "copycat.log").toConfig());
+  }
+
+  public LogConfig(Config config) {
+    Configs.apply((Consumer<String>) this::setDirectory, String.class, config, "directory");
+    Configs.apply((Consumer<Integer>) this::setSegmentSize, Integer.class, config, "segment-size");
+    Configs.apply((Consumer<Long>) this::setSegmentInterval, Long.class, config, "segment-interval");
+    Configs.apply((Consumer<Boolean>) this::setFlushOnWrite, Boolean.class, config, "flush-on-write");
+    Configs.apply((Consumer<Long>) this::setFlushInterval, Long.class, config, "flush-interval");
+    if (config.hasPath("retention-policy")) {
+      setRetentionPolicy(Services.load(config.getValue("retention-policy")));
+    }
   }
 
   private LogConfig(LogConfig config) {

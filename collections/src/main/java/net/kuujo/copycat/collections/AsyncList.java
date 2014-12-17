@@ -20,7 +20,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.collection.AsyncListState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncListState;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
@@ -42,7 +41,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @return The asynchronous list.
    */
   static <T> AsyncList<T> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), ExecutionContext.create());
+    return create(name, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -55,7 +54,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncList<T> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), ExecutionContext.create());
+    return create(name, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -68,7 +67,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncList<T> create(String name, AsyncListConfig config) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+    return create(name, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
@@ -81,7 +80,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncList<T> create(String name, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), context);
+    return create(name, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), context);
   }
 
   /**
@@ -108,7 +107,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncList<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, Services.load(String.format("copycat.list.%s", name), AsyncListConfig.class), context);
+    return create(name, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), context);
   }
 
   /**
@@ -122,7 +121,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncList<T> create(String name, AsyncListConfig config, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+    return create(name, new ClusterConfig(), config, context);
   }
 
   /**

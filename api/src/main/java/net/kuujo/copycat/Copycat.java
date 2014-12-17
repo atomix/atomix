@@ -18,7 +18,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.DefaultCopycat;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 /**
@@ -34,7 +33,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create() {
-    return create(Services.load("copycat.cluster", ClusterConfig.class), Services.load("copycat.log", CopycatConfig.class), null);
+    return create(new ClusterConfig(), new CopycatConfig(), null);
   }
 
   /**
@@ -44,7 +43,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create(ExecutionContext context) {
-    return create(Services.load("copycat.cluster", ClusterConfig.class), Services.load("copycat.log", CopycatConfig.class), context);
+    return create(new ClusterConfig(), new CopycatConfig(), context);
   }
 
   /**
@@ -54,7 +53,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create(ClusterConfig cluster) {
-    return create(cluster, Services.load("copycat.log", CopycatConfig.class), null);
+    return create(cluster, new CopycatConfig(), null);
   }
 
   /**
@@ -65,7 +64,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create(ClusterConfig cluster, ExecutionContext context) {
-    return create(cluster, Services.load("copycat.log", CopycatConfig.class), context);
+    return create(cluster, new CopycatConfig(), context);
   }
 
   /**

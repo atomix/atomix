@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.Config;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -29,6 +31,18 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ChronicleLog extends AbstractLog {
+
+  public ChronicleLog(String resource) {
+    super(resource);
+  }
+
+  public ChronicleLog(Map<String, Object> config) {
+    super(config);
+  }
+
+  public ChronicleLog(Config config) {
+    super(config);
+  }
 
   public ChronicleLog(String name, LogConfig config) {
     super(name, config);

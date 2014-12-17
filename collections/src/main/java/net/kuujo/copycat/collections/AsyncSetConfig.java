@@ -15,6 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
+import com.typesafe.config.Config;
+import net.kuujo.copycat.internal.util.Configs;
+
+import java.util.Map;
+
 /**
  * Asynchronous set configuration.
  *
@@ -23,11 +28,19 @@ package net.kuujo.copycat.collections;
 public class AsyncSetConfig extends AsyncCollectionConfig {
 
   public AsyncSetConfig() {
-    super();
+    super(Configs.load("copycat.set", "copycat.collection").toConfig());
   }
 
   public AsyncSetConfig(String resource) {
-    super(resource);
+    super(Configs.load(resource, "copycat.set", "copycat.collection").toConfig());
+  }
+
+  public AsyncSetConfig(Map<String, Object> config) {
+    super(Configs.load(config, "copycat.set", "copycat.collection").toConfig());
+  }
+
+  public AsyncSetConfig(Config config) {
+    super(config);
   }
 
 }

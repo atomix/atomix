@@ -14,14 +14,12 @@
  */
 package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.Service;
-
 /**
  * Context factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ExecutionContextFactory extends Service {
+public interface ExecutionContextFactory {
 
   /**
    * Creates a new context.

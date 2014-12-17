@@ -15,6 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
+import com.typesafe.config.Config;
+import net.kuujo.copycat.internal.util.Configs;
+
+import java.util.Map;
+
 /**
  * Asynchronous lock configuration.
  *
@@ -23,11 +28,19 @@ package net.kuujo.copycat.collections;
 public class AsyncLockConfig extends AsyncCollectionConfig {
 
   public AsyncLockConfig() {
-    super();
+    super(Configs.load("copycat.lock", "copycat.collection").toConfig());
   }
 
   public AsyncLockConfig(String resource) {
-    super(resource);
+    super(Configs.load(resource, "copycat.lock", "copycat.collection").toConfig());
+  }
+
+  public AsyncLockConfig(Map<String, Object> config) {
+    super(Configs.load(config, "copycat.lock", "copycat.collection").toConfig());
+  }
+
+  public AsyncLockConfig(Config config) {
+    super(config);
   }
 
 }

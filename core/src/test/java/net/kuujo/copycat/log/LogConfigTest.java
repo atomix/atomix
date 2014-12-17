@@ -13,38 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.internal.util.Services;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
- * Base type for configurable services.
+ * Log configuration test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Service {
+@Test
+public class LogConfigTest {
 
   /**
-   * Loads a service.
-   *
-   * @param path The service path.
-   * @param <T> The service type.
-   * @return The service instance.
+   * Tests loading the default log configuration.
    */
-  static <T extends Service> T load(String path) {
-    return Services.load(path);
-  }
-
-  /**
-   * Loads a service of the given type.
-   *
-   * @param path The service path.
-   * @param type The service type.
-   * @param <T> The service type.
-   * @return The loaded and configured service.
-   */
-  static <T extends Service> T load(String path, Class<T> type) {
-    return Services.load(path, type);
+  public void testDefaultConfig() {
+    LogConfig config = new LogConfig();
+    assertEquals(config.getDirectory().getName(), "copycat");
+    assertEquals(config.getSegmentSize(), 1000);
+    assertEquals(config.getSegmentInterval(), 60000);
   }
 
 }

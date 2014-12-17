@@ -15,6 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
+import com.typesafe.config.Config;
+import net.kuujo.copycat.internal.util.Configs;
+
+import java.util.Map;
+
 /**
  * Asynchronous multimap configuration.
  *
@@ -23,11 +28,19 @@ package net.kuujo.copycat.collections;
 public class AsyncMultiMapConfig extends AsyncCollectionConfig {
 
   public AsyncMultiMapConfig() {
-    super();
+    super(Configs.load("copycat.multimap", "copycat.collection").toConfig());
   }
 
   public AsyncMultiMapConfig(String resource) {
-    super(resource);
+    super(Configs.load(resource, "copycat.multimap", "copycat.collection").toConfig());
+  }
+
+  public AsyncMultiMapConfig(Map<String, Object> config) {
+    super(Configs.load(config, "copycat.multimap", "copycat.collection").toConfig());
+  }
+
+  public AsyncMultiMapConfig(Config config) {
+    super(config);
   }
 
 }

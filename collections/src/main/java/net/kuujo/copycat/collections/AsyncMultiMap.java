@@ -21,7 +21,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.map.AsyncMultiMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMapState;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.Collection;
@@ -48,7 +47,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    * @return A new asynchronous multimap.
    */
   static <K, V> AsyncMultiMap<K, V> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), ExecutionContext.create());
+    return create(name, new ClusterConfig(), new AsyncMultiMapConfig(String.format("copycat.multimap.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -62,7 +61,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), ExecutionContext.create());
+    return create(name, cluster, new AsyncMultiMapConfig(String.format("copycat.multimap.%s", name)), ExecutionContext.create());
   }
 
   /**
@@ -76,7 +75,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMultiMap<K, V> create(String name, AsyncMultiMapConfig config) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+    return create(name, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
@@ -90,7 +89,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMultiMap<K, V> create(String name, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), context);
+    return create(name, new ClusterConfig(), new AsyncMultiMapConfig(String.format("copycat.multimap.%s", name)), context);
   }
 
   /**
@@ -120,7 +119,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, Services.load(String.format("copycat.multimap.%s", name), AsyncMultiMapConfig.class), context);
+    return create(name, cluster, new AsyncMultiMapConfig(String.format("copycat.multimap.%s", name)), context);
   }
 
   /**
@@ -135,7 +134,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMultiMap<K, V> create(String name, AsyncMultiMapConfig config, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+    return create(name, new ClusterConfig(), config, context);
   }
 
   /**

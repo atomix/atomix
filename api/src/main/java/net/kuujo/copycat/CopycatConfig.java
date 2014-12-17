@@ -15,10 +15,15 @@
  */
 package net.kuujo.copycat;
 
+import com.typesafe.config.Config;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.Configs;
+import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.util.serializer.JavaSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
+
+import java.util.Map;
 
 /**
  * Copycat configuration.
@@ -34,6 +39,15 @@ public class CopycatConfig extends LogConfig {
 
   public CopycatConfig(String resource) {
     super(resource);
+  }
+
+  public CopycatConfig(Map<String, Object> config) {
+    this(Configs.load(config, "copycat").toConfig());
+  }
+
+  public CopycatConfig(Config config) {
+    super(config.getConfig("log"));
+    setSerializer(Services.load("copycat.serializer"));
   }
 
   /**

@@ -6,7 +6,6 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.ExecutionException;
@@ -24,7 +23,7 @@ public interface LeaderElection extends CopycatResource {
    * @return The state machine.
    */
   static LeaderElection create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), ExecutionContext.create());
+    return create(name, new ClusterConfig(), ExecutionContext.create());
   }
 
   /**
@@ -35,7 +34,7 @@ public interface LeaderElection extends CopycatResource {
    * @return The state machine.
    */
   static LeaderElection create(String name, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), context);
+    return create(name, new ClusterConfig(), context);
   }
 
   /**

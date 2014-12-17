@@ -14,8 +14,6 @@
  */
 package net.kuujo.copycat.util.serializer;
 
-import net.kuujo.copycat.Service;
-
 import java.nio.ByteBuffer;
 
 /**
@@ -23,7 +21,7 @@ import java.nio.ByteBuffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Serializer extends Service {
+public interface Serializer {
 
   /**
    * Returns a serializer instance.
@@ -47,7 +45,6 @@ public interface Serializer extends Service {
    * Writes an object.
    *
    * @param object The object to write.
-   * @param <T> The object type.
    * @return The object bytes.
    */
   ByteBuffer writeObject(Object object);

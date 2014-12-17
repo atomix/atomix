@@ -15,12 +15,16 @@
  */
 package net.kuujo.copycat;
 
+import com.typesafe.config.Config;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.Configs;
 import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.util.serializer.JavaSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.io.File;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * State log configuration.
@@ -38,10 +42,26 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
   private long flushInterval = Long.MAX_VALUE;
 
   public StateLogConfig() {
+    this(Configs.load("copycat.state-log").toConfig());
   }
 
   public StateLogConfig(String resource) {
-    Services.apply(resource, this);
+    this(Configs.load(resource, "copycat.state-log").toConfig());
+  }
+
+  public StateLogConfig(Map<String, Object> config) {
+    this(Configs.load(config, "copycat.state-log").toConfig());
+  }
+
+  public StateLogConfig(Config config) {
+    setSerializer(config.hasPath("serializer") ? Services.load(config.getValue("serializer")) : Services.load("copycat.serializer"));
+    Configs.apply((Consumer<String>) this::setDirectory, String.class, config, "directory");
+    Configs.apply((Consumer<Integer>) this::setMaxSize, Integer.class, config, "max-size");
+    Configs.apply((Consumer<Integer>) this::setMaxSegments, Integer.class, config, "max-segments");
+    Configs.apply((Consumer<Integer>) this::setSegmentSize, Integer.class, config, "segment-size");
+    Configs.apply((Consumer<Long>) this::setSegmentInterval, Long.class, config, "segment-interval");
+    Configs.apply((Consumer<Boolean>) this::setFlushOnWrite, Boolean.class, config, "flush-on-write");
+    Configs.apply((Consumer<Long>) this::setFlushInterval, Long.class, config, "flush-interval");
   }
 
   private StateLogConfig(StateLogConfig config) {

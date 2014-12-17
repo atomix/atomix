@@ -14,16 +14,16 @@
  */
 package net.kuujo.copycat.internal.util;
 
-import com.typesafe.config.*;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigObject;
+import com.typesafe.config.ConfigValue;
+import com.typesafe.config.ConfigValueType;
 import net.kuujo.copycat.ConfigurationException;
 
-import java.beans.BeanInfo;
-import java.beans.IntrospectionException;
-import java.beans.Introspector;
-import java.beans.PropertyDescriptor;
-import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Service utilities.
@@ -31,144 +31,136 @@ import java.lang.reflect.Method;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class Services {
-  private static final String COPYCAT_CONFIG;
   private static final String CLASS_KEY = "class";
 
-  static {
-    String configFile = System.getProperty("copycat.config.file");
-    if (configFile == null) {
-      configFile = "copycat";
+  /**
+   * Loads a service class from the given configuration path.
+   *
+   * @param path The configuration path from which to load the service.
+   * @param <T> The service type.
+   * @return The service class.
+   */
+  @SuppressWarnings("unchecked")
+  public static <T> Class<T> loadClass(String path) {
+    Config config = Configs.load();
+    if (!config.hasPath(path)) {
+      throw new ConfigurationException(String.format("No configuration defined at path %s", path));
     }
-    COPYCAT_CONFIG = configFile;
+    return getClassFromValue(config.getValue(path));
   }
 
   /**
-   * Loads a service by path.
+   * Loads a service from a configuration object.
    *
-   * @param path The path to the service configuration.
+   * @param value The configuration value from which to load the service.
+   * @param <T> The service type.
+   * @return The service instance.
+   */
+  public static <T> T load(ConfigValue value) {
+    Class<T> serviceType = getClassFromValue(value);
+    if (value.valueType() == ConfigValueType.STRING) {
+      try {
+        return serviceType.newInstance();
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate service", e);
+      }
+    } else {
+      try {
+        Constructor<T> constructor = serviceType.getConstructor(Config.class);
+        return constructor.newInstance(((ConfigObject) value).toConfig());
+      } catch (NoSuchMethodException e1) {
+        try {
+          return serviceType.newInstance();
+        } catch (InstantiationException | IllegalAccessException e2) {
+          throw new ConfigurationException("No valid constructors", e2);
+        }
+      } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new ConfigurationException("Failed to instantiate service", e);
+      }
+    }
+  }
+
+  /**
+   * Gets a service class from a configuration value.
+   */
+  @SuppressWarnings("unchecked")
+  private static <T> Class<T> getClassFromValue(ConfigValue value) {
+    String className;
+    if (value.valueType() == ConfigValueType.STRING) {
+      className = value.unwrapped().toString();
+    } else if (value.valueType() == ConfigValueType.OBJECT) {
+      ConfigValue classValue = ((ConfigObject) value).get(CLASS_KEY);
+      if (classValue == null || classValue.valueType() != ConfigValueType.STRING) {
+        throw new ConfigurationException(String.format("Invalid configuration format at path"));
+      }
+      className = classValue.unwrapped().toString();
+    } else {
+      throw new ConfigurationException(String.format("Invalid configuration type at path"));
+    }
+
+    try {
+      return (Class<T>) Thread.currentThread().getContextClassLoader().loadClass(className);
+    } catch (ClassNotFoundException e) {
+      throw new ConfigurationException(e);
+    }
+  }
+
+  /**
+   * Loads a service from the given configuration path.
+   *
+   * @param path The configuration path from which to load the service.
    * @param <T> The service type.
    * @return The service instance.
    */
   public static <T> T load(String path) {
-    Config config = ConfigFactory.load(COPYCAT_CONFIG);
-    if (!config.hasPath(path)) {
-      throw new ConfigurationException(String.format("Missing configuration path %s", path));
-    }
-    ConfigValue value = config.getValue(path);
-    if (value.valueType() == ConfigValueType.OBJECT) {
-      return loadFromConfig(path, (ConfigObject) value.unwrapped());
-    } else if (value.valueType() == ConfigValueType.STRING) {
-      return loadFromClass(path, value.unwrapped().toString());
-    } else {
-      throw new ConfigurationException(String.format("Invalid configuration value type at path %s", path));
-    }
+    return load(path, loadClass(path));
   }
 
   /**
-   * Loads a service, applying the service configuration to the given class.
+   * Loads a service from the given configuration path.
    *
-   * @param path The path to the service configuration.
-   * @param type The service type.
+   * @param path The configuration path from which to load the service.
+   * @param config The user-defined service configuration.
+   * @param <T> The service instance.
+   */
+  public static <T> T load(String path, Map<String, Object> config) {
+    return load(path, loadClass(path), config);
+  }
+
+  /**
+   * Populates a service with the configuration from the given path.
+   *
+   * @param path The configuration path from which to load the service configuration.
+   * @param serviceType The service class.
    * @param <T> The service type.
    * @return The service instance.
    */
-  public static <T> T load(String path, Class<T> type) {
-    Config config = ConfigFactory.load(COPYCAT_CONFIG);
-    if (!config.hasPath(path)) {
-      throw new ConfigurationException(String.format("Missing configuration path %s", path));
-    }
+  public static <T> T load(String path, Class<T> serviceType) {
+    return load(path, serviceType, new HashMap<>(0));
+  }
+
+  /**
+   * Populates a service with the configuration from the given path.
+   *
+   * @param path The configuration path from which to load the service configuration.
+   * @param serviceType The service class.
+   * @param serviceConfig The user-defined service configuration.
+   * @param <T> The service type.
+   * @return The service instance.
+   */
+  public static <T> T load(String path, Class<T> serviceType, Map<String, Object> serviceConfig) {
     try {
-      return applyProperties(path, type.newInstance(), config.getObject(path));
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new ConfigurationException(String.format("Failed to instantiate service %s", type));
-    }
-  }
-
-  /**
-   * Loads a service object from a class name.
-   *
-   * @param className The service class name.
-   * @param <T> The service type.
-   * @return The service instance.
-   */
-  @SuppressWarnings("unchecked")
-  private static <T> T loadFromClass(String path, String className) {
-    try {
-      return (T) Class.forName(className).newInstance();
-    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-      throw new ConfigurationException(String.format("Invalid configuration class for path %s", path), e);
-    }
-  }
-
-  /**
-   * Loads a service object from a configuration object.
-   *
-   * @param path The service path.
-   * @param config The service configuration.
-   * @param <T> The service type.
-   * @return The service instance.
-   */
-  private static <T> T loadFromConfig(String path, ConfigObject config) {
-    ConfigValue classValue = config.get(CLASS_KEY);
-    if (classValue == null) {
-      throw new ConfigurationException(String.format("Missing configuration class for path %s", path));
-    }
-    T service = loadFromClass(path, classValue.unwrapped().toString());
-    return applyProperties(path, service, config);
-  }
-
-  /**
-   * Applies properties to an existing service object.
-   *
-   * @param path The path from which to apply properties.
-   * @param service The service instance.
-   * @param <T> The service type.
-   * @return The service instance.
-   */
-  public static <T> T apply(String path, T service) {
-    Config config = ConfigFactory.load(COPYCAT_CONFIG);
-    if (!config.hasPath(path)) {
-      throw new ConfigurationException(String.format("Missing configuration path %s", path));
-    }
-    return applyProperties(path, service, config.getObject(path));
-  }
-
-  /**
-   * Applies configuration properties to the given service object.
-   *
-   * @param service The service to which to apply properties.
-   * @param config The service configuration.
-   * @param <T> The service type.
-   * @return The configured service instance.
-   */
-  private static <T> T applyProperties(String path, T service, ConfigObject config) {
-    try {
-      BeanInfo info = Introspector.getBeanInfo(service.getClass());
-      for (PropertyDescriptor descriptor : info.getPropertyDescriptors()) {
-        Method method = descriptor.getWriteMethod();
-        if (method != null) {
-          try {
-            ConfigValue value = config.get(descriptor.getName());
-            if (value == null || value.valueType() == ConfigValueType.NULL) {
-              continue;
-            }
-            Class<?> type = descriptor.getPropertyType();
-            if (type == Class.class) {
-              method.invoke(service, Thread.currentThread().getContextClassLoader().loadClass(value.unwrapped().toString()));
-            } else if (type == File.class) {
-              method.invoke(service, new File(value.unwrapped().toString()));
-            } else {
-              method.invoke(service, value.unwrapped());
-            }
-          } catch (IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
-            throw new ConfigurationException(String.format("Failed to apply configuration value at path %s.%s", path, descriptor.getName()), e);
-          }
-        }
+      Constructor<T> constructor = serviceType.getConstructor(Config.class);
+      return constructor.newInstance(Configs.load(serviceConfig, path).toConfig());
+    } catch (NoSuchMethodException e1) {
+      try {
+        return serviceType.newInstance();
+      } catch (InstantiationException | IllegalAccessException e2) {
+        throw new ConfigurationException("No valid constructors", e2);
       }
-    } catch (IntrospectionException e) {
-      throw new ConfigurationException(e);
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new ConfigurationException("Failed to instantiate service", e);
     }
-    return service;
   }
 
 }

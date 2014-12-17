@@ -15,13 +15,17 @@
  */
 package net.kuujo.copycat;
 
+import com.typesafe.config.Config;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.Configs;
 import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.spi.RetentionPolicy;
 import net.kuujo.copycat.util.serializer.JavaSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.io.File;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * Event log configuration.
@@ -38,10 +42,24 @@ public class EventLogConfig implements Copyable<EventLogConfig> {
   private RetentionPolicy retentionPolicy = log -> true;
 
   public EventLogConfig() {
+    this(Configs.load("copycat.state-log").toConfig());
   }
 
   public EventLogConfig(String resource) {
-    Services.apply(resource, this);
+    this(Configs.load(resource, "copycat.state-log").toConfig());
+  }
+
+  public EventLogConfig(Map<String, Object> config) {
+    this(Configs.load(config, "copycat.state-log").toConfig());
+  }
+
+  public EventLogConfig(Config config) {
+    setSerializer(config.hasPath("serializer") ? Services.load(config.getValue("serializer")) : Services.load("copycat.serializer"));
+    Configs.apply((Consumer<String>) this::setDirectory, String.class, config, "directory");
+    Configs.apply((Consumer<Integer>) this::setSegmentSize, Integer.class, config, "segment-size");
+    Configs.apply((Consumer<Long>) this::setSegmentInterval, Long.class, config, "segment-interval");
+    Configs.apply((Consumer<Boolean>) this::setFlushOnWrite, Boolean.class, config, "flush-on-write");
+    Configs.apply((Consumer<Long>) this::setFlushInterval, Long.class, config, "flush-interval");
   }
 
   private EventLogConfig(EventLogConfig config) {

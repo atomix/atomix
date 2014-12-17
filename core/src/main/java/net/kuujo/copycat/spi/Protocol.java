@@ -14,7 +14,6 @@
  */
 package net.kuujo.copycat.spi;
 
-import net.kuujo.copycat.Service;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
 
@@ -25,7 +24,7 @@ import java.net.URI;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol extends Service {
+public interface Protocol {
 
   /**
    * Returns a boolean indicating whether the given URI is valid.

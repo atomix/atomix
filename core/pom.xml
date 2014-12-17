@@ -21,4 +21,5 @@
       <version>${typesafe.config.version}</version>
     </dependency>
   </dependencies>
+
 </project>

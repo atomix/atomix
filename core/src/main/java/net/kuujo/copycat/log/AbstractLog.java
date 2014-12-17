@@ -15,7 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.Config;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.Configs;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 import java.io.File;
@@ -36,6 +38,18 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
   protected final TreeMap<Long, LogSegment> segments = new TreeMap<>();
   protected LogSegment currentSegment;
   private long lastFlush;
+
+  protected AbstractLog(String resource) {
+    this(Configs.load(resource, "copycat.log").toConfig());
+  }
+
+  protected AbstractLog(Map<String, Object> config) {
+    this(Configs.load(config, "copycat.log").toConfig());
+  }
+
+  protected AbstractLog(Config config) {
+    this(config.getString("name"), new LogConfig(config));
+  }
 
   protected AbstractLog(String name, LogConfig config) {
     this.config = config.copy();
@@ -264,7 +278,7 @@ public abstract class AbstractLog extends AbstractLogger implements Log {
     if (currentSegment.size() >= config.getSegmentSize() || (config.getSegmentInterval() < Long.MAX_VALUE && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval())) {
       long nextIndex = currentSegment.lastIndex() + 1;
       currentSegment.flush();
-      currentSegment.unlock();
+      currentSegment.unlock();System.out.println(nextIndex);
       currentSegment = createSegment(nextIndex);
       currentSegment.open();
       segments.put(nextIndex, currentSegment);

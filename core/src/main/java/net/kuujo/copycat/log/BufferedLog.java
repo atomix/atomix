@@ -15,8 +15,11 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.Config;
+
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 /**
  * In-memory log implementation.
@@ -24,6 +27,18 @@ import java.util.Collections;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class BufferedLog extends AbstractLog {
+
+  public BufferedLog(String resource) {
+    super(resource);
+  }
+
+  public BufferedLog(Map<String, Object> config) {
+    super(config);
+  }
+
+  public BufferedLog(Config config) {
+    super(config);
+  }
 
   public BufferedLog(String name, LogConfig config) {
     super(name, config);

@@ -14,9 +14,11 @@
  */
 package net.kuujo.copycat.cluster;
 
+import com.typesafe.config.Config;
 import net.kuujo.copycat.Copyable;
-import net.kuujo.copycat.Service;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.Configs;
+import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.spi.Protocol;
 
@@ -24,13 +26,14 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 /**
  * Cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterConfig implements Copyable<ClusterConfig>, Service {
+public class ClusterConfig implements Copyable<ClusterConfig> {
   private Protocol protocol = new LocalProtocol();
   private long electionTimeout = 300;
   private long heartbeatInterval = 150;
@@ -38,6 +41,22 @@ public class ClusterConfig implements Copyable<ClusterConfig>, Service {
   private Set<String> remoteMembers = new HashSet<>(10);
 
   public ClusterConfig() {
+  }
+
+  public ClusterConfig(String resource) {
+    this(Configs.load(resource, "copycat.cluster").toConfig());
+  }
+
+  public ClusterConfig(Map<String, Object> config) {
+    this(Configs.load(config, "copycat.cluster").toConfig());
+  }
+
+  public ClusterConfig(Config config) {
+    setProtocol(Services.load("copycat.cluster.protocol"));
+    Configs.apply((Consumer<Long>) this::setElectionTimeout, Long.class, config, "election-timeout");
+    Configs.apply((Consumer<Long>) this::setHeartbeatInterval, Long.class, config, "heartbeat-interval");
+    Configs.apply((Consumer<String>) this::setLocalMember, String.class, config, "local-member");
+    Configs.apply((Consumer<Collection<String>>) this::setRemoteMembers, Collection.class, config, "remote-members");
   }
 
   private ClusterConfig(ClusterConfig config) {
