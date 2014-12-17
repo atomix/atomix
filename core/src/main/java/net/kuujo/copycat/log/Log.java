@@ -22,7 +22,7 @@ import java.io.File;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Log extends Logger {
+public interface Log extends Loggable {
 
   /**
    * Return the log configuration.

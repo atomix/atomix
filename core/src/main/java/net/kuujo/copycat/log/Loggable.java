@@ -25,7 +25,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Logger extends Closeable {
+public interface Loggable extends Closeable {
 
   /**
    * Opens the logger.

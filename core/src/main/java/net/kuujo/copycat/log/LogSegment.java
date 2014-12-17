@@ -22,7 +22,7 @@ import java.io.File;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LogSegment extends Logger {
+public interface LogSegment extends Loggable {
 
   /**
    * Returns the parent log.

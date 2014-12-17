@@ -28,7 +28,7 @@ import java.util.TreeMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferedLogSegment extends AbstractLogger implements LogSegment {
+public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
   private final BufferedLog parent;
   private final long segment;
   private long timestamp;
@@ -88,7 +88,7 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
 
   @Override
   public boolean isEmpty() {
-    return size() > 0;
+    return size() == 0;
   }
 
   @Override

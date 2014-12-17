@@ -13,4 +13,10 @@ public final class Bytes {
     return ByteBuffer.wrap(string.getBytes());
   }
 
+  /**
+   * Returns a ByteBuffer wrapping the bytes of the {@code number}.
+   */
+  public static ByteBuffer of(int number) {
+    return ByteBuffer.allocate(4).putInt(number);
+  }
 }
