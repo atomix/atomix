@@ -76,6 +76,12 @@ public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
   }
 
   @Override
+  public long entries() {
+    assertIsOpen();
+    return log.size();
+  }
+
+  @Override
   public boolean isEmpty() {
     return size() == 0;
   }
@@ -160,10 +166,9 @@ public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
   @Override
   public void compact(long index) {
     assertIsOpen();
+    assertContainsIndex(index);
     if (!log.isEmpty()) {
-      if (index < log.firstKey()) {
-        throw new IllegalArgumentException("Log does not contain index " + index);
-      } else if (index > log.lastKey()) {
+      if (index > log.lastKey()) {
         log.clear();
       } else {
         for (long i = log.firstKey(); i < index; i++) {

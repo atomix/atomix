@@ -40,9 +40,9 @@ public interface Loggable extends Closeable {
   boolean isOpen();
 
   /**
-   * Returns the logger size.
+   * Returns the size in bytes.
    *
-   * @return The logger size.
+   * @return The size in bytes.
    * @throws java.lang.IllegalStateException If the log is not open.
    */
   long size();
@@ -53,6 +53,14 @@ public interface Loggable extends Closeable {
    * @return Indicates whether the logger is empty.
    */
   boolean isEmpty();
+
+  /**
+   * Returns the number of entries.
+   * 
+   * @return The number of entries.
+   * @throws java.lang.IllegalStateException If the log is not open.
+   */
+  long entries();
 
   /**
    * Appends an entry to the logger.
@@ -127,17 +135,20 @@ public interface Loggable extends Closeable {
   void removeAfter(long index);
 
   /**
-   * Compacts the log at the given index, appending the given entry.
+   * Compacts the log, dropping all entries up to the {@code index}.
    *
    * @param index The index at which to compact the log.
+   * @throws IndexOutOfBoundsException if the log does not contain the {@code index}
    */
   void compact(long index);
 
   /**
-   * Compacts the log at the given index, appending the given entry.
+   * Compacts the log, dropping all entries up to the {@code index} and placing the {@code entry} at
+   * the {@code index}.
    *
    * @param index The index at which to compact the log.
    * @param entry The entry to write to the log at the given index.
+   * @throws IndexOutOfBoundsException if the log does not contain the {@code index}
    */
   void compact(long index, ByteBuffer entry);
 
@@ -151,7 +162,8 @@ public interface Loggable extends Closeable {
   /**
    * Flushes the log to disk, optionally forcing the flush.
    *
-   * @param force Whether to force the log to be flushed to disk even if the flush is blocked by configuration.
+   * @param force Whether to force the log to be flushed to disk even if the flush is blocked by
+   *          configuration.
    */
   void flush(boolean force);
 

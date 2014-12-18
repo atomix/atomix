@@ -185,7 +185,7 @@ public abstract class AbstractLogTest {
     log.close();
     log.appendEntry(Bytes.of("1"));
   }
-  
+
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void segmentShouldThrowOnEmptyLog() throws Exception {
     log.delete();
@@ -201,24 +201,26 @@ public abstract class AbstractLogTest {
 
   public void testCompactEndOfLog() throws Exception {
     appendEntries(5);
-    log.compact(5, Bytes.of("foo"));
-    assertEquals(log.size(), 1);
+    log.compact(5, Bytes.of(6));
+    assertEquals(log.entries(), 1);
+    assertEquals(log.size(), log.entries() * entrySize());
 
     assertEquals(log.firstIndex().longValue(), 5);
     assertEquals(log.lastIndex().longValue(), 5);
-    assertBytesEqual(log.getEntry(5), "foo");
+    assertBytesEqual(log.getEntry(5), 6);
   }
 
   public void testCompactMiddleOfLog() throws Exception {
     appendEntries(5);
-    log.compact(3, Bytes.of("foo"));
-    assertEquals(log.size(), 3);
+    log.compact(3, Bytes.of(6));
+    assertEquals(log.entries(), 3);
+    assertEquals(log.size(), log.entries() * entrySize());
 
     assertEquals(log.firstIndex().longValue(), 3);
     assertEquals(log.lastIndex().longValue(), 5);
-    assertBytesEqual(log.getEntry(3), "3");
-    assertBytesEqual(log.getEntry(4), "4");
-    assertBytesEqual(log.getEntry(5), "5");
+    assertBytesEqual(log.getEntry(3), 6);
+    assertBytesEqual(log.getEntry(4), 4);
+    assertBytesEqual(log.getEntry(5), 5);
   }
 
   public void testFirstIndex() throws Exception {
@@ -293,6 +295,16 @@ public abstract class AbstractLogTest {
     assertTrue(log.containsIndex(201));
     assertEquals(log.lastIndex().longValue(), 201);
     assertEquals(log.segment().lastIndex().longValue(), 201);
+  }
+
+  public void testEntries() {
+    assertEquals(log.entries(), 0);
+    appendEntries(10);
+    assertEquals(log.entries(), 10);
+    log.removeAfter(5);
+    assertEquals(log.entries(), 5);
+    log.removeAfter(0);
+    assertEquals(log.entries(), 0);
   }
 
   /**

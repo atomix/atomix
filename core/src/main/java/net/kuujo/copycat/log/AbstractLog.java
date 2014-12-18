@@ -176,6 +176,11 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     assertIsOpen();
     return segments.values().stream().mapToLong(LogSegment::size).sum();
   }
+  
+  @Override
+  public long entries() {
+    return segments.values().stream().mapToLong(LogSegment::entries).sum();
+  }
 
   @Override
   public boolean isEmpty() {
@@ -265,15 +270,19 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   }
 
   @Override
+  @SuppressWarnings("resource")
   public void compact(long index) {
     assertIsOpen();
-    segment(index).compact(index);
+    LogSegment segment = currentSegment.containsIndex(index) ? currentSegment : segment(index);
+    segment.compact(index);
   }
 
   @Override
+  @SuppressWarnings("resource")
   public void compact(long index, ByteBuffer entry) {
     assertIsOpen();
-    segment(index).compact(index, entry);
+    LogSegment segment = currentSegment.containsIndex(index) ? currentSegment : segment(index);
+    segment.compact(index, entry);
   }
 
   @Override
