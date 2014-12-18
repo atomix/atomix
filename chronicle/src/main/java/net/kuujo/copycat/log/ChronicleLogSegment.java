@@ -72,16 +72,6 @@ public class ChronicleLogSegment extends AbstractLoggable implements LogSegment 
   }
 
   @Override
-  public File file() {
-    return dataFile;
-  }
-
-  @Override
-  public File index() {
-    return indexFile;
-  }
-
-  @Override
   public long segment() {
     return segment;
   }
@@ -325,12 +315,12 @@ public class ChronicleLogSegment extends AbstractLoggable implements LogSegment 
           basePath.getName()));
         File historyIndexFile = new File(basePath.getParent(), String.format("%s.history.index",
           basePath.getName()));
-        Files.copy(file().toPath(), historyDataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(index().toPath(), historyIndexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(dataFile.toPath(), historyDataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(indexFile.toPath(), historyIndexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         // Now rename temporary log files.
-        Files.move(tempDataFile.toPath(), file().toPath(), StandardCopyOption.REPLACE_EXISTING);
-        Files.move(tempIndexFile.toPath(), index().toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.move(tempDataFile.toPath(), dataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.move(tempIndexFile.toPath(), indexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         // Delete the history files if we've made it this far.
         historyDataFile.delete();

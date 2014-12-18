@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import java.io.File;
 
 /**
  * Log segment.
@@ -30,20 +29,6 @@ public interface LogSegment extends Loggable {
    * @return The parent log.
    */
   Log log();
-
-  /**
-   * Returns the segment file.
-   *
-   * @return The segment file.
-   */
-  File file();
-
-  /**
-   * Returns the segment index file.
-   *
-   * @return The segment index file.
-   */
-  File index();
 
   /**
    * Returns the unique segment name.

@@ -16,6 +16,7 @@
 package net.kuujo.copycat.log;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * Log manager.
@@ -45,4 +46,8 @@ public interface Log extends Loggable {
    */
   File directory();
 
+  /**
+   * Returns a collection of log segments.
+   */
+  Collection<LogSegment> segments();
 }

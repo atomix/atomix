@@ -105,7 +105,8 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   /**
    * Returns a collection of log segments.
    */
-  Collection<LogSegment> segments() {
+  @Override
+  public Collection<LogSegment> segments() {
     return segments.values();
   }
 

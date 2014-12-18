@@ -15,13 +15,12 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.internal.util.Assert;
-
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
+
+import net.kuujo.copycat.internal.util.Assert;
 
 /**
  * In-memory log segment.
@@ -43,16 +42,6 @@ public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
   @Override
   public Log log() {
     return parent;
-  }
-
-  @Override
-  public File file() {
-    return null;
-  }
-
-  @Override
-  public File index() {
-    return null;
   }
 
   @Override
