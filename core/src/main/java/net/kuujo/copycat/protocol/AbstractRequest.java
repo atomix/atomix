@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.util.Objects;
+
 /**
  * Abstract request implementation.
  *
@@ -33,6 +37,16 @@ abstract class AbstractRequest implements Request {
     return member;
   }
 
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, member);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, member=%s]", getClass().getCanonicalName(), id, member);
+  }
+
   /**
    * Abstract request builder.
    *
@@ -49,6 +63,7 @@ abstract class AbstractRequest implements Request {
     @Override
     @SuppressWarnings("unchecked")
     public T withId(Object id) {
+      Assert.isNotNull(id, "id");
       request.id = id;
       return (T) this;
     }
@@ -56,12 +71,15 @@ abstract class AbstractRequest implements Request {
     @Override
     @SuppressWarnings("unchecked")
     public T withMember(String member) {
+      Assert.isNotNull(member, "member");
       request.member = member;
       return (T) this;
     }
 
     @Override
     public U build() {
+      Assert.isNotNull(request.id, "id");
+      Assert.isNotNull(request.member, "member");
       return request;
     }
   }

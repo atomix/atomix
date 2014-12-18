@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.util.Objects;
+
 /**
  * Protocol poll request.
  *
@@ -73,6 +77,25 @@ public class PollRequest extends AbstractRequest {
   }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(id, member, term, candidate, logIndex, logTerm);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof PollRequest) {
+      PollRequest request = (PollRequest) object;
+      return request.id.equals(id)
+        && request.member.equals(member)
+        && request.term == term
+        && request.candidate.equals(candidate)
+        && request.logIndex.equals(logIndex)
+        && request.logTerm.equals(logTerm);
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[id=%s, term=%d, candidate=%s, logIndex=%d, logTerm=%d]", getClass().getSimpleName(), id, term, candidate, logIndex, logTerm);
   }
@@ -92,7 +115,7 @@ public class PollRequest extends AbstractRequest {
      * @return The poll request builder.
      */
     public Builder withTerm(long term) {
-      request.term = term;
+      request.term = Assert.arg(term, term > 0, "term must be greater than zero");
       return this;
     }
 
@@ -103,7 +126,7 @@ public class PollRequest extends AbstractRequest {
      * @return The poll request builder.
      */
     public Builder withCandidate(String candidate) {
-      request.candidate = candidate;
+      request.candidate = Assert.isNotNull(candidate, "candidate");
       return this;
     }
 
@@ -114,7 +137,7 @@ public class PollRequest extends AbstractRequest {
      * @return The poll request builder.
      */
     public Builder withLogIndex(Long index) {
-      request.logIndex = index;
+      request.logIndex = Assert.index(index, index == null || index > 0, "index must be greater than zero");
       return this;
     }
 
@@ -125,8 +148,34 @@ public class PollRequest extends AbstractRequest {
      * @return The poll request builder.
      */
     public Builder withLogTerm(Long term) {
-      request.logTerm = term;
+      request.logTerm = Assert.arg(term, term == null || term > 0, "term must be greater than zero");
       return this;
+    }
+
+    @Override
+    public PollRequest build() {
+      super.build();
+      Assert.isNotNull(request.candidate, "candidate");
+      Assert.arg(request.term, request.term > 0, "term must be greater than zero");
+      Assert.index(request.logIndex, request.logIndex == null || request.logIndex > 0, "index must be greater than zero");
+      Assert.arg(request.logTerm, request.logTerm == null || request.logTerm > 0, "term must be greater than zero");
+      Assert.arg(null, (request.logIndex == null && request.logTerm == null) || (request.logIndex != null && request.logTerm != null), "log index and term must both be null or neither be null");
+      return request;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(request);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).request.equals(request);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[request=%s]", getClass().getCanonicalName(), request);
     }
 
   }

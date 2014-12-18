@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.util.Objects;
+
 /**
  * Protocol poll response.
  *
@@ -53,6 +57,24 @@ public class PollResponse extends AbstractResponse {
   }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(id, member, status, term, voted);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof PollResponse) {
+      PollResponse response = (PollResponse) object;
+      return response.id.equals(id)
+        && response.member.equals(member)
+        && response.status == status
+        && response.term == term
+        && response.voted == voted;
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[id=%s, term=%d, voted=%b]", getClass().getSimpleName(), id, term, voted);
   }
@@ -72,7 +94,7 @@ public class PollResponse extends AbstractResponse {
      * @return The poll response builder.
      */
     public Builder withTerm(long term) {
-      response.term = term;
+      response.term = Assert.arg(term, term > 0, "term must be greater than zero");
       return this;
     }
 
@@ -85,6 +107,28 @@ public class PollResponse extends AbstractResponse {
     public Builder withVoted(boolean voted) {
       response.voted = voted;
       return this;
+    }
+
+    @Override
+    public PollResponse build() {
+      super.build();
+      Assert.arg(response.term, response.term > 0, "term must be greater than zero");
+      return response;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(response);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).response.equals(response);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[response=%s]", getClass().getCanonicalName(), response);
     }
 
   }

@@ -14,9 +14,12 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Protocol append request.
@@ -40,7 +43,7 @@ public class AppendRequest extends AbstractRequest {
   private Long logIndex;
   private Long logTerm;
   private List<ByteBuffer> entries;
-  private long commitIndex;
+  private Long commitIndex;
 
   /**
    * Returns the requesting node's current term.
@@ -92,8 +95,29 @@ public class AppendRequest extends AbstractRequest {
    *
    * @return The leader commit index.
    */
-  public long commitIndex() {
+  public Long commitIndex() {
     return commitIndex;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, member, term, leader, logIndex, logTerm, entries, commitIndex);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof AppendRequest) {
+      AppendRequest request = (AppendRequest) object;
+      return request.id.equals(id)
+        && request.member.equals(member)
+        && request.term == term
+        && request.leader.equals(leader)
+        && request.logIndex.equals(logIndex)
+        && request.logTerm.equals(logTerm)
+        && request.entries.equals(entries)
+        && request.commitIndex.equals(commitIndex);
+    }
+    return false;
   }
 
   @Override
@@ -116,7 +140,7 @@ public class AppendRequest extends AbstractRequest {
      * @return The append request builder.
      */
     public Builder withTerm(long term) {
-      request.term = term;
+      request.term = Assert.arg(term, term > 0, "term must be greater than zero");
       return this;
     }
 
@@ -127,7 +151,7 @@ public class AppendRequest extends AbstractRequest {
      * @return The append request builder.
      */
     public Builder withLeader(String leader) {
-      request.leader = leader;
+      request.leader = Assert.isNotNull(leader, "leader");
       return this;
     }
 
@@ -138,7 +162,7 @@ public class AppendRequest extends AbstractRequest {
      * @return The append request builder.
      */
     public Builder withLogIndex(Long index) {
-      request.logIndex = index;
+      request.logIndex = Assert.index(index, index == null || index > 0, "index must be greater than zero");
       return this;
     }
 
@@ -149,7 +173,7 @@ public class AppendRequest extends AbstractRequest {
      * @return The append request builder.
      */
     public Builder withLogTerm(Long term) {
-      request.logTerm = term;
+      request.logTerm = Assert.arg(term, term == null || term > 0, "term must be greater than zero");
       return this;
     }
 
@@ -170,7 +194,7 @@ public class AppendRequest extends AbstractRequest {
      * @return The append request builder.
      */
     public Builder withEntries(List<ByteBuffer> entries) {
-      request.entries = entries;
+      request.entries = Assert.isNotNull(entries, "entries");
       return this;
     }
 
@@ -180,9 +204,37 @@ public class AppendRequest extends AbstractRequest {
      * @param index The request commit index.
      * @return The append request builder.
      */
-    public Builder withCommitIndex(long index) {
-      request.commitIndex = index;
+    public Builder withCommitIndex(Long index) {
+      request.commitIndex = Assert.index(index, index == null || index > 0, "index must be greater than zero");
       return this;
+    }
+
+    @Override
+    public AppendRequest build() {
+      super.build();
+      Assert.isNotNull(request.leader, "leader");
+      Assert.arg(request.term, request.term > 0, "term must be greater than zero");
+      Assert.index(request.logIndex, request.logIndex == null || request.logIndex > 0, "index must be greater than zero");
+      Assert.arg(request.logTerm, request.logTerm == null || request.logTerm > 0, "term must be greater than zero");
+      Assert.arg(null, (request.logIndex == null && request.logTerm == null) || (request.logIndex != null && request.logTerm != null), "log index and term must both be null or neither be null");
+      Assert.isNotNull(request.entries, "entries");
+      Assert.index(request.commitIndex, request.commitIndex == null || request.commitIndex > 0, "commit index must be greater than zero");
+      return request;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(request);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).request.equals(request);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[request=%s]", getClass().getCanonicalName(), request);
     }
 
   }

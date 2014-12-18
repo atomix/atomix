@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.util.Objects;
+
 /**
  * Protocol commit response.
  *
@@ -44,8 +46,26 @@ public class CommitResponse extends AbstractResponse {
   }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(id, member, status, result);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof CommitResponse) {
+      CommitResponse response = (CommitResponse) object;
+      return response.id.equals(id)
+        && response.member.equals(member)
+        && response.status == status
+        && ((response.result == null && result == null)
+        || response.result != null && result != null && response.result.equals(result));
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[id=%s, result=%s]", getClass().getSimpleName(), id, result);
+    return String.format("%s[id=%s, status=%s, result=%s]", getClass().getSimpleName(), id, status, result);
   }
 
   /**
@@ -66,6 +86,22 @@ public class CommitResponse extends AbstractResponse {
       response.result = result;
       return this;
     }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(response);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).response.equals(response);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[response=%s]", getClass().getCanonicalName(), response);
+    }
+
   }
 
 }

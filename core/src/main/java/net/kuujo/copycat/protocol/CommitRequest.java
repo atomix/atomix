@@ -14,7 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
 import java.nio.ByteBuffer;
+import java.util.Objects;
 
 /**
  * Protocol commit request.
@@ -45,6 +48,22 @@ public class CommitRequest extends AbstractRequest {
   }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(id, member, entry);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof CommitRequest) {
+      CommitRequest request = (CommitRequest) object;
+      return request.id.equals(id)
+        && request.member.equals(member)
+        && request.entry.equals(entry);
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[id=%s]", getClass().getSimpleName(), id);
   }
@@ -64,8 +83,30 @@ public class CommitRequest extends AbstractRequest {
      * @return The request builder.
      */
     public Builder withEntry(ByteBuffer entry) {
-      request.entry = entry;
+      request.entry = Assert.isNotNull(entry, "entry");
       return this;
+    }
+
+    @Override
+    public CommitRequest build() {
+      super.build();
+      Assert.isNotNull(request.entry, "entry");
+      return request;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(request);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).request.equals(request);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[request=%s]", getClass().getCanonicalName(), request);
     }
 
   }

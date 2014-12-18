@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.util.Objects;
+
 /**
  * Protocol ping request.
  *
@@ -83,8 +87,28 @@ public class PingRequest extends AbstractRequest {
   }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(id, member, term, leader, logIndex, logTerm, commitIndex);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof PingRequest) {
+      PingRequest request = (PingRequest) object;
+      return request.id.equals(id)
+        && request.member.equals(member)
+        && request.term == term
+        && request.leader.equals(leader)
+        && request.logIndex.equals(logIndex)
+        && request.logTerm.equals(logTerm)
+        && request.commitIndex.equals(commitIndex);
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, commitIndex);
+    return String.format("%s[id=%s, member=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, commitIndex=%d]", getClass().getSimpleName(), id, member, term, leader, logIndex, logTerm, commitIndex);
   }
 
   /**
@@ -102,6 +126,7 @@ public class PingRequest extends AbstractRequest {
      * @return The ping request builder.
      */
     public Builder withTerm(long term) {
+      request.term = Assert.arg(term, term > 0, "term must be greater than zero");
       request.term = term;
       return this;
     }
@@ -113,7 +138,7 @@ public class PingRequest extends AbstractRequest {
      * @return The ping request builder.
      */
     public Builder withLeader(String leader) {
-      request.leader = leader;
+      request.leader = Assert.isNotNull(leader, "leader");
       return this;
     }
 
@@ -124,7 +149,7 @@ public class PingRequest extends AbstractRequest {
      * @return The ping request builder.
      */
     public Builder withLogIndex(Long index) {
-      request.logIndex = index;
+      request.logIndex = Assert.index(index, index == null || index > 0, "index must be greater than zero");
       return this;
     }
 
@@ -135,7 +160,7 @@ public class PingRequest extends AbstractRequest {
      * @return The ping request builder.
      */
     public Builder withLogTerm(Long term) {
-      request.logTerm = term;
+      request.logTerm = Assert.arg(term, term == null || term > 0, "term must be greater than zero");
       return this;
     }
 
@@ -146,8 +171,34 @@ public class PingRequest extends AbstractRequest {
      * @return The ping request builder.
      */
     public Builder withCommitIndex(Long index) {
-      request.commitIndex = index;
+      request.commitIndex = Assert.index(index, index == null || index > 0, "index must be greater than zero");
       return this;
+    }
+
+    @Override
+    public PingRequest build() {
+      super.build();
+      Assert.isNotNull(request.leader, "leader");
+      Assert.arg(request.term, request.term > 0, "term must be greater than zero");
+      Assert.index(request.logIndex, request.logIndex == null || request.logIndex > 0, "index must be greater than zero");
+      Assert.arg(request.logTerm, request.logTerm == null || request.logTerm > 0, "term must be greater than zero");
+      Assert.arg(null, (request.logIndex == null && request.logTerm == null) || (request.logIndex != null && request.logTerm != null), "log index and term must both be null or neither be null");
+      return request;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(request);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).request.equals(request);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[request=%s]", getClass().getCanonicalName(), request);
     }
 
   }

@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.util.Objects;
+
 /**
  * Protocol ping response.
  *
@@ -33,6 +37,7 @@ public class PingResponse extends AbstractResponse {
 
   private long term;
   private boolean succeeded;
+  private Long logIndex;
 
   /**
    * Returns the requesting node's current term.
@@ -50,6 +55,33 @@ public class PingResponse extends AbstractResponse {
    */
   public boolean succeeded() {
     return succeeded;
+  }
+
+  /**
+   * Returns th elast log index.
+   *
+   * @return The response last log index.
+   */
+  public Long logIndex() {
+    return logIndex;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, member, status, term, succeeded, logIndex);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof PingResponse) {
+      PingResponse response = (PingResponse) object;
+      return response.id.equals(id)
+        && response.member.equals(member)
+        && response.term == term
+        && response.succeeded == succeeded
+        && response.logIndex.equals(logIndex);
+    }
+    return false;
   }
 
   @Override
@@ -72,7 +104,7 @@ public class PingResponse extends AbstractResponse {
      * @return The ping response builder.
      */
     public Builder withTerm(long term) {
-      response.term = term;
+      response.term = Assert.arg(term, term > 0, "term must be greater than zero");
       return this;
     }
 
@@ -85,6 +117,40 @@ public class PingResponse extends AbstractResponse {
     public Builder withSucceeded(boolean succeeded) {
       response.succeeded = succeeded;
       return this;
+    }
+
+    /**
+     * Sets the response last log index.
+     *
+     * @param index The response last log index.
+     * @return The ping response builder.
+     */
+    public Builder withLogIndex(Long index) {
+      response.logIndex = Assert.index(index, index == null || index > 0, "index must be greater than zero");
+      return this;
+    }
+
+    @Override
+    public PingResponse build() {
+      super.build();
+      Assert.arg(response.term, response.term > 0, "term must be greater than zero");
+      Assert.index(response.logIndex, response.logIndex == null || response.logIndex > 0, "index must be greater than zero");
+      return response;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(response);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).response.equals(response);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[response=%s]", getClass().getCanonicalName(), response);
     }
 
   }

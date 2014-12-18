@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.util.Objects;
+
 /**
  * Protocol append response.
  *
@@ -33,7 +37,7 @@ public class AppendResponse extends AbstractResponse {
 
   private long term;
   private boolean succeeded;
-  private long logIndex;
+  private Long logIndex;
 
   /**
    * Returns the requesting node's current term.
@@ -58,13 +62,32 @@ public class AppendResponse extends AbstractResponse {
    *
    * @return The last index of the responding replica's log.
    */
-  public long logIndex() {
+  public Long logIndex() {
     return logIndex;
   }
 
   @Override
+  public int hashCode() {
+    return Objects.hash(id, member, term, succeeded, logIndex);
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof AppendResponse) {
+      AppendResponse response = (AppendResponse) object;
+      return response.id.equals(id)
+        && response.status == status
+        && response.member.equals(member)
+        && response.term == term
+        && response.succeeded == succeeded
+        && response.logIndex.equals(logIndex);
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), id, term, succeeded, logIndex);
+    return String.format("%s[id=%s, status=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), status, id, term, succeeded, logIndex);
   }
 
   /**
@@ -103,9 +126,32 @@ public class AppendResponse extends AbstractResponse {
      * @param index The last index of the replica's log.
      * @return The append response builder.
      */
-    public Builder withLogIndex(long index) {
-      response.logIndex = index;
+    public Builder withLogIndex(Long index) {
+      response.logIndex = Assert.index(index, index == null || index > 0, "log index must be greater than zero");
       return this;
+    }
+
+    @Override
+    public AppendResponse build() {
+      super.build();
+      Assert.arg(response.term, response.term > 0, "term must be greater than zero");
+      Assert.index(response.logIndex, response.logIndex == null || response.logIndex > 0, "log index must be greater than zero");
+      return response;
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(response);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).response.equals(response);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[response=%s]", getClass().getCanonicalName(), response);
     }
 
   }

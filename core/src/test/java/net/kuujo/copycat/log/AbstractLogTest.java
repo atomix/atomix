@@ -93,11 +93,11 @@ public abstract class AbstractLogTest {
     assertFalse(log.isEmpty());
     assertFalse(log.containsIndex(0));
     assertTrue(log.containsIndex(1));
-    assertBytesEqual(log.getEntry(1), "1");
-    assertBytesEqual(log.getEntry(2), "2");
-    assertBytesEqual(log.getEntry(3), "3");
-    assertBytesEqual(log.getEntry(4), "4");
-    assertBytesEqual(log.getEntry(5), "5");
+    assertEquals(log.getEntry(1).getInt(), 1);
+    assertEquals(log.getEntry(2).getInt(), 2);
+    assertEquals(log.getEntry(3).getInt(), 3);
+    assertEquals(log.getEntry(4).getInt(), 4);
+    assertEquals(log.getEntry(5).getInt(), 5);
     assertFalse(log.containsIndex(6));
     log.appendEntry(Bytes.of("6"));
     log.appendEntry(Bytes.of("7"));

@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import java.util.Objects;
+
 /**
  * Protocol sync response.
  *
@@ -33,6 +35,17 @@ public class SyncResponse extends AbstractResponse {
   }
 
   @Override
+  public boolean equals(Object object) {
+    if (object instanceof SyncResponse) {
+      SyncResponse response = (SyncResponse) object;
+      return response.id.equals(id)
+        && response.member.equals(member)
+        && response.status == status;
+    }
+    return false;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s[id=%s]", getClass().getSimpleName(), id);
   }
@@ -44,6 +57,22 @@ public class SyncResponse extends AbstractResponse {
     private Builder() {
       super(new SyncResponse());
     }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(response);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).response.equals(response);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[response=%s]", getClass().getCanonicalName(), response);
+    }
+
   }
 
 }

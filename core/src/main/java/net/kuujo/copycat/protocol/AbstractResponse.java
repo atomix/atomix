@@ -14,6 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.util.Objects;
+
 /**
  * Abstract response implementation.
  *
@@ -45,6 +49,16 @@ abstract class AbstractResponse implements Response {
     return error;
   }
 
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, member, status);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, member=%s, status=%s]", getClass().getCanonicalName(), id, member, status);
+  }
+
   /**
    * Abstract response builder.
    *
@@ -61,6 +75,7 @@ abstract class AbstractResponse implements Response {
     @Override
     @SuppressWarnings("unchecked")
     public T withId(Object id) {
+      Assert.isNotNull(id, "id");
       response.id = id;
       return (T) this;
     }
@@ -68,6 +83,7 @@ abstract class AbstractResponse implements Response {
     @Override
     @SuppressWarnings("unchecked")
     public T withMember(String member) {
+      Assert.isNotNull(member, "member");
       response.member = member;
       return (T) this;
     }
@@ -75,6 +91,7 @@ abstract class AbstractResponse implements Response {
     @Override
     @SuppressWarnings("unchecked")
     public T withStatus(Status status) {
+      Assert.isNotNull(status, "status");
       response.status = status;
       return (T) this;
     }
@@ -82,12 +99,16 @@ abstract class AbstractResponse implements Response {
     @Override
     @SuppressWarnings("unchecked")
     public T withError(Throwable error) {
+      Assert.isNotNull(error, "error");
       response.error = error;
       return (T) this;
     }
 
     @Override
     public U build() {
+      Assert.isNotNull(response.id, "id");
+      Assert.isNotNull(response.member, "member");
+      Assert.isNotNull(response.status, "status");
       return response;
     }
   }
