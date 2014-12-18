@@ -15,14 +15,13 @@
  */
 package net.kuujo.copycat.log;
 
-import java.io.File;
 
 /**
  * Log segment.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LogSegment extends Logger {
+public interface LogSegment extends Loggable {
 
   /**
    * Returns the parent log.
@@ -30,20 +29,6 @@ public interface LogSegment extends Logger {
    * @return The parent log.
    */
   Log log();
-
-  /**
-   * Returns the segment file.
-   *
-   * @return The segment file.
-   */
-  File file();
-
-  /**
-   * Returns the segment index file.
-   *
-   * @return The segment index file.
-   */
-  File index();
 
   /**
    * Returns the unique segment name.

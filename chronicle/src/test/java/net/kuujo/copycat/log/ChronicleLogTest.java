@@ -2,6 +2,8 @@ package net.kuujo.copycat.log;
 
 import java.util.UUID;
 
+import net.openhft.chronicle.ChronicleConfig;
+
 import org.testng.annotations.Test;
 
 /**
@@ -12,14 +14,19 @@ import org.testng.annotations.Test;
 @Test
 public class ChronicleLogTest extends AbstractLogTest {
   @Override
-  protected Log createLog() throws Throwable {
+  protected AbstractLog createLog() throws Throwable {
     LogConfig config = new LogConfig().withSegmentSize(segmentSize);
     String id = UUID.randomUUID().toString();
-    return new ChronicleLog(id, config);
+    ChronicleConfig chronicleConfig = ChronicleConfig.DEFAULT.indexFileCapacity(1024 * 1024)
+      .indexFileExcerpts(8 * 1024)
+      .dataBlockSize(8 * 1024)
+      .messageCapacity(8192 / 2);
+    chronicleConfig.minimiseFootprint(true);
+    return new ChronicleLog(id, config, chronicleConfig);
   }
-  
+
   @Override
   protected int entrySize() {
-    return 14;
+    return 17;
   }
 }

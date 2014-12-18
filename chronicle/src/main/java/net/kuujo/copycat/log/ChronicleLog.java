@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import com.typesafe.config.Config;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,27 +23,36 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import net.openhft.chronicle.ChronicleConfig;
+
+import com.typesafe.config.Config;
+
 /**
  * Chronicle based Copycat log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ChronicleLog extends AbstractLog {
-
+  final ChronicleConfig chronicleConfig;
+  
   public ChronicleLog(String resource) {
     super(resource);
+    chronicleConfig = ChronicleConfig.DEFAULT;
   }
 
   public ChronicleLog(Map<String, Object> config) {
     super(config);
+    chronicleConfig = ChronicleConfig.DEFAULT;
   }
 
   public ChronicleLog(Config config) {
     super(config);
+    chronicleConfig = ChronicleConfig.DEFAULT;
   }
 
-  public ChronicleLog(String name, LogConfig config) {
+  public ChronicleLog(String name, LogConfig config, ChronicleConfig chronicleConfig) {
     super(name, config);
+    this.chronicleConfig = chronicleConfig;
   }
 
   @Override

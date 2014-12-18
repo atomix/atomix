@@ -16,13 +16,14 @@
 package net.kuujo.copycat.log;
 
 import java.io.File;
+import java.util.Collection;
 
 /**
  * Log manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Log extends Logger {
+public interface Log extends Loggable {
 
   /**
    * Return the log configuration.
@@ -45,4 +46,8 @@ public interface Log extends Logger {
    */
   File directory();
 
+  /**
+   * Returns a collection of log segments.
+   */
+  Collection<LogSegment> segments();
 }

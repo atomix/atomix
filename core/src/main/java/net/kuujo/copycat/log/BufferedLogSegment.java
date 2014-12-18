@@ -15,20 +15,19 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.internal.util.Assert;
-
-import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
+
+import net.kuujo.copycat.internal.util.Assert;
 
 /**
  * In-memory log segment.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferedLogSegment extends AbstractLogger implements LogSegment {
+public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
   private final BufferedLog parent;
   private final long segment;
   private long timestamp;
@@ -43,16 +42,6 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public Log log() {
     return parent;
-  }
-
-  @Override
-  public File file() {
-    return null;
-  }
-
-  @Override
-  public File index() {
-    return null;
   }
 
   @Override
@@ -87,8 +76,14 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
+  public long entries() {
+    assertIsOpen();
+    return log.size();
+  }
+
+  @Override
   public boolean isEmpty() {
-    return size() > 0;
+    return size() == 0;
   }
 
   @Override
@@ -171,10 +166,9 @@ public class BufferedLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public void compact(long index) {
     assertIsOpen();
+    assertContainsIndex(index);
     if (!log.isEmpty()) {
-      if (index < log.firstKey()) {
-        throw new IllegalArgumentException("Log does not contain index " + index);
-      } else if (index > log.lastKey()) {
+      if (index > log.lastKey()) {
         log.clear();
       } else {
         for (long i = log.firstKey(); i < index; i++) {

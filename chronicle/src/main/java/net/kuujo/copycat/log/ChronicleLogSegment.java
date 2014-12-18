@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import net.openhft.chronicle.*;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,18 +24,28 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.openhft.chronicle.Chronicle;
+import net.openhft.chronicle.Excerpt;
+import net.openhft.chronicle.ExcerptAppender;
+import net.openhft.chronicle.ExcerptTailer;
+import net.openhft.chronicle.IndexedChronicle;
+
 /**
  * Chronicle based log segment.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
+public class ChronicleLogSegment extends AbstractLoggable implements LogSegment {
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
+  /* Size of index + status + length data */
+  private static final int ENTRY_INFO_LEN = 13;
+
   private final ChronicleLog parent;
-  private final File base;
-  private final File file;
-  private final File index;
+  /* The base path to chronicle files */
+  private final File basePath;
+  private final File dataFile;
+  private final File indexFile;
   private final long segment;
   private Chronicle chronicle;
   private Excerpt excerpt;
@@ -45,29 +53,21 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   private ExcerptTailer tailer;
   private Long firstIndex;
   private Long lastIndex;
-  private int size;
+  private long size;
+  private long entries;
+  private long compactOffset;
 
   ChronicleLogSegment(ChronicleLog parent, long segment) {
     this.parent = parent;
-    this.base = new File(parent.base().getParent(), String.format("%s-%d", parent.base().getName(), segment));
-    this.file = new File(parent.base().getParent(), String.format("%s-%d.log", parent.base().getName(), segment));
-    this.index = new File(parent.base().getParent(), String.format("%s-%d.index", parent.base().getName(), segment));
+    this.basePath = new File(parent.base().getParent(), String.format("%s-%d", parent.base().getName(), segment));
+    this.dataFile = new File(parent.base().getParent(), String.format("%s-%d.data", parent.base().getName(), segment));
+    this.indexFile = new File(parent.base().getParent(), String.format("%s-%d.index", parent.base().getName(), segment));
     this.segment = segment;
   }
 
   @Override
   public Log log() {
     return parent;
-  }
-
-  @Override
-  public File file() {
-    return file;
-  }
-
-  @Override
-  public File index() {
-    return index;
   }
 
   @Override
@@ -78,33 +78,34 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public long timestamp() {
     try {
-      BasicFileAttributes attributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+      BasicFileAttributes attributes = Files.readAttributes(dataFile.toPath(), BasicFileAttributes.class);
       return attributes.creationTime().toMillis();
     } catch (IOException e) {
-      return 0;
+      throw new LogException(e, "Failed to read Chronicle segment data file: %s", dataFile);
     }
   }
 
   @Override
-  public void open() {
+  public void open() throws IOException {
     assertIsNotOpen();
-    try {
-      chronicle = new IndexedChronicle(base.getAbsolutePath());
-      excerpt = chronicle.createExcerpt();
-      appender = chronicle.createAppender();
-      tailer = chronicle.createTailer();
-      if (chronicle.size() > 0) {
-        firstIndex = segment;
-      }
+
+    chronicle = new IndexedChronicle(basePath.getAbsolutePath(), parent.chronicleConfig);
+    excerpt = chronicle.createExcerpt();
+    appender = chronicle.createAppender();
+    tailer = chronicle.createTailer();
+
+    if (chronicle.size() > 0) {
       try (ExcerptTailer t = tailer.toStart()) {
-        long index = t.readLong();
-        if (firstIndex == null) {
-          firstIndex = index;
-        }
-        lastIndex = index;
+        do {
+          long index = t.readLong();
+          if (t.readByte() == ACTIVE) {
+            if (firstIndex == null) {
+              firstIndex = index;
+            }
+            lastIndex = index;
+          }
+        } while (t.nextIndex());
       }
-    } catch (IOException e) {
-      throw new LogException(e);
     }
   }
 
@@ -116,18 +117,26 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   @Override
   public long size() {
     assertIsOpen();
-    return chronicle.size();
+    return size;
+  }
+
+  @Override
+  public long entries() {
+    assertIsOpen();
+    return entries;
   }
 
   @Override
   public boolean isEmpty() {
-    return size() > 0;
+    return size == 0;
   }
 
   @Override
   public long appendEntry(ByteBuffer entry) {
     assertIsOpen();
-    long index = lastIndex + 1;
+    long index = lastIndex == null ? segment : lastIndex + 1;
+    if (entry.remaining() == 0)
+      entry.flip();
     appender.startExcerpt();
     appender.writeLong(index);
     appender.writeByte(ACTIVE);
@@ -135,12 +144,10 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
     appender.write(entry);
     appender.finish();
     lastIndex = index;
-    size += entry.capacity() + 13; // 13 bytes for index, status, and length
+    size += entry.capacity() + ENTRY_INFO_LEN;
+    entries++;
     if (firstIndex == null) {
       firstIndex = segment;
-    }
-    if (lastIndex == null) {
-      lastIndex = segment;
     }
     return index;
   }
@@ -177,6 +184,7 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
     assertContainsIndex(index);
+    index -= compactOffset;
     if (tailer.index(index - segment)) {
       do {
         ByteBuffer entry = extractEntry(tailer, index);
@@ -234,10 +242,15 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
     assertIsOpen();
     if (index < segment) {
       chronicle.clear();
+      size = 0;
+      entries = 0;
     } else if (excerpt.index(index - segment)) {
       while (excerpt.nextIndex()) {
         if (excerpt.readLong() > index) {
           excerpt.writeByte(DELETED);
+          int entrySize = excerpt.readInt();
+          size -= (entrySize + ENTRY_INFO_LEN);
+          entries--;
         }
       }
     }
@@ -256,41 +269,56 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
 
     if (index > firstIndex) {
       // Create a new log file using the most recent timestamp.
-      File tempBaseFile = new File(base.getParent(), String.format("%s.tmp", base.getName()));
-      File tempLogFile = new File(base.getParent(), String.format("%s.tmp.log", base.getName()));
-      File tempIndexFile = new File(base.getParent(), String.format("%s.tmp.index", base.getName()));
+      File tempBaseFile = new File(basePath.getParent(), String.format("%s.tmp", basePath.getName()));
+      File tempDataFile = new File(basePath.getParent(), String.format("%s.tmp.data", basePath.getName()));
+      File tempIndexFile = new File(basePath.getParent(), String.format("%s.tmp.index", basePath.getName()));
       int newSize = 0;
+      int newEntries = 0;
 
       // Create a new chronicle for the new log file.
-      try (Chronicle chronicle = new IndexedChronicle(tempBaseFile.getAbsolutePath());
-        ExcerptAppender appender = chronicle.createAppender()) {
+      try (Chronicle tempChronicle = new IndexedChronicle(tempBaseFile.getAbsolutePath(), parent.chronicleConfig);
+        ExcerptAppender tempAppender = tempChronicle.createAppender()) {
+
+        long copycatIndex = index;
+        long chronicleIndex = index - segment;
+        long newChronicleIndex = 1;
 
         // If an entry is to replace the existing entry at the given index, write the new entry
         // first.
         if (entry != null) {
-          appender.startExcerpt();
-          appender.writeLong(index);
-          appender.writeByte(ACTIVE);
-          appender.writeInt(entry.limit());
-          appender.write(entry);
-          appender.finish();
-          newSize += entry.limit() + 13; // 13 bytes for index, status, and length
+          if (entry.remaining() == 0)
+            entry.flip();
+          tempAppender.startExcerpt();
+          tempAppender.writeLong(newChronicleIndex);
+          tempAppender.writeByte(ACTIVE);
+          tempAppender.writeInt(entry.limit());
+          tempAppender.write(entry);
+          tempAppender.finish();
+          newSize += entry.limit() + ENTRY_INFO_LEN;
+          newEntries++;
+          copycatIndex++;
+          chronicleIndex++;
+          newChronicleIndex++;
         }
 
         // Iterate through entries greater than the given index and copy them to the new chronicle.
-        long currentIndex = index - segment;
-        if (tailer.index(currentIndex)) {
+        if (tailer.index(chronicleIndex)) {
           do {
-            ByteBuffer currentEntry = extractEntry(tailer, currentIndex);
+            ByteBuffer currentEntry = extractEntry(tailer, copycatIndex);
             if (currentEntry != null) {
-              appender.startExcerpt();
-              appender.writeLong(currentIndex);
-              appender.writeByte(ACTIVE);
-              appender.writeInt(currentEntry.limit());
-              appender.write(currentEntry);
-              appender.finish();
-              newSize += currentEntry.limit() + 13; // 13 bytes for index, status, and length
-              currentIndex++;
+              if (currentEntry.remaining() == 0)
+                currentEntry.flip();
+              tempAppender.startExcerpt();
+              tempAppender.writeLong(newChronicleIndex);
+              tempAppender.writeByte(ACTIVE);
+              tempAppender.writeInt(currentEntry.limit());
+              tempAppender.write(currentEntry);
+              tempAppender.finish();
+              newSize += currentEntry.limit() + ENTRY_INFO_LEN;
+              newEntries++;
+              copycatIndex++;
+              chronicleIndex++;
+              newChronicleIndex++;
             }
           } while (tailer.nextIndex());
         }
@@ -303,30 +331,30 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
 
         // First, create a copy of the existing log files. This can be used to restore the logs
         // during recovery if the compaction fails.
-        File historyLogFile = new File(base.getParent(), String.format("%s.history.log",
-          base.getName()));
-        File historyIndexFile = new File(base.getParent(), String.format("%s.history.index",
-          base.getName()));
-        Files.copy(file().toPath(), historyLogFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-        Files.copy(index().toPath(), historyIndexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        File historyDataFile = new File(basePath.getParent(), String.format("%s.history.data", basePath.getName()));
+        File historyIndexFile = new File(basePath.getParent(), String.format("%s.history.index", basePath.getName()));
+        Files.copy(dataFile.toPath(), historyDataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.copy(indexFile.toPath(), historyIndexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         // Now rename temporary log files.
-        Files.move(tempLogFile.toPath(), file().toPath(), StandardCopyOption.REPLACE_EXISTING);
-        Files.move(tempIndexFile.toPath(), index().toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.move(tempDataFile.toPath(), dataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        Files.move(tempIndexFile.toPath(), indexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
         // Delete the history files if we've made it this far.
-        historyLogFile.delete();
+        historyDataFile.delete();
         historyIndexFile.delete();
 
         // Reset chronicle log types.
-        this.chronicle = new IndexedChronicle(file.getAbsolutePath());
+        this.chronicle = new IndexedChronicle(basePath.getAbsolutePath(), parent.chronicleConfig);
         this.excerpt = chronicle.createExcerpt();
         this.appender = chronicle.createAppender();
         this.tailer = chronicle.createTailer();
         this.firstIndex = index;
         this.size = newSize;
+        this.entries = newEntries;
+        compactOffset = index - 1;
       } catch (IOException e) {
-        throw new LogException(e);
+        throw new LogException(e, "Failed to compact log segment at index %s", index);
       }
     }
   }
@@ -347,12 +375,10 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
   }
 
   @Override
-  public void close() {
+  public void close() throws IOException {
     assertIsOpen();
     try {
       chronicle.close();
-    } catch (IOException e) {
-      throw new LogException(e);
     } finally {
       chronicle = null;
       excerpt = null;
@@ -368,9 +394,8 @@ public class ChronicleLogSegment extends AbstractLogger implements LogSegment {
 
   @Override
   public void delete() {
-    file.delete();
-    index.delete();
+    dataFile.delete();
+    indexFile.delete();
     parent.deleteSegment(segment);
   }
-
 }
