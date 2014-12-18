@@ -62,28 +62,28 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
 
   @Override
   public <U extends T, V> StateLog<T> register(String name, Command<U, V> command, CommandOptions options) {
-    Assert.state(open, "Cannot register command on open state log");
+    Assert.state(!open, "Cannot register command on open state log");
     commands.put(name.hashCode(), new CommandInfo(name, command, options));
     return this;
   }
 
   @Override
   public StateLog<T> unregister(String name) {
-    Assert.state(open, "Cannot unregister command on open state log");
+    Assert.state(!open, "Cannot unregister command on open state log");
     commands.remove(name.hashCode());
     return this;
   }
 
   @Override
   public <U> StateLog<T> snapshotter(Supplier<U> snapshotter) {
-    Assert.state(open, "Cannot modify state log once opened");
+    Assert.state(!open, "Cannot modify state log once opened");
     this.snapshotter = snapshotter;
     return this;
   }
 
   @Override
   public <U> StateLog<T> installer(Consumer<U> installer) {
-    Assert.state(open, "Cannot modify state log once opened");
+    Assert.state(!open, "Cannot modify state log once opened");
     this.installer = installer;
     return this;
   }
@@ -200,8 +200,6 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
     return super.open().whenComplete((result, error) -> {
       if (error == null) {
         context.cluster().localMember().registerHandler("query", this::query);
-        commitIndex = context.log().firstIndex() - 1;
-        takeSnapshot();
       } else {
         open = false;
       }
@@ -248,7 +246,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
 
     private U execute(Long index, TT entry) {
       U result = command.execute(entry);
-      commitIndex++;
+      commitIndex = index;
       checkSnapshot();
       return result;
     }

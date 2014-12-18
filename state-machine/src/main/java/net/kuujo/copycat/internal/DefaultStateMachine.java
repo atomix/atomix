@@ -17,13 +17,11 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +34,6 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultStateMachine<T> implements StateMachine<T> {
-  private final Serializer serializer = Serializer.serializer();
   private final Class<T> stateType;
   private T state;
   private final StateLog<List<Object>> log;
@@ -118,25 +115,22 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
   /**
    * Takes a snapshot of the state machine state.
    */
-  private ByteBuffer snapshot() {
-    return serializer.writeObject(data);
+  private Map<String, Object> snapshot() {
+    return data;
   }
 
   /**
    * Installs a snapshot of the state machine state.
    */
-  private void install(ByteBuffer snapshot) {
-    data = serializer.readObject(snapshot);
+  private void install(Map<String, Object> snapshot) {
+    this.data = snapshot;
   }
 
   @Override
   public CompletableFuture<Void> open() {
-    return log.open().whenComplete((result, error) -> {
-      if (error == null) {
-        log.snapshotter(this::snapshot);
-        log.installer(this::install);
-      }
-    });
+    log.snapshotter(this::snapshot);
+    log.installer(this::install);
+    return log.open();
   }
 
   @Override
