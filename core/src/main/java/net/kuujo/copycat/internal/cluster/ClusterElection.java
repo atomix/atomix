@@ -32,6 +32,7 @@ class ClusterElection implements Election, Observer {
   private CopycatStateContext context;
   private Consumer<ElectionResult> handler;
   private ElectionResult result;
+  private boolean handled;
 
   ClusterElection(Cluster cluster, CopycatStateContext context) {
     this.cluster = cluster;
@@ -40,8 +41,8 @@ class ClusterElection implements Election, Observer {
 
   @Override
   public void update(Observable o, Object arg) {
-    if (result == null) {
-      CopycatStateContext context = (CopycatStateContext) o;
+    CopycatStateContext context = (CopycatStateContext) o;
+    if (!handled) {
       String leader = context.getLeader();
       if (leader != null) {
         long term = context.getTerm();
@@ -50,10 +51,17 @@ class ClusterElection implements Election, Observer {
           if (member != null) {
             result = new ClusterElectionResult(term, member);
             if (handler != null) {
+              handled = true;
               handler.accept(result);
             }
+          } else if (result != null) {
+            result = null;
           }
+        } else if (result != null) {
+          result = null;
         }
+      } else if (result != null) {
+        result = null;
       }
     }
     this.context = (CopycatStateContext) o;
@@ -76,7 +84,13 @@ class ClusterElection implements Election, Observer {
 
   @Override
   public Election handler(Consumer<ElectionResult> handler) {
+    if (handler != this.handler) {
+      handled = false;
+    }
     this.handler = handler;
+    if (!handled && result != null) {
+      handler.accept(result);
+    }
     return this;
   }
 
