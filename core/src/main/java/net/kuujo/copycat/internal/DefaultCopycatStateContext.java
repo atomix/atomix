@@ -47,6 +47,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   private MessageHandler<AppendRequest, AppendResponse> appendHandler;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
+  private CompletableFuture<Void> openFuture;
   private final String localMember;
   private final Set<String> remoteMembers;
   private Election.Status status;
@@ -57,6 +58,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   private long lastApplied;
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
+  private boolean open;
 
   public DefaultCopycatStateContext(ClusterConfig config, Log log, ExecutionContext executor) {
     this.localMember = config.getLocalMember();
@@ -96,6 +98,9 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
         this.leader = leader;
         this.lastVotedFor = null;
         this.status = Election.Status.COMPLETE;
+        if (openFuture != null) {
+          openFuture.complete(null);
+        }
         triggerChangeEvent();
       }
     } else if (leader != null) {
@@ -277,6 +282,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
     if (leader == null) {
       return Futures.completedFuture(SyncResponse.builder()
         .withId(request.id())
+        .withMember(request.member())
         .withStatus(Response.Status.ERROR)
         .withError(new CopycatException("No cluster leader found"))
         .build());
@@ -299,6 +305,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
     if (leader == null) {
       return Futures.completedFuture(CommitResponse.builder()
         .withId(request.id())
+        .withMember(request.member())
         .withStatus(Response.Status.ERROR)
         .withError(new CopycatException("No cluster leader found"))
         .build());
@@ -417,26 +424,32 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
 
   @Override
   public CompletableFuture<Void> open() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
+    if (openFuture != null) {
+      return openFuture;
+    }
+    openFuture = new CompletableFuture<>();
     executor.execute(() -> {
       try {
+        open = true;
         log.open();
-        transition(CopycatState.FOLLOWER).whenComplete((result, error) -> {
-          if (error == null) {
-            future.complete(null);
-          } else {
-            future.completeExceptionally(error);
-          }
-        });
+        transition(CopycatState.FOLLOWER);
       } catch (Exception e) {
-        future.completeExceptionally(e);
+        openFuture.completeExceptionally(e);
+        openFuture = null;
       }
     });
-    return future;
+    return openFuture;
   }
 
   @Override
   public CompletableFuture<Void> close() {
+    if (openFuture != null) {
+      openFuture.cancel(false);
+      openFuture = null;
+    } else if (!open) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+    }
+
     CompletableFuture<Void> future = new CompletableFuture<>();
     executor.execute(() -> {
       transition(CopycatState.START).whenComplete((result, error) -> {
