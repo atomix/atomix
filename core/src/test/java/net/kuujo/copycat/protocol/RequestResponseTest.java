@@ -1533,7 +1533,7 @@ public class RequestResponseTest {
    */
   public void testSyncRequestBuilderFailsWithoutId() {
     try {
-      SyncRequest.builder().withMember("foo").build();
+      SyncRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
       fail();
     } catch (NullPointerException e) {
     }
@@ -1555,7 +1555,7 @@ public class RequestResponseTest {
    */
   public void testSyncRequestBuilderFailsWithoutMember() {
     try {
-      SyncRequest.builder().withId("test").build();
+      SyncRequest.builder().withId("test").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
       fail();
     } catch (NullPointerException e) {
     }
@@ -1573,15 +1573,38 @@ public class RequestResponseTest {
   }
 
   /**
+   * Tests that the sync request builder fails without a configured entry.
+   */
+  public void testSyncRequestBuilderFailsWithoutEntry() {
+    try {
+      SyncRequest.builder().withId("test").withMember("foo").build();
+      fail();
+    } catch (NullPointerException e) {
+    }
+  }
+
+  /**
+   * Tests that the sync request builder fails when no entry has been set.
+   */
+  public void testSyncRequestBuilderEntrySetterFailsWithNullEntry() {
+    try {
+      SyncRequest.builder().withEntry(null).build();
+      fail();
+    } catch (NullPointerException e) {
+    }
+  }
+
+  /**
    * Tests that the sync request builder succeeds when properly configured.
    */
   public void testSyncRequestBuilderSucceedsWithValidConfiguration() {
     SyncRequest request = SyncRequest.builder()
       .withId("test")
       .withMember("foo")
-      .build();
+      .withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
     assertEquals(request.id(), "test");
     assertEquals(request.member(), "foo");
+    assertEquals(new String(request.entry().array()), "Hello world!");
   }
 
   /**
@@ -1600,7 +1623,7 @@ public class RequestResponseTest {
    */
   public void testSyncResponseBuilderFailsWithoutId() {
     try {
-      SyncResponse.builder().withMember("foo").build();
+      SyncResponse.builder().withMember("foo").withResult("Hello world!").build();
       fail();
     } catch (NullPointerException e) {
     }
@@ -1622,7 +1645,7 @@ public class RequestResponseTest {
    */
   public void testSyncResponseBuilderFailsWithoutMember() {
     try {
-      SyncResponse.builder().withId("test").build();
+      SyncResponse.builder().withId("test").withResult("Hello world!").build();
       fail();
     } catch (NullPointerException e) {
     }
@@ -1640,15 +1663,31 @@ public class RequestResponseTest {
   }
 
   /**
+   * Tests that the sync response builder succeeds with a null result.
+   */
+  public void testSyncResponseBuilderSucceedsWithNullResult() {
+    SyncResponse response = SyncResponse.builder()
+      .withId("test")
+      .withMember("foo")
+      .withResult(null)
+      .build();
+    assertEquals(response.id(), "test");
+    assertEquals(response.member(), "foo");
+    assertNull(response.result());
+  }
+
+  /**
    * Tests that the sync response builder succeeds with a valid configuration.
    */
   public void testSyncResponseBuilderSucceedsWithValidConfiguration() {
     SyncResponse response = SyncResponse.builder()
       .withId("test")
       .withMember("foo")
+      .withResult("Hello world!")
       .build();
     assertEquals(response.id(), "test");
     assertEquals(response.member(), "foo");
+    assertEquals(response.result(), "Hello world!");
   }
 
 }

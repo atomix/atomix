@@ -92,33 +92,37 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   @SuppressWarnings("unchecked")
   public <U> CompletableFuture<U> submit(String command, T entry) {
     Assert.state(open, "State log not open");
-    CommandInfo<T, U> commandInfo = commands.get(command.hashCode());
+    CommandInfo commandInfo = commands.get(command.hashCode());
     if (commandInfo == null) {
       CompletableFuture<U> future = new CompletableFuture<>();
       executor.execute(() -> future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command))));
       return future;
     }
+
+    // If this is a read-only command, check if the command is consistent. For consistent commands,
+    // queries are forwarded to the current cluster leader for evaluation. Otherwise, it's safe to
+    // read stale data from the local node.
     if (commandInfo.options.isReadOnly()) {
       if (commandInfo.options.isConsistent()) {
-        CompletableFuture<U> future = new CompletableFuture<>();
-        context.cluster().leader().<T, U>send("query", entry).whenCompleteAsync((result, error) -> {
-          if (error == null) {
-            future.complete(result);
-          } else {
-            future.completeExceptionally(error);
-          }
-        }, executor);
-        return future;
+        ByteBuffer buffer = serializer.writeObject(entry);
+        ByteBuffer syncEntry = ByteBuffer.allocate(8 + buffer.capacity());
+        syncEntry.putInt(1); // Entry type
+        syncEntry.putInt(command.hashCode());
+        syncEntry.put(buffer);
+        syncEntry.rewind();
+        return context.sync(syncEntry).thenApplyAsync(serializer::readObject);
       } else {
-        return CompletableFuture.supplyAsync(() -> commandInfo.command.execute(entry), executor);
+        return CompletableFuture.supplyAsync(() -> (U) commandInfo.command.execute(entry), executor);
       }
     } else {
+      // Write commands are always submitted to the context which will forward it to the cluster leader.
       ByteBuffer buffer = serializer.writeObject(entry);
-      ByteBuffer commandEntry = ByteBuffer.allocateDirect(8 + buffer.capacity());
+      ByteBuffer commandEntry = ByteBuffer.allocate(8 + buffer.capacity());
       commandEntry.putInt(1); // Entry type
       commandEntry.putInt(command.hashCode());
       commandEntry.put(buffer);
-      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
+      commandEntry.rewind();
+      return context.commit(commandEntry).thenApplyAsync(serializer::readObject);
     }
   }
 
@@ -140,29 +144,12 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
         int commandCode = entry.getInt();
         CommandInfo commandInfo = commands.get(commandCode);
         if (commandInfo != null) {
-          commandInfo.execute(index, serializer.readObject(entry.slice()));
+          return serializer.writeObject(commandInfo.execute(index, serializer.readObject(entry.slice())));
         }
         return ByteBuffer.allocate(0);
       default:
         throw new IllegalArgumentException("Invalid entry type");
     }
-  }
-
-  /**
-   * Queries the state log.
-   *
-   * @param query The query with which to query state.
-   * @return The query result.
-   */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  private CompletableFuture<Object> query(Query query) {
-    CommandInfo commandInfo = commands.get(query.command.hashCode());
-    if (commandInfo == null) {
-      CompletableFuture<Object> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Invalid command " + query.command));
-      return future;
-    }
-    return context.sync().thenApply(v -> commandInfo.command.execute(query.entry));
   }
 
   /**
@@ -198,9 +185,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
     context.consumer(this::consume);
     open = true;
     return super.open().whenComplete((result, error) -> {
-      if (error == null) {
-        context.cluster().localMember().registerHandler("query", this::query);
-      } else {
+      if (error != null) {
         open = false;
       }
     });

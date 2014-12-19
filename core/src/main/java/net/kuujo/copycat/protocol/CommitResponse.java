@@ -33,6 +33,16 @@ public class CommitResponse extends AbstractResponse {
     return new Builder();
   }
 
+  /**
+   * Returns a commit response builder for an existing response.
+   *
+   * @param response The response to build.
+   * @return The commit response builder.
+   */
+  public static Builder builder(CommitResponse response) {
+    return new Builder(response);
+  }
+
   private Object result;
 
   /**
@@ -73,7 +83,11 @@ public class CommitResponse extends AbstractResponse {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, CommitResponse> {
     private Builder() {
-      super(new CommitResponse());
+      this(new CommitResponse());
+    }
+
+    private Builder(CommitResponse response) {
+      super(response);
     }
 
     /**

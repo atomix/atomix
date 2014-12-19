@@ -35,6 +35,16 @@ public class AppendResponse extends AbstractResponse {
     return new Builder();
   }
 
+  /**
+   * Returns an append response builder for an existing response.
+   *
+   * @param response The response to build.
+   * @return The append response builder.
+   */
+  public static Builder builder(AppendResponse response) {
+    return new Builder(response);
+  }
+
   private long term;
   private boolean succeeded;
   private Long logIndex;
@@ -95,7 +105,11 @@ public class AppendResponse extends AbstractResponse {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, AppendResponse> {
     private Builder() {
-      super(new AppendResponse());
+      this(new AppendResponse());
+    }
+
+    private Builder(AppendResponse response) {
+      super(response);
     }
 
     /**

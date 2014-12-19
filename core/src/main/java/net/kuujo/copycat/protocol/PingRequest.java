@@ -35,6 +35,16 @@ public class PingRequest extends AbstractRequest {
     return new Builder();
   }
 
+  /**
+   * Returns a ping request builder for an existing request.
+   *
+   * @param request The request to build.
+   * @return The ping request builder.
+   */
+  public static Builder builder(PingRequest request) {
+    return new Builder(request);
+  }
+
   private long term;
   private String leader;
   private Long logIndex;
@@ -116,7 +126,11 @@ public class PingRequest extends AbstractRequest {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, PingRequest> {
     private Builder() {
-      super(new PingRequest());
+      this(new PingRequest());
+    }
+
+    private Builder(PingRequest request) {
+      super(request);
     }
 
     /**

@@ -109,13 +109,13 @@ class CandidateState extends ActiveState {
 
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
-    final long lastIndex = context.log().lastIndex();
-    ByteBuffer lastEntry = lastIndex > 0 ? context.log().getEntry(lastIndex) : null;
+    final Long lastIndex = context.log().lastIndex();
+    ByteBuffer lastEntry = lastIndex != null ? context.log().getEntry(lastIndex) : null;
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.
-    LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getRemoteMembers());
-    final long lastTerm = lastEntry != null ? lastEntry.getLong() : 0;
+    LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getMembers());
+    final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
     for (String member : context.getMembers()) {
       LOGGER.debug("{} - Polling {}", context.getLocalMember(), member);
       PollRequest request = PollRequest.builder()

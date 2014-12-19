@@ -15,10 +15,12 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.election.Election;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.spi.ExecutionContext;
@@ -272,6 +274,17 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
 
   @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    if (leader == null) {
+      return Futures.completedFuture(SyncResponse.builder()
+        .withId(request.id())
+        .withStatus(Response.Status.ERROR)
+        .withError(new CopycatException("No cluster leader found"))
+        .build());
+    } else if (!leader.equals(localMember)) {
+      return syncHandler.handle(SyncRequest.builder(request)
+        .withMember(leader)
+        .build());
+    }
     return state.sync(request);
   }
 
@@ -283,6 +296,17 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
 
   @Override
   public CompletableFuture<CommitResponse> commit(CommitRequest request) {
+    if (leader == null) {
+      return Futures.completedFuture(CommitResponse.builder()
+        .withId(request.id())
+        .withStatus(Response.Status.ERROR)
+        .withError(new CopycatException("No cluster leader found"))
+        .build());
+    } else if (!leader.equals(localMember)) {
+      return commitHandler.handle(CommitRequest.builder(request)
+        .withMember(leader)
+        .build());
+    }
     return state.commit(request);
   }
 

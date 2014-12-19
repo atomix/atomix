@@ -38,6 +38,16 @@ public class AppendRequest extends AbstractRequest {
     return new Builder();
   }
 
+  /**
+   * Returns an append request builder for an existing request.
+   *
+   * @param request The request to build.
+   * @return The append request builder.
+   */
+  public static Builder builder(AppendRequest request) {
+    return new Builder(request);
+  }
+
   private long term;
   private String leader;
   private Long logIndex;
@@ -130,7 +140,11 @@ public class AppendRequest extends AbstractRequest {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, AppendRequest> {
     private Builder() {
-      super(new AppendRequest());
+      this(new AppendRequest());
+    }
+
+    private Builder(AppendRequest request) {
+      super(request);
     }
 
     /**

@@ -22,10 +22,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -109,7 +106,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
 
   @Override
   public <U> CompletableFuture<U> submit(String command, Object... args) {
-    return log.submit(command, Arrays.asList(args));
+    return log.submit(command, new ArrayList<>(Arrays.asList(args)));
   }
 
   /**
@@ -192,8 +189,16 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
         }
       }
 
+      Object[] compiledArgs;
+      if (contextIndex != null) {
+        compiledArgs = values.toArray(new Object[values.size() + 1]);
+        compiledArgs[compiledArgs.length-1] = context;
+      } else {
+        compiledArgs = values.toArray(new Object[values.size()]);
+      }
+
       try {
-        return method.invoke(state, values.toArray(new Object[values.size() + (contextIndex != null ? 1 : 0)]));
+        return method.invoke(state, compiledArgs);
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new IllegalStateException(e);
       }

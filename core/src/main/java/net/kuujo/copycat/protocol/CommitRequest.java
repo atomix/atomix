@@ -36,6 +36,16 @@ public class CommitRequest extends AbstractRequest {
     return new Builder();
   }
 
+  /**
+   * Returns a commit request builder for an existing request.
+   *
+   * @param request The request to build.
+   * @return The commit request builder.
+   */
+  public static Builder builder(CommitRequest request) {
+    return new Builder(request);
+  }
+
   private ByteBuffer entry;
 
   /**
@@ -73,7 +83,11 @@ public class CommitRequest extends AbstractRequest {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, CommitRequest> {
     private Builder() {
-      super(new CommitRequest());
+      this(new CommitRequest());
+    }
+
+    private Builder(CommitRequest request) {
+      super(request);
     }
 
     /**

@@ -35,6 +35,16 @@ public class PingResponse extends AbstractResponse {
     return new Builder();
   }
 
+  /**
+   * Returns a ping response builder for an existing response.
+   *
+   * @param response The response to build.
+   * @return The ping response builder.
+   */
+  public static Builder builder(PingResponse response) {
+    return new Builder(response);
+  }
+
   private long term;
   private boolean succeeded;
   private Long logIndex;
@@ -94,7 +104,11 @@ public class PingResponse extends AbstractResponse {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, PingResponse> {
     private Builder() {
-      super(new PingResponse());
+      this(new PingResponse());
+    }
+
+    private Builder(PingResponse response) {
+      super(response);
     }
 
     /**

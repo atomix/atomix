@@ -89,8 +89,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
           Map<String, Object> logConfig = new HashMap<>(1);
           logConfig.put("name", name);
           CopycatStateContext state = new DefaultCopycatStateContext(config, Services.load("copycat.log", logConfig), executor);
-          CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state,
-            new ResourceRouter(name), executor);
+          CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), executor);
           context = new DefaultCopycatContext(cluster, state);
           contexts.put(name, context);
         }

@@ -170,6 +170,6 @@ public interface StateLog<T> extends CopycatResource {
    * @param entry The command entry.
    * @return A completable future to be completed once the command output is received.
    */
-  <U>CompletableFuture<U> submit(String command, T entry);
+  <U> CompletableFuture<U> submit(String command, T entry);
 
 }

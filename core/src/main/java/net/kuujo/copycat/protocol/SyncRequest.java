@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
@@ -34,12 +37,39 @@ public class SyncRequest extends AbstractRequest {
     return new Builder();
   }
 
+  /**
+   * Returns a sync request builder for an existing request.
+   *
+   * @param request The request to build.
+   * @return The sync request builder.
+   */
+  public static Builder builder(SyncRequest request) {
+    return new Builder(request);
+  }
+
+  private ByteBuffer entry;
+
+  /**
+   * Returns the sync entry.
+   *
+   * @return The sync entry.
+   */
+  public ByteBuffer entry() {
+    return entry;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, member, entry);
+  }
+
   @Override
   public boolean equals(Object object) {
     if (object instanceof SyncRequest) {
       SyncRequest request = (SyncRequest) object;
       return request.id.equals(id)
-        && request.member.equals(member);
+        && request.member.equals(member)
+        && request.entry.equals(entry);
     }
     return false;
   }
@@ -50,11 +80,33 @@ public class SyncRequest extends AbstractRequest {
   }
 
   /**
-   * Commit request builder.
+   * Sync request builder.
    */
   public static class Builder extends AbstractRequest.Builder<Builder, SyncRequest> {
     private Builder() {
-      super(new SyncRequest());
+      this(new SyncRequest());
+    }
+
+    private Builder(SyncRequest request) {
+      super(request);
+    }
+
+    /**
+     * Sets the request entry.
+     *
+     * @param entry The request entry.
+     * @return The request builder.
+     */
+    public Builder withEntry(ByteBuffer entry) {
+      request.entry = Assert.isNotNull(entry, "entry");
+      return this;
+    }
+
+    @Override
+    public SyncRequest build() {
+      super.build();
+      Assert.isNotNull(request.entry, "entry");
+      return request;
     }
 
     @Override

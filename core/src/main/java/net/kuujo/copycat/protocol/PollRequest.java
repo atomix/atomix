@@ -35,6 +35,16 @@ public class PollRequest extends AbstractRequest {
     return new Builder();
   }
 
+  /**
+   * Returns a poll request builder for an existing request.
+   *
+   * @param request The request to build.
+   * @return The poll request builder.
+   */
+  public static Builder builder(PollRequest request) {
+    return new Builder(request);
+  }
+
   private long term;
   private String candidate;
   private Long logIndex;
@@ -105,7 +115,11 @@ public class PollRequest extends AbstractRequest {
    */
   public static class Builder extends AbstractRequest.Builder<Builder, PollRequest> {
     private Builder() {
-      super(new PollRequest());
+      this(new PollRequest());
+    }
+
+    private Builder(PollRequest request) {
+      super(request);
     }
 
     /**

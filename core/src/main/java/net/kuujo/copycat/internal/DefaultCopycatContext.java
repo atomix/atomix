@@ -84,16 +84,17 @@ public class DefaultCopycatContext implements CopycatContext {
   }
 
   @Override
-  public CompletableFuture<Void> sync() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
+  public CompletableFuture<ByteBuffer> sync(ByteBuffer entry) {
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     SyncRequest request = SyncRequest.builder()
       .withId(UUID.randomUUID().toString())
       .withMember(context.getLocalMember())
+      .withEntry(entry)
       .build();
     context.sync(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(null);
+          future.complete(response.result());
         } else {
           future.completeExceptionally(response.error());
         }

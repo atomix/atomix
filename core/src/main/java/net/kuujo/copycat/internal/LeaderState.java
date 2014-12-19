@@ -144,6 +144,8 @@ class LeaderState extends ActiveState {
     logRequest(request);
 
     CompletableFuture<SyncResponse> future = new CompletableFuture<>();
+    BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
+
     long lastIndex = context.log().lastIndex();
     LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), lastIndex);
     replicator.ping(lastIndex).whenComplete((index, error) -> {
@@ -152,6 +154,7 @@ class LeaderState extends ActiveState {
           future.complete(logResponse(SyncResponse.builder()
             .withId(request.id())
             .withMember(context.getLocalMember())
+            .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
             .build()));
         } catch (Exception e) {
           future.complete(SyncResponse.builder()
@@ -183,6 +186,7 @@ class LeaderState extends ActiveState {
     ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 8);
     logEntry.putLong(context.getTerm());
     logEntry.put(entry);
+    entry.rewind();
     long index = context.log().appendEntry(logEntry);
     LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember(), index);
     LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
@@ -394,7 +398,6 @@ class LeaderState extends ActiveState {
     private volatile long nextIndex;
     private volatile long matchIndex;
     private volatile long sendIndex;
-    private volatile boolean open;
     private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
     private final Map<Long, CompletableFuture<Long>> replicateFutures = new HashMap<>(1024);
 
@@ -452,12 +455,6 @@ class LeaderState extends ActiveState {
      * Commits the given index to the replica.
      */
     public CompletableFuture<Long> sync(long index) {
-      if (!open) {
-        CompletableFuture<Long> future = new CompletableFuture<>();
-        future.completeExceptionally(new CopycatException("Connection not open"));
-        return future;
-      }
-
       if (index <= matchIndex) {
         return CompletableFuture.completedFuture(index);
       }

@@ -63,7 +63,7 @@ public interface CopycatContext extends ExecutionContext, Managed {
    *
    * @return A completable future to be completed once the cluster has been synchronized.
    */
-  CompletableFuture<Void> sync();
+  CompletableFuture<ByteBuffer> sync(ByteBuffer entry);
 
   /**
    * Submits a persistent entry to the context.

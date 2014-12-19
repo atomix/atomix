@@ -23,7 +23,6 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SyncResponse extends AbstractResponse {
-  public static final int TYPE = -12;
 
   /**
    * Returns a new sync response builder.
@@ -34,28 +33,72 @@ public class SyncResponse extends AbstractResponse {
     return new Builder();
   }
 
+  /**
+   * Returns a sync response builder for an existing response.
+   *
+   * @param response The response to build.
+   * @return The sync response builder.
+   */
+  public static Builder builder(SyncResponse response) {
+    return new Builder(response);
+  }
+
+  private Object result;
+
+  /**
+   * Returns the sync result.
+   *
+   * @return The sync result.
+   */
+  @SuppressWarnings("unchecked")
+  public <T> T result() {
+    return (T) result;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, member, status, result);
+  }
+
   @Override
   public boolean equals(Object object) {
     if (object instanceof SyncResponse) {
       SyncResponse response = (SyncResponse) object;
       return response.id.equals(id)
         && response.member.equals(member)
-        && response.status == status;
+        && response.status == status
+        && ((response.result == null && result == null)
+        || response.result != null && result != null && response.result.equals(result));
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
+    return String.format("%s[id=%s, status=%s, result=%s]", getClass().getSimpleName(), id, status, result);
   }
 
   /**
-   * Commit response builder.
+   * Sync response builder.
    */
   public static class Builder extends AbstractResponse.Builder<Builder, SyncResponse> {
     private Builder() {
-      super(new SyncResponse());
+      this(new SyncResponse());
+    }
+
+    private Builder(SyncResponse response) {
+      super(response);
+    }
+
+    /**
+     * Sets the sync response result.
+     *
+     * @param result The response result.
+     * @return The response builder.
+     */
+    public Builder withResult(Object result) {
+      response.result = result;
+      return this;
     }
 
     @Override

@@ -35,6 +35,16 @@ public class PollResponse extends AbstractResponse {
     return new Builder();
   }
 
+  /**
+   * Returns a poll response builder for an existing response.
+   *
+   * @param response The response to build.
+   * @return The poll response builder.
+   */
+  public static Builder builder(PollResponse response) {
+    return new Builder(response);
+  }
+
   private long term;
   private boolean voted;
 
@@ -84,7 +94,11 @@ public class PollResponse extends AbstractResponse {
    */
   public static class Builder extends AbstractResponse.Builder<Builder, PollResponse> {
     private Builder() {
-      super(new PollResponse());
+      this(new PollResponse());
+    }
+
+    private Builder(PollResponse response) {
+      super(response);
     }
 
     /**
