@@ -73,12 +73,15 @@ class LeaderState extends ActiveState {
    * Applies all unapplied entries to the log.
    */
   private void applyEntries() {
-    int count = 0;
-    for (long i = context.getLastApplied() + 1; i <= context.log().lastIndex(); i++) {
-      applyEntry(i);
-      count++;
+    Long lastIndex = context.log().lastIndex();
+    if (lastIndex != null) {
+      int count = 0;
+      for (long i = context.getLastApplied() + 1; i <= lastIndex; i++) {
+        applyEntry(i);
+        count++;
+      }
+      LOGGER.debug("{} - Applied {} entries to log", context.getLocalMember(), count);
     }
-    LOGGER.debug("{} - Applied {} entries to log", context.getLocalMember(), count);
   }
 
   /**
@@ -146,33 +149,41 @@ class LeaderState extends ActiveState {
     CompletableFuture<SyncResponse> future = new CompletableFuture<>();
     BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
 
-    long lastIndex = context.log().lastIndex();
-    LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), lastIndex);
-    replicator.ping(lastIndex).whenComplete((index, error) -> {
-      if (error == null) {
-        try {
-          future.complete(logResponse(SyncResponse.builder()
-            .withId(request.id())
-            .withMember(context.getLocalMember())
-            .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
-            .build()));
-        } catch (Exception e) {
+    Long lastIndex = context.log().lastIndex();
+    if (lastIndex != null) {
+      LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), lastIndex);
+      replicator.ping(lastIndex).whenComplete((index, error) -> {
+        if (error == null) {
+          try {
+            future.complete(logResponse(SyncResponse.builder()
+              .withId(request.id())
+              .withMember(context.getLocalMember())
+              .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
+              .build()));
+          } catch (Exception e) {
+            future.complete(SyncResponse.builder()
+              .withId(request.id())
+              .withMember(context.getLocalMember())
+              .withStatus(Response.Status.ERROR)
+              .withError(e)
+              .build());
+          }
+        } else {
           future.complete(SyncResponse.builder()
             .withId(request.id())
             .withMember(context.getLocalMember())
             .withStatus(Response.Status.ERROR)
-            .withError(e)
+            .withError(error)
             .build());
         }
-      } else {
-        future.complete(SyncResponse.builder()
-          .withId(request.id())
-          .withMember(context.getLocalMember())
-          .withStatus(Response.Status.ERROR)
-          .withError(error)
-          .build());
-      }
-    });
+      });
+    } else {
+      future.complete(logResponse(SyncResponse.builder()
+        .withId(request.id())
+        .withMember(context.getLocalMember())
+        .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
+        .build()));
+    }
     return future;
   }
 
@@ -272,7 +283,7 @@ class LeaderState extends ActiveState {
     /**
      * Pings the log using the given index for the consistency check.
      */
-    public CompletableFuture<Long> ping(long index) {
+    public CompletableFuture<Long> ping(Long index) {
       CompletableFuture<Long> future = new CompletableFuture<>();
 
       // Set up a read quorum. Once the required number of replicas have been
@@ -309,7 +320,11 @@ class LeaderState extends ActiveState {
     /**
      * Syncs the log up to the given index.
      */
-    public CompletableFuture<Long> sync(long index) {
+    public CompletableFuture<Long> sync(Long index) {
+      if (index == null) {
+        return ping(null);
+      }
+
       CompletableFuture<Long> future = new CompletableFuture<>();
       commitFutures.put(index, future);
 
@@ -347,7 +362,7 @@ class LeaderState extends ActiveState {
         // Sort the list of replicas, order by the last index that was replicated
         // to the replica. This will allow us to determine the median index
         // for all known replicated entries across all cluster members.
-        Collections.sort(replicas, (o1, o2) -> Long.compare(o1.matchIndex, o2.matchIndex));
+        Collections.sort(replicas, (o1, o2) -> Long.compare(o1.matchIndex != null ? o1.matchIndex : 0, o2.matchIndex != null ? o2.matchIndex : 0));
 
         // Set the current commit index as the median replicated index.
         // Since replicas is a list with zero based indexes, use the negation of
@@ -355,9 +370,11 @@ class LeaderState extends ActiveState {
         // possible quorum replication. That replica's match index is the commit index.
         // Set the commit index. Once the commit index has been set we can run
         // all tasks up to the given commit.
-        long commitIndex = replicas.get(quorumIndex).matchIndex;
-        context.setCommitIndex(commitIndex);
-        triggerCommitFutures(commitIndex);
+        Long commitIndex = replicas.get(quorumIndex).matchIndex;
+        if (commitIndex != null) {
+          context.setCommitIndex(commitIndex);
+          triggerCommitFutures(commitIndex);
+        }
       }
     }
 
@@ -395,28 +412,32 @@ class LeaderState extends ActiveState {
     private static final int BATCH_SIZE = 100;
     private final String member;
     private final DefaultCopycatStateContext context;
-    private volatile long nextIndex;
-    private volatile long matchIndex;
-    private volatile long sendIndex;
+    private volatile Long nextIndex;
+    private volatile Long matchIndex;
+    private volatile Long sendIndex;
     private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
     private final Map<Long, CompletableFuture<Long>> replicateFutures = new HashMap<>(1024);
 
     private Replica(String member, DefaultCopycatStateContext context) {
       this.member = member;
       this.context = context;
+      this.nextIndex = context.log().lastIndex() != null ? context.log().lastIndex() + 1 : null;
+      this.sendIndex = nextIndex;
     }
 
-    public CompletableFuture<Long> ping(long index) {
-      if (index > matchIndex) {
+    public CompletableFuture<Long> ping(Long index) {
+      if (index != null && (matchIndex == null || index > matchIndex)) {
         return sync(index);
       }
 
       CompletableFuture<Long> future = new CompletableFuture<>();
-      if (!pingFutures.isEmpty() && pingFutures.lastKey() >= index) {
+      if (index != null && !pingFutures.isEmpty() && pingFutures.lastKey() >= index) {
         return pingFutures.lastEntry().getValue();
       }
 
-      pingFutures.put(index, future);
+      if (index != null) {
+        pingFutures.put(index, future);
+      }
 
       PingRequest request = PingRequest.builder()
         .withId(UUID.randomUUID().toString())
@@ -424,7 +445,9 @@ class LeaderState extends ActiveState {
         .withTerm(context.getTerm())
         .withLeader(context.getLocalMember())
         .withLogIndex(index)
-        .withLogTerm(context.log().containsIndex(index) ? context.log().getEntry(index).getLong() : 0)
+        .withLogTerm(index != null && context.log().containsIndex(index) ? context.log()
+          .getEntry(index)
+          .getLong() : null)
         .withCommitIndex(context.getCommitIndex())
         .build();
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
@@ -455,7 +478,7 @@ class LeaderState extends ActiveState {
      * Commits the given index to the replica.
      */
     public CompletableFuture<Long> sync(long index) {
-      if (index <= matchIndex) {
+      if (matchIndex != null && index <= matchIndex) {
         return CompletableFuture.completedFuture(index);
       }
 
@@ -522,8 +545,8 @@ class LeaderState extends ActiveState {
             if (response.succeeded()) {
               // Update the next index to send and the last index known to be replicated.
               if (!entries.isEmpty()) {
-                nextIndex = Math.max(nextIndex + 1, prevIndex + entries.size() + 1);
-                matchIndex = Math.max(matchIndex, prevIndex + entries.size());
+                nextIndex = nextIndex != null ? Math.max(nextIndex + 1, prevIndex + entries.size() + 1) : prevIndex + entries.size() + 1;
+                matchIndex = matchIndex != null ? Math.max(matchIndex, prevIndex + entries.size()) : prevIndex + entries.size();
                 triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size());
                 doSync();
               }
@@ -536,7 +559,7 @@ class LeaderState extends ActiveState {
                 // the replica in the response to generate a new nextIndex. This allows
                 // us to skip repeatedly replicating one entry at a time if it's not
                 // necessary.
-                nextIndex = sendIndex = Math.max(response.logIndex() + 1, context.log().firstIndex());
+                nextIndex = sendIndex = response.logIndex() != null ? Math.max(response.logIndex() + 1, context.log().firstIndex()) : prevIndex;
                 doSync();
               }
             }
@@ -551,21 +574,25 @@ class LeaderState extends ActiveState {
     /**
      * Triggers ping futures with a completion result.
      */
-    private synchronized void triggerPingFutures(long index) {
-      NavigableMap<Long, CompletableFuture<Long>> matchFutures = pingFutures.headMap(index, true);
-      for (Map.Entry<Long, CompletableFuture<Long>> entry : matchFutures.entrySet()) {
-        entry.getValue().complete(index);
+    private synchronized void triggerPingFutures(Long index) {
+      if (index != null) {
+        NavigableMap<Long, CompletableFuture<Long>> matchFutures = pingFutures.headMap(index, true);
+        for (Map.Entry<Long, CompletableFuture<Long>> entry : matchFutures.entrySet()) {
+          entry.getValue().complete(index);
+        }
+        matchFutures.clear();
       }
-      matchFutures.clear();
     }
 
     /**
      * Triggers response futures with an error result.
      */
-    private synchronized void triggerPingFutures(long index, Throwable t) {
-      CompletableFuture<Long> future = pingFutures.remove(index);
-      if (future != null) {
-        future.completeExceptionally(t);
+    private synchronized void triggerPingFutures(Long index, Throwable t) {
+      if (index != null) {
+        CompletableFuture<Long> future = pingFutures.remove(index);
+        if (future != null) {
+          future.completeExceptionally(t);
+        }
       }
     }
 

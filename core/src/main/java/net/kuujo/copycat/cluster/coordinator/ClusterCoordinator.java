@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat.cluster.coordinator;
 
-import java.util.Collection;
-
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.Managed;
+
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Cluster coordinator.
@@ -53,8 +54,24 @@ public interface ClusterCoordinator extends Managed {
    * Creates a cluster resource.
    *
    * @param name The resource name.
-   * @return The resource instance.
+   * @return A completable future to be completed with the resource instance.
    */
-  CopycatContext getResource(String name);
+  CompletableFuture<CopycatContext> createResource(String name);
+
+  /**
+   * Gets a cluster resource.
+   *
+   * @param name The resource name.
+   * @return A completable future to be completed with the resource instance.
+   */
+  CompletableFuture<CopycatContext> getResource(String name);
+
+  /**
+   * Deletes a cluster resource.
+   *
+   * @param name The resource name.
+   * @return A completable future to be completed once the resource has been deleted.
+   */
+  CompletableFuture<Void> deleteResource(String name);
 
 }

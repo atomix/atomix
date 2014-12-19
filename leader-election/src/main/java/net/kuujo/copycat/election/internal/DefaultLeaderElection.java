@@ -2,6 +2,7 @@ package net.kuujo.copycat.election.internal;
 
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.AbstractCopycatResource;
@@ -22,8 +23,8 @@ public class DefaultLeaderElection extends AbstractCopycatResource<LeaderElectio
     }
   };
 
-  public DefaultLeaderElection(String name, CopycatContext context, ExecutionContext executor) {
-    super(name, context, executor);
+  public DefaultLeaderElection(String name, CopycatContext context, ClusterCoordinator coordinator, ExecutionContext executor) {
+    super(name, context, coordinator, executor);
     context.log().config()
       .withFlushOnWrite(true)
       .withRetentionPolicy(new ZeroRetentionPolicy());

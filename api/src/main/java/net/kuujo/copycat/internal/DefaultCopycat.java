@@ -28,6 +28,7 @@ import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -39,7 +40,6 @@ public class DefaultCopycat implements Copycat {
   private final ClusterCoordinator coordinator;
   private final CopycatConfig config;
   private final ExecutionContext executor;
-  private boolean open;
 
   public DefaultCopycat(ClusterConfig cluster, CopycatConfig config, ExecutionContext executor) {
     this.coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
@@ -48,107 +48,105 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public synchronized <T> EventLog<T> eventLog(String name) {
+  public synchronized <T> CompletableFuture<EventLog<T>> eventLog(String name) {
     return eventLog(name, new EventLogConfig().withSerializer(config.getSerializer()));
   }
 
   @Override
-  public synchronized <T> EventLog<T> eventLog(String name, EventLogConfig config) {
-    return new DefaultEventLog<T>(name, coordinator.getResource(name), config, executor);
+  public synchronized <T> CompletableFuture<EventLog<T>> eventLog(String name, EventLogConfig config) {
+    return coordinator.createResource(name).thenApplyAsync(context -> new DefaultEventLog<T>(name, context, coordinator, config, executor), executor);
   }
 
   @Override
-  public synchronized <T> StateLog<T> stateLog(String name) {
+  public synchronized <T> CompletableFuture<StateLog<T>> stateLog(String name) {
     return stateLog(name, new StateLogConfig().withSerializer(config.getSerializer()));
   }
 
   @Override
-  public synchronized <T> StateLog<T> stateLog(String name, StateLogConfig config) {
-    return new DefaultStateLog<T>(name, coordinator.getResource(name), config, executor);
+  public synchronized <T> CompletableFuture<StateLog<T>> stateLog(String name, StateLogConfig config) {
+    return coordinator.createResource(name).thenApplyAsync(context -> new DefaultStateLog<T>(name, context, coordinator, config, executor), executor);
   }
 
   @Override
-  public synchronized <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState) {
+  public synchronized <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState) {
     return stateMachine(name, stateType, initialState, new StateMachineConfig());
   }
 
   @Override
-  public synchronized <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config) {
-    return new DefaultStateMachine<>(stateType, initialState, stateLog(name, config));
+  public synchronized <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config) {
+    return this.<List<Object>>stateLog(name, config).thenApplyAsync(log -> new DefaultStateMachine<T>(stateType, initialState, log), executor);
   }
 
   @Override
-  public synchronized LeaderElection election(String name) {
-    return new DefaultLeaderElection(name, coordinator.getResource(name), executor);
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public synchronized <K, V> AsyncMap<K, V> getMap(String name) {
-    return new DefaultAsyncMap(stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>()));
+  public synchronized CompletableFuture<LeaderElection> election(String name) {
+    return coordinator.createResource(name).thenApplyAsync(context -> new DefaultLeaderElection(name, context, coordinator, executor), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <K, V> AsyncMap<K, V> getMap(String name, AsyncMapConfig config) {
-    return new DefaultAsyncMap(stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>(), config));
+  public synchronized <K, V> CompletableFuture<AsyncMap<K, V>> getMap(String name) {
+    return stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>()).thenApplyAsync(stateMachine -> new DefaultAsyncMap(stateMachine), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <K, V> AsyncMultiMap<K, V> getMultiMap(String name) {
-    return new DefaultAsyncMultiMap(stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>()));
+  public synchronized <K, V> CompletableFuture<AsyncMap<K, V>> getMap(String name, AsyncMapConfig config) {
+    return stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>(), config).thenApplyAsync(stateMachine -> new DefaultAsyncMap(stateMachine), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <K, V> AsyncMultiMap<K, V> getMultiMap(String name, AsyncMultiMapConfig config) {
-    return new DefaultAsyncMultiMap(stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), config));
+  public synchronized <K, V> CompletableFuture<AsyncMultiMap<K, V>> getMultiMap(String name) {
+    return stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>()).thenApplyAsync(stateMachine -> new DefaultAsyncMultiMap(stateMachine), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T> AsyncList<T> getList(String name) {
-    return new DefaultAsyncList(stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>()));
+  public synchronized <K, V> CompletableFuture<AsyncMultiMap<K, V>> getMultiMap(String name, AsyncMultiMapConfig config) {
+    return stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), config).thenApplyAsync(stateMachine -> new DefaultAsyncMultiMap(stateMachine), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T> AsyncList<T> getList(String name, AsyncListConfig config) {
-    return new DefaultAsyncList(stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>(), config));
+  public synchronized <T> CompletableFuture<AsyncList<T>> getList(String name) {
+    return stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>()).thenApplyAsync(stateMachine -> new DefaultAsyncList(stateMachine), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T> AsyncSet<T> getSet(String name) {
-    return new DefaultAsyncSet(stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>()));
+  public synchronized <T> CompletableFuture<AsyncList<T>> getList(String name, AsyncListConfig config) {
+    return stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>(), config).thenApplyAsync(stateMachine -> new DefaultAsyncList(stateMachine), executor);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T> AsyncSet<T> getSet(String name, AsyncSetConfig config) {
-    return new DefaultAsyncSet(stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>(), config));
+  public synchronized <T> CompletableFuture<AsyncSet<T>> getSet(String name) {
+    return stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>()).thenApplyAsync(stateMachine -> new DefaultAsyncSet(stateMachine), executor);
   }
 
   @Override
-  public synchronized AsyncLock getLock(String name) {
-    return new DefaultAsyncLock(stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState()));
+  @SuppressWarnings("unchecked")
+  public synchronized <T> CompletableFuture<AsyncSet<T>> getSet(String name, AsyncSetConfig config) {
+    return stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>(), config).thenApplyAsync(stateMachine -> new DefaultAsyncSet(stateMachine), executor);
   }
 
   @Override
-  public synchronized AsyncLock getLock(String name, AsyncLockConfig config) {
-    return new DefaultAsyncLock(stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState(), config));
+  public synchronized CompletableFuture<AsyncLock> getLock(String name) {
+    return stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState()).thenApplyAsync(stateMachine -> new DefaultAsyncLock(stateMachine), executor);
+  }
+
+  @Override
+  public synchronized CompletableFuture<AsyncLock> getLock(String name, AsyncLockConfig config) {
+    return stateMachine(name, AsyncLockState.class, new UnlockedAsyncLockState(), config).thenApplyAsync(stateMachine -> new DefaultAsyncLock(stateMachine), executor);
   }
 
   @Override
   public synchronized CompletableFuture<Void> open() {
-    open = true;
     return coordinator.open();
   }
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    open = false;
     return coordinator.close();
   }
 

@@ -19,6 +19,7 @@ import net.kuujo.copycat.CopycatResource;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.ArrayList;
@@ -34,14 +35,16 @@ import java.util.concurrent.CompletableFuture;
 public abstract class AbstractCopycatResource<T extends CopycatResource> implements CopycatResource {
   protected final String name;
   protected final CopycatContext context;
+  private final ClusterCoordinator coordinator;
   protected final ExecutionContext executor;
   private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
   private boolean open;
 
-  protected AbstractCopycatResource(String name, CopycatContext context, ExecutionContext executor) {
+  protected AbstractCopycatResource(String name, CopycatContext context, ClusterCoordinator coordinator, ExecutionContext executor) {
     this.name = name;
     this.context = context;
+    this.coordinator = coordinator;
     this.executor = executor;
   }
 
@@ -93,25 +96,24 @@ public abstract class AbstractCopycatResource<T extends CopycatResource> impleme
 
     open = true;
     CompletableFuture<Void> future = new CompletableFuture<>();
-    context.open().whenComplete(
-      (result, error) -> {
-        if (error == null) {
-          context.execute(() -> {
-            CompletableFuture<Void>[] futures = startupTasks.stream()
-              .map(t -> t.execute())
-              .toArray(size -> new CompletableFuture[size]);
-            CompletableFuture.allOf(futures).whenComplete((r, e) -> {
-              if (e == null) {
-                executor.execute(() -> future.complete(null));
-              } else {
-                executor.execute(() -> future.completeExceptionally(e));
-              }
-            });
+    context.open().whenComplete((result, error) -> {
+      if (error == null) {
+        context.execute(() -> {
+          CompletableFuture<Void>[] futures = startupTasks.stream()
+            .map(t -> t.execute())
+            .toArray(size -> new CompletableFuture[size]);
+          CompletableFuture.allOf(futures).whenComplete((r, e) -> {
+            if (e == null) {
+              executor.execute(() -> future.complete(null));
+            } else {
+              executor.execute(() -> future.completeExceptionally(e));
+            }
           });
-        } else {
-          executor.execute(() -> future.completeExceptionally(error));
-        }
-      });
+        });
+      } else {
+        executor.execute(() -> future.completeExceptionally(error));
+      }
+    });
     return future;
   }
 
@@ -127,9 +129,7 @@ public abstract class AbstractCopycatResource<T extends CopycatResource> impleme
     context.close().whenComplete((result, error) -> {
       if (error == null) {
         context.execute(() -> {
-          CompletableFuture<Void>[] futures = shutdownTasks.stream()
-            .map(t -> t.execute())
-            .toArray(size -> new CompletableFuture[size]);
+          CompletableFuture<Void>[] futures = shutdownTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]);
           CompletableFuture.allOf(futures).whenComplete((r, e) -> {
             if (e == null) {
               executor.execute(() -> future.complete(null));
@@ -147,16 +147,7 @@ public abstract class AbstractCopycatResource<T extends CopycatResource> impleme
 
   @Override
   public CompletableFuture<Void> delete() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.execute(() -> {
-      try {
-        context.log().delete();
-        executor.execute(() -> future.complete(null));
-      } catch (Exception e) {
-        executor.execute(() -> future.completeExceptionally(e));
-      }
-    });
-    return future;
+    return coordinator.deleteResource(name);
   }
 
 }

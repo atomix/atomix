@@ -18,6 +18,7 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.CommitRequest;
 import net.kuujo.copycat.protocol.Response;
@@ -41,6 +42,8 @@ public class DefaultCopycatContext implements CopycatContext {
   private final Cluster cluster;
   private final CopycatStateContext context;
   private final AtomicInteger counter = new AtomicInteger();
+  private boolean open;
+  private boolean deleted;
 
   public DefaultCopycatContext(Cluster cluster, CopycatStateContext context) {
     this.cluster = cluster;
@@ -85,6 +88,12 @@ public class DefaultCopycatContext implements CopycatContext {
 
   @Override
   public CompletableFuture<ByteBuffer> sync(ByteBuffer entry) {
+    if (!open) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+    } else if (deleted) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context has been deleted"));
+    }
+
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     SyncRequest request = SyncRequest.builder()
       .withId(UUID.randomUUID().toString())
@@ -107,6 +116,12 @@ public class DefaultCopycatContext implements CopycatContext {
 
   @Override
   public CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
+    if (!open) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+    } else if (deleted) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context has been deleted"));
+    }
+
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     CommitRequest request = CommitRequest.builder()
       .withId(UUID.randomUUID().toString())
@@ -134,6 +149,7 @@ public class DefaultCopycatContext implements CopycatContext {
       if (counter.incrementAndGet() == 1) {
         CompletableFuture.allOf(cluster.open(), context.open()).whenComplete((result, error) -> {
           if (error == null) {
+            open = true;
             future.complete(null);
           } else {
             counter.decrementAndGet();
@@ -151,6 +167,7 @@ public class DefaultCopycatContext implements CopycatContext {
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     context.executor().execute(() -> {
+      open = false;
       if (counter.decrementAndGet() == 0) {
         CompletableFuture.allOf(cluster.close(), context.close()).whenComplete((result, error) -> {
           if (error == null) {
@@ -162,6 +179,17 @@ public class DefaultCopycatContext implements CopycatContext {
       } else {
         future.complete(null);
       }
+    });
+    return future;
+  }
+
+  @Override
+  public CompletableFuture<Void> delete() {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    context.executor().execute(() -> {
+      deleted = true;
+      context.log().delete();
+      future.complete(null);
     });
     return future;
   }

@@ -33,8 +33,8 @@ import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.spi.ExecutionContext;
-import net.kuujo.copycat.spi.Protocol;
 
+import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,19 +48,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultClusterCoordinator implements ClusterCoordinator {
+  private final CopycatContext context;
   private final ClusterConfig config;
-  private final Protocol protocol;
   private final LocalMemberCoordinator localMember;
   private final Map<String, MemberCoordinator> remoteMembers = new HashMap<>();
   private final Map<String, CopycatContext> contexts = new ConcurrentHashMap<>();
 
   public DefaultClusterCoordinator(ClusterConfig config, ExecutionContext context) {
     this.config = config.copy();
-    this.protocol = config.getProtocol();
-    this.localMember = new DefaultLocalMemberCoordinator(config.getLocalMember(), protocol, context);
+    this.localMember = new DefaultLocalMemberCoordinator(config.getLocalMember(), config.getProtocol(), context);
     for (String uri : config.getRemoteMembers()) {
-      this.remoteMembers.put(uri, new DefaultRemoteMemberCoordinator(uri, protocol, context));
+      this.remoteMembers.put(uri, new DefaultRemoteMemberCoordinator(uri, config.getProtocol(), context));
     }
+    Map<String, Object> logConfig = new HashMap<>();
+    logConfig.put("name", "copycat");
+    CopycatStateContext state = new DefaultCopycatStateContext(config, Services.load("copycat.log", logConfig), context);
+    this.context = new DefaultCopycatContext(new CoordinatedCluster(0, this, state, new ResourceRouter("copycat"), context), state);
   }
 
   @Override
@@ -79,23 +82,141 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   }
 
   @Override
-  public CopycatContext getResource(String name) {
-    CopycatContext context = contexts.get(name);
-    if (context == null) {
-      synchronized (contexts) {
-        context = contexts.get(name);
+  public CompletableFuture<CopycatContext> createResource(String name) {
+    ByteBuffer entry = ByteBuffer.allocate(8 + name.getBytes().length);
+    entry.putInt(1);
+    entry.putInt(name.getBytes().length);
+    entry.put(name.getBytes());
+    entry.rewind();
+    return context.sync(entry).thenApplyAsync(buffer -> {
+      int result = buffer.getInt();
+      if (result == 0) {
+        return null;
+      } else {
+        CopycatContext context = contexts.get(name);
         if (context == null) {
-          ExecutionContext executor = ExecutionContext.create();
-          Map<String, Object> logConfig = new HashMap<>(1);
-          logConfig.put("name", name);
-          CopycatStateContext state = new DefaultCopycatStateContext(config, Services.load("copycat.log", logConfig), executor);
-          CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), executor);
-          context = new DefaultCopycatContext(cluster, state);
-          contexts.put(name, context);
+          synchronized (contexts) {
+            context = contexts.get(name);
+            if (context == null) {
+              context = createContext(name);
+              contexts.put(name, context);
+            }
+          }
         }
+        return context;
       }
+    });
+  }
+
+  @Override
+  public CompletableFuture<CopycatContext> getResource(String name) {
+    ByteBuffer entry = ByteBuffer.allocate(8 + name.getBytes().length);
+    entry.putInt(0);
+    entry.putInt(name.getBytes().length);
+    entry.put(name.getBytes());
+    entry.rewind();
+    return context.sync(entry).thenApplyAsync(buffer -> {
+      int result = buffer.getInt();
+      if (result == 0) {
+        return null;
+      } else {
+        CopycatContext context = contexts.get(name);
+        if (context == null) {
+          synchronized (contexts) {
+            context = contexts.get(name);
+            if (context == null) {
+              context = createContext(name);
+              contexts.put(name, context);
+            }
+          }
+        }
+        return context;
+      }
+    }, context);
+  }
+
+  @Override
+  public CompletableFuture<Void> deleteResource(String name) {
+    ByteBuffer entry = ByteBuffer.allocate(8 + name.getBytes().length);
+    entry.putInt(-1);
+    entry.putInt(name.getBytes().length);
+    entry.put(name.getBytes());
+    return context.commit(entry).thenApplyAsync(result -> null, context);
+  }
+
+  /**
+   * Creates a new Copycat context.
+   *
+   * @param name The context name.
+   * @return The created context.
+   */
+  private CopycatContext createContext(String name) {
+    ExecutionContext executor = ExecutionContext.create();
+    Map<String, Object> logConfig = new HashMap<>(1);
+    logConfig.put("name", name);
+    CopycatStateContext state = new DefaultCopycatStateContext(config, Services.load("copycat.log", logConfig), executor);
+    CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), executor);
+    return new DefaultCopycatContext(cluster, state);
+  }
+
+  /**
+   * Consumes messages from the log.
+   */
+  private ByteBuffer consume(Long index, ByteBuffer buffer) {
+    buffer.rewind();
+    int type = buffer.getInt();
+    byte[] nameBytes;
+    String name;
+    ByteBuffer result;
+
+    switch (type) {
+      case 0: // get
+        nameBytes = new byte[buffer.getInt()];
+        buffer.get(nameBytes);
+        name = new String(nameBytes);
+        result = ByteBuffer.allocate(4);
+        synchronized (contexts) {
+          result.putInt(contexts.containsKey(name) ? 1 : 0);
+        }
+        break;
+      case 1: // create
+        nameBytes = new byte[buffer.getInt()];
+        buffer.get(nameBytes);
+        name = new String(nameBytes);
+        result = ByteBuffer.allocate(4);
+        synchronized (contexts) {
+          if (!contexts.containsKey(name)) {
+            contexts.put(name, createContext(name));
+            result.putInt(1);
+          } else {
+            result.putInt(0);
+          }
+        }
+        break;
+      case -1: // delete
+        nameBytes = new byte[buffer.getInt()];
+        buffer.get(nameBytes);
+        name = new String(nameBytes);
+        result = ByteBuffer.allocate(4);
+        synchronized (contexts) {
+          CopycatContext context = contexts.remove(name);
+          if (context != null) {
+            try {
+              context.close().get();
+              context.delete().get();
+            } catch (Exception e) {
+            }
+            result.putInt(1);
+          } else {
+            result.putInt(0);
+          }
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException("Invalid command");
     }
-    return context;
+    result.rewind();
+    return result;
   }
 
   @Override
@@ -107,7 +228,8 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     for (MemberCoordinator remoteMember : remoteMembers.values()) {
       futures[i++] = remoteMember.open();
     }
-    return CompletableFuture.allOf(futures);
+    context.consumer(this::consume);
+    return CompletableFuture.allOf(futures).thenCompose((v) -> context.open());
   }
 
   @Override
@@ -119,7 +241,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     for (MemberCoordinator remoteMember : remoteMembers.values()) {
       futures[i++] = remoteMember.close();
     }
-    return CompletableFuture.allOf(futures);
+    return context.close().thenCompose((v) -> CompletableFuture.allOf(futures));
   }
 
   /**
@@ -156,8 +278,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
         return member.send(topic, request);
       }
       CompletableFuture<U> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s",
-        request.member())));
+      future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s", request.member())));
       return future;
     }
 

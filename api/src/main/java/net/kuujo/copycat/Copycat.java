@@ -20,6 +20,8 @@ import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.DefaultCopycat;
 import net.kuujo.copycat.spi.ExecutionContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Copycat.
  *
@@ -96,7 +98,7 @@ public interface Copycat extends Managed {
    * @param name The name of the event log to create.
    * @return The event log.
    */
-  <T> EventLog<T> eventLog(String name);
+  <T> CompletableFuture<EventLog<T>> eventLog(String name);
 
   /**
    * Creates a new event log.
@@ -105,7 +107,7 @@ public interface Copycat extends Managed {
    * @param config The event log configuration.
    * @return The event log.
    */
-  <T> EventLog<T> eventLog(String name, EventLogConfig config);
+  <T> CompletableFuture<EventLog<T>> eventLog(String name, EventLogConfig config);
 
   /**
    * Creates a new state log.
@@ -113,7 +115,7 @@ public interface Copycat extends Managed {
    * @param name The name of the state log to create.
    * @return The state log.
    */
-  <T> StateLog<T> stateLog(String name);
+  <T> CompletableFuture<StateLog<T>> stateLog(String name);
 
   /**
    * Creates a new state log.
@@ -122,7 +124,7 @@ public interface Copycat extends Managed {
    * @param config The state log configuration.
    * @return The state log.
    */
-  <T> StateLog<T> stateLog(String name, StateLogConfig config);
+  <T> CompletableFuture<StateLog<T>> stateLog(String name, StateLogConfig config);
 
   /**
    * Creates a new replicated state machine.
@@ -131,7 +133,7 @@ public interface Copycat extends Managed {
    * @param initialState The state machine's initial state.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState);
+  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState);
 
   /**
    * Creates a new replicated state machine.
@@ -141,7 +143,7 @@ public interface Copycat extends Managed {
    * @param config The state machine's log configuration.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config);
+  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config);
 
   /**
    * Creates a new leader election.
@@ -149,7 +151,7 @@ public interface Copycat extends Managed {
    * @param name The leader election name.
    * @return A completable future to be completed once the leader election has been created.
    */
-  LeaderElection election(String name);
+  CompletableFuture<LeaderElection> election(String name);
 
   /**
    * Returns a named asynchronous map.
@@ -159,7 +161,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return An asynchronous map.
    */
-  <K, V> AsyncMap<K, V> getMap(String name);
+  <K, V> CompletableFuture<AsyncMap<K, V>> getMap(String name);
 
   /**
    * Returns a name asynchronous map.
@@ -170,7 +172,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return An asynchronous map.
    */
-  <K, V> AsyncMap<K, V> getMap(String name, AsyncMapConfig config);
+  <K, V> CompletableFuture<AsyncMap<K, V>> getMap(String name, AsyncMapConfig config);
 
   /**
    * Returns a named asynchronous multimap.
@@ -180,7 +182,7 @@ public interface Copycat extends Managed {
    * @param <V> The map entry type.
    * @return An asynchronous multimap.
    */
-  <K, V> AsyncMultiMap<K, V> getMultiMap(String name);
+  <K, V> CompletableFuture<AsyncMultiMap<K, V>> getMultiMap(String name);
 
   /**
    * Returns a named asynchronous multimap.
@@ -191,7 +193,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return An asynchronous multimap.
    */
-  <K, V> AsyncMultiMap<K, V> getMultiMap(String name, AsyncMultiMapConfig config);
+  <K, V> CompletableFuture<AsyncMultiMap<K, V>> getMultiMap(String name, AsyncMultiMapConfig config);
 
   /**
    * Returns a named asynchronous list.
@@ -200,7 +202,7 @@ public interface Copycat extends Managed {
    * @param <T> The list entry type.
    * @return An asynchronous list.
    */
-  <T> AsyncList<T> getList(String name);
+  <T> CompletableFuture<AsyncList<T>> getList(String name);
 
   /**
    * Returns a named asynchronous list.
@@ -210,7 +212,7 @@ public interface Copycat extends Managed {
    * @param <T> The list entry type.
    * @return An asynchronous list.
    */
-  <T> AsyncList<T> getList(String name, AsyncListConfig config);
+  <T> CompletableFuture<AsyncList<T>> getList(String name, AsyncListConfig config);
 
   /**
    * Returns a named asynchronous set.
@@ -219,7 +221,7 @@ public interface Copycat extends Managed {
    * @param <T> The set entry type.
    * @return An asynchronous set.
    */
-  <T> AsyncSet<T> getSet(String name);
+  <T> CompletableFuture<AsyncSet<T>> getSet(String name);
 
   /**
    * Returns a named asynchronous set.
@@ -229,7 +231,7 @@ public interface Copycat extends Managed {
    * @param <T> The set entry type.
    * @return An asynchronous set.
    */
-  <T> AsyncSet<T> getSet(String name, AsyncSetConfig config);
+  <T> CompletableFuture<AsyncSet<T>> getSet(String name, AsyncSetConfig config);
 
   /**
    * Returns a named asynchronous lock.
@@ -237,7 +239,7 @@ public interface Copycat extends Managed {
    * @param name The lock name.
    * @return An asynchronous lock.
    */
-  AsyncLock getLock(String name);
+  CompletableFuture<AsyncLock> getLock(String name);
 
   /**
    * Returns a named asynchronous lock.
@@ -246,6 +248,6 @@ public interface Copycat extends Managed {
    * @param config The log configuration.
    * @return An asynchronous lock.
    */
-  AsyncLock getLock(String name, AsyncLockConfig config);
+  CompletableFuture<AsyncLock> getLock(String name, AsyncLockConfig config);
 
 }

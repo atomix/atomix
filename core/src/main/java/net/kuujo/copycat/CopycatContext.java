@@ -73,4 +73,11 @@ public interface CopycatContext extends ExecutionContext, Managed {
    */
   CompletableFuture<ByteBuffer> commit(ByteBuffer entry);
 
+  /**
+   * Deletes the context.
+   *
+   * @return A completable future to be completed once the context has been deleted.
+   */
+  CompletableFuture<Void> delete();
+
 }

@@ -114,7 +114,7 @@ public interface StateLog<T> extends CopycatResource {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
-      return new DefaultStateLog<T>(name, coordinator.getResource(name), config, context);
+      return new DefaultStateLog<T>(name, coordinator.createResource(name).get(), coordinator, config, context).withShutdownTask(coordinator::close);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

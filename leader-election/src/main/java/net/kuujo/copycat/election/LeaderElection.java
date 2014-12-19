@@ -60,7 +60,7 @@ public interface LeaderElection extends CopycatResource {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
-      return new DefaultLeaderElection(name, coordinator.getResource(name), context);
+      return new DefaultLeaderElection(name, coordinator.createResource(name).get(), coordinator, context);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

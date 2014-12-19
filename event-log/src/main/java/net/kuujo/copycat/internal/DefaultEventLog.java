@@ -17,6 +17,7 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.EventLog;
 import net.kuujo.copycat.EventLogConfig;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -33,8 +34,8 @@ public class DefaultEventLog<T> extends AbstractCopycatResource<EventLog<T>> imp
   private final Serializer serializer;
   private Consumer<T> consumer;
 
-  public DefaultEventLog(String name, CopycatContext context, EventLogConfig config, ExecutionContext executor) {
-    super(name, context, executor);
+  public DefaultEventLog(String name, CopycatContext context, ClusterCoordinator coordinator, EventLogConfig config, ExecutionContext executor) {
+    super(name, context, coordinator, executor);
     context.log().config().withSegmentSize(config.getSegmentSize())
       .withSegmentInterval(config.getSegmentInterval())
       .withFlushOnWrite(config.isFlushOnWrite())
