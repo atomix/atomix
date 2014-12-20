@@ -69,6 +69,7 @@ public abstract class AbstractLogSegmentTest {
       log.delete();
     }
   }
+ 
 
   public void shouldNotAppendToFullSegment() {
   }

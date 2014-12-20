@@ -18,7 +18,6 @@ package net.kuujo.copycat.log;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 /**
  * Logger.
@@ -60,7 +59,7 @@ public interface Loggable extends Closeable {
    * @return The number of entries.
    * @throws IllegalStateException If the log is not open.
    */
-  long entries();
+  long entryCount();
 
   /**
    * Appends an entry to the logger.
@@ -72,17 +71,6 @@ public interface Loggable extends Closeable {
    * @throws LogException If a new segment cannot be opened
    */
   long appendEntry(ByteBuffer entry);
-
-  /**
-   * Appends a list of entries to the log.
-   *
-   * @param entries A list of entries to append.
-   * @return A list of appended entry indices.
-   * @throws IllegalStateException If the log is not open.
-   * @throws NullPointerException If the entries list is null.
-   * @throws LogException If a new segment cannot be opened
-   */
-  List<Long> appendEntries(List<ByteBuffer> entries);
 
   /**
    * Returns the index of the first entry in the log.
@@ -117,16 +105,6 @@ public interface Loggable extends Closeable {
    * @throws IllegalStateException If the log is not open.
    */
   ByteBuffer getEntry(long index);
-
-  /**
-   * Gets a list of entries from the log.
-   *
-   * @param from The index of the start of the list of entries to get.
-   * @param to The index of the end of the list of entries to get.
-   * @return A list of entries from the given start index to the given end index.
-   * @throws IllegalStateException If the log is not open.
-   */
-  List<ByteBuffer> getEntries(long from, long to);
 
   /**
    * Removes all entries after the given index (exclusive).

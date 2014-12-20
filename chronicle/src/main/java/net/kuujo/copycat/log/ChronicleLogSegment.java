@@ -21,8 +21,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
 
 import net.openhft.chronicle.Chronicle;
 import net.openhft.chronicle.Excerpt;
@@ -115,7 +113,7 @@ public class ChronicleLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public long entries() {
+  public long entryCount() {
     assertIsOpen();
     return entries;
   }
@@ -136,16 +134,6 @@ public class ChronicleLogSegment extends AbstractLogSegment {
     size += entry.capacity() + ENTRY_INFO_LEN;
     entries++;
     return index;
-  }
-
-  @Override
-  public List<Long> appendEntries(List<ByteBuffer> entries) {
-    assertIsOpen();
-    List<Long> indices = new ArrayList<>(entries.size());
-    for (ByteBuffer entry : entries) {
-      indices.add(appendEntry(entry));
-    }
-    return indices;
   }
 
   @Override
@@ -179,28 +167,6 @@ public class ChronicleLogSegment extends AbstractLogSegment {
       } while (tailer.nextIndex());
     }
     return null;
-  }
-
-  @Override
-  public List<ByteBuffer> getEntries(long from, long to) {
-    assertIsOpen();
-    assertContainsIndex(from);
-    assertContainsIndex(to);
-    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
-    long currentIndex = from;
-    if (tailer.index(from - firstIndex)) {
-      do {
-        ByteBuffer entry = extractEntry(tailer, currentIndex);
-        if (entry != null) {
-          entries.add(entry);
-          currentIndex++;
-        }
-        if (currentIndex > to) {
-          return entries;
-        }
-      } while (tailer.nextIndex());
-    }
-    return entries;
   }
 
   /**

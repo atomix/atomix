@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.typesafe.config.Config;
 
 /**
- * Abstract log.
+ * Abstract log. Not threadsafe.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -43,6 +43,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   protected final File base;
   protected final TreeMap<Long, LogSegment> segments = new TreeMap<>();
   protected LogSegment currentSegment;
+  private long nextSegmentId;
   private long lastFlush;
 
   protected AbstractLog(String resource) {
@@ -72,11 +73,11 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   /**
    * Creates a new log segment.
    *
-   * @param segmentNumber The log segment number.
+   * @param segmentId The log segment id.
    * @param firstIndex The index at which the segment starts.
    * @return A new log segment.
    */
-  protected abstract LogSegment createSegment(long segmentNumber, long firstIndex);
+  protected abstract LogSegment createSegment(long segmentId, long firstIndex);
 
   /**
    * Deletes a log segment.
@@ -176,8 +177,8 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   }
 
   @Override
-  public long entries() {
-    return segments.values().stream().mapToLong(LogSegment::entries).sum();
+  public long entryCount() {
+    return segments.values().stream().mapToLong(LogSegment::entryCount).sum();
   }
 
   @Override
@@ -197,9 +198,14 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   @Override
   public List<Long> appendEntries(List<ByteBuffer> entries) {
     assertIsOpen();
-    checkRollOver();
+    List<Long> indices = new ArrayList<>(entries.size());
+    for (ByteBuffer entry : entries) {
+      checkRollOver();
+      indices.add(currentSegment.appendEntry(entry));
+    }
+
     checkFlush();
-    return currentSegment.appendEntries(entries);
+    return indices;
   }
 
   @Override
@@ -243,7 +249,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   public List<ByteBuffer> getEntries(long from, long to) {
     assertIsOpen();
 
-    List<ByteBuffer> entries = new ArrayList<>();
+    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
     LogSegment segment = currentSegment;
     for (long i = from; i <= to; i++) {
       if (!segment.containsIndex(i))
@@ -266,6 +272,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
       if (index < segment.firstIndex()) {
         segment.delete();
         i.remove();
+        nextSegmentId--;
       } else {
         segment.removeAfter(index);
       }
@@ -290,11 +297,12 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     LogSegment segment = null;
     for (Iterator<LogSegment> i = segments.values().iterator(); i.hasNext();) {
       segment = i.next();
+      i.remove();
       if (segment.lastIndex() < index) {
         segment.delete();
-        i.remove();
       } else {
         segment.compact(index, entry);
+        segments.put(segment.firstIndex(), segment);
         break;
       }
     }
@@ -334,10 +342,15 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     segments.clear();
   }
 
+  @Override
+  public String toString() {
+    return segments.toString();
+  }
+  
   private void createInitialSegment() throws IOException {
-    currentSegment = createSegment(1, 1);
+    currentSegment = createSegment(++nextSegmentId, 1);
     currentSegment.open();
-    segments.put(1L, currentSegment);
+    segments.put(Long.valueOf(1), currentSegment);
   }
 
   /**
@@ -355,9 +368,9 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
       && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval();
 
     if (segmentSizeExceeded || segmentExpired) {
-      long nextIndex = lastIndex + 1;
       currentSegment.flush();
-      currentSegment = createSegment(segments.size() + 1, nextIndex);
+      long nextIndex = lastIndex + 1;
+      currentSegment = createSegment(++nextSegmentId, nextIndex);
       log.debug("Rolling over to new segment at new index {}", nextIndex);
 
       try {
