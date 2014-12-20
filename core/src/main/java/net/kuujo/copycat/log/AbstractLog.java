@@ -73,17 +73,18 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
    * Creates a new log segment.
    *
    * @param segmentNumber The log segment number.
+   * @param firstIndex The index at which the segment starts.
    * @return A new log segment.
    */
-  protected abstract LogSegment createSegment(long segmentNumber);
+  protected abstract LogSegment createSegment(long segmentNumber, long firstIndex);
 
   /**
    * Deletes a log segment.
    *
-   * @param segmentNumber The log segment number.
+   * @param firstIndex The first index of the segment to delete
    */
-  protected void deleteSegment(long segmentNumber) {
-    segments.remove(segmentNumber);
+  protected void deleteSegment(long firstIndex) {
+    segments.remove(firstIndex);
   }
 
   @Override
@@ -154,7 +155,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     }
     for (LogSegment segment : loadSegments()) {
       segment.open();
-      segments.put(segment.segment(), segment);
+      segments.put(segment.firstIndex(), segment);
     }
     if (!segments.isEmpty()) {
       currentSegment = segments.lastEntry().getValue();
@@ -181,7 +182,8 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
 
   @Override
   public boolean isEmpty() {
-    return firstIndex() == null;
+    LogSegment firstSegment = firstSegment();
+    return firstSegment == null || firstSegment.size() == 0;
   }
 
   @Override
@@ -217,7 +219,8 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   @Override
   public boolean containsIndex(long index) {
     Long firstIndex = firstIndex();
-    return firstIndex != null && firstIndex <= index && index <= lastIndex();
+    Long lastIndex = lastIndex();
+    return firstIndex != null && lastIndex != null && firstIndex <= index && index <= lastIndex;
   }
 
   /**
@@ -332,7 +335,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   }
 
   private void createInitialSegment() throws IOException {
-    currentSegment = createSegment(1);
+    currentSegment = createSegment(1, 1);
     currentSegment.open();
     segments.put(1L, currentSegment);
   }
@@ -354,7 +357,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     if (segmentSizeExceeded || segmentExpired) {
       long nextIndex = lastIndex + 1;
       currentSegment.flush();
-      currentSegment = createSegment(nextIndex);
+      currentSegment = createSegment(segments.size() + 1, nextIndex);
       log.debug("Rolling over to new segment at new index {}", nextIndex);
 
       try {
@@ -391,5 +394,4 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
       flush(true);
     }
   }
-
 }

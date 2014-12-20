@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
 public abstract class AbstractLogTest {
   protected AbstractLog log;
   protected int segmentSize = 100;
-  protected int entriesPerSegment = (segmentSize / entrySize()) + 1;
+  protected int entriesPerSegment = (int) Math.ceil((double) segmentSize / (double) entrySize());
 
   /**
    * Creates a test log instance.
@@ -191,7 +191,7 @@ public abstract class AbstractLogTest {
     assertEquals(log.firstIndex().longValue(), 1);
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 2);
     assertEquals(log.entries(), entriesPerSegment * 2);
-    assertEquals(log.segments().size(), 3);
+    assertEquals(log.segments().size(), 2);
   }
 
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
@@ -236,9 +236,11 @@ public abstract class AbstractLogTest {
     log.compact(1, Bytes.of(5000));
     assertBytesEqual(log.getEntry(log.firstIndex()), 5000);
     assertEquals(log.entries(), entriesPerSegment * 3);
-    assertEquals(log.segments().size(), 4);
+    assertEquals(log.segments().size(), 3);
     assertEquals(log.firstIndex().longValue(), 1);
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
+    
+    // TODO add getEntries
   }
 
   /**
@@ -254,6 +256,8 @@ public abstract class AbstractLogTest {
     assertEquals(log.segments().size(), 1);
     assertEquals(log.firstIndex().longValue(), entriesPerSegment * 3);
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
+    
+    // TODO add getEntries
   }
 
   /**
@@ -269,6 +273,8 @@ public abstract class AbstractLogTest {
     assertEquals(log.size(), entrySize() * expectedEntries);
     assertEquals(log.firstIndex().longValue(), entriesPerSegment + 3);
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
+    
+    // TODO add getEntries
   }
 
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
@@ -344,12 +350,12 @@ public abstract class AbstractLogTest {
     assertEquals(log.size(), 0);
 
     appendEntries(entriesPerSegment * 3);
-    assertEquals(log.segments().size(), 4);
+    assertEquals(log.segments().size(), 3);
     assertEquals(log.size(), entrySize() * entriesPerSegment * 3);
     assertFalse(log.isEmpty());
 
     appendEntries(entriesPerSegment * 2);
-    assertEquals(log.segments().size(), 6);
+    assertEquals(log.segments().size(), 5);
     assertEquals(log.size(), entrySize() * entriesPerSegment * 5);
 
     log.removeAfter(entriesPerSegment * 2 + 1);
@@ -376,7 +382,7 @@ public abstract class AbstractLogTest {
   public void testSegments() {
     assertEquals(log.segments().size(), 1);
     appendEntries(entriesPerSegment * 3);
-    assertEquals(log.segments().size(), 4);
+    assertEquals(log.segments().size(), 3);
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
   }
 

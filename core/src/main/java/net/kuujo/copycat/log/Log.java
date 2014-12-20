@@ -23,8 +23,7 @@ import java.util.Collection;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Log extends Loggable {
-
+public interface Log extends Loggable {  
   /**
    * Return the log configuration.
    *

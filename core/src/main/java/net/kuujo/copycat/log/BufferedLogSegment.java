@@ -29,24 +29,18 @@ import net.kuujo.copycat.internal.util.Assert;
  */
 public class BufferedLogSegment extends AbstractLogSegment {
   private final BufferedLog parent;
-  private final long segment;
   private long timestamp;
   private TreeMap<Long, ByteBuffer> log;
   private int size;
 
-  BufferedLogSegment(BufferedLog parent, long segment) {
+  BufferedLogSegment(BufferedLog parent, long id, long firstIndex) {
+    super(id, firstIndex);
     this.parent = parent;
-    this.segment = segment;
   }
 
   @Override
   public Log log() {
     return parent;
-  }
-
-  @Override
-  public long segment() {
-    return segment;
   }
 
   @Override
@@ -68,6 +62,11 @@ public class BufferedLogSegment extends AbstractLogSegment {
   public boolean isOpen() {
     return log != null;
   }
+  
+  @Override
+  public boolean isEmpty() {
+    return log != null && !log.isEmpty();
+  }
 
   @Override
   public long size() {
@@ -82,15 +81,10 @@ public class BufferedLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public boolean isEmpty() {
-    return size() == 0;
-  }
-
-  @Override
   public long appendEntry(ByteBuffer entry) {
     Assert.isNotNull(entry, "entry");
     assertIsOpen();
-    long index = log.isEmpty() ? segment : log.lastKey() + 1;
+    long index = log.isEmpty() ? firstIndex : log.lastKey() + 1;
     log.put(index, entry);
     size += entry.limit();
     return index;
@@ -149,7 +143,7 @@ public class BufferedLogSegment extends AbstractLogSegment {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
-    if (index < segment) {
+    if (index < firstIndex) {
       log.clear();
       size = 0;
     } else {

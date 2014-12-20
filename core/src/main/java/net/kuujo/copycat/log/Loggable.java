@@ -33,6 +33,13 @@ public interface Loggable extends Closeable {
   void open() throws IOException;
 
   /**
+   * Returns a boolean indicating whether the logger is empty.
+   *
+   * @return Indicates whether the logger is empty.
+   */
+  boolean isEmpty();
+  
+  /**
    * Returns a boolean indicating whether the log is open.
    *
    * @return Indicates whether the log is open.
@@ -46,13 +53,6 @@ public interface Loggable extends Closeable {
    * @throws IllegalStateException If the log is not open.
    */
   long size();
-
-  /**
-   * Returns a boolean indicating whether the logger is empty.
-   *
-   * @return Indicates whether the logger is empty.
-   */
-  boolean isEmpty();
 
   /**
    * Returns the number of entries.

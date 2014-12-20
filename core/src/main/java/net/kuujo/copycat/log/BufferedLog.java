@@ -27,7 +27,6 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class BufferedLog extends AbstractLog {
-
   public BufferedLog(String resource) {
     super(resource);
   }
@@ -51,8 +50,7 @@ public class BufferedLog extends AbstractLog {
   }
 
   @Override
-  protected LogSegment createSegment(long segmentNumber) {
-    return new BufferedLogSegment(this, segmentNumber);
+  protected LogSegment createSegment(long segmentNumber, long firstIndex) {
+    return new BufferedLogSegment(this, segmentNumber, firstIndex);
   }
-
 }
