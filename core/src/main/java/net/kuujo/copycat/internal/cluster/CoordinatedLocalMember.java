@@ -36,13 +36,13 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   }
 
   @Override
-  public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
+  public synchronized <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
     coordinator.register(topic, id, handler);
     return this;
   }
   
   @Override
-  public LocalMember unregisterHandler(String topic) {
+  public synchronized LocalMember unregisterHandler(String topic) {
     coordinator.unregister(topic, id);
     return this;
   }
@@ -58,4 +58,5 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
     coordinator.unregisterExecutor(id);
     return CompletableFuture.completedFuture(null);
   }
+
 }
