@@ -19,7 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -160,9 +159,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     if (!segments.isEmpty()) {
       currentSegment = segments.lastEntry().getValue();
     } else {
-      currentSegment = createSegment(1);
-      currentSegment.open();
-      segments.put(1L, currentSegment);
+      createInitialSegment();
     }
   }
 
@@ -176,7 +173,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     assertIsOpen();
     return segments.values().stream().mapToLong(LogSegment::size).sum();
   }
-  
+
   @Override
   public long entries() {
     return segments.values().stream().mapToLong(LogSegment::entries).sum();
@@ -236,8 +233,8 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   }
 
   /**
-   * Returns the entries for the given {@code from}-{@code to} range by starting at the current
-   * segment first and looking up segments through segments as needed.
+   * Returns the entries for the given {@code from}-{@code to} range, inclusive, by starting at the
+   * current segment first and looking up segments through segments as needed.
    */
   @Override
   public List<ByteBuffer> getEntries(long from, long to) {
@@ -257,32 +254,49 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
-    Long floorKey = segments.floorKey(index < 1 ? 1 : index);
-    // Prevent concurrent modification exceptions when deleting removed segments.
-    Map<Long, LogSegment> partitionedSegments = segments.tailMap(floorKey);
-    for (LogSegment segment : Arrays.asList(partitionedSegments.values().toArray(
-      new LogSegment[partitionedSegments.size()]))) {
-      segment.removeAfter(index);
-      if (segment.isEmpty()) {
+    assertContainsIndex(index + 1);
+    Long segmentIndex = segments.floorKey(index < 1 ? 1 : index);
+    // Segments to inspect for removal
+    Collection<LogSegment> removalSegments = segments.tailMap(segmentIndex).values();
+    for (Iterator<LogSegment> i = removalSegments.iterator(); i.hasNext();) {
+      LogSegment segment = i.next();
+      if (index < segment.firstIndex()) {
         segment.delete();
+        i.remove();
+      } else {
+        segment.removeAfter(index);
+      }
+    }
+
+    Map.Entry<Long, LogSegment> lastSegment = segments.lastEntry();
+    if (lastSegment != null) {
+      currentSegment = lastSegment.getValue();
+    } else {
+      try {
+        createInitialSegment();
+      } catch (IOException e) {
+        throw new LogException(e, "Failed to open new segment");
       }
     }
   }
 
   @Override
-  @SuppressWarnings("resource")
-  public void compact(long index) {
-    assertIsOpen();
-    LogSegment segment = currentSegment.containsIndex(index) ? currentSegment : segment(index);
-    segment.compact(index);
-  }
-
-  @Override
-  @SuppressWarnings("resource")
   public void compact(long index, ByteBuffer entry) {
     assertIsOpen();
-    LogSegment segment = currentSegment.containsIndex(index) ? currentSegment : segment(index);
-    segment.compact(index, entry);
+    assertContainsIndex(index);
+    LogSegment segment = null;
+    for (Iterator<LogSegment> i = segments.values().iterator(); i.hasNext();) {
+      segment = i.next();
+      if (segment.lastIndex() < index) {
+        segment.delete();
+        i.remove();
+      } else {
+        segment.compact(index, entry);
+        break;
+      }
+    }
+
+    currentSegment = segments.lastEntry().getValue();
   }
 
   @Override
@@ -317,8 +331,16 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     segments.clear();
   }
 
+  private void createInitialSegment() throws IOException {
+    currentSegment = createSegment(1);
+    currentSegment.open();
+    segments.put(1L, currentSegment);
+  }
+
   /**
    * Checks whether the current segment needs to be rolled over to a new segment.
+   * 
+   * @throws LogException if a new segment cannot be opened
    */
   private void checkRollOver() {
     Long lastIndex = currentSegment.lastIndex();

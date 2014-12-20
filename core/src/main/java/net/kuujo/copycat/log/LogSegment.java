@@ -15,14 +15,15 @@
  */
 package net.kuujo.copycat.log;
 
+import java.util.Comparator;
+
 
 /**
  * Log segment.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LogSegment extends Loggable {
-
+public interface LogSegment extends Loggable, Comparator<LogSegment> {
   /**
    * Returns the parent log.
    *
@@ -43,5 +44,4 @@ public interface LogSegment extends Loggable {
    * @return The segment timestamp.
    */
   long timestamp();
-
 }

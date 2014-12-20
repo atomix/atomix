@@ -43,7 +43,7 @@ public interface Loggable extends Closeable {
    * Returns the size in bytes.
    *
    * @return The size in bytes.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   long size();
 
@@ -58,7 +58,7 @@ public interface Loggable extends Closeable {
    * Returns the number of entries.
    * 
    * @return The number of entries.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   long entries();
 
@@ -67,8 +67,9 @@ public interface Loggable extends Closeable {
    *
    * @param entry The entry to append.
    * @return The appended entry index.
-   * @throws java.lang.IllegalStateException If the log is not open.
-   * @throws java.lang.NullPointerException If the entry is null.
+   * @throws IllegalStateException If the log is not open.
+   * @throws NullPointerException If the entry is null.
+   * @throws LogException If a new segment cannot be opened
    */
   long appendEntry(ByteBuffer entry);
 
@@ -77,8 +78,9 @@ public interface Loggable extends Closeable {
    *
    * @param entries A list of entries to append.
    * @return A list of appended entry indices.
-   * @throws java.lang.IllegalStateException If the log is not open.
-   * @throws java.lang.NullPointerException If the entries list is null.
+   * @throws IllegalStateException If the log is not open.
+   * @throws NullPointerException If the entries list is null.
+   * @throws LogException If a new segment cannot be opened
    */
   List<Long> appendEntries(List<ByteBuffer> entries);
 
@@ -86,7 +88,7 @@ public interface Loggable extends Closeable {
    * Returns the index of the first entry in the log.
    *
    * @return The index of the first entry in the log or {@code null} if the log is empty.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   Long firstIndex();
 
@@ -94,7 +96,7 @@ public interface Loggable extends Closeable {
    * Returns the index of the last entry in the log.
    *
    * @return The index of the last entry in the log or {@code null} if the log is empty.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   Long lastIndex();
 
@@ -103,7 +105,7 @@ public interface Loggable extends Closeable {
    *
    * @param index The index of the entry to check.
    * @return Indicates whether the log contains the given index.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   boolean containsIndex(long index);
 
@@ -112,7 +114,7 @@ public interface Loggable extends Closeable {
    *
    * @param index The index of the entry to get.
    * @return The entry at the given index, or {@code null} if the entry doesn't exist.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   ByteBuffer getEntry(long index);
 
@@ -122,29 +124,22 @@ public interface Loggable extends Closeable {
    * @param from The index of the start of the list of entries to get.
    * @param to The index of the end of the list of entries to get.
    * @return A list of entries from the given start index to the given end index.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   List<ByteBuffer> getEntries(long from, long to);
 
   /**
-   * Removes all entries after the given index.
+   * Removes all entries after the given index (exclusive).
    *
    * @param index The index after which to remove entries.
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
+   * @throws LogException If a new segment cannot be opened
    */
   void removeAfter(long index);
 
   /**
-   * Compacts the log, dropping all entries up to the {@code index}.
-   *
-   * @param index The index at which to compact the log.
-   * @throws IndexOutOfBoundsException if the log does not contain the {@code index}
-   */
-  void compact(long index);
-
-  /**
-   * Compacts the log, dropping all entries up to the {@code index} and placing the {@code entry} at
-   * the {@code index}.
+   * Compacts the log, dropping all entries up to the {@code index} (exclusive) and placing the
+   * {@code entry} at the {@code index}.
    *
    * @param index The index at which to compact the log.
    * @param entry The entry to write to the log at the given index.
@@ -155,7 +150,7 @@ public interface Loggable extends Closeable {
   /**
    * Flushes the log to disk.
    *
-   * @throws java.lang.IllegalStateException If the log is not open.
+   * @throws IllegalStateException If the log is not open.
    */
   void flush();
 

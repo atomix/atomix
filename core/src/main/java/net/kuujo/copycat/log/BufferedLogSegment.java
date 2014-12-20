@@ -27,7 +27,7 @@ import net.kuujo.copycat.internal.util.Assert;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
+public class BufferedLogSegment extends AbstractLogSegment {
   private final BufferedLog parent;
   private final long segment;
   private long timestamp;
@@ -164,24 +164,6 @@ public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
   }
 
   @Override
-  public void compact(long index) {
-    assertIsOpen();
-    assertContainsIndex(index);
-    if (!log.isEmpty()) {
-      if (index > log.lastKey()) {
-        log.clear();
-      } else {
-        for (long i = log.firstKey(); i < index; i++) {
-          ByteBuffer value = log.remove(i);
-          if (value != null) {
-            size -= value.limit();
-          }
-        }
-      }
-    }
-  }
-
-  @Override
   public void compact(long index, ByteBuffer entry) {
     assertIsOpen();
     assertContainsIndex(index);
@@ -222,7 +204,5 @@ public class BufferedLogSegment extends AbstractLoggable implements LogSegment {
       log.clear();
       log = null;
     }
-    parent.deleteSegment(segment);
   }
-
 }

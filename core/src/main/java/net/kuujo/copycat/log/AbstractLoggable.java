@@ -23,7 +23,6 @@ import net.kuujo.copycat.internal.util.Assert;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractLoggable implements Loggable {
-
   /**
    * Asserts whether the log is currently open.
    */
@@ -44,5 +43,4 @@ public abstract class AbstractLoggable implements Loggable {
   protected void assertContainsIndex(long index) {
     Assert.index(index, containsIndex(index), "Log does not contain index %d", index);
   }
-
 }

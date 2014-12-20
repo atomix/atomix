@@ -35,7 +35,7 @@ import net.openhft.chronicle.IndexedChronicle;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ChronicleLogSegment extends AbstractLoggable implements LogSegment {
+public class ChronicleLogSegment extends AbstractLogSegment {
   private static final byte DELETED = 0;
   private static final byte ACTIVE = 1;
   /* Size of index + status + length data */
@@ -258,11 +258,6 @@ public class ChronicleLogSegment extends AbstractLoggable implements LogSegment 
   }
 
   @Override
-  public void compact(long index) {
-    compact(index, null);
-  }
-
-  @Override
   public void compact(long index, ByteBuffer entry) {
     assertIsOpen();
     assertContainsIndex(index);
@@ -394,8 +389,14 @@ public class ChronicleLogSegment extends AbstractLoggable implements LogSegment 
 
   @Override
   public void delete() {
+    if (isOpen()) {
+      try {
+        close();
+      } catch (IOException ignore) {
+      }
+    }
+    
     dataFile.delete();
     indexFile.delete();
-    parent.deleteSegment(segment);
   }
 }
