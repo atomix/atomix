@@ -16,10 +16,10 @@
 package net.kuujo.copycat.lockservice;
 
 import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.VertxExecutionContext;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.AsyncLock;
 import net.kuujo.copycat.protocol.VertxEventBusProtocol;
-import net.kuujo.copycat.VertxExecutionContext;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;
@@ -85,24 +85,24 @@ public class VertxEventBusLockService extends Verticle {
       if (copycatError == null) {
 
         // Create and open the log.
-        lock = copycat.getLock(address);
-        lock.open().whenComplete((lockResult, lockError) -> {
-          if (lockError == null) {
+        copycat.getLock(address).whenComplete((lock, error) -> {
+          lock.open().whenComplete((lockResult, lockError) -> {
+            if (lockError == null) {
 
-            // Register an event bus handler for operating on the lock.
-            vertx.eventBus().registerHandler(address, messageHandler, result -> {
-              if (result.succeeded()) {
-                startResult.setResult(null);
-              } else {
-                startResult.setFailure(result.cause());
-              }
-            });
+              // Register an event bus handler for operating on the lock.
+              vertx.eventBus().registerHandler(address, messageHandler, result -> {
+                if (result.succeeded()) {
+                  startResult.setResult(null);
+                } else {
+                  startResult.setFailure(result.cause());
+                }
+              });
 
-          } else {
-            startResult.setFailure(lockError);
-          }
+            } else {
+              startResult.setFailure(lockError);
+            }
+          });
         });
-
       } else {
         startResult.setFailure(copycatError);
       }
