@@ -318,7 +318,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   }
 
   /**
-   * Transition handler.
+   * Transition registerHandler.
    */
   CompletableFuture<CopycatState> transition(CopycatState state) {
     if (this.state != null && state == this.state.state()) {

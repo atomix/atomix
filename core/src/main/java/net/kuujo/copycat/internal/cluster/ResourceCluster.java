@@ -51,7 +51,7 @@ public class ResourceCluster implements Cluster {
 
   @Override
   public Election election() {
-    return context.cluster().election();
+    return new ResourceClusterElection(this, context.cluster().election(), executor);
   }
 
   @Override

@@ -20,27 +20,31 @@ import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.internal.CopycatStateContext;
 
+import java.util.HashSet;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.function.Consumer;
 
 /**
+ * Coordinated cluster election handler.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class ClusterElection implements Election, Observer {
+class CoordinatedClusterElection implements Election, Observer {
   private final Cluster cluster;
   private CopycatStateContext context;
-  private Consumer<ElectionResult> handler;
+  private final Set<Consumer<ElectionResult>> listeners = new HashSet<>();
   private ElectionResult result;
   private boolean handled;
 
-  ClusterElection(Cluster cluster, CopycatStateContext context) {
+  CoordinatedClusterElection(Cluster cluster, CopycatStateContext context) {
     this.cluster = cluster;
     this.context = context;
   }
 
   @Override
-  public void update(Observable o, Object arg) {
+  public synchronized void update(Observable o, Object arg) {
     CopycatStateContext context = (CopycatStateContext) o;
     if (!handled) {
       String leader = context.getLeader();
@@ -50,9 +54,9 @@ class ClusterElection implements Election, Observer {
           Member member = cluster.member(leader);
           if (member != null) {
             result = new ClusterElectionResult(term, member);
-            if (handler != null) {
-              handled = true;
-              handler.accept(result);
+            handled = true;
+            for (Consumer<ElectionResult> listener : listeners) {
+              listener.accept(result);
             }
           } else if (result != null) {
             result = null;
@@ -68,36 +72,47 @@ class ClusterElection implements Election, Observer {
   }
 
   @Override
-  public Status status() {
+  public synchronized Status status() {
     return context.getStatus();
   }
 
   @Override
-  public long term() {
+  public synchronized long term() {
     return context.getTerm();
   }
 
   @Override
-  public ElectionResult result() {
+  public synchronized ElectionResult result() {
     return result;
   }
 
   @Override
-  public Election handler(Consumer<ElectionResult> handler) {
-    if (handler != this.handler) {
-      handled = false;
-    }
-    this.handler = handler;
-    if (!handled && result != null) {
-      handler.accept(result);
+  public synchronized Election addListener(Consumer<ElectionResult> listener) {
+    if (!listeners.contains(listener)) {
+      listeners.add(listener);
+      if (result != null && handled) {
+        listener.accept(result);
+      }
     }
     return this;
   }
 
+  @Override
+  public synchronized Election removeListener(Consumer<ElectionResult> listener) {
+    listeners.remove(listener);
+    return this;
+  }
+
+  /**
+   * Opens the election.
+   */
   void open() {
     ((Observable) context).addObserver(this);
   }
 
+  /**
+   * Closes the election.
+   */
   void close() {
     ((Observable) context).deleteObserver(this);
   }

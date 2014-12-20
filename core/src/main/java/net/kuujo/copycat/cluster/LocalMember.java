@@ -21,21 +21,21 @@ package net.kuujo.copycat.cluster;
  */
 public interface LocalMember extends Member {
   /**
-   * Registers a message type handler on the local member.
+   * Registers a message type registerHandler on the local member.
    *
    * @param topic The topic to handle.
-   * @param handler The message handler.
+   * @param handler The message registerHandler.
    * @param <T> The request message type.
    * @param <U> The response message type.
-   * @return
+   * @return The local member.
    */
   <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler);
 
   /**
-   * Unregisters a message type handler on the local member.
+   * Unregisters a message type registerHandler on the local member.
    *
    * @param topic The topic to handle.
-   * @return
+   * @return The local member.
    */
   LocalMember unregisterHandler(String topic);
 }

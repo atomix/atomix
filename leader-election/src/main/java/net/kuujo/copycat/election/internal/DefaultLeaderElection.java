@@ -17,7 +17,7 @@ import java.util.function.Consumer;
  */
 public class DefaultLeaderElection extends AbstractCopycatResource<LeaderElection> implements LeaderElection {
   private Consumer<Member> handler;
-  private final Consumer<ElectionResult> electionHandler = result -> {
+  private final Consumer<ElectionResult> electionListener = result -> {
     if (handler != null) {
       handler.accept(result.winner());
     }
@@ -39,13 +39,13 @@ public class DefaultLeaderElection extends AbstractCopycatResource<LeaderElectio
   @Override
   public CompletableFuture<Void> open() {
     return super.open().thenAccept(result -> {
-      context.cluster().election().handler(electionHandler);
+      context.cluster().election().addListener(electionListener);
     });
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    context.cluster().election().handler(null);
+    context.cluster().election().removeListener(electionListener);
     return super.close();
   }
 

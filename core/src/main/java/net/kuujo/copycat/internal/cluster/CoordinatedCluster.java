@@ -30,13 +30,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatedCluster extends CoordinatedClusterManager implements Cluster {
-  private final ClusterElection election;
+  private final CoordinatedClusterElection election;
   private final Router router;
   private final CopycatStateContext context;
 
   public CoordinatedCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ExecutionContext executor) {
     super(id, coordinator, executor);
-    this.election = new ClusterElection(this, context);
+    this.election = new CoordinatedClusterElection(this, context);
     this.router = router;
     this.context = context;
   }

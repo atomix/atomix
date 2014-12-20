@@ -62,11 +62,19 @@ public interface Election {
   ElectionResult result();
 
   /**
-   * Registers an election completion handler.
+   * Registers an election completion listener.
    *
-   * @param handler The election handler to run once the election is complete.
+   * @param listener The election listener to run once the election is complete.
    * @return The election instance.
    */
-  Election handler(Consumer<ElectionResult> handler);
+  Election addListener(Consumer<ElectionResult> listener);
+
+  /**
+   * Unregisters an election completion listener.
+   *
+   * @param listener The election listener to unregister.
+   * @return The election instance.
+   */
+  Election removeListener(Consumer<ElectionResult> listener);
 
 }

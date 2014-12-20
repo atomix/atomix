@@ -133,7 +133,7 @@ abstract class AbstractState implements RaftProtocol {
   }
 
   /**
-   * Sets a transition handler on the state.
+   * Sets a transition registerHandler on the state.
    */
   public AbstractState transitionHandler(EventHandler<CopycatState, CompletableFuture<CopycatState>> handler) {
     this.transitionHandler = handler;

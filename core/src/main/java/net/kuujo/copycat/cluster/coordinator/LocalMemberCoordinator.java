@@ -26,20 +26,20 @@ import net.kuujo.copycat.spi.ExecutionContext;
 public interface LocalMemberCoordinator extends MemberCoordinator {
 
   /**
-   * Registers a message handler.
+   * Registers a message registerHandler.
    *
-   * @param topic The topic for which to register the handler.
-   * @param address The internal address at which to register the handler.
-   * @param handler The handler to register.
+   * @param topic The topic for which to register the registerHandler.
+   * @param address The internal address at which to register the registerHandler.
+   * @param handler The registerHandler to register.
    * @return The local member coordinator.
    */
   <T, U> LocalMemberCoordinator register(String topic, int address, MessageHandler<T, U> handler);
 
   /**
-   * Unregisters a message handler.
+   * Unregisters a message registerHandler.
    *
-   * @param topic The topic for which to unregister the handler.
-   * @param address The internal address at which to unregister the handler.
+   * @param topic The topic for which to unregister the registerHandler.
+   * @param address The internal address at which to unregister the registerHandler.
    * @return The local member coordinator.
    */
   LocalMemberCoordinator unregister(String topic, int address);
