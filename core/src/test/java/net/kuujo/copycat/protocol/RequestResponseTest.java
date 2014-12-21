@@ -33,78 +33,57 @@ public class RequestResponseTest {
   /**
    * Tests that the commit request builder when not configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithoutConfiguration() {
-    try {
-      CommitRequest.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitRequest.builder().build();
   }
 
   /**
    * Tests that the commit request builder fails without a configured ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithoutId() {
-    try {
-      CommitRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
    * Tests that the commit request builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithNullId() {
-    try {
-      CommitRequest.builder().withId(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitRequest.builder().withId(null).build();
   }
 
   /**
    * Tests that the commit request builder fails without a configured member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithoutMember() {
-    try {
-      CommitRequest.builder().withId("test").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitRequest.builder().withId("test").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
    * Tests that the commit request builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithNullMember() {
-    try {
-      CommitRequest.builder().withMember(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitRequest.builder().withMember(null).build();
   }
 
   /**
    * Tests that the commit request builder fails without a configured entry.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithoutEntry() {
-    try {
-      CommitRequest.builder().withId("test").withMember("foo").build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitRequest.builder().withId("test").withMember("foo").build();
   }
 
   /**
    * Tests that the commit request builder fails when no entry has been set.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderEntrySetterFailsWithNullEntry() {
-    try {
-      CommitRequest.builder().withEntry(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitRequest.builder().withEntry(null).build();
   }
 
   /**
@@ -123,56 +102,41 @@ public class RequestResponseTest {
   /**
    * Tests that the commit response builder fails without being properly configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithoutConfiguration() {
-    try {
-      CommitResponse.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitResponse.builder().build();
   }
 
   /**
    * Tests that the commit response builder fails without an ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithoutId() {
-    try {
-      CommitResponse.builder().withMember("foo").withResult("Hello world!").build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitResponse.builder().withMember("foo").withResult("Hello world!").build();
   }
 
   /**
    * Tests that the commit response builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithNullId() {
-    try {
-      CommitResponse.builder().withId(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitResponse.builder().withId(null).build();
   }
 
   /**
    * Tests that the commit response builder fails without a member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithoutMember() {
-    try {
-      CommitResponse.builder().withId("test").withResult("Hello world!").build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitResponse.builder().withId("test").withResult("Hello world!").build();
   }
 
   /**
    * Tests that the commit response builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithNullMember() {
-    try {
-      CommitResponse.builder().withMember(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    CommitResponse.builder().withMember(null).build();
   }
 
   /**
@@ -206,247 +170,208 @@ public class RequestResponseTest {
   /**
    * Tests that the append request builder when not configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithoutConfiguration() {
-    try {
-      AppendRequest.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder().build();
   }
 
   /**
    * Tests that the append request builder fails without a configured ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithoutId() {
-    try {
-      AppendRequest.builder()
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithNullId() {
-    try {
-      AppendRequest.builder()
-        .withId(null)
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withId(null)
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails without a configured member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithoutMember() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithNullMember() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember(null)
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember(null)
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails without a leader.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithoutLeader() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails with a null leader.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithNullLeader() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader(null)
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader(null)
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails without a term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testAppendRequestBuilderFailsWithoutTerm() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails without an invalid term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testAppendRequestBuilderFailsWithInvalidTerm() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(-1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(-1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails without entries.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithoutEntries() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails without null entries.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithNullEntries() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries((List<ByteBuffer>) null)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries((List<ByteBuffer>) null)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails with an invalid log index.
    */
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void testAppendRequestBuilderFailsWithInvalidLogIndex() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(-1L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(-1L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails with an invalid log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testAppendRequestBuilderFailsWithInvalidLogTerm() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(-1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(-1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
@@ -468,41 +393,35 @@ public class RequestResponseTest {
   /**
    * Tests that the append request builder fails with a valid log index and null log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testAppendRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(null)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(null)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append request builder fails with a null log index and valid log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testAppendRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(null)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(null)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
@@ -524,21 +443,18 @@ public class RequestResponseTest {
   /**
    * Tests that the append request builder fails with an invalid commit index.
    */
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void testAppendRequestBuilderFailsWithInvalidCommitIndex() {
-    try {
-      AppendRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(-1L)
-        .build();
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-    }
+    AppendRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(-1L)
+      .build();
   }
 
   /**
@@ -568,95 +484,77 @@ public class RequestResponseTest {
   /**
    * Tests that the append response builder fails without being properly configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithoutConfiguration() {
-    try {
-      AppendResponse.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendResponse.builder().build();
   }
 
   /**
    * Tests that the append response builder fails without an ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithoutId() {
-    try {
-      AppendResponse.builder()
-        .withMember("foo")
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendResponse.builder()
+      .withMember("foo")
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append response builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithNullId() {
-    try {
-      AppendResponse.builder()
-        .withId(null)
-        .withMember("foo")
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendResponse.builder()
+      .withId(null)
+      .withMember("foo")
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append response builder fails without a member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithoutMember() {
-    try {
-      AppendResponse.builder()
-        .withId("test")
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendResponse.builder()
+      .withId("test")
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append response builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithNullMember() {
-    try {
-      AppendResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the append response builder fails with an invalid term.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithInvalidTerm() {
-    try {
-      AppendResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(-1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(-1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
@@ -675,18 +573,15 @@ public class RequestResponseTest {
   /**
    * Tests that the append response builder fails with an invalid index.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithInvalidIndex() {
-    try {
-      AppendResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(-1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    AppendResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(-1L)
+      .build();
   }
 
   /**
@@ -710,198 +605,165 @@ public class RequestResponseTest {
   /**
    * Tests that the ping request builder when not configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithoutConfiguration() {
-    try {
-      PingRequest.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingRequest.builder().build();
   }
 
   /**
    * Tests that the ping request builder fails without a configured ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithoutId() {
-    try {
-      PingRequest.builder()
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingRequest.builder()
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithNullId() {
-    try {
-      PingRequest.builder()
-        .withId(null)
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingRequest.builder()
+      .withId(null)
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails without a configured member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithoutMember() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithNullMember() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember(null)
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember(null)
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails without a leader.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithoutLeader() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails with a null leader.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithNullLeader() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader(null)
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader(null)
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails without a term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPingRequestBuilderFailsWithoutTerm() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails without an invalid term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPingRequestBuilderFailsWithInvalidTerm() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(-1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(-1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails with an invalid log index.
    */
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void testPingRequestBuilderFailsWithInvalidLogIndex() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(-1L)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(-1L)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails with an invalid log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPingRequestBuilderFailsWithInvalidLogTerm() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(-1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(-1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
@@ -922,39 +784,33 @@ public class RequestResponseTest {
   /**
    * Tests that the ping request builder fails with a valid log index and null log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPingRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(null)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(null)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping request builder fails with a null log index and valid log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPingRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(null)
-        .withLogTerm(1L)
-        .withCommitIndex(4L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(null)
+      .withLogTerm(1L)
+      .withCommitIndex(4L)
+      .build();
   }
 
   /**
@@ -975,20 +831,17 @@ public class RequestResponseTest {
   /**
    * Tests that the ping request builder fails with an invalid commit index.
    */
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void testPingRequestBuilderFailsWithInvalidCommitIndex() {
-    try {
-      PingRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withLeader("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .withCommitIndex(-1L)
-        .build();
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-    }
+    PingRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withLeader("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .withCommitIndex(-1L)
+      .build();
   }
 
   /**
@@ -1016,95 +869,77 @@ public class RequestResponseTest {
   /**
    * Tests that the ping response builder fails without being properly configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithoutConfiguration() {
-    try {
-      PingResponse.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingResponse.builder().build();
   }
 
   /**
    * Tests that the ping response builder fails without an ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithoutId() {
-    try {
-      PingResponse.builder()
-        .withMember("foo")
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingResponse.builder()
+      .withMember("foo")
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping response builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithNullId() {
-    try {
-      PingResponse.builder()
-        .withId(null)
-        .withMember("foo")
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingResponse.builder()
+      .withId(null)
+      .withMember("foo")
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping response builder fails without a member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithoutMember() {
-    try {
-      PingResponse.builder()
-        .withId("test")
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingResponse.builder()
+      .withId("test")
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping response builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithNullMember() {
-    try {
-      PingResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
    * Tests that the ping response builder fails with an invalid term.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithInvalidTerm() {
-    try {
-      PingResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(-1L)
-        .withSucceeded(true)
-        .withLogIndex(4L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(-1L)
+      .withSucceeded(true)
+      .withLogIndex(4L)
+      .build();
   }
 
   /**
@@ -1123,18 +958,15 @@ public class RequestResponseTest {
   /**
    * Tests that the ping response builder fails with an invalid index.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithInvalidIndex() {
-    try {
-      PingResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(1L)
-        .withSucceeded(true)
-        .withLogIndex(-1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PingResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(1L)
+      .withSucceeded(true)
+      .withLogIndex(-1L)
+      .build();
   }
 
   /**
@@ -1158,188 +990,155 @@ public class RequestResponseTest {
   /**
    * Tests that the poll request builder when not configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithoutConfiguration() {
-    try {
-      PollRequest.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollRequest.builder().build();
   }
 
   /**
    * Tests that the poll request builder fails without a configured ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithoutId() {
-    try {
-      PollRequest.builder()
-        .withMember("foo")
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollRequest.builder()
+      .withMember("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithNullId() {
-    try {
-      PollRequest.builder()
-        .withId(null)
-        .withMember("foo")
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollRequest.builder()
+      .withId(null)
+      .withMember("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails without a configured member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithoutMember() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithNullMember() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember(null)
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember(null)
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails without a candidate.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithoutCandidate() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails with a null candidate.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithNullCandidate() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withCandidate(null)
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withCandidate(null)
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails without a term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPollRequestBuilderFailsWithoutTerm() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withCandidate("bar")
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withCandidate("bar")
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails without an invalid term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPollRequestBuilderFailsWithInvalidTerm() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withCandidate("bar")
-        .withTerm(-1)
-        .withLogIndex(5L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withCandidate("bar")
+      .withTerm(-1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails with an invalid log index.
    */
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void testPollRequestBuilderFailsWithInvalidLogIndex() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(-1L)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (IndexOutOfBoundsException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(-1L)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails with an invalid log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPollRequestBuilderFailsWithInvalidLogTerm() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(-1L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(-1L)
+      .build();
   }
 
   /**
@@ -1359,37 +1158,31 @@ public class RequestResponseTest {
   /**
    * Tests that the poll request builder fails with a valid log index and null log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPollRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(5L)
-        .withLogTerm(null)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(null)
+      .build();
   }
 
   /**
    * Tests that the poll request builder fails with a null log index and valid log term.
    */
+  @Test(expectedExceptions = IllegalArgumentException.class)
   public void testPollRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
-    try {
-      PollRequest.builder()
-        .withId("test")
-        .withMember("foo")
-        .withCandidate("bar")
-        .withTerm(1)
-        .withLogIndex(null)
-        .withLogTerm(1L)
-        .build();
-      fail();
-    } catch (IllegalArgumentException e) {
-    }
+    PollRequest.builder()
+      .withId("test")
+      .withMember("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(null)
+      .withLogTerm(1L)
+      .build();
   }
 
   /**
@@ -1415,90 +1208,72 @@ public class RequestResponseTest {
   /**
    * Tests that the poll response builder fails without being properly configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollResponseBuilderFailsWithoutConfiguration() {
-    try {
-      PollResponse.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollResponse.builder().build();
   }
 
   /**
    * Tests that the poll response builder fails without an ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollResponseBuilderFailsWithoutId() {
-    try {
-      PollResponse.builder()
-        .withMember("foo")
-        .withTerm(1L)
-        .withVoted(true)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollResponse.builder()
+      .withMember("foo")
+      .withTerm(1L)
+      .withVoted(true)
+      .build();
   }
 
   /**
    * Tests that the poll response builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollResponseBuilderFailsWithNullId() {
-    try {
-      PollResponse.builder()
-        .withId(null)
-        .withMember("foo")
-        .withTerm(1L)
-        .withVoted(true)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollResponse.builder()
+      .withId(null)
+      .withMember("foo")
+      .withTerm(1L)
+      .withVoted(true)
+      .build();
   }
 
   /**
    * Tests that the poll response builder fails without a member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollResponseBuilderFailsWithoutMember() {
-    try {
-      PollResponse.builder()
-        .withId("test")
-        .withTerm(1L)
-        .withVoted(true)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollResponse.builder()
+      .withId("test")
+      .withTerm(1L)
+      .withVoted(true)
+      .build();
   }
 
   /**
    * Tests that the poll response builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollResponseBuilderFailsWithNullMember() {
-    try {
-      PollResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(1L)
-        .withVoted(true)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(1L)
+      .withVoted(true)
+      .build();
   }
 
   /**
    * Tests that the poll response builder fails with an invalid term.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testPollResponseBuilderFailsWithInvalidTerm() {
-    try {
-      PollResponse.builder()
-        .withId("test")
-        .withMember(null)
-        .withTerm(-1L)
-        .withVoted(true)
-        .build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    PollResponse.builder()
+      .withId("test")
+      .withMember(null)
+      .withTerm(-1L)
+      .withVoted(true)
+      .build();
   }
 
   /**
@@ -1520,89 +1295,65 @@ public class RequestResponseTest {
   /**
    * Tests that the query request builder when not configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithoutConfiguration() {
-    try {
-      QueryRequest.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().build();
   }
 
   /**
    * Tests that the query request builder fails without a configured ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithoutId() {
-    try {
-      QueryRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
    * Tests that the query request builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithNullId() {
-    try {
-      QueryRequest.builder().withId(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().withId(null).build();
   }
 
   /**
    * Tests that the query request builder fails without a configured member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithoutMember() {
-    try {
-      QueryRequest.builder().withId("test").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().withId("test").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
    * Tests that the query request builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithNullMember() {
-    try {
-      QueryRequest.builder().withMember(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().withMember(null).build();
   }
 
   /**
    * Tests that the query request builder fails without a configured entry.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithoutEntry() {
-    try {
-      QueryRequest.builder().withId("test").withMember("foo").build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().withId("test").withMember("foo").build();
   }
 
   /**
    * Tests that the query request builder fails when no entry has been set.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderEntrySetterFailsWithNullEntry() {
-    try {
-      QueryRequest.builder().withEntry(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().withEntry(null).build();
   }
 
   /**
    * Tests that the query request builder fails when a null consistency is provided.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderEntrySetterFailsWithNullConsistency() {
-    try {
-      QueryRequest.builder().withConsistency(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryRequest.builder().withConsistency(null).build();
   }
 
   /**
@@ -1624,56 +1375,41 @@ public class RequestResponseTest {
   /**
    * Tests that the query response builder fails without being properly configured.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithoutConfiguration() {
-    try {
-      QueryResponse.builder().build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryResponse.builder().build();
   }
 
   /**
    * Tests that the query response builder fails without an ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithoutId() {
-    try {
-      QueryResponse.builder().withMember("foo").withResult("Hello world!").build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryResponse.builder().withMember("foo").withResult("Hello world!").build();
   }
 
   /**
    * Tests that the query response builder fails with a null ID.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithNullId() {
-    try {
-      QueryResponse.builder().withId(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryResponse.builder().withId(null).build();
   }
 
   /**
    * Tests that the query response builder fails without a member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithoutMember() {
-    try {
-      QueryResponse.builder().withId("test").withResult("Hello world!").build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryResponse.builder().withId("test").withResult("Hello world!").build();
   }
 
   /**
    * Tests that the query response builder fails with a null member.
    */
+  @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithNullMember() {
-    try {
-      QueryResponse.builder().withMember(null).build();
-      fail();
-    } catch (NullPointerException e) {
-    }
+    QueryResponse.builder().withMember(null).build();
   }
 
   /**
