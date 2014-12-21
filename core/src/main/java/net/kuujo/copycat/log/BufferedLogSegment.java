@@ -16,8 +16,6 @@
 package net.kuujo.copycat.log;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.TreeMap;
 
 import net.kuujo.copycat.internal.util.Assert;
@@ -29,24 +27,18 @@ import net.kuujo.copycat.internal.util.Assert;
  */
 public class BufferedLogSegment extends AbstractLogSegment {
   private final BufferedLog parent;
-  private final long segment;
   private long timestamp;
   private TreeMap<Long, ByteBuffer> log;
   private int size;
 
-  BufferedLogSegment(BufferedLog parent, long segment) {
+  BufferedLogSegment(BufferedLog parent, long id, long firstIndex) {
+    super(id, firstIndex);
     this.parent = parent;
-    this.segment = segment;
   }
 
   @Override
   public Log log() {
     return parent;
-  }
-
-  @Override
-  public long segment() {
-    return segment;
   }
 
   @Override
@@ -68,6 +60,11 @@ public class BufferedLogSegment extends AbstractLogSegment {
   public boolean isOpen() {
     return log != null;
   }
+  
+  @Override
+  public boolean isEmpty() {
+    return log != null && !log.isEmpty();
+  }
 
   @Override
   public long size() {
@@ -76,33 +73,19 @@ public class BufferedLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public long entries() {
+  public long entryCount() {
     assertIsOpen();
     return log.size();
-  }
-
-  @Override
-  public boolean isEmpty() {
-    return size() == 0;
   }
 
   @Override
   public long appendEntry(ByteBuffer entry) {
     Assert.isNotNull(entry, "entry");
     assertIsOpen();
-    long index = log.isEmpty() ? segment : log.lastKey() + 1;
+    long index = log.isEmpty() ? firstIndex : log.lastKey() + 1;
     log.put(index, entry);
     size += entry.limit();
     return index;
-  }
-
-  @Override
-  public List<Long> appendEntries(List<ByteBuffer> entries) {
-    List<Long> indices = new ArrayList<>(entries.size());
-    for (ByteBuffer entry : entries) {
-      indices.add(appendEntry(entry));
-    }
-    return indices;
   }
 
   @Override
@@ -131,25 +114,9 @@ public class BufferedLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public List<ByteBuffer> getEntries(long from, long to) {
-    assertIsOpen();
-    assertContainsIndex(from);
-    assertContainsIndex(to);
-
-    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
-    for (long i = from; i <= to; i++) {
-      ByteBuffer entry = getEntry(i);
-      if (entry != null) {
-        entries.add(entry);
-      }
-    }
-    return entries;
-  }
-
-  @Override
   public void removeAfter(long index) {
     assertIsOpen();
-    if (index < segment) {
+    if (index < firstIndex) {
       log.clear();
       size = 0;
     } else {

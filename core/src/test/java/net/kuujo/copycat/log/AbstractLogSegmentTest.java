@@ -15,27 +15,16 @@
  */
 package net.kuujo.copycat.log;
 
-import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertNull;
 import static org.testng.Assert.assertTrue;
-
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import net.kuujo.copycat.internal.util.Bytes;
 
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 /**
- * Tests log implementations.
+ * Tests LogSegment implementations.
  *
- * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  * @author Jonathan Halterman
  */
 @Test
@@ -80,6 +69,7 @@ public abstract class AbstractLogSegmentTest {
       log.delete();
     }
   }
+ 
 
   public void shouldNotAppendToFullSegment() {
   }

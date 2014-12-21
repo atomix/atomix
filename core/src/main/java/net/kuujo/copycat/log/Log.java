@@ -16,15 +16,16 @@
 package net.kuujo.copycat.log;
 
 import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Log manager.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Log extends Loggable {
-
+public interface Log extends Loggable {  
   /**
    * Return the log configuration.
    *
@@ -38,6 +39,17 @@ public interface Log extends Loggable {
    * @return The log base file.
    */
   File base();
+  
+  /**
+   * Appends a list of entries to the log.
+   *
+   * @param entries A list of entries to append.
+   * @return A list of appended entry indices.
+   * @throws IllegalStateException If the log is not open.
+   * @throws NullPointerException If the entries list is null.
+   * @throws LogException If a new segment cannot be opened
+   */
+  List<Long> appendEntries(List<ByteBuffer> entries);
 
   /**
    * Returns the log directory.
@@ -45,6 +57,16 @@ public interface Log extends Loggable {
    * @return The log directory.
    */
   File directory();
+  
+  /**
+   * Gets a list of entries from the log.
+   *
+   * @param from The index of the start of the list of entries to get (inclusive).
+   * @param to The index of the end of the list of entries to get (inclusive).
+   * @return A list of entries from the given start index to the given end index.
+   * @throws IllegalStateException If the log is not open.
+   */
+  List<ByteBuffer> getEntries(long from, long to);
 
   /**
    * Returns a collection of log segments.
