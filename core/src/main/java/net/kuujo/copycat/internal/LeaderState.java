@@ -36,10 +36,8 @@ import java.util.function.BiFunction;
  */
 class LeaderState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(LeaderState.class);
-  private static final long CONSISTENCY_LEASE_TIME = 1000;
   private ScheduledFuture<?> currentTimer;
   private Replicator replicator;
-  private long lastConsistencyCheck;
 
   LeaderState(DefaultCopycatStateContext context) {
     super(context);
@@ -208,7 +206,7 @@ class LeaderState extends ActiveState {
     long index = context.log().appendEntry(logEntry);
     LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember(), index);
     LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
-    replicator.sync(index).whenComplete((resultIndex, error) -> {
+    replicator.commit(index).whenComplete((resultIndex, error) -> {
       if (error == null) {
         try {
           future.complete(logResponse(CommitResponse.builder()
@@ -318,16 +316,16 @@ class LeaderState extends ActiveState {
     }
 
     /**
-     * Syncs the log to all nodes in the cluster.
+     * Commits the log to all nodes in the cluster.
      */
-    public CompletableFuture<Long> syncAll() {
-      return sync(context.log().lastIndex());
+    public CompletableFuture<Long> commitAll() {
+      return commit(context.log().lastIndex());
     }
 
     /**
-     * Syncs the log up to the given index.
+     * Commits the log up to the given index.
      */
-    public CompletableFuture<Long> sync(Long index) {
+    public CompletableFuture<Long> commit(Long index) {
       if (index == null) {
         return ping(null);
       }
@@ -348,7 +346,7 @@ class LeaderState extends ActiveState {
 
       // Iterate through replicas and commit all entries up to the given index.
       for (Replica replica : replicaMap.values()) {
-        replica.sync(index).whenComplete((resultIndex, error) -> {
+        replica.commit(index).whenComplete((resultIndex, error) -> {
           // Once the commit succeeds, check the commit index of all replicas.
           if (error == null) {
             quorum.succeed();
@@ -434,7 +432,7 @@ class LeaderState extends ActiveState {
 
     public CompletableFuture<Long> ping(Long index) {
       if (index != null && (matchIndex == null || index > matchIndex)) {
-        return sync(index);
+        return commit(index);
       }
 
       CompletableFuture<Long> future = new CompletableFuture<>();
@@ -469,7 +467,7 @@ class LeaderState extends ActiveState {
               transition(CopycatState.FOLLOWER);
               triggerPingFutures(index, new CopycatException("Not the leader"));
             } else if (!response.succeeded()) {
-              triggerPingFutures(index, new ProtocolException("Replica not in sync"));
+              triggerPingFutures(index, new ProtocolException("Replica not in commit"));
             } else {
               triggerPingFutures(index);
             }
@@ -484,7 +482,7 @@ class LeaderState extends ActiveState {
     /**
      * Commits the given index to the replica.
      */
-    public CompletableFuture<Long> sync(long index) {
+    public CompletableFuture<Long> commit(long index) {
       if (matchIndex != null && index <= matchIndex) {
         return CompletableFuture.completedFuture(index);
       }
