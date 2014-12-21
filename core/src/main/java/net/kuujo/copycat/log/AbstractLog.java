@@ -15,22 +15,15 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.Config;
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.Configs;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.Configs;
-
-import org.slf4j.LoggerFactory;
-
-import com.typesafe.config.Config;
+import java.util.*;
 
 /**
  * Abstract log. Not threadsafe.
@@ -93,8 +86,10 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
     return config;
   }
 
-  @Override
-  public File base() {
+  /**
+   * Returns the base log file.
+   */
+  File base() {
     return base;
   }
 
@@ -106,8 +101,7 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   /**
    * Returns a collection of log segments.
    */
-  @Override
-  public Collection<LogSegment> segments() {
+  Collection<LogSegment> segments() {
     return segments.values();
   }
 

@@ -53,4 +53,5 @@ public class BufferedLog extends AbstractLog {
   protected LogSegment createSegment(long segmentNumber, long firstIndex) {
     return new BufferedLogSegment(this, segmentNumber, firstIndex);
   }
+
 }

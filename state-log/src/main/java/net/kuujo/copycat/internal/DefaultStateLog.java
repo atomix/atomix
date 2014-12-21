@@ -157,7 +157,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
    * Checks whether to take a snapshot.
    */
   private void checkSnapshot() {
-    if (context.log().size() > config.getMaxSize() || context.log().segments().size() > config.getMaxSegments()) {
+    if (context.log().size() > config.getMaxSize()) {
       takeSnapshot();
     }
   }

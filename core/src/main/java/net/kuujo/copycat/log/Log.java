@@ -17,7 +17,6 @@ package net.kuujo.copycat.log;
 
 import java.io.File;
 import java.nio.ByteBuffer;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -32,13 +31,6 @@ public interface Log extends Loggable {
    * @return The log configuration.
    */
   LogConfig config();
-
-  /**
-   * Returns the log base file.
-   *
-   * @return The log base file.
-   */
-  File base();
   
   /**
    * Appends a list of entries to the log.
@@ -68,8 +60,4 @@ public interface Log extends Loggable {
    */
   List<ByteBuffer> getEntries(long from, long to);
 
-  /**
-   * Returns a collection of log segments.
-   */
-  Collection<LogSegment> segments();
 }
