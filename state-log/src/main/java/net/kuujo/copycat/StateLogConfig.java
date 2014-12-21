@@ -35,7 +35,6 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
   private Serializer serializer = new JavaSerializer();
   private File directory = new File(System.getProperty("java.io.tmpdir"), "copycat");
   private long maxSize = Long.MAX_VALUE;
-  private int maxSegments = 2;
   private int segmentSize = 1024 * 1024;
   private long segmentInterval = Long.MAX_VALUE;
   private boolean flushOnWrite = true;
@@ -57,7 +56,6 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
     setSerializer(config.hasPath("serializer") ? Services.load(config.getValue("serializer")) : Services.load("copycat.serializer"));
     Configs.apply((Consumer<String>) this::setDirectory, String.class, config, "directory");
     Configs.apply((Consumer<Integer>) this::setMaxSize, Integer.class, config, "max-size");
-    Configs.apply((Consumer<Integer>) this::setMaxSegments, Integer.class, config, "max-segments");
     Configs.apply((Consumer<Integer>) this::setSegmentSize, Integer.class, config, "segment-size");
     Configs.apply((Consumer<Long>) this::setSegmentInterval, Long.class, config, "segment-interval");
     Configs.apply((Consumer<Boolean>) this::setFlushOnWrite, Boolean.class, config, "flush-on-write");
@@ -68,7 +66,6 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
     this.serializer = config.serializer;
     this.directory = config.directory;
     this.maxSize = config.maxSize;
-    this.maxSegments = config.maxSegments;
     this.segmentSize = config.segmentSize;
     this.segmentInterval = config.segmentInterval;
     this.flushOnWrite = config.flushOnWrite;
@@ -173,35 +170,6 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
    */
   public StateLogConfig withMaxSize(long maxSize) {
     this.maxSize = Assert.arg(maxSize, maxSize > 0, "maximum log size must be greater than 0");
-    return this;
-  }
-
-  /**
-   * Sets the maximum number of log segments prior to compaction.
-   *
-   * @param maxSegments The maximum number of log segments.
-   */
-  public void setMaxSegments(int maxSegments) {
-    this.maxSegments = Assert.arg(maxSegments, maxSegments > 0, "maximum log segments must be greater than 0");
-  }
-
-  /**
-   * Returns the maximum number of log segments prior to compaction.
-   *
-   * @return The maximum number of log segments.
-   */
-  public int getMaxSegments() {
-    return maxSegments;
-  }
-
-  /**
-   * Sets the maximum number of log segments prior to compaction, returning the log configuration for method chaining.
-   *
-   * @param maxSegments The maximum number of log segments.
-   * @return The state log configuration.
-   */
-  public StateLogConfig withMaxSegments(int maxSegments) {
-    this.maxSegments = Assert.arg(maxSegments, maxSegments > 0, "maximum log segments must be greater than 0");
     return this;
   }
 
