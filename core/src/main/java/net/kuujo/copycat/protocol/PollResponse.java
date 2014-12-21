@@ -24,7 +24,6 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollResponse extends AbstractResponse {
-  public static final int TYPE = -4;
 
   /**
    * Returns a new poll response builder.

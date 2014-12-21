@@ -22,7 +22,6 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CommitResponse extends AbstractResponse {
-  public static final int TYPE = -12;
 
   /**
    * Returns a new commit response builder.

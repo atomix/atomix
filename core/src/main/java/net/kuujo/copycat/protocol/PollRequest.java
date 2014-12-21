@@ -24,7 +24,6 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PollRequest extends AbstractRequest {
-  public static final int TYPE = -3;
 
   /**
    * Returns a new poll request builder.
