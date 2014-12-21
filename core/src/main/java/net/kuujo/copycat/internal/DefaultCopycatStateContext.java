@@ -41,10 +41,11 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   private final Log log;
   private AbstractState state;
   private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
+  private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<PingRequest, PingResponse> pingHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
   private MessageHandler<AppendRequest, AppendResponse> appendHandler;
-  private MessageHandler<QueryRequest, QueryResponse> syncHandler;
+  private MessageHandler<QueryRequest, QueryResponse> queryHandler;
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
   private CompletableFuture<Void> openFuture;
   private final String localMember;
@@ -238,6 +239,17 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   }
 
   @Override
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    return state.sync(request);
+  }
+
+  @Override
+  public RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
+    this.syncHandler = handler;
+    return this;
+  }
+
+  @Override
   public DefaultCopycatStateContext pingHandler(MessageHandler<PingRequest, PingResponse> handler) {
     this.pingHandler = handler;
     return this;
@@ -272,7 +284,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
 
   @Override
   public DefaultCopycatStateContext queryHandler(MessageHandler<QueryRequest, QueryResponse> handler) {
-    this.syncHandler = handler;
+    this.queryHandler = handler;
     return this;
   }
 
@@ -368,10 +380,11 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
    * Registers handlers on the given state.
    */
   private void registerHandlers(AbstractState state) {
+    state.syncHandler(syncHandler);
     state.pingHandler(pingHandler);
     state.appendHandler(appendHandler);
     state.pollHandler(pollHandler);
-    state.queryHandler(syncHandler);
+    state.queryHandler(queryHandler);
     state.commitHandler(commitHandler);
     state.transitionHandler(this::transition);
   }
@@ -380,6 +393,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
    * Unregisters handlers on the given state.
    */
   private void unregisterHandlers(AbstractState state) {
+    state.syncHandler(null);
     state.pingHandler(null);
     state.appendHandler(null);
     state.pollHandler(null);

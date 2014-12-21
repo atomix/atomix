@@ -27,6 +27,22 @@ import java.util.concurrent.CompletableFuture;
 public interface RaftProtocol extends Managed {
 
   /**
+   * Sends a protocol sync request.
+   *
+   * @param request The protocol sync request.
+   * @return A completable future to be completed with the sync response.
+   */
+  CompletableFuture<SyncResponse> sync(SyncRequest request);
+
+  /**
+   * Registers a protocol sync request handler.
+   *
+   * @param handler A protocol sync request handler.
+   * @return The Raft protocol.
+   */
+  RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler);
+
+  /**
    * Sends a protocol ping request.
    *
    * @param request The protocol ping request.

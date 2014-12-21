@@ -27,6 +27,11 @@ public enum CopycatState {
   START,
 
   /**
+   * Passive state.
+   */
+  PASSIVE,
+
+  /**
    * Follower state.
    */
   FOLLOWER,

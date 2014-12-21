@@ -22,6 +22,11 @@ package net.kuujo.copycat.internal.cluster;
 public class Topics {
 
   /**
+   * Member sync topic.
+   */
+  public static final String SYNC = "sync";
+
+  /**
    * Member ping topic.
    */
   public static final String PING = "ping";

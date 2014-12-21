@@ -29,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
  */
 abstract class AbstractState implements RaftProtocol {
   protected final CopycatStateContext context;
+  protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
   protected MessageHandler<PingRequest, PingResponse> pingHandler;
   protected MessageHandler<PollRequest, PollResponse> pollHandler;
   protected MessageHandler<AppendRequest, AppendResponse> appendHandler;
@@ -75,6 +76,17 @@ abstract class AbstractState implements RaftProtocol {
   protected final <R extends Response> R logResponse(R response) {
     logger().debug("{} - Sent {}", context.getLocalMember(), response);
     return response;
+  }
+
+  @Override
+  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
+  }
+
+  @Override
+  public RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
+    this.syncHandler = handler;
+    return this;
   }
 
   @Override

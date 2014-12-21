@@ -28,7 +28,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ActiveState extends AbstractState {
+abstract class ActiveState extends PassiveState {
   private final AtomicBoolean transition = new AtomicBoolean();
 
   protected ActiveState(CopycatStateContext context) {

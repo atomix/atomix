@@ -256,11 +256,13 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public void createRoutes(Cluster cluster, RaftProtocol protocol) {
+      cluster.localMember().registerHandler(Topics.SYNC, protocol::sync);
       cluster.localMember().registerHandler(Topics.PING, protocol::ping);
       cluster.localMember().registerHandler(Topics.POLL, protocol::poll);
       cluster.localMember().registerHandler(Topics.APPEND, protocol::append);
       cluster.localMember().registerHandler(Topics.QUERY, protocol::query);
       cluster.localMember().registerHandler(Topics.COMMIT, protocol::commit);
+      protocol.pingHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
       protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
