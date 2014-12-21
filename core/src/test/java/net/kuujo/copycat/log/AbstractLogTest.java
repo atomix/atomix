@@ -93,16 +93,12 @@ public abstract class AbstractLogTest {
    * Asserts that entries spanning 3 segments are appended with the expected indexes.
    */
   public void testAppendEntries() throws Exception {
-    List<Long> expectedIndexes = IntStream.range(1, entriesPerSegment * 3 + 1)
-      .asLongStream()
-      .boxed()
-      .collect(Collectors.toList());
     List<ByteBuffer> entries = IntStream.range(1, entriesPerSegment * 3 + 1)
       .boxed()
       .map(i -> ByteBuffer.allocate(4).putInt(i))
       .collect(Collectors.toList());
 
-    assertEquals(log.appendEntries(entries), expectedIndexes);
+    assertIndexes(log.appendEntries(entries), 1, entriesPerSegment * 3);
     assertEquals(log.segments().size(), 3);
     assertEquals(log.entryCount(), entriesPerSegment * 3);
     assertEquals(log.size(), entrySize() * entriesPerSegment * 3);
@@ -142,7 +138,8 @@ public abstract class AbstractLogTest {
     assertFalse(log.containsIndex(0));
     assertFalse(log.containsIndex(1));
 
-    appendEntries(entriesPerSegment * 3);
+    List<Long> indexes = appendEntries(entriesPerSegment * 3);
+    assertIndexes(indexes, 1, entriesPerSegment * 3);
     for (int i = 1; i <= entriesPerSegment * 3; i++)
       assertTrue(log.containsIndex(i));
     assertFalse(log.containsIndex(entriesPerSegment * 3 + 1));
@@ -190,14 +187,16 @@ public abstract class AbstractLogTest {
 
     // Append 3 more segments
     int nextEntryId = 5000;
-    List<Long> moreIndexes = appendEntries(entriesPerSegment * 3, nextEntryId);
-    for (int i = 0; i < moreIndexes.size(); i++)
-      assertBytesEqual(log.getEntry(moreIndexes.get(i)), nextEntryId + i);
+    List<Long> indexes = appendEntries(entriesPerSegment * 3, nextEntryId);
+    assertIndexes(indexes, entriesPerSegment + 3, entriesPerSegment * 3 + 3);
+    for (int i = 0; i < indexes.size(); i++)
+      assertBytesEqual(log.getEntry(indexes.get(i)), nextEntryId + i);
     assertFalse(log.containsIndex((entriesPerSegment + 2) + (entriesPerSegment * 3) + 1));
 
     // Remove all segments
     log.removeAfter(0);
-    appendEntries(entriesPerSegment * 2);
+    indexes = appendEntries(entriesPerSegment * 2);
+    assertIndexes(indexes, 1, entriesPerSegment * 2);
     assertEquals(log.firstIndex().longValue(), 1);
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 2);
     assertEquals(log.entryCount(), entriesPerSegment * 2);
@@ -254,7 +253,8 @@ public abstract class AbstractLogTest {
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
 
     // Append 2 more segments
-    appendEntries(entriesPerSegment * 2);
+    List<Long> indexes = appendEntries(entriesPerSegment * 2);
+    assertIndexes(indexes, entriesPerSegment * 3 + 1, entriesPerSegment * 5);
     for (int i = 2; i <= entriesPerSegment * 5; i++)
       assertBytesEqual(log.getEntry(i), i);
     assertEquals(log.entryCount(), entriesPerSegment * 5);
@@ -289,7 +289,8 @@ public abstract class AbstractLogTest {
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
 
     // Append 3 more segments - 1
-    appendEntries(entriesPerSegment * 3 - 1, 5001);
+    List<Long> indexes = appendEntries(entriesPerSegment * 3 - 1, 5001);
+    assertIndexes(indexes, entriesPerSegment * 3 + 1, entriesPerSegment * 3 - 1);
     for (int i = 0; i < entriesPerSegment * 3; i++)
       assertBytesEqual(log.getEntry(i + entriesPerSegment * 3), 5000 + i);
     assertEquals(log.entryCount(), entriesPerSegment * 3);
@@ -327,7 +328,8 @@ public abstract class AbstractLogTest {
     assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
 
     // Append 2 more segments
-    appendEntries(entriesPerSegment * 2, 5000);
+    List<Long> indexes = appendEntries(entriesPerSegment * 2, 5000);
+    assertIndexes(indexes, entriesPerSegment * 3 + 1, entriesPerSegment * 5);
     for (int i = 0; i < entriesPerSegment * 2; i++)
       assertBytesEqual(log.getEntry(i + entriesPerSegment * 3 + 1), 5000 + i);
     expectedEntries = (entriesPerSegment * 5) - (entriesPerSegment + 2);
@@ -484,5 +486,10 @@ public abstract class AbstractLogTest {
 
   protected static void assertBytesEqual(ByteBuffer b1, String string) {
     assertEquals(new String(b1.array()), string);
+  }
+
+  protected static void assertIndexes(List<Long> indexes, int start, int end) {
+    for (int i = 0, j = start; j <= end; i++, j++)
+      assertEquals(indexes.get(i).longValue(), j);
   }
 }
