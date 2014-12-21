@@ -88,7 +88,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     entry.putInt(name.getBytes().length);
     entry.put(name.getBytes());
     entry.rewind();
-    return context.sync(entry).thenApplyAsync(buffer -> {
+    return context.query(entry).thenApplyAsync(buffer -> {
       int result = buffer.getInt();
       if (result == 0) {
         return null;
@@ -115,7 +115,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     entry.putInt(name.getBytes().length);
     entry.put(name.getBytes());
     entry.rewind();
-    return context.sync(entry).thenApplyAsync(buffer -> {
+    return context.query(entry).thenApplyAsync(buffer -> {
       int result = buffer.getInt();
       if (result == 0) {
         return null;
@@ -259,12 +259,12 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       cluster.localMember().registerHandler(Topics.PING, protocol::ping);
       cluster.localMember().registerHandler(Topics.POLL, protocol::poll);
       cluster.localMember().registerHandler(Topics.APPEND, protocol::append);
-      cluster.localMember().registerHandler(Topics.SYNC, protocol::sync);
+      cluster.localMember().registerHandler(Topics.QUERY, protocol::query);
       cluster.localMember().registerHandler(Topics.COMMIT, protocol::commit);
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
       protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
-      protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
+      protocol.queryHandler(request -> handleOutboundRequest(Topics.QUERY, request, cluster));
       protocol.commitHandler(request -> handleOutboundRequest(Topics.COMMIT, request, cluster));
     }
 
@@ -288,7 +288,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       protocol.pingHandler(null);
       protocol.pollHandler(null);
       protocol.appendHandler(null);
-      protocol.syncHandler(null);
+      protocol.queryHandler(null);
       protocol.commitHandler(null);
     }
   }

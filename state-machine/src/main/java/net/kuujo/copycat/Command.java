@@ -15,20 +15,23 @@
  */
 package net.kuujo.copycat;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * State command.
+ * State machine command annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface Command<T, U> {
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Command {
 
   /**
-   * Executes the command.
-   *
-   * @param entry The log entry.
-   * @return The command output.
+   * The command name.
    */
-  U execute(T entry);
+  String name() default "";
 
 }

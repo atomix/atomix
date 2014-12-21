@@ -1518,155 +1518,169 @@ public class RequestResponseTest {
   }
 
   /**
-   * Tests that the sync request builder when not configured.
+   * Tests that the query request builder when not configured.
    */
-  public void testSyncRequestBuilderFailsWithoutConfiguration() {
+  public void testQueryRequestBuilderFailsWithoutConfiguration() {
     try {
-      SyncRequest.builder().build();
+      QueryRequest.builder().build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync request builder fails without a configured ID.
+   * Tests that the query request builder fails without a configured ID.
    */
-  public void testSyncRequestBuilderFailsWithoutId() {
+  public void testQueryRequestBuilderFailsWithoutId() {
     try {
-      SyncRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
+      QueryRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync request builder fails with a null ID.
+   * Tests that the query request builder fails with a null ID.
    */
-  public void testSyncRequestBuilderFailsWithNullId() {
+  public void testQueryRequestBuilderFailsWithNullId() {
     try {
-      SyncRequest.builder().withId(null).build();
+      QueryRequest.builder().withId(null).build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync request builder fails without a configured member.
+   * Tests that the query request builder fails without a configured member.
    */
-  public void testSyncRequestBuilderFailsWithoutMember() {
+  public void testQueryRequestBuilderFailsWithoutMember() {
     try {
-      SyncRequest.builder().withId("test").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
+      QueryRequest.builder().withId("test").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync request builder fails with a null member.
+   * Tests that the query request builder fails with a null member.
    */
-  public void testSyncRequestBuilderFailsWithNullMember() {
+  public void testQueryRequestBuilderFailsWithNullMember() {
     try {
-      SyncRequest.builder().withMember(null).build();
+      QueryRequest.builder().withMember(null).build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync request builder fails without a configured entry.
+   * Tests that the query request builder fails without a configured entry.
    */
-  public void testSyncRequestBuilderFailsWithoutEntry() {
+  public void testQueryRequestBuilderFailsWithoutEntry() {
     try {
-      SyncRequest.builder().withId("test").withMember("foo").build();
+      QueryRequest.builder().withId("test").withMember("foo").build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync request builder fails when no entry has been set.
+   * Tests that the query request builder fails when no entry has been set.
    */
-  public void testSyncRequestBuilderEntrySetterFailsWithNullEntry() {
+  public void testQueryRequestBuilderEntrySetterFailsWithNullEntry() {
     try {
-      SyncRequest.builder().withEntry(null).build();
+      QueryRequest.builder().withEntry(null).build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync request builder succeeds when properly configured.
+   * Tests that the query request builder fails when a null consistency is provided.
    */
-  public void testSyncRequestBuilderSucceedsWithValidConfiguration() {
-    SyncRequest request = SyncRequest.builder()
+  public void testQueryRequestBuilderEntrySetterFailsWithNullConsistency() {
+    try {
+      QueryRequest.builder().withConsistency(null).build();
+      fail();
+    } catch (NullPointerException e) {
+    }
+  }
+
+  /**
+   * Tests that the query request builder succeeds when properly configured.
+   */
+  public void testQueryRequestBuilderSucceedsWithValidConfiguration() {
+    QueryRequest request = QueryRequest.builder()
       .withId("test")
       .withMember("foo")
-      .withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
+      .withEntry(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withConsistency(Consistency.FULL)
+      .build();
     assertEquals(request.id(), "test");
     assertEquals(request.member(), "foo");
     assertEquals(new String(request.entry().array()), "Hello world!");
+    assertEquals(request.consistency(), Consistency.FULL);
   }
 
   /**
-   * Tests that the sync response builder fails without being properly configured.
+   * Tests that the query response builder fails without being properly configured.
    */
-  public void testSyncResponseBuilderFailsWithoutConfiguration() {
+  public void testQueryResponseBuilderFailsWithoutConfiguration() {
     try {
-      SyncResponse.builder().build();
+      QueryResponse.builder().build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync response builder fails without an ID.
+   * Tests that the query response builder fails without an ID.
    */
-  public void testSyncResponseBuilderFailsWithoutId() {
+  public void testQueryResponseBuilderFailsWithoutId() {
     try {
-      SyncResponse.builder().withMember("foo").withResult("Hello world!").build();
+      QueryResponse.builder().withMember("foo").withResult("Hello world!").build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync response builder fails with a null ID.
+   * Tests that the query response builder fails with a null ID.
    */
-  public void testSyncResponseBuilderFailsWithNullId() {
+  public void testQueryResponseBuilderFailsWithNullId() {
     try {
-      SyncResponse.builder().withId(null).build();
+      QueryResponse.builder().withId(null).build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync response builder fails without a member.
+   * Tests that the query response builder fails without a member.
    */
-  public void testSyncResponseBuilderFailsWithoutMember() {
+  public void testQueryResponseBuilderFailsWithoutMember() {
     try {
-      SyncResponse.builder().withId("test").withResult("Hello world!").build();
+      QueryResponse.builder().withId("test").withResult("Hello world!").build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync response builder fails with a null member.
+   * Tests that the query response builder fails with a null member.
    */
-  public void testSyncResponseBuilderFailsWithNullMember() {
+  public void testQueryResponseBuilderFailsWithNullMember() {
     try {
-      SyncResponse.builder().withMember(null).build();
+      QueryResponse.builder().withMember(null).build();
       fail();
     } catch (NullPointerException e) {
     }
   }
 
   /**
-   * Tests that the sync response builder succeeds with a null result.
+   * Tests that the query response builder succeeds with a null result.
    */
-  public void testSyncResponseBuilderSucceedsWithNullResult() {
-    SyncResponse response = SyncResponse.builder()
+  public void testQueryResponseBuilderSucceedsWithNullResult() {
+    QueryResponse response = QueryResponse.builder()
       .withId("test")
       .withMember("foo")
       .withResult(null)
@@ -1677,10 +1691,10 @@ public class RequestResponseTest {
   }
 
   /**
-   * Tests that the sync response builder succeeds with a valid configuration.
+   * Tests that the query response builder succeeds with a valid configuration.
    */
-  public void testSyncResponseBuilderSucceedsWithValidConfiguration() {
-    SyncResponse response = SyncResponse.builder()
+  public void testQueryResponseBuilderSucceedsWithValidConfiguration() {
+    QueryResponse response = QueryResponse.builder()
       .withId("test")
       .withMember("foo")
       .withResult("Hello world!")

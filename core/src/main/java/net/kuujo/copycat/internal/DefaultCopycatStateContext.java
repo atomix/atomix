@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MessageHandler;
@@ -45,7 +44,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   private MessageHandler<PingRequest, PingResponse> pingHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
   private MessageHandler<AppendRequest, AppendResponse> appendHandler;
-  private MessageHandler<SyncRequest, SyncResponse> syncHandler;
+  private MessageHandler<QueryRequest, QueryResponse> syncHandler;
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
   private CompletableFuture<Void> openFuture;
   private final String localMember;
@@ -272,26 +271,14 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
   }
 
   @Override
-  public DefaultCopycatStateContext syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
+  public DefaultCopycatStateContext queryHandler(MessageHandler<QueryRequest, QueryResponse> handler) {
     this.syncHandler = handler;
     return this;
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    if (leader == null) {
-      return Futures.completedFuture(SyncResponse.builder()
-        .withId(request.id())
-        .withMember(request.member())
-        .withStatus(Response.Status.ERROR)
-        .withError(new CopycatException("No cluster leader found"))
-        .build());
-    } else if (!leader.equals(localMember)) {
-      return syncHandler.handle(SyncRequest.builder(request)
-        .withMember(leader)
-        .build());
-    }
-    return state.sync(request);
+  public CompletableFuture<QueryResponse> query(QueryRequest request) {
+    return state.query(request);
   }
 
   @Override
@@ -302,18 +289,6 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
 
   @Override
   public CompletableFuture<CommitResponse> commit(CommitRequest request) {
-    if (leader == null) {
-      return Futures.completedFuture(CommitResponse.builder()
-        .withId(request.id())
-        .withMember(request.member())
-        .withStatus(Response.Status.ERROR)
-        .withError(new CopycatException("No cluster leader found"))
-        .build());
-    } else if (!leader.equals(localMember)) {
-      return commitHandler.handle(CommitRequest.builder(request)
-        .withMember(leader)
-        .build());
-    }
     return state.commit(request);
   }
 
@@ -396,7 +371,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
     state.pingHandler(pingHandler);
     state.appendHandler(appendHandler);
     state.pollHandler(pollHandler);
-    state.syncHandler(syncHandler);
+    state.queryHandler(syncHandler);
     state.commitHandler(commitHandler);
     state.transitionHandler(this::transition);
   }
@@ -408,7 +383,7 @@ public class DefaultCopycatStateContext extends Observable implements CopycatSta
     state.pingHandler(null);
     state.appendHandler(null);
     state.pollHandler(null);
-    state.syncHandler(null);
+    state.queryHandler(null);
     state.commitHandler(null);
     state.transitionHandler(null);
   }

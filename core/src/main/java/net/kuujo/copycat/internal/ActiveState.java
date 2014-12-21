@@ -141,7 +141,7 @@ abstract class ActiveState extends AbstractState {
 
   @Override
   public synchronized CompletableFuture<AppendResponse> append(final AppendRequest request) {
-    CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleSync(logRequest(request))));
+    CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleAppend(logRequest(request))));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
     if (transition.get()) {
@@ -153,7 +153,7 @@ abstract class ActiveState extends AbstractState {
   /**
    * Starts the append process.
    */
-  private synchronized AppendResponse handleSync(AppendRequest request) {
+  private synchronized AppendResponse handleAppend(AppendRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
@@ -463,27 +463,40 @@ abstract class ActiveState extends AbstractState {
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+  public CompletableFuture<QueryResponse> query(QueryRequest request) {
     logRequest(request);
-
-    return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-      .withId(request.id())
-      .withMember(context.getLocalMember())
-      .withStatus(Response.Status.ERROR)
-      .withError(new IllegalStateException("Not the leader"))
-      .build()));
+    // If the request allows inconsistency, immediately execute the query and return the result.
+    if (request.consistency() == Consistency.NONE) {
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
+        .withId(request.id())
+        .withMember(context.getLocalMember())
+        .withResult(context.consumer() != null ? context.consumer().apply(null, request.entry()) : null)
+        .build()));
+    } else if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
+        .withId(request.id())
+        .withMember(context.getLocalMember())
+        .withStatus(Response.Status.ERROR)
+        .withError(new IllegalStateException("Not the leader"))
+        .build()));
+    } else {
+      return queryHandler.handle(QueryRequest.builder(request).withMember(context.getLeader()).build());
+    }
   }
 
   @Override
   public CompletableFuture<CommitResponse> commit(CommitRequest request) {
     logRequest(request);
-
-    return CompletableFuture.completedFuture(logResponse(CommitResponse.builder()
-      .withId(request.id())
-      .withMember(context.getLocalMember())
-      .withStatus(Response.Status.ERROR)
-      .withError(new IllegalStateException("Not the leader"))
-      .build()));
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(CommitResponse.builder()
+        .withId(request.id())
+        .withMember(context.getLocalMember())
+        .withStatus(Response.Status.ERROR)
+        .withError(new IllegalStateException("Not the leader"))
+        .build()));
+    } else {
+      return commitHandler.handle(CommitRequest.builder(request).withMember(context.getLeader()).build());
+    }
   }
 
 }

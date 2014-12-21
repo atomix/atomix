@@ -21,8 +21,9 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.CommitRequest;
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.QueryRequest;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.protocol.SyncRequest;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
@@ -87,7 +88,12 @@ public class DefaultCopycatContext implements CopycatContext {
   }
 
   @Override
-  public CompletableFuture<ByteBuffer> sync(ByteBuffer entry) {
+  public CompletableFuture<ByteBuffer> query(ByteBuffer entry) {
+    return query(entry, Consistency.DEFAULT);
+  }
+
+  @Override
+  public CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency) {
     if (!open) {
       return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
     } else if (deleted) {
@@ -95,12 +101,13 @@ public class DefaultCopycatContext implements CopycatContext {
     }
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    SyncRequest request = SyncRequest.builder()
+    QueryRequest request = QueryRequest.builder()
       .withId(UUID.randomUUID().toString())
       .withMember(context.getLocalMember())
       .withEntry(entry)
+      .withConsistency(consistency)
       .build();
-    context.sync(request).whenComplete((response, error) -> {
+    context.query(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
           future.complete(response.result());

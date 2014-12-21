@@ -75,20 +75,20 @@ public interface RaftProtocol extends Managed {
   RaftProtocol appendHandler(MessageHandler<AppendRequest, AppendResponse> handler);
 
   /**
-   * Sends a protocol sync request.
+   * Sends a protocol query request.
    *
-   * @param request The protocol sync request.
-   * @return A completable future to be completed with the sync response.
+   * @param request The protocol query request.
+   * @return A completable future to be completed with the query response.
    */
-  CompletableFuture<SyncResponse> sync(SyncRequest request);
+  CompletableFuture<QueryResponse> query(QueryRequest request);
 
   /**
-   * Registers a protocol sync request handler.
+   * Registers a protocol query request handler.
    *
-   * @param handler A protocol sync request handler.
+   * @param handler A protocol query request handler.
    * @return The Raft protocol.
    */
-  RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler);
+  RaftProtocol queryHandler(MessageHandler<QueryRequest, QueryResponse> handler);
 
   /**
    * Sends a protocol commit request.

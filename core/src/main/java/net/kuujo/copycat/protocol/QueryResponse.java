@@ -18,37 +18,37 @@ package net.kuujo.copycat.protocol;
 import java.util.Objects;
 
 /**
- * Protocol sync response.
+ * Protocol query response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SyncResponse extends AbstractResponse {
+public class QueryResponse extends AbstractResponse {
 
   /**
-   * Returns a new sync response builder.
+   * Returns a new query response builder.
    *
-   * @return A new sync response builder.
+   * @return A new query response builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
   /**
-   * Returns a sync response builder for an existing response.
+   * Returns a query response builder for an existing response.
    *
    * @param response The response to build.
-   * @return The sync response builder.
+   * @return The query response builder.
    */
-  public static Builder builder(SyncResponse response) {
+  public static Builder builder(QueryResponse response) {
     return new Builder(response);
   }
 
   private Object result;
 
   /**
-   * Returns the sync result.
+   * Returns the query result.
    *
-   * @return The sync result.
+   * @return The query result.
    */
   @SuppressWarnings("unchecked")
   public <T> T result() {
@@ -62,8 +62,8 @@ public class SyncResponse extends AbstractResponse {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof SyncResponse) {
-      SyncResponse response = (SyncResponse) object;
+    if (object instanceof QueryResponse) {
+      QueryResponse response = (QueryResponse) object;
       return response.id.equals(id)
         && response.member.equals(member)
         && response.status == status
@@ -81,17 +81,17 @@ public class SyncResponse extends AbstractResponse {
   /**
    * Sync response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, SyncResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, QueryResponse> {
     private Builder() {
-      this(new SyncResponse());
+      this(new QueryResponse());
     }
 
-    private Builder(SyncResponse response) {
+    private Builder(QueryResponse response) {
       super(response);
     }
 
     /**
-     * Sets the sync response result.
+     * Sets the query response result.
      *
      * @param result The response result.
      * @return The response builder.

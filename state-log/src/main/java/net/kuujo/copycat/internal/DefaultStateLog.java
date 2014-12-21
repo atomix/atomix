@@ -15,18 +15,22 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.StateLog;
+import net.kuujo.copycat.StateLogConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -37,7 +41,7 @@ import java.util.function.Supplier;
 public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> implements StateLog<T> {
   private final Serializer serializer;
   private final ExecutionContext executor;
-  private final Map<Integer, CommandInfo> commands = new HashMap<>();
+  private final Map<Integer, OperationInfo> operations = new HashMap<>();
   private final StateLogConfig config;
   private Supplier snapshotter;
   private Consumer installer;
@@ -57,33 +61,54 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   }
 
   @Override
-  public <U extends T, V> StateLog<T> register(String name, Command<U, V> command) {
-    return register(name, command, new CommandOptions());
+  public <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command) {
+    Assert.state(!open, "Cannot register command on open state log");
+    operations.put(name.hashCode(), new OperationInfo(name, command, false));
+    return this;
   }
 
   @Override
-  public <U extends T, V> StateLog<T> register(String name, Command<U, V> command, CommandOptions options) {
-    Assert.state(!open, "Cannot register command on open state log");
-    commands.put(name.hashCode(), new CommandInfo(name, command, options));
+  public StateLog<T> unregisterCommand(String name) {
+    Assert.state(!open, "Cannot unregister command on open state log");
+    operations.remove(name);
     return this;
+  }
+
+  @Override
+  public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
+    Assert.state(!open, "Cannot register command on open state log");
+    operations.put(name.hashCode(), new OperationInfo(name, query, true));
+    return this;
+  }
+
+  @Override
+  public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency) {
+    Assert.state(!open, "Cannot register command on open state log");
+    operations.put(name.hashCode(), new OperationInfo(name, query, true, consistency));
+    return this;
+  }
+
+  @Override
+  public StateLog<T> unregisterQuery(String name) {
+    return null;
   }
 
   @Override
   public StateLog<T> unregister(String name) {
     Assert.state(!open, "Cannot unregister command on open state log");
-    commands.remove(name.hashCode());
+    operations.remove(name.hashCode());
     return this;
   }
 
   @Override
-  public <U> StateLog<T> snapshotter(Supplier<U> snapshotter) {
+  public <U> StateLog<T> takeSnapshotWith(Supplier<U> snapshotter) {
     Assert.state(!open, "Cannot modify state log once opened");
     this.snapshotter = snapshotter;
     return this;
   }
 
   @Override
-  public <U> StateLog<T> installer(Consumer<U> installer) {
+  public <U> StateLog<T> installSnapshotWith(Consumer<U> installer) {
     Assert.state(!open, "Cannot modify state log once opened");
     this.installer = installer;
     return this;
@@ -93,37 +118,33 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   @SuppressWarnings("unchecked")
   public <U> CompletableFuture<U> submit(String command, T entry) {
     Assert.state(open, "State log not open");
-    CommandInfo commandInfo = commands.get(command.hashCode());
-    if (commandInfo == null) {
+    OperationInfo<T, U> operationInfo = operations.get(command.hashCode());
+    if (operationInfo == null) {
       CompletableFuture<U> future = new CompletableFuture<>();
       executor.execute(() -> future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command))));
       return future;
     }
 
-    // If this is a read-only command, check if the command is consistent. For consistent commands,
+    // If this is a read-only command, check if the command is consistent. For consistent operations,
     // queries are forwarded to the current cluster leader for evaluation. Otherwise, it's safe to
     // read stale data from the local node.
-    if (commandInfo.options.isReadOnly()) {
-      if (commandInfo.options.isConsistent()) {
-        ByteBuffer buffer = serializer.writeObject(entry);
-        ByteBuffer syncEntry = ByteBuffer.allocate(8 + buffer.capacity());
-        syncEntry.putInt(1); // Entry type
-        syncEntry.putInt(command.hashCode());
-        syncEntry.put(buffer);
-        syncEntry.rewind();
-        return context.sync(syncEntry).thenApplyAsync(serializer::readObject);
-      } else {
-        return CompletableFuture.supplyAsync(() -> (U) commandInfo.command.execute(entry), executor);
-      }
+    if (operationInfo.readOnly) {
+      ByteBuffer buffer = serializer.writeObject(entry);
+      ByteBuffer syncEntry = ByteBuffer.allocate(8 + buffer.capacity());
+      syncEntry.putInt(1); // Entry type
+      syncEntry.putInt(command.hashCode());
+      syncEntry.put(buffer);
+      syncEntry.rewind();
+      return context.query(syncEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
     } else {
-      // Write commands are always submitted to the context which will forward it to the cluster leader.
+      // Write operations are always submitted to the context which will forward it to the cluster leader.
       ByteBuffer buffer = serializer.writeObject(entry);
       ByteBuffer commandEntry = ByteBuffer.allocate(8 + buffer.capacity());
       commandEntry.putInt(1); // Entry type
       commandEntry.putInt(command.hashCode());
       commandEntry.put(buffer);
       commandEntry.rewind();
-      return context.commit(commandEntry).thenApplyAsync(serializer::readObject);
+      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
     }
   }
 
@@ -143,9 +164,9 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
         return ByteBuffer.allocate(0);
       case 1: // Command entry
         int commandCode = entry.getInt();
-        CommandInfo commandInfo = commands.get(commandCode);
-        if (commandInfo != null) {
-          return serializer.writeObject(commandInfo.execute(index, serializer.readObject(entry.slice())));
+        OperationInfo operationInfo = operations.get(commandCode);
+        if (operationInfo != null) {
+          return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
         }
         return ByteBuffer.allocate(0);
       default:
@@ -196,42 +217,31 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   public CompletableFuture<Void> close() {
     open = false;
     context.consumer(null);
-    context.cluster().localMember().unregisterHandler("query");
     return super.close();
-  }
-
-  /**
-   * Query sent between followers and leaders.
-   */
-  private class Query implements Serializable {
-    private final String command;
-    private final Object entry;
-    private Query() {
-      command = null;
-      entry = null;
-    }
-    private Query(String command, Object entry) {
-      this.command = command;
-      this.entry = entry;
-    }
   }
 
   /**
    * State command info.
    */
-  private class CommandInfo<TT, U> {
+  private class OperationInfo<TT, U> {
     private final String name;
-    private final Command<TT, U> command;
-    private final CommandOptions options;
+    private final Function<TT, U> function;
+    private final boolean readOnly;
+    private final Consistency consistency;
 
-    private CommandInfo(String name, Command<TT, U> command, CommandOptions options) {
+    private OperationInfo(String name, Function<TT, U> function, boolean readOnly) {
+      this(name, function, readOnly, Consistency.DEFAULT);
+    }
+
+    private OperationInfo(String name, Function<TT, U> function, boolean readOnly, Consistency consistency) {
       this.name = name;
-      this.command = command;
-      this.options = options;
+      this.function = function;
+      this.readOnly = readOnly;
+      this.consistency = consistency;
     }
 
     private U execute(Long index, TT entry) {
-      U result = command.execute(entry);
+      U result = function.apply(entry);
       commitIndex = index;
       checkSnapshot();
       return result;

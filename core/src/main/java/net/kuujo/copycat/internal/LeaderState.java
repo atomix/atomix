@@ -36,8 +36,10 @@ import java.util.function.BiFunction;
  */
 class LeaderState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(LeaderState.class);
+  private static final long CONSISTENCY_LEASE_TIME = 1000;
   private ScheduledFuture<?> currentTimer;
   private Replicator replicator;
+  private long lastConsistencyCheck;
 
   LeaderState(DefaultCopycatStateContext context) {
     super(context);
@@ -143,46 +145,51 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+  public CompletableFuture<QueryResponse> query(QueryRequest request) {
     logRequest(request);
 
-    CompletableFuture<SyncResponse> future = new CompletableFuture<>();
+    CompletableFuture<QueryResponse> future = new CompletableFuture<>();
     BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
 
-    Long lastIndex = context.log().lastIndex();
-    if (lastIndex != null) {
-      LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), lastIndex);
-      replicator.ping(lastIndex).whenComplete((index, error) -> {
-        if (error == null) {
-          try {
-            future.complete(logResponse(SyncResponse.builder()
-              .withId(request.id())
-              .withMember(context.getLocalMember())
-              .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
-              .build()));
-          } catch (Exception e) {
-            future.complete(SyncResponse.builder()
+    switch (request.consistency()) {
+      // Consistency mode NONE or DEFAULT is immediately evaluated and returned.
+      case NONE:
+      case DEFAULT:
+        future.complete(logResponse(QueryResponse.builder()
+          .withId(request.id())
+          .withMember(context.getLocalMember())
+          .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
+          .build()));
+        break;
+      // Consistency mode FULL requires synchronous consistency check prior to applying the query.
+      case FULL:
+        LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), context.log().lastIndex());
+        replicator.pingAll().whenComplete((index, error) -> {
+          if (error == null) {
+            try {
+              future.complete(logResponse(QueryResponse.builder()
+                .withId(request.id())
+                .withMember(context.getLocalMember())
+                .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
+                .build()));
+            } catch (Exception e) {
+              future.complete(QueryResponse.builder()
+                .withId(request.id())
+                .withMember(context.getLocalMember())
+                .withStatus(Response.Status.ERROR)
+                .withError(e)
+                .build());
+            }
+          } else {
+            future.complete(QueryResponse.builder()
               .withId(request.id())
               .withMember(context.getLocalMember())
               .withStatus(Response.Status.ERROR)
-              .withError(e)
+              .withError(error)
               .build());
           }
-        } else {
-          future.complete(SyncResponse.builder()
-            .withId(request.id())
-            .withMember(context.getLocalMember())
-            .withStatus(Response.Status.ERROR)
-            .withError(error)
-            .build());
-        }
-      });
-    } else {
-      future.complete(logResponse(SyncResponse.builder()
-        .withId(request.id())
-        .withMember(context.getLocalMember())
-        .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
-        .build()));
+        });
+        break;
     }
     return future;
   }

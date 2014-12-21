@@ -21,55 +21,65 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * Protocol sync request.
+ * Protocol query request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SyncRequest extends AbstractRequest {
-  public static final int TYPE = -13;
+public class QueryRequest extends AbstractRequest {
 
   /**
-   * Returns a new sync request builder.
+   * Returns a new query request builder.
    *
-   * @return A new sync request builder.
+   * @return A new query request builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
   /**
-   * Returns a sync request builder for an existing request.
+   * Returns a query request builder for an existing request.
    *
    * @param request The request to build.
-   * @return The sync request builder.
+   * @return The query request builder.
    */
-  public static Builder builder(SyncRequest request) {
+  public static Builder builder(QueryRequest request) {
     return new Builder(request);
   }
 
   private ByteBuffer entry;
+  private Consistency consistency = Consistency.DEFAULT;
 
   /**
-   * Returns the sync entry.
+   * Returns the query entry.
    *
-   * @return The sync entry.
+   * @return The query entry.
    */
   public ByteBuffer entry() {
     return entry;
   }
 
+  /**
+   * Returns the query consistency level.
+   *
+   * @return The query consistency level.
+   */
+  public Consistency consistency() {
+    return consistency;
+  }
+
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, entry);
+    return Objects.hash(id, member, entry, consistency);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof SyncRequest) {
-      SyncRequest request = (SyncRequest) object;
+    if (object instanceof QueryRequest) {
+      QueryRequest request = (QueryRequest) object;
       return request.id.equals(id)
         && request.member.equals(member)
-        && request.entry.equals(entry);
+        && request.entry.equals(entry)
+        && request.consistency == consistency;
     }
     return false;
   }
@@ -82,12 +92,12 @@ public class SyncRequest extends AbstractRequest {
   /**
    * Sync request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, SyncRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, QueryRequest> {
     private Builder() {
-      this(new SyncRequest());
+      this(new QueryRequest());
     }
 
-    private Builder(SyncRequest request) {
+    private Builder(QueryRequest request) {
       super(request);
     }
 
@@ -102,8 +112,19 @@ public class SyncRequest extends AbstractRequest {
       return this;
     }
 
+    /**
+     * Sets the request consistency level.
+     *
+     * @param consistency The request consistency level.
+     * @return The request builder.
+     */
+    public Builder withConsistency(Consistency consistency) {
+      request.consistency = Assert.isNotNull(consistency, "consistency");
+      return this;
+    }
+
     @Override
-    public SyncRequest build() {
+    public QueryRequest build() {
       super.build();
       Assert.isNotNull(request.entry, "entry");
       return request;

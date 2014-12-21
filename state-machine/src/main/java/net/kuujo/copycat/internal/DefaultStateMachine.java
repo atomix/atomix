@@ -24,6 +24,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * Default state machine implementation.
@@ -125,16 +126,16 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
 
   @Override
   public CompletableFuture<Void> open() {
-    log.snapshotter(this::snapshot);
-    log.installer(this::install);
+    log.takeSnapshotWith(this::snapshot);
+    log.installSnapshotWith(this::install);
     return log.open();
   }
 
   @Override
   public CompletableFuture<Void> close() {
     return log.close().whenComplete((result, error) -> {
-      log.snapshotter(null);
-      log.installer(null);
+      log.takeSnapshotWith(null);
+      log.installSnapshotWith(null);
     });
   }
 
@@ -148,22 +149,28 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
    */
   private void registerCommands() {
     for (Method method : stateType.getMethods()) {
-      CommandInfo info = method.getAnnotation(CommandInfo.class);
-      if (info == null) {
-        log.register(method.getName(), createCommand(method));
+      Query query = method.getAnnotation(Query.class);
+      if (query != null) {
+        log.registerQuery(query.name()
+          .equals("") ? method.getName() : query.name(), wrapOperation(method), query.consistency());
       } else {
-        log.register(info.name().equals("") ? method.getName() : info.name(), createCommand(method), new CommandOptions().withConsistent(info.consistent()).withReadOnly(info.readOnly()));
+        Command command = method.getAnnotation(Command.class);
+        if (command != null) {
+          log.registerCommand(command.name().equals("") ? method.getName() : command.name(), wrapOperation(method));
+        } else if (method.isAccessible()) {
+          log.registerCommand(method.getName(), wrapOperation(method));
+        }
       }
     }
   }
 
   /**
-   * Creates a state log command for the given method.
+   * Wraps a state log operation for the given method.
    *
    * @param method The method for which to create the state log command.
    * @return The generated state log command.
    */
-  private Command<List<Object>, Object> createCommand(Method method) {
+  private Function<List<Object>, Object> wrapOperation(Method method) {
     Integer tempIndex = null;
     Class<?>[] paramTypes = method.getParameterTypes();
     for (int i = 0; i < paramTypes.length; i++) {

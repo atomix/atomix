@@ -15,33 +15,23 @@
  */
 package net.kuujo.copycat;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.protocol.Consistency;
 
 /**
- * State machine command annotation.
+ * State machine query annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface CommandInfo {
+public @interface Query {
 
   /**
-   * The command name.
+   * The query name.
    */
   String name() default "";
 
   /**
-   * Indicates whether the command is a read-only command.
+   * The query consistency.
    */
-  boolean readOnly() default false;
-
-  /**
-   * Indicates whether the command should be consistently executed.
-   */
-  boolean consistent() default true;
+  Consistency consistency() default Consistency.DEFAULT;
 
 }

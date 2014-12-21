@@ -16,6 +16,7 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.nio.ByteBuffer;
@@ -59,19 +60,28 @@ public interface CopycatContext extends ExecutionContext, Managed {
   CopycatContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer);
 
   /**
-   * Submits a synchronous entry to the context.
-   *
-   * @return A completable future to be completed once the cluster has been synchronized.
-   */
-  CompletableFuture<ByteBuffer> sync(ByteBuffer entry);
-
-  /**
    * Submits a persistent entry to the context.
    *
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
   CompletableFuture<ByteBuffer> commit(ByteBuffer entry);
+
+  /**
+   * Submits a synchronous entry to the context.
+   *
+   * @param entry The entry to query.
+   * @return A completable future to be completed once the cluster has been synchronized.
+   */
+  CompletableFuture<ByteBuffer> query(ByteBuffer entry);
+
+  /**
+   * Submits a synchronous entry to the context.
+   *
+   * @param entry The entry to query.
+   * @return A completable future to be completed once the cluster has been synchronized.
+   */
+  CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency);
 
   /**
    * Deletes the context.
