@@ -19,6 +19,7 @@ import net.kuujo.copycat.internal.util.Assert;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,8 +51,10 @@ public class SyncRequest extends AbstractRequest {
 
   private long term;
   private String leader;
+  private Long logIndex;
+  private Long commitIndex;
   private List<ByteBuffer> entries;
-  private Membership membership;
+  private Collection<MemberInfo> members;
 
   /**
    * Returns the requesting node's current term.
@@ -72,6 +75,24 @@ public class SyncRequest extends AbstractRequest {
   }
 
   /**
+   * Returns the last known log index.
+   *
+   * @return The last known log index.
+   */
+  public Long logIndex() {
+    return logIndex;
+  }
+
+  /**
+   * Returns the requesting node's commit index.
+   *
+   * @return The requesting node's commit index.
+   */
+  public Long commitIndex() {
+    return commitIndex;
+  }
+
+  /**
    * Returns the log entries to append.
    *
    * @return A list of log entries.
@@ -85,8 +106,8 @@ public class SyncRequest extends AbstractRequest {
    *
    * @return The currently known membership.
    */
-  public Membership membership() {
-    return membership;
+  public Collection<MemberInfo> members() {
+    return members;
   }
 
   @Override
@@ -102,15 +123,17 @@ public class SyncRequest extends AbstractRequest {
         && request.member.equals(member)
         && request.term == term
         && request.leader.equals(leader)
+        && request.logIndex.equals(logIndex)
+        && request.commitIndex.equals(commitIndex)
         && request.entries.equals(entries)
-        && request.membership.equals(membership);
+        && request.members.equals(members);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, entries=[...]]", getClass().getSimpleName(), id, term, leader);
+    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%s, commitIndex=%s, entries=[...]]", getClass().getSimpleName(), id, term, leader, logIndex, commitIndex);
   }
 
   /**
@@ -169,13 +192,35 @@ public class SyncRequest extends AbstractRequest {
     }
 
     /**
+     * Sets the request log index.
+     *
+     * @param index The request log index.
+     * @return The request builder.
+     */
+    public Builder withLogIndex(Long index) {
+      request.logIndex = index;
+      return this;
+    }
+
+    /**
+     * Sets the request commit index.
+     *
+     * @param commitIndex The request commit index.
+     * @return The request builder.
+     */
+    public Builder withCommitIndex(Long commitIndex) {
+      request.commitIndex = commitIndex;
+      return this;
+    }
+
+    /**
      * Sets the request membership.
      *
-     * @param membership The request membership.
+     * @param members The request membership.
      * @return The sync request builder.
      */
-    public Builder withMembership(Membership membership) {
-      request.membership = Assert.isNotNull(membership, "membership");
+    public Builder withMembers(Collection<MemberInfo> members) {
+      request.members = Assert.isNotNull(members, "members");
       return this;
     }
 
@@ -185,7 +230,7 @@ public class SyncRequest extends AbstractRequest {
       Assert.isNotNull(request.leader, "leader");
       Assert.arg(request.term, request.term > 0, "term must be greater than zero");
       Assert.isNotNull(request.entries, "entries");
-      Assert.isNotNull(request.membership, "membership");
+      Assert.isNotNull(request.members, "members");
       return request;
     }
 

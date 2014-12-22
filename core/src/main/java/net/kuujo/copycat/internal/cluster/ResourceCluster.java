@@ -61,24 +61,18 @@ public class ResourceCluster implements Cluster {
   }
 
   @Override
-  public LocalMember localMember() {
-    LocalMember member = context.cluster().localMember();
+  public LocalMember member() {
+    LocalMember member = context.cluster().member();
     return member != null ? new LocalResourceMember(member, context, executor) : null;
   }
 
   @Override
-  public Collection<Member> remoteMembers() {
+  public Collection<Member> members() {
     Collection<Member> members = new HashSet<>();
-    for (Member member : context.cluster().remoteMembers()) {
+    for (Member member : context.cluster().members()) {
       members.add(new ResourceMember(member, context, executor));
     }
     return members;
-  }
-
-  @Override
-  public Member remoteMember(String uri) {
-    Member member = context.cluster().remoteMember(uri);
-    return member != null ? new ResourceMember(member, context, executor) : null;
   }
 
   @Override
@@ -104,6 +98,11 @@ public class ResourceCluster implements Cluster {
   @Override
   public CompletableFuture<Void> close() {
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[members=%s]", getClass().getCanonicalName(), members());
   }
 
 }

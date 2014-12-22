@@ -76,6 +76,11 @@ class ResourceClusterElection implements Election {
     return this;
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[term=%d, status=%s]", getClass().getCanonicalName(), term(), status());
+  }
+
   /**
    * Resource election result.
    */
@@ -95,6 +100,12 @@ class ResourceClusterElection implements Election {
       Member winner = result.winner();
       return winner != null ? cluster.member(winner.uri()) : null;
     }
+
+    @Override
+    public String toString() {
+      return String.format("%s[term=%d, winner=%s]", getClass().getCanonicalName(), term(), winner());
+    }
+
   }
 
 }

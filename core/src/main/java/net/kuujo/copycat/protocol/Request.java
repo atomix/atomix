@@ -33,7 +33,7 @@ public interface Request {
    *
    * @return The request member.
    */
-  String member();
+  String uri();
 
   /**
    * Request builder.
@@ -54,10 +54,10 @@ public interface Request {
     /**
      * Sets the request member.
      *
-     * @param member The member to which to send the request.
+     * @param uri The member to which to send the request.
      * @return The request builder.
      */
-    T withMember(String member);
+    T withUri(String uri);
 
     /**
      * Builds the request.

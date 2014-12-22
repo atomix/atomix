@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.util.Collection;
-
 import net.kuujo.copycat.Configurable;
 import net.kuujo.copycat.Managed;
+
+import java.util.Collection;
 
 /**
  * Cluster manager.
@@ -26,6 +26,14 @@ import net.kuujo.copycat.Managed;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface ClusterManager extends Configurable<ClusterManager, ClusterConfig>, Managed {
+
+  /**
+   * Returns the local cluster member URI.
+   *
+   * @return The local cluster member URI.
+   */
+  LocalMember member();
+
   /**
    * Returns a member by URI.
    *
@@ -35,25 +43,10 @@ public interface ClusterManager extends Configurable<ClusterManager, ClusterConf
   Member member(String uri);
 
   /**
-   * Returns the local cluster member URI.
-   *
-   * @return The local cluster member URI.
-   */
-  LocalMember localMember();
-
-  /**
    * Returns an immutable set of remote cluster members.
    *
    * @return An immutable set of remote cluster members.
    */
-  Collection<Member> remoteMembers();
-
-  /**
-   * Returns a remote member by URI.
-   *
-   * @param uri The remote member URI.
-   * @return The remote member.
-   */
-  Member remoteMember(String uri);
+  Collection<Member> members();
 
 }

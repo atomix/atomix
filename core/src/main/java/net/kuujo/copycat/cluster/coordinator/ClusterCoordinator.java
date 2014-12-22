@@ -17,6 +17,7 @@ package net.kuujo.copycat.cluster.coordinator;
 
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.Managed;
+import net.kuujo.copycat.cluster.ClusterConfig;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +34,7 @@ public interface ClusterCoordinator extends Managed {
    *
    * @return The local member coordinator.
    */
-  LocalMemberCoordinator localMember();
+  LocalMemberCoordinator member();
 
   /**
    * Returns a member coordinator by URI.
@@ -44,27 +45,28 @@ public interface ClusterCoordinator extends Managed {
   MemberCoordinator member(String uri);
 
   /**
-   * Returns an immutable set of remote member coordinators.
+   * Returns an immutable set of member coordinators.
    *
-   * @return An immutable set of remote member coordinators.
+   * @return An immutable set of member coordinators.
    */
-  Collection<MemberCoordinator> remoteMembers();
+  Collection<MemberCoordinator> members();
 
   /**
    * Creates a cluster resource.
    *
    * @param name The resource name.
-   * @return A completable future to be completed with the resource instance.
+   * @return A completable future to be completed with the resource context.
    */
   CompletableFuture<CopycatContext> createResource(String name);
 
   /**
-   * Gets a cluster resource.
+   * Creates a cluster resource.
    *
    * @param name The resource name.
-   * @return A completable future to be completed with the resource instance.
+   * @param cluster The resource cluster configuration.
+   * @return A completable future to be completed with the resource context.
    */
-  CompletableFuture<CopycatContext> getResource(String name);
+  CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster);
 
   /**
    * Deletes a cluster resource.

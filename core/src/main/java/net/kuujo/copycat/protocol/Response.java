@@ -49,7 +49,7 @@ public interface Response {
    *
    * @return The member to which to send the response.
    */
-  String member();
+  String uri();
 
   /**
    * Returns the response status.
@@ -87,7 +87,7 @@ public interface Response {
      * @param member The member to which to send the response.
      * @return The response builder.
      */
-    T withMember(String member);
+    T withUri(String member);
 
     /**
      * Sets the response status.

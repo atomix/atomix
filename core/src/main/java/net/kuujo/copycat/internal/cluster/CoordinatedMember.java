@@ -43,8 +43,13 @@ public class CoordinatedMember implements Member {
   }
 
   @Override
+  public Type type() {
+    return coordinator.type();
+  }
+
+  @Override
   public State state() {
-    return null;
+    return coordinator.state();
   }
 
   @Override
@@ -60,6 +65,11 @@ public class CoordinatedMember implements Member {
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
     return coordinator.submit(id, task);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[uri=%s]", getClass().getCanonicalName(), coordinator.uri());
   }
 
 }

@@ -16,6 +16,7 @@
 package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.Task;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.spi.ExecutionContext;
@@ -33,14 +34,12 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
-  private static final int USER_ADDRESS = -1;
-  private static final int SYSTEM_ADDRESS = 0;
   private final ProtocolClient client;
   private final ExecutionContext context;
   private final Serializer serializer = Serializer.serializer();
 
-  DefaultRemoteMemberCoordinator(String uri, Protocol protocol, ExecutionContext context) {
-    super(uri);
+  DefaultRemoteMemberCoordinator(String uri, Member.Type type, Member.State state, Protocol protocol, ExecutionContext context) {
+    super(uri, type, state);
     try {
       URI realUri = new URI(uri);
       if (!protocol.isValidUri(realUri)) {
@@ -125,6 +124,11 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
       });
     });
     return future;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[uri=%s]", getClass().getCanonicalName(), uri());
   }
 
 }

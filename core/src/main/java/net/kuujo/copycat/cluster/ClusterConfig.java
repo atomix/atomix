@@ -37,8 +37,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   private Protocol protocol = new LocalProtocol();
   private long electionTimeout = 300;
   private long heartbeatInterval = 150;
-  private String localMember;
-  private Set<String> remoteMembers = new HashSet<>(10);
+  private Set<String> members = new HashSet<>(10);
 
   public ClusterConfig() {
   }
@@ -55,16 +54,14 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
     setProtocol(Services.load("copycat.cluster.protocol"));
     Configs.apply((Consumer<Long>) this::setElectionTimeout, Long.class, config, "election-timeout");
     Configs.apply((Consumer<Long>) this::setHeartbeatInterval, Long.class, config, "heartbeat-interval");
-    Configs.apply((Consumer<String>) this::setLocalMember, String.class, config, "local-member");
-    Configs.apply((Consumer<Collection<String>>) this::setRemoteMembers, Collection.class, config, "remote-members");
+    Configs.apply((Consumer<Collection<String>>) this::setMembers, Collection.class, config, "members");
   }
 
   private ClusterConfig(ClusterConfig config) {
     protocol = config.protocol;
     electionTimeout = config.electionTimeout;
     heartbeatInterval = config.heartbeatInterval;
-    localMember = config.getLocalMember();
-    remoteMembers = config.getRemoteMembers();
+    members = new HashSet<>(config.getMembers());
   }
 
   @Override
@@ -204,93 +201,49 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   }
 
   /**
-   * Returns a set of all cluster member URIs, including the local member.
+   * Sets all cluster member URIs.
+   *
+   * @param uris A collection of cluster member URIs.
+   */
+  public void setMembers(String... uris) {
+    setMembers(new ArrayList<>(Arrays.asList(uris)));
+  }
+
+  /**
+   * Sets all cluster member URIs.
+   *
+   * @param uris A collection of cluster member URIs.
+   */
+  public void setMembers(Collection<String> uris) {
+    Assert.isNotNull(uris, "uris");
+    members = new HashSet<>(uris.size());
+    for (String uri : uris) {
+      try {
+        members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
+      } catch (URISyntaxException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+  }
+
+  /**
+   * Returns a set of all cluster member URIs.
    *
    * @return A set of all cluster member URIs.
    */
-  public Set<String> getMembers() {
-    Set<String> members = new HashSet<>(remoteMembers);
-    members.add(localMember);
+  public Collection<String> getMembers() {
     return members;
   }
 
   /**
-   * Sets the local cluster member URI.
+   * Adds a member to the cluster, returning the cluster configuration for method chaining.
    *
-   * @param uri The local cluster member URI.
-   */
-  public void setLocalMember(String uri) {
-    try {
-      this.localMember = Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri");
-    } catch (URISyntaxException e) {
-      throw new IllegalArgumentException(e);
-    }
-  }
-
-  /**
-   * Returns the local cluster member URI.
-   *
-   * @return The local cluster member URI.
-   */
-  public String getLocalMember() {
-    return localMember;
-  }
-
-  /**
-   * Sets the local cluster member URI, returning the cluster configuration for method chaining.
-   *
-   * @param uri The local cluster member URI.
-   * @return The cluster configuration.
-   */
-  public ClusterConfig withLocalMember(String uri) {
-    setLocalMember(uri);
-    return this;
-  }
-
-  /**
-   * Sets all remote cluster member URIs.
-   *
-   * @param uris A collection of remote cluster member URIs.
-   */
-  public void setRemoteMembers(String... uris) {
-    setRemoteMembers(new ArrayList<>(Arrays.asList(uris)));
-  }
-
-  /**
-   * Sets all remote cluster member URIs.
-   *
-   * @param uris A collection of remote cluster member URIs.
-   */
-  public void setRemoteMembers(Collection<String> uris) {
-    Assert.isNotNull(uris, "uris");
-    remoteMembers = new HashSet<>(uris.size());
-    for (String uri : uris) {
-      try {
-        remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException(e);
-      }
-    }
-  }
-
-  /**
-   * Returns a set of all remote cluster member URIs.
-   *
-   * @return A set of all remote cluster member URIs.
-   */
-  public Set<String> getRemoteMembers() {
-    return remoteMembers;
-  }
-
-  /**
-   * Adds a remote member to the cluster, returning the cluster configuration for method chaining.
-   *
-   * @param uri The remote member URI to add.
+   * @param uri The member URI to add.
    * @return The cluster configuration.
    */
   public ClusterConfig addRemoteMember(String uri) {
     try {
-      remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
+      members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(e);
     }
@@ -298,37 +251,37 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   }
 
   /**
-   * Sets all remote cluster member URIs, returning the cluster configuration for method chaining.
+   * Sets all cluster member URIs, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of remote cluster member URIs.
+   * @param uris A collection of cluster member URIs.
    * @return The cluster configuration.
    */
-  public ClusterConfig withRemoteMembers(String... uris) {
-    setRemoteMembers(uris);
+  public ClusterConfig withMembers(String... uris) {
+    setMembers(uris);
     return this;
   }
 
   /**
-   * Sets all remote cluster member URIs, returning the cluster configuration for method chaining.
+   * Sets all cluster member URIs, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of remote cluster member URIs.
+   * @param uris A collection of cluster member URIs.
    * @return The cluster configuration.
    */
-  public ClusterConfig withRemoteMembers(Collection<String> uris) {
-    setRemoteMembers(uris);
+  public ClusterConfig withMembers(Collection<String> uris) {
+    setMembers(uris);
     return this;
   }
 
   /**
-   * Adds a collection of remote member URIs to the configuration, returning the cluster configuration for method chaining.
+   * Adds a collection of member URIs to the configuration, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of remote cluster member URIs to add.
+   * @param uris A collection of cluster member URIs to add.
    * @return The cluster configuration.
    */
-  public ClusterConfig addRemoteMembers(String... uris) {
+  public ClusterConfig addMembers(String... uris) {
     for (String uri : uris) {
       try {
-        remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
+        members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
       } catch (URISyntaxException e) {
         throw new IllegalArgumentException(e);
       }
@@ -337,16 +290,16 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   }
 
   /**
-   * Adds a collection of remote member URIs to the configuration, returning the cluster configuration for method chaining.
+   * Adds a collection of member URIs to the configuration, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of remote cluster member URIs to add.
+   * @param uris A collection of cluster member URIs to add.
    * @return The cluster configuration.
    */
-  public ClusterConfig addRemoteMembers(Collection<String> uris) {
+  public ClusterConfig addMembers(Collection<String> uris) {
     Assert.isNotNull(uris, "uris");
     for (String uri : uris) {
       try {
-        remoteMembers.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
+        members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
       } catch (URISyntaxException e) {
         throw new IllegalArgumentException(e);
       }
@@ -355,38 +308,38 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   }
 
   /**
-   * Removes a collection of remote member URIs from the configuration, returning the cluster configuration for method chaining.
+   * Removes a collection of member URIs from the configuration, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of remote cluster member URIs to remove.
+   * @param uris A collection of cluster member URIs to remove.
    * @return The cluster configuration.
    */
-  public ClusterConfig removeRemoteMembers(String... uris) {
+  public ClusterConfig removeMembers(String... uris) {
     for (String uri : uris) {
-      remoteMembers.remove(uri);
+      members.remove(uri);
     }
     return this;
   }
 
   /**
-   * Removes a collection of remote member URIs from the configuration, returning the cluster configuration for method chaining.
+   * Removes a collection of member URIs from the configuration, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of remote cluster member URIs to remove.
+   * @param uris A collection of cluster member URIs to remove.
    * @return The cluster configuration.
    */
-  public ClusterConfig removeRemoteMembers(Collection<String> uris) {
+  public ClusterConfig removeMembers(Collection<String> uris) {
     for (String uri : uris) {
-      remoteMembers.remove(uri);
+      members.remove(uri);
     }
     return this;
   }
 
   /**
-   * Clears all remote member URIs from the configuration, returning the cluster configuration for method chaining.
+   * Clears all member URIs from the configuration, returning the cluster configuration for method chaining.
    *
    * @return The cluster configuration.
    */
-  public ClusterConfig clearRemoteMembers() {
-    remoteMembers.clear();
+  public ClusterConfig clearMembers() {
+    members.clear();
     return this;
   }
 

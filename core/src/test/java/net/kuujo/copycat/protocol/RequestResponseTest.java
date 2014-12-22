@@ -43,7 +43,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithoutId() {
-    CommitRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
+    CommitRequest.builder().withUri("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
@@ -67,7 +67,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithNullMember() {
-    CommitRequest.builder().withMember(null).build();
+    CommitRequest.builder().withUri(null).build();
   }
 
   /**
@@ -75,7 +75,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitRequestBuilderFailsWithoutEntry() {
-    CommitRequest.builder().withId("test").withMember("foo").build();
+    CommitRequest.builder().withId("test").withUri("foo").build();
   }
 
   /**
@@ -92,10 +92,10 @@ public class RequestResponseTest {
   public void testCommitRequestBuilderSucceedsWithValidConfiguration() {
     CommitRequest request = CommitRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
     assertEquals(request.id(), "test");
-    assertEquals(request.member(), "foo");
+    assertEquals(request.uri(), "foo");
     assertEquals(new String(request.entry().array()), "Hello world!");
   }
 
@@ -112,7 +112,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithoutId() {
-    CommitResponse.builder().withMember("foo").withResult("Hello world!").build();
+    CommitResponse.builder().withUri("foo").withResult("Hello world!").build();
   }
 
   /**
@@ -136,7 +136,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithNullMember() {
-    CommitResponse.builder().withMember(null).build();
+    CommitResponse.builder().withUri(null).build();
   }
 
   /**
@@ -145,11 +145,11 @@ public class RequestResponseTest {
   public void testCommitResponseBuilderSucceedsWithNullResult() {
     CommitResponse response = CommitResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withResult(null)
       .build();
     assertEquals(response.id(), "test");
-    assertEquals(response.member(), "foo");
+    assertEquals(response.uri(), "foo");
     assertNull(response.result());
   }
 
@@ -159,11 +159,11 @@ public class RequestResponseTest {
   public void testCommitResponseBuilderSucceedsWithValidConfiguration() {
     CommitResponse response = CommitResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withResult("Hello world!")
       .build();
     assertEquals(response.id(), "test");
-    assertEquals(response.member(), "foo");
+    assertEquals(response.uri(), "foo");
     assertEquals(response.result(), "Hello world!");
   }
 
@@ -181,7 +181,7 @@ public class RequestResponseTest {
   @Test(expectedExceptions = NullPointerException.class)
   public void testAppendRequestBuilderFailsWithoutId() {
     AppendRequest.builder()
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -198,7 +198,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithNullId() {
     AppendRequest.builder()
       .withId(null)
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -231,7 +231,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithNullMember() {
     AppendRequest.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -248,7 +248,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithoutLeader() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
       .withLogIndex(5L)
@@ -264,7 +264,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithNullLeader() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader(null)
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -281,7 +281,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithoutTerm() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
       .withLogIndex(5L)
@@ -297,7 +297,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithInvalidTerm() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(-1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -314,7 +314,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithoutEntries() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -330,7 +330,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithNullEntries() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries((List<ByteBuffer>) null)
@@ -347,7 +347,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithInvalidLogIndex() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -364,7 +364,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithInvalidLogTerm() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -380,7 +380,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderSucceedsWithNullLogIndexAndNullLogTerm() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -397,7 +397,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -414,7 +414,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -430,7 +430,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderSucceedsWithNullCommitIndex() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -447,7 +447,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderFailsWithInvalidCommitIndex() {
     AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -463,7 +463,7 @@ public class RequestResponseTest {
   public void testAppendRequestBuilderSucceedsWithValidConfiguration() {
     AppendRequest request = AppendRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
@@ -472,7 +472,7 @@ public class RequestResponseTest {
       .withCommitIndex(4L)
       .build();
     assertEquals(request.id(), "test");
-    assertEquals(request.member(), "foo");
+    assertEquals(request.uri(), "foo");
     assertEquals(request.leader(), "bar");
     assertEquals(request.term(), 1);
     assertEquals(new String(request.entries().get(0).array()), "Hello world!");
@@ -495,7 +495,7 @@ public class RequestResponseTest {
   @Test(expectedExceptions = NullPointerException.class)
   public void testAppendResponseBuilderFailsWithoutId() {
     AppendResponse.builder()
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -509,7 +509,7 @@ public class RequestResponseTest {
   public void testAppendResponseBuilderFailsWithNullId() {
     AppendResponse.builder()
       .withId(null)
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -536,7 +536,7 @@ public class RequestResponseTest {
   public void testAppendResponseBuilderFailsWithNullMember() {
     AppendResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -550,7 +550,7 @@ public class RequestResponseTest {
   public void testAppendResponseBuilderFailsWithInvalidTerm() {
     AppendResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(-1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -563,7 +563,7 @@ public class RequestResponseTest {
   public void testAppendResponseBuilderSucceedsWithNullIndex() {
     AppendResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(null)
@@ -577,7 +577,7 @@ public class RequestResponseTest {
   public void testAppendResponseBuilderFailsWithInvalidIndex() {
     AppendResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(-1L)
@@ -590,13 +590,13 @@ public class RequestResponseTest {
   public void testAppendResponseBuilderSucceedsWithValidConfiguration() {
     AppendResponse response = AppendResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
       .build();
     assertEquals(response.id(), "test");
-    assertEquals(response.member(), "foo");
+    assertEquals(response.uri(), "foo");
     assertEquals(response.term(), 1);
     assertTrue(response.succeeded());
     assertEquals(response.logIndex().longValue(), 4);
@@ -616,7 +616,7 @@ public class RequestResponseTest {
   @Test(expectedExceptions = NullPointerException.class)
   public void testPingRequestBuilderFailsWithoutId() {
     PingRequest.builder()
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -632,7 +632,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithNullId() {
     PingRequest.builder()
       .withId(null)
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -663,7 +663,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithNullMember() {
     PingRequest.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -679,7 +679,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithoutLeader() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1)
       .withLogIndex(5L)
       .withLogTerm(1L)
@@ -694,7 +694,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithNullLeader() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader(null)
       .withTerm(1)
       .withLogIndex(5L)
@@ -710,7 +710,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithoutTerm() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withLogIndex(5L)
       .withLogTerm(1L)
@@ -725,7 +725,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithInvalidTerm() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(-1)
       .withLogIndex(5L)
@@ -741,7 +741,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithInvalidLogIndex() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(-1L)
@@ -757,7 +757,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithInvalidLogTerm() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -772,7 +772,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderSucceedsWithNullLogIndexAndNullLogTerm() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(null)
@@ -788,7 +788,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -804,7 +804,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(null)
@@ -819,7 +819,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderSucceedsWithNullCommitIndex() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -835,7 +835,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderFailsWithInvalidCommitIndex() {
     PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -850,7 +850,7 @@ public class RequestResponseTest {
   public void testPingRequestBuilderSucceedsWithValidConfiguration() {
     PingRequest request = PingRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withLeader("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -858,7 +858,7 @@ public class RequestResponseTest {
       .withCommitIndex(4L)
       .build();
     assertEquals(request.id(), "test");
-    assertEquals(request.member(), "foo");
+    assertEquals(request.uri(), "foo");
     assertEquals(request.leader(), "bar");
     assertEquals(request.term(), 1);
     assertEquals(request.logIndex().longValue(), 5);
@@ -880,7 +880,7 @@ public class RequestResponseTest {
   @Test(expectedExceptions = NullPointerException.class)
   public void testPingResponseBuilderFailsWithoutId() {
     PingResponse.builder()
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -894,7 +894,7 @@ public class RequestResponseTest {
   public void testPingResponseBuilderFailsWithNullId() {
     PingResponse.builder()
       .withId(null)
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -921,7 +921,7 @@ public class RequestResponseTest {
   public void testPingResponseBuilderFailsWithNullMember() {
     PingResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -935,7 +935,7 @@ public class RequestResponseTest {
   public void testPingResponseBuilderFailsWithInvalidTerm() {
     PingResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(-1L)
       .withSucceeded(true)
       .withLogIndex(4L)
@@ -948,7 +948,7 @@ public class RequestResponseTest {
   public void testPingResponseBuilderSucceedsWithNullIndex() {
     PingResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(null)
@@ -962,7 +962,7 @@ public class RequestResponseTest {
   public void testPingResponseBuilderFailsWithInvalidIndex() {
     PingResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(-1L)
@@ -975,13 +975,13 @@ public class RequestResponseTest {
   public void testPingResponseBuilderSucceedsWithValidConfiguration() {
     PingResponse response = PingResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withSucceeded(true)
       .withLogIndex(4L)
       .build();
     assertEquals(response.id(), "test");
-    assertEquals(response.member(), "foo");
+    assertEquals(response.uri(), "foo");
     assertEquals(response.term(), 1);
     assertTrue(response.succeeded());
     assertEquals(response.logIndex().longValue(), 4);
@@ -1001,7 +1001,7 @@ public class RequestResponseTest {
   @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithoutId() {
     PollRequest.builder()
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -1016,7 +1016,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithNullId() {
     PollRequest.builder()
       .withId(null)
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -1045,7 +1045,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithNullMember() {
     PollRequest.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -1060,7 +1060,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithoutCandidate() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1)
       .withLogIndex(5L)
       .withLogTerm(1L)
@@ -1074,7 +1074,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithNullCandidate() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate(null)
       .withTerm(1)
       .withLogIndex(5L)
@@ -1089,7 +1089,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithoutTerm() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withLogIndex(5L)
       .withLogTerm(1L)
@@ -1103,7 +1103,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithInvalidTerm() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(-1)
       .withLogIndex(5L)
@@ -1118,7 +1118,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithInvalidLogIndex() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(-1L)
@@ -1133,7 +1133,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithInvalidLogTerm() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -1147,7 +1147,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderSucceedsWithNullLogIndexAndNullLogTerm() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(null)
@@ -1162,7 +1162,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(5L)
@@ -1177,7 +1177,7 @@ public class RequestResponseTest {
   public void testPollRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
     PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(null)
@@ -1191,14 +1191,14 @@ public class RequestResponseTest {
   public void testPollRequestBuilderSucceedsWithValidConfiguration() {
     PollRequest request = PollRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withCandidate("bar")
       .withTerm(1)
       .withLogIndex(5L)
       .withLogTerm(1L)
       .build();
     assertEquals(request.id(), "test");
-    assertEquals(request.member(), "foo");
+    assertEquals(request.uri(), "foo");
     assertEquals(request.candidate(), "bar");
     assertEquals(request.term(), 1);
     assertEquals(request.logIndex().longValue(), 5);
@@ -1219,7 +1219,7 @@ public class RequestResponseTest {
   @Test(expectedExceptions = NullPointerException.class)
   public void testPollResponseBuilderFailsWithoutId() {
     PollResponse.builder()
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withVoted(true)
       .build();
@@ -1232,7 +1232,7 @@ public class RequestResponseTest {
   public void testPollResponseBuilderFailsWithNullId() {
     PollResponse.builder()
       .withId(null)
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withVoted(true)
       .build();
@@ -1257,7 +1257,7 @@ public class RequestResponseTest {
   public void testPollResponseBuilderFailsWithNullMember() {
     PollResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(1L)
       .withVoted(true)
       .build();
@@ -1270,7 +1270,7 @@ public class RequestResponseTest {
   public void testPollResponseBuilderFailsWithInvalidTerm() {
     PollResponse.builder()
       .withId("test")
-      .withMember(null)
+      .withUri(null)
       .withTerm(-1L)
       .withVoted(true)
       .build();
@@ -1282,12 +1282,12 @@ public class RequestResponseTest {
   public void testPollResponseBuilderSucceedsWithValidConfiguration() {
     PollResponse response = PollResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withTerm(1L)
       .withVoted(true)
       .build();
     assertEquals(response.id(), "test");
-    assertEquals(response.member(), "foo");
+    assertEquals(response.uri(), "foo");
     assertEquals(response.term(), 1);
     assertTrue(response.voted());
   }
@@ -1305,7 +1305,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithoutId() {
-    QueryRequest.builder().withMember("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
+    QueryRequest.builder().withUri("foo").withEntry(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
@@ -1329,7 +1329,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithNullMember() {
-    QueryRequest.builder().withMember(null).build();
+    QueryRequest.builder().withUri(null).build();
   }
 
   /**
@@ -1337,7 +1337,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testQueryRequestBuilderFailsWithoutEntry() {
-    QueryRequest.builder().withId("test").withMember("foo").build();
+    QueryRequest.builder().withId("test").withUri("foo").build();
   }
 
   /**
@@ -1362,12 +1362,12 @@ public class RequestResponseTest {
   public void testQueryRequestBuilderSucceedsWithValidConfiguration() {
     QueryRequest request = QueryRequest.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withEntry(ByteBuffer.wrap("Hello world!".getBytes()))
       .withConsistency(Consistency.FULL)
       .build();
     assertEquals(request.id(), "test");
-    assertEquals(request.member(), "foo");
+    assertEquals(request.uri(), "foo");
     assertEquals(new String(request.entry().array()), "Hello world!");
     assertEquals(request.consistency(), Consistency.FULL);
   }
@@ -1385,7 +1385,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithoutId() {
-    QueryResponse.builder().withMember("foo").withResult("Hello world!").build();
+    QueryResponse.builder().withUri("foo").withResult("Hello world!").build();
   }
 
   /**
@@ -1409,7 +1409,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithNullMember() {
-    QueryResponse.builder().withMember(null).build();
+    QueryResponse.builder().withUri(null).build();
   }
 
   /**
@@ -1418,11 +1418,11 @@ public class RequestResponseTest {
   public void testQueryResponseBuilderSucceedsWithNullResult() {
     QueryResponse response = QueryResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withResult(null)
       .build();
     assertEquals(response.id(), "test");
-    assertEquals(response.member(), "foo");
+    assertEquals(response.uri(), "foo");
     assertNull(response.result());
   }
 
@@ -1432,11 +1432,11 @@ public class RequestResponseTest {
   public void testQueryResponseBuilderSucceedsWithValidConfiguration() {
     QueryResponse response = QueryResponse.builder()
       .withId("test")
-      .withMember("foo")
+      .withUri("foo")
       .withResult("Hello world!")
       .build();
     assertEquals(response.id(), "test");
-    assertEquals(response.member(), "foo");
+    assertEquals(response.uri(), "foo");
     assertEquals(response.result(), "Hello world!");
   }
 

@@ -35,107 +35,109 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  static <T> AsyncSet<T> create(String name) {
-    return create(name, new ClusterConfig(), new AsyncSetConfig(String.format("copycat.set.%s", name)), ExecutionContext.create());
+  static <T> AsyncSet<T> create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new AsyncSetConfig(String.format("copycat.set.%s", name)), ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
    * @param cluster The cluster configuration.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncSetConfig(String.format("copycat.set.%s", name)), ExecutionContext.create());
+  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new AsyncSetConfig(String.format("copycat.set.%s", name)), ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
    * @param config The set configuration.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, AsyncSetConfig config) {
-    return create(name, new ClusterConfig(), config, ExecutionContext.create());
+  static <T> AsyncSet<T> create(String name, String uri, AsyncSetConfig config) {
+    return create(name, uri, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
    * @param context The user execution context.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, ExecutionContext context) {
-    return create(name, new ClusterConfig(), new AsyncSetConfig(String.format("copycat.set.%s", name)), context);
+  static <T> AsyncSet<T> create(String name, String uri, ExecutionContext context) {
+    return create(name, uri, new ClusterConfig(), new AsyncSetConfig(String.format("copycat.set.%s", name)), context);
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
    * @param cluster The cluster configuration.
    * @param config The set configuration.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, AsyncSetConfig config) {
-    return create(name, cluster, config, ExecutionContext.create());
+  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, AsyncSetConfig config) {
+    return create(name, uri, cluster, config, ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
    * @param cluster The cluster configuration.
    * @param context The user execution context.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, new AsyncSetConfig(String.format("copycat.set.%s", name)), context);
+  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, uri, cluster, new AsyncSetConfig(String.format("copycat.set.%s", name)), context);
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
-   * @param config The set configuration.
-   * @param context The user execution context.
-   * @param <T> The set data type.
-   * @return The asynchronous set.
-   */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, AsyncSetConfig config, ExecutionContext context) {
-    return create(name, new ClusterConfig(), config, context);
-  }
-
-  /**
-   * Creates a new asynchronous set.
-   *
-   * @param name The asynchronous set name.
-   * @param cluster The cluster configuration.
+   * @param uri The asynchronous set member URI.
    * @param config The set configuration.
    * @param context The user execution context.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
+  static <T> AsyncSet<T> create(String name, String uri, AsyncSetConfig config, ExecutionContext context) {
+    return create(name, uri, new ClusterConfig(), config, context);
+  }
+
+  /**
+   * Creates a new asynchronous set.
+   *
+   * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
+   * @param cluster The cluster configuration.
+   * @param config The set configuration.
+   * @param context The user execution context.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
   @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, AsyncSetConfig config, ExecutionContext context) {
-    return new DefaultAsyncSet(StateMachine.create(name, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, config, context));
+  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, AsyncSetConfig config, ExecutionContext context) {
+    return new DefaultAsyncSet(StateMachine.create(name, uri, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, config, context));
   }
 
 }

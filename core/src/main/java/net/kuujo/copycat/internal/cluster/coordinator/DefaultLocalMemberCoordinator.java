@@ -24,6 +24,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.kuujo.copycat.Task;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
 import net.kuujo.copycat.protocol.ProtocolException;
@@ -37,19 +38,15 @@ import net.kuujo.copycat.util.serializer.Serializer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements
-  LocalMemberCoordinator {
-  private static final int USER_ADDRESS = -1;
-  private static final int SYSTEM_ADDRESS = 0;
-  
+public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements LocalMemberCoordinator {
   private final ProtocolServer server;
   private final ExecutionContext context;
   private final Map<Integer, ExecutionContext> contexts = new ConcurrentHashMap<>();
   @SuppressWarnings("rawtypes") private final Map<String, Map<Integer, MessageHandler>> handlers = new ConcurrentHashMap<>();
   private final Serializer serializer = Serializer.serializer();
 
-  public DefaultLocalMemberCoordinator(String uri, Protocol protocol, ExecutionContext context) {
-    super(uri);
+  public DefaultLocalMemberCoordinator(String uri, Member.Type type, Member.State state, Protocol protocol, ExecutionContext context) {
+    super(uri, type, state);
     try {
       URI realUri = new URI(uri);
       if (!protocol.isValidUri(realUri)) {
@@ -235,6 +232,11 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
       });
     });
     return future;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[uri=%s]", getClass().getCanonicalName(), uri());
   }
 
 }

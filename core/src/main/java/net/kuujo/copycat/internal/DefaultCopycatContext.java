@@ -103,7 +103,7 @@ public class DefaultCopycatContext implements CopycatContext {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     QueryRequest request = QueryRequest.builder()
       .withId(UUID.randomUUID().toString())
-      .withMember(context.getLocalMember())
+      .withUri(context.getLocalMember().uri())
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
@@ -132,7 +132,7 @@ public class DefaultCopycatContext implements CopycatContext {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     CommitRequest request = CommitRequest.builder()
       .withId(UUID.randomUUID().toString())
-      .withMember(context.getLocalMember())
+      .withUri(context.getLocalMember().uri())
       .withEntry(entry)
       .build();
     context.commit(request).whenComplete((response, error) -> {
@@ -199,6 +199,11 @@ public class DefaultCopycatContext implements CopycatContext {
       future.complete(null);
     });
     return future;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[cluster=%s, context=%s]", getClass().getCanonicalName(), cluster, context);
   }
 
 }

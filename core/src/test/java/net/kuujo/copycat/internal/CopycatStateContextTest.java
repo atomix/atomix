@@ -18,8 +18,6 @@ package net.kuujo.copycat.internal;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.internal.CopycatStateContext;
-import net.kuujo.copycat.internal.DefaultCopycatStateContext;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogConfig;
@@ -43,12 +41,11 @@ public class CopycatStateContextTest extends ConcurrentTestCase {
   /**
    * Creates a new state context.
    */
-  private DefaultCopycatStateContext createContext() {
+  private CopycatStateContext createContext() {
     ClusterConfig cluster = new ClusterConfig()
-      .withLocalMember("local://foo")
-      .withRemoteMembers("local://bar", "local://baz");
+      .withMembers("local://foo", "local://bar", "local://baz");
     Log log = new BufferedLog("test", new LogConfig());
-    return new DefaultCopycatStateContext(cluster, log, ExecutionContext.create());
+    return new CopycatStateContext("local://foo", cluster, log, ExecutionContext.create());
   }
 
   /**
@@ -81,7 +78,7 @@ public class CopycatStateContextTest extends ConcurrentTestCase {
    * Tests that the cluster leader is set when transitioning to leader.
    */
   public void testLeaderTakesLeadershipOnTransition() throws Throwable {
-    DefaultCopycatStateContext context = createContext();
+    CopycatStateContext context = createContext();
     context.open().get();
     context.pingHandler(request -> CompletableFuture.completedFuture(null));
     context.transition(CopycatState.LEADER).get();

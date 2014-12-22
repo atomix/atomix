@@ -70,4 +70,9 @@ public class CoordinatedCluster extends CoordinatedClusterManager implements Clu
     return super.close();
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[members=%s]", getClass().getCanonicalName(), members());
+  }
+
 }

@@ -17,6 +17,7 @@ package net.kuujo.copycat.cluster.coordinator;
 
 import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.Task;
+import net.kuujo.copycat.cluster.Member;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -33,6 +34,20 @@ public interface MemberCoordinator extends Managed {
    * @return The member URI.
    */
   String uri();
+
+  /**
+   * Returns the member type.
+   *
+   * @return The member type.
+   */
+  Member.Type type();
+
+  /**
+   * Returns the member state.
+   *
+   * @return The member state.
+   */
+  Member.State state();
 
   /**
    * Sends an internal message.

@@ -68,7 +68,6 @@ class CoordinatedClusterElection implements Election, Observer {
         result = null;
       }
     }
-    this.context = (CopycatStateContext) o;
   }
 
   @Override
@@ -107,14 +106,19 @@ class CoordinatedClusterElection implements Election, Observer {
    * Opens the election.
    */
   void open() {
-    ((Observable) context).addObserver(this);
+    context.addObserver(this);
   }
 
   /**
    * Closes the election.
    */
   void close() {
-    ((Observable) context).deleteObserver(this);
+    context.deleteObserver(this);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[term=%d, status=%s]", getClass().getCanonicalName(), term(), status());
   }
 
   /**
@@ -138,6 +142,12 @@ class CoordinatedClusterElection implements Election, Observer {
     public Member winner() {
       return winner;
     }
+
+    @Override
+    public String toString() {
+      return String.format("%s[term=%d, winner=%s]", getClass().getCanonicalName(), term, winner);
+    }
+
   }
 
 }

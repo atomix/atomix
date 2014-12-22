@@ -35,7 +35,7 @@ abstract class AbstractResponse implements Response {
   }
 
   @Override
-  public String member() {
+  public String uri() {
     return member;
   }
 
@@ -56,7 +56,7 @@ abstract class AbstractResponse implements Response {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, member=%s, status=%s]", getClass().getCanonicalName(), id, member, status);
+    return String.format("%s[id=%s, uri=%s, status=%s]", getClass().getCanonicalName(), id, member, status);
   }
 
   /**
@@ -82,8 +82,8 @@ abstract class AbstractResponse implements Response {
 
     @Override
     @SuppressWarnings("unchecked")
-    public T withMember(String member) {
-      Assert.isNotNull(member, "member");
+    public T withUri(String member) {
+      Assert.isNotNull(member, "uri");
       response.member = member;
       return (T) this;
     }
@@ -107,7 +107,7 @@ abstract class AbstractResponse implements Response {
     @Override
     public U build() {
       Assert.isNotNull(response.id, "id");
-      Assert.isNotNull(response.member, "member");
+      Assert.isNotNull(response.member, "uri");
       Assert.isNotNull(response.status, "status");
       return response;
     }

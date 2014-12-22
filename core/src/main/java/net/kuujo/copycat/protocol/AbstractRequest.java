@@ -33,7 +33,7 @@ abstract class AbstractRequest implements Request {
   }
 
   @Override
-  public String member() {
+  public String uri() {
     return member;
   }
 
@@ -44,7 +44,7 @@ abstract class AbstractRequest implements Request {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, member=%s]", getClass().getCanonicalName(), id, member);
+    return String.format("%s[id=%s, uri=%s]", getClass().getCanonicalName(), id, member);
   }
 
   /**
@@ -70,16 +70,16 @@ abstract class AbstractRequest implements Request {
 
     @Override
     @SuppressWarnings("unchecked")
-    public T withMember(String member) {
-      Assert.isNotNull(member, "member");
-      request.member = member;
+    public T withUri(String uri) {
+      Assert.isNotNull(uri, "uri");
+      request.member = uri;
       return (T) this;
     }
 
     @Override
     public U build() {
       Assert.isNotNull(request.id, "id");
-      Assert.isNotNull(request.member, "member");
+      Assert.isNotNull(request.member, "uri");
       return request;
     }
   }

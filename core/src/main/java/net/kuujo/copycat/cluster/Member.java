@@ -26,13 +26,42 @@ import java.util.concurrent.CompletableFuture;
 public interface Member {
 
   /**
+   * Member type.
+   */
+  public static enum Type {
+
+    /**
+     * Indicates that the member is a passive, non-voting member of the cluster.
+     */
+    LISTENER,
+
+    /**
+     * Indicates that the member is a full voting member of the cluster.
+     */
+    MEMBER
+
+  }
+
+  /**
    * Member state.
    */
   public static enum State {
-    LISTENER,
-    PROMOTABLE,
-    MEMBER,
-    LEADER
+
+    /**
+     * Indicates that the member is considered to be dead.
+     */
+    DEAD,
+
+    /**
+     * Indicates that the member is suspicious and is unreachable by at least one other member.
+     */
+    SUSPICIOUS,
+
+    /**
+     * Indicates that the member is alive and reachable.
+     */
+    ALIVE
+
   }
 
   /**
@@ -41,6 +70,13 @@ public interface Member {
    * @return The member URI.
    */
   String uri();
+
+  /**
+   * Returns the member type.
+   *
+   * @return The member type.
+   */
+  Type type();
 
   /**
    * Returns the member state.

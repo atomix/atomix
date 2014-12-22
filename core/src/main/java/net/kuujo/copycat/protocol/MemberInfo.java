@@ -15,7 +15,13 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.internal.util.Assert;
+
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 
 /**
  * Cluster member info.
@@ -23,27 +29,64 @@ import java.io.Serializable;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemberInfo implements Serializable {
-  public static final int STATUS_ACTIVE = 1;
-  public static final int STATUS_INACTIVE = 0;
 
-  protected String uri;
-  protected long version = 1;
-  protected Long index;
-  protected String leader;
-  protected long term;
-  protected int status = STATUS_ACTIVE;
-
-  public MemberInfo(String uri) {
-    this(uri, 1, null, null, 1, 1);
+  /**
+   * Returns a new member info builder.
+   *
+   * @return A new member info builder.
+   */
+  public static Builder builder() {
+    return new Builder();
   }
 
-  public MemberInfo(String uri, long version, Long index, String leader, long term, int status) {
+  /**
+   * Returns a new member info builder.
+   *
+   * @param member The member info to build.
+   * @return A new member info builder.
+   */
+  public static Builder builder(MemberInfo member) {
+    return new Builder(member);
+  }
+
+  private Member.Type type;
+  private Member.State state;
+  private String uri;
+  private long version = 1;
+  private Long index;
+  private final Set<String> failures = new HashSet<>();
+
+  private MemberInfo() {
+  }
+
+  public MemberInfo(String uri, Member.Type type, Member.State state) {
+    this(uri, type, state, 1, null);
+  }
+
+  public MemberInfo(String uri, Member.Type type, Member.State state, long version, Long index) {
     this.uri = uri;
+    this.type = type;
+    this.state = state;
     this.version = version;
     this.index = index;
-    this.leader = leader;
-    this.term = term;
-    this.status = status;
+  }
+
+  /**
+   * Returns the member type.
+   *
+   * @return The member type.
+   */
+  public Member.Type type() {
+    return type;
+  }
+
+  /**
+   * Returns the member state.
+   *
+   * @return The member state.
+   */
+  public Member.State state() {
+    return state;
   }
 
   /**
@@ -74,30 +117,45 @@ public class MemberInfo implements Serializable {
   }
 
   /**
-   * Returns the currently known cluster leader.
+   * Returns a set of all nodes that have recorded failures for this member.
    *
-   * @return The currently known cluster leader.
+   * @return A set of all nodes that have recorded failures for this member.
    */
-  public String leader() {
-    return leader;
+  public Set<String> failures() {
+    return failures;
   }
 
   /**
-   * Returns the currently known cluster term.
+   * Marks a successful gossip with the member.
    *
-   * @return The currently known cluster term.
+   * @return The member info.
    */
-  public long term() {
-    return term;
+  public MemberInfo succeed() {
+    if (type == Member.Type.LISTENER && state != Member.State.ALIVE) {
+      failures.clear();
+      state = Member.State.ALIVE;
+    }
+    return this;
   }
 
   /**
-   * Returns the member status.
+   * Marks a failure in the member.
    *
-   * @return The member status.
+   * @param uri The URI recording the failure.
+   * @return The member info.
    */
-  public int status() {
-    return status;
+  public MemberInfo fail(String uri) {
+    if (type == Member.Type.LISTENER) {
+      failures.add(uri);
+      if (state == Member.State.ALIVE) {
+        state = Member.State.SUSPICIOUS;
+      } else if (state == Member.State.SUSPICIOUS) {
+        if (failures.size() >= 3) {
+          state = Member.State.DEAD;
+        }
+      }
+    }
+    return this;
   }
 
   /**
@@ -106,11 +164,141 @@ public class MemberInfo implements Serializable {
    * @param info The member info to update.
    */
   public void update(MemberInfo info) {
-    this.version = info.version;
-    this.index = info.index;
-    this.leader = info.leader;
-    this.term = info.term;
-    this.status = info.status;
+    if (info.version > this.version) {
+      this.version = info.version;
+      this.index = info.index;
+      this.type = info.type;
+
+      // Only passive member types can experience state changes.
+      if (this.type == Member.Type.LISTENER) {
+        // If the member is marked as alive then clear failures.
+        if (info.state == Member.State.ALIVE) {
+          this.failures.clear();
+        }
+        this.state = info.state;
+      }
+    }
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof MemberInfo) {
+      MemberInfo member = (MemberInfo) object;
+      return member.uri.equals(uri)
+        && member.type == type
+        && member.state == state
+        && member.version == version
+        && member.index.equals(index);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(uri, type, state, version, index);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("MemberInfo[uri=%s, type=%s, state=%s, version=%d, index=%s]", uri, type, state, version, index);
+  }
+
+  /**
+   * Member info builder.
+   */
+  public static class Builder {
+    private final MemberInfo member;
+
+    private Builder() {
+      this(new MemberInfo());
+    }
+
+    private Builder(MemberInfo member) {
+      this.member = member;
+    }
+
+    /**
+     * Sets the member type.
+     *
+     * @param type The member type.
+     * @return The member info builder.
+     */
+    public Builder withType(Member.Type type) {
+      member.type = Assert.isNotNull(type, "type");
+      return this;
+    }
+
+    /**
+     * Sets the member state.
+     *
+     * @param state The member state.
+     * @return The member info builder.
+     */
+    public Builder withState(Member.State state) {
+      member.state = Assert.isNotNull(state, "state");
+      return this;
+    }
+
+    /**
+     * Sets the member URI.
+     *
+     * @param uri The member URI.
+     * @return The member info builder.
+     */
+    public Builder withUri(String uri) {
+      member.uri = Assert.isNotNull(uri, "uri");
+      return this;
+    }
+
+    /**
+     * Sets the member version.
+     *
+     * @param version The member version.
+     * @return The member info builder.
+     */
+    public Builder withVersion(long version) {
+      member.version = Assert.arg(version, version > 0, "version must be greater than zero");
+      return this;
+    }
+
+    /**
+     * Sets the member log commit index.
+     *
+     * @param index The member log commit index.
+     * @return The member info builder.
+     */
+    public Builder withIndex(Long index) {
+      member.index = Assert.arg(index, index == null || index > 0, "index must be greater than zero");
+      return this;
+    }
+
+    /**
+     * Builds the member.
+     *
+     * @return The built member.
+     */
+    public MemberInfo build() {
+      Assert.isNotNull(member.type, "type");
+      Assert.isNotNull(member.state, "state");
+      Assert.isNotNull(member.uri, "uri");
+      return member;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      return object instanceof Builder && ((Builder) object).member.equals(member);
+    }
+
+    @Override
+    public int hashCode() {
+      return Objects.hash(member);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[member=%s]", getClass().getCanonicalName(), member);
+    }
+
   }
 
 }

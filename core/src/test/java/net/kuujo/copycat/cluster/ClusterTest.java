@@ -44,9 +44,8 @@ public class ClusterTest extends ConcurrentTestCase {
     Protocol protocol = new LocalProtocol();
     ClusterConfig config = new ClusterConfig()
       .withProtocol(protocol)
-      .withLocalMember("local://foo")
-      .withRemoteMembers("local://bar", "local://baz");
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(config, ExecutionContext.create());
+      .withMembers("local://foo", "local://bar", "local://baz");
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator("local://foo", config, ExecutionContext.create());
     coordinator.open().whenComplete((result, error) -> {
       threadAssertNull(error);
       latch.countDown();
@@ -65,17 +64,15 @@ public class ClusterTest extends ConcurrentTestCase {
     ExecutionContext context1 = ExecutionContext.create();
     ClusterConfig config1 = new ClusterConfig()
       .withProtocol(protocol)
-      .withLocalMember("local://foo")
-      .withRemoteMembers("local://bar", "local://baz");
-    ClusterCoordinator coordinator1 = new DefaultClusterCoordinator(config1, ExecutionContext.create());
+      .withMembers("local://foo", "local://bar", "local://baz");
+    ClusterCoordinator coordinator1 = new DefaultClusterCoordinator("local://foo", config1, ExecutionContext.create());
     ClusterManager cluster1 = new CoordinatedClusterManager(1, coordinator1, context1);
 
     ExecutionContext context2 = ExecutionContext.create();
     ClusterConfig config2 = new ClusterConfig()
       .withProtocol(protocol)
-      .withLocalMember("local://bar")
-      .withRemoteMembers("local://baz", "local://foo");
-    ClusterCoordinator coordinator2 = new DefaultClusterCoordinator(config2, ExecutionContext.create());
+      .withMembers("local://foo", "local://bar", "local://baz");
+    ClusterCoordinator coordinator2 = new DefaultClusterCoordinator("local://bar", config2, ExecutionContext.create());
     ClusterManager cluster2 = new CoordinatedClusterManager(1, coordinator2, context2);
 
     context1.execute(() -> {
@@ -84,7 +81,7 @@ public class ClusterTest extends ConcurrentTestCase {
           context2.execute(() -> {
             coordinator2.open().thenRun(() -> {
               cluster2.open().thenRun(() -> {
-                cluster2.localMember().registerHandler("test", message -> CompletableFuture.completedFuture("world!"));
+                cluster2.member().registerHandler("test", message -> CompletableFuture.completedFuture("world!"));
                 context1.execute(() -> {
                   cluster1.member("local://bar").send("test", "Hello").whenComplete((result, error) -> {
                     threadAssertEquals(result, "world!");

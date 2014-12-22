@@ -35,92 +35,100 @@ public interface AsyncLock extends CopycatResource {
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
    * @return A new asynchronous lock.
    */
-  static AsyncLock create(String name) {
-    return create(name, new ClusterConfig(), new AsyncLockConfig(String.format("copycat.lock.%s", name)), ExecutionContext.create());
+  static AsyncLock create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new AsyncLockConfig(String.format("copycat.lock.%s", name)), ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
    * @param cluster The cluster configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncLockConfig(String.format("copycat.lock.%s", name)), ExecutionContext.create());
+  static AsyncLock create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new AsyncLockConfig(String.format("copycat.lock.%s", name)), ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
    * @param config The lock configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, AsyncLockConfig config) {
-    return create(name, new ClusterConfig(), config, ExecutionContext.create());
+  static AsyncLock create(String name, String uri, AsyncLockConfig config) {
+    return create(name, uri, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
    * @param context The user execution context.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, ExecutionContext context) {
-    return create(name, new ClusterConfig(), new AsyncLockConfig(String.format("copycat.lock.%s", name)), context);
+  static AsyncLock create(String name, String uri, ExecutionContext context) {
+    return create(name, uri, new ClusterConfig(), new AsyncLockConfig(String.format("copycat.lock.%s", name)), context);
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
    * @param cluster The cluster configuration.
    * @param config The lock configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, ClusterConfig cluster, AsyncLockConfig config) {
-    return create(name, cluster, config, ExecutionContext.create());
+  static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config) {
+    return create(name, uri, cluster, config, ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
    * @param cluster The cluster configuration.
    * @param context The user execution context.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, new AsyncLockConfig(String.format("copycat.lock.%s", name)), context);
+  static AsyncLock create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, uri, cluster, new AsyncLockConfig(String.format("copycat.lock.%s", name)), context);
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
-   * @param config The lock configuration.
-   * @param context The user execution context.
-   * @return The asynchronous lock.
-   */
-  static AsyncLock create(String name, AsyncLockConfig config, ExecutionContext context) {
-    return create(name, new ClusterConfig(), config, context);
-  }
-
-  /**
-   * Creates a new asynchronous lock.
-   *
-   * @param name The asynchronous lock name.
-   * @param cluster The cluster configuration.
+   * @param uri The asynchronous lock member URI.
    * @param config The lock configuration.
    * @param context The user execution context.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, ClusterConfig cluster, AsyncLockConfig config, ExecutionContext context) {
-    return new DefaultAsyncLock(StateMachine.create(name, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, config, context));
+  static AsyncLock create(String name, String uri, AsyncLockConfig config, ExecutionContext context) {
+    return create(name, uri, new ClusterConfig(), config, context);
+  }
+
+  /**
+   * Creates a new asynchronous lock.
+   *
+   * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
+   * @param cluster The cluster configuration.
+   * @param config The lock configuration.
+   * @param context The user execution context.
+   * @return The asynchronous lock.
+   */
+  static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config, ExecutionContext context) {
+    return new DefaultAsyncLock(StateMachine.create(name, uri, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, config, context));
   }
 
   /**

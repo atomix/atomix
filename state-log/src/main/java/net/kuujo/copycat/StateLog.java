@@ -40,80 +40,87 @@ public interface StateLog<T> extends CopycatResource {
    * Creates a new state log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new StateLogConfig(), ExecutionContext.create());
+  static <T> StateLog<T> create(String name, String uri) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new StateLogConfig(), ExecutionContext.create());
   }
 
   /**
    * Creates a new state log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @param context The user execution context.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new StateLogConfig(), context);
+  static <T> StateLog<T> create(String name, String uri, ExecutionContext context) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new StateLogConfig(), context);
   }
 
   /**
    * Creates a new state log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @param config The state log configuration.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, StateLogConfig config) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+  static <T> StateLog<T> create(String name, String uri, StateLogConfig config) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
   }
 
   /**
    * Creates a new state log.
    *
    * @param name The log name.
-   * @param config The state log configuration.
-   * @param context The user execution context.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, StateLogConfig config, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param cluster The state log cluster.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new StateLogConfig(), ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param cluster The state log cluster.
-   * @param context The user execution context.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, new StateLogConfig(), context);
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param cluster The state log cluster.
+   * @param uri The local log member URI.
    * @param config The state log configuration.
    * @param context The user execution context.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, ClusterConfig cluster, StateLogConfig config, ExecutionContext context) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
+  static <T> StateLog<T> create(String name, String uri, StateLogConfig config, ExecutionContext context) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+  }
+
+  /**
+   * Creates a new state log.
+   *
+   * @param name The log name.
+   * @param uri The local log member URI.
+   * @param cluster The state log cluster.
+   * @return A new state log instance.
+   */
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new StateLogConfig(), ExecutionContext.create());
+  }
+
+  /**
+   * Creates a new state log.
+   *
+   * @param name The log name.
+   * @param uri The local log member URI.
+   * @param cluster The state log cluster.
+   * @param context The user execution context.
+   * @return A new state log instance.
+   */
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, uri, cluster, new StateLogConfig(), context);
+  }
+
+  /**
+   * Creates a new state log.
+   *
+   * @param name The log name.
+   * @param uri The local log member URI.
+   * @param cluster The state log cluster.
+   * @param config The state log configuration.
+   * @param context The user execution context.
+   * @return A new state log instance.
+   */
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, StateLogConfig config, ExecutionContext context) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
       return new DefaultStateLog<T>(name, coordinator.createResource(name).get(), coordinator, config, context).withShutdownTask(coordinator::close);

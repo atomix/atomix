@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 class StartState extends AbstractState {
   private static final Logger LOGGER = LoggerFactory.getLogger(StartState.class);
 
-  StartState(DefaultCopycatStateContext context) {
+  StartState(CopycatStateContext context) {
     super(context);
   }
 

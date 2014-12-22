@@ -44,6 +44,11 @@ public class ResourceMember implements Member {
   }
 
   @Override
+  public Type type() {
+    return member.type();
+  }
+
+  @Override
   public State state() {
     return member.state();
   }
@@ -91,6 +96,11 @@ public class ResourceMember implements Member {
       });
     });
     return future;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[uri=%s]", getClass().getCanonicalName(), uri());
   }
 
 }

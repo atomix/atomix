@@ -16,12 +16,19 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.protocol.MemberInfo;
+import net.kuujo.copycat.protocol.Response;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -34,11 +41,9 @@ import java.util.concurrent.TimeUnit;
 public class PassiveState extends AbstractState {
   private static final Logger LOGGER = LoggerFactory.getLogger(PassiveState.class);
   private ScheduledFuture<?> currentTimer;
-  private final Membership membership;
 
   public PassiveState(CopycatStateContext context) {
     super(context);
-    this.membership = new Membership(context.getLocalMember(), context.getMembers());
   }
 
   @Override
@@ -79,42 +84,51 @@ public class PassiveState extends AbstractState {
    */
   private void sync() {
     // Create a list of currently active members.
-    Collection<MemberInfo> members = membership.members();
-    List<MemberInfo> activeMembers = new ArrayList<>(members.size());
-    for (MemberInfo member : members) {
-      if (member.status() == MemberInfo.STATUS_ACTIVE) {
+    List<MemberInfo> activeMembers = new ArrayList<>(context.getMembers().size());
+    for (MemberInfo member : context.getMembers()) {
+      if (!member.equals(context.getLocalMember())
+        && (context.getLocalMember().type() == Member.Type.MEMBER && member.type() == Member.Type.LISTENER)
+        || (context.getLocalMember().type() == Member.Type.LISTENER && member.type() == Member.Type.MEMBER)
+        && (member.state() == Member.State.SUSPICIOUS || member.state() == Member.State.ALIVE)) {
         activeMembers.add(member);
       }
     }
 
     // Create a random list of three active members.
     Random random = new Random();
-    List<MemberInfo> randomMembers = new ArrayList<>();
+    List<MemberInfo> randomMembers = new ArrayList<>(3);
     for (int i = 0; i < Math.min(activeMembers.size(), 3); i++) {
       randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size() - 1, 2))));
     }
 
+    // Increment the local member version in the vector clock.
+    context.setVersion(context.getVersion() + 1);
+
     // For each active member, send membership info to the member.
     for (MemberInfo member : randomMembers) {
       LOGGER.debug("{} - sending sync request to {}", context.getLocalMember(), member.uri());
-      List<ByteBuffer> entries = context.log().getEntries(member.index(), Math.min(member.index() + 100, context.log().lastIndex()));
+      List<ByteBuffer> entries = context.log().getEntries(member.index() != null ? member.index() : 1, Math.min(member.index() + 100, context.getCommitIndex()));
       syncHandler.handle(SyncRequest.builder()
         .withId(UUID.randomUUID().toString())
-        .withMember(member.uri())
-        .withMembership(membership.increment())
+        .withLeader(context.getLeader())
+        .withTerm(context.getTerm())
+        .withLogIndex(member.index())
+        .withCommitIndex(context.getCommitIndex())
+        .withMembers(context.getMembers())
         .withEntries(entries)
         .build()).whenComplete((response, error) -> {
         if (error == null) {
           // If the response succeeded, update membership info with the target node's membership.
           if (response.status() == Response.Status.OK) {
-            membership.update(response.membership());
+            context.setMembers(response.members());
+            member.succeed();
           } else {
             LOGGER.warn("{} - received error response from {}", context.getLocalMember(), member.uri());
           }
         } else {
           // If the request failed then record the member as INACTIVE.
           LOGGER.warn("{} - sync to {} failed", context.getLocalMember(), member.uri());
-          member.update(new MemberInfo(member.uri(), member.version(), member.index(), member.leader(), member.term(), MemberInfo.STATUS_INACTIVE));
+          member.fail(context.getLocalMember().uri());
         }
       });
     }
@@ -122,11 +136,37 @@ public class PassiveState extends AbstractState {
 
   @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    membership.update(request.membership());
+    if (request.term() > context.getTerm()) {
+      context.setTerm(request.term());
+      context.setLeader(request.leader());
+    }
+
+    // Increment the local vector clock version and update cluster members.
+    context.setVersion(context.getVersion() + 1);
+    context.setMembers(request.members());
+
+    for (int i = 0; i < request.entries().size(); i++) {
+      long index = request.logIndex() != null ? request.logIndex() + i + 1 : i + 1;
+      if (!context.log().containsIndex(index)) {
+        if ((index == 1 && context.log().lastIndex() != null) || (index > 1 && context.log().lastIndex() != index - 1)) {
+          return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
+            .withId(logRequest(request).id())
+            .withUri(context.getLocalMember().uri())
+            .withMembers(context.getMembers())
+            .build()));
+        }
+        ByteBuffer entry = request.entries().get(i);
+        context.log().appendEntry(entry);
+        context.setCommitIndex(index);
+        context.consumer().apply(index, entry);
+        context.setLastApplied(index);
+      }
+    }
+
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
       .withId(logRequest(request).id())
-      .withMember(context.getLocalMember())
-      .withMembership(membership)
+      .withUri(context.getLocalMember().uri())
+      .withMembers(context.getMembers())
       .build()));
   }
 

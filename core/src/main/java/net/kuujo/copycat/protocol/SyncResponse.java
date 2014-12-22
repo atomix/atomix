@@ -17,6 +17,7 @@ package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.internal.util.Assert;
 
+import java.util.Collection;
 import java.util.Objects;
 
 /**
@@ -45,20 +46,20 @@ public class SyncResponse extends AbstractResponse {
     return new Builder(response);
   }
 
-  private Membership membership;
+  private Collection<MemberInfo> members;
 
   /**
    * Returns the responding node's membership.
    *
    * @return The responding node's membership.
    */
-  public Membership membership() {
-    return membership;
+  public Collection<MemberInfo> members() {
+    return members;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, membership);
+    return Objects.hash(id, member, members);
   }
 
   @Override
@@ -68,7 +69,7 @@ public class SyncResponse extends AbstractResponse {
       return response.id.equals(id)
         && response.status == status
         && response.member.equals(member)
-        && response.membership.equals(membership);
+        && response.members.equals(members);
     }
     return false;
   }
@@ -93,18 +94,18 @@ public class SyncResponse extends AbstractResponse {
     /**
      * Sets the response membership.
      *
-     * @param membership The request membership.
+     * @param members The request membership.
      * @return The sync response builder.
      */
-    public Builder withMembership(Membership membership) {
-      response.membership = Assert.isNotNull(membership, "membership");
+    public Builder withMembers(Collection<MemberInfo> members) {
+      response.members = Assert.isNotNull(members, "members");
       return this;
     }
 
     @Override
     public SyncResponse build() {
       super.build();
-      Assert.isNotNull(response.membership, "membership");
+      Assert.isNotNull(response.members, "members");
       return response;
     }
 

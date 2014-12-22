@@ -73,12 +73,11 @@ public class VertxEventBusLockService extends Verticle {
     // Create a Copycat cluster configuration using the Vert.x event bus protocol.
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new VertxEventBusProtocol(vertx))
-      .withLocalMember("eventbus://lock1")
-      .withRemoteMembers("eventbus://lock2", "eventbus://lock3");
+      .withMembers("eventbus://lock1", "eventbus://lock2", "eventbus://lock3");
 
     // Create a Copycat instance and give it a reference to the local Vert.x instance in order to run
     // asynchronous calls on the Vert.x event loop.
-    copycat = Copycat.create(cluster, new VertxExecutionContext(vertx));
+    copycat = Copycat.create("eventbus://lock1", cluster, new VertxExecutionContext(vertx));
 
     // Open the Copycat instance and create a lock instance.
     copycat.open().whenComplete((copycatResult, copycatError) -> {

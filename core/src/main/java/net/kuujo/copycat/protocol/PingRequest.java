@@ -117,7 +117,7 @@ public class PingRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, member=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, commitIndex=%d]", getClass().getSimpleName(), id, member, term, leader, logIndex, logTerm, commitIndex);
+    return String.format("%s[id=%s, uri=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, commitIndex=%d]", getClass().getSimpleName(), id, member, term, leader, logIndex, logTerm, commitIndex);
   }
 
   /**

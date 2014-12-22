@@ -14,12 +14,6 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterManager;
 import net.kuujo.copycat.cluster.LocalMember;
@@ -28,6 +22,12 @@ import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Internal cluster.
  *
@@ -35,39 +35,31 @@ import net.kuujo.copycat.spi.ExecutionContext;
  */
 public class CoordinatedClusterManager implements ClusterManager {
   private CoordinatedLocalMember localMember;
-  private final Map<String, CoordinatedMember> remoteMembers = new HashMap<>();
+  private final Map<String, CoordinatedMember> members = new HashMap<>();
 
   public CoordinatedClusterManager(int id, ClusterCoordinator coordinator, ExecutionContext executor) {
-    this.localMember = new CoordinatedLocalMember(id, coordinator.localMember(), executor);
-    for (MemberCoordinator member : coordinator.remoteMembers()) {
-      this.remoteMembers.put(member.uri(), new CoordinatedMember(id, member, executor));
+    this.localMember = new CoordinatedLocalMember(id, coordinator.member(), executor);
+    this.members.put(localMember.uri(), localMember);
+    for (MemberCoordinator member : coordinator.members()) {
+      if (!member.uri().equals(localMember.uri())) {
+        this.members.put(member.uri(), new CoordinatedMember(id, member, executor));
+      }
     }
   }
 
   @Override
   public Member member(String uri) {
-    Member member = remoteMembers.get(uri);
-    if (member != null) {
-      return member;
-    } else if (localMember.uri().equals(uri)) {
-      return localMember;
-    }
-    return null;
+    return members.get(uri);
   }
 
   @Override
-  public LocalMember localMember() {
+  public LocalMember member() {
     return localMember;
   }
 
   @Override
-  public Collection<Member> remoteMembers() {
-    return Collections.unmodifiableCollection(remoteMembers.values());
-  }
-
-  @Override
-  public Member remoteMember(String uri) {
-    return remoteMembers.get(uri);
+  public Collection<Member> members() {
+    return Collections.unmodifiableCollection(members.values());
   }
 
   @Override
@@ -87,6 +79,11 @@ public class CoordinatedClusterManager implements ClusterManager {
   public CompletableFuture<Void> close() {
     localMember.close();
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[members=%s]", getClass().getCanonicalName(), members.values());
   }
 
 }

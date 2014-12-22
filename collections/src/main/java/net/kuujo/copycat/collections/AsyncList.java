@@ -37,106 +37,108 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  static <T> AsyncList<T> create(String name) {
-    return create(name, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
+  static <T> AsyncList<T> create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
    * @param config The list configuration.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, AsyncListConfig config) {
-    return create(name, new ClusterConfig(), config, ExecutionContext.create());
+  static <T> AsyncList<T> create(String name, String uri, AsyncListConfig config) {
+    return create(name, uri, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
    * @param context The user execution context.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ExecutionContext context) {
-    return create(name, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), context);
+  static <T> AsyncList<T> create(String name, String uri, ExecutionContext context) {
+    return create(name, uri, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), context);
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param config The list configuration.   * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config) {
-    return create(name, cluster, config, ExecutionContext.create());
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config) {
+    return create(name, uri, cluster, config, ExecutionContext.create());
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param context The user execution context.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), context);
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, uri, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), context);
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
+   * @param config The list configuration.
+   * @param context The user execution context.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  static <T> AsyncList<T> create(String name, String uri, AsyncListConfig config, ExecutionContext context) {
+    return create(name, uri, new ClusterConfig(), config, context);
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
+   * @param cluster The cluster configuration.
    * @param config The list configuration.
    * @param context The user execution context.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
   @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, AsyncListConfig config, ExecutionContext context) {
-    return create(name, new ClusterConfig(), config, context);
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param cluster The cluster configuration.
-   * @param config The list configuration.
-   * @param context The user execution context.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config, ExecutionContext context) {
-    return new DefaultAsyncList(StateMachine.create(name, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config, context));
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config, ExecutionContext context) {
+    return new DefaultAsyncList(StateMachine.create(name, uri, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config, context));
   }
 
   /**

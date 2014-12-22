@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 
 /**
@@ -24,14 +25,33 @@ import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
  */
 abstract class AbstractMemberCoordinator implements MemberCoordinator {
   private final String uri;
+  private final Member.Type type;
+  private Member.State state;
 
-  protected AbstractMemberCoordinator(String uri) {
+  protected AbstractMemberCoordinator(String uri, Member.Type type, Member.State state) {
     this.uri = uri;
+    this.type = type;
+    this.state = state;
   }
 
   @Override
   public String uri() {
     return uri;
+  }
+
+  @Override
+  public Member.Type type() {
+    return type;
+  }
+
+  @Override
+  public Member.State state() {
+    return state;
+  }
+
+  AbstractMemberCoordinator state(Member.State state) {
+    this.state = state;
+    return this;
   }
 
 }

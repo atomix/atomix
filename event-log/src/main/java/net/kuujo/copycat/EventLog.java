@@ -36,69 +36,75 @@ public interface EventLog<T> extends CopycatResource {
    * Creates a new event log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), ExecutionContext.create());
+  static <T> EventLog<T> create(String name, String uri) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), ExecutionContext.create());
   }
 
   /**
    * Creates a new event log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @param context The user execution context.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), context);
+  static <T> EventLog<T> create(String name, String uri, ExecutionContext context) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), context);
   }
 
   /**
    * Creates a new event log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @param config The log configuration.
    * @return The event log.
    */
-  static <T> EventLog<T> create(String name, EventLogConfig config) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+  static <T> EventLog<T> create(String name, String uri, EventLogConfig config) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
   }
 
   /**
    * Creates a new event log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @param config The log configuration.
    * @param context The user execution context.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, EventLogConfig config, ExecutionContext context) {
-    return create(name, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+  static <T> EventLog<T> create(String name, String uri, EventLogConfig config, ExecutionContext context) {
+    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, context);
   }
 
   /**
    * Creates a new event log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @param cluster The event log cluster.
    * @param context The user execution context.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, cluster, new EventLogConfig(), context);
+  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
+    return create(name, uri, cluster, new EventLogConfig(), context);
   }
 
   /**
    * Creates a new event log.
    *
    * @param name The log name.
+   * @param uri The local log member URI.
    * @param cluster The event log cluster.
    * @param config The log configuration.
    * @param context The user execution context.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, ClusterConfig cluster, EventLogConfig config, ExecutionContext context) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(cluster, ExecutionContext.create());
+  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, EventLogConfig config, ExecutionContext context) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
       return new DefaultEventLog<T>(name, coordinator.createResource(name).get(), coordinator, config, context).withShutdownTask(coordinator::close);
