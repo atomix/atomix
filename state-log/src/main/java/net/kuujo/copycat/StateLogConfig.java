@@ -289,4 +289,15 @@ public class StateLogConfig implements Copyable<StateLogConfig> {
     return flushInterval;
   }
 
+  /**
+   * Sets the log flush interval, returning the configuration for method chaining.
+   *
+   * @param flushInterval The log flush interval.
+   * @return The log configuration.
+   */
+  public StateLogConfig withFlushInterval(long flushInterval) {
+    setFlushInterval(flushInterval);
+    return this;
+  }
+
 }
