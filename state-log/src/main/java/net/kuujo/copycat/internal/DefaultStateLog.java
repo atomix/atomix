@@ -41,10 +41,10 @@ import java.util.function.Supplier;
 public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> implements StateLog<T> {
   private final Serializer serializer;
   private final ExecutionContext executor;
-  private final Map<Integer, OperationInfo> operations = new HashMap<>();
+  private final Map<Integer, OperationInfo<?, ?>> operations = new HashMap<>();
   private final StateLogConfig config;
-  private Supplier snapshotter;
-  private Consumer installer;
+  private Supplier<?> snapshotter;
+  private Consumer<?> installer;
   private long commitIndex;
   private boolean open;
 
@@ -63,28 +63,28 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   @Override
   public <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command) {
     Assert.state(!open, "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo(name, command, false));
+    operations.put(name.hashCode(), new OperationInfo<>(name, command, false));
     return this;
   }
 
   @Override
   public StateLog<T> unregisterCommand(String name) {
     Assert.state(!open, "Cannot unregister command on open state log");
-    operations.remove(name);
+    operations.remove(name.hashCode());
     return this;
   }
 
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
     Assert.state(!open, "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo(name, query, true));
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true));
     return this;
   }
 
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency) {
     Assert.state(!open, "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo(name, query, true, consistency));
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, consistency));
     return this;
   }
 
@@ -118,33 +118,28 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   @SuppressWarnings("unchecked")
   public <U> CompletableFuture<U> submit(String command, T entry) {
     Assert.state(open, "State log not open");
-    OperationInfo<T, U> operationInfo = operations.get(command.hashCode());
+    OperationInfo<T, U> operationInfo = (OperationInfo<T, U>)operations.get(command.hashCode());
     if (operationInfo == null) {
       CompletableFuture<U> future = new CompletableFuture<>();
       executor.execute(() -> future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command))));
       return future;
     }
 
+    ByteBuffer buffer = serializer.writeObject(entry);
+    ByteBuffer entryBuf = ByteBuffer.allocate(8 + buffer.capacity());
+    entryBuf.putInt(1); // Entry type
+    entryBuf.putInt(command.hashCode());
+    entryBuf.put(buffer);
+    entryBuf.rewind();
+    
     // If this is a read-only command, check if the command is consistent. For consistent operations,
     // queries are forwarded to the current cluster leader for evaluation. Otherwise, it's safe to
     // read stale data from the local node.
     if (operationInfo.readOnly) {
-      ByteBuffer buffer = serializer.writeObject(entry);
-      ByteBuffer syncEntry = ByteBuffer.allocate(8 + buffer.capacity());
-      syncEntry.putInt(1); // Entry type
-      syncEntry.putInt(command.hashCode());
-      syncEntry.put(buffer);
-      syncEntry.rewind();
-      return context.query(syncEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
+      return context.query(entryBuf, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
     } else {
       // Write operations are always submitted to the context which will forward it to the cluster leader.
-      ByteBuffer buffer = serializer.writeObject(entry);
-      ByteBuffer commandEntry = ByteBuffer.allocate(8 + buffer.capacity());
-      commandEntry.putInt(1); // Entry type
-      commandEntry.putInt(command.hashCode());
-      commandEntry.put(buffer);
-      commandEntry.rewind();
-      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
+      return context.commit(entryBuf).thenApplyAsync(serializer::readObject, executor);
     }
   }
 
@@ -195,7 +190,6 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   /**
    * Installs a snapshot.
    */
-  @SuppressWarnings("unchecked")
   private void installSnapshot(ByteBuffer snapshot) {
     if (installer != null) {
       installer.accept(serializer.readObject(snapshot));
