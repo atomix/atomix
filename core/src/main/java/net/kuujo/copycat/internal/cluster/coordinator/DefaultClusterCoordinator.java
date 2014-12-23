@@ -53,7 +53,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
   private final CopycatContext context;
   private final ClusterConfig config;
   private final DefaultLocalMemberCoordinator localMember;
-  private final Map<String, AbstractMemberCoordinator> members = new HashMap<>();
+  private final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
   private final Map<String, CopycatContext> contexts = new ConcurrentHashMap<>();
 
   public DefaultClusterCoordinator(String uri, ClusterConfig config, ExecutionContext executor) {
@@ -77,12 +77,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
         if (!members.containsKey(member.uri())) {
           if (member.state() != Member.State.DEAD) {
             DefaultRemoteMemberCoordinator coordinator = new DefaultRemoteMemberCoordinator(member.uri(), Member.Type.LISTENER, member.state(), config.getProtocol(), executor);
-            members.put(member.uri(), coordinator);
             try {
               coordinator.open().get();
             } catch (InterruptedException | ExecutionException e) {
-              this.members.remove(member.uri());
             }
+            members.put(member.uri(), coordinator);
           }
         } else {
           if (member.state() == Member.State.DEAD) {
@@ -134,17 +133,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
       if (result == 0) {
         return null;
       } else {
-        CopycatContext context = contexts.get(name);
-        if (context == null) {
-          synchronized (contexts) {
-            context = contexts.get(name);
-            if (context == null) {
-              context = createContext(name, cluster.getMembers());
-              contexts.put(name, context);
-            }
-          }
-        }
-        return context;
+        return contexts.computeIfAbsent(name, k -> createContext(k, cluster.getMembers()));
       }
     });
   }
@@ -206,18 +195,16 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
         buffer.get(nameBytes);
         name = new String(nameBytes);
         result = ByteBuffer.allocate(4);
-        synchronized (contexts) {
-          CopycatContext context = contexts.remove(name);
-          if (context != null) {
-            try {
-              context.close().get();
-              context.delete().get();
-            } catch (Exception e) {
-            }
-            result.putInt(1);
-          } else {
-            result.putInt(0);
+        CopycatContext context = contexts.remove(name);
+        if (context != null) {
+          try {
+            context.close().get();
+            context.delete().get();
+          } catch (Exception e) {
           }
+          result.putInt(1);
+        } else {
+          result.putInt(0);
         }
         break;
       default:
