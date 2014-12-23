@@ -59,39 +59,45 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
   public DefaultClusterCoordinator(String uri, ClusterConfig config, ExecutionContext executor) {
     this.config = config.copy();
     this.executor = executor;
-    this.localMember = new DefaultLocalMemberCoordinator(uri, config.getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE, config.getProtocol(), executor);
+    this.localMember = new DefaultLocalMemberCoordinator(uri, config.getMembers().contains(uri) ? Member.Type.MEMBER
+      : Member.Type.LISTENER, Member.State.ALIVE, config.getProtocol(), executor);
     this.members.put(uri, localMember);
     for (String member : config.getMembers()) {
-      this.members.put(member, new DefaultRemoteMemberCoordinator(member, Member.Type.MEMBER, Member.State.ALIVE, config.getProtocol(), executor));
+      this.members.put(member, new DefaultRemoteMemberCoordinator(member, Member.Type.MEMBER, Member.State.ALIVE,
+        config.getProtocol(), executor));
     }
     Map<String, Object> logConfig = new HashMap<>();
     logConfig.put("name", "copycat");
     state = new CopycatStateContext(uri, config, Services.load("copycat.log", logConfig), executor);
-    context = new DefaultCopycatContext(new CoordinatedCluster(0, this, state, new ResourceRouter("copycat"), executor), state);
+    context = new DefaultCopycatContext(
+      new CoordinatedCluster(0, this, state, new ResourceRouter("copycat"), executor), state);
   }
 
   @Override
-  public synchronized void update(Observable o, Object arg) {
+  public void update(Observable o, Object arg) {
     for (MemberInfo member : state.getMembers()) {
-      if (member.type() == Member.Type.LISTENER) {
-        if (!members.containsKey(member.uri())) {
-          if (member.state() != Member.State.DEAD) {
-            DefaultRemoteMemberCoordinator coordinator = new DefaultRemoteMemberCoordinator(member.uri(), Member.Type.LISTENER, member.state(), config.getProtocol(), executor);
-            try {
-              coordinator.open().get();
-            } catch (InterruptedException | ExecutionException e) {
-            }
-            members.put(member.uri(), coordinator);
-          }
-        } else {
-          if (member.state() == Member.State.DEAD) {
+      if (member.type().equals(Member.Type.LISTENER)) {
+        if (members.containsKey(member.uri())) {
+          if (member.state().equals(Member.State.DEAD)) {
             MemberCoordinator coordinator = members.remove(member.uri());
             try {
               coordinator.close().get();
-            } catch (InterruptedException | ExecutionException e) {
+            } catch (InterruptedException | ExecutionException ignore) {
             }
           } else {
             members.get(member.uri()).state(member.state());
+          }
+        } else {
+          if (!member.state().equals(Member.State.DEAD)) {
+            members.computeIfAbsent(member.uri(), k -> {
+              DefaultRemoteMemberCoordinator coordinator = new DefaultRemoteMemberCoordinator(member.uri(),
+                Member.Type.LISTENER, member.state(), config.getProtocol(), executor);
+              try {
+                coordinator.open().get();
+              } catch (InterruptedException | ExecutionException ignore) {
+              }
+              return coordinator;
+            });
           }
         }
       }
@@ -157,8 +163,10 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
     ExecutionContext executor = ExecutionContext.create();
     Map<String, Object> logConfig = new HashMap<>(1);
     logConfig.put("name", name);
-    CopycatStateContext state = new CopycatStateContext(localMember.uri(), new ClusterConfig().withMembers(members), Services.load("copycat.log", logConfig), executor);
-    CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), executor);
+    CopycatStateContext state = new CopycatStateContext(localMember.uri(), new ClusterConfig().withMembers(members),
+      Services.load("copycat.log", logConfig), executor);
+    CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name),
+      executor);
     return new DefaultCopycatContext(cluster, state);
   }
 
@@ -181,13 +189,13 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
         buffer.get(clusterBytes);
         Set<String> members = serializer.readObject(ByteBuffer.wrap(clusterBytes));
         result = ByteBuffer.allocate(4);
-        synchronized (contexts) {
-          if (!contexts.containsKey(name)) {
-            contexts.put(name, createContext(name, members));
+        if (!contexts.containsKey(name)) {
+          contexts.computeIfAbsent(name, k -> {
             result.putInt(1);
-          } else {
-            result.putInt(0);
-          }
+            return createContext(name, members);
+          });
+        } else {
+          result.putInt(0);
         }
         break;
       case -1: // delete
@@ -273,8 +281,8 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
     /**
      * Handles an outbound protocol request.
      */
-    private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(
-      String topic, T request, Cluster cluster) {
+    private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(String topic, T request,
+      Cluster cluster) {
       Member member = cluster.member(request.uri());
       if (member != null) {
         return member.send(topic, request);
