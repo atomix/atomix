@@ -17,7 +17,10 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.election.Election;
 
 /**
- * Copycat cluster.
+ * Resource cluster.<p>
+ *
+ * The cluster contains state information defining the current cluster configuration. Note that cluster configuration
+ * state is potential stale at any given point in time.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

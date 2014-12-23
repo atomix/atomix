@@ -15,11 +15,15 @@
 package net.kuujo.copycat.cluster;
 
 /**
- * Local cluster member.
+ * Local cluster member.<p>
+ *
+ * The local member provides an interface for receiving messages from other members of the cluster. Messages can
+ * be sent across the cluster via a topic-based system.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface LocalMember extends Member {
+
   /**
    * Registers a message type registerHandler on the local member.
    *
@@ -38,4 +42,5 @@ public interface LocalMember extends Member {
    * @return The local member.
    */
   LocalMember unregisterHandler(String topic);
+
 }

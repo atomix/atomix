@@ -21,16 +21,19 @@ import net.kuujo.copycat.Managed;
 import java.util.Collection;
 
 /**
- * Cluster manager.
+ * Resource cluster manager.<p>
+ *
+ * The cluster manager is a based API that contains the cluster state.
+ *
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface ClusterManager extends Configurable<ClusterManager, ClusterConfig>, Managed {
 
   /**
-   * Returns the local cluster member URI.
+   * Returns the local cluster member.
    *
-   * @return The local cluster member URI.
+   * @return The local cluster member.
    */
   LocalMember member();
 
@@ -43,9 +46,9 @@ public interface ClusterManager extends Configurable<ClusterManager, ClusterConf
   Member member(String uri);
 
   /**
-   * Returns an immutable set of remote cluster members.
+   * Returns an immutable set of all cluster members.
    *
-   * @return An immutable set of remote cluster members.
+   * @return An immutable set of all cluster members.
    */
   Collection<Member> members();
 
