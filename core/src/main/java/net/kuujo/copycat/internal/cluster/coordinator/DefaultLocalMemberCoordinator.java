@@ -71,9 +71,9 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   @SuppressWarnings({ "unchecked", "rawtypes" })
   public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
-    Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
-    if (handlers != null) {
-      MessageHandler handler = handlers.get(address);
+    Map<Integer, MessageHandler> topicHandlers = handlers.get(topic);
+    if (topicHandlers != null) {
+      MessageHandler handler = topicHandlers.get(address);
       if (handler != null) {
         getContext(address).execute(() -> {
           ((CompletionStage<U>) handler.handle(message)).whenComplete((result, error) -> {
@@ -99,28 +99,19 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   @SuppressWarnings("rawtypes")
   public <T, U> LocalMemberCoordinator register(String topic, int address,
     MessageHandler<T, U> handler) {
-    Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
-    if (handlers == null) {
-      synchronized (this.handlers) {
-        handlers = this.handlers.get(topic);
-        if (handlers == null) {
-          handlers = new ConcurrentHashMap<>();
-          this.handlers.put(topic, handlers);
-        }
-      }
-    }
-    handlers.put(address, handler);
+    Map<Integer, MessageHandler> topicHandlers = handlers.computeIfAbsent(topic, t -> new ConcurrentHashMap<>());
+    topicHandlers.put(address, handler);
     return this;
   }
 
   @Override
   @SuppressWarnings("rawtypes")
   public LocalMemberCoordinator unregister(String topic, int address) {
-    Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
-    if (handlers != null) {
-      handlers.remove(address);
-      if (handlers.isEmpty()) {
-        this.handlers.remove(topic);
+    Map<Integer, MessageHandler> topicHandlers = handlers.get(topic);
+    if (topicHandlers != null) {
+      topicHandlers.remove(address);
+      if (topicHandlers.isEmpty()) {
+        handlers.remove(topic);
       }
     }
     return this;
@@ -154,10 +145,10 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
         byte[] topicBytes = new byte[topicLength];
         request.get(topicBytes);
         String topic = new String(topicBytes);
-        Map<Integer, MessageHandler> handlers = this.handlers.get(topic);
-        if (handlers != null) {
+        Map<Integer, MessageHandler> topicHandlers = handlers.get(topic);
+        if (topicHandlers != null) {
           int address = request.getInt();
-          MessageHandler handler = handlers.get(address);
+          MessageHandler handler = topicHandlers.get(address);
           if (handler != null) {
             Object message = serializer.readObject(request.slice());
             getContext(address).execute(() -> {

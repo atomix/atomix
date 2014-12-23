@@ -15,6 +15,14 @@
  */
 package net.kuujo.copycat.internal;
 
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Observable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
+
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
@@ -23,13 +31,21 @@ import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.protocol.AppendRequest;
+import net.kuujo.copycat.protocol.AppendResponse;
+import net.kuujo.copycat.protocol.CommitRequest;
+import net.kuujo.copycat.protocol.CommitResponse;
+import net.kuujo.copycat.protocol.MemberInfo;
+import net.kuujo.copycat.protocol.PingRequest;
+import net.kuujo.copycat.protocol.PingResponse;
+import net.kuujo.copycat.protocol.PollRequest;
+import net.kuujo.copycat.protocol.PollResponse;
+import net.kuujo.copycat.protocol.QueryRequest;
+import net.kuujo.copycat.protocol.QueryResponse;
+import net.kuujo.copycat.protocol.RaftProtocol;
+import net.kuujo.copycat.protocol.SyncRequest;
+import net.kuujo.copycat.protocol.SyncResponse;
 import net.kuujo.copycat.spi.ExecutionContext;
-
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 
 /**
  * Copycat state context.
@@ -49,7 +65,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
   private CompletableFuture<Void> openFuture;
   private final String localMember;
-  private final Map<String, MemberInfo> members = new HashMap<>();
+  private final Map<String, MemberInfo> members = new ConcurrentHashMap<>();
   private Election.Status status;
   private String leader;
   private long term;
@@ -87,8 +103,8 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return A set of all members in the state cluster.
    */
-  public List<MemberInfo> getMembers() {
-    return new ArrayList<>(members.values());
+  public Collection<MemberInfo> getMembers() {
+    return members.values();
   }
 
   /**

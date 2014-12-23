@@ -40,7 +40,6 @@ public final class Services {
    * @param <T> The service type.
    * @return The service class.
    */
-  @SuppressWarnings("unchecked")
   public static <T> Class<T> loadClass(String path) {
     Config config = Configs.load();
     if (!config.hasPath(path)) {
