@@ -19,7 +19,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.DefaultStateLog;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.spi.ExecutionContext;
 
@@ -44,7 +43,7 @@ public interface StateLog<T> extends CopycatResource {
    * @return A new state log instance.
    */
   static <T> StateLog<T> create(String name, String uri) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new StateLogConfig(), ExecutionContext.create());
+    return create(name, uri, new ClusterConfig(), new StateLogConfig(), ExecutionContext.create());
   }
 
   /**
@@ -56,7 +55,7 @@ public interface StateLog<T> extends CopycatResource {
    * @return A new state log instance.
    */
   static <T> StateLog<T> create(String name, String uri, ExecutionContext context) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new StateLogConfig(), context);
+    return create(name, uri, new ClusterConfig(), new StateLogConfig(), context);
   }
 
   /**
@@ -68,7 +67,7 @@ public interface StateLog<T> extends CopycatResource {
    * @return A new state log instance.
    */
   static <T> StateLog<T> create(String name, String uri, StateLogConfig config) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+    return create(name, uri, new ClusterConfig(), config, ExecutionContext.create());
   }
 
   /**
@@ -81,7 +80,7 @@ public interface StateLog<T> extends CopycatResource {
    * @return A new state log instance.
    */
   static <T> StateLog<T> create(String name, String uri, StateLogConfig config, ExecutionContext context) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+    return create(name, uri, new ClusterConfig(), config, context);
   }
 
   /**
