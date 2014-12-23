@@ -167,7 +167,6 @@ public class MemberInfo implements Serializable {
     if (info.version > this.version) {
       this.version = info.version;
       this.index = info.index;
-      this.type = info.type;
 
       // Only passive member types can experience state changes.
       if (this.type == Member.Type.LISTENER) {
