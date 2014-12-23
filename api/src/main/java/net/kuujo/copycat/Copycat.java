@@ -105,7 +105,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name);
+  <T> CompletableFuture<EventLog<T>> getEventLog(String name);
 
   /**
    * Creates a new event log.
@@ -115,7 +115,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name, ClusterConfig cluster);
+  <T> CompletableFuture<EventLog<T>> getEventLog(String name, ClusterConfig cluster);
 
   /**
    * Creates a new event log.
@@ -125,7 +125,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name, EventLogConfig config);
+  <T> CompletableFuture<EventLog<T>> getEventLog(String name, EventLogConfig config);
 
   /**
    * Creates a new event log.
@@ -136,7 +136,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name, ClusterConfig cluster, EventLogConfig config);
+  <T> CompletableFuture<EventLog<T>> getEventLog(String name, ClusterConfig cluster, EventLogConfig config);
 
   /**
    * Creates a new state log.
@@ -145,7 +145,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name);
+  <T> CompletableFuture<StateLog<T>> getStateLog(String name);
 
   /**
    * Creates a new state log.
@@ -155,7 +155,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name, ClusterConfig cluster);
+  <T> CompletableFuture<StateLog<T>> getStateLog(String name, ClusterConfig cluster);
 
   /**
    * Creates a new state log.
@@ -165,7 +165,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name, StateLogConfig config);
+  <T> CompletableFuture<StateLog<T>> getStateLog(String name, StateLogConfig config);
 
   /**
    * Creates a new state log.
@@ -176,7 +176,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name, ClusterConfig cluster, StateLogConfig config);
+  <T> CompletableFuture<StateLog<T>> getStateLog(String name, ClusterConfig cluster, StateLogConfig config);
 
   /**
    * Creates a new replicated state machine.
@@ -187,7 +187,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState);
+  <T> CompletableFuture<StateMachine<T>> getStateMachine(String name, Class<T> stateType, T initialState);
 
   /**
    * Creates a new replicated state machine.
@@ -199,7 +199,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster);
+  <T> CompletableFuture<StateMachine<T>> getStateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster);
 
   /**
    * Creates a new replicated state machine.
@@ -211,7 +211,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config);
+  <T> CompletableFuture<StateMachine<T>> getStateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config);
 
   /**
    * Creates a new replicated state machine.
@@ -224,7 +224,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster, StateMachineConfig config);
+  <T> CompletableFuture<StateMachine<T>> getStateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster, StateMachineConfig config);
 
   /**
    * Creates a new leader election.
@@ -232,7 +232,7 @@ public interface Copycat extends Managed {
    * @param name The leader election name.
    * @return A completable future to be completed once the leader election has been created.
    */
-  CompletableFuture<LeaderElection> election(String name);
+  CompletableFuture<LeaderElection> getElection(String name);
 
   /**
    * Creates a new leader election.
@@ -241,7 +241,7 @@ public interface Copycat extends Managed {
    * @param cluster The leader election cluster configuration.
    * @return A completable future to be completed once the leader election has been created.
    */
-  CompletableFuture<LeaderElection> election(String name, ClusterConfig cluster);
+  CompletableFuture<LeaderElection> getElection(String name, ClusterConfig cluster);
 
   /**
    * Creates a named asynchronous map.
