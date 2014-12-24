@@ -39,35 +39,35 @@ public class ResourceCluster implements Cluster {
   }
 
   @Override
-  public Member leader() {
+  public synchronized Member leader() {
     Member leader = context.cluster().leader();
     return leader != null ? leader instanceof LocalMember ? new LocalResourceMember((LocalMember) leader, context, executor) : new ResourceMember(leader, context, executor) : null;
   }
 
   @Override
-  public long term() {
+  public synchronized long term() {
     return context.cluster().term();
   }
 
   @Override
-  public Election election() {
+  public synchronized Election election() {
     return new ResourceClusterElection(this, context.cluster().election(), executor);
   }
 
   @Override
-  public Member member(String uri) {
+  public synchronized Member member(String uri) {
     Member member = context.cluster().member(uri);
     return member != null ? member instanceof LocalMember ? new LocalResourceMember((LocalMember) member, context, executor) : new ResourceMember(member, context, executor) : null;
   }
 
   @Override
-  public LocalMember member() {
+  public synchronized LocalMember member() {
     LocalMember member = context.cluster().member();
     return member != null ? new LocalResourceMember(member, context, executor) : null;
   }
 
   @Override
-  public Collection<Member> members() {
+  public synchronized Collection<Member> members() {
     Collection<Member> members = new HashSet<>();
     for (Member member : context.cluster().members()) {
       members.add(new ResourceMember(member, context, executor));
@@ -76,7 +76,7 @@ public class ResourceCluster implements Cluster {
   }
 
   @Override
-  public CompletableFuture<ClusterManager> configure(ClusterConfig configuration) {
+  public synchronized CompletableFuture<ClusterManager> configure(ClusterConfig configuration) {
     CompletableFuture<ClusterManager> future = new CompletableFuture<>();
     context.execute(() -> {
       context.cluster().configure(configuration).whenComplete((result, error) -> {

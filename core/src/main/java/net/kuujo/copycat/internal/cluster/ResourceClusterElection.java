@@ -23,6 +23,7 @@ import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -34,7 +35,7 @@ class ResourceClusterElection implements Election {
   private final Cluster cluster;
   private final Election election;
   private final ExecutionContext executor;
-  private final Map<Consumer<ElectionResult>, Consumer<ElectionResult>> listeners = new HashMap<>();
+  private final Map<Consumer<ElectionResult>, Consumer<ElectionResult>> listeners = new ConcurrentHashMap<>(128);
 
   ResourceClusterElection(Cluster cluster, Election election, ExecutionContext executor) {
     this.cluster = cluster;
@@ -59,11 +60,11 @@ class ResourceClusterElection implements Election {
 
   @Override
   public Election addListener(Consumer<ElectionResult> listener) {
-    if (!listeners.containsKey(listener)) {
+    listeners.computeIfAbsent(listener, k -> {
       Consumer<ElectionResult> wrapper = result -> executor.execute(() -> listener.accept(result));
       election.addListener(wrapper);
-      listeners.put(listener, wrapper);
-    }
+      return wrapper;
+    });
     return this;
   }
 
@@ -96,7 +97,7 @@ class ResourceClusterElection implements Election {
     }
 
     @Override
-    public Member winner() {
+    public synchronized Member winner() {
       Member winner = result.winner();
       return winner != null ? cluster.member(winner.uri()) : null;
     }
