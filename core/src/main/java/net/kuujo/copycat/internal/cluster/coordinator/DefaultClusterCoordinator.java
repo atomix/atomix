@@ -134,14 +134,14 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
     entry.putInt(serialized.capacity());
     entry.put(serialized);
     entry.rewind();
-    return context.query(entry).thenApplyAsync(buffer -> {
+    return context.commit(entry).thenApplyAsync(buffer -> {
       int result = buffer.getInt();
       if (result == 0) {
         return null;
       } else {
         return contexts.computeIfAbsent(name, k -> createContext(k, cluster.getMembers()));
       }
-    });
+    }, executor);
   }
 
   @Override
