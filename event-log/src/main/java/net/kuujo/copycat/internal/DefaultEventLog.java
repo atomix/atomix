@@ -112,7 +112,7 @@ public class DefaultEventLog<T> extends AbstractCopycatResource<EventLog<T>> imp
     ByteBuffer result = ByteBuffer.allocateDirect(8);
     result.putLong(index);
     if (consumer != null) {
-      consumer.accept(serializer.readObject(entry));
+      executor.execute(() -> consumer.accept(serializer.readObject(entry)));
     }
     return result;
   }
