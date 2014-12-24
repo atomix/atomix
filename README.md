@@ -1,29 +1,26 @@
 Copycat
 =======
 
-### [User Manual](#user-manual)
+## [User Manual](#user-manual)
 
-Copycat is an extensible Java-based implementation of the
-[Raft consensus protocol](https://ramcloud.stanford.edu/wiki/download/attachments/11370504/raft.pdf).
+Copycat is an extensible log-based distributed coordination framework for Java 8 built on the
+[Raft consensus protocol](https://raftconsensus.github.io/).
 
-The core of Copycat is a framework designed to integrate with any asynchronous framework
-or protocol. Copycat provides a simple extensible API that can be used to build a
-strongly consistent, *fault/partition tolerant state machine* over any mode of communication.
-Copycat's Raft implementation also supports advanced features of the Raft algorithm such as
-snapshotting and dynamic cluster configuration changes and provides *additional optimizations
-pipelining, fast Kryo-based serialization, memory-mapped file logging, and read-only state queries.*
+The core of Copycat is a set of high level APIs for consistent distributed coordination based on a replicated log.
+Copycat provides concise asynchronous APIs for replicated, consistent, partition-tolerant event logs, state logs,
+state machines, leader elections, and collections.
 
-Copycat is a pluggable framework, providing protocol and service implementations for
-various frameworks such as [Netty](http://netty.io) and [Vert.x](http://vertx.io).
+Copycat also provides integration with asynchronous networking frameworks like [Netty](http://netty.io) and
+[Vert.x](http://vertx.io).
 
 **Please note that Copycat is still undergoing heavy development, and until a beta release,
 the API is subject to change.**
 
-Copycat *will* be published to Maven Central once these features are complete. Follow
+Copycat *will* be published to Maven Central it is feature complete and well tested. Follow
 the project for updates!
 
 *Copycat requires Java 8. Though it has been requested, there are currently no imminent
-plans for supporting Java 7. Of course, feel free to fork and PR :-)*
+plans for supporting Java 7.*
 
 User Manual
 ===========
@@ -31,206 +28,364 @@ User Manual
 **Note: Some of this documentation may be inaccurate due to the rapid development currently
 taking place on Copycat**
 
-### Configuration
+## Getting started
+
+### Configuring the cluster
+
+### Creating a Copycat instance
+
+### Creating a replicated state machine
+
+### Querying the replicated state machine via proxy
+
+## The Copycat dependency hierarchy
+
+## State machines
+
+### Creating a state machine
+
+### Configuring the state machine
+
+### Designing state machine states
+
+### State machine commands
+
+### State machine queries
+
+### The state context
+
+### Transitioning the state machine state
+
+### Starting the state machine
+
+### Working with state machine proxies
+
+### Partitioning a state machine
+
+## Event logs
+
+### Creating an event log
+
+### Configuring the event log
+
+### Writing events to the event log
+
+### Consuming events from the event log
+
+### Replaying the log
+
+## State logs
+
+### Creating a state log
+
+### Configuring the state log
+
+### State commands
+
+### State queries
+
+### Submitting operations to the state log
+
+## Leader elections
+
+### Creating a leader election
+
+## Collections
+
+### AsyncMap
+
+#### Creating an AsyncMap
+
+#### Configuring the AsyncMap
+
+### AsyncList
+
+#### Creating an AsyncList
+
+#### Configuring the AsyncList
+
+### AsyncSet
+
+#### Creating an AsyncSet
+
+#### Configuring the AsyncSet
+
+### AsyncMultiMap
+
+#### Creating an AsyncMultiMap
+
+#### Configuring the AsyncMultiMap
+
+### AsyncLock
+
+#### Creating an AsyncLock
+
+#### Configuring the AsyncLock
+
+1. [Getting started](#getting-started)
+   * [Configuring the cluster](#configuring-the-cluster)
+   * [Creating a Copycat instance](#creating-a-copycat-instance)
+   * [Creating a replicated state machine](#creating-a-replicated-state-machine)
+   * [Querying the replicated state machine via proxy](#querying-the-replicated-state-machine-via-proxy)
+1. [The Copycat dependency hierarchy](#the-copycat-dependency-hierarchy)
+1. [State machines](#state-machines)
+   * [Creating a state machine](#creating-a-state-machine)
+   * [Configuring the state machine](#configuring-the-state-machine)
+   * [Designing state machine states](#designing-state-machine-states)
+   * [State machine commands](#state-machine-commands)
+   * [State machine queries](#state-machine-queries)
+   * [The state context](#the-state-context)
+   * [Transitioning the state machine state](#transitioning-the-state-machine-state)
+   * [Starting the state machine](#starting-the-state-machine)
+   * [Working with state machine proxies](#working-with-state-machine-proxies)
+   * [Partitioning a state machine](#partitioning-a-state-machine)
+   * [Serialization](#serialization)
+1. [Event logs](#event-logs)
+   * [Creating an event log](#creating-an-event-log)
+   * [Configuring the event log](#configuring-the-event-log)
+   * [Writing events to the event log](#writing-events-to-the-event-log)
+   * [Consuming events from the event log](#consuming-events-from-the-event-log)
+   * [Replaying the log](#replaying-the-log)
+1. [State logs](#state-logs)
+   * [Creating a state log](#creating-a-state-log)
+   * [Configuring the state log](#configuring-the-state-log)
+   * [State commands](#state-commands)
+   * [State queries](#state-queries)
+   * [Submitting operations to the state log](#submitting-operations-to-the-state-log)
+   * [Snapshotting](#snapshotting)
+1. [Leader elections](#leader-elections)
+   * [Creating a leader election](#creating-a-leader-election)
+1. [Collections](#collections)
+   * [AsyncMap](#asyncmap)
+      * [Creating an AsyncMap](#creating-an-asyncmap)
+      * [Configuring the AsyncMap](#configuring-the-asyncmap)
+   * [AsyncList](#asynclist)
+      * [Creating an AsyncList](#creating-an-asynclist)
+      * [Configuring the AsyncList](#configuring-the-asynclist)
+   * [AsyncSet](#asyncset)
+      * [Creating an AsyncSet](#creating-an-asyncset)
+      * [Configuring the AsyncSet](#configuring-the-asyncset)
+   * [AsyncMultiMap](#asyncmultimap)
+      * [Creating an AsyncMultiMap](#creating-an-asyncmultimap)
+      * [Configuring the AsyncMultiMap](#configuring-the-asyncmultimap)
+   * [AsyncLock](#asynclock)
+      * [Creating an AsyncLock](#creating-an-asynclock)
+      * [Configuring the AsyncLock](#configuring-the-asynclock)
+1. [The Copycat cluster](#the-copycat-cluster)
+   * [Cluster architecture](#cluster-architecture)
+      * [Members](#members)
+      * [Listeners](#listeners)
+   * [Cluster configuration](#cluster-configuration)
+   * [Leader election](#leader-election)
+   * [Messaging](#messaging)
+   * [Remote execution](#remote-execution)
+1. [Protocols]
+   * [The local protocol](#the-local-protocol)
+   * [Netty protocol](#netty-protocol)
+   * [Vert.x protocol](#vertx-protocol)
+   * [Vert.x 3 protocol](#vertx-3-protocol)
+   * [Writing a custom protocol](#writing-a-custom-protocol)
+1. [Architecture](#architecture)
+   * [Strong consistency and Copycat's Raft consensus protocol](#strong-consistency-and-copycats-raft-consensus-protocol)
+      * [Leader election](#leader-election-2)
+      * [Command replication](#command-replication)
+      * [Query consistency](#query-consistency)
+      * [Log compaction](#log-compaction)
+   * [Eventual consistency and Copycat's gossip protocol](#eventual-consistency-and-copycats-gossip-protocol)
+      * [Log replication](#log-replication)
+      * [Failure detection](#failure-detection)
+
+## Getting started
+
+### Configuring the cluster
+
+In order to connect to the Copycat cluster, you first must create a `ClusterConfig` defining the protocol
+to use for communication and a set of seed nodes in the cluster. Seed nodes are the permanent voting members of
+the cluster to which passive members connect and gossip with.
+
 ```java
 ClusterConfig cluster = new ClusterConfig()
-  .withLocalMember("tcp://123.456.789.0")
-  .withRemoteMembers("tcp://234.567.890.1", "tcp://345.678.901.2");
-Protocol protocol = new NettyTcpProtocol();
-Copycat copycat = Copycat.create(cluster, protocol);
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 ```
 
-or...
+### Creating a Copycat instance
 
-```
-copycat {
-  cluster {
-    protocol {
-      class: net.kuujo.copycat.protocol.netty.NettyTcpProtocol
-      tcp-keep-alive: true
-    }
-    local-member: tcp://123.456.789.0
-    members: [
-      tcp://123.456.789.0
-      tcp://234.567.890.1
-      tcp://345.678.901.2
-    ]
-  }
-}
-```
+### Creating a replicated state machine
 
-or...
+### Querying the replicated state machine via proxy
 
-```
-copycat.cluster.localMember = tcp://123.456.789.0
-copycat.cluster.members.1 = tcp://123.456.789.0
-copycat.cluster.members.2 = tcp://234.567.890.1
-copycat.cluster.members.3 = tcp://345.678.901.2
+## The Copycat dependency hierarchy
+The Copycat project is organized into a number of modules based on specific use cases.
 
-copycat.protocol.class = net.kuujo.copycat.protocol.netty.NettyTcpProtocol
-copycat.protocol.tcp-keep-alive = true
-```
+#### copycat-api
+The `copycat-api` module is a high-level project that aggregates all the separate Copycat modules.
 
-### Event log
-When a new log is created, if a log with the given resource name already exists, the log
-will become a member of the existing cluster, otherwise it will start a new cluster. In this
-way, logs are replicated based on the nodes on which they have been created. If multiple instances
-of the same resource are created from the same Copycat instance, each instance will essentially
-point to the same local replicated log.
-```java
-Copycat copycat = Copycat.create();
+#### copycat-core
+The `copycat-core` module is the core of Copycat which provides the base Raft implementation, configuration,
+cluster management, messaging, logs, and protocol interfaces.
 
-EventLog log = copycat.eventLog("events");
+#### event-log
+The `copycat-event-log` module is an event log implementation built on the Raft consensus protocol.
+The event log supports both small strongly consistent event logs and large eventually consistent event
+logs via a gossip protocol.
 
-eventLog.consumer(entry -> System.out.println("Got event " + entry));
-log.commit("Hello world!").thenRun(() -> {
-  log.commit("Hello world again!").thenRun(() -> {
-    log.commit("Hello world once more!").thenRun(() -> {
-      log.replay().thenRun(() -> {
-        log.get(2).whenComplete((entry, error) -> {
-          if (error != null) {
-            System.out.println(entry);
-          }
-        });
-      });
-    });
-  });
-});
-```
+#### state-log
+The `copycat-state-log` module is a strongly consistent, snapshottable log built on the Raft consensus protocol.
 
-```
-Got event Hello world!
-Got event Hello world again!
-Got event Hello world once more!
-Got event Hello world!
-Got event Hello world again!
-Got event Hello world once more!
-Hello world again!
-```
+#### state-machine
+The `copycat-state-machine` module provides a high-level state machine API on top of the `copycat-state-log` API.
 
-### State log
-The state log is a strongly consistent log that supports snapshots.
+#### leader-election
+The `copycat-leader-election` module provides a simple Raft-based distributed leader election API.
 
-```java
-Copycat copycat = Copycat.create();
+#### collections
+The `copycat-collections` module provides strongly- and eventually-consistent log-based distributed data
+structures including `AsyncMap`, `AsyncMultiMap`, `AsyncList`, `AsyncSet`, and `AsyncLock`.
 
-StateLog log = copycat.stateLog("state");
+#### copycat-chronicle
+The `copycat-chronicle` module is a fast [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log
+implementation.
 
-final Map<String, String> map = new HashMap<>();
+#### netty
+The `copycat-netty` module provides a [Netty](http://netty.io) based protocol implementation.
 
-log.register("put", entry -> map.put(entry.key, entry.value));
-log.register("get", entry -> map.get(entry.key));
+#### vertx
+The `copycat-vertx` module provides a [Vert.x 2](http://vertx.io) based protocol implementation.
 
-log.open().thenRun(() -> {
-  log.submit("put", "foo", "Hello world!").thenRun(() -> {
-    log.submit("get", "foo").thenAccept(result -> {
-      System.out.println("foo is " + result);
-    });
-  });
-});
-```
+#### vertx3
+The `copycat-vertx3` module provides a [Vert.x 3](http://vertx.io) based protocol implementation.
 
-### State machine
-The state machine is a strongly consistent persistent log.
+## State machines
 
-```java
-public interface MyState {
+### Creating a state machine
 
-  void put(String key, Object value);
+### Configuring the state machine
 
-  Object get(String key);
+### Designing state machine states
 
-}
-```
+### State machine commands
 
-```java
-public interface MyStateProxy {
+### State machine queries
 
-  CompletableFuture<Void> put(String key, Object value);
+### The state context
 
-  CompletableFuture<Object> get(String key);
+### Transitioning the state machine state
 
-}
-```
+### Starting the state machine
 
-```java
-Copycat copycat = Copycat.create();
+### Working with state machine proxies
 
-StateMachine stateMachine = model.stateMachine("state", MyState.class, new MyInitialState());
+### Partitioning a state machine
 
-MyStateProxy asyncProxy = stateMachine.createProxy(MyStateProxy.class);
-asyncProxy.put("foo", "Hello world!").thenRun(() -> {
-  asyncProxy.get("foo").thenAccept(result -> {
-    System.out.println("foo is " + result);
-  });
-});
+### Serialization
 
-MyState syncProxy = stateMachine.createProxy(MyStateProxy.class);
-syncProxy.put("foo", "Hello world!");
-Object result = syncProxy.get("foo");
-System.out.println("foo is " + result);
-```
+## Event logs
 
-### Consistent distributed data structures
-```java
-Copycat copcyat = Copycat.create();
+### Creating an event log
 
-AsyncMap<String, String> asyncMap = copycat.getMap("foo");
-asyncMap.put("foo", "bar").thenRun(() -> {
-  asyncMap.get("foo").thenAccept(result -> {
-    System.out.println("foo is " + result);
-  });
-});
+### Configuring the event log
 
-Map<String, String> map = copycat.getSyncMap("foo");
-map.put("foo", "bar");
-System.out.println("foo is " + map.get("foo"));
+### Writing events to the event log
 
-AsyncList<String> asyncList = copycat.getList("bar");
-asyncList.add("Hello world!").thenRun(() -> {
-  asyncList.get(0).thenAccept(result -> {
-    System.out.println("list index 0 is " + result);
-  });
-});
+### Consuming events from the event log
 
-List<String> list = copycat.getSyncList("bar");
-list.add("Hello world!");
-System.out.println("list index 0 is " + list.get(0));
-```
+### Replaying the log
 
-### Messaging
-```java
-Copycat copycat = Copycat.create();
+## State logs
 
-copycat.cluster().localMember().handler(message -> {
-  return CompletableFuture.completedFuture("world!");
-});
+### Creating a state log
 
-copycat.cluster().member("tcp://123.456.789.0").send("Hello").thenAccept(response -> {
-  System.out.println("Hello " + response);
-});
-```
+### Configuring the state log
 
-### Remote execution
-```java
-Copycat copycat = Copycat.create();
+### State commands
 
-copycat.cluster.member("tcp://123.456.789.0").execute(() -> {
-  System.out.println("I'm running on tcp://123.456.789.0!");
-});
+### State queries
 
-copycat.cluster.member("tcp://123.456.789.0").submit(() -> "Hello world!").thenAccept(response -> {
-  System.out.println(response);
-});
-```
+### Submitting operations to the state log
+
+### Snapshotting
+
+## Leader elections
+
+### Creating a leader election
+
+## Collections
+
+### AsyncMap
+
+#### Creating an AsyncMap
+
+#### Configuring the AsyncMap
+
+### AsyncList
+
+#### Creating an AsyncList
+
+#### Configuring the AsyncList
+
+### AsyncSet
+
+#### Creating an AsyncSet
+
+#### Configuring the AsyncSet
+
+### AsyncMultiMap
+
+#### Creating an AsyncMultiMap
+
+#### Configuring the AsyncMultiMap
+
+### AsyncLock
+
+#### Creating an AsyncLock
+
+#### Configuring the AsyncLock
+
+## The Copycat cluster
+
+### Cluster architecture
+
+#### Members
+
+#### Listeners
+
+### Cluster configuration
 
 ### Leader election
-```java
-Copycat copycat = Copycat.create();
 
-copycat.election("foo").handler(leader -> {
-  leader.submit(() -> {
-    System.out.println("I'm running on the leader!");
-  });
-});
-```
+### Messaging
+
+### Remote execution
+
+## Protocols
+
+### The local protocol
+
+### Netty protocol
+
+### Vert.x protocol
+
+### Vert.x 3 protocol
+
+### Writing a custom protocol
+
+## Architecture
+
+### Strong consistency and Copycat's Raft consensus protocol
+
+#### Leader election
+
+#### Command replication
+
+#### Query consistency
+
+#### Log compaction
+
+### Eventual consistency and Copycat's gossip protocol
+
+#### Log replication
+
+#### Failure detection
+
+### [User Manual](#user-manual)
