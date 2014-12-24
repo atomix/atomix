@@ -17,11 +17,18 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.protocol.Consistency;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * State machine query annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface Query {
 
   /**
