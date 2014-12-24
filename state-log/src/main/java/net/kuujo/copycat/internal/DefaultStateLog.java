@@ -26,9 +26,10 @@ import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -41,12 +42,13 @@ import java.util.function.Supplier;
 public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> implements StateLog<T> {
   private final Serializer serializer;
   private final ExecutionContext executor;
-  private final Map<Integer, OperationInfo> operations = new HashMap<>();
+  private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
   private final StateLogConfig config;
   private Supplier snapshotter;
   private Consumer installer;
   private long commitIndex;
   private boolean open;
+  private final AtomicBoolean snapshotting = new AtomicBoolean();
 
   public DefaultStateLog(String name, CopycatContext context, ClusterCoordinator coordinator, StateLogConfig config, ExecutionContext executor) {
     super(name, context, coordinator, executor);
@@ -63,34 +65,36 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   @Override
   public <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command) {
     Assert.state(!open, "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo(name, command, false));
+    operations.put(name.hashCode(), new OperationInfo<>(name, command, false));
     return this;
   }
 
   @Override
   public StateLog<T> unregisterCommand(String name) {
     Assert.state(!open, "Cannot unregister command on open state log");
-    operations.remove(name);
+    operations.remove(name.hashCode());
     return this;
   }
 
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
     Assert.state(!open, "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo(name, query, true));
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true));
     return this;
   }
 
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency) {
     Assert.state(!open, "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo(name, query, true, consistency));
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, consistency));
     return this;
   }
 
   @Override
   public StateLog<T> unregisterQuery(String name) {
-    return null;
+    Assert.state(!open, "Cannot unregister command on open state log");
+    operations.remove(name.hashCode());
+    return this;
   }
 
   @Override
@@ -116,7 +120,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
 
   @Override
   @SuppressWarnings("unchecked")
-  public <U> CompletableFuture<U> submit(String command, T entry) {
+  public synchronized <U> CompletableFuture<U> submit(String command, T entry) {
     Assert.state(open, "State log not open");
     OperationInfo<T, U> operationInfo = operations.get(command.hashCode());
     if (operationInfo == null) {
@@ -128,22 +132,15 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
     // If this is a read-only command, check if the command is consistent. For consistent operations,
     // queries are forwarded to the current cluster leader for evaluation. Otherwise, it's safe to
     // read stale data from the local node.
+    ByteBuffer buffer = serializer.writeObject(entry);
+    ByteBuffer commandEntry = ByteBuffer.allocate(8 + buffer.capacity());
+    commandEntry.putInt(1); // Entry type
+    commandEntry.putInt(command.hashCode());
+    commandEntry.put(buffer);
+    commandEntry.rewind();
     if (operationInfo.readOnly) {
-      ByteBuffer buffer = serializer.writeObject(entry);
-      ByteBuffer syncEntry = ByteBuffer.allocate(8 + buffer.capacity());
-      syncEntry.putInt(1); // Entry type
-      syncEntry.putInt(command.hashCode());
-      syncEntry.put(buffer);
-      syncEntry.rewind();
-      return context.query(syncEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
+      return context.query(commandEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
     } else {
-      // Write operations are always submitted to the context which will forward it to the cluster leader.
-      ByteBuffer buffer = serializer.writeObject(entry);
-      ByteBuffer commandEntry = ByteBuffer.allocate(8 + buffer.capacity());
-      commandEntry.putInt(1); // Entry type
-      commandEntry.putInt(command.hashCode());
-      commandEntry.put(buffer);
-      commandEntry.rewind();
       return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
     }
   }
@@ -187,8 +184,12 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
    * Takes a snapshot and compacts the log.
    */
   private void takeSnapshot() {
-    if (snapshotter != null) {
-      context.log().compact(commitIndex, serializer.writeObject(snapshotter.get()));
+    if (snapshotting.compareAndSet(false, true)) {
+      Object snapshot = snapshotter != null ? snapshotter.get() : null;
+      context.execute(() -> {
+        context.log().compact(commitIndex, serializer.writeObject(snapshot));
+        snapshotting.set(false);
+      });
     }
   }
 
@@ -203,7 +204,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public synchronized CompletableFuture<Void> open() {
     context.consumer(this::consume);
     open = true;
     return super.open().whenComplete((result, error) -> {
@@ -214,7 +215,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     open = false;
     context.consumer(null);
     return super.close();

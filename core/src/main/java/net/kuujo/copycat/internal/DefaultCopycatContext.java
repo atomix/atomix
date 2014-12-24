@@ -82,7 +82,7 @@ public class DefaultCopycatContext implements CopycatContext {
   }
 
   @Override
-  public CopycatContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
+  public synchronized CopycatContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
     context.consumer(consumer);
     return this;
   }
@@ -107,16 +107,18 @@ public class DefaultCopycatContext implements CopycatContext {
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
-    context.query(request).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
+    context.executor().execute(() -> {
+      context.query(request).whenComplete((response, error) -> {
+        if (error == null) {
+          if (response.status() == Response.Status.OK) {
+            future.complete(response.result());
+          } else {
+            future.completeExceptionally(response.error());
+          }
         } else {
-          future.completeExceptionally(response.error());
+          future.completeExceptionally(error);
         }
-      } else {
-        future.completeExceptionally(error);
-      }
+      });
     });
     return future;
   }
@@ -135,16 +137,18 @@ public class DefaultCopycatContext implements CopycatContext {
       .withUri(context.getLocalMember().uri())
       .withEntry(entry)
       .build();
-    context.commit(request).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
+    context.executor().execute(() -> {
+      context.commit(request).whenComplete((response, error) -> {
+        if (error == null) {
+          if (response.status() == Response.Status.OK) {
+            future.complete(response.result());
+          } else {
+            future.completeExceptionally(response.error());
+          }
         } else {
-          future.completeExceptionally(response.error());
+          future.completeExceptionally(error);
         }
-      } else {
-        future.completeExceptionally(error);
-      }
+      });
     });
     return future;
   }
