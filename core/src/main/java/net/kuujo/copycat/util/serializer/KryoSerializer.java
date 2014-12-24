@@ -33,13 +33,13 @@ public class KryoSerializer implements Serializer {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T> T readObject(ByteBuffer buffer) {
+  public synchronized <T> T readObject(ByteBuffer buffer) {
     input.setBuffer(buffer);
     return (T) kryo.readClassAndObject(input);
   }
 
   @Override
-  public ByteBuffer writeObject(Object object) {
+  public synchronized ByteBuffer writeObject(Object object) {
     ByteBuffer buffer = ByteBuffer.allocate(4096);
     output.setBuffer(buffer);
     kryo.writeClassAndObject(output, object);
