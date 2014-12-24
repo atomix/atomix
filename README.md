@@ -85,7 +85,7 @@ taking place on Copycat**
    * [Leader election](#leader-election)
    * [Messaging](#messaging)
    * [Remote execution](#remote-execution)
-1. [Protocols]
+1. [Protocols](#protocols)
    * [The local protocol](#the-local-protocol)
    * [Netty protocol](#netty-protocol)
    * [Vert.x protocol](#vertx-protocol)
