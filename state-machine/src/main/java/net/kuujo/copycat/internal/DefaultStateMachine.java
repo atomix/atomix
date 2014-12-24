@@ -125,14 +125,14 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public synchronized CompletableFuture<Void> open() {
     log.takeSnapshotWith(this::snapshot);
     log.installSnapshotWith(this::install);
     return log.open();
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     return log.close().whenComplete((result, error) -> {
       log.takeSnapshotWith(null);
       log.installSnapshotWith(null);
@@ -151,8 +151,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
     for (Method method : stateType.getMethods()) {
       Query query = method.getAnnotation(Query.class);
       if (query != null) {
-        log.registerQuery(query.name()
-          .equals("") ? method.getName() : query.name(), wrapOperation(method), query.consistency());
+        log.registerQuery(query.name().equals("") ? method.getName() : query.name(), wrapOperation(method), query.consistency());
       } else {
         Command command = method.getAnnotation(Command.class);
         if (command != null) {
