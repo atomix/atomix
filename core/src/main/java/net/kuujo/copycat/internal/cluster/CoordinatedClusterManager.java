@@ -14,7 +14,6 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ClusterManager;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.Member;
@@ -60,13 +59,6 @@ public class CoordinatedClusterManager implements ClusterManager {
   @Override
   public Collection<Member> members() {
     return Collections.unmodifiableCollection(members.values());
-  }
-
-  @Override
-  public CompletableFuture<ClusterManager> configure(ClusterConfig config) {
-    CompletableFuture<ClusterManager> future = new CompletableFuture<>();
-    future.completeExceptionally(new UnsupportedOperationException("Configuration changes not supported"));
-    return future;
   }
 
   @Override

@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.Configurable;
 import net.kuujo.copycat.Managed;
 
 import java.util.Collection;
@@ -28,7 +27,7 @@ import java.util.Collection;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ClusterManager extends Configurable<ClusterManager, ClusterConfig>, Managed {
+public interface ClusterManager extends Managed {
 
   /**
    * Returns the local cluster member.

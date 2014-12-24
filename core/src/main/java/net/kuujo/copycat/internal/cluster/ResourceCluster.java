@@ -16,7 +16,9 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.CopycatContext;
-import net.kuujo.copycat.cluster.*;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.LocalMember;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.spi.ExecutionContext;
 
@@ -73,21 +75,6 @@ public class ResourceCluster implements Cluster {
       members.add(new ResourceMember(member, context, executor));
     }
     return members;
-  }
-
-  @Override
-  public synchronized CompletableFuture<ClusterManager> configure(ClusterConfig configuration) {
-    CompletableFuture<ClusterManager> future = new CompletableFuture<>();
-    context.execute(() -> {
-      context.cluster().configure(configuration).whenComplete((result, error) -> {
-        if (error == null) {
-          executor.execute(() -> future.complete(result));
-        } else {
-          executor.execute(() -> future.completeExceptionally(error));
-        }
-      });
-    });
-    return future;
   }
 
   @Override
