@@ -24,6 +24,8 @@ import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -41,7 +43,7 @@ public interface LeaderElection extends CopycatResource {
    * @return The state machine.
    */
   static LeaderElection create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), ExecutionContext.create());
+    return create(name, uri, new ClusterConfig(), Executors.newSingleThreadExecutor());
   }
 
   /**
@@ -49,11 +51,11 @@ public interface LeaderElection extends CopycatResource {
    *
    * @param name The election name.
    * @param uri The election member URI.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @return The state machine.
    */
-  static LeaderElection create(String name, String uri, ExecutionContext context) {
-    return create(name, uri, new ClusterConfig(), context);
+  static LeaderElection create(String name, String uri, Executor executor) {
+    return create(name, uri, new ClusterConfig(), executor);
   }
 
   /**
@@ -65,7 +67,7 @@ public interface LeaderElection extends CopycatResource {
    * @return The state machine.
    */
   static LeaderElection create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, ExecutionContext.create());
+    return create(name, uri, cluster, Executors.newSingleThreadExecutor());
   }
 
   /**
@@ -74,14 +76,14 @@ public interface LeaderElection extends CopycatResource {
    * @param name The election name.
    * @param uri The election member URI.
    * @param cluster The Copycat cluster.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @return The state machine.
    */
-  static LeaderElection create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
+  static LeaderElection create(String name, String uri, ClusterConfig cluster, Executor executor) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, ExecutionContext.create());
     try {
       coordinator.open().get();
-      return new DefaultLeaderElection(name, coordinator.createResource(name).get(), coordinator, context);
+      return new DefaultLeaderElection(name, coordinator.createResource(name).get(), coordinator, executor);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

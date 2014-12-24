@@ -84,7 +84,7 @@ public class VertxEventBusLockService extends Verticle {
       if (copycatError == null) {
 
         // Create and open the log.
-        copycat.getLock(address).whenComplete((lock, error) -> {
+        copycat.lock(address).whenComplete((lock, error) -> {
           lock.open().whenComplete((lockResult, lockError) -> {
             if (lockError == null) {
 

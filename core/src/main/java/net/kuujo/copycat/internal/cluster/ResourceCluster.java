@@ -20,11 +20,11 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Resource cluster.
@@ -33,9 +33,9 @@ import java.util.concurrent.CompletableFuture;
  */
 public class ResourceCluster implements Cluster {
   private final CopycatContext context;
-  private final ExecutionContext executor;
+  private final Executor executor;
 
-  public ResourceCluster(CopycatContext context, ExecutionContext executor) {
+  public ResourceCluster(CopycatContext context, Executor executor) {
     this.context = context;
     this.executor = executor;
   }

@@ -27,10 +27,9 @@ import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -42,7 +41,6 @@ import java.util.function.Supplier;
  */
 public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> implements StateLog<T> {
   private final Serializer serializer;
-  private final ExecutionContext executor;
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
   private final StateLogConfig config;
   private Supplier snapshotter;
@@ -51,7 +49,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
   private boolean open;
   private final AtomicBoolean snapshotting = new AtomicBoolean();
 
-  public DefaultStateLog(String name, CopycatContext context, ClusterCoordinator coordinator, StateLogConfig config, ExecutionContext executor) {
+  public DefaultStateLog(String name, CopycatContext context, ClusterCoordinator coordinator, StateLogConfig config, Executor executor) {
     super(name, context, coordinator, executor);
     context.log().config()
       .withSegmentSize(config.getSegmentSize())
@@ -59,7 +57,6 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
       .withFlushOnWrite(config.isFlushOnWrite())
       .withFlushInterval(config.getFlushInterval());
     this.serializer = config.getSerializer();
-    this.executor = executor;
     this.config = config;
   }
 
@@ -155,27 +152,34 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   private ByteBuffer consume(Long index, ByteBuffer entry) {
+    AtomicReference reference = new AtomicReference();
+    CountDownLatch latch = new CountDownLatch(1);
+    executor.execute(() -> {
+      int entryType = entry.getInt();
+      switch (entryType) {
+        case 0: // Snapshot entry
+          installSnapshot(entry.slice());
+          reference.set(ByteBuffer.allocate(0));
+          break;
+        case 1: // Command entry
+          int commandCode = entry.getInt();
+          OperationInfo operationInfo = operations.get(commandCode);
+          if (operationInfo != null) {
+            reference.set(operationInfo.execute(index, serializer.readObject(entry.slice())));
+          }
+          reference.set(ByteBuffer.allocate(0));
+          break;
+        default:
+          throw new IllegalArgumentException("Invalid entry type");
+      }
+      latch.countDown();
+    });
     try {
-      return executor.submit(() -> {
-        int entryType = entry.getInt();
-        switch (entryType) {
-          case 0: // Snapshot entry
-            installSnapshot(entry.slice());
-            return ByteBuffer.allocate(0);
-          case 1: // Command entry
-            int commandCode = entry.getInt();
-            OperationInfo operationInfo = operations.get(commandCode);
-            if (operationInfo != null) {
-              return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
-            }
-            return ByteBuffer.allocate(0);
-          default:
-            throw new IllegalArgumentException("Invalid entry type");
-        }
-      }).get();
-    } catch (InterruptedException | ExecutionException e) {
+      latch.await();
+    } catch (InterruptedException e) {
       throw new RuntimeException(e);
     }
+    return serializer.writeObject(reference.get());
   }
 
   /**

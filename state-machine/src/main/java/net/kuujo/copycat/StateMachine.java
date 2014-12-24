@@ -18,9 +18,10 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * State machine.
@@ -39,7 +40,7 @@ public interface StateMachine<T> extends CopycatResource {
    * @return The state machine.
    */
   static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState) {
-    return create(name, uri, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), new StateMachineConfig(), ExecutionContext.create());
+    return create(name, uri, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), new StateMachineConfig(), Executors.newSingleThreadExecutor());
   }
 
   /**
@@ -53,7 +54,7 @@ public interface StateMachine<T> extends CopycatResource {
    * @return The state machine.
    */
   static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, StateMachineConfig config) {
-    return create(name, uri, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), config, ExecutionContext.create());
+    return create(name, uri, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), config, Executors.newSingleThreadExecutor());
   }
 
   /**
@@ -64,11 +65,11 @@ public interface StateMachine<T> extends CopycatResource {
    * @param stateType The state machine state type.
    * @param initialState The state machine state.
    * @param config The state machine configuration.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, StateMachineConfig config, ExecutionContext context) {
-    return create(name, uri, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), config, context);
+  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, StateMachineConfig config, Executor executor) {
+    return create(name, uri, stateType, initialState, Services.load("copycat.cluster", ClusterConfig.class), config, executor);
   }
 
   /**
@@ -82,7 +83,7 @@ public interface StateMachine<T> extends CopycatResource {
    * @return The state machine.
    */
   static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster) {
-    return create(name, uri, stateType, initialState, cluster, new StateMachineConfig(), ExecutionContext.create());
+    return create(name, uri, stateType, initialState, cluster, new StateMachineConfig(), Executors.newSingleThreadExecutor());
   }
 
   /**
@@ -93,11 +94,11 @@ public interface StateMachine<T> extends CopycatResource {
    * @param stateType The state machine state type.
    * @param initialState The state machine state.
    * @param cluster The state machine cluster configuration.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, uri, stateType, initialState, cluster, new StateMachineConfig(), context);
+  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster, Executor executor) {
+    return create(name, uri, stateType, initialState, cluster, new StateMachineConfig(), executor);
   }
 
   /**
@@ -109,11 +110,11 @@ public interface StateMachine<T> extends CopycatResource {
    * @param initialState The state machine state.
    * @param cluster The state machine cluster configuration.
    * @param config The state machine configuration.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster, StateMachineConfig config, ExecutionContext context) {
-    return new DefaultStateMachine<>(stateType, initialState, StateLog.create(name, uri, cluster, config, context));
+  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster, StateMachineConfig config, Executor executor) {
+    return new DefaultStateMachine<>(stateType, initialState, StateLog.create(name, uri, cluster, config, executor));
   }
 
   /**

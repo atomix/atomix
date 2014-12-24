@@ -19,11 +19,10 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionResult;
-import net.kuujo.copycat.spi.ExecutionContext;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
 /**
@@ -34,10 +33,10 @@ import java.util.function.Consumer;
 class ResourceClusterElection implements Election {
   private final Cluster cluster;
   private final Election election;
-  private final ExecutionContext executor;
+  private final Executor executor;
   private final Map<Consumer<ElectionResult>, Consumer<ElectionResult>> listeners = new ConcurrentHashMap<>(128);
 
-  ResourceClusterElection(Cluster cluster, Election election, ExecutionContext executor) {
+  ResourceClusterElection(Cluster cluster, Election election, Executor executor) {
     this.cluster = cluster;
     this.election = election;
     this.executor = executor;

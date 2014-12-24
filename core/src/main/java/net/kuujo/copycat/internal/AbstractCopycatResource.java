@@ -21,12 +21,12 @@ import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.cluster.ResourceCluster;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Copycat context.
@@ -38,12 +38,12 @@ public abstract class AbstractCopycatResource<T extends CopycatResource> impleme
   protected final CopycatContext context;
   protected final Cluster cluster;
   private final ClusterCoordinator coordinator;
-  protected final ExecutionContext executor;
+  protected final Executor executor;
   private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
   private boolean open;
 
-  protected AbstractCopycatResource(String name, CopycatContext context, ClusterCoordinator coordinator, ExecutionContext executor) {
+  protected AbstractCopycatResource(String name, CopycatContext context, ClusterCoordinator coordinator, Executor executor) {
     this.name = name;
     this.context = context;
     this.cluster = new ResourceCluster(context, executor);
