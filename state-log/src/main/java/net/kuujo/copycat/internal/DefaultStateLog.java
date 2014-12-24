@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -154,20 +155,26 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   private ByteBuffer consume(Long index, ByteBuffer entry) {
-    int entryType = entry.getInt();
-    switch (entryType) {
-      case 0: // Snapshot entry
-        installSnapshot(entry.slice());
-        return ByteBuffer.allocate(0);
-      case 1: // Command entry
-        int commandCode = entry.getInt();
-        OperationInfo operationInfo = operations.get(commandCode);
-        if (operationInfo != null) {
-          return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
+    try {
+      return executor.submit(() -> {
+        int entryType = entry.getInt();
+        switch (entryType) {
+          case 0: // Snapshot entry
+            installSnapshot(entry.slice());
+            return ByteBuffer.allocate(0);
+          case 1: // Command entry
+            int commandCode = entry.getInt();
+            OperationInfo operationInfo = operations.get(commandCode);
+            if (operationInfo != null) {
+              return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
+            }
+            return ByteBuffer.allocate(0);
+          default:
+            throw new IllegalArgumentException("Invalid entry type");
         }
-        return ByteBuffer.allocate(0);
-      default:
-        throw new IllegalArgumentException("Invalid entry type");
+      }).get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new RuntimeException(e);
     }
   }
 
