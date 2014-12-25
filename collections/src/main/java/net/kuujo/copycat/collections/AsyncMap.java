@@ -21,12 +21,15 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.map.AsyncMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMapState;
-import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.log.LogConfig;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Asynchronous map.
@@ -43,54 +46,13 @@ public interface AsyncMap<K, V> extends CopycatResource {
    *
    * @param name The asynchronous map name.
    * @param uri The asynchronous map member URI.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  static <K, V> AsyncMap<K, V> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncMapConfig(String.format("copycat.map.%s", name)), ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
    * @param cluster The cluster configuration.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return A new asynchronous map.
    */
   static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncMapConfig(String.format("copycat.map.%s", name)), ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
-   * @param config The map configuration.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, AsyncMapConfig config) {
-    return create(name, uri, new ClusterConfig(), config, ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
-   * @param context The user execution context.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ExecutionContext context) {
-    return create(name, uri, new ClusterConfig(), new AsyncMapConfig(String.format("copycat.map.%s", name)), context);
+    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-map-" + name + "-%d")));
   }
 
   /**
@@ -104,8 +66,8 @@ public interface AsyncMap<K, V> extends CopycatResource {
    * @param <V> The map entry type.
    * @return A new asynchronous map.
    */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMapConfig config) {
-    return create(name, uri, cluster, config, ExecutionContext.create());
+  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
+    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-map-" + name + "-%d")));
   }
 
   /**
@@ -114,28 +76,13 @@ public interface AsyncMap<K, V> extends CopycatResource {
    * @param name The asynchronous map name.
    * @param uri The asynchronous map member URI.
    * @param cluster The cluster configuration.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return A new asynchronous map.
    */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, uri, cluster, new AsyncMapConfig(String.format("copycat.map.%s", name)), context);
-  }
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
-   * @param config The map configuration.
-   * @param context The user execution context.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, AsyncMapConfig config, ExecutionContext context) {
-    return create(name, uri, new ClusterConfig(), config, context);
+  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, Executor executor) {
+    return create(name, uri, cluster, new LogConfig(), executor);
   }
 
   /**
@@ -145,14 +92,14 @@ public interface AsyncMap<K, V> extends CopycatResource {
    * @param uri The asynchronous map member URI.
    * @param cluster The cluster configuration.
    * @param config The map configuration.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return A new asynchronous map.
    */
   @SuppressWarnings("unchecked")
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMapConfig config, ExecutionContext context) {
-    return new DefaultAsyncMap(StateMachine.create(name, uri, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, config, context));
+  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
+    return new DefaultAsyncMap(StateMachine.create(name, uri, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, config, executor));
   }
 
   /**

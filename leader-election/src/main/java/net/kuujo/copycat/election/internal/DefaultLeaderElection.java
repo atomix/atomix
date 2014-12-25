@@ -21,7 +21,6 @@ import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.AbstractCopycatResource;
-import net.kuujo.copycat.log.ZeroRetentionPolicy;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -42,9 +41,6 @@ public class DefaultLeaderElection extends AbstractCopycatResource<LeaderElectio
 
   public DefaultLeaderElection(String name, CopycatContext context, ClusterCoordinator coordinator, Executor executor) {
     super(name, context, coordinator, executor);
-    context.log().config()
-      .withFlushOnWrite(true)
-      .withRetentionPolicy(new ZeroRetentionPolicy());
   }
 
   @Override

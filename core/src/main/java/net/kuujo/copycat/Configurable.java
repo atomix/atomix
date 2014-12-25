@@ -15,31 +15,18 @@
  */
 package net.kuujo.copycat;
 
-import com.typesafe.config.Config;
-
-import java.util.Map;
-
 /**
- * State machine configuration.
+ * Interface for configurable types.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateMachineConfig extends StateLogConfig {
+public interface Configurable {
 
-  public StateMachineConfig() {
-    super();
-  }
-
-  public StateMachineConfig(String resource) {
-    super(resource);
-  }
-
-  public StateMachineConfig(Map<String, Object> config) {
-    super(config);
-  }
-
-  public StateMachineConfig(Config config) {
-    super(config);
-  }
+  /**
+   * Configures the object.
+   *
+   * @param config The configuration with which to configure the object.
+   */
+  void configure(Config config);
 
 }

@@ -19,8 +19,9 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.DefaultStateLog;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -42,47 +43,11 @@ public interface StateLog<T> extends CopycatResource {
    *
    * @param name The log name.
    * @param uri The local log member URI.
+   * @param cluster The state log cluster.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new StateLogConfig(), Executors.newSingleThreadExecutor());
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param executor The user execution context.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, String uri, Executor executor) {
-    return create(name, uri, new ClusterConfig(), new StateLogConfig(), executor);
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param config The state log configuration.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, String uri, StateLogConfig config) {
-    return create(name, uri, new ClusterConfig(), config, Executors.newSingleThreadExecutor());
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param config The state log configuration.
-   * @param executor The user execution context.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, String uri, StateLogConfig config, Executor executor) {
-    return create(name, uri, new ClusterConfig(), config, executor);
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-state-log-" + name + "-%d")));
   }
 
   /**
@@ -91,10 +56,11 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The log name.
    * @param uri The local log member URI.
    * @param cluster The state log cluster.
+   * @param config The state log configuration.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new StateLogConfig(), Executors.newSingleThreadExecutor());
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
+    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-state-log-" + name + "-%d")));
   }
 
   /**
@@ -107,7 +73,7 @@ public interface StateLog<T> extends CopycatResource {
    * @return A new state log instance.
    */
   static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new StateLogConfig(), executor);
+    return create(name, uri, cluster, new LogConfig(), executor);
   }
 
   /**
@@ -120,11 +86,11 @@ public interface StateLog<T> extends CopycatResource {
    * @param executor The user execution context.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, StateLogConfig config, Executor executor) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, ExecutionContext.create());
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
     try {
       coordinator.open().get();
-      return new DefaultStateLog<T>(name, coordinator.createResource(name).get(), coordinator, config, executor).withShutdownTask(coordinator::close);
+      return new DefaultStateLog<T>(name, coordinator.createResource(name, cluster, config).get(), coordinator, config, executor).withShutdownTask(coordinator::close);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

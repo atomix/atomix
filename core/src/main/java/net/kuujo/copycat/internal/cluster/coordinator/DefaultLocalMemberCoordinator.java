@@ -15,6 +15,15 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
+import net.kuujo.copycat.Task;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.MessageHandler;
+import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
+import net.kuujo.copycat.protocol.ProtocolException;
+import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.spi.Protocol;
+import net.kuujo.copycat.util.serializer.Serializer;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -22,16 +31,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
-
-import net.kuujo.copycat.Task;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
-import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.spi.ExecutionContext;
-import net.kuujo.copycat.spi.Protocol;
-import net.kuujo.copycat.util.serializer.Serializer;
+import java.util.concurrent.Executor;
 
 /**
  * Default local member implementation.
@@ -40,12 +40,12 @@ import net.kuujo.copycat.util.serializer.Serializer;
  */
 public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements LocalMemberCoordinator {
   private final ProtocolServer server;
-  private final ExecutionContext context;
-  private final Map<Integer, ExecutionContext> contexts = new ConcurrentHashMap<>();
+  private final Executor executor;
+  private final Map<Integer, Executor> executors = new ConcurrentHashMap<>();
   @SuppressWarnings("rawtypes") private final Map<String, Map<Integer, MessageHandler>> handlers = new ConcurrentHashMap<>();
   private final Serializer serializer = Serializer.serializer();
 
-  public DefaultLocalMemberCoordinator(String uri, Member.Type type, Member.State state, Protocol protocol, ExecutionContext context) {
+  public DefaultLocalMemberCoordinator(String uri, Member.Type type, Member.State state, Protocol protocol, Executor executor) {
     super(uri, type, state);
     try {
       URI realUri = new URI(uri);
@@ -56,15 +56,15 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
     } catch (URISyntaxException e) {
       throw new ProtocolException(e);
     }
-    this.context = context;
+    this.executor = executor;
   }
 
   /**
    * Returns the execution context for a given address.
    */
-  private ExecutionContext getContext(int address) {
-    ExecutionContext context = contexts.get(address);
-    return context != null ? context : this.context;
+  private Executor getExecutor(int address) {
+    Executor executor = executors.get(address);
+    return executor != null ? executor : this.executor;
   }
 
   @Override
@@ -75,7 +75,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
     if (topicHandlers != null) {
       MessageHandler handler = topicHandlers.get(address);
       if (handler != null) {
-        getContext(address).execute(() -> {
+        getExecutor(address).execute(() -> {
           ((CompletionStage<U>) handler.handle(message)).whenComplete((result, error) -> {
             if (error == null) {
               future.complete(result);
@@ -85,12 +85,10 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
           });
         });
       } else {
-        getContext(address).execute(
-          () -> future.completeExceptionally(new IllegalStateException("No handlers")));
+        getExecutor(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
       }
     } else {
-      getContext(address).execute(
-        () -> future.completeExceptionally(new IllegalStateException("No handlers")));
+      getExecutor(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
     }
     return future;
   }
@@ -131,7 +129,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
       case 0:
         int contextAddress = request.getInt();
         Task task = serializer.readObject(request.slice());
-        getContext(contextAddress).execute(() -> {
+        getExecutor(contextAddress).execute(() -> {
           try {
             Object result = task.execute();
             future.complete(serializer.writeObject(result));
@@ -151,7 +149,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
           MessageHandler handler = topicHandlers.get(address);
           if (handler != null) {
             Object message = serializer.readObject(request.slice());
-            getContext(address).execute(() -> {
+            getExecutor(address).execute(() -> {
               ((CompletionStage<?>) handler.handle(message)).whenComplete((result, error) -> {
                 if (error == null) {
                   future.complete(serializer.writeObject(result));
@@ -173,23 +171,23 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
 
   @Override
   public CompletableFuture<Void> execute(int address, Task<Void> task) {
-    return getContext(address).submit(task::execute);
+    return CompletableFuture.supplyAsync(task::execute, getExecutor(address));
   }
 
   @Override
   public <T> CompletableFuture<T> submit(int address, Task<T> task) {
-    return getContext(address).submit(task::execute);
+    return CompletableFuture.supplyAsync(task::execute, getExecutor(address));
   }
 
   @Override
-  public LocalMemberCoordinator registerExecutor(int address, ExecutionContext context) {
-    contexts.put(address, context);
+  public LocalMemberCoordinator registerExecutor(int address, Executor executor) {
+    executors.put(address, executor);
     return this;
   }
   
   @Override
   public LocalMemberCoordinator unregisterExecutor(int address) {
-    contexts.remove(address, context);
+    executors.remove(address, executor);
     return this;
   }
 
@@ -198,7 +196,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.listen().whenComplete((result, error) -> {
       server.handler(this::handle);
-      context.execute(() -> {
+      executor.execute(() -> {
         if (error == null) {
           future.complete(null);
         } else {
@@ -213,7 +211,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     server.close().whenComplete((result, error) -> {
-      context.execute(() -> {
+      executor.execute(() -> {
         server.handler(null);
         if (error == null) {
           future.complete(null);

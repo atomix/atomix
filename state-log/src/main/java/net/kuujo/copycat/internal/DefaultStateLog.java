@@ -18,16 +18,18 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.StateLog;
-import net.kuujo.copycat.StateLogConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -40,23 +42,17 @@ import java.util.function.Supplier;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> implements StateLog<T> {
-  private final Serializer serializer;
+  private final Serializer serializer = Serializer.serializer();
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
-  private final StateLogConfig config;
+  private final LogConfig config;
   private Supplier snapshotter;
   private Consumer installer;
   private long commitIndex;
   private boolean open;
   private final AtomicBoolean snapshotting = new AtomicBoolean();
 
-  public DefaultStateLog(String name, CopycatContext context, ClusterCoordinator coordinator, StateLogConfig config, Executor executor) {
+  public DefaultStateLog(String name, CopycatContext context, ClusterCoordinator coordinator, LogConfig config, Executor executor) {
     super(name, context, coordinator, executor);
-    context.log().config()
-      .withSegmentSize(config.getSegmentSize())
-      .withSegmentInterval(config.getSegmentInterval())
-      .withFlushOnWrite(config.isFlushOnWrite())
-      .withFlushInterval(config.getFlushInterval());
-    this.serializer = config.getSerializer();
     this.config = config;
   }
 
@@ -186,7 +182,7 @@ public class DefaultStateLog<T> extends AbstractCopycatResource<StateLog<T>> imp
    * Checks whether to take a snapshot.
    */
   private void checkSnapshot() {
-    if (context.log().size() > config.getMaxSize()) {
+    if (context.log().size() > config.getSegmentSize()) {
       takeSnapshot();
     }
   }

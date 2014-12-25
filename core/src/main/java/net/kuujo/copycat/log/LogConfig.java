@@ -15,59 +15,54 @@
  */
 package net.kuujo.copycat.log;
 
-import com.typesafe.config.Config;
-import net.kuujo.copycat.Copyable;
-import net.kuujo.copycat.internal.util.Configs;
-import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.Config;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.spi.RetentionPolicy;
 
 import java.io.File;
-import java.util.Map;
-import java.util.function.Consumer;
 
 /**
  * Log configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LogConfig implements Copyable<LogConfig> {
-  private File directory = new File(System.getProperty("java.io.tmpdir"), "copycat");
-  private int segmentSize = 1024 * 1024;
-  private long segmentInterval = Long.MAX_VALUE;
-  private boolean flushOnWrite = false;
-  private long flushInterval = Long.MAX_VALUE;
-  private RetentionPolicy retentionPolicy = log -> true;
+public class LogConfig extends Config {
+  public static final String LOG_NAME = "name";
+  public static final String LOG_DIRECTORY = "directory";
+  public static final String LOG_SEGMENT_SIZE = "segment.size";
+  public static final String LOG_SEGMENT_INTERVAL = "segment.interval";
+  public static final String LOG_FLUSH_ON_WRITE = "flush.on-write";
+  public static final String LOG_FLUSH_INTERVAL = "flush.interval";
+  public static final String LOG_RETENTION_POLICY = "retention-policy";
+
+  private static final int DEFAULT_LOG_SEGMENT_SIZE = 1024 * 1024;
+  private static final long DEFAULT_LOG_SEGMENT_INTERVAL = Long.MAX_VALUE;
+  private static final boolean DEFAULT_LOG_FLUSH_ON_WRITE = false;
+  private static final long DEFAULT_LOG_FLUSH_INTERVAL = Long.MAX_VALUE;
+  private static final RetentionPolicy DEFAULT_LOG_RETENTION_POLICY = segment -> true;
 
   public LogConfig() {
-    this(Configs.load("copycat.log").toConfig());
+    super();
   }
 
-  public LogConfig(String resource) {
-    this(Configs.load(resource, "copycat.log").toConfig());
-  }
-
-  public LogConfig(Map<String, Object> config) {
-    this(Configs.load(config, "copycat.log").toConfig());
+  public LogConfig(String name) {
+    super();
+    setName(name);
   }
 
   public LogConfig(Config config) {
-    Configs.apply((Consumer<String>) this::setDirectory, String.class, config, "directory");
-    Configs.apply((Consumer<Integer>) this::setSegmentSize, Integer.class, config, "segment-size");
-    Configs.apply((Consumer<Long>) this::setSegmentInterval, Long.class, config, "segment-interval");
-    Configs.apply((Consumer<Boolean>) this::setFlushOnWrite, Boolean.class, config, "flush-on-write");
-    Configs.apply((Consumer<Long>) this::setFlushInterval, Long.class, config, "flush-interval");
-    if (config.hasPath("retention-policy")) {
-      setRetentionPolicy(Services.load(config.getValue("retention-policy")));
-    }
+    super(config);
   }
 
   private LogConfig(LogConfig config) {
-    this.directory = config.directory;
-    this.segmentSize = config.segmentSize;
-    this.segmentInterval = config.segmentInterval;
-    this.flushOnWrite = config.flushOnWrite;
-    this.flushInterval = config.flushInterval;
-    this.retentionPolicy = config.retentionPolicy;
+    super();
+    put(LOG_NAME, config.get(LOG_NAME));
+    put(LOG_DIRECTORY, config.get(LOG_DIRECTORY));
+    put(LOG_SEGMENT_SIZE, config.get(LOG_SEGMENT_SIZE));
+    put(LOG_SEGMENT_INTERVAL, config.get(LOG_SEGMENT_INTERVAL));
+    put(LOG_FLUSH_ON_WRITE, config.get(LOG_FLUSH_ON_WRITE));
+    put(LOG_FLUSH_INTERVAL, config.get(LOG_FLUSH_INTERVAL));
+    put(LOG_RETENTION_POLICY, config.get(LOG_RETENTION_POLICY));
   }
 
   @Override
@@ -76,12 +71,41 @@ public class LogConfig implements Copyable<LogConfig> {
   }
 
   /**
+   * Sets the log name.
+   *
+   * @param name The log name.
+   */
+  public void setName(String name) {
+    put(LOG_NAME, Assert.isNotNull(name, "name"));
+  }
+
+  /**
+   * Returns the log name.
+   *
+   * @return The log name.
+   */
+  public String getName() {
+    return get(LOG_NAME);
+  }
+
+  /**
+   * Sets the log name, returning the log configuration for method chaining.
+   *
+   * @param name The log name.
+   * @return The log configuration.
+   */
+  public LogConfig withName(String name) {
+    setName(name);
+    return this;
+  }
+
+  /**
    * Sets the log directory.
    *
    * @param directory The log directory.
    */
   public void setDirectory(String directory) {
-    this.directory = new File(directory);
+    setDirectory(new File(directory));
   }
 
   /**
@@ -90,7 +114,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @param directory The log directory.
    */
   public void setDirectory(File directory) {
-    this.directory = directory;
+    put(LOG_DIRECTORY, directory);
   }
 
   /**
@@ -99,7 +123,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log directory.
    */
   public File getDirectory() {
-    return directory;
+    return get(LOG_DIRECTORY, new File("copycat"));
   }
 
   /**
@@ -109,7 +133,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log configuration.
    */
   public LogConfig withDirectory(String directory) {
-    this.directory = new File(directory);
+    setDirectory(directory);
     return this;
   }
 
@@ -120,7 +144,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log configuration.
    */
   public LogConfig withDirectory(File directory) {
-    this.directory = directory;
+    setDirectory(directory);
     return this;
   }
 
@@ -130,7 +154,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @param segmentSize The log segment size.
    */
   public void setSegmentSize(int segmentSize) {
-    this.segmentSize = segmentSize;
+    put(LOG_SEGMENT_SIZE, Assert.arg(segmentSize, segmentSize > 0, "segment size must be greater than zero"));
   }
 
   /**
@@ -139,7 +163,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log segment size.
    */
   public int getSegmentSize() {
-    return segmentSize;
+    return get(LOG_SEGMENT_SIZE, DEFAULT_LOG_SEGMENT_SIZE);
   }
 
   /**
@@ -149,7 +173,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log configuration.
    */
   public LogConfig withSegmentSize(int segmentSize) {
-    this.segmentSize = segmentSize;
+    setSegmentSize(segmentSize);
     return this;
   }
 
@@ -159,7 +183,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @param segmentInterval The log segment interval.
    */
   public void setSegmentInterval(long segmentInterval) {
-    this.segmentInterval = segmentInterval;
+    put(LOG_SEGMENT_INTERVAL, Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be greater than zero"));
   }
 
   /**
@@ -168,7 +192,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log segment interval.
    */
   public long getSegmentInterval() {
-    return segmentInterval;
+    return get(LOG_SEGMENT_INTERVAL, DEFAULT_LOG_SEGMENT_INTERVAL);
   }
 
   /**
@@ -178,7 +202,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log configuration.
    */
   public LogConfig withSegmentInterval(long segmentInterval) {
-    this.segmentInterval = segmentInterval;
+    setSegmentInterval(segmentInterval);
     return this;
   }
 
@@ -188,7 +212,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @param flushOnWrite Whether to flush the log to disk on every write.
    */
   public void setFlushOnWrite(boolean flushOnWrite) {
-    this.flushOnWrite = flushOnWrite;
+    put(LOG_FLUSH_ON_WRITE, flushOnWrite);
   }
 
   /**
@@ -197,7 +221,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return Whether to flush the log to disk on every write.
    */
   public boolean isFlushOnWrite() {
-    return flushOnWrite;
+    return get(LOG_FLUSH_ON_WRITE, DEFAULT_LOG_FLUSH_ON_WRITE);
   }
 
   /**
@@ -207,7 +231,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log configuration.
    */
   public LogConfig withFlushOnWrite(boolean flushOnWrite) {
-    this.flushOnWrite = flushOnWrite;
+    setFlushOnWrite(flushOnWrite);
     return this;
   }
 
@@ -217,7 +241,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @param flushInterval The log flush interval.
    */
   public void setFlushInterval(long flushInterval) {
-    this.flushInterval = flushInterval;
+    put(LOG_FLUSH_INTERVAL, Assert.arg(flushInterval, flushInterval > 0, "flush interval must be greater than zero"));
   }
 
   /**
@@ -226,7 +250,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log flush interval.
    */
   public long getFlushInterval() {
-    return flushInterval;
+    return get(LOG_FLUSH_INTERVAL, DEFAULT_LOG_FLUSH_INTERVAL);
   }
 
   /**
@@ -236,7 +260,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log configuration.
    */
   public LogConfig withFlushInterval(long flushInterval) {
-    this.flushInterval = flushInterval;
+    setFlushInterval(flushInterval);
     return this;
   }
 
@@ -246,7 +270,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @param retentionPolicy The log retention policy.
    */
   public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
-    this.retentionPolicy = retentionPolicy;
+    put(LOG_RETENTION_POLICY, Assert.isNotNull(retentionPolicy, "retentionPolicy"));
   }
 
   /**
@@ -255,7 +279,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log retention policy.
    */
   public RetentionPolicy getRetentionPolicy() {
-    return retentionPolicy;
+    return get(LOG_RETENTION_POLICY, DEFAULT_LOG_RETENTION_POLICY);
   }
 
   /**
@@ -265,7 +289,7 @@ public class LogConfig implements Copyable<LogConfig> {
    * @return The log configuration.
    */
   public LogConfig withRetentionPolicy(RetentionPolicy retentionPolicy) {
-    this.retentionPolicy = retentionPolicy;
+    setRetentionPolicy(retentionPolicy);
     return this;
   }
 

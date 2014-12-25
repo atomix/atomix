@@ -14,11 +14,8 @@
  */
 package net.kuujo.copycat.cluster;
 
-import com.typesafe.config.Config;
 import net.kuujo.copycat.Copyable;
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.Configs;
-import net.kuujo.copycat.internal.util.Services;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.spi.Protocol;
 
@@ -26,7 +23,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 
 /**
  * Cluster configuration.
@@ -40,21 +36,6 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   private Set<String> members = new HashSet<>(10);
 
   public ClusterConfig() {
-  }
-
-  public ClusterConfig(String resource) {
-    this(Configs.load(resource, "copycat.cluster").toConfig());
-  }
-
-  public ClusterConfig(Map<String, Object> config) {
-    this(Configs.load(config, "copycat.cluster").toConfig());
-  }
-
-  public ClusterConfig(Config config) {
-    setProtocol(Services.load("copycat.cluster.protocol"));
-    Configs.apply((Consumer<Long>) this::setElectionTimeout, Long.class, config, "election-timeout");
-    Configs.apply((Consumer<Long>) this::setHeartbeatInterval, Long.class, config, "heartbeat-interval");
-    Configs.apply((Consumer<Collection<String>>) this::setMembers, Collection.class, config, "members");
   }
 
   private ClusterConfig(ClusterConfig config) {

@@ -17,9 +17,9 @@ package net.kuujo.copycat.internal.cluster;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Internal cluster member.
@@ -29,12 +29,12 @@ import java.util.concurrent.CompletableFuture;
 public class CoordinatedMember implements Member {
   protected final int id;
   private final MemberCoordinator coordinator;
-  protected final ExecutionContext context;
+  protected final Executor executor;
 
-  protected CoordinatedMember(int id, MemberCoordinator coordinator, ExecutionContext context) {
+  protected CoordinatedMember(int id, MemberCoordinator coordinator, Executor executor) {
     this.id = id;
     this.coordinator = coordinator;
-    this.context = context;
+    this.executor = executor;
   }
 
   @Override

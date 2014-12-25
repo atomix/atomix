@@ -14,13 +14,13 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.internal.ThreadExecutionContext;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Local protocol client implementation.
@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocolClient implements ProtocolClient {
-  private final ExecutionContext context = new ThreadExecutionContext(new NamedThreadFactory("copycat-protocol-thread-%d"));
+  private final Executor executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-protocol-thread-%d"));
   private final String address;
   private final Map<String, LocalProtocolServer> registry;
 
@@ -41,14 +41,14 @@ public class LocalProtocolClient implements ProtocolClient {
   public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
     request.rewind();
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    context.execute(() -> {
+    executor.execute(() -> {
       LocalProtocolServer server = registry.get(address);
       if (server != null) {
         server.handle(request).whenComplete((result, error) -> {
           if (error != null) {
-            context.submit(() -> future.completeExceptionally(error));
+            executor.execute(() -> future.completeExceptionally(error));
           } else {
-            context.submit(() -> future.complete(result));
+            executor.execute(() -> future.complete(result));
           }
         });
       } else {

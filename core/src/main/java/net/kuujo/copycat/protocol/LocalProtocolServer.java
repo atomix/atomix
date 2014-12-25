@@ -14,13 +14,13 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.internal.ThreadExecutionContext;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Local protocol server implementation.
@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocolServer implements ProtocolServer {
-  private final ExecutionContext context = new ThreadExecutionContext(new NamedThreadFactory("copycat-protocol-thread-%d"));
+  private final Executor executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-protocol-thread-%d"));
   private final String address;
   private final Map<String, LocalProtocolServer> registry;
   private ProtocolHandler handler;
@@ -45,7 +45,7 @@ public class LocalProtocolServer implements ProtocolServer {
 
   CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    context.execute(() -> {
+    executor.execute(() -> {
       if (handler == null) {
         future.completeExceptionally(new ProtocolException("No protocol handler registered"));
       } else {
@@ -64,18 +64,18 @@ public class LocalProtocolServer implements ProtocolServer {
 
   @Override
   public CompletableFuture<Void> listen() {
-    return context.submit(() -> {
+    return CompletableFuture.supplyAsync(() -> {
       registry.put(address, this);
       return null;
-    });
+    }, executor);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    return context.submit(() -> {
+    return CompletableFuture.supplyAsync(() -> {
       registry.remove(address);
       return null;
-    });
+    }, executor);
   }
 
 }

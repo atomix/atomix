@@ -28,11 +28,12 @@ import net.kuujo.copycat.internal.cluster.CoordinatedCluster;
 import net.kuujo.copycat.internal.cluster.Router;
 import net.kuujo.copycat.internal.cluster.Topics;
 import net.kuujo.copycat.internal.util.Services;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.protocol.MemberInfo;
 import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
@@ -40,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 
 /**
  * Default cluster coordinator implementation.
@@ -48,7 +50,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
   private final Serializer serializer = Serializer.serializer();
-  private final ExecutionContext executor;
+  private final Executor executor;
   private final CopycatStateContext state;
   private final CopycatContext context;
   private final ClusterConfig config;
@@ -56,7 +58,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
   private final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
   private final Map<String, CopycatContext> contexts = new ConcurrentHashMap<>();
 
-  public DefaultClusterCoordinator(String uri, ClusterConfig config, ExecutionContext executor) {
+  public DefaultClusterCoordinator(String uri, ClusterConfig config, Executor executor) {
     this.config = config.copy();
     this.executor = executor;
     this.localMember = new DefaultLocalMemberCoordinator(uri, config.getMembers().contains(uri) ? Member.Type.MEMBER
@@ -68,9 +70,8 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
     }
     Map<String, Object> logConfig = new HashMap<>();
     logConfig.put("name", "copycat");
-    state = new CopycatStateContext(uri, config, Services.load("copycat.log", logConfig), executor);
-    context = new DefaultCopycatContext(
-      new CoordinatedCluster(0, this, state, new ResourceRouter("copycat"), executor), state);
+    state = new CopycatStateContext(uri, config, Services.load(Log.class, new LogConfig().withName("copycat")));
+    context = new DefaultCopycatContext(new CoordinatedCluster(0, this, state, new ResourceRouter("copycat"), executor), state);
   }
 
   @Override
@@ -121,25 +122,39 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
 
   @Override
   public CompletableFuture<CopycatContext> createResource(String name) {
-    return createResource(name, config);
+    return createResource(name, config, new LogConfig().withName(name));
   }
 
   @Override
   public CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster) {
-    ByteBuffer serialized = serializer.writeObject(cluster.getMembers());
-    ByteBuffer entry = ByteBuffer.allocate(12 + name.getBytes().length + serialized.capacity());
+    return createResource(name, cluster, new LogConfig().withName(name));
+  }
+
+  @Override
+  public CompletableFuture<CopycatContext> createResource(String name, LogConfig log) {
+    return createResource(name, config, log.withName(name));
+  }
+
+  @Override
+  public CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster, LogConfig log) {
+    log.setName(name);
+    ByteBuffer serializedCluster = serializer.writeObject(cluster.getMembers());
+    ByteBuffer serializedLog = serializer.writeObject(log);
+    ByteBuffer entry = ByteBuffer.allocate(16 + name.getBytes().length + serializedCluster.capacity() + serializedLog.capacity());
     entry.putInt(1);
     entry.putInt(name.getBytes().length);
     entry.put(name.getBytes());
-    entry.putInt(serialized.capacity());
-    entry.put(serialized);
+    entry.putInt(serializedCluster.capacity());
+    entry.put(serializedCluster);
+    entry.putInt(serializedLog.capacity());
+    entry.put(serializedLog);
     entry.rewind();
     return context.commit(entry).thenApplyAsync(buffer -> {
       int result = buffer.getInt();
       if (result == 0) {
         return null;
       } else {
-        return contexts.computeIfAbsent(name, k -> createContext(k, cluster.getMembers()));
+        return contexts.computeIfAbsent(name, k -> createContext(k, log, cluster.getMembers()));
       }
     }, executor);
   }
@@ -159,14 +174,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
    * @param name The context name.
    * @return The created context.
    */
-  private CopycatContext createContext(String name, Collection<String> members) {
-    ExecutionContext executor = ExecutionContext.create();
-    Map<String, Object> logConfig = new HashMap<>(1);
-    logConfig.put("name", name);
-    CopycatStateContext state = new CopycatStateContext(localMember.uri(), new ClusterConfig().withMembers(members),
-      Services.load("copycat.log", logConfig), executor);
-    CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name),
-      executor);
+  private CopycatContext createContext(String name, LogConfig config, Collection<String> members) {
+    CopycatStateContext state = new CopycatStateContext(localMember.uri(), this.config.copy().withMembers(members), Services.load(Log.class, config));
+    CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), state.executor());
     return new DefaultCopycatContext(cluster, state);
   }
 
@@ -188,11 +198,14 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
         byte[] clusterBytes = new byte[buffer.getInt()];
         buffer.get(clusterBytes);
         Set<String> members = serializer.readObject(ByteBuffer.wrap(clusterBytes));
+        byte[] logBytes = new byte[buffer.getInt()];
+        buffer.get(logBytes);
+        LogConfig log = serializer.readObject(ByteBuffer.wrap(logBytes));
         result = ByteBuffer.allocate(4);
         if (!contexts.containsKey(name)) {
           contexts.computeIfAbsent(name, k -> {
             result.putInt(1);
-            return createContext(name, members);
+            return createContext(name, log, members);
           });
         } else {
           result.putInt(0);

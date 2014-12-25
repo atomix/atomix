@@ -19,13 +19,13 @@ import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Internal cluster.
@@ -36,7 +36,7 @@ public class CoordinatedClusterManager implements ClusterManager {
   private CoordinatedLocalMember localMember;
   private final Map<String, CoordinatedMember> members = new HashMap<>();
 
-  public CoordinatedClusterManager(int id, ClusterCoordinator coordinator, ExecutionContext executor) {
+  public CoordinatedClusterManager(int id, ClusterCoordinator coordinator, Executor executor) {
     this.localMember = new CoordinatedLocalMember(id, coordinator.member(), executor);
     this.members.put(localMember.uri(), localMember);
     for (MemberCoordinator member : coordinator.members()) {

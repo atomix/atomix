@@ -27,8 +27,10 @@ public class BufferedLogTest extends AbstractLogTest {
 
   @Override
   protected AbstractLog createLog() throws Throwable {
-    LogConfig config = new LogConfig().withSegmentSize(segmentSize);
-    return new BufferedLog("test", config);
+    LogConfig config = new LogConfig().withName("test").withSegmentSize(segmentSize);
+    AbstractLog log = new BufferedLog();
+    log.configure(config);
+    return log;
   }
 
   @Override

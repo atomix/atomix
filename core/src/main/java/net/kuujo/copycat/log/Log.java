@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.Configurable;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -24,13 +26,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Log extends Loggable {  
-  /**
-   * Return the log configuration.
-   *
-   * @return The log configuration.
-   */
-  LogConfig config();
+public interface Log extends Configurable, Loggable {
   
   /**
    * Appends a list of entries to the log.

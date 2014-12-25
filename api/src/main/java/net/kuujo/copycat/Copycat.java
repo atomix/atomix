@@ -18,6 +18,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.DefaultCopycat;
+import net.kuujo.copycat.log.LogConfig;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -37,7 +38,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create(String uri) {
-    return create(uri, new ClusterConfig(), new CopycatConfig(), null);
+    return create(uri, new ClusterConfig(), new LogConfig(), null);
   }
 
   /**
@@ -48,7 +49,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create(String uri, Executor executor) {
-    return create(uri, new ClusterConfig(), new CopycatConfig(), executor);
+    return create(uri, new ClusterConfig(), new LogConfig(), executor);
   }
 
   /**
@@ -59,7 +60,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create(String uri, ClusterConfig cluster) {
-    return create(uri, cluster, new CopycatConfig(), null);
+    return create(uri, cluster, new LogConfig(), null);
   }
 
   /**
@@ -71,7 +72,7 @@ public interface Copycat extends Managed {
    * @return The Copycat instance.
    */
   static Copycat create(String uri, ClusterConfig cluster, Executor executor) {
-    return create(uri, cluster, new CopycatConfig(), executor);
+    return create(uri, cluster, new LogConfig(), executor);
   }
 
   /**
@@ -82,7 +83,7 @@ public interface Copycat extends Managed {
    * @param config The log configuration.
    * @return The Copycat instance.
    */
-  static Copycat create(String uri, ClusterConfig cluster, CopycatConfig config) {
+  static Copycat create(String uri, ClusterConfig cluster, LogConfig config) {
     return create(uri, cluster, config, null);
   }
 
@@ -95,7 +96,7 @@ public interface Copycat extends Managed {
    * @param executor The user execution context.
    * @return The Copycat instance.
    */
-  static Copycat create(String uri, ClusterConfig cluster, CopycatConfig config, Executor executor) {
+  static Copycat create(String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
     return new DefaultCopycat(uri, cluster, config, executor != null ? executor : Executors.newSingleThreadExecutor());
   }
 
@@ -147,7 +148,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name, EventLogConfig config);
+  <T> CompletableFuture<EventLog<T>> eventLog(String name, LogConfig config);
 
   /**
    * Creates a new event log.
@@ -158,7 +159,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name, EventLogConfig config, Executor executor);
+  <T> CompletableFuture<EventLog<T>> eventLog(String name, LogConfig config, Executor executor);
 
   /**
    * Creates a new event log.
@@ -169,7 +170,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name, ClusterConfig cluster, EventLogConfig config);
+  <T> CompletableFuture<EventLog<T>> eventLog(String name, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a new event log.
@@ -181,7 +182,7 @@ public interface Copycat extends Managed {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T> CompletableFuture<EventLog<T>> eventLog(String name, ClusterConfig cluster, EventLogConfig config, Executor executor);
+  <T> CompletableFuture<EventLog<T>> eventLog(String name, ClusterConfig cluster, LogConfig config, Executor executor);
 
   /**
    * Creates a new state log.
@@ -231,7 +232,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name, StateLogConfig config);
+  <T> CompletableFuture<StateLog<T>> stateLog(String name, LogConfig config);
 
   /**
    * Creates a new state log.
@@ -242,7 +243,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name, StateLogConfig config, Executor executor);
+  <T> CompletableFuture<StateLog<T>> stateLog(String name, LogConfig config, Executor executor);
 
   /**
    * Creates a new state log.
@@ -253,7 +254,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name, ClusterConfig cluster, StateLogConfig config);
+  <T> CompletableFuture<StateLog<T>> stateLog(String name, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a new state log.
@@ -265,7 +266,7 @@ public interface Copycat extends Managed {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T> CompletableFuture<StateLog<T>> stateLog(String name, ClusterConfig cluster, StateLogConfig config, Executor executor);
+  <T> CompletableFuture<StateLog<T>> stateLog(String name, ClusterConfig cluster, LogConfig config, Executor executor);
 
   /**
    * Creates a new replicated state machine.
@@ -325,7 +326,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config);
+  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, LogConfig config);
 
   /**
    * Creates a new replicated state machine.
@@ -338,7 +339,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, StateMachineConfig config, Executor executor);
+  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, LogConfig config, Executor executor);
 
   /**
    * Creates a new replicated state machine.
@@ -351,7 +352,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster, StateMachineConfig config);
+  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a new replicated state machine.
@@ -365,7 +366,7 @@ public interface Copycat extends Managed {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster, StateMachineConfig config, Executor executor);
+  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState, ClusterConfig cluster, LogConfig config, Executor executor);
 
   /**
    * Creates a new leader election.
@@ -456,7 +457,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous map has been created.
    */
-  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, AsyncMapConfig config);
+  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, LogConfig config);
 
   /**
    * Creates a name asynchronous map.
@@ -468,7 +469,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous map has been created.
    */
-  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, AsyncMapConfig config, Executor executor);
+  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, LogConfig config, Executor executor);
 
   /**
    * Creates a name asynchronous map.
@@ -480,7 +481,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous map has been created.
    */
-  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, ClusterConfig cluster, AsyncMapConfig config);
+  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a name asynchronous map.
@@ -493,7 +494,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous map has been created.
    */
-  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, ClusterConfig cluster, AsyncMapConfig config, Executor executor);
+  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, ClusterConfig cluster, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous multimap.
@@ -548,7 +549,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous multimap has been created.
    */
-  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, AsyncMultiMapConfig config);
+  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, LogConfig config);
 
   /**
    * Creates a named asynchronous multimap.
@@ -560,7 +561,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous multimap has been created.
    */
-  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, AsyncMultiMapConfig config, Executor executor);
+  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous multimap.
@@ -572,7 +573,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous multimap has been created.
    */
-  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, ClusterConfig cluster, AsyncMultiMapConfig config);
+  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a named asynchronous multimap.
@@ -585,7 +586,7 @@ public interface Copycat extends Managed {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous multimap has been created.
    */
-  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, ClusterConfig cluster, AsyncMultiMapConfig config, Executor executor);
+  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, ClusterConfig cluster, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous list.
@@ -635,7 +636,7 @@ public interface Copycat extends Managed {
    * @param <T> The list entry type.
    * @return A completable future to be completed once the asynchronous list has been created.
    */
-  <T> CompletableFuture<AsyncList<T>> list(String name, AsyncListConfig config);
+  <T> CompletableFuture<AsyncList<T>> list(String name, LogConfig config);
 
   /**
    * Creates a named asynchronous list.
@@ -646,7 +647,7 @@ public interface Copycat extends Managed {
    * @param <T> The list entry type.
    * @return A completable future to be completed once the asynchronous list has been created.
    */
-  <T> CompletableFuture<AsyncList<T>> list(String name, AsyncListConfig config, Executor executor);
+  <T> CompletableFuture<AsyncList<T>> list(String name, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous list.
@@ -657,7 +658,7 @@ public interface Copycat extends Managed {
    * @param <T> The list entry type.
    * @return A completable future to be completed once the asynchronous list has been created.
    */
-  <T> CompletableFuture<AsyncList<T>> list(String name, ClusterConfig cluster, AsyncListConfig config);
+  <T> CompletableFuture<AsyncList<T>> list(String name, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a named asynchronous list.
@@ -669,7 +670,7 @@ public interface Copycat extends Managed {
    * @param <T> The list entry type.
    * @return A completable future to be completed once the asynchronous list has been created.
    */
-  <T> CompletableFuture<AsyncList<T>> list(String name, ClusterConfig cluster, AsyncListConfig config, Executor executor);
+  <T> CompletableFuture<AsyncList<T>> list(String name, ClusterConfig cluster, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous set.
@@ -719,7 +720,7 @@ public interface Copycat extends Managed {
    * @param <T> The set entry type.
    * @return A completable future to be completed once the asynchronous set has been created.
    */
-  <T> CompletableFuture<AsyncSet<T>> set(String name, AsyncSetConfig config);
+  <T> CompletableFuture<AsyncSet<T>> set(String name, LogConfig config);
 
   /**
    * Creates a named asynchronous set.
@@ -730,7 +731,7 @@ public interface Copycat extends Managed {
    * @param <T> The set entry type.
    * @return A completable future to be completed once the asynchronous set has been created.
    */
-  <T> CompletableFuture<AsyncSet<T>> set(String name, AsyncSetConfig config, Executor executor);
+  <T> CompletableFuture<AsyncSet<T>> set(String name, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous set.
@@ -741,7 +742,7 @@ public interface Copycat extends Managed {
    * @param <T> The set entry type.
    * @return A completable future to be completed once the asynchronous set has been created.
    */
-  <T> CompletableFuture<AsyncSet<T>> set(String name, ClusterConfig cluster, AsyncSetConfig config);
+  <T> CompletableFuture<AsyncSet<T>> set(String name, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a named asynchronous set.
@@ -753,7 +754,7 @@ public interface Copycat extends Managed {
    * @param <T> The set entry type.
    * @return A completable future to be completed once the asynchronous set has been created.
    */
-  <T> CompletableFuture<AsyncSet<T>> set(String name, ClusterConfig cluster, AsyncSetConfig config, Executor executor);
+  <T> CompletableFuture<AsyncSet<T>> set(String name, ClusterConfig cluster, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous lock.
@@ -798,7 +799,7 @@ public interface Copycat extends Managed {
    * @param config The log configuration.
    * @return A completable future to be completed once the asynchronous lock has been created.
    */
-  CompletableFuture<AsyncLock> lock(String name, AsyncLockConfig config);
+  CompletableFuture<AsyncLock> lock(String name, LogConfig config);
 
   /**
    * Creates a named asynchronous lock.
@@ -808,7 +809,7 @@ public interface Copycat extends Managed {
    * @param executor The lock's executor.
    * @return A completable future to be completed once the asynchronous lock has been created.
    */
-  CompletableFuture<AsyncLock> lock(String name, AsyncLockConfig config, Executor executor);
+  CompletableFuture<AsyncLock> lock(String name, LogConfig config, Executor executor);
 
   /**
    * Creates a named asynchronous lock.
@@ -818,7 +819,7 @@ public interface Copycat extends Managed {
    * @param config The log configuration.
    * @return A completable future to be completed once the asynchronous lock has been created.
    */
-  CompletableFuture<AsyncLock> lock(String name, ClusterConfig cluster, AsyncLockConfig config);
+  CompletableFuture<AsyncLock> lock(String name, ClusterConfig cluster, LogConfig config);
 
   /**
    * Creates a named asynchronous lock.
@@ -829,6 +830,6 @@ public interface Copycat extends Managed {
    * @param executor The lock's executor.
    * @return A completable future to be completed once the asynchronous lock has been created.
    */
-  CompletableFuture<AsyncLock> lock(String name, ClusterConfig cluster, AsyncLockConfig config, Executor executor);
+  CompletableFuture<AsyncLock> lock(String name, ClusterConfig cluster, LogConfig config, Executor executor);
 
 }

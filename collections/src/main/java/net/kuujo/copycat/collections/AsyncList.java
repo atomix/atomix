@@ -20,9 +20,12 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.collection.AsyncListState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncListState;
-import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.log.LogConfig;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Asynchronous list.
@@ -38,50 +41,12 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    *
    * @param name The asynchronous list name.
    * @param uri The asynchronous list member URI.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  static <T> AsyncList<T> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
   static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
-   * @param config The list configuration.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  static <T> AsyncList<T> create(String name, String uri, AsyncListConfig config) {
-    return create(name, uri, new ClusterConfig(), config, ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
-   * @param context The user execution context.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  static <T> AsyncList<T> create(String name, String uri, ExecutionContext context) {
-    return create(name, uri, new ClusterConfig(), new AsyncListConfig(String.format("copycat.list.%s", name)), context);
+    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-list-" + name + "-%d")));
   }
 
   /**
@@ -93,8 +58,8 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @param config The list configuration.   * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config) {
-    return create(name, uri, cluster, config, ExecutionContext.create());
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
+    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-list-" + name + "-%d")));
   }
 
   /**
@@ -103,26 +68,12 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @param name The asynchronous list name.
    * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, uri, cluster, new AsyncListConfig(String.format("copycat.list.%s", name)), context);
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
-   * @param config The list configuration.
-   * @param context The user execution context.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  static <T> AsyncList<T> create(String name, String uri, AsyncListConfig config, ExecutionContext context) {
-    return create(name, uri, new ClusterConfig(), config, context);
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, Executor executor) {
+    return create(name, uri, cluster, new LogConfig(), executor);
   }
 
   /**
@@ -132,13 +83,13 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param config The list configuration.
-   * @param context The user execution context.
+   * @param executor The user execution context.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
   @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config, ExecutionContext context) {
-    return new DefaultAsyncList(StateMachine.create(name, uri, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config, context));
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
+    return new DefaultAsyncList(StateMachine.create(name, uri, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config, executor));
   }
 
   /**

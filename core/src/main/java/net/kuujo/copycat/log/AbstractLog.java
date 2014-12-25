@@ -15,9 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
-import com.typesafe.config.Config;
+import net.kuujo.copycat.Config;
 import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.Configs;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -32,29 +31,12 @@ import java.util.*;
  */
 public abstract class AbstractLog extends AbstractLoggable implements Log {
   private final org.slf4j.Logger log = LoggerFactory.getLogger(getClass());
-  protected final LogConfig config;
-  protected final File base;
+  protected LogConfig config;
+  protected File base;
   protected final TreeMap<Long, LogSegment> segments = new TreeMap<>();
   protected LogSegment currentSegment;
   private long nextSegmentId;
   private long lastFlush;
-
-  protected AbstractLog(String resource) {
-    this(Configs.load(resource, "copycat.log").toConfig());
-  }
-
-  protected AbstractLog(Map<String, Object> config) {
-    this(Configs.load(config, "copycat.log").toConfig());
-  }
-
-  protected AbstractLog(Config config) {
-    this(config.getString("name"), new LogConfig(config));
-  }
-
-  protected AbstractLog(String name, LogConfig config) {
-    this.config = config.copy();
-    this.base = new File(config.getDirectory(), name);
-  }
 
   /**
    * Loads all log segments.
@@ -82,8 +64,9 @@ public abstract class AbstractLog extends AbstractLoggable implements Log {
   }
 
   @Override
-  public LogConfig config() {
-    return config;
+  public void configure(Config config) {
+    this.config = new LogConfig(config.copy());
+    this.base = new File(this.config.getDirectory(), this.config.getName());
   }
 
   /**

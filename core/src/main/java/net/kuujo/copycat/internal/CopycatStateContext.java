@@ -15,14 +15,6 @@
  */
 package net.kuujo.copycat.internal;
 
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Observable;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
-
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
@@ -30,22 +22,19 @@ import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.AppendRequest;
-import net.kuujo.copycat.protocol.AppendResponse;
-import net.kuujo.copycat.protocol.CommitRequest;
-import net.kuujo.copycat.protocol.CommitResponse;
-import net.kuujo.copycat.protocol.MemberInfo;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
-import net.kuujo.copycat.protocol.PollRequest;
-import net.kuujo.copycat.protocol.PollResponse;
-import net.kuujo.copycat.protocol.QueryRequest;
-import net.kuujo.copycat.protocol.QueryResponse;
-import net.kuujo.copycat.protocol.RaftProtocol;
-import net.kuujo.copycat.protocol.SyncRequest;
-import net.kuujo.copycat.protocol.SyncResponse;
-import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.protocol.*;
+
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Observable;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.BiFunction;
 
 /**
  * Copycat state context.
@@ -53,7 +42,7 @@ import net.kuujo.copycat.spi.ExecutionContext;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatStateContext extends Observable implements RaftProtocol {
-  private final ExecutionContext executor;
+  private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-%d"));
   private final Log log;
   private AbstractState state;
   private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
@@ -77,14 +66,13 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private boolean open;
 
-  public CopycatStateContext(String uri, ClusterConfig config, Log log, ExecutionContext executor) {
+  public CopycatStateContext(String uri, ClusterConfig config, Log log) {
     this.localMember = uri;
     for (String member : config.getMembers()) {
       this.members.put(member, new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE));
     }
     this.members.put(uri, new MemberInfo(uri, config.getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE));
     this.log = log;
-    this.executor = executor;
     this.electionTimeout = config.getElectionTimeout();
     this.heartbeatInterval = config.getHeartbeatInterval();
   }
@@ -388,7 +376,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return The context executor.
    */
-  public ExecutionContext executor() {
+  public ScheduledExecutorService executor() {
     return executor;
   }
 

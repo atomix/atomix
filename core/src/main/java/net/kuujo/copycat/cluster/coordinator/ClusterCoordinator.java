@@ -18,6 +18,7 @@ package net.kuujo.copycat.cluster.coordinator;
 import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.log.LogConfig;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -67,6 +68,25 @@ public interface ClusterCoordinator extends Managed {
    * @return A completable future to be completed with the resource context.
    */
   CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster);
+
+  /**
+   * Creates a cluster resource.
+   *
+   * @param name The resource name.
+   * @param log The resource log configuration.
+   * @return A completable future to be completed with the resource context.
+   */
+  CompletableFuture<CopycatContext> createResource(String name, LogConfig log);
+
+  /**
+   * Creates a cluster resource.
+   *
+   * @param name The resource name.
+   * @param cluster The resource cluster configuration.
+   * @param log The resource log configuration.
+   * @return A completable future to be completed with the resource context.
+   */
+  CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster, LogConfig log);
 
   /**
    * Deletes a cluster resource.

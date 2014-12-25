@@ -19,7 +19,6 @@ import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.spi.ExecutionContext;
 import net.kuujo.copycat.spi.Protocol;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -27,6 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Default remote member coordinator implementation.
@@ -35,10 +35,10 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   private final ProtocolClient client;
-  private final ExecutionContext context;
+  private final Executor executor;
   private final Serializer serializer = Serializer.serializer();
 
-  DefaultRemoteMemberCoordinator(String uri, Member.Type type, Member.State state, Protocol protocol, ExecutionContext context) {
+  DefaultRemoteMemberCoordinator(String uri, Member.Type type, Member.State state, Protocol protocol, Executor executor) {
     super(uri, type, state);
     try {
       URI realUri = new URI(uri);
@@ -49,7 +49,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
     } catch (URISyntaxException e) {
       throw new ProtocolException(e);
     }
-    this.context = context;
+    this.executor = executor;
   }
 
   @Override
@@ -65,9 +65,9 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
     request.put(buffer);
     client.write(request).whenComplete((response, error) -> {
       if (error == null) {
-        context.execute(() -> future.complete(serializer.readObject(response)));
+        executor.execute(() -> future.complete(serializer.readObject(response)));
       } else {
-        context.execute(() -> future.completeExceptionally(error));
+        executor.execute(() -> future.completeExceptionally(error));
       }
     });
     return future;
@@ -88,9 +88,9 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
     request.put(buffer);
     client.write(request).whenComplete((response, error) -> {
       if (error == null) {
-        context.execute(() -> future.complete(serializer.readObject(response)));
+        executor.execute(() -> future.complete(serializer.readObject(response)));
       } else {
-        context.execute(() -> future.completeExceptionally(error));
+        executor.execute(() -> future.completeExceptionally(error));
       }
     });
     return future;
@@ -100,7 +100,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   public CompletableFuture<Void> open() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     client.connect().whenComplete((result, error) -> {
-      context.execute(() -> {
+      executor.execute(() -> {
         if (error == null) {
           future.complete(null);
         } else {
@@ -115,7 +115,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   public CompletableFuture<Void> close() {
     CompletableFuture<Void> future = new CompletableFuture<>();
     client.close().whenComplete((result, error) -> {
-      context.execute(() -> {
+      executor.execute(() -> {
         if (error == null) {
           future.complete(null);
         } else {

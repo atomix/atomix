@@ -27,10 +27,7 @@ import net.kuujo.copycat.protocol.Response;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
@@ -64,16 +61,6 @@ public class DefaultCopycatContext implements CopycatContext {
   @Override
   public Log log() {
     return context.log();
-  }
-
-  @Override
-  public ScheduledFuture<?> schedule(Runnable task, long delay, TimeUnit unit) {
-    return context.executor().schedule(task, delay, unit);
-  }
-
-  @Override
-  public <T> CompletableFuture<T> submit(Callable<T> task) {
-    return context.executor().submit(task);
   }
 
   @Override

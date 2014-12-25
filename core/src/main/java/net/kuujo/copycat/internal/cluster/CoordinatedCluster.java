@@ -20,9 +20,9 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Stateful cluster.
@@ -34,7 +34,7 @@ public class CoordinatedCluster extends CoordinatedClusterManager implements Clu
   private final Router router;
   private final CopycatStateContext context;
 
-  public CoordinatedCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ExecutionContext executor) {
+  public CoordinatedCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Executor executor) {
     super(id, coordinator, executor);
     this.election = new CoordinatedClusterElection(this, context);
     this.router = router;

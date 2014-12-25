@@ -18,8 +18,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.internal.DefaultEventLog;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.log.LogConfig;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -39,10 +39,11 @@ public interface EventLog<T> extends CopycatResource {
    *
    * @param name The log name.
    * @param uri The local log member URI.
+   * @param cluster The event log cluster.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), Executors.newSingleThreadExecutor());
+  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-event-log-" + name + "-%d")));
   }
 
   /**
@@ -50,36 +51,12 @@ public interface EventLog<T> extends CopycatResource {
    *
    * @param name The log name.
    * @param uri The local log member URI.
-   * @param executor The user execution context.
-   * @return A new event log instance.
-   */
-  static <T> EventLog<T> create(String name, String uri, Executor executor) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), new EventLogConfig(), executor);
-  }
-
-  /**
-   * Creates a new event log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
+   * @param cluster The event log cluster.
    * @param config The log configuration.
-   * @return The event log.
-   */
-  static <T> EventLog<T> create(String name, String uri, EventLogConfig config) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, Executors.newSingleThreadExecutor());
-  }
-
-  /**
-   * Creates a new event log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param config The log configuration.
-   * @param executor The user execution context.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri, EventLogConfig config, Executor executor) {
-    return create(name, uri, Services.load("copycat.cluster", ClusterConfig.class), config, executor);
+  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
+    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-event-log-" + name + "-%d")));
   }
 
   /**
@@ -92,7 +69,7 @@ public interface EventLog<T> extends CopycatResource {
    * @return A new event log instance.
    */
   static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new EventLogConfig(), executor);
+    return create(name, uri, cluster, new LogConfig(), executor);
   }
 
   /**
@@ -105,11 +82,11 @@ public interface EventLog<T> extends CopycatResource {
    * @param executor The user execution context.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, EventLogConfig config, Executor executor) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, ExecutionContext.create());
+  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
     try {
       coordinator.open().get();
-      return new DefaultEventLog<T>(name, coordinator.createResource(name).get(), coordinator, config, executor).withShutdownTask(coordinator::close);
+      return new DefaultEventLog<T>(name, coordinator.createResource(name, cluster, config).get(), coordinator, executor).withShutdownTask(coordinator::close);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

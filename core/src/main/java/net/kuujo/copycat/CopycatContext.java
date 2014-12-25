@@ -17,10 +17,10 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 
 /**
@@ -28,7 +28,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CopycatContext extends ExecutionContext, Managed {
+public interface CopycatContext extends Executor, Managed {
 
   /**
    * Returns the current Copycat state.

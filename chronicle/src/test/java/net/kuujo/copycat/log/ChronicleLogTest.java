@@ -1,19 +1,13 @@
 package net.kuujo.copycat.log;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.util.UUID;
-
-import net.openhft.chronicle.ChronicleConfig;
-
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.UUID;
 
 /**
  * Chronicle log test.
@@ -44,14 +38,18 @@ public class ChronicleLogTest extends AbstractLogTest {
   @Override
   protected AbstractLog createLog() throws Throwable {
     String id = UUID.randomUUID().toString();
-    LogConfig config = new LogConfig().withSegmentSize(segmentSize).withDirectory(
-      new File(String.format("target/test-logs/%s", id)));
-    ChronicleConfig chronicleConfig = ChronicleConfig.DEFAULT.indexFileCapacity(1024 * 1024)
-      .indexFileExcerpts(8 * 1024)
-      .dataBlockSize(8 * 1024)
-      .messageCapacity(8192 / 2);
-    chronicleConfig.minimiseFootprint(true);
-    return new ChronicleLog(id, config, chronicleConfig);
+    ChronicleLogConfig config = new ChronicleLogConfig()
+      .withName(id)
+      .withSegmentSize(segmentSize)
+      .withDirectory(new File(String.format("target/test-logs/%s", id)))
+      .withIndexFileCapacity(1024 * 1024)
+      .withIndexFileExcerpts(8 * 1024)
+      .withDataBlockSize(8 * 1024)
+      .withMessageCapacity(8192 / 2)
+      .withMinimiseFootprint(true);
+    AbstractLog log = new ChronicleLog();
+    log.configure(config);
+    return log;
   }
 
   @Override

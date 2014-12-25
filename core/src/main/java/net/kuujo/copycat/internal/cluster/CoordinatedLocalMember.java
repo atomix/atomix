@@ -18,9 +18,9 @@ import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
-import net.kuujo.copycat.spi.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Internal local cluster member.
@@ -30,8 +30,8 @@ import java.util.concurrent.CompletableFuture;
 public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember, Managed {
   private final LocalMemberCoordinator coordinator;
 
-  public CoordinatedLocalMember(int id, LocalMemberCoordinator coordinator, ExecutionContext context) {
-    super(id, coordinator, context);
+  public CoordinatedLocalMember(int id, LocalMemberCoordinator coordinator, Executor executor) {
+    super(id, coordinator, executor);
     this.coordinator = coordinator;
   }
 
@@ -49,7 +49,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
 
   @Override
   public CompletableFuture<Void> open() {
-    coordinator.registerExecutor(id, context);
+    coordinator.registerExecutor(id, executor);
     return CompletableFuture.completedFuture(null);
   }
 

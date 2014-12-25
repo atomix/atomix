@@ -15,6 +15,11 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.Config;
+import net.openhft.chronicle.ChronicleConfig;
+import net.openhft.chronicle.ExcerptTailer;
+import net.openhft.chronicle.IndexedChronicle;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -23,38 +28,23 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import net.openhft.chronicle.ChronicleConfig;
-import net.openhft.chronicle.ExcerptTailer;
-import net.openhft.chronicle.IndexedChronicle;
-
-import com.typesafe.config.Config;
-
 /**
  * Chronicle based Copycat log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ChronicleLog extends AbstractLog {
-  final ChronicleConfig chronicleConfig;
+  ChronicleConfig chronicleConfig;
 
-  public ChronicleLog(String resource) {
-    super(resource);
-    chronicleConfig = ChronicleConfig.DEFAULT;
-  }
-
-  public ChronicleLog(Map<String, Object> config) {
-    super(config);
-    chronicleConfig = ChronicleConfig.DEFAULT;
-  }
-
-  public ChronicleLog(Config config) {
-    super(config);
-    chronicleConfig = ChronicleConfig.DEFAULT;
-  }
-
-  public ChronicleLog(String name, LogConfig config, ChronicleConfig chronicleConfig) {
-    super(name, config);
-    this.chronicleConfig = chronicleConfig;
+  @Override
+  public void configure(Config baseConfig) {
+    ChronicleLogConfig config = new ChronicleLogConfig(baseConfig);
+    chronicleConfig = ChronicleConfig.DEFAULT
+      .indexFileCapacity(config.getIndexFileCapacity())
+      .indexFileExcerpts(config.getIndexFileExcerpts())
+      .dataBlockSize(config.getDataBlockSize())
+      .messageCapacity(config.getMessageCapacity());
+    chronicleConfig.minimiseFootprint(config.isMinimiseFootprint());
   }
 
   @Override
@@ -66,8 +56,7 @@ public class ChronicleLog extends AbstractLog {
         && !segments.containsKey(Long.valueOf(file.getName().substring(0,
           file.getName().indexOf(".", base.getName().length()))))) {
         try {
-          long id = Long.valueOf(file.getName().substring(0, file.getName().indexOf(".", base.getName().length())))
-            .longValue();
+          long id = Long.valueOf(file.getName().substring(0, file.getName().indexOf(".", base.getName().length()))).longValue();
           // First, look for an existing history file for the log.
           File historyLogFile = new File(base.getParent(), String.format("%s-%d.history.log", base.getName(), id));
           File historyIndexFile = new File(base.getParent(), String.format("%s-%d.history.index", base.getName(), id));
@@ -99,7 +88,7 @@ public class ChronicleLog extends AbstractLog {
   }
 
   long firstEntryIndex(File file) throws IOException {
-    try (IndexedChronicle chronicle = new IndexedChronicle(file.getAbsolutePath(), chronicleConfig)) {
+    try (IndexedChronicle chronicle = new IndexedChronicle(file.getAbsolutePath())) {
       ExcerptTailer tailer = chronicle.createTailer();
       try (ExcerptTailer t = tailer.toStart()) {
         return t.readLong();

@@ -21,14 +21,14 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogConfig;
-import net.kuujo.copycat.spi.ExecutionContext;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertNull;
 
 /**
  * Copycat state context tests.
@@ -44,8 +44,9 @@ public class CopycatStateContextTest extends ConcurrentTestCase {
   private CopycatStateContext createContext() {
     ClusterConfig cluster = new ClusterConfig()
       .withMembers("local://foo", "local://bar", "local://baz");
-    Log log = new BufferedLog("test", new LogConfig());
-    return new CopycatStateContext("local://foo", cluster, log, ExecutionContext.create());
+    Log log = new BufferedLog();
+    log.configure(new LogConfig().withName("test"));
+    return new CopycatStateContext("local://foo", cluster, log);
   }
 
   /**

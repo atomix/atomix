@@ -20,9 +20,12 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.lock.AsyncLockState;
 import net.kuujo.copycat.collections.internal.lock.DefaultAsyncLock;
 import net.kuujo.copycat.collections.internal.lock.UnlockedAsyncLockState;
-import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.log.LogConfig;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Asynchronous lock.
@@ -36,46 +39,11 @@ public interface AsyncLock extends CopycatResource {
    *
    * @param name The asynchronous lock name.
    * @param uri The asynchronous lock member URI.
-   * @return A new asynchronous lock.
-   */
-  static AsyncLock create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncLockConfig(String.format("copycat.lock.%s", name)), ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous lock.
-   *
-   * @param name The asynchronous lock name.
-   * @param uri The asynchronous lock member URI.
    * @param cluster The cluster configuration.
    * @return The asynchronous lock.
    */
   static AsyncLock create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncLockConfig(String.format("copycat.lock.%s", name)), ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous lock.
-   *
-   * @param name The asynchronous lock name.
-   * @param uri The asynchronous lock member URI.
-   * @param config The lock configuration.
-   * @return The asynchronous lock.
-   */
-  static AsyncLock create(String name, String uri, AsyncLockConfig config) {
-    return create(name, uri, new ClusterConfig(), config, ExecutionContext.create());
-  }
-
-  /**
-   * Creates a new asynchronous lock.
-   *
-   * @param name The asynchronous lock name.
-   * @param uri The asynchronous lock member URI.
-   * @param context The user execution context.
-   * @return The asynchronous lock.
-   */
-  static AsyncLock create(String name, String uri, ExecutionContext context) {
-    return create(name, uri, new ClusterConfig(), new AsyncLockConfig(String.format("copycat.lock.%s", name)), context);
+    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-lock-" + name + "-%d")));
   }
 
   /**
@@ -87,8 +55,8 @@ public interface AsyncLock extends CopycatResource {
    * @param config The lock configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config) {
-    return create(name, uri, cluster, config, ExecutionContext.create());
+  static AsyncLock create(String name, String uri, ClusterConfig cluster, LogConfig config) {
+    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-lock-" + name + "-%d")));
   }
 
   /**
@@ -100,21 +68,8 @@ public interface AsyncLock extends CopycatResource {
    * @param context The user execution context.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, String uri, ClusterConfig cluster, ExecutionContext context) {
-    return create(name, uri, cluster, new AsyncLockConfig(String.format("copycat.lock.%s", name)), context);
-  }
-
-  /**
-   * Creates a new asynchronous lock.
-   *
-   * @param name The asynchronous lock name.
-   * @param uri The asynchronous lock member URI.
-   * @param config The lock configuration.
-   * @param context The user execution context.
-   * @return The asynchronous lock.
-   */
-  static AsyncLock create(String name, String uri, AsyncLockConfig config, ExecutionContext context) {
-    return create(name, uri, new ClusterConfig(), config, context);
+  static AsyncLock create(String name, String uri, ClusterConfig cluster, Executor context) {
+    return create(name, uri, cluster, new LogConfig(), context);
   }
 
   /**
@@ -127,7 +82,7 @@ public interface AsyncLock extends CopycatResource {
    * @param context The user execution context.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config, ExecutionContext context) {
+  static AsyncLock create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor context) {
     return new DefaultAsyncLock(StateMachine.create(name, uri, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, config, context));
   }
 

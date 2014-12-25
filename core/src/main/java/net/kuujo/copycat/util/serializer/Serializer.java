@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.util.serializer;
 
+import net.kuujo.copycat.internal.util.Services;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -29,7 +31,7 @@ public interface Serializer {
    * @return A serializer instance.
    */
   static Serializer serializer() {
-    return new JavaSerializer();
+    return Services.load(Serializer.class);
   }
 
   /**

@@ -21,7 +21,9 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.spi.ExecutionContext;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.log.ZeroRetentionPolicy;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -34,29 +36,6 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface LeaderElection extends CopycatResource {
-
-  /**
-   * Creates a new leader election for the given state model.
-   *
-   * @param name The election name.
-   * @param uri The election member URI.
-   * @return The state machine.
-   */
-  static LeaderElection create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), Executors.newSingleThreadExecutor());
-  }
-
-  /**
-   * Creates a new state machine for the given state model.
-   *
-   * @param name The election name.
-   * @param uri The election member URI.
-   * @param executor The user execution context.
-   * @return The state machine.
-   */
-  static LeaderElection create(String name, String uri, Executor executor) {
-    return create(name, uri, new ClusterConfig(), executor);
-  }
 
   /**
    * Creates a new state machine for the given state model.
@@ -80,10 +59,10 @@ public interface LeaderElection extends CopycatResource {
    * @return The state machine.
    */
   static LeaderElection create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, ExecutionContext.create());
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
     try {
       coordinator.open().get();
-      return new DefaultLeaderElection(name, coordinator.createResource(name).get(), coordinator, executor);
+      return new DefaultLeaderElection(name, coordinator.createResource(name, cluster, new LogConfig().withFlushOnWrite(true).withRetentionPolicy(new ZeroRetentionPolicy())).get(), coordinator, executor);
     } catch (InterruptedException | ExecutionException e) {
       throw new IllegalStateException(e);
     }

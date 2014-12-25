@@ -16,7 +16,8 @@
 package net.kuujo.copycat.cluster.coordinator;
 
 import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.spi.ExecutionContext;
+
+import java.util.concurrent.Executor;
 
 /**
  * Local member coordinator.
@@ -48,10 +49,10 @@ public interface LocalMemberCoordinator extends MemberCoordinator {
    * Registers an execution context for the given address.
    *
    * @param address The address for which to register the context.
-   * @param context The execution context.
+   * @param executor The execution context.
    * @return The local member coordinator.
    */
-  LocalMemberCoordinator registerExecutor(int address, ExecutionContext context);
+  LocalMemberCoordinator registerExecutor(int address, Executor executor);
 
   /**
    * Unregisters an execution context for the given address.
