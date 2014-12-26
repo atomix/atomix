@@ -37,6 +37,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
   private final StateLog<List<Object>> log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
   private Map<String, Object> data = new HashMap<>(1024);
+  private Method initializer;
   private final StateContext<T> context = new StateContext<T>() {
     @Override
     public T state() {
@@ -70,6 +71,7 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
     @Override
     public StateContext<T> transition(T state) {
       DefaultStateMachine.this.state = state;
+      initialize();
       return this;
     }
   };
@@ -160,6 +162,24 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
           log.registerCommand(method.getName(), wrapOperation(method));
         }
       }
+      Initializer initializer = method.getAnnotation(Initializer.class);
+      if (initializer != null) {
+        this.initializer = method;
+      }
+    }
+    initialize();
+  }
+
+  /**
+   * Initializes the current state.
+   */
+  private void initialize() {
+    if (initializer != null) {
+      try {
+        initializer.invoke(state, context);
+      } catch (IllegalAccessException | InvocationTargetException e) {
+        throw new IllegalStateException(e);
+      }
     }
   }
 
@@ -170,41 +190,9 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
    * @return The generated state log command.
    */
   private Function<List<Object>, Object> wrapOperation(Method method) {
-    Integer tempIndex = null;
-    Class<?>[] paramTypes = method.getParameterTypes();
-    for (int i = 0; i < paramTypes.length; i++) {
-      if (StateContext.class.isAssignableFrom(paramTypes[i])) {
-        tempIndex = i;
-      }
-    }
-    final Integer contextIndex = tempIndex;
-
     return values -> {
-      Object[] emptyArgs = new Object[values.size() + (contextIndex != null ? 1 : 0)];
-      Object[] args = values.toArray(emptyArgs);
-      if (contextIndex != null) {
-        Object lastArg = null;
-        for (int i = 0; i < args.length; i++) {
-          if (i > contextIndex) {
-            args[i] = lastArg;
-            lastArg = args[i];
-          } else if (i == contextIndex) {
-            lastArg = args[i];
-            args[i] = context;
-          }
-        }
-      }
-
-      Object[] compiledArgs;
-      if (contextIndex != null) {
-        compiledArgs = values.toArray(new Object[values.size() + 1]);
-        compiledArgs[compiledArgs.length-1] = context;
-      } else {
-        compiledArgs = values.toArray(new Object[values.size()]);
-      }
-
       try {
-        return method.invoke(state, compiledArgs);
+        return method.invoke(state, values.toArray(new Object[values.size()]));
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new IllegalStateException(e);
       }

@@ -18,8 +18,11 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncLock;
+import net.kuujo.copycat.collections.AsyncLockProxy;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 /**
  * Default asynchronous lock implementation.
@@ -35,26 +38,6 @@ public class DefaultAsyncLock implements AsyncLock {
   }
 
   @Override
-  public CompletableFuture<Void> lock() {
-    if (proxy == null) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Lock closed"));
-      return future;
-    }
-    return proxy.lock();
-  }
-
-  @Override
-  public CompletableFuture<Void> unlock() {
-    if (proxy == null) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Lock closed"));
-      return future;
-    }
-    return proxy.unlock();
-  }
-
-  @Override
   public String name() {
     return stateMachine.name();
   }
@@ -67,6 +50,36 @@ public class DefaultAsyncLock implements AsyncLock {
   @Override
   public CopycatState state() {
     return stateMachine.state();
+  }
+
+  /**
+   * If the lock is closed, returning a failed CompletableFuture. Otherwise, calls the given supplier to
+   * return the completed future result.
+   *
+   * @param supplier The supplier to call if the lock is open.
+   * @param <T> The future result type.
+   * @return A completable future that if this lock is closed is immediately failed.
+   */
+  protected <T> CompletableFuture<T> checkOpen(Supplier<CompletableFuture<T>> supplier) {
+    if (proxy == null) {
+      return Futures.exceptionalFuture(new IllegalStateException("Lock closed"));
+    }
+    return supplier.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> lock() {
+    return checkOpen(proxy::lock);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> tryLock() {
+    return checkOpen(proxy::tryLock);
+  }
+
+  @Override
+  public CompletableFuture<Void> unlock() {
+    return checkOpen(proxy::unlock);
   }
 
   @Override

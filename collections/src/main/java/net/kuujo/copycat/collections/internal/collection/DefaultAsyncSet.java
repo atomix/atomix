@@ -15,118 +15,19 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncSet;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.collections.AsyncSetProxy;
 
 /**
  * Default asynchronous set.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncSet<T> implements AsyncSet<T> {
-  private final StateMachine<AsyncSetState<T>> stateMachine;
-  private AsyncSetProxy<T> proxy;
+public class DefaultAsyncSet<T> extends AbstractAsyncCollection<SetState<T>, AsyncSetProxy<T>, T> implements AsyncSet<T> {
 
-  public DefaultAsyncSet(StateMachine<AsyncSetState<T>> stateMachine) {
-    this.stateMachine = stateMachine;
-  }
-
-  @Override
-  public String name() {
-    return stateMachine.name();
-  }
-
-  @Override
-  public Cluster cluster() {
-    return stateMachine.cluster();
-  }
-
-  @Override
-  public CopycatState state() {
-    return stateMachine.state();
-  }
-
-  @Override
-  public CompletableFuture<Boolean> add(T value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Set closed"));
-      return future;
-    }
-    return proxy.add(value);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> remove(T value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Set closed"));
-      return future;
-    }
-    return proxy.remove(value);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> contains(Object value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Set closed"));
-      return future;
-    }
-    return proxy.contains(value);
-  }
-
-  @Override
-  public CompletableFuture<Integer> size() {
-    if (proxy == null) {
-      CompletableFuture<Integer> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Set closed"));
-      return future;
-    }
-    return proxy.size();
-  }
-
-  @Override
-  public CompletableFuture<Boolean> isEmpty() {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Set closed"));
-      return future;
-    }
-    return proxy.isEmpty();
-  }
-
-  @Override
-  public CompletableFuture<Void> clear() {
-    if (proxy == null) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Set closed"));
-      return future;
-    }
-    return proxy.clear();
-  }
-
-  @Override
-  public CompletableFuture<Void> delete() {
-    return stateMachine.delete();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> open() {
-    return stateMachine.open().thenRun(() -> {
-      this.proxy = stateMachine.createProxy(AsyncSetProxy.class);
-    });
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    proxy = null;
-    return stateMachine.close();
+  public DefaultAsyncSet(StateMachine<SetState<T>> stateMachine) {
+    super(stateMachine, AsyncSetProxy.class);
   }
 
 }

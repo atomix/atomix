@@ -15,19 +15,38 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.Query;
+import net.kuujo.copycat.protocol.Consistency;
+
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.List;
 
 /**
- * Default asynchronous set state.
+ * Asynchronous list state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncSetState<T> extends AbstractAsyncCollectionState<AsyncSetState<T>, T> implements AsyncSetState<T> {
+public interface ListState<T> extends CollectionState<ListState<T>, T>, List<T> {
 
   @Override
-  protected Collection<T> createCollection() {
-    return new HashSet<>();
-  }
+  @Query(consistency=Consistency.DEFAULT)
+  T get(int index);
+
+  @Override
+  @Command
+  T set(int index, T element);
+
+  @Override
+  @Command
+  void add(int index, T element);
+
+  @Override
+  @Command
+  boolean addAll(int index, Collection<? extends T> c);
+
+  @Override
+  @Command
+  T remove(int index);
 
 }

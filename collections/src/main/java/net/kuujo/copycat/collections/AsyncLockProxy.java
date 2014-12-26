@@ -13,25 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.collections;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * State machine command annotation.
+ * Asynchronous lock proxy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Command {
+public interface AsyncLockProxy {
 
   /**
-   * The command name.
+   * Acquires the lock.
+   *
+   * @return A completable future to be completed once the lock has been acquired.
    */
-  String name() default "";
+  CompletableFuture<Void> lock();
+
+  /**
+   * Acquires the lock only if its free at the time.
+   *
+   * @return A completable future to be completed indicating whether the lock was acquired.
+   */
+  CompletableFuture<Boolean> tryLock();
+
+  /**
+   * Releases the lock.
+   *
+   * @return A completable future to be completed once the lock has been released.
+   */
+  CompletableFuture<Void> unlock();
 
 }

@@ -17,9 +17,9 @@ package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.collection.AsyncSetState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSetState;
+import net.kuujo.copycat.collections.internal.collection.DefaultSetState;
+import net.kuujo.copycat.collections.internal.collection.SetState;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.LogConfig;
 
@@ -33,7 +33,7 @@ import java.util.concurrent.Executors;
  *
  * @param <T> The set data type.
  */
-public interface AsyncSet<T> extends AsyncCollection<T> {
+public interface AsyncSet<T> extends AsyncCollection<T>, AsyncSetProxy<T> {
 
   /**
    * Creates a new asynchronous set.
@@ -89,7 +89,7 @@ public interface AsyncSet<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncSet(StateMachine.create(name, uri, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, config, executor));
+    return new DefaultAsyncSet(StateMachine.create(name, uri, SetState.class, new DefaultSetState<>(), cluster, config, executor));
   }
 
 }

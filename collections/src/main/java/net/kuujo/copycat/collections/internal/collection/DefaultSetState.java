@@ -15,10 +15,19 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
- * Asynchronous set state.
+ * Default asynchronous set state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncSetState<T> extends AsyncCollectionState<AsyncSetState<T>, T> {
+public class DefaultSetState<T> extends AbstractCollectionState<SetState<T>, Set<T>, T> implements SetState<T> {
+
+  @Override
+  protected Set<T> createCollection() {
+    return new HashSet<>();
+  }
+
 }

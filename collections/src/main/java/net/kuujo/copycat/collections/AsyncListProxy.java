@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections.internal.collection;
+package net.kuujo.copycat.collections;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -39,7 +40,25 @@ public interface AsyncListProxy<T> extends AsyncCollectionProxy<T> {
    * @param value The entry to set.
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<Void> set(int index, T value);
+  CompletableFuture<T> set(int index, T value);
+
+  /**
+   * Adds a value at an index in the list.
+   *
+   * @param index The index at which to add the value.
+   * @param value The value to add.
+   * @return A completable future to be completed with the result once complete.
+   */
+  CompletableFuture<Void> add(int index, T value);
+
+  /**
+   * Adds a collection of values at an index in the list.
+   *
+   * @param index The index at which to add the values.
+   * @param values The values to add.
+   * @return A completable future to be completed with the result once complete.
+   */
+  CompletableFuture<Boolean> addAll(int index, Collection<? extends T> values);
 
   /**
    * Removes an index in the list.

@@ -19,11 +19,15 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncMultiMap;
+import net.kuujo.copycat.collections.AsyncMultiMapProxy;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * Default asynchronous multimap.
@@ -31,10 +35,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
-  private final StateMachine<AsyncMultiMapState<K, V>> stateMachine;
+  private final StateMachine<MultiMapState<K, V>> stateMachine;
   private AsyncMultiMapProxy<K, V> proxy;
 
-  public DefaultAsyncMultiMap(StateMachine<AsyncMultiMapState<K, V>> stateMachine) {
+  public DefaultAsyncMultiMap(StateMachine<MultiMapState<K, V>> stateMachine) {
     this.stateMachine = stateMachine;
   }
 
@@ -53,134 +57,109 @@ public class DefaultAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
     return stateMachine.state();
   }
 
-  @Override
-  public CompletableFuture<Boolean> put(K key, V value) {
+  /**
+   * If the map is closed, returning a failed CompletableFuture. Otherwise, calls the given supplier to
+   * return the completed future result.
+   *
+   * @param supplier The supplier to call if the map is open.
+   * @param <T> The future result type.
+   * @return A completable future that if this map is closed is immediately failed.
+   */
+  protected <T> CompletableFuture<T> checkOpen(Supplier<CompletableFuture<T>> supplier) {
     if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
+      return Futures.exceptionalFuture(new IllegalStateException("Map closed"));
     }
-    return proxy.put(key, value);
-  }
-
-  @Override
-  public CompletableFuture<Collection<V>> get(K key) {
-    if (proxy == null) {
-      CompletableFuture<Collection<V>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.get(key);
-  }
-
-  @Override
-  public CompletableFuture<Collection<V>> remove(K key) {
-    if (proxy == null) {
-      CompletableFuture<Collection<V>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.remove(key);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> remove(K key, V value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.remove(key, value);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> containsKey(K key) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.containsKey(key);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> containsValue(V value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.containsValue(value);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> containsEntry(K key, V value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.containsEntry(key, value);
-  }
-
-  @Override
-  public CompletableFuture<Set<K>> keySet() {
-    if (proxy == null) {
-      CompletableFuture<Set<K>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.keySet();
-  }
-
-  @Override
-  public CompletableFuture<Set<Map.Entry<K, Collection<V>>>> entrySet() {
-    if (proxy == null) {
-      CompletableFuture<Set<Map.Entry<K, Collection<V>>>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.entrySet();
-  }
-
-  @Override
-  public CompletableFuture<Collection<V>> values() {
-    if (proxy == null) {
-      CompletableFuture<Collection<V>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.values();
+    return supplier.get();
   }
 
   @Override
   public CompletableFuture<Integer> size() {
-    if (proxy == null) {
-      CompletableFuture<Integer> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.size();
+    return checkOpen(proxy::size);
   }
 
   @Override
   public CompletableFuture<Boolean> isEmpty() {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.isEmpty();
+    return checkOpen(proxy::isEmpty);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsKey(K key) {
+    return checkOpen(() -> proxy.containsKey(key));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsValue(V value) {
+    return checkOpen(() -> proxy.containsValue(value));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsEntry(K key, V value) {
+    return checkOpen(() -> proxy.containsEntry(key, value));
+  }
+
+  @Override
+  public CompletableFuture<Collection<V>> get(K key) {
+    return checkOpen(() -> proxy.get(key));
+  }
+
+  @Override
+  public CompletableFuture<Collection<V>> put(K key, V value) {
+    return checkOpen(() -> proxy.put(key, value));
+  }
+
+  @Override
+  public CompletableFuture<Collection<V>> remove(K key) {
+    return checkOpen(() -> proxy.remove(key));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> remove(K key, V value) {
+    return checkOpen(() -> proxy.remove(key, value));
+  }
+
+  @Override
+  public CompletableFuture<Void> putAll(Map<? extends K, ? extends Collection<V>> m) {
+    return checkOpen(() -> proxy.putAll(m));
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    if (proxy == null) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Multimap closed"));
-      return future;
-    }
-    return proxy.clear();
+    return checkOpen(proxy::clear);
+  }
+
+  @Override
+  public CompletableFuture<Set<K>> keySet() {
+    return checkOpen(proxy::keySet);
+  }
+
+  @Override
+  public CompletableFuture<Collection<Collection<V>>> values() {
+    return checkOpen(proxy::values);
+  }
+
+  @Override
+  public CompletableFuture<Set<Map.Entry<K, Collection<V>>>> entrySet() {
+    return checkOpen(proxy::entrySet);
+  }
+
+  @Override
+  public CompletableFuture<Collection<V>> getOrDefault(K key, Collection<V> defaultValue) {
+    return checkOpen(() -> proxy.getOrDefault(key, defaultValue));
+  }
+
+  @Override
+  public CompletableFuture<Void> replaceAll(BiFunction<? super K, ? super Collection<V>, ? extends Collection<V>> function) {
+    return checkOpen(() -> proxy.replaceAll(function));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
+    return checkOpen(() -> proxy.replace(key, oldValue, newValue));
+  }
+
+  @Override
+  public CompletableFuture<Collection<V>> replace(K key, Collection<V> value) {
+    return checkOpen(() -> proxy.replace(key, value));
   }
 
   @Override

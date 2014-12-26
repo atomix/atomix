@@ -16,6 +16,10 @@
 package net.kuujo.copycat.collections.internal.lock;
 
 import net.kuujo.copycat.StateContext;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 
 /**
  * Locked asynchronous lock state.
@@ -23,15 +27,42 @@ import net.kuujo.copycat.StateContext;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LockedAsyncLockState implements AsyncLockState {
+  private StateContext<AsyncLockState> context;
 
   @Override
-  public void lock(StateContext<AsyncLockState> context) {
-    throw new IllegalStateException("Cannot lock locked lock");
+  public void init(StateContext<AsyncLockState> context) {
+    this.context = context;
   }
 
   @Override
-  public void unlock(StateContext<AsyncLockState> context) {
+  public void lock() {
+    throw new IllegalStateException("Lock is locked");
+  }
+
+  @Override
+  public void lockInterruptibly() throws InterruptedException {
+    throw new UnsupportedOperationException("lockInterruptibly");
+  }
+
+  @Override
+  public boolean tryLock() {
+    return false;
+  }
+
+  @Override
+  public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
+    return false;
+  }
+
+  @Override
+  public void unlock() {
     context.transition(new UnlockedAsyncLockState());
+  }
+
+  @NotNull
+  @Override
+  public Condition newCondition() {
+    throw new UnsupportedOperationException("newCondition");
   }
 
 }

@@ -19,11 +19,16 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncMap;
+import net.kuujo.copycat.collections.AsyncMapProxy;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Default asynchronous map.
@@ -31,10 +36,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultAsyncMap<K, V> implements AsyncMap<K, V> {
-  private final StateMachine<AsyncMapState<K, V>> stateMachine;
+  private final StateMachine<MapState<K, V>> stateMachine;
   private AsyncMapProxy<K, V> proxy;
 
-  public DefaultAsyncMap(StateMachine<AsyncMapState<K, V>> stateMachine) {
+  public DefaultAsyncMap(StateMachine<MapState<K, V>> stateMachine) {
     this.stateMachine = stateMachine;
   }
 
@@ -53,104 +58,129 @@ public class DefaultAsyncMap<K, V> implements AsyncMap<K, V> {
     return stateMachine.state();
   }
 
-  @Override
-  public CompletableFuture<V> put(K key, V value) {
+  /**
+   * If the map is closed, returning a failed CompletableFuture. Otherwise, calls the given supplier to
+   * return the completed future result.
+   *
+   * @param supplier The supplier to call if the map is open.
+   * @param <T> The future result type.
+   * @return A completable future that if this map is closed is immediately failed.
+   */
+  protected <T> CompletableFuture<T> checkOpen(Supplier<CompletableFuture<T>> supplier) {
     if (proxy == null) {
-      CompletableFuture<V> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
+      return Futures.exceptionalFuture(new IllegalStateException("Map closed"));
     }
-    return proxy.put(key, value);
-  }
-
-  @Override
-  public CompletableFuture<V> get(K key) {
-    if (proxy == null) {
-      CompletableFuture<V> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.get(key);
-  }
-
-  @Override
-  public CompletableFuture<V> remove(K key) {
-    if (proxy == null) {
-      CompletableFuture<V> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.remove(key);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> containsKey(K key) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.containsKey(key);
-  }
-
-  @Override
-  public CompletableFuture<Set<K>> keySet() {
-    if (proxy == null) {
-      CompletableFuture<Set<K>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.keySet();
-  }
-
-  @Override
-  public CompletableFuture<Set<Map.Entry<K, V>>> entrySet() {
-    if (proxy == null) {
-      CompletableFuture<Set<Map.Entry<K, V>>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.entrySet();
-  }
-
-  @Override
-  public CompletableFuture<Collection<V>> values() {
-    if (proxy == null) {
-      CompletableFuture<Collection<V>> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.values();
+    return supplier.get();
   }
 
   @Override
   public CompletableFuture<Integer> size() {
-    if (proxy == null) {
-      CompletableFuture<Integer> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.size();
+    return checkOpen(proxy::size);
   }
 
   @Override
   public CompletableFuture<Boolean> isEmpty() {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.isEmpty();
+    return checkOpen(proxy::isEmpty);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsKey(Object key) {
+    return checkOpen(() -> proxy.containsKey(key));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsValue(Object value) {
+    return checkOpen(() -> proxy.containsValue(value));
+  }
+
+  @Override
+  public CompletableFuture<V> get(Object key) {
+    return checkOpen(() -> proxy.get(key));
+  }
+
+  @Override
+  public CompletableFuture<V> put(K key, V value) {
+    return checkOpen(() -> proxy.put(key, value));
+  }
+
+  @Override
+  public CompletableFuture<V> remove(Object key) {
+    return checkOpen(() -> proxy.remove(key));
+  }
+
+  @Override
+  public CompletableFuture<Void> putAll(Map<? extends K, ? extends V> m) {
+    return checkOpen(() -> proxy.putAll(m));
   }
 
   @Override
   public CompletableFuture<Void> clear() {
-    if (proxy == null) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("Map closed"));
-      return future;
-    }
-    return proxy.clear();
+    return checkOpen(proxy::clear);
+  }
+
+  @Override
+  public CompletableFuture<Set<K>> keySet() {
+    return checkOpen(proxy::keySet);
+  }
+
+  @Override
+  public CompletableFuture<Collection<V>> values() {
+    return checkOpen(proxy::values);
+  }
+
+  @Override
+  public CompletableFuture<Set<Map.Entry<K, V>>> entrySet() {
+    return checkOpen(proxy::entrySet);
+  }
+
+  @Override
+  public CompletableFuture<V> getOrDefault(Object key, V defaultValue) {
+    return checkOpen(() -> proxy.getOrDefault(key, defaultValue));
+  }
+
+  @Override
+  public CompletableFuture<Void> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+    return checkOpen(() -> proxy.replaceAll(function));
+  }
+
+  @Override
+  public CompletableFuture<V> putIfAbsent(K key, V value) {
+    return checkOpen(() -> proxy.putIfAbsent(key, value));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> remove(Object key, Object value) {
+    return checkOpen(() -> proxy.remove(key, value));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
+    return checkOpen(() -> proxy.replace(key, oldValue, newValue));
+  }
+
+  @Override
+  public CompletableFuture<V> replace(K key, V value) {
+    return checkOpen(() -> proxy.replace(key, value));
+  }
+
+  @Override
+  public CompletableFuture<V> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+    return checkOpen(() -> proxy.computeIfAbsent(key, mappingFunction));
+  }
+
+  @Override
+  public CompletableFuture<V> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return checkOpen(() -> proxy.computeIfPresent(key, remappingFunction));
+  }
+
+  @Override
+  public CompletableFuture<V> compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return checkOpen(() -> proxy.compute(key, remappingFunction));
+  }
+
+  @Override
+  public CompletableFuture<V> merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    return checkOpen(() -> proxy.merge(key, value, remappingFunction));
   }
 
   @Override

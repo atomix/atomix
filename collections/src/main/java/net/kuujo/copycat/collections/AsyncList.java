@@ -17,13 +17,12 @@ package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.collection.AsyncListState;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncListState;
+import net.kuujo.copycat.collections.internal.collection.DefaultListState;
+import net.kuujo.copycat.collections.internal.collection.ListState;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.LogConfig;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -34,7 +33,7 @@ import java.util.concurrent.Executors;
  *
  * @param <T> The list data type.
  */
-public interface AsyncList<T> extends AsyncCollection<T> {
+public interface AsyncList<T> extends AsyncCollection<T>, AsyncListProxy<T> {
 
   /**
    * Creates a new asynchronous list.
@@ -89,32 +88,7 @@ public interface AsyncList<T> extends AsyncCollection<T> {
    */
   @SuppressWarnings("unchecked")
   static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncList(StateMachine.create(name, uri, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config, executor));
+    return new DefaultAsyncList(StateMachine.create(name, uri, ListState.class, new DefaultListState<>(), cluster, config, executor));
   }
-
-  /**
-   * Gets a entry at a specific index in the list.
-   *
-   * @param index The index of the entry to get.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<T> get(int index);
-
-  /**
-   * Sets an index in the list.
-   *
-   * @param index The index to set.
-   * @param value The entry to set.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Void> set(int index, T value);
-
-  /**
-   * Removes an index in the list.
-   *
-   * @param index The index to remove.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<T> remove(int index);
 
 }

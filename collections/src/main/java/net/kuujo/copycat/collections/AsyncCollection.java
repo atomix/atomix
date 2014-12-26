@@ -17,8 +17,6 @@ package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.CopycatResource;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Asynchronous collection.
  *
@@ -26,51 +24,5 @@ import java.util.concurrent.CompletableFuture;
  *
  * @param <T> The collection data type.
  */
-public interface AsyncCollection<T> extends CopycatResource {
-
-  /**
-   * Adds a entry to the collection.
-   *
-   * @param value The entry to add.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Boolean> add(T value);
-
-  /**
-   * Removes a entry from the collection.
-   *
-   * @param value The entry to remove.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Boolean> remove(T value);
-
-  /**
-   * Checks whether the collection contains a entry.
-   *
-   * @param value The entry to check.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Boolean> contains(Object value);
-
-  /**
-   * Gets the current collection size.
-   *
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Integer> size();
-
-  /**
-   * Checks whether the collection is empty.
-   *
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Boolean> isEmpty();
-
-  /**
-   * Clears all values from the collection.
-   *
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Void> clear();
-
+public interface AsyncCollection<T> extends AsyncCollectionProxy<T>, CopycatResource {
 }

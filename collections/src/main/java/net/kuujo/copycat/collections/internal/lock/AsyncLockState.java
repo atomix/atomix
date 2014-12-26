@@ -15,27 +15,44 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
+import net.kuujo.copycat.Command;
+import net.kuujo.copycat.Initializer;
 import net.kuujo.copycat.StateContext;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 
 /**
  * Asynchronous lock state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLockState {
+public interface AsyncLockState extends Lock {
 
   /**
-   * Locks the lock.
-   *
-   * @param context The lock state context.
+   * Initializes the lock state.
    */
-  void lock(StateContext<AsyncLockState> context);
+  @Initializer
+  public void init(StateContext<AsyncLockState> context);
 
-  /**
-   * Unlocks the lock.
-   *
-   * @param context The lock state context.
-   */
-  void unlock(StateContext<AsyncLockState> context);
+  @Override
+  @Command
+  void lock();
+
+  @Override
+  @Command
+  void lockInterruptibly() throws InterruptedException;
+
+  @Override
+  @Command
+  boolean tryLock();
+
+  @Override
+  @Command
+  boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
+
+  @Override
+  @Command
+  void unlock();
 
 }

@@ -21,17 +21,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * State machine command annotation.
+ * Annotates a state initializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Command {
-
-  /**
-   * The command name.
-   */
-  String name() default "";
-
+public @interface Initializer {
 }

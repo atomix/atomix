@@ -23,7 +23,6 @@ import net.kuujo.copycat.collections.internal.lock.UnlockedAsyncLockState;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.LogConfig;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -32,7 +31,7 @@ import java.util.concurrent.Executors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLock extends CopycatResource {
+public interface AsyncLock extends AsyncLockProxy, CopycatResource {
 
   /**
    * Creates a new asynchronous lock.
@@ -85,19 +84,5 @@ public interface AsyncLock extends CopycatResource {
   static AsyncLock create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor context) {
     return new DefaultAsyncLock(StateMachine.create(name, uri, AsyncLockState.class, new UnlockedAsyncLockState(), cluster, config, context));
   }
-
-  /**
-   * Acquires the log.
-   *
-   * @return A completable future to be completed once the lock has been acquired.
-   */
-  CompletableFuture<Void> lock();
-
-  /**
-   * Releases the lock.
-   *
-   * @return A completable future to be completed once the lock has been released.
-   */
-  CompletableFuture<Void> unlock();
 
 }

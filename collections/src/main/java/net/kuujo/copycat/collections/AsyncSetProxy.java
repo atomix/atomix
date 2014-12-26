@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections.internal.collection;
+package net.kuujo.copycat.collections;
 
 /**
  * Asynchronous set proxy.

@@ -18,16 +18,12 @@ package net.kuujo.copycat.collections;
 import net.kuujo.copycat.CopycatResource;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.AsyncMultiMapState;
+import net.kuujo.copycat.collections.internal.map.MultiMapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMapState;
+import net.kuujo.copycat.collections.internal.map.DefaultMultiMapState;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.LogConfig;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -39,7 +35,7 @@ import java.util.concurrent.Executors;
  * @param <K> The map key type.
  * @param <V> The map entry type.
  */
-public interface AsyncMultiMap<K, V> extends CopycatResource {
+public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, CopycatResource {
 
   /**
    * Creates a new asynchronous multimap.
@@ -99,108 +95,7 @@ public interface AsyncMultiMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncMultiMap(StateMachine.create(name, uri, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), cluster, config, executor));
+    return new DefaultAsyncMultiMap(StateMachine.create(name, uri, MultiMapState.class, new DefaultMultiMapState<>(), cluster, config, executor));
   }
-
-  /**
-   * Sets a key entry in the map.
-   *
-   * @param key The key to set.
-   * @param value The entry to set
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Boolean> put(K key, V value);
-
-  /**
-   * Gets a key entry in the map.
-   *
-   * @param key The key to get.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Collection<V>> get(K key);
-
-  /**
-   * Removes a key from the map.
-   *
-   * @param key The key to remove.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Collection<V>> remove(K key);
-
-  /**
-   * Removes a entry from a key in the map.
-   *
-   * @param key The key from which to remove the entry.
-   * @param value The entry to remove.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Boolean> remove(K key, V value);
-
-  /**
-   * Checks if the map contains a key.
-   *
-   * @param key The key to check.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Boolean> containsKey(K key);
-
-  /**
-   * Checks if the map contains a entry.
-   *
-   * @param value The entry to check.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Boolean> containsValue(V value);
-
-  /**
-   * Checks if the map contains a key/entry pair.
-   *
-   * @param key The key to check.
-   * @param value The entry to check.
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Boolean> containsEntry(K key, V value);
-
-  /**
-   * Gets a set of keys in the map.
-   *
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Set<K>> keySet();
-
-  /**
-   * Gets a set of entries in the map.
-   *
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Set<Map.Entry<K, Collection<V>>>> entrySet();
-
-  /**
-   * Gets a collection of values in the map.
-   *
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Collection<V>> values();
-
-  /**
-   * Gets the current size of the map.
-   *
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Integer> size();
-
-  /**
-   * Checks whether the map is empty.
-   *
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Boolean> isEmpty();
-
-  /**
-   * Clears all keys from the map.
-   *
-   * @return A completable future to be completed once the operation is complete.
-   */
-  CompletableFuture<Void> clear();
 
 }

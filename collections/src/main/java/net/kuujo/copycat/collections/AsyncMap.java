@@ -18,16 +18,12 @@ package net.kuujo.copycat.collections;
 import net.kuujo.copycat.CopycatResource;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.AsyncMapState;
+import net.kuujo.copycat.collections.internal.map.MapState;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMapState;
+import net.kuujo.copycat.collections.internal.map.DefaultMapState;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.LogConfig;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -39,7 +35,7 @@ import java.util.concurrent.Executors;
  * @param <K> The map key type.
  * @param <V> The map entry type.
  */
-public interface AsyncMap<K, V> extends CopycatResource {
+public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, CopycatResource {
 
   /**
    * Creates a new asynchronous map.
@@ -99,82 +95,7 @@ public interface AsyncMap<K, V> extends CopycatResource {
    */
   @SuppressWarnings("unchecked")
   static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncMap(StateMachine.create(name, uri, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, config, executor));
+    return new DefaultAsyncMap(StateMachine.create(name, uri, MapState.class, new DefaultMapState<>(), cluster, config, executor));
   }
-
-  /**
-   * Sets a key entry in the map.
-   *
-   * @param key The key to set.
-   * @param value The entry to set.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<V> put(K key, V value);
-
-  /**
-   * Gets a key entry from the map.
-   *
-   * @param key The key to get.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<V> get(K key);
-
-  /**
-   * Removes a key from the map.
-   *
-   * @param key The key to remove.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<V> remove(K key);
-
-  /**
-   * Checks whether the map contains a key.
-   *
-   * @param key The key to check.
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Boolean> containsKey(K key);
-
-  /**
-   * Gets a set of keys in the map.
-   *
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Set<K>> keySet();
-
-  /**
-   * Gets a set of entries in the map.
-   *
-   * @return A completable future to be completed with the entry set once complete.
-   */
-  CompletableFuture<Set<Map.Entry<K, V>>> entrySet();
-
-  /**
-   * Gets a collection of values in the map.
-   *
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Collection<V>> values();
-
-  /**
-   * Gets the current size of the map.
-   *
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Integer> size();
-
-  /**
-   * Checks whether the map is empty.
-   *
-   * @return A completable future to be completed with the result once complete.
-   */
-  CompletableFuture<Boolean> isEmpty();
-
-  /**
-   * Clears all keys from the map.
-   *
-   * @return A completable future to be completed once the map has been cleared.
-   */
-  CompletableFuture<Void> clear();
 
 }

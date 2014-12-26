@@ -233,7 +233,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <K, V> CompletableFuture<AsyncMap<K, V>> map(String name, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return stateMachine(name, AsyncMapState.class, new DefaultAsyncMapState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncMap(stateMachine), executor);
+    return stateMachine(name, MapState.class, new DefaultMapState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncMap(stateMachine), executor);
   }
 
   @Override
@@ -274,7 +274,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return stateMachine(name, AsyncMultiMapState.class, new DefaultAsyncMultiMapState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncMultiMap(stateMachine), executor);
+    return stateMachine(name, MultiMapState.class, new DefaultMultiMapState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncMultiMap(stateMachine), executor);
   }
 
   @Override
@@ -315,7 +315,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <T> CompletableFuture<AsyncList<T>> list(String name, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return stateMachine(name, AsyncListState.class, new DefaultAsyncListState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncList(stateMachine), executor);
+    return stateMachine(name, ListState.class, new DefaultListState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncList(stateMachine), executor);
   }
 
   @Override
@@ -356,7 +356,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <T> CompletableFuture<AsyncSet<T>> set(String name, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return stateMachine(name, AsyncSetState.class, new DefaultAsyncSetState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncSet(stateMachine), executor);
+    return stateMachine(name, SetState.class, new DefaultSetState<>(), cluster, config, executor).thenApplyAsync(stateMachine -> new DefaultAsyncSet(stateMachine), executor);
   }
 
   @Override

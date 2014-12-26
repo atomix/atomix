@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections.internal.collection;
+package net.kuujo.copycat.collections;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -33,12 +34,36 @@ public interface AsyncCollectionProxy<T> {
   CompletableFuture<Boolean> add(T value);
 
   /**
+   * Adds a collection of entries to the collection.
+   *
+   * @param values The values to add.
+   * @return A completable future to be completed with the result once complete.
+   */
+  CompletableFuture<Boolean> addAll(Collection<? extends T> values);
+
+  /**
+   * Retains a collection of values in the collection.
+   *
+   * @param values The values to retain.
+   * @return A completable future to be completed with the result once complete.
+   */
+  CompletableFuture<Boolean> retainAll(Collection<?> values);
+
+  /**
    * Removes a entry from the collection.
    *
    * @param value The entry to remove.
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<Boolean> remove(T value);
+  CompletableFuture<Boolean> remove(Object value);
+
+  /**
+   * Removes a collection of values from the collection.
+   *
+   * @param values The collection of values to remove.
+   * @return A completable future to be completed with the result once complete.
+   */
+  CompletableFuture<Boolean> removeAll(Collection<?> values);
 
   /**
    * Checks whether the collection contains a entry.
@@ -47,6 +72,15 @@ public interface AsyncCollectionProxy<T> {
    * @return A completable future to be completed with the result once complete.
    */
   CompletableFuture<Boolean> contains(Object value);
+
+  /**
+   * Checks whether the collection contains a collection of entries.
+   *
+   * @param values The collection of values to check.
+   * @return A completable future to be completed with a boolean value indicating whether the collection contains
+   *         the given set of values.
+   */
+  CompletableFuture<Boolean> containsAll(Collection<?> values);
 
   /**
    * Gets the current collection size.

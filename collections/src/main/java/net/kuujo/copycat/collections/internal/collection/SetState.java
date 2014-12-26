@@ -13,29 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections.internal.lock;
+package net.kuujo.copycat.collections.internal.collection;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Set;
 
 /**
- * Asynchronous lock proxy.
+ * Asynchronous set state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLockProxy {
-
-  /**
-   * Acquires the log.
-   *
-   * @return A completable future to be completed once the lock has been acquired.
-   */
-  CompletableFuture<Void> lock();
-
-  /**
-   * Releases the lock.
-   *
-   * @return A completable future to be completed once the lock has been released.
-   */
-  CompletableFuture<Void> unlock();
-
+public interface SetState<T> extends CollectionState<SetState<T>, T>, Set<T> {
 }

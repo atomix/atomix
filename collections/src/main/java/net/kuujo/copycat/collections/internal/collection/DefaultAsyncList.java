@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncList;
+import net.kuujo.copycat.collections.AsyncListProxy;
 
+import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -27,136 +27,35 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncList<T> implements AsyncList<T> {
-  private final StateMachine<AsyncListState<T>> stateMachine;
-  private AsyncListProxy<T> proxy;
+public class DefaultAsyncList<T> extends AbstractAsyncCollection<ListState<T>, AsyncListProxy<T>, T> implements AsyncList<T> {
 
-  public DefaultAsyncList(StateMachine<AsyncListState<T>> stateMachine) {
-    this.stateMachine = stateMachine;
-  }
-
-  @Override
-  public String name() {
-    return stateMachine.name();
-  }
-
-  @Override
-  public Cluster cluster() {
-    return stateMachine.cluster();
-  }
-
-  @Override
-  public CopycatState state() {
-    return stateMachine.state();
+  public DefaultAsyncList(StateMachine<ListState<T>> stateMachine) {
+    super(stateMachine, AsyncListProxy.class);
   }
 
   @Override
   public CompletableFuture<T> get(int index) {
-    if (proxy == null) {
-      CompletableFuture<T> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.get(index);
+    return checkOpen(() -> proxy.get(index));
   }
 
   @Override
-  public CompletableFuture<Void> set(int index, T value) {
-    if (proxy == null) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.set(index, value);
+  public CompletableFuture<T> set(int index, T value) {
+    return checkOpen(() -> proxy.set(index, value));
+  }
+
+  @Override
+  public CompletableFuture<Void> add(int index, T value) {
+    return checkOpen(() -> proxy.add(index, value));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> addAll(int index, Collection<? extends T> values) {
+    return checkOpen(() -> proxy.addAll(index, values));
   }
 
   @Override
   public CompletableFuture<T> remove(int index) {
-    if (proxy == null) {
-      CompletableFuture<T> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.remove(index);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> add(T value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.add(value);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> remove(T value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.remove(value);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> contains(Object value) {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.contains(value);
-  }
-
-  @Override
-  public CompletableFuture<Integer> size() {
-    if (proxy == null) {
-      CompletableFuture<Integer> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.size();
-  }
-
-  @Override
-  public CompletableFuture<Boolean> isEmpty() {
-    if (proxy == null) {
-      CompletableFuture<Boolean> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.isEmpty();
-  }
-
-  @Override
-  public CompletableFuture<Void> clear() {
-    if (proxy == null) {
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException("List closed"));
-      return future;
-    }
-    return proxy.clear();
-  }
-
-  @Override
-  public CompletableFuture<Void> delete() {
-    return stateMachine.delete();
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> open() {
-    return stateMachine.open().thenRun(() -> {
-      this.proxy = stateMachine.createProxy(AsyncListProxy.class);
-    });
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    proxy = null;
-    return stateMachine.close();
+    return checkOpen(() -> proxy.remove(index));
   }
 
 }
