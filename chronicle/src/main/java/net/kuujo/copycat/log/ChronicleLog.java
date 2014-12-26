@@ -76,6 +76,7 @@ public class ChronicleLog extends AbstractLog {
             segments.put(id, new ChronicleLogSegment(this, id, firstIndex));
           }
         } catch (IOException | NumberFormatException e) {
+          throw new LogException(e);
         }
       }
     }
