@@ -264,10 +264,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a event log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the event log to add.
+   * @param config The event log configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -282,19 +282,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a event log configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The event log name.
+   * @return The event log configuration.
    */
   public StateLogConfig getEventLogConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a event log configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the event log to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeEventLogConfig(String name) {
@@ -306,10 +306,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a state machine log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the state machine log to add.
+   * @param config The state machine log configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -324,19 +324,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a state machine log configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The state machine log name.
+   * @return The state machine log configuration.
    */
   public StateMachineConfig getStateMachineConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a state machine log configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the state machine log to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeStateMachineConfig(String name) {
@@ -348,10 +348,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a leader election configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the leader election to add.
+   * @param config The leader election configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -366,19 +366,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a leader election configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The leader election name.
+   * @return The leader election configuration.
    */
   public StateMachineConfig getLeaderElectionConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a leader election configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the leader election to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeLeaderElectionConfig(String name) {
@@ -390,10 +390,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a map configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the map to add.
+   * @param config The map configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -408,19 +408,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a map configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The map name.
+   * @return The map configuration.
    */
   public StateMachineConfig getMapConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a map configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the map to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeMapConfig(String name) {
@@ -432,10 +432,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a multimap configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the multimap to add.
+   * @param config The multimap configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -450,19 +450,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a multimap configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The multimap name.
+   * @return The multimap configuration.
    */
   public StateMachineConfig getMultiMapConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a multimap configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the multimap to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeMultiMapConfig(String name) {
@@ -474,10 +474,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a list configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the list to add.
+   * @param config The list configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -492,19 +492,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a list configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The list name.
+   * @return The list configuration.
    */
   public StateMachineConfig getListConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a list configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the list to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeListConfig(String name) {
@@ -516,10 +516,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a set configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the set to add.
+   * @param config The set configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -534,19 +534,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a set configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The set name.
+   * @return The set configuration.
    */
   public StateMachineConfig getSetConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a set configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the set to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeSetConfig(String name) {
@@ -558,10 +558,10 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Adds a state log configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
+   * Adds a lock configuration to the Copycat configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to add.
-   * @param config The state log configuration to add.
+   * @param name The name of the lock to add.
+   * @param config The lock configuration to add.
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If any argument is {@code null}
    * @throws net.kuujo.copycat.ConfigurationException If the configuration conflicts with an existing configuration of
@@ -576,19 +576,19 @@ public class CopycatConfig extends Config {
   }
 
   /**
-   * Returns a state log configuration.
+   * Returns a lock configuration.
    *
-   * @param name The state log name.
-   * @return The state log configuration.
+   * @param name The lock name.
+   * @return The lock configuration.
    */
   public StateMachineConfig getLockConfig(String name) {
     return getResourceConfig(name);
   }
 
   /**
-   * Removes a state log configuration, returning the Copycat configuration for method chaining.
+   * Removes a lock configuration, returning the Copycat configuration for method chaining.
    *
-   * @param name The name of the state log to remove.
+   * @param name The name of the lock to remove.
    * @return The Copycat configuration.
    */
   public CopycatConfig removeLockConfig(String name) {
