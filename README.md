@@ -43,12 +43,13 @@ taking place on Copycat**
    * [Adding Copycat as a Maven dependency](#adding-copycat-as-a-maven-dependency)
    * [Setting up the cluster](#setting-up-the-cluster)
    * [Configuring the protocol](#configuring-the-protocol)
+   * [Configuring resources](#configuring-resources)
    * [Creating a Copycat instance](#creating-a-copycat-instance)
-   * [Creating a replicated state machine](#creating-a-replicated-state-machine)
-   * [Querying the replicated state machine via proxy](#querying-the-replicated-state-machine-via-proxy)
+   * [Creating resources](#creating-resources)
 1. [The Copycat dependency hierarchy](#the-copycat-dependency-hierarchy)
 1. [State machines](#state-machines)
    * [Creating a state machine](#creating-a-state-machine)
+   * [Creating a standalone state machine](#creating-a-state-machine-as-a-standalone-service)
    * [Configuring the state machine](#configuring-the-state-machine)
    * [Designing state machine states](#designing-state-machine-states)
    * [State machine commands](#state-machine-commands)
@@ -56,9 +57,8 @@ taking place on Copycat**
    * [The state context](#the-state-context)
    * [Transitioning the state machine state](#transitioning-the-state-machine-state)
    * [Starting the state machine](#starting-the-state-machine)
-   * [Working with state machine proxies](#working-with-state-machine-proxies)
-   * [Partitioning a state machine](#partitioning-a-state-machine)
-   * [Serialization](#serialization)
+   * [Synchronous proxies](#synchronous-proxies)
+   * [Asynchronous proxies](#asynchronous-proxies)
 1. [Event logs](#event-logs)
    * [Creating an event log](#creating-an-event-log)
    * [Configuring the event log](#configuring-the-event-log)
@@ -173,13 +173,73 @@ at configuration time for validity.
 Because of the design of the [Raft algorithm](#strong-consistency-and-copycats-raft-consensus-protocol), it is strongly
 recommended that any Copycat cluster have *at least three voting members*.
 
+### Configuring resources
+
+Each Copycat instance can support any number of various named resources. *Resource* is an abstract term for all of the
+high level log-based data types provided by Copycat. Ultimately, each structure - whether is be an event log, state
+machine, or collection - is backed by a Raft replicated log that is managed by the Copycat cluster coordinator
+internally.
+
+It's important to note that *all cluster resources must be configured prior to opening the Copycat instance.* This is
+because Copycat needs a full view of the cluster's resources in order to properly configure and open various resources
+internally. For instance, if a state log is created on node *a* in a three node cluster, nodes *b* and *c* also need
+to create the same log in order to support replication.
+
+Each of Copycat's resource types - `EventLog`, `StateLog`, `StateMachine`, etc - has an associated `Config` class.
+This configuration class is used to configure various attributes of the resource, including Raft-specific configuration
+options such as election timeouts and heartbeat intervals as well as resource specific configuration options. Each of
+these configuration classes can then be added to the global `CopycatConfig` prior to startup.
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(new ClusterConfig()
+    .withProtocol(new NettyTcpProtocol())
+    .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2"));
+
+config.addEventLogConfig("event-log", new EventLogConfig()
+  .withSerializer(KryoSerializer.class)
+  .withLog(new FileLog()
+    .withSegmentSize(1024 * 1024)
+    .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024)));
+```
+
+The first argument to any `addResourceConfig` type method is always the unique resource name. Resource names are unique
+across the entire cluster, not just for the specific resource type. So, if you attempt to overwrite an existing
+resource configuration with a resource configuration of a different type, a `ConfigurationException` will occur.
+
+The Copycat configuration API is designed to support arbitrary `Map` based configurations as well. Simply pass a map
+with the proper configuration options for the given configuration type to the configuration object constructor:
+
+```java
+// Create an event log configuration map.
+Map<String, Object> configMap = new HashMap<>();
+configMap.put("serializer", "net.kuujo.copycat.util.serializer.KryoSerializer");
+
+// Create a file-based log configuration map.
+Map<String, Object> logConfigMap = new HashMap<>();
+logConfigMap.put("class", "net.kuujo.copycat.log.FileLog");
+logConfigMap.put("segment.size", 1024 * 1024);
+
+// Create a log retention policy configuration map.
+Map<String, Object> retentionConfigMap = new HashMap<>();
+retentionConfigMap.put("class", "net.kuujo.copycat.log.SizeBasedRetentionPolicy");
+retentionConfigMap.put("size", 1024 * 1024);
+
+// Add the log retention policy to the log configuration map.
+logConfigMap.put("retention-policy", retentionConfigMap);
+
+// Add the log configuration map to the event log configuration.
+configMap.put("log", logConfigMap);
+
+// Construct the event log.
+EventLogConfig config = new EventLogConfig(configMap);
+```
+
 ### Creating a Copycat instance
 
 To create a `Copycat` instance, call one of the overloaded `Copycat.create()` methods:
 * `Copycat.create(String uri, ClusterConfig cluster)`
-* `Copycat.create(String uri, ClusterConfig cluster, Executor executor)`
-* `Copycat.create(String uri, ClusterConfig cluster, CopycatConfig config)`
-* `Copycat.create(String uri, ClusterConfig cluster, CopycatConfig config, Executor executor)`
+* `Copycat.create(String uri, CopycatConfig config)`
 
 Note that the first argument to any `Copycat.create()` method is a `uri`. This is the protocol specific URI of the
 *local* member, and it may or may not be a member defined in the provided `ClusterConfig`. This is because Copycat
@@ -195,89 +255,24 @@ This state machine is responsible for maintaining the state of all cluster resou
 central registry for other log based structures created within the cluster. This allows Copycat to coordinate the
 creation, usage, and deletion of multiple log-based resources within the same cluster.
 
-### Creating a replicated state machine
-The most common use case for consensus algorithms is to support a strongly consistent replicated state machine.
-Replicated state machines are similarly an essential feature of Copycat. Copycat provides a unique, proxy based
-interface that allows users to operate on state machines either synchronously or asynchronously.
+### Creating resources
 
-To create a replicated state machine, you first must design an interface for the state machine states. In this case
-we'll use one of Copycat's provided [collections](#collections) as an example.
+With resources configured and the `Copycat` instance created, resources can be easily retrieved by calling any
+of the resource-specific methods on the `Copycat` instance:
+* `<T, U> CompletableFuture<EventLog<T, U>> eventLog(String name)`
+* `<T, U> CompletableFuture<StateLog<T, U>> stateLog(String name)`
+* `<T> CompletableFuture<StateMachine<T>> stateMachine(String name)`
+* `CompletableFuture<LeaderElection> leaderElection(String name)`
+* `<K, V> CompletableFuture<AsyncMap<K, V>> map(String name)`
+* `<K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name)`
+* `<T> CompletableFuture<List<T>> list(String name)`
+* `<T> CompletableFuture<Set<T>> set(String name)`
+* `CompletableFuture<Lock> lock(String name)`
 
-States are used internally by Copycat to apply state machine commands and queries and transition between multiple
-logical states. Each state within a state machine must implement a consistent explicitly defined interface. In this
-case we're using the existing Java `Map` interface to define the state.
-
-```java
-public class DefaultAsyncMapState<K, V> implements Map<K, V> {
-  private Map<K, V> map;
-
-  @Initializer
-  public void init(StateContext<AsyncMapState<K, V>> context) {
-    map = context.get("value");
-    if (map == null) {
-      map = new HashMap<>();
-      context.put("value", map);
-    }
-  }
-
-  @Override
-  public V put(K key, V value) {
-    return map.put(key, value);
-  }
-
-  @Override
-  public V get(K key) {
-    return map.get(key);
-  }
-
-  @Override
-  public V remove(K key) {
-    return map.remove(key);
-  }
-
-  @Override
-  public boolean containsKey(K key) {
-    return map.containsKey(key);
-  }
-
-}
-```
-
-The `StateContext` can be used to store state values that Copycat will use to take snapshots of the state machine state
-and compact the replicated log. For this reason, it is essential that state implementations store state in the
-`StateContext`.
-
-Once we've defined the map state, we can simply create a new map state machine via the `stateMachine` factory method.
-
-```java
-StateMachine<Map<String, String>> stateMachine = copycat.stateMachine("map", Map.class, new DefaultMapState<>()).get();
-stateMachine.open().get();
-```
-
-When a Copycat resource - such as a state machine, log, or election - is created, the resource must be opened before
-it can be used. Practically all Copycat interfaces return `CompletableFuture` instances which can either be used to
-block until the result is received or receive the result asynchronously. In this case we just block by calling the
-`get()` method on the `CompletableFuture`.
-
-### Querying the replicated state machine via proxy
-
-While Copycat's `StateMachine` interface exposes a `submit` method for submitting named commands and queries to the
-state machine, it also provides a proxy based interface for operating on the state machine state interface directly.
-To create a state machine proxy simply call the `createProxy` method on the `StateMachine` object, passing the proxy
-interface to implement. The state machine supports both synchronous and asynchronous return values by checking whether
-a given proxy interface method's return type is `CompletableFuture`.
-
-```java
-Map<String, String> proxy = stateMachine.createProxy(Map.class);
-```
-
-Once we've created a state machine proxy, we can simply call methods directly on the proxy object and Copycat will
-internally submit [commands](#commands) and [queries](#queries) to the replicated state machine.
-
-```java
-proxy.put("foo", "Hello world!");
-System.out.println(proxy.get("foo")); // Hello world!
-```
+Note that resources are created asynchronously. This is because some resources may not already be running on the local
+cluster. For instance, if the current node is not listed as one of the given resources' replicas, the resource will be
+created and join the resource's replica cluster via a gossip protocol. For more information read about
+[the Copycat cluster](#the-copycat-cluster)
 
 ## The Copycat dependency hierarchy
 The Copycat project is organized into a number of modules based on specific use cases.
@@ -322,9 +317,133 @@ The `copycat-vertx3` module provides a [Vert.x 3](http://vertx.io) based protoco
 
 ## State machines
 
+The most common use case for consensus algorithms is to support a strongly consistent replicated state machine.
+Replicated state machines are similarly an essential feature of Copycat. Copycat provides a unique, proxy based
+interface that allows users to operate on state machines either synchronously or asynchronously.
+
 ### Creating a state machine
 
+To create a replicated state machine, you first must design an interface for the state machine states. In this case
+we'll use one of Copycat's provided [collections](#collections) as an example.
+
+States are used internally by Copycat to apply state machine commands and queries and transition between multiple
+logical states. Each state within a state machine must implement a consistent explicitly defined interface. In this
+case we're using the existing Java `Map` interface to define the state.
+
+```java
+public class DefaultMapState<K, V> implements Map<K, V> {
+  private Map<K, V> map;
+
+  @Initializer
+  public void init(StateContext<AsyncMapState<K, V>> context) {
+    map = context.get("value");
+    if (map == null) {
+      map = new HashMap<>();
+      context.put("value", map);
+    }
+  }
+
+  @Override
+  public V put(K key, V value) {
+    return map.put(key, value);
+  }
+
+  @Override
+  public V get(K key) {
+    return map.get(key);
+  }
+
+  @Override
+  public V remove(K key) {
+    return map.remove(key);
+  }
+
+  @Override
+  public boolean containsKey(K key) {
+    return map.containsKey(key);
+  }
+
+}
+```
+
+The `StateContext` can be used to store state values that Copycat will use to take snapshots of the state machine state
+and compact the replicated log. For this reason, it is essential that state implementations store state in the
+`StateContext`.
+
+Once we've defined the map state, we can simply create a new map state machine via the `stateMachine` factory method.
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addStateMachineConfig("map", new StateMachineConfig()
+    .withStateType(Map.class)
+    .withInitialState(DefaultMapState.class));
+
+Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+copycat.open().get();
+
+StateMachine<Map<String, String>> stateMachine = copycat.stateMachine("map").get();
+stateMachine.open().get();
+```
+
+When a Copycat resource - such as a state machine, log, or election - is created, the resource must be opened before
+it can be used. Practically all Copycat interfaces return `CompletableFuture` instances which can either be used to
+block until the result is received or receive the result asynchronously. In this case we just block by calling the
+`get()` method on the `CompletableFuture`.
+
+### Creating a state machine as a standalone service
+
+Copycat's architecture is designed such that individual resource types can be used completely independently of others.
+The state machine module can be added as a separate Maven dependency, and state machines can be created independent
+of the high level `Copycat` interface which aggregates all resource types into a single component.
+
+To use the state machine as a standalone service, simply add the `copycat-state-machine` module as a Maven dependency:
+
+```
+<dependency>
+  <groupId>net.kuujo.copycat</groupId>
+  <artifactId>copycat-state-machine</artifactId>
+  <version>0.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+The `StateMachine` interface provides its own constructors similar to the `Copycat.create` constructors.
+
+```java
+StateMachineConfig config = new StateMachineConfig()
+  .withStateType(Map.class)
+  .withInitialState(DefaultMapState.class)'
+
+StateMachine<Map<K, V>> stateMachine = StateMachine.create("tcp://123.456.789.0", config);
+stateMachine.open().get();
+stateMachine.submit("get", "foo", "Hello world!").get();
+```
+
 ### Configuring the state machine
+
+State machines are configured using the `StateMachineConfig` class. This class contains vital configuration information
+regarding how the state machine should handle startup and how it should apply commands.
+
+As demonstrated in the example in the previous section, two vital components of the `StateMachineConfig` are the
+*state type* and *initial state*. The state type is an *interface* which contains all of the state methods. All state
+implementations must implement this interface. The initial state is the first state to which the state machine will
+transition upon startup.
+
+```java
+StateMachineConfig config = new StateMachineConfig()
+  .withStateType(Map.class)
+  .withInitialState(DefaultMapState.class);
+```
+
+By default, all Copycat resources use the `KryoSerializer` for serialization. This should work fine for most use cases,
+but if you so desire you can configure the `Serializer` class on the `StateMachineConfig`.
+
+```java
+StateMachineConfig config = new StateMachineConfig()
+  .withStateType(Map.class)
+  .withInitialState(DefaultMapState.class)
+  .withSerializer(MyCustomSerializer.class);
+```
 
 ### Designing state machine states
 
@@ -338,9 +457,58 @@ The `copycat-vertx3` module provides a [Vert.x 3](http://vertx.io) based protoco
 
 ### Starting the state machine
 
-### Working with state machine proxies
+### Synchronous proxies
 
-### Partitioning a state machine
+While Copycat's `StateMachine` interface exposes a `submit` method for submitting named commands and queries to the
+state machine, it also provides a proxy based interface for operating on the state machine state interface directly.
+To create a state machine proxy simply call the `createProxy` method on the `StateMachine` object, passing the proxy
+interface to implement. The state machine supports both synchronous and asynchronous return values by checking whether
+a given proxy interface method's return type is `CompletableFuture`.
+
+```java
+Map<String, String> proxy = stateMachine.createProxy(Map.class);
+```
+
+Once we've created a state machine proxy, we can simply call methods directly on the proxy object and Copycat will
+internally submit [commands](#commands) and [queries](#queries) to the replicated state machine.
+
+```java
+proxy.put("foo", "Hello world!");
+System.out.println(proxy.get("foo")); // Hello world!
+```
+
+### Asynchronous proxies
+
+The state machine proxy feature also supports asynchronous proxies. It does this simply by checking the return type
+of a given proxy method. If the proxy method's return type is `CompletableFuture` then the method will be executed
+in a separate thread.
+
+Often times asynchronous proxies require creating a separate proxy interface.
+
+```java
+public interface AsyncMap<K, V> {
+
+  CompletableFuture<V> put(K key, V value);
+
+  CompletableFuture<V> get(K key);
+
+  CompletableFuture<V> remove(K key);
+
+  CompletableFuture<Void> clear();
+
+}
+```
+
+Aside from the return types, asynchronous proxies work the same way as synchronous proxies. To create an asynchronous
+proxy simply call the `createProxy` method, passing the asynchronous proxy interface.
+
+```java
+AsyncMap<K, V> map = stateMachine.createProxy(AsyncMap.class);
+
+map.put("foo", "Hello world!").thenRun(() -> {
+  map.get("foo").thenAccept(value -> System.out.println(value)); // Hello world!
+});
+```
 
 ### Serialization
 
