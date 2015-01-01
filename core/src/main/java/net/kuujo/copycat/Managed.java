@@ -21,14 +21,14 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Managed {
+public interface Managed<T> {
 
   /**
    * Opens the managed object.
    *
    * @return A completable future to be completed once the object has been opened.
    */
-  CompletableFuture<Void> open();
+  CompletableFuture<T> open();
 
   /**
    * Returns a boolean value indicating whether the managed object is open.

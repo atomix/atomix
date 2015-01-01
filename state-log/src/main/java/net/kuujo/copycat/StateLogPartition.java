@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateLogPartition<T> extends ResourcePartition {
+public interface StateLogPartition<T> extends ResourcePartition<StateLogPartition<T>> {
 
   /**
    * Registers a state command.

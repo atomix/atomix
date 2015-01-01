@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Copycat extends Managed {
+public interface Copycat extends Managed<Copycat> {
 
   /**
    * Creates a new Copycat instance.

@@ -178,10 +178,10 @@ public class DefaultAsyncMap<K, V> extends AbstractDiscreteResource<AsyncMap<K, 
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<AsyncMap<K, V>> open() {
     return stateMachine.open().thenRun(() -> {
       this.proxy = stateMachine.createProxy(AsyncMapProxy.class);
-    });
+    }).thenApply(v -> this);
   }
 
   @Override

@@ -15,7 +15,10 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.PartitionedResource;
+import net.kuujo.copycat.ResourceContext;
+import net.kuujo.copycat.ResourcePartition;
+import net.kuujo.copycat.ResourcePartitionContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +28,7 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractPartitionedResource<T extends Resource, U extends ResourcePartition> extends AbstractResource<T> implements PartitionedResource<U> {
+public abstract class AbstractPartitionedResource<T extends PartitionedResource<T, U>, U extends ResourcePartition<U>> extends AbstractResource<T> implements PartitionedResource<T, U> {
   protected final List<U> partitions;
 
   protected AbstractPartitionedResource(ResourceContext context) {

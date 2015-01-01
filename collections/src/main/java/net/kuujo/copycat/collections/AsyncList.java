@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @param <T> The list data type.
  */
-public interface AsyncList<T> extends AsyncCollection<T>, AsyncListProxy<T> {
+public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncListProxy<T> {
 
   /**
    * Creates a new asynchronous list.

@@ -22,14 +22,14 @@ import java.util.List;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface PartitionedResource<T extends ResourcePartition> extends Resource {
+public interface PartitionedResource<T extends PartitionedResource<T, U>, U extends ResourcePartition<U>> extends Resource<T> {
 
   /**
    * Returns a list of resource partitions.
    *
    * @return A list of resource partitions.
    */
-  List<T> partitions();
+  List<U> partitions();
 
   /**
    * Returns a resource partition by partition number.
@@ -39,6 +39,6 @@ public interface PartitionedResource<T extends ResourcePartition> extends Resour
    * @throws java.lang.IndexOutOfBoundsException If the given {@code partition} is not a valid partition number
    *         for the resource
    */
-  T partition(int partition);
+  U partition(int partition);
 
 }

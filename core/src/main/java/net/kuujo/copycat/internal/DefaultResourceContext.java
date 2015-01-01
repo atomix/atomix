@@ -64,12 +64,12 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
-    CompletableFuture<Void>[] futures = new CompletableFuture[partitions.size()];
+  public CompletableFuture<ResourceContext> open() {
+    CompletableFuture<ResourcePartitionContext>[] futures = new CompletableFuture[partitions.size()];
     for (int i = 0; i < partitions.size(); i++) {
       futures[i] = partitions.get(i).open();
     }
-    return CompletableFuture.allOf(futures);
+    return CompletableFuture.allOf(futures).thenApply(v -> this);
   }
 
   @Override

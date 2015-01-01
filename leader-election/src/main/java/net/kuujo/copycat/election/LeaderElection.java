@@ -32,7 +32,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LeaderElection extends Resource {
+public interface LeaderElection extends Resource<LeaderElection> {
 
   /**
    * Creates a new state machine for the given state model.

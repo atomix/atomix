@@ -58,9 +58,9 @@ abstract class AbstractMemberCoordinator implements MemberCoordinator {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<MemberCoordinator> open() {
     open = true;
-    return CompletableFuture.completedFuture(null);
+    return CompletableFuture.completedFuture(this);
   }
 
   @Override

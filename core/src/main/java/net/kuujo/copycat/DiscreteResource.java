@@ -22,7 +22,7 @@ import net.kuujo.copycat.cluster.Cluster;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface DiscreteResource extends Resource {
+public interface DiscreteResource<T extends DiscreteResource<T>> extends Resource<T> {
 
   /**
    * Returns the resource cluster.

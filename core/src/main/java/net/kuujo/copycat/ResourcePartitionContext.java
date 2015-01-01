@@ -29,7 +29,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ResourcePartitionContext extends Executor, Managed {
+public interface ResourcePartitionContext extends Executor, Managed<ResourcePartitionContext> {
 
   /**
    * Returns the resource name.

@@ -19,9 +19,10 @@ import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
+import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.net.URI;
@@ -192,10 +193,11 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<MemberCoordinator> open() {
     return super.open()
       .thenComposeAsync(v -> server.listen(), executor)
-      .thenRun(() -> server.handler(this::handle));
+      .thenRun(() -> server.handler(this::handle))
+      .thenApply(v -> this);
   }
 
   @Override

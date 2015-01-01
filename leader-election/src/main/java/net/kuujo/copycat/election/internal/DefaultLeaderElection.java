@@ -54,9 +54,10 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
   }
 
   @Override
-  public CompletableFuture<Void> open() {
-    return super.open().thenAccept(result -> {
+  public CompletableFuture<LeaderElection> open() {
+    return super.open().thenApply(result -> {
       context.partition(1).cluster().election().addListener(electionListener);
+      return this;
     });
   }
 

@@ -95,8 +95,8 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public synchronized CompletableFuture<Void> open() {
-    return coordinator.open();
+  public synchronized CompletableFuture<Copycat> open() {
+    return coordinator.open().thenApply(v -> this);
   }
 
   @Override

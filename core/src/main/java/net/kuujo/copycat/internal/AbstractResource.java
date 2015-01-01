@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractResource<T extends Resource> extends AbstractManagedResource<T> implements Resource {
+public abstract class AbstractResource<T extends Resource<T>> extends AbstractManagedResource<T> implements Resource<T> {
   protected final ResourceContext context;
 
   protected AbstractResource(ResourceContext context) {
@@ -39,8 +39,9 @@ public abstract class AbstractResource<T extends Resource> extends AbstractManag
   }
 
   @Override
-  public synchronized CompletableFuture<Void> open() {
-    return super.open().thenCompose(v -> context.open());
+  @SuppressWarnings("unchecked")
+  public synchronized CompletableFuture<T> open() {
+    return super.open().thenCompose(v -> context.open()).thenApply(v -> (T) this);
   }
 
   @Override

@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.EventLogConfig;
 import net.kuujo.copycat.EventLogPartition;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -90,7 +89,7 @@ public class DefaultEventLogPartition<T> extends AbstractResourcePartition<Event
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<EventLogPartition<T>> open() {
     context.consumer(this::consume);
     return super.open();
   }

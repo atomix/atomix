@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource extends Managed {
+public interface Resource<T extends Resource<T>> extends Managed<T> {
 
   /**
    * Returns the resource name.

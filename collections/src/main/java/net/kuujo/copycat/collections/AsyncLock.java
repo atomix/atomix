@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLock extends AsyncLockProxy, DiscreteResource {
+public interface AsyncLock extends AsyncLockProxy, DiscreteResource<AsyncLock> {
 
   /**
    * Creates a new asynchronous lock.

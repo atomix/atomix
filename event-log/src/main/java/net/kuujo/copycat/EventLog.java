@@ -29,7 +29,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventLog<T, U> extends PartitionedResource<EventLogPartition<U>> {
+public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, EventLogPartition<U>> {
 
   /**
    * Creates a new event log.

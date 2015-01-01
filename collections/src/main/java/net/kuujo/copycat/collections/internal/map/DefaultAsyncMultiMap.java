@@ -157,10 +157,10 @@ public class DefaultAsyncMultiMap<K, V> extends AbstractDiscreteResource<AsyncMu
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<AsyncMultiMap<K, V>> open() {
     return stateMachine.open().thenRun(() -> {
       this.proxy = stateMachine.createProxy(AsyncMultiMapProxy.class);
-    });
+    }).thenApply(v -> this);
   }
 
   @Override

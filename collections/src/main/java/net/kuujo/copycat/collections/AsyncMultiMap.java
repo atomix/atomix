@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutionException;
  * @param <K> The multimap key type.
  * @param <V> The multimap entry type.
  */
-public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, DiscreteResource {
+public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, DiscreteResource<AsyncMultiMap<K, V>> {
 
   /**
    * Creates a new asynchronous multimap.

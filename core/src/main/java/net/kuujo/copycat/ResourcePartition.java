@@ -21,7 +21,7 @@ import net.kuujo.copycat.cluster.Cluster;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ResourcePartition extends Managed {
+public interface ResourcePartition<T extends ResourcePartition<T>> extends Managed<T> {
 
   /**
    * Returns the resource name.

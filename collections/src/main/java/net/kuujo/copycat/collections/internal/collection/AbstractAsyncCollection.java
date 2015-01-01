@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.DiscreteResource;
 import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.collections.AsyncCollection;
@@ -32,7 +31,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractAsyncCollection<S extends DiscreteResource, T extends CollectionState<T, V>, U extends AsyncCollectionProxy<V>, V> extends AbstractDiscreteResource<S> implements AsyncCollection<V> {
+public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T extends CollectionState<T, V>, U extends AsyncCollectionProxy<V>, V> extends AbstractDiscreteResource<S> implements AsyncCollection<S, V> {
   private final StateMachine<T> stateMachine;
   private final Class<U> proxyClass;
   protected U proxy;
@@ -115,10 +114,11 @@ public abstract class AbstractAsyncCollection<S extends DiscreteResource, T exte
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<S> open() {
     return stateMachine.open().thenRun(() -> {
       proxy = stateMachine.createProxy(proxyClass);
-    });
+    }).thenApply(v -> (S) this);
   }
 
   @Override

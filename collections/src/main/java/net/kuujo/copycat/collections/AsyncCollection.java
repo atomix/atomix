@@ -24,5 +24,5 @@ import net.kuujo.copycat.DiscreteResource;
  *
  * @param <T> The collection data type.
  */
-public interface AsyncCollection<T> extends AsyncCollectionProxy<T>, DiscreteResource {
+public interface AsyncCollection<T extends AsyncCollection<T, U>, U> extends AsyncCollectionProxy<U>, DiscreteResource<T> {
 }

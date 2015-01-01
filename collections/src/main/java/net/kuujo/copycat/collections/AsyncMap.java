@@ -33,7 +33,7 @@ import java.util.concurrent.ExecutionException;
  * @param <K> The map key type.
  * @param <V> The map entry type.
  */
-public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, DiscreteResource {
+public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, DiscreteResource<AsyncMap<K, V>> {
 
   /**
    * Creates a new asynchronous map.

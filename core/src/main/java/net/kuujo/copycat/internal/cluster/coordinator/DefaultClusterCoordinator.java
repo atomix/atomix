@@ -217,7 +217,7 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
    * Opens all cluster resources.
    */
   private CompletableFuture<Void> openResources() {
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    List<CompletableFuture<ResourcePartitionContext>> futures = new ArrayList<>();
     for (ResourceHolder resource : resources.values()) {
       for (PartitionHolder partition : resource.partitions) {
         if (partition.config.getReplicas().contains(uri)) {
@@ -243,12 +243,12 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<ClusterCoordinator> open() {
     if (open.get()) {
       return CompletableFuture.completedFuture(null);
     }
 
-    CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
+    CompletableFuture<MemberCoordinator>[] futures = new CompletableFuture[members.size()];
     int i = 0;
     for (MemberCoordinator member : members.values()) {
       futures[i++] = member.open();
@@ -257,7 +257,8 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
       .thenComposeAsync(v -> cluster.open(), executor)
       .thenComposeAsync(v -> context.open(), executor)
       .thenComposeAsync(v -> openResources(), executor)
-      .thenRun(() -> open.set(true));
+      .thenRun(() -> open.set(true))
+      .thenApply(v -> this);
   }
 
   @Override

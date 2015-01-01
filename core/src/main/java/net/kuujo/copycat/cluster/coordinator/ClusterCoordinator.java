@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ClusterCoordinator extends Managed {
+public interface ClusterCoordinator extends Managed<ClusterCoordinator> {
 
   /**
    * Returns the global coordinator cluster.

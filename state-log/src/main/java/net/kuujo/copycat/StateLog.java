@@ -32,7 +32,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateLog<T, U> extends PartitionedResource<StateLogPartition<U>> {
+public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, StateLogPartition<U>> {
 
   /**
    * Creates a new state log.

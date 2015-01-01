@@ -23,7 +23,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventLogPartition<T> extends ResourcePartition {
+public interface EventLogPartition<T> extends ResourcePartition<EventLogPartition<T>> {
 
   /**
    * Registers a log entry consumer.

@@ -26,7 +26,7 @@ import net.kuujo.copycat.cluster.Cluster;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractDiscreteResource<T extends DiscreteResource> extends AbstractResource<T> implements DiscreteResource {
+public abstract class AbstractDiscreteResource<T extends DiscreteResource<T>> extends AbstractResource<T> implements DiscreteResource<T> {
   protected final ResourcePartitionContext partition;
 
   protected AbstractDiscreteResource(ResourceContext context) {

@@ -130,10 +130,10 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
   }
 
   @Override
-  public synchronized CompletableFuture<Void> open() {
+  public synchronized CompletableFuture<StateMachine<T>> open() {
     log.partition(1).snapshotWith(this::snapshot);
     log.partition(1).installWith(this::install);
-    return log.open();
+    return log.open().thenApply(v -> this);
   }
 
   @Override

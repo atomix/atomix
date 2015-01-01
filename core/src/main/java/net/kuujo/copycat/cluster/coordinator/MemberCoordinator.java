@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface MemberCoordinator extends Managed {
+public interface MemberCoordinator extends Managed<MemberCoordinator> {
 
   /**
    * Returns the member URI.

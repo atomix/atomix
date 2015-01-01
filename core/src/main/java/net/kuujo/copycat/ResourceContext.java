@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ResourceContext extends Managed {
+public interface ResourceContext extends Managed<ResourceContext> {
 
   /**
    * Returns the resource name.

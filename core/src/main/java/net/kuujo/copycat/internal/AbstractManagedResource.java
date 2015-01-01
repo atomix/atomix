@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractManagedResource<T> implements Managed {
+public abstract class AbstractManagedResource<T> implements Managed<T> {
   private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
 
@@ -58,8 +58,8 @@ public abstract class AbstractManagedResource<T> implements Managed {
 
   @Override
   @SuppressWarnings("all")
-  public synchronized CompletableFuture<Void> open() {
-    return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]));
+  public synchronized CompletableFuture<T> open() {
+    return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size])).thenApply(v -> (T) this);
   }
 
   @Override

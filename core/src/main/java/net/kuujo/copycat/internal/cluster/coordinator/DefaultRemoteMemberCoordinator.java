@@ -17,9 +17,10 @@ package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.net.URI;
@@ -97,8 +98,8 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
-    return super.open().thenComposeAsync(v -> client.connect(), executor);
+  public CompletableFuture<MemberCoordinator> open() {
+    return super.open().thenComposeAsync(v -> client.connect(), executor).thenApply(v -> this);
   }
 
   @Override

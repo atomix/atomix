@@ -27,7 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractResourcePartition<T extends ResourcePartition> extends AbstractManagedResource<T> implements ResourcePartition {
+public abstract class AbstractResourcePartition<T extends ResourcePartition<T>> extends AbstractManagedResource<T> implements ResourcePartition<T> {
   protected ResourcePartitionContext context;
   private AtomicBoolean open = new AtomicBoolean();
 
@@ -57,11 +57,11 @@ public abstract class AbstractResourcePartition<T extends ResourcePartition> ext
 
   @Override
   @SuppressWarnings("all")
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<T> open() {
     if (open.compareAndSet(false, true)) {
-      return super.open().thenComposeAsync(v -> context.open(), context);
+      return super.open().thenComposeAsync(v -> context.open(), context).thenApply(v -> (T) this);
     }
-    return CompletableFuture.completedFuture(null);
+    return CompletableFuture.completedFuture((T) this);
   }
 
   @Override

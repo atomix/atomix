@@ -88,10 +88,10 @@ public class CoordinatedCluster implements Cluster {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<Cluster> open() {
     router.createRoutes(this, context);
     election.open();
-    return localMember.open();
+    return localMember.open().thenApply(m -> this);
   }
 
   @Override

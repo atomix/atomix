@@ -27,7 +27,7 @@ import java.util.Collection;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Cluster extends Managed {
+public interface Cluster extends Managed<Cluster> {
 
   /**
    * Returns the current cluster leader.

@@ -31,7 +31,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @param <T> The set data type.
  */
-public interface AsyncSet<T> extends AsyncCollection<T>, AsyncSetProxy<T> {
+public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetProxy<T> {
 
   /**
    * Creates a new asynchronous set.

@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.log.LogManager;
@@ -157,8 +157,8 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
   }
 
   @Override
-  public synchronized CompletableFuture<Void> open() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
+  public synchronized CompletableFuture<ResourcePartitionContext> open() {
+    CompletableFuture<ResourcePartitionContext> future = new CompletableFuture<>();
     context.executor().execute(() -> {
       if (counter.incrementAndGet() == 1) {
         CompletableFuture.allOf(cluster.open(), context.open()).whenComplete((result, error) -> {

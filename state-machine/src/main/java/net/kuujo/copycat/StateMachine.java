@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateMachine<T> extends DiscreteResource {
+public interface StateMachine<T> extends DiscreteResource<StateMachine<T>> {
 
   /**
    * Creates a new state machine.
