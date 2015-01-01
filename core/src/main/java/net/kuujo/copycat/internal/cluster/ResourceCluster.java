@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.Member;
@@ -32,10 +32,11 @@ import java.util.concurrent.Executor;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ResourceCluster implements Cluster {
-  private final CopycatContext context;
+  private final ResourcePartitionContext context;
   private final Executor executor;
+  private boolean open;
 
-  public ResourceCluster(CopycatContext context, Executor executor) {
+  public ResourceCluster(ResourcePartitionContext context, Executor executor) {
     this.context = context;
     this.executor = executor;
   }
@@ -79,12 +80,24 @@ public class ResourceCluster implements Cluster {
 
   @Override
   public CompletableFuture<Void> open() {
+    open = true;
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
+  public boolean isOpen() {
+    return open;
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
+    open = false;
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
   }
 
   @Override

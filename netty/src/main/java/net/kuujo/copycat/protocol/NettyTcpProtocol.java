@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.spi.Protocol;
-
 import java.net.URI;
 
 /**
@@ -24,7 +22,7 @@ import java.net.URI;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocol implements Protocol {
+public class NettyTcpProtocol extends Protocol {
   private int threads = 1;
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;

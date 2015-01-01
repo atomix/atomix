@@ -14,10 +14,10 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.Copyable;
+import net.kuujo.copycat.Config;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.protocol.LocalProtocol;
-import net.kuujo.copycat.spi.Protocol;
+import net.kuujo.copycat.protocol.Protocol;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -29,20 +29,27 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterConfig implements Copyable<ClusterConfig> {
-  private Protocol protocol = new LocalProtocol();
-  private long electionTimeout = 300;
-  private long heartbeatInterval = 150;
-  private Set<String> members = new HashSet<>(10);
+public class ClusterConfig extends Config {
+  public static final String CLUSTER_PROTOCOL = "protocol";
+  public static final String CLUSTER_ELECTION_TIMEOUT = "election.timeout";
+  public static final String CLUSTER_HEARTBEAT_INTERVAL = "heartbeat.interval";
+  public static final String CLUSTER_MEMBERS = "members";
+
+  private static final Protocol DEFAULT_CLUSTER_PROTOCOL = new LocalProtocol();
+  private static final long DEFAULT_CLUSTER_ELECTION_TIMEOUT = 300;
+  private static final long DEFAULT_CLUSTER_HEARTBEAT_INTERVAL = 150;
+  private static final Set<String> DEFAULT_CLUSTER_MEMBERS = new HashSet<>(10);
 
   public ClusterConfig() {
+    super();
+  }
+
+  public ClusterConfig(Map<String, Object> config) {
+    super(config);
   }
 
   private ClusterConfig(ClusterConfig config) {
-    protocol = config.protocol;
-    electionTimeout = config.electionTimeout;
-    heartbeatInterval = config.heartbeatInterval;
-    members = new HashSet<>(config.getMembers());
+    super(config);
   }
 
   @Override
@@ -54,9 +61,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * Sets the cluster protocol.
    *
    * @param protocol The cluster protocol.
+   * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public void setProtocol(Protocol protocol) {
-    this.protocol = Assert.isNotNull(protocol, "protocol");
+    put(CLUSTER_PROTOCOL, Assert.isNotNull(protocol, "protocol").toMap());
   }
 
   /**
@@ -65,7 +73,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @return The cluster protocol.
    */
   public Protocol getProtocol() {
-    return protocol;
+    return get(CLUSTER_PROTOCOL, DEFAULT_CLUSTER_PROTOCOL);
   }
 
   /**
@@ -73,9 +81,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param protocol The cluster protocol.
    * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public ClusterConfig withProtocol(Protocol protocol) {
-    this.protocol = Assert.isNotNull(protocol, "protocol");
+    setProtocol(protocol);
     return this;
   }
 
@@ -83,9 +92,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * Sets the cluster election timeout.
    *
    * @param electionTimeout The cluster election timeout in milliseconds.
+   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public void setElectionTimeout(long electionTimeout) {
-    this.electionTimeout = electionTimeout;
+    put(CLUSTER_ELECTION_TIMEOUT, Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive"));
   }
 
   /**
@@ -93,9 +103,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param electionTimeout The cluster election timeout.
    * @param unit The timeout unit.
+   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public void setElectionTimeout(long electionTimeout, TimeUnit unit) {
-    this.electionTimeout = unit.toMillis(electionTimeout);
+    setElectionTimeout(unit.toMillis(electionTimeout));
   }
 
   /**
@@ -104,7 +115,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @return The cluster election timeout in milliseconds.
    */
   public long getElectionTimeout() {
-    return electionTimeout;
+    return get(CLUSTER_ELECTION_TIMEOUT, DEFAULT_CLUSTER_ELECTION_TIMEOUT);
   }
 
   /**
@@ -112,6 +123,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param electionTimeout The cluster election timeout in milliseconds.
    * @return The cluster configuration.
+   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public ClusterConfig withElectionTimeout(long electionTimeout) {
     setElectionTimeout(electionTimeout);
@@ -124,6 +136,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @param electionTimeout The cluster election timeout.
    * @param unit The timeout unit.
    * @return The cluster configuration.
+   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public ClusterConfig withElectionTimeout(long electionTimeout, TimeUnit unit) {
     setElectionTimeout(electionTimeout, unit);
@@ -134,9 +147,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * Sets the cluster heartbeat interval.
    *
    * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
+   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public void setHeartbeatInterval(long heartbeatInterval) {
-    this.heartbeatInterval = heartbeatInterval;
+    put(CLUSTER_HEARTBEAT_INTERVAL, Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive"));
   }
 
   /**
@@ -144,9 +158,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param heartbeatInterval The cluster heartbeat interval.
    * @param unit The heartbeat interval unit.
+   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public void setHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-    this.heartbeatInterval = unit.toMillis(heartbeatInterval);
+    setHeartbeatInterval(unit.toMillis(heartbeatInterval));
   }
 
   /**
@@ -155,7 +170,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @return The interval at which nodes send heartbeats to each other.
    */
   public long getHeartbeatInterval() {
-    return heartbeatInterval;
+    return get(CLUSTER_HEARTBEAT_INTERVAL, DEFAULT_CLUSTER_HEARTBEAT_INTERVAL);
   }
 
   /**
@@ -163,6 +178,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
    * @return The cluster configuration.
+   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public ClusterConfig withHeartbeatInterval(long heartbeatInterval) {
     setHeartbeatInterval(heartbeatInterval);
@@ -175,6 +191,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @param heartbeatInterval The cluster heartbeat interval.
    * @param unit The heartbeat interval unit.
    * @return The cluster configuration.
+   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public ClusterConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
     setHeartbeatInterval(heartbeatInterval, unit);
@@ -185,6 +202,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * Sets all cluster member URIs.
    *
    * @param uris A collection of cluster member URIs.
+   * @throws java.lang.IllegalArgumentException If a given URI is invalid
    */
   public void setMembers(String... uris) {
     setMembers(new ArrayList<>(Arrays.asList(uris)));
@@ -194,17 +212,20 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * Sets all cluster member URIs.
    *
    * @param uris A collection of cluster member URIs.
+   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
+   * @throws java.lang.IllegalArgumentException If a given URI is invalid
    */
   public void setMembers(Collection<String> uris) {
     Assert.isNotNull(uris, "uris");
-    members = new HashSet<>(uris.size());
+    Set<String> members = new HashSet<>(uris.size());
     for (String uri : uris) {
       try {
-        members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
+        members.add(Assert.isNotNull(Assert.arg(uri, getProtocol().isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
       } catch (URISyntaxException e) {
         throw new IllegalArgumentException(e);
       }
     }
+    put(CLUSTER_MEMBERS, members);
   }
 
   /**
@@ -213,7 +234,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @return A set of all cluster member URIs.
    */
   public Collection<String> getMembers() {
-    return members;
+    return get(CLUSTER_MEMBERS, DEFAULT_CLUSTER_MEMBERS);
   }
 
   /**
@@ -221,10 +242,17 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param uri The member URI to add.
    * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If {@code uri} is {@code null}
+   * @throws java.lang.IllegalArgumentException If the given URI is invalid
    */
-  public ClusterConfig addRemoteMember(String uri) {
+  public ClusterConfig addMember(String uri) {
+    Set<String> members = get(CLUSTER_MEMBERS);
+    if (members == null) {
+      members = new HashSet<>();
+      put(CLUSTER_MEMBERS, members);
+    }
     try {
-      members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
+      members.add(Assert.isNotNull(Assert.arg(uri, getProtocol().isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
     } catch (URISyntaxException e) {
       throw new IllegalArgumentException(e);
     }
@@ -236,6 +264,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param uris A collection of cluster member URIs.
    * @return The cluster configuration.
+   * @throws java.lang.IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig withMembers(String... uris) {
     setMembers(uris);
@@ -247,6 +276,8 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param uris A collection of cluster member URIs.
    * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
+   * @throws java.lang.IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig withMembers(Collection<String> uris) {
     setMembers(uris);
@@ -258,16 +289,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param uris A collection of cluster member URIs to add.
    * @return The cluster configuration.
+   * @throws java.lang.IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig addMembers(String... uris) {
-    for (String uri : uris) {
-      try {
-        members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException(e);
-      }
-    }
-    return this;
+    return addMembers(Arrays.asList(uris));
   }
 
   /**
@@ -275,14 +300,28 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param uris A collection of cluster member URIs to add.
    * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
+   * @throws java.lang.IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig addMembers(Collection<String> uris) {
     Assert.isNotNull(uris, "uris");
-    for (String uri : uris) {
-      try {
-        members.add(Assert.isNotNull(Assert.arg(uri, protocol.isValidUri(new URI(uri)), "invalid protocol URI"), "uris"));
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException(e);
+    uris.forEach(this::addMember);
+    return this;
+  }
+
+  /**
+   * Removes a member from the configuration, returning the cluster configuration for method chaining.
+   *
+   * @param uri The member URI to remove.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If {@code uri} is {@code null}
+   */
+  public ClusterConfig removeMember(String uri) {
+    Set<String> members = get(CLUSTER_MEMBERS, DEFAULT_CLUSTER_MEMBERS);
+    if (members != null) {
+      members.remove(Assert.isNotNull(uri, "uri"));
+      if (members.isEmpty()) {
+        remove(CLUSTER_MEMBERS);
       }
     }
     return this;
@@ -295,10 +334,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @return The cluster configuration.
    */
   public ClusterConfig removeMembers(String... uris) {
-    for (String uri : uris) {
-      members.remove(uri);
-    }
-    return this;
+    return removeMembers(Arrays.asList(uris));
   }
 
   /**
@@ -306,11 +342,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @param uris A collection of cluster member URIs to remove.
    * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
    */
   public ClusterConfig removeMembers(Collection<String> uris) {
-    for (String uri : uris) {
-      members.remove(uri);
-    }
+    uris.forEach(this::removeMember);
     return this;
   }
 
@@ -320,7 +355,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    * @return The cluster configuration.
    */
   public ClusterConfig clearMembers() {
-    members.clear();
+    remove(CLUSTER_MEMBERS);
     return this;
   }
 

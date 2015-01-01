@@ -15,16 +15,14 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
-import net.kuujo.copycat.collections.internal.collection.DefaultSetState;
-import net.kuujo.copycat.collections.internal.collection.SetState;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous set.
@@ -45,7 +43,7 @@ public interface AsyncSet<T> extends AsyncCollection<T>, AsyncSetProxy<T> {
    * @return The asynchronous set.
    */
   static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-set-" + name + "-%d")));
+    return create(name, uri, cluster, new AsyncSetConfig());
   }
 
   /**
@@ -58,38 +56,17 @@ public interface AsyncSet<T> extends AsyncCollection<T>, AsyncSetProxy<T> {
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
-    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-set-" + name + "-%d")));
-  }
-
-  /**
-   * Creates a new asynchronous set.
-   *
-   * @param name The asynchronous set name.
-   * @param uri The asynchronous set member URI.
-   * @param cluster The cluster configuration.
-   * @param executor The user execution context.
-   * @param <T> The set data type.
-   * @return The asynchronous set.
-   */
-  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new LogConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous set.
-   *
-   * @param name The asynchronous set name.
-   * @param uri The asynchronous set member URI.
-   * @param cluster The cluster configuration.
-   * @param config The set configuration.
-   * @param executor The user execution context.
-   * @param <T> The set data type.
-   * @return The asynchronous set.
-   */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncSet(StateMachine.create(name, uri, SetState.class, new DefaultSetState<>(), cluster, config, executor));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, AsyncSetConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
+    try {
+      coordinator.open().get();
+      return (AsyncSet<T>) ((AbstractManagedResource) coordinator.<AsyncSet<T>>getResource(name).get()).withShutdownTask(coordinator::close);
+    } catch (InterruptedException e) {
+      throw new ResourceException(e);
+    } catch (ExecutionException e) {
+      throw new ResourceException(e.getCause());
+    }
   }
 
 }

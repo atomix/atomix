@@ -29,6 +29,7 @@ import java.util.concurrent.Executor;
  */
 public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember, Managed {
   private final LocalMemberCoordinator coordinator;
+  private boolean open;
 
   public CoordinatedLocalMember(int id, LocalMemberCoordinator coordinator, Executor executor) {
     super(id, coordinator, executor);
@@ -49,14 +50,26 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
 
   @Override
   public CompletableFuture<Void> open() {
+    open = true;
     coordinator.registerExecutor(id, executor);
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
+  public boolean isOpen() {
+    return open;
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
+    open = false;
     coordinator.unregisterExecutor(id);
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
   }
 
 }

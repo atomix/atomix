@@ -14,8 +14,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.spi.Protocol;
-
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,8 +23,25 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocol implements Protocol {
+public class LocalProtocol extends Protocol {
   private final Map<String, LocalProtocolServer> registry = new ConcurrentHashMap<>();
+
+  public LocalProtocol() {
+    super();
+  }
+
+  public LocalProtocol(Map<String, Object> config) {
+    super(config);
+  }
+
+  private LocalProtocol(LocalProtocol protocol) {
+    super(protocol);
+  }
+
+  @Override
+  public LocalProtocol copy() {
+    return new LocalProtocol(this);
+  }
 
   @Override
   public ProtocolClient createClient(URI uri) {

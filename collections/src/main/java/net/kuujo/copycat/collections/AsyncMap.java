@@ -15,17 +15,15 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.CopycatResource;
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.DiscreteResource;
+import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.MapState;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
-import net.kuujo.copycat.collections.internal.map.DefaultMapState;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous map.
@@ -35,7 +33,7 @@ import java.util.concurrent.Executors;
  * @param <K> The map key type.
  * @param <V> The map entry type.
  */
-public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, CopycatResource {
+public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, DiscreteResource {
 
   /**
    * Creates a new asynchronous map.
@@ -44,11 +42,11 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, CopycatResource {
    * @param uri The asynchronous map member URI.
    * @param cluster The cluster configuration.
    * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
+   * @param <V> The map value type.
+   * @return The asynchronous map.
    */
   static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-map-" + name + "-%d")));
+    return create(name, uri, cluster, new AsyncMapConfig());
   }
 
   /**
@@ -59,43 +57,20 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, CopycatResource {
    * @param cluster The cluster configuration.
    * @param config The map configuration.
    * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
+   * @param <V> The map value type.
+   * @return The asynchronous map.
    */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
-    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-map-" + name + "-%d")));
-  }
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
-   * @param cluster The cluster configuration.
-   * @param executor The user execution context.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new LogConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous map.
-   *
-   * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
-   * @param cluster The cluster configuration.
-   * @param config The map configuration.
-   * @param executor The user execution context.
-   * @param <K> The map key type.
-   * @param <V> The map entry type.
-   * @return A new asynchronous map.
-   */
-  @SuppressWarnings("unchecked")
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncMap(StateMachine.create(name, uri, MapState.class, new DefaultMapState<>(), cluster, config, executor));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMapConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
+    try {
+      coordinator.open().get();
+      return (AsyncMap<K, V>) ((AbstractManagedResource) coordinator.<AsyncMap<K, V>>getResource(name).get()).withShutdownTask(coordinator::close);
+    } catch (InterruptedException e) {
+      throw new ResourceException(e);
+    } catch (ExecutionException e) {
+      throw new ResourceException(e.getCause());
+    }
   }
 
 }

@@ -15,19 +15,21 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.collections.AsyncSet;
 import net.kuujo.copycat.collections.AsyncSetProxy;
+import net.kuujo.copycat.internal.DefaultStateMachine;
 
 /**
  * Default asynchronous set.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncSet<T> extends AbstractAsyncCollection<SetState<T>, AsyncSetProxy<T>, T> implements AsyncSet<T> {
+public class DefaultAsyncSet<T> extends AbstractAsyncCollection<AsyncSet<T>, SetState<T>, AsyncSetProxy<T>, T> implements AsyncSet<T> {
 
-  public DefaultAsyncSet(StateMachine<SetState<T>> stateMachine) {
-    super(stateMachine, AsyncSetProxy.class);
+  @SuppressWarnings("unchecked")
+  public DefaultAsyncSet(ResourceContext context) {
+    super(context, new DefaultStateMachine(context, SetState.class, DefaultSetState.class), AsyncSetProxy.class);
   }
 
 }

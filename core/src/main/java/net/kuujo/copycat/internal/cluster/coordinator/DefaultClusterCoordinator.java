@@ -15,94 +15,76 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
-import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
+import net.kuujo.copycat.cluster.coordinator.*;
 import net.kuujo.copycat.internal.CopycatStateContext;
-import net.kuujo.copycat.internal.DefaultCopycatContext;
+import net.kuujo.copycat.internal.DefaultResourceContext;
+import net.kuujo.copycat.internal.DefaultResourcePartitionContext;
 import net.kuujo.copycat.internal.cluster.CoordinatedCluster;
 import net.kuujo.copycat.internal.cluster.Router;
 import net.kuujo.copycat.internal.cluster.Topics;
-import net.kuujo.copycat.internal.util.Services;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.log.LogConfig;
-import net.kuujo.copycat.protocol.MemberInfo;
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
-import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Default cluster coordinator implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
-  private final Serializer serializer = Serializer.serializer();
+public class DefaultClusterCoordinator extends Observable implements ClusterCoordinator {
+  private final String uri;
   private final Executor executor;
-  private final CopycatStateContext state;
-  private final CopycatContext context;
-  private final ClusterConfig config;
+  private final CoordinatorConfig config;
   private final DefaultLocalMemberCoordinator localMember;
   private final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
-  private final Map<String, CopycatContext> contexts = new ConcurrentHashMap<>();
+  private final CopycatStateContext context;
+  private final Cluster cluster;
+  private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
+  private final AtomicBoolean open = new AtomicBoolean();
 
-  public DefaultClusterCoordinator(String uri, ClusterConfig config, Executor executor) {
+  public DefaultClusterCoordinator(String uri, CoordinatorConfig config) {
+    this(uri, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+  }
+
+  public DefaultClusterCoordinator(String uri, CoordinatorConfig config, Executor executor) {
+    this.uri = uri;
     this.config = config.copy();
     this.executor = executor;
-    this.localMember = new DefaultLocalMemberCoordinator(uri, config.getMembers().contains(uri) ? Member.Type.MEMBER
-      : Member.Type.LISTENER, Member.State.ALIVE, config.getProtocol(), executor);
+    this.localMember = new DefaultLocalMemberCoordinator(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE, config.getClusterConfig().getProtocol(), executor);
     this.members.put(uri, localMember);
-    for (String member : config.getMembers()) {
-      this.members.put(member, new DefaultRemoteMemberCoordinator(member, Member.Type.MEMBER, Member.State.ALIVE,
-        config.getProtocol(), executor));
+    for (String member : config.getClusterConfig().getMembers()) {
+      this.members.put(member, new DefaultRemoteMemberCoordinator(member, Member.Type.MEMBER, Member.State.ALIVE, config.getClusterConfig().getProtocol(), executor));
     }
-    Map<String, Object> logConfig = new HashMap<>();
-    logConfig.put("name", "copycat");
-    state = new CopycatStateContext(uri, config, Services.load(Log.class, new LogConfig().withName("copycat")));
-    context = new DefaultCopycatContext(new CoordinatedCluster(0, this, state, new ResourceRouter("copycat"), executor), state);
+    CoordinatedResourceConfig resourceConfig = new CoordinatedResourceConfig()
+      .withElectionTimeout(config.getClusterConfig().getElectionTimeout())
+      .withHeartbeatInterval(config.getClusterConfig().getHeartbeatInterval())
+      .withLog(new BufferedLog());
+    CoordinatedResourcePartitionConfig partitionConfig = new CoordinatedResourcePartitionConfig()
+      .withPartition(1)
+      .withReplicas(config.getClusterConfig().getMembers());
+    this.context = new CopycatStateContext("copycat", uri, resourceConfig, partitionConfig);
+    this.cluster = new CoordinatedCluster(0, this, context, new ResourceRouter("copycat"), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
   }
 
   @Override
-  public void update(Observable o, Object arg) {
-    for (MemberInfo member : state.getMembers()) {
-      if (member.type().equals(Member.Type.LISTENER)) {
-        if (members.containsKey(member.uri())) {
-          if (member.state().equals(Member.State.DEAD)) {
-            MemberCoordinator coordinator = members.remove(member.uri());
-            try {
-              coordinator.close().get();
-            } catch (InterruptedException | ExecutionException ignore) {
-            }
-          } else {
-            members.get(member.uri()).state(member.state());
-          }
-        } else {
-          if (!member.state().equals(Member.State.DEAD)) {
-            members.computeIfAbsent(member.uri(), k -> {
-              DefaultRemoteMemberCoordinator coordinator = new DefaultRemoteMemberCoordinator(member.uri(),
-                Member.Type.LISTENER, member.state(), config.getProtocol(), executor);
-              try {
-                coordinator.open().get();
-              } catch (InterruptedException | ExecutionException ignore) {
-              }
-              return coordinator;
-            });
-          }
-        }
-      }
-    }
+  public Cluster cluster() {
+    return cluster;
   }
 
   @Override
@@ -120,144 +102,189 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
     return Collections.unmodifiableCollection(members.values());
   }
 
-  @Override
-  public CompletableFuture<CopycatContext> createResource(String name) {
-    return createResource(name, config, new LogConfig().withName(name));
-  }
-
-  @Override
-  public CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster) {
-    return createResource(name, cluster, new LogConfig().withName(name));
-  }
-
-  @Override
-  public CompletableFuture<CopycatContext> createResource(String name, LogConfig log) {
-    return createResource(name, config, log.withName(name));
-  }
-
-  @Override
-  public CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster, LogConfig log) {
-    log.setName(name);
-    ByteBuffer serializedCluster = serializer.writeObject(cluster.getMembers());
-    ByteBuffer serializedLog = serializer.writeObject(log);
-    ByteBuffer entry = ByteBuffer.allocate(16 + name.getBytes().length + serializedCluster.capacity() + serializedLog.capacity());
-    entry.putInt(1);
-    entry.putInt(name.getBytes().length);
-    entry.put(name.getBytes());
-    entry.putInt(serializedCluster.capacity());
-    entry.put(serializedCluster);
-    entry.putInt(serializedLog.capacity());
-    entry.put(serializedLog);
-    entry.rewind();
-    return context.commit(entry).thenApplyAsync(buffer -> {
-      int result = buffer.getInt();
-      if (result == 0) {
-        return null;
-      } else {
-        return contexts.computeIfAbsent(name, k -> createContext(k, log, cluster.getMembers()));
-      }
-    }, executor);
-  }
-
-  @Override
-  public CompletableFuture<Void> deleteResource(String name) {
-    ByteBuffer entry = ByteBuffer.allocate(8 + name.getBytes().length);
-    entry.putInt(-1);
-    entry.putInt(name.getBytes().length);
-    entry.put(name.getBytes());
-    return context.commit(entry).thenApplyAsync(result -> null, context);
-  }
-
   /**
-   * Creates a new Copycat context.
+   * Gets a Copycat resource.
    *
-   * @param name The context name.
-   * @return The created context.
+   * @param name The resource name.
+   * @return A completable future to be completed once the resource has been retrieved.
    */
-  private CopycatContext createContext(String name, LogConfig config, Collection<String> members) {
-    CopycatStateContext state = new CopycatStateContext(localMember.uri(), this.config.copy().withMembers(members), Services.load(Log.class, config));
-    CoordinatedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), state.executor());
-    return new DefaultCopycatContext(cluster, state);
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends Resource> CompletableFuture<T> getResource(String name) {
+    Assert.state(isOpen(), "coordinator not open");
+    ResourceHolder resource = resources.get(name);
+    if (resource != null) {
+      return CompletableFuture.completedFuture((T) resource.resource);
+    }
+    return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
   }
 
   /**
-   * Consumes messages from the log.
+   * Acquires a resource partition.
+   *
+   * @param name The resource name.
+   * @param partition The partition number.
+   * @return A completable future to be completed once the partition has been acquired.
    */
-  private ByteBuffer consume(Long index, ByteBuffer buffer) {
-    buffer.rewind();
-    int type = buffer.getInt();
-    byte[] nameBytes;
-    String name;
-    ByteBuffer result;
-
-    switch (type) {
-      case 1: // create
-        nameBytes = new byte[buffer.getInt()];
-        buffer.get(nameBytes);
-        name = new String(nameBytes);
-        byte[] clusterBytes = new byte[buffer.getInt()];
-        buffer.get(clusterBytes);
-        Set<String> members = serializer.readObject(ByteBuffer.wrap(clusterBytes));
-        byte[] logBytes = new byte[buffer.getInt()];
-        buffer.get(logBytes);
-        LogConfig log = serializer.readObject(ByteBuffer.wrap(logBytes));
-        result = ByteBuffer.allocate(4);
-        if (!contexts.containsKey(name)) {
-          contexts.computeIfAbsent(name, k -> {
-            result.putInt(1);
-            return createContext(name, log, members);
+  CompletableFuture<Void> acquirePartition(String name, int partition) {
+    Assert.state(isOpen(), "coordinator not open");
+    ResourceHolder resource = resources.get(name);
+    if (resource != null) {
+      PartitionHolder partitionHolder = resource.partitions.get(partition - 1);
+      CompletableFuture<Void> future = new CompletableFuture<>();
+      partitionHolder.state.executor().execute(() -> {
+        if (!partitionHolder.config.getReplicas().contains(uri) && partitionHolder.state.isClosed()) {
+          partitionHolder.cluster.open().whenComplete((r1, e1) -> {
+            if (e1 == null) {
+              partitionHolder.state.open().whenComplete((r2, e2) -> {
+                if (e2 == null) {
+                  future.complete(null);
+                } else {
+                  future.completeExceptionally(e2);
+                }
+              });
+            } else {
+              future.completeExceptionally(e1);
+            }
           });
         } else {
-          result.putInt(0);
+          future.complete(null);
         }
-        break;
-      case -1: // delete
-        nameBytes = new byte[buffer.getInt()];
-        buffer.get(nameBytes);
-        name = new String(nameBytes);
-        result = ByteBuffer.allocate(4);
-        CopycatContext context = contexts.remove(name);
-        if (context != null) {
-          try {
-            context.close().get();
-            context.delete().get();
-          } catch (Exception e) {
-          }
-          result.putInt(1);
-        } else {
-          result.putInt(0);
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException("Invalid command");
+      });
     }
-    result.rewind();
-    return result;
+    return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
+  }
+
+  /**
+   * Releases a resource partition.
+   *
+   * @param name The resource name.
+   * @param partition The partition number.
+   * @return A completable future to be completed once the partition has been released.
+   */
+  CompletableFuture<Void> releasePartition(String name, int partition) {
+    Assert.state(isOpen(), "coordinator not open");
+    ResourceHolder resource = resources.get(name);
+    if (resource != null) {
+      PartitionHolder partitionHolder = resource.partitions.get(partition - 1);
+      CompletableFuture<Void> future = new CompletableFuture<>();
+      partitionHolder.state.executor().execute(() -> {
+        if (!partitionHolder.config.getReplicas().contains(uri) && partitionHolder.state.isOpen()) {
+          partitionHolder.state.close().whenComplete((r1, e1) -> {
+            if (e1 == null) {
+              partitionHolder.cluster.close().whenComplete((r2, e2) -> {
+                if (e2 == null) {
+                  future.complete(null);
+                } else {
+                  future.completeExceptionally(e2);
+                }
+              });
+            } else {
+              future.completeExceptionally(e1);
+            }
+          });
+        } else {
+          future.complete(null);
+        }
+      });
+    }
+    return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
+  }
+
+  /**
+   * Creates all Copycat resources.
+   */
+  private void createResources() {
+    for (Map.Entry<String, CoordinatedResourceConfig> entry : this.config.getResourceConfigs().entrySet()) {
+      String name = entry.getKey();
+      CoordinatedResourceConfig config = entry.getValue();
+
+      List<PartitionHolder> partitions = new ArrayList<>(config.getPartitions().size());
+      for (CoordinatedResourcePartitionConfig partitionConfig : config.getPartitions()) {
+        CopycatStateContext state = new CopycatStateContext(name, uri, config, partitionConfig);
+        Cluster cluster = new CoordinatedCluster(name.hashCode(), this, context, new ResourceRouter(name), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
+        ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state);
+        partitions.add(new PartitionHolder(partitionConfig, cluster, state, context));
+      }
+
+      Resource resource = config.getResourceFactory().apply(new DefaultResourceContext(name, config, partitions.stream()
+        .collect(Collectors.mapping(p -> p.context, Collectors.toList())), this));
+      resources.put(name, new ResourceHolder(resource, config, partitions));
+    }
+  }
+
+  /**
+   * Opens all cluster resources.
+   */
+  private CompletableFuture<Void> openResources() {
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    for (ResourceHolder resource : resources.values()) {
+      for (PartitionHolder partition : resource.partitions) {
+        if (partition.config.getReplicas().contains(uri)) {
+          futures.add(partition.cluster.open().thenCompose(v -> partition.context.open()));
+        }
+      }
+    }
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
+  }
+
+  /**
+   * Closes all cluster resources.
+   */
+  private CompletableFuture<Void> closeResources() {
+    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    for (ResourceHolder resource : resources.values()) {
+      for (PartitionHolder partition : resource.partitions) {
+        futures.add(partition.context.close().thenCompose(v -> partition.cluster.close()));
+      }
+    }
+    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
-    state.addObserver(this);
+    if (open.get()) {
+      return CompletableFuture.completedFuture(null);
+    }
+
     CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
     int i = 0;
     for (MemberCoordinator member : members.values()) {
       futures[i++] = member.open();
     }
-    context.consumer(this::consume);
-    return CompletableFuture.allOf(futures).thenCompose((v) -> context.open());
+    return CompletableFuture.allOf(futures)
+      .thenComposeAsync(v -> cluster.open(), executor)
+      .thenComposeAsync(v -> context.open(), executor)
+      .thenComposeAsync(v -> openResources(), executor)
+      .thenRun(() -> open.set(true));
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open.get();
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
-    state.deleteObserver(this);
-    CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
-    int i = 0;
-    for (MemberCoordinator member : members.values()) {
-      futures[i++] = member.close();
+    if (open.compareAndSet(true, false)) {
+      CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
+      int i = 0;
+      for (MemberCoordinator member : members.values()) {
+        futures[i++] = member.close();
+      }
+      return closeResources()
+        .thenComposeAsync(v -> context.close(), executor)
+        .thenComposeAsync(v -> cluster.close(), executor)
+        .thenComposeAsync(v -> CompletableFuture.allOf(futures));
     }
-    return context.close().thenCompose((v) -> CompletableFuture.allOf(futures));
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open.get();
   }
 
   @Override
@@ -295,7 +322,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
      * Handles an outbound protocol request.
      */
     private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(String topic, T request,
-      Cluster cluster) {
+                                                                                               Cluster cluster) {
       Member member = cluster.member(request.uri());
       if (member != null) {
         return member.send(topic, request);
@@ -313,6 +340,39 @@ public class DefaultClusterCoordinator implements ClusterCoordinator, Observer {
       protocol.appendHandler(null);
       protocol.queryHandler(null);
       protocol.commitHandler(null);
+    }
+  }
+
+  /**
+   * Container for all resource related types.
+   */
+  @SuppressWarnings("rawtypes")
+  private static class ResourceHolder {
+    private final Resource resource;
+    private final CoordinatedResourceConfig config;
+    private final List<PartitionHolder> partitions;
+
+    private ResourceHolder(Resource resource, CoordinatedResourceConfig config, List<PartitionHolder> partitions) {
+      this.resource = resource;
+      this.config = config;
+      this.partitions = partitions;
+    }
+  }
+
+  /**
+   * Container for resource partitions.
+   */
+  private static class PartitionHolder {
+    private final CoordinatedResourcePartitionConfig config;
+    private final Cluster cluster;
+    private final CopycatStateContext state;
+    private final ResourcePartitionContext context;
+
+    private PartitionHolder(CoordinatedResourcePartitionConfig config, Cluster cluster, CopycatStateContext state, ResourcePartitionContext context) {
+      this.config = config;
+      this.cluster = cluster;
+      this.state = state;
+      this.context = context;
     }
   }
 

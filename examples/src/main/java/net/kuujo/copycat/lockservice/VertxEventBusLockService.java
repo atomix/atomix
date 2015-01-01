@@ -16,7 +16,6 @@
 package net.kuujo.copycat.lockservice;
 
 import net.kuujo.copycat.Copycat;
-import net.kuujo.copycat.VertxExecutionContext;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.AsyncLock;
 import net.kuujo.copycat.protocol.VertxEventBusProtocol;
@@ -77,7 +76,7 @@ public class VertxEventBusLockService extends Verticle {
 
     // Create a Copycat instance and give it a reference to the local Vert.x instance in order to run
     // asynchronous calls on the Vert.x event loop.
-    copycat = Copycat.create("eventbus://lock1", cluster, new VertxExecutionContext(vertx));
+    copycat = Copycat.create("eventbus://lock1", cluster);
 
     // Open the Copycat instance and create a lock instance.
     copycat.open().whenComplete((copycatResult, copycatError) -> {
@@ -91,19 +90,19 @@ public class VertxEventBusLockService extends Verticle {
               // Register an event bus handler for operating on the lock.
               vertx.eventBus().registerHandler(address, messageHandler, result -> {
                 if (result.succeeded()) {
-                  startResult.setResult(null);
+                  vertx.runOnContext(startResult::setResult);
                 } else {
-                  startResult.setFailure(result.cause());
+                  vertx.runOnContext(v -> startResult.setFailure(result.cause()));
                 }
               });
 
             } else {
-              startResult.setFailure(lockError);
+              vertx.runOnContext(v -> startResult.setFailure(lockError));
             }
           });
         });
       } else {
-        startResult.setFailure(copycatError);
+        vertx.runOnContext(v -> startResult.setFailure(copycatError));
       }
     });
   }

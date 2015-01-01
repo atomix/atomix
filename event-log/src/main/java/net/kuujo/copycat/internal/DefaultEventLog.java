@@ -14,14 +14,14 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.EventLog;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.util.serializer.Serializer;
+import net.kuujo.copycat.EventLogPartition;
+import net.kuujo.copycat.ResourceContext;
+import net.kuujo.copycat.ResourcePartitionContext;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -29,98 +29,34 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultEventLog<T> extends AbstractCopycatResource<EventLog<T>> implements EventLog<T> {
-  private final Serializer serializer = Serializer.serializer();
-  private Consumer<T> consumer;
+public class DefaultEventLog<T, U> extends AbstractPartitionedResource<EventLog<T, U>, EventLogPartition<U>> implements EventLog<T, U> {
 
-  public DefaultEventLog(String name, CopycatContext context, ClusterCoordinator coordinator, Executor executor) {
-    super(name, context, coordinator, executor);
+  public DefaultEventLog(ResourceContext context) {
+    super(context);
   }
 
   @Override
-  public EventLog<T> consumer(Consumer<T> consumer) {
-    this.consumer = consumer;
+  protected EventLogPartition<U> createPartition(ResourcePartitionContext context) {
+    return new DefaultEventLogPartition<>(context, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-resource-" + context.name() + "-partition-" + context.config().getPartition() + "-%d")));
+  }
+
+  @Override
+  public synchronized EventLog<T, U> consumer(Consumer<U> consumer) {
+    partitions.forEach(p -> p.consumer(consumer));
     return this;
   }
 
   @Override
-  public <U extends T> CompletableFuture<U> get(long index) {
-    CompletableFuture<U> future = new CompletableFuture<>();
-    context.execute(() -> {
-      if (!context.log().containsIndex(index)) {
-        executor.execute(() -> {
-          future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index)));
-        });
-      } else {
-        ByteBuffer buffer = context.log().getEntry(index);
-        if (buffer != null) {
-          U entry = serializer.readObject(buffer);
-          executor.execute(() -> future.complete(entry));
-        } else {
-          executor.execute(() -> future.complete(null));
-        }
-      }
-    });
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<Long> commit(T entry) {
-    return context.commit(serializer.writeObject(entry)).thenApplyAsync(ByteBuffer::getLong, executor);
-  }
-
-  @Override
-  public CompletableFuture<Void> replay() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.execute(() -> replay(context.log().firstIndex(), future));
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<Void> replay(long index) {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.execute(() -> replay(index, future));
-    return future;
-  }
-
-  /**
-   * Handles asynchronous replay of the log. The log is read on the internal context and the consumer
-   * is called on the user's context.
-   */
-  private void replay(long index, CompletableFuture<Void> future) {
-    if (context.log().containsIndex(index)) {
-      executor.execute(() -> {
-        consumer.accept(serializer.readObject(context.log().getEntry(index)));
-        executor.execute(() -> replay(index, future));
-      });
-    } else {
-      executor.execute(() -> future.complete(null));
+  public synchronized CompletableFuture<Void> commit(U entry) {
+    if (partitions.size() == 1) {
+      return partitions.get(0).commit(entry).thenApply(index -> null);
     }
-  }
-
-  /**
-   * Handles a log write.
-   */
-  private ByteBuffer consume(Long index, ByteBuffer entry) {
-    ByteBuffer result = ByteBuffer.allocateDirect(8);
-    result.putLong(index);
-    if (consumer != null) {
-      executor.execute(() -> consumer.accept(serializer.readObject(entry)));
-    }
-    return result;
+    return partitions.get(entry.hashCode() % partitions.size()).commit(entry).thenApply(index -> null);
   }
 
   @Override
-  public CompletableFuture<Void> open() {
-    return super.open().thenRunAsync(() -> {
-      context.consumer(this::consume);
-    }, executor);
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    context.consumer(null);
-    return super.close();
+  public synchronized CompletableFuture<Void> commit(T partitionKey, U entry) {
+    return partitions.get(partitionKey.hashCode() % partitions.size()).commit(entry).thenApply(index -> null);
   }
 
 }

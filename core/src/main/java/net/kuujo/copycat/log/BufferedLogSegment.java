@@ -26,18 +26,18 @@ import net.kuujo.copycat.internal.util.Assert;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class BufferedLogSegment extends AbstractLogSegment {
-  private final BufferedLog parent;
+  private final BufferedLogManager parent;
   private long timestamp;
   private TreeMap<Long, ByteBuffer> log;
   private int size;
 
-  BufferedLogSegment(BufferedLog parent, long id, long firstIndex) {
+  BufferedLogSegment(BufferedLogManager parent, long id, long firstIndex) {
     super(id, firstIndex);
     this.parent = parent;
   }
 
   @Override
-  public Log log() {
+  public LogManager log() {
     return parent;
   }
 

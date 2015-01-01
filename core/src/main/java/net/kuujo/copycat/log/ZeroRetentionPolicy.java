@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.spi.RetentionPolicy;
-
 /**
  * Retention policy that does not retain any logs.
  *

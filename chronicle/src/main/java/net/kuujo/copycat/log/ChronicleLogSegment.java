@@ -40,7 +40,7 @@ public class ChronicleLogSegment extends AbstractLogSegment {
   /* Size of index + status + length data */
   private static final int ENTRY_INFO_LEN = 13;
 
-  private final ChronicleLog parent;
+  private final ChronicleLogManager parent;
   /* The base path to chronicle files */
   private final File basePath;
   private final File dataFile;
@@ -53,16 +53,16 @@ public class ChronicleLogSegment extends AbstractLogSegment {
   private long size;
   private long entries;
 
-  ChronicleLogSegment(ChronicleLog parent, long id, long firstIndex) {
+  ChronicleLogSegment(ChronicleLogManager parent, long id, long firstIndex) {
     super(id, firstIndex);
     this.parent = parent;
-    this.basePath = new File(parent.base().getParent(), String.format("%s-%d", parent.base().getName(), id));
-    this.dataFile = new File(parent.base().getParent(), String.format("%s-%d.data", parent.base().getName(), id));
-    this.indexFile = new File(parent.base().getParent(), String.format("%s-%d.index", parent.base().getName(), id));
+    this.basePath = new File(parent.base.getParent(), String.format("%s-%d", parent.base.getName(), id));
+    this.dataFile = new File(parent.base.getParent(), String.format("%s-%d.data", parent.base.getName(), id));
+    this.indexFile = new File(parent.base.getParent(), String.format("%s-%d.index", parent.base.getName(), id));
   }
 
   @Override
-  public Log log() {
+  public LogManager log() {
     return parent;
   }
 

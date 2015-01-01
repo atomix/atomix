@@ -31,10 +31,24 @@ public interface Managed {
   CompletableFuture<Void> open();
 
   /**
+   * Returns a boolean value indicating whether the managed object is open.
+   *
+   * @return Indicates whether the managed object is open.
+   */
+  boolean isOpen();
+
+  /**
    * Closes the managed object.
    *
    * @return A completable future to be completed once the object has been closed.
    */
   CompletableFuture<Void> close();
+
+  /**
+   * Returns a boolean value indicating whether the managed object is closed.
+   *
+   * @return Indicates whether the managed object is closed.
+   */
+  boolean isClosed();
 
 }

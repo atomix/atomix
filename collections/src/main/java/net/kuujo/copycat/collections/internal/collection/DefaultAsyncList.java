@@ -15,9 +15,10 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.collections.AsyncList;
 import net.kuujo.copycat.collections.AsyncListProxy;
+import net.kuujo.copycat.internal.DefaultStateMachine;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -27,10 +28,11 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncList<T> extends AbstractAsyncCollection<ListState<T>, AsyncListProxy<T>, T> implements AsyncList<T> {
+public class DefaultAsyncList<T> extends AbstractAsyncCollection<AsyncList<T>, ListState<T>, AsyncListProxy<T>, T> implements AsyncList<T> {
 
-  public DefaultAsyncList(StateMachine<ListState<T>> stateMachine) {
-    super(stateMachine, AsyncListProxy.class);
+  @SuppressWarnings("unchecked")
+  public DefaultAsyncList(ResourceContext context) {
+    super(context, new DefaultStateMachine(context, ListState.class, DefaultListState.class), AsyncListProxy.class);
   }
 
   @Override

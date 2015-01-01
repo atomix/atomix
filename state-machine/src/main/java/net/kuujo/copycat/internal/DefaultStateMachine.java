@@ -17,6 +17,7 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.internal.util.Assert;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
@@ -31,10 +32,10 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultStateMachine<T> implements StateMachine<T> {
+public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachine<T>> implements StateMachine<T> {
   private final Class<T> stateType;
   private T state;
-  private final StateLog<List<Object>> log;
+  private final StateLog<Integer, List<Object>> log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
   private Map<String, Object> data = new HashMap<>(1024);
   private Method initializer;
@@ -76,13 +77,15 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
     }
   };
 
-  public DefaultStateMachine(Class<T> stateType, T state, StateLog<List<Object>> log) {
-    if (!stateType.isInterface()) {
-      throw new IllegalArgumentException("State type must be an interface");
+  public DefaultStateMachine(ResourceContext context, Class<T> stateType, Class<? extends T> initialState) {
+    super(context);
+    this.stateType = Assert.isNotNull(stateType, "stateType");
+    try {
+      this.state = Assert.isNotNull(initialState, "initialState").newInstance();
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new RuntimeException(e);
     }
-    this.stateType = stateType;
-    this.state = state;
-    this.log = log;
+    this.log = new DefaultStateLog<>(context);
     registerCommands();
   }
 
@@ -93,12 +96,12 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
 
   @Override
   public Cluster cluster() {
-    return log.cluster();
+    return log.partition(1).cluster();
   }
 
   @Override
   public CopycatState state() {
-    return log.state();
+    return log.partition(1).state();
   }
 
   @Override
@@ -128,17 +131,27 @@ public class DefaultStateMachine<T> implements StateMachine<T> {
 
   @Override
   public synchronized CompletableFuture<Void> open() {
-    log.takeSnapshotWith(this::snapshot);
-    log.installSnapshotWith(this::install);
+    log.partition(1).snapshotWith(this::snapshot);
+    log.partition(1).installWith(this::install);
     return log.open();
+  }
+
+  @Override
+  public boolean isOpen() {
+    return log.isOpen();
   }
 
   @Override
   public synchronized CompletableFuture<Void> close() {
     return log.close().whenComplete((result, error) -> {
-      log.takeSnapshotWith(null);
-      log.installSnapshotWith(null);
+      log.snapshotWith(null);
+      log.installWith(null);
     });
+  }
+
+  @Override
+  public boolean isClosed() {
+    return log.isClosed();
   }
 
   @Override

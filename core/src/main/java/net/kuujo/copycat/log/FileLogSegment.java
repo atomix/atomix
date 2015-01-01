@@ -30,7 +30,7 @@ import java.nio.file.StandardOpenOption;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileLogSegment extends AbstractLogSegment {
-  private final FileLog log;
+  private final FileLogManager log;
   private final File logFile;
   private final File indexFile;
   private final File metadataFile;
@@ -42,7 +42,7 @@ public class FileLogSegment extends AbstractLogSegment {
   private Long firstIndex;
   private Long lastIndex;
 
-  public FileLogSegment(FileLog log, long id, long firstIndex) {
+  FileLogSegment(FileLogManager log, long id, long firstIndex) {
     super(id, firstIndex);
     this.log = log;
     this.logFile = new File(log.base.getParentFile(), String.format("%s-%d.log", log.base.getName(), id));
@@ -51,17 +51,19 @@ public class FileLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public Log log() {
+  public LogManager log() {
     return log;
   }
 
   @Override
   public long timestamp() {
+    assertIsOpen();
     return timestamp;
   }
 
   @Override
   public void open() throws IOException {
+    assertIsNotOpen();
     if (!logFile.getParentFile().exists()) {
       logFile.getParentFile().mkdirs();
     }
@@ -92,6 +94,7 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public boolean isEmpty() {
+    assertIsOpen();
     return firstIndex == null;
   }
 
@@ -102,6 +105,7 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public long size() {
+    assertIsOpen();
     try {
       return logFileChannel.size();
     } catch (IOException e) {
@@ -111,6 +115,7 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public long entryCount() {
+    assertIsOpen();
     return firstIndex != null ? lastIndex - firstIndex + 1 : 0;
   }
 
@@ -128,6 +133,7 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public long appendEntry(ByteBuffer entry) {
+    assertIsOpen();
     long index = nextIndex();
     try {
       long position = logFileChannel.position();
@@ -167,21 +173,25 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public Long firstIndex() {
+    assertIsOpen();
     return firstIndex;
   }
 
   @Override
   public Long lastIndex() {
+    assertIsOpen();
     return lastIndex;
   }
 
   @Override
   public boolean containsIndex(long index) {
+    assertIsOpen();
     return firstIndex != null && lastIndex != null && firstIndex <= index && index <= lastIndex;
   }
 
   @Override
   public ByteBuffer getEntry(long index) {
+    assertIsOpen();
     try {
       logFileChannel.read(entryBuffer, findPosition(index));
       entryBuffer.flip();
@@ -193,6 +203,7 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public void removeAfter(long index) {
+    assertIsOpen();
     if (containsIndex(index + 1)) {
       try {
         logFileChannel.truncate(findPosition(index + 1));
@@ -205,6 +216,7 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public void compact(long index, ByteBuffer entry) {
+    assertIsOpen();
     try {
       // Create temporary log, index, and metadata files which will be copied to permanent names.
       File tempLogFile = new File(log.base.getParent(), String.format("%s-%d.log.tmp", log.base.getName(), id));
@@ -259,21 +271,25 @@ public class FileLogSegment extends AbstractLogSegment {
 
   @Override
   public void flush() {
-    flush(true);
+    flush(false);
   }
 
   @Override
   public void flush(boolean force) {
-    try {
-      logFileChannel.force(true);
-      indexFileChannel.force(true);
-    } catch (IOException e) {
-      throw new LogException(e);
+    assertIsOpen();
+    if (force || log.config.isFlushOnWrite()) {
+      try {
+        logFileChannel.force(true);
+        indexFileChannel.force(true);
+      } catch (IOException e) {
+        throw new LogException(e);
+      }
     }
   }
 
   @Override
   public void close() throws IOException {
+    assertIsOpen();
     logFileChannel.close();
     logFileChannel = null;
     indexFileChannel.close();

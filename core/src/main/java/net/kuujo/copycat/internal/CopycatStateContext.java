@@ -15,15 +15,16 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.*;
 
 import java.nio.ByteBuffer;
@@ -43,7 +44,7 @@ import java.util.function.BiFunction;
  */
 public class CopycatStateContext extends Observable implements RaftProtocol {
   private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-%d"));
-  private final Log log;
+  private final LogManager log;
   private AbstractState state;
   private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
@@ -66,13 +67,13 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private boolean open;
 
-  public CopycatStateContext(String uri, ClusterConfig config, Log log) {
+  public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, CoordinatedResourcePartitionConfig partition) {
     this.localMember = uri;
-    for (String member : config.getMembers()) {
+    for (String member : partition.getReplicas()) {
       this.members.put(member, new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE));
     }
-    this.members.put(uri, new MemberInfo(uri, config.getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE));
-    this.log = log;
+    this.members.put(uri, new MemberInfo(uri, partition.getReplicas().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE));
+    this.log = config.getLog().getLogManager(name);
     this.electionTimeout = config.getElectionTimeout();
     this.heartbeatInterval = config.getHeartbeatInterval();
   }
@@ -405,7 +406,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return The state log.
    */
-  public Log log() {
+  public LogManager log() {
     return log;
   }
 
@@ -608,6 +609,11 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
+  public boolean isOpen() {
+    return open;
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
     if (openFuture != null) {
       openFuture.cancel(false);
@@ -637,6 +643,11 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       });
     });
     return future;
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
   }
 
   @Override

@@ -15,21 +15,22 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.internal.DefaultStateMachine;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 
 /**
  * State machine.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateMachine<T> extends CopycatResource {
+public interface StateMachine<T> extends DiscreteResource {
 
   /**
    * Creates a new state machine.
@@ -41,8 +42,8 @@ public interface StateMachine<T> extends CopycatResource {
    * @param cluster The state machine cluster configuration.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster) {
-    return create(name, uri, stateType, initialState, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-state-machine-" + name + "-%d")));
+  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, Class<? extends T> initialState, ClusterConfig cluster) {
+    return create(name, uri, cluster, new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
   }
 
   /**
@@ -50,46 +51,36 @@ public interface StateMachine<T> extends CopycatResource {
    *
    * @param name The state machine resource name.
    * @param uri The state machine member URI.
-   * @param stateType The state machine state type.
-   * @param initialState The state machine state.
    * @param cluster The state machine cluster configuration.
    * @param config The state machine configuration.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster, LogConfig config) {
-    return create(name, uri, stateType, initialState, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-state-machine-" + name + "-%d")));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <T> StateMachine<T> create(String name, String uri, ClusterConfig cluster, StateMachineConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
+    try {
+      coordinator.open().get();
+      return (StateMachine<T>) ((AbstractManagedResource) coordinator.<StateMachine<T>>getResource(name).get()).withShutdownTask(coordinator::close);
+    } catch (InterruptedException e) {
+      throw new ResourceException(e);
+    } catch (ExecutionException e) {
+      throw new ResourceException(e.getCause());
+    }
   }
 
   /**
-   * Creates a new state machine.
+   * Returns the state machine cluster.
    *
-   * @param name The state machine resource name.
-   * @param uri The state machine member URI.
-   * @param stateType The state machine state type.
-   * @param initialState The state machine state.
-   * @param cluster The state machine cluster configuration.
-   * @param executor The user execution context.
-   * @return The state machine.
+   * @return The state machine cluster.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, stateType, initialState, cluster, new LogConfig(), executor);
-  }
+  Cluster cluster();
 
   /**
-   * Creates a new state machine.
+   * Returns the current state machine state.
    *
-   * @param name The state machine resource name.
-   * @param uri The state machine member URI.
-   * @param stateType The state machine state type.
-   * @param initialState The state machine state.
-   * @param cluster The state machine cluster configuration.
-   * @param config The state machine configuration.
-   * @param executor The user execution context.
-   * @return The state machine.
+   * @return The current state machine state.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, T initialState, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultStateMachine<>(stateType, initialState, StateLog.create(name, uri, cluster, config, executor));
-  }
+  CopycatState state();
 
   /**
    * Creates a state machine proxy.

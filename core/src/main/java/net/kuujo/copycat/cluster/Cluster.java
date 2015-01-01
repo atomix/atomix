@@ -14,7 +14,10 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.election.Election;
+
+import java.util.Collection;
 
 /**
  * Resource cluster.<p>
@@ -24,7 +27,7 @@ import net.kuujo.copycat.election.Election;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Cluster extends ClusterManager {
+public interface Cluster extends Managed {
 
   /**
    * Returns the current cluster leader.
@@ -46,5 +49,27 @@ public interface Cluster extends ClusterManager {
    * @return The cluster election.
    */
   Election election();
+
+  /**
+   * Returns the local cluster member.
+   *
+   * @return The local cluster member.
+   */
+  LocalMember member();
+
+  /**
+   * Returns a member by URI.
+   *
+   * @param uri The unique member URI.
+   * @return The member.
+   */
+  Member member(String uri);
+
+  /**
+   * Returns an immutable set of all cluster members.
+   *
+   * @return An immutable set of all cluster members.
+   */
+  Collection<Member> members();
 
 }

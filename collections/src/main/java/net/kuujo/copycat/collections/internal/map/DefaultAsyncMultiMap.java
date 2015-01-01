@@ -15,11 +15,12 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncMultiMap;
 import net.kuujo.copycat.collections.AsyncMultiMapProxy;
+import net.kuujo.copycat.internal.AbstractDiscreteResource;
+import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.Collection;
@@ -34,27 +35,14 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncMultiMap<K, V> implements AsyncMultiMap<K, V> {
+public class DefaultAsyncMultiMap<K, V> extends AbstractDiscreteResource<AsyncMultiMap<K, V>> implements AsyncMultiMap<K, V> {
   private final StateMachine<MultiMapState<K, V>> stateMachine;
   private AsyncMultiMapProxy<K, V> proxy;
 
-  public DefaultAsyncMultiMap(StateMachine<MultiMapState<K, V>> stateMachine) {
-    this.stateMachine = stateMachine;
-  }
-
-  @Override
-  public String name() {
-    return stateMachine.name();
-  }
-
-  @Override
-  public Cluster cluster() {
-    return stateMachine.cluster();
-  }
-
-  @Override
-  public CopycatState state() {
-    return stateMachine.state();
+  @SuppressWarnings("unchecked")
+  public DefaultAsyncMultiMap(ResourceContext context) {
+    super(context);
+    this.stateMachine = new DefaultStateMachine(context, MultiMapState.class, DefaultMultiMapState.class);
   }
 
   /**

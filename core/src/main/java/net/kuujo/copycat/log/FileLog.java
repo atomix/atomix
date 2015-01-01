@@ -16,12 +16,6 @@
 package net.kuujo.copycat.log;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -29,56 +23,114 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FileLog extends AbstractLog {
+public class FileLog extends Log {
+  public static final String FILE_LOG_DIRECTORY = "directory";
 
-  @Override
-  protected Collection<LogSegment> loadSegments() {
-    Map<Long, LogSegment> segments = new HashMap<>();
-    base.getAbsoluteFile().getParentFile().mkdirs();
-    for (File file : directory().listFiles(File::isFile)) {
-      if (file.getName().startsWith(base.getName() + "-") && file.getName().endsWith(".metadata")) {
-        try {
-          long id = Long.valueOf(file.getName().substring(file.getName().lastIndexOf('-')), file.getName().lastIndexOf('.')).longValue();
-          if (!segments.containsKey(id)) {
-            // First, look for an existing history file for the log. If history files exist for this segment then that
-            // indicates that a failure occurred during log compaction. Recover the previous log.
-            File historyLogFile = new File(base.getParent(), String.format("%s-%d.log.history", base.getName(), id));
-            File historyIndexFile = new File(base.getParent(), String.format("%s-%d.index.history", base.getName(), id));
-            File historyMetadataFile = new File(base.getParent(), String.format("%s-%d.metadata.history", base.getName(), id));
-            if (historyLogFile.exists() && historyIndexFile.exists() && historyMetadataFile.exists()) {
-              // Restore the log by moving historical files back to permanent log files.
-              File logFile = new File(base.getParent(), String.format("%s-%d.log", base.getName(), id));
-              File indexFile = new File(base.getParent(), String.format("%s-%d.index", base.getName(), id));
-              File metadataFile = new File(base.getParent(), String.format("%s-%d.metadata", base.getName(), id));
+  private static final String DEFAULT_FILE_LOG_DIRECTORY = System.getProperty("user.dir");
 
-              // Copy the files instead of moving them in case another failure occurs.
-              Files.copy(historyLogFile.toPath(), logFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-              Files.copy(historyIndexFile.toPath(), indexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-              Files.copy(historyMetadataFile.toPath(), metadataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+  public FileLog() {
+    super();
+  }
 
-              // Once the history has been restored, delete historical files.
-              historyLogFile.delete();
-              historyIndexFile.delete();
-              historyMetadataFile.delete();
-            }
+  public FileLog(Map<String, Object> config) {
+    super(config);
+  }
 
-            // Open the metadata file, determine the segment's first index, and create a log segment.
-            try (RandomAccessFile metaFile = new RandomAccessFile(file, "r")) {
-              long firstIndex = metaFile.readLong();
-              segments.put(id, new FileLogSegment(this, id, firstIndex));
-            }
-          }
-        } catch (IOException | NumberFormatException e) {
-          throw new LogException(e);
-        }
-      }
-    }
-    return segments.values();
+  protected FileLog(FileLog log) {
+    super(log);
   }
 
   @Override
-  protected LogSegment createSegment(long segmentId, long firstIndex) {
-    return new FileLogSegment(this, segmentId, firstIndex);
+  public FileLog copy() {
+    return new FileLog(this);
+  }
+
+  /**
+   * Sets the log directory.
+   *
+   * @param directory The log directory.
+   * @throws java.lang.NullPointerException If the directory is {@code null}
+   */
+  public void setDirectory(String directory) {
+    put(FILE_LOG_DIRECTORY, directory);
+  }
+
+  /**
+   * Sets the log directory.
+   *
+   * @param directory The log directory.
+   * @throws java.lang.NullPointerException If the directory is {@code null}
+   */
+  public void setDirectory(File directory) {
+    setDirectory(directory.getAbsolutePath());
+  }
+
+  /**
+   * Returns the log directory.
+   *
+   * @return The log directory.
+   */
+  public File getDirectory() {
+    return new File(get(FILE_LOG_DIRECTORY, DEFAULT_FILE_LOG_DIRECTORY));
+  }
+
+  /**
+   * Sets the log directory, returning the log configuration for method chaining.
+   *
+   * @param directory The log directory.
+   * @return The log configuration.
+   * @throws java.lang.NullPointerException If the directory is {@code null}
+   */
+  public FileLog withDirectory(String directory) {
+    setDirectory(directory);
+    return this;
+  }
+
+  /**
+   * Sets the log directory, returning the log configuration for method chaining.
+   *
+   * @param directory The log directory.
+   * @return The log configuration.
+   * @throws java.lang.NullPointerException If the directory is {@code null}
+   */
+  public FileLog withDirectory(File directory) {
+    setDirectory(directory);
+    return this;
+  }
+
+  @Override
+  public FileLog withSegmentSize(int segmentSize) {
+    setSegmentSize(segmentSize);
+    return this;
+  }
+
+  @Override
+  public FileLog withSegmentInterval(long segmentInterval) {
+    setSegmentInterval(segmentInterval);
+    return this;
+  }
+
+  @Override
+  public FileLog withFlushOnWrite(boolean flushOnWrite) {
+    setFlushOnWrite(flushOnWrite);
+    return this;
+  }
+
+  @Override
+  public FileLog withFlushInterval(long flushInterval) {
+    setFlushInterval(flushInterval);
+    return this;
+  }
+
+  @Override
+  public FileLog withRetentionPolicy(RetentionPolicy retentionPolicy) {
+    setRetentionPolicy(retentionPolicy);
+    return this;
+  }
+
+  @Override
+  public LogManager getLogManager(String name) {
+    return new FileLogManager(name, this);
   }
 
 }

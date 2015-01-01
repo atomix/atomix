@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
 
@@ -29,10 +29,10 @@ import java.util.concurrent.Executor;
  */
 public class ResourceMember implements Member {
   private final Member member;
-  private final CopycatContext context;
+  private final ResourcePartitionContext context;
   private final Executor executor;
 
-  ResourceMember(Member member, CopycatContext context, Executor executor) {
+  ResourceMember(Member member, ResourcePartitionContext context, Executor executor) {
     this.member = member;
     this.context = context;
     this.executor = executor;

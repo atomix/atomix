@@ -17,7 +17,6 @@ package net.kuujo.copycat.protocol;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
-import net.kuujo.copycat.spi.Protocol;
 
 import java.net.URI;
 
@@ -26,7 +25,7 @@ import java.net.URI;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocol implements Protocol {
+public class VertxEventBusProtocol extends Protocol {
   private String host;
   private int port;
   private Vertx vertx;

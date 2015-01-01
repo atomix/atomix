@@ -16,7 +16,6 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.util.Quorum;
 import net.kuujo.copycat.protocol.*;
@@ -256,7 +255,7 @@ class LeaderState extends ActiveState {
   /**
    * Log replicator.
    */
-  private class Replicator implements Managed {
+  private class Replicator {
     private final CopycatStateContext context;
     private final Map<String, Replica> replicaMap;
     private final List<Replica> replicas;
@@ -400,16 +399,6 @@ class LeaderState extends ActiveState {
           break;
         }
       }
-    }
-
-    @Override
-    public CompletableFuture<Void> open() {
-      return CompletableFuture.completedFuture(null);
-    }
-
-    @Override
-    public CompletableFuture<Void> close() {
-      return CompletableFuture.completedFuture(null);
     }
   }
 

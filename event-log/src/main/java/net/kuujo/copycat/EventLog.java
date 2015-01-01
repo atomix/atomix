@@ -16,15 +16,12 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.internal.DefaultEventLog;
+import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.internal.AbstractManagedResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.LogConfig;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -32,7 +29,7 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventLog<T> extends CopycatResource {
+public interface EventLog<T, U> extends PartitionedResource<EventLogPartition<U>> {
 
   /**
    * Creates a new event log.
@@ -42,22 +39,10 @@ public interface EventLog<T> extends CopycatResource {
    * @param cluster The event log cluster.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-event-log-" + name + "-%d")));
+  static <T, U> EventLog<T, U> create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new EventLogConfig());
   }
 
-  /**
-   * Creates a new event log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param cluster The event log cluster.
-   * @param config The log configuration.
-   * @return A new event log instance.
-   */
-  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
-    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-event-log-" + name + "-%d")));
-  }
 
   /**
    * Creates a new event log.
@@ -65,30 +50,19 @@ public interface EventLog<T> extends CopycatResource {
    * @param name The log name.
    * @param uri The local log member URI.
    * @param cluster The event log cluster.
-   * @param executor The user execution context.
+   * @param config The event log configuration.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new LogConfig(), executor);
-  }
-
-  /**
-   * Creates a new event log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param cluster The event log cluster.
-   * @param config The log configuration.
-   * @param executor The user execution context.
-   * @return A new event log instance.
-   */
-  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <T, U> EventLog<T, U> create(String name, String uri, ClusterConfig cluster, EventLogConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
     try {
       coordinator.open().get();
-      return new DefaultEventLog<T>(name, coordinator.createResource(name, cluster, config).get(), coordinator, executor).withShutdownTask(coordinator::close);
-    } catch (InterruptedException | ExecutionException e) {
-      throw new IllegalStateException(e);
+      return (EventLog<T, U>) ((AbstractManagedResource) coordinator.<EventLog<T, U>>getResource(name).get()).withShutdownTask(coordinator::close);
+    } catch (InterruptedException e) {
+      throw new ResourceException(e);
+    } catch (ExecutionException e) {
+      throw new ResourceException(e.getCause());
     }
   }
 
@@ -98,15 +72,7 @@ public interface EventLog<T> extends CopycatResource {
    * @param consumer The log entry consumer.
    * @return The event log.
    */
-  EventLog<T> consumer(Consumer<T> consumer);
-
-  /**
-   * Gets an entry from the log by index.
-   *
-   * @param index The index of the entry to get.
-   * @return A completable future to be completed once the entry has been loaded.
-   */
-  <U extends T> CompletableFuture<U> get(long index);
+  EventLog<T, U> consumer(Consumer<U> consumer);
 
   /**
    * Commits an entry to the log.
@@ -114,21 +80,15 @@ public interface EventLog<T> extends CopycatResource {
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
-  CompletableFuture<Long> commit(T entry);
+  CompletableFuture<Void> commit(U entry);
 
   /**
-   * Replays all entries in the log.
+   * Commits an entry to the log.
    *
-   * @return A completable future to be completed once all entries have been replayed.
+   * @param partitionKey The entry partition key.
+   * @param entry The entry to commit.
+   * @return A completable future to be completed once the entry has been committed.
    */
-  CompletableFuture<Void> replay();
-
-  /**
-   * Replays entries in the log starting at the given index.
-   *
-   * @param index The index at which to begin replaying messages.
-   * @return A completable future to be completed once all requested entries have been replayed.
-   */
-  CompletableFuture<Void> replay(long index);
+  CompletableFuture<Void> commit(T partitionKey, U entry);
 
 }

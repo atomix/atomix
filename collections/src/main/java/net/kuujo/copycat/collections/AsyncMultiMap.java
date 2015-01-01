@@ -15,27 +15,25 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.CopycatResource;
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.DiscreteResource;
+import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.MultiMapState;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
-import net.kuujo.copycat.collections.internal.map.DefaultMultiMapState;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous multi-map.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  *
- * @param <K> The map key type.
- * @param <V> The map entry type.
+ * @param <K> The multimap key type.
+ * @param <V> The multimap entry type.
  */
-public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, CopycatResource {
+public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, DiscreteResource {
 
   /**
    * Creates a new asynchronous multimap.
@@ -44,11 +42,11 @@ public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, CopycatRe
    * @param uri The asynchronous multimap member URI.
    * @param cluster The cluster configuration.
    * @param <K> The multimap key type.
-   * @param <V> The multimap entry type.
-   * @return A new asynchronous multimap.
+   * @param <V> The multimap value type.
+   * @return The asynchronous multimap.
    */
   static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-multimap-" + name + "-%d")));
+    return create(name, uri, cluster, new AsyncMultiMapConfig());
   }
 
   /**
@@ -59,43 +57,20 @@ public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, CopycatRe
    * @param cluster The cluster configuration.
    * @param config The multimap configuration.
    * @param <K> The multimap key type.
-   * @param <V> The multimap entry type.
-   * @return A new asynchronous multimap.
+   * @param <V> The multimap value type.
+   * @return The asynchronous multimap.
    */
-  static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
-    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-multimap-" + name + "-%d")));
-  }
-
-  /**
-   * Creates a new asynchronous multimap.
-   *
-   * @param name The asynchronous multimap name.
-   * @param uri The asynchronous multimap member URI.
-   * @param cluster The cluster configuration.
-   * @param executor The user execution context.
-   * @param <K> The multimap key type.
-   * @param <V> The multimap entry type.
-   * @return A new asynchronous multimap.
-   */
-  static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new LogConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous multimap.
-   *
-   * @param name The asynchronous multimap name.
-   * @param uri The asynchronous multimap member URI.
-   * @param cluster The cluster configuration.
-   * @param config The multimap configuration.
-   * @param executor The user execution context.
-   * @param <K> The multimap key type.
-   * @param <V> The multimap entry type.
-   * @return A new asynchronous multimap.
-   */
-  @SuppressWarnings("unchecked")
-  static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncMultiMap(StateMachine.create(name, uri, MultiMapState.class, new DefaultMultiMapState<>(), cluster, config, executor));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMultiMapConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
+    try {
+      coordinator.open().get();
+      return (AsyncMultiMap<K, V>) ((AbstractManagedResource) coordinator.<AsyncMultiMap<K, V>>getResource(name).get()).withShutdownTask(coordinator::close);
+    } catch (InterruptedException e) {
+      throw new ResourceException(e);
+    } catch (ExecutionException e) {
+      throw new ResourceException(e.getCause());
+    }
   }
 
 }

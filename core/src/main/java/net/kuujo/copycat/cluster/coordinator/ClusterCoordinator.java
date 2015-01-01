@@ -15,10 +15,9 @@
  */
 package net.kuujo.copycat.cluster.coordinator;
 
-import net.kuujo.copycat.CopycatContext;
 import net.kuujo.copycat.Managed;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.cluster.Cluster;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +28,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface ClusterCoordinator extends Managed {
+
+  /**
+   * Returns the global coordinator cluster.
+   *
+   * @return The global coordinator cluster.
+   */
+  Cluster cluster();
 
   /**
    * Returns the local member coordinator.
@@ -53,47 +59,12 @@ public interface ClusterCoordinator extends Managed {
   Collection<MemberCoordinator> members();
 
   /**
-   * Creates a cluster resource.
+   * Gets a cluster resource.
    *
    * @param name The resource name.
-   * @return A completable future to be completed with the resource context.
+   * @param <T> The resource type.
+   * @return A completable future to be completed with the resource.
    */
-  CompletableFuture<CopycatContext> createResource(String name);
-
-  /**
-   * Creates a cluster resource.
-   *
-   * @param name The resource name.
-   * @param cluster The resource cluster configuration.
-   * @return A completable future to be completed with the resource context.
-   */
-  CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster);
-
-  /**
-   * Creates a cluster resource.
-   *
-   * @param name The resource name.
-   * @param log The resource log configuration.
-   * @return A completable future to be completed with the resource context.
-   */
-  CompletableFuture<CopycatContext> createResource(String name, LogConfig log);
-
-  /**
-   * Creates a cluster resource.
-   *
-   * @param name The resource name.
-   * @param cluster The resource cluster configuration.
-   * @param log The resource log configuration.
-   * @return A completable future to be completed with the resource context.
-   */
-  CompletableFuture<CopycatContext> createResource(String name, ClusterConfig cluster, LogConfig log);
-
-  /**
-   * Deletes a cluster resource.
-   *
-   * @param name The resource name.
-   * @return A completable future to be completed once the resource has been deleted.
-   */
-  CompletableFuture<Void> deleteResource(String name);
+  <T extends Resource> CompletableFuture<T> getResource(String name);
 
 }

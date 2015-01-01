@@ -15,15 +15,16 @@
  */
 package net.kuujo.copycat.election.internal;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.election.LeaderElection;
-import net.kuujo.copycat.internal.AbstractCopycatResource;
+import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -31,16 +32,19 @@ import java.util.function.Consumer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultLeaderElection extends AbstractCopycatResource<LeaderElection> implements LeaderElection {
+public class DefaultLeaderElection extends AbstractResource<LeaderElection> implements LeaderElection {
+  private final Executor executor;
   private Consumer<Member> handler;
-  private final Consumer<ElectionResult> electionListener = result -> {
-    if (handler != null) {
-      executor.execute(() -> handler.accept(result.winner()));
-    }
-  };
+  private final Consumer<ElectionResult> electionListener;
 
-  public DefaultLeaderElection(String name, CopycatContext context, ClusterCoordinator coordinator, Executor executor) {
-    super(name, context, coordinator, executor);
+  public DefaultLeaderElection(ResourceContext context) {
+    super(context);
+    this.executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-election-" + context.name() + "-%d"));
+    this.electionListener = result -> {
+      if (handler != null) {
+        executor.execute(() -> handler.accept(result.winner()));
+      }
+    };
   }
 
   @Override
@@ -52,13 +56,13 @@ public class DefaultLeaderElection extends AbstractCopycatResource<LeaderElectio
   @Override
   public CompletableFuture<Void> open() {
     return super.open().thenAccept(result -> {
-      context.cluster().election().addListener(electionListener);
+      context.partition(1).cluster().election().addListener(electionListener);
     });
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    context.cluster().election().removeListener(electionListener);
+    context.partition(1).cluster().election().removeListener(electionListener);
     return super.close();
   }
 

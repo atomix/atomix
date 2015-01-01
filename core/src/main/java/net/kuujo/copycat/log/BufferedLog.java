@@ -15,25 +15,65 @@
  */
 package net.kuujo.copycat.log;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Map;
 
 /**
- * In-memory log implementation.
+ * Buffered log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferedLog extends AbstractLog {
+public class BufferedLog extends Log {
 
-  @Override
-  @SuppressWarnings("unchecked")
-  protected Collection<LogSegment> loadSegments() {
-    return Collections.EMPTY_LIST;
+  public BufferedLog() {
+    super();
+  }
+
+  public BufferedLog(Map<String, Object> config) {
+    super(config);
+  }
+
+  private BufferedLog(BufferedLog log) {
+    super(log);
   }
 
   @Override
-  protected LogSegment createSegment(long segmentNumber, long firstIndex) {
-    return new BufferedLogSegment(this, segmentNumber, firstIndex);
+  public BufferedLog copy() {
+    return new BufferedLog(this);
+  }
+
+  @Override
+  public BufferedLog withSegmentSize(int segmentSize) {
+    setSegmentSize(segmentSize);
+    return this;
+  }
+
+  @Override
+  public BufferedLog withSegmentInterval(long segmentInterval) {
+    setSegmentInterval(segmentInterval);
+    return this;
+  }
+
+  @Override
+  public BufferedLog withFlushOnWrite(boolean flushOnWrite) {
+    setFlushOnWrite(flushOnWrite);
+    return this;
+  }
+
+  @Override
+  public BufferedLog withFlushInterval(long flushInterval) {
+    setFlushInterval(flushInterval);
+    return this;
+  }
+
+  @Override
+  public BufferedLog withRetentionPolicy(RetentionPolicy retentionPolicy) {
+    setRetentionPolicy(retentionPolicy);
+    return this;
+  }
+
+  @Override
+  public LogManager getLogManager(String name) {
+    return new BufferedLogManager(this);
   }
 
 }

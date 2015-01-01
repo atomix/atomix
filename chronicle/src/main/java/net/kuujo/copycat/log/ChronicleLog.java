@@ -15,85 +15,239 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.Config;
-import net.openhft.chronicle.ChronicleConfig;
-import net.openhft.chronicle.ExcerptTailer;
-import net.openhft.chronicle.IndexedChronicle;
+import net.kuujo.copycat.internal.util.Assert;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * Chronicle based Copycat log.
+ * Chronicle log implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ChronicleLog extends AbstractLog {
-  ChronicleConfig chronicleConfig;
+public class ChronicleLog extends FileLog {
+  public static final String CHRONICLE_LOG_INDEX_FILE_CAPACITY = "index.capacity";
+  public static final String CHRONICLE_LOG_INDEX_FILE_EXCERPTS = "index.excerpts";
+  public static final String CHRONICLE_LOG_DATA_BLOCK_SIZE = "block.size";
+  public static final String CHRONICLE_LOG_MESSAGE_CAPACITY = "message.capacity";
+  public static final String CHRONICLE_LOG_MINIMISE_FOOTPRINT = "minimise-footprint";
 
-  @Override
-  public void configure(Config baseConfig) {
-    ChronicleLogConfig config = new ChronicleLogConfig(baseConfig);
-    chronicleConfig = ChronicleConfig.DEFAULT
-      .indexFileCapacity(config.getIndexFileCapacity())
-      .indexFileExcerpts(config.getIndexFileExcerpts())
-      .dataBlockSize(config.getDataBlockSize())
-      .messageCapacity(config.getMessageCapacity());
-    chronicleConfig.minimiseFootprint(config.isMinimiseFootprint());
+  private static final int DEFAULT_CHRONICLE_LOG_INDEX_FILE_CAPACITY = 1024 * 1024;
+  private static final int DEFAULT_CHRONICLE_LOG_INDEX_FILE_EXCERPTS = 8 * 1024;
+  private static final int DEFAULT_CHRONICLE_LOG_DATA_BLOCK_SIZE = 8 * 1024;
+  private static final int DEFAULT_CHRONICLE_LOG_MESSAGE_CAPACITY = 8129 / 2;
+  private static final boolean DEFAULT_CHRONICLE_LOG_MINIMISE_FOOTPRINT = false;
+
+  public ChronicleLog() {
+    super();
+  }
+
+  public ChronicleLog(FileLog log) {
+    super(log);
   }
 
   @Override
-  protected Collection<LogSegment> loadSegments() {
-    Map<Long, LogSegment> segments = new HashMap<>();
-    base.getAbsoluteFile().getParentFile().mkdirs();
-    for (File file : directory().listFiles(File::isFile)) {
-      if (file.getName().startsWith(base.getName() + "-")
-        && !segments.containsKey(Long.valueOf(file.getName().substring(0,
-          file.getName().indexOf(".", base.getName().length()))))) {
-        try {
-          long id = Long.valueOf(file.getName().substring(0, file.getName().indexOf(".", base.getName().length()))).longValue();
-          // First, look for an existing history file for the log.
-          File historyLogFile = new File(base.getParent(), String.format("%s-%d.history.log", base.getName(), id));
-          File historyIndexFile = new File(base.getParent(), String.format("%s-%d.history.index", base.getName(), id));
-          if (historyLogFile.exists() && historyIndexFile.exists()) {
-            File logFile = new File(base.getParent(), String.format("%s-%d.log", base.getName(), id));
-            File indexFile = new File(base.getParent(), String.format("%s-%d.index", base.getName(), id));
-            Files.copy(historyLogFile.toPath(), logFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            Files.copy(historyIndexFile.toPath(), indexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            logFile.delete();
-            indexFile.delete();
-          }
+  public ChronicleLog copy() {
+    return new ChronicleLog(this);
+  }
 
-          long firstIndex = firstEntryIndex(file);
+  /**
+   * Sets the chronicle index file capacity.
+   *
+   * @param capacity The chronicle index file capacity.
+   * @throws java.lang.IllegalArgumentException If the capacity is not positive
+   */
+  public void setIndexFileCapacity(int capacity) {
+    put(CHRONICLE_LOG_INDEX_FILE_CAPACITY, Assert.arg(capacity, capacity > 0, "index file capacity must be positive"));
+  }
 
-          // Once we've cleaned up the history, add the segment to the log.
-          if (!segments.containsKey(id)) {
-            segments.put(id, new ChronicleLogSegment(this, id, firstIndex));
-          }
-        } catch (IOException | NumberFormatException e) {
-          throw new LogException(e);
-        }
-      }
-    }
-    return segments.values();
+  /**
+   * Returns the chronicle index file capacity.
+   *
+   * @return The chronicle index file capacity.
+   */
+  public int getIndexFileCapacity() {
+    return get(CHRONICLE_LOG_INDEX_FILE_CAPACITY, DEFAULT_CHRONICLE_LOG_INDEX_FILE_CAPACITY);
+  }
+
+  /**
+   * Sets the chronicle index file capacity, returning the configuration for method chaining.
+   *
+   * @param capacity The chronicle index file capacity.
+   * @return The chronicle log configuration.
+   * @throws java.lang.IllegalArgumentException If the capacity is not positive
+   */
+  public ChronicleLog withIndexFileCapacity(int capacity) {
+    setIndexFileCapacity(capacity);
+    return this;
+  }
+
+  /**
+   * Sets the number of chronicle index file excerpts.
+   *
+   * @param excerpts The number of chronicle index file excerpts.
+   * @throws java.lang.IllegalArgumentException If excerpts is not positive
+   */
+  public void setIndexFileExcerpts(int excerpts) {
+    put(CHRONICLE_LOG_INDEX_FILE_EXCERPTS, Assert.arg(excerpts, excerpts > 0, "index file excerpts must be positive"));
+  }
+
+  /**
+   * Returns the number of chronicle index file excerpts.
+   *
+   * @return The number of chronicle index file excerpts.
+   */
+  public int getIndexFileExcerpts() {
+    return get(CHRONICLE_LOG_INDEX_FILE_EXCERPTS, DEFAULT_CHRONICLE_LOG_INDEX_FILE_EXCERPTS);
+  }
+
+  /**
+   * Sets the number of chronicle index file excerpts, returning the configuration for method chaining.
+   *
+   * @param excerpts The number of chronicle index file excerpts.
+   * @return The chronicle log configuration.
+   * @throws java.lang.IllegalArgumentException If excerpts is not positive
+   */
+  public ChronicleLog withIndexFileExcerpts(int excerpts) {
+    setIndexFileExcerpts(excerpts);
+    return this;
+  }
+
+  /**
+   * Sets the chronicle data block size.
+   *
+   * @param blockSize The chronicle data block size.
+   * @throws java.lang.IllegalArgumentException If data block size is not positive
+   */
+  public void setDataBlockSize(int blockSize) {
+    put(CHRONICLE_LOG_DATA_BLOCK_SIZE, Assert.arg(blockSize, blockSize > 0, "data block size must be positive"));
+  }
+
+  /**
+   * Returns the chronicle data block size.
+   *
+   * @return The chronicle data block size.
+   */
+  public int getDataBlockSize() {
+    return get(CHRONICLE_LOG_DATA_BLOCK_SIZE, DEFAULT_CHRONICLE_LOG_DATA_BLOCK_SIZE);
+  }
+
+  /**
+   * Sets the chronicle data block size, returning the configuration for method chaining.
+   *
+   * @param blockSize The chronicle data block size.
+   * @return The chronicle log configuration.
+   * @throws java.lang.IllegalArgumentException If data block size is not positive
+   */
+  public ChronicleLog withDataBlockSize(int blockSize) {
+    setDataBlockSize(blockSize);
+    return this;
+  }
+
+  /**
+   * Sets the chronicle message capacity.
+   *
+   * @param capacity The chronicle message capacity.
+   * @throws java.lang.IllegalArgumentException If message capacity is not positive
+   */
+  public void setMessageCapacity(int capacity) {
+    put(CHRONICLE_LOG_MESSAGE_CAPACITY, Assert.arg(capacity, capacity > 0, "message capacity must be positive"));
+  }
+
+  /**
+   * Returns the chronicle message capacity.
+   *
+   * @return The chronicle message capacity.
+   */
+  public int getMessageCapacity() {
+    return get(CHRONICLE_LOG_MESSAGE_CAPACITY, DEFAULT_CHRONICLE_LOG_MESSAGE_CAPACITY);
+  }
+
+  /**
+   * Sets the chronicle message capacity, returning the configuration for method chaining.
+   *
+   * @param capacity The chronicle message capacity.
+   * @return The chronicle log configuration.
+   * @throws java.lang.IllegalArgumentException If message capacity is not positive
+   */
+  public ChronicleLog withMessageCapacity(int capacity) {
+    setMessageCapacity(capacity);
+    return this;
+  }
+
+  /**
+   * Sets whether to minimize the Chronicle log footprint.
+   *
+   * @param minimise Whether to minimize the chronicle log footprint.
+   */
+  public void setMinimiseFootprint(boolean minimise) {
+    put(CHRONICLE_LOG_MINIMISE_FOOTPRINT, minimise);
+  }
+
+  /**
+   * Returns whether Chronicle log footprint minimization is enabled.
+   *
+   * @return Indicates whether footprint minimization is enabled.
+   */
+  public boolean isMinimiseFootprint() {
+    return get(CHRONICLE_LOG_MINIMISE_FOOTPRINT, DEFAULT_CHRONICLE_LOG_MINIMISE_FOOTPRINT);
+  }
+
+  /**
+   * Sets whether to minimize the Chronicle log footprint, returning the configuration for method chaining.
+   *
+   * @param minimise Whether to minimize the chronicle log footprint.
+   * @return The Chronicle log configuration.
+   */
+  public ChronicleLog withMinimiseFootprint(boolean minimise) {
+    setMinimiseFootprint(minimise);
+    return this;
   }
 
   @Override
-  protected LogSegment createSegment(long id, long firstIndex) {
-    return new ChronicleLogSegment(this, id, firstIndex);
+  public ChronicleLog withDirectory(String directory) {
+    super.setDirectory(directory);
+    return this;
   }
 
-  long firstEntryIndex(File file) throws IOException {
-    try (IndexedChronicle chronicle = new IndexedChronicle(file.getAbsolutePath())) {
-      ExcerptTailer tailer = chronicle.createTailer();
-      try (ExcerptTailer t = tailer.toStart()) {
-        return t.readLong();
-      }
-    }
+  @Override
+  public ChronicleLog withDirectory(File directory) {
+    super.setDirectory(directory);
+    return this;
   }
+
+  @Override
+  public ChronicleLog withSegmentSize(int segmentSize) {
+    super.setSegmentSize(segmentSize);
+    return this;
+  }
+
+  @Override
+  public ChronicleLog withSegmentInterval(long segmentInterval) {
+    super.setSegmentInterval(segmentInterval);
+    return this;
+  }
+
+  @Override
+  public ChronicleLog withFlushOnWrite(boolean flushOnWrite) {
+    super.setFlushOnWrite(flushOnWrite);
+    return this;
+  }
+
+  @Override
+  public ChronicleLog withFlushInterval(long flushInterval) {
+    super.setFlushInterval(flushInterval);
+    return this;
+  }
+
+  @Override
+  public ChronicleLog withRetentionPolicy(RetentionPolicy retentionPolicy) {
+    super.setRetentionPolicy(retentionPolicy);
+    return this;
+  }
+
+  @Override
+  public LogManager getLogManager(String name) {
+    return new ChronicleLogManager(name, this);
+  }
+
 }

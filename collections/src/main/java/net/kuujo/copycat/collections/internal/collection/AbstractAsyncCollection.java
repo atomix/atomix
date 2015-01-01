@@ -15,11 +15,12 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.DiscreteResource;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncCollection;
 import net.kuujo.copycat.collections.AsyncCollectionProxy;
+import net.kuujo.copycat.internal.AbstractDiscreteResource;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.Collection;
@@ -31,30 +32,16 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractAsyncCollection<T extends CollectionState<T, V>, U extends AsyncCollectionProxy<V>, V> implements AsyncCollection<V> {
+public abstract class AbstractAsyncCollection<S extends DiscreteResource, T extends CollectionState<T, V>, U extends AsyncCollectionProxy<V>, V> extends AbstractDiscreteResource<S> implements AsyncCollection<V> {
   private final StateMachine<T> stateMachine;
   private final Class<U> proxyClass;
   protected U proxy;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected AbstractAsyncCollection(StateMachine<T> stateMachine, Class proxyClass) {
+  protected AbstractAsyncCollection(ResourceContext context, StateMachine<T> stateMachine, Class proxyClass) {
+    super(context);
     this.stateMachine = stateMachine;
     this.proxyClass = proxyClass;
-  }
-
-  @Override
-  public String name() {
-    return stateMachine.name();
-  }
-
-  @Override
-  public Cluster cluster() {
-    return stateMachine.cluster();
-  }
-
-  @Override
-  public CopycatState state() {
-    return stateMachine.state();
   }
 
   /**

@@ -36,6 +36,7 @@ abstract class AbstractState implements RaftProtocol {
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
   protected MessageHandler<QueryRequest, QueryResponse> queryHandler;
   protected EventHandler<CopycatState, CompletableFuture<CopycatState>> transitionHandler;
+  private boolean open;
 
   protected AbstractState(CopycatStateContext context) {
     this.context = context;
@@ -154,12 +155,24 @@ abstract class AbstractState implements RaftProtocol {
 
   @Override
   public CompletableFuture<Void> open() {
+    open = true;
     return CompletableFuture.completedFuture(null);
   }
 
   @Override
+  public boolean isOpen() {
+    return open;
+  }
+
+  @Override
   public CompletableFuture<Void> close() {
+    open = false;
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
   }
 
 }

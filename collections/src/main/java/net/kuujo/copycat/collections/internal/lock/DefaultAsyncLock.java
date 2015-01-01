@@ -14,11 +14,12 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.collections.AsyncLock;
 import net.kuujo.copycat.collections.AsyncLockProxy;
+import net.kuujo.copycat.internal.AbstractDiscreteResource;
+import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;
@@ -29,27 +30,13 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncLock implements AsyncLock {
-  private final StateMachine<AsyncLockState> stateMachine;
+public class DefaultAsyncLock extends AbstractDiscreteResource<AsyncLock> implements AsyncLock {
+  private final StateMachine<LockState> stateMachine;
   private AsyncLockProxy proxy;
 
-  public DefaultAsyncLock(StateMachine<AsyncLockState> stateMachine) {
-    this.stateMachine = stateMachine;
-  }
-
-  @Override
-  public String name() {
-    return stateMachine.name();
-  }
-
-  @Override
-  public Cluster cluster() {
-    return stateMachine.cluster();
-  }
-
-  @Override
-  public CopycatState state() {
-    return stateMachine.state();
+  public DefaultAsyncLock(ResourceContext context) {
+    super(context);
+    this.stateMachine = new DefaultStateMachine<>(context, LockState.class, UnlockedLockState.class);
   }
 
   /**

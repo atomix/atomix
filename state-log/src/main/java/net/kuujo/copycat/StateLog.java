@@ -17,82 +17,56 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.internal.DefaultStateLog;
+import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.internal.AbstractManagedResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Copycat event log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateLog<T> extends CopycatResource {
+public interface StateLog<T, U> extends PartitionedResource<StateLogPartition<U>> {
 
   /**
    * Creates a new state log.
    *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param cluster The state log cluster.
+   * @param name The state log name.
+   * @param uri The local member URI.
+   * @param cluster The state log cluster configuration.
+   * @param <T> The state log entry type.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-state-log-" + name + "-%d")));
+  static <T, U> StateLog<T, U> create(String name, String uri, ClusterConfig cluster) {
+    return create(name, uri, cluster, new StateLogConfig());
   }
 
   /**
    * Creates a new state log.
    *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param cluster The state log cluster.
+   * @param name The state log name.
+   * @param uri The local member URI.
+   * @param cluster The state log cluster configuration.
    * @param config The state log configuration.
+   * @param <T> The state log entry type.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
-    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-state-log-" + name + "-%d")));
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param cluster The state log cluster.
-   * @param executor The user execution context.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new LogConfig(), executor);
-  }
-
-  /**
-   * Creates a new state log.
-   *
-   * @param name The log name.
-   * @param uri The local log member URI.
-   * @param cluster The state log cluster.
-   * @param config The state log configuration.
-   * @param executor The user execution context.
-   * @return A new state log instance.
-   */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <T, U> StateLog<T, U> create(String name, String uri, ClusterConfig cluster, StateLogConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
     try {
       coordinator.open().get();
-      return new DefaultStateLog<T>(name, coordinator.createResource(name, cluster, config).get(), coordinator, config, executor).withShutdownTask(coordinator::close);
-    } catch (InterruptedException | ExecutionException e) {
-      throw new IllegalStateException(e);
+      return (StateLog<T, U>) ((AbstractManagedResource) coordinator.<StateLog<T, U>>getResource(name).get()).withShutdownTask(coordinator::close);
+    } catch (InterruptedException e) {
+      throw new ResourceException(e);
+    } catch (ExecutionException e) {
+      throw new ResourceException(e.getCause());
     }
   }
 
@@ -101,11 +75,11 @@ public interface StateLog<T> extends CopycatResource {
    *
    * @param name The command name.
    * @param command The command function.
-   * @param <U> The command input type.
-   * @param <V> The command output type.
+   * @param <V> The command input type.
+   * @param <W> The command output type.
    * @return The state log.
    */
-  <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command);
+  <V extends U, W> StateLog<T, U> registerCommand(String name, Function<V, W> command);
 
   /**
    * Unregisters a state command.
@@ -113,18 +87,18 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The command name.
    * @return The state log.
    */
-  StateLog<T> unregisterCommand(String name);
+  StateLog<T, U> unregisterCommand(String name);
 
   /**
    * Registers a state query.
    *
    * @param name The query name.
    * @param query The query function.
-   * @param <U> The query input type.
-   * @param <V> The query output type.
+   * @param <V> The query input type.
+   * @param <W> The query output type.
    * @return The state log.
    */
-  <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query);
+  <V extends U, W> StateLog<T, U> registerQuery(String name, Function<V, W> query);
 
   /**
    * Registers a state query.
@@ -132,11 +106,11 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The query name.
    * @param query The query function.
    * @param consistency The default query consistency.
-   * @param <U> The query input type.
-   * @param <V> The query output type.
+   * @param <V> The query input type.
+   * @param <W> The query output type.
    * @return The state log.
    */
-  <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency);
+  <V extends U, W> StateLog<T, U> registerQuery(String name, Function<V, W> query, Consistency consistency);
 
   /**
    * Unregisters a state query.
@@ -144,7 +118,7 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The query name.
    * @return The state log.
    */
-  StateLog<T> unregisterQuery(String name);
+  StateLog<T, U> unregisterQuery(String name);
 
   /**
    * Unregisters a state command or query.
@@ -152,15 +126,15 @@ public interface StateLog<T> extends CopycatResource {
    * @param name The command or query name.
    * @return The state log.
    */
-  StateLog<T> unregister(String name);
+  StateLog<T, U> unregister(String name);
 
   /**
-   * Registers a state log snapshot provider.
+   * Registers a state log snapshot function.
    *
-   * @param snapshotter The snapshot provider.
+   * @param snapshotter The snapshot function.
    * @return The state log.
    */
-  <U> StateLog<T> takeSnapshotWith(Supplier<U> snapshotter);
+  <V> StateLog<T, U> snapshotWith(Function<Integer, V> snapshotter);
 
   /**
    * Registers a state log snapshot installer.
@@ -168,15 +142,27 @@ public interface StateLog<T> extends CopycatResource {
    * @param installer The snapshot installer.
    * @return The state log.
    */
-  <U> StateLog<T> installSnapshotWith(Consumer<U> installer);
+  <V> StateLog<T, U> installWith(BiConsumer<Integer, V> installer);
 
   /**
    * Submits a state command or query to the log.
    *
    * @param command The command name.
    * @param entry The command entry.
+   * @param <V> The command return type.
    * @return A completable future to be completed once the command output is received.
    */
-  <U> CompletableFuture<U> submit(String command, T entry);
+  <V> CompletableFuture<V> submit(String command, U entry);
+
+  /**
+   * Submits a state command or query to the log.
+   *
+   * @param command The command name.
+   * @param partitionKey The command partition key.
+   * @param entry The command entry.
+   * @param <V> The command return type.
+   * @return A completable future to be completed once the command output is received.
+   */
+  <V> CompletableFuture<V> submit(String command, T partitionKey, U entry);
 
 }

@@ -15,16 +15,14 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
-import net.kuujo.copycat.collections.internal.collection.DefaultListState;
-import net.kuujo.copycat.collections.internal.collection.ListState;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous list.
@@ -45,34 +43,7 @@ public interface AsyncList<T> extends AsyncCollection<T>, AsyncListProxy<T> {
    * @return The asynchronous list.
    */
   static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LogConfig(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-list-" + name + "-%d")));
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
-   * @param cluster The cluster configuration.
-   * @param config The list configuration.   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, LogConfig config) {
-    return create(name, uri, cluster, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-list-" + name + "-%d")));
-  }
-
-  /**
-   * Creates a new asynchronous list.
-   *
-   * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
-   * @param cluster The cluster configuration.
-   * @param executor The user execution context.
-   * @param <T> The list data type.
-   * @return The asynchronous list.
-   */
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, Executor executor) {
-    return create(name, uri, cluster, new LogConfig(), executor);
+    return create(name, uri, cluster, new AsyncListConfig());
   }
 
   /**
@@ -82,13 +53,20 @@ public interface AsyncList<T> extends AsyncCollection<T>, AsyncListProxy<T> {
    * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param config The list configuration.
-   * @param executor The user execution context.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  @SuppressWarnings("unchecked")
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, LogConfig config, Executor executor) {
-    return new DefaultAsyncList(StateMachine.create(name, uri, ListState.class, new DefaultListState<>(), cluster, config, executor));
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
+    try {
+      coordinator.open().get();
+      return (AsyncList<T>) ((AbstractManagedResource) coordinator.<AsyncList<T>>getResource(name).get()).withShutdownTask(coordinator::close);
+    } catch (InterruptedException e) {
+      throw new ResourceException(e);
+    } catch (ExecutionException e) {
+      throw new ResourceException(e.getCause());
+    }
   }
 
 }

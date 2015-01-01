@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.log;
 
-
-
 /**
  * Log segment.
  *
@@ -28,7 +26,7 @@ public interface LogSegment extends Loggable {
    *
    * @return The parent log.
    */
-  Log log();
+  LogManager log();
   
   /**
    * Returns the segment id.

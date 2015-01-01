@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.CopycatContext;
+import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
 
@@ -29,7 +29,7 @@ import java.util.concurrent.Executor;
 public class LocalResourceMember extends ResourceMember implements LocalMember {
   private final LocalMember member;
 
-  public LocalResourceMember(LocalMember member, CopycatContext context, Executor executor) {
+  public LocalResourceMember(LocalMember member, ResourcePartitionContext context, Executor executor) {
     super(member, context, executor);
     this.member = member;
   }

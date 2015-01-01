@@ -16,11 +16,17 @@
 package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.CopycatStateContext;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -29,13 +35,23 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedCluster extends CoordinatedClusterManager implements Cluster {
+public class CoordinatedCluster implements Cluster {
+  private final int id;
+  private CoordinatedLocalMember localMember;
+  private final Map<String, CoordinatedMember> members = new HashMap<>();
   private final CoordinatedClusterElection election;
   private final Router router;
   private final CopycatStateContext context;
 
   public CoordinatedCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Executor executor) {
-    super(id, coordinator, executor);
+    this.id = id;
+    this.localMember = new CoordinatedLocalMember(id, coordinator.member(), executor);
+    this.members.put(localMember.uri(), localMember);
+    for (MemberCoordinator member : coordinator.members()) {
+      if (!member.uri().equals(localMember.uri())) {
+        this.members.put(member.uri(), new CoordinatedMember(id, member, executor));
+      }
+    }
     this.election = new CoordinatedClusterElection(this, context);
     this.router = router;
     this.context = context;
@@ -57,17 +73,43 @@ public class CoordinatedCluster extends CoordinatedClusterManager implements Clu
   }
 
   @Override
+  public Member member(String uri) {
+    return members.get(uri);
+  }
+
+  @Override
+  public LocalMember member() {
+    return localMember;
+  }
+
+  @Override
+  public Collection<Member> members() {
+    return Collections.unmodifiableCollection(members.values());
+  }
+
+  @Override
   public CompletableFuture<Void> open() {
     router.createRoutes(this, context);
     election.open();
-    return super.open();
+    return localMember.open();
+  }
+
+  @Override
+  public boolean isOpen() {
+    return localMember.isOpen();
   }
 
   @Override
   public CompletableFuture<Void> close() {
+    localMember.close();
     router.destroyRoutes(this, context);
     election.close();
-    return super.close();
+    return localMember.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return localMember.isClosed();
   }
 
   @Override

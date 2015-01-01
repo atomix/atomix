@@ -18,12 +18,26 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.protocol.RaftProtocol;
 
 /**
+ * Cluster context router.
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Router {
 
+  /**
+   * Creates routes from the given cluster to the given Raft protocol.
+   *
+   * @param cluster The cluster on which to create routes.
+   * @param protocol The Raft protocol on which to create routes.
+   */
   void createRoutes(Cluster cluster, RaftProtocol protocol);
 
+  /**
+   * Destroys routes from the given cluster to the given Raft protocol.
+   *
+   * @param cluster The cluster on which to destroy routes.
+   * @param protocol The Raft protocol on which to destroy routes.
+   */
   void destroyRoutes(Cluster cluster, RaftProtocol protocol);
 
 }

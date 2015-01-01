@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.internal.util;
 
-import net.kuujo.copycat.Config;
-import net.kuujo.copycat.Configurable;
-
 import java.util.ServiceLoader;
 
 /**
@@ -33,16 +30,6 @@ public final class Services {
   public static <T> T load(Class<T> type) {
     ServiceLoader<T> loader = ServiceLoader.load(type);
     return loader.iterator().next();
-  }
-
-  /**
-   * Loads a service and applies a configuration.
-   */
-  public static <T extends Configurable> T load(Class<T> type, Config config) {
-    ServiceLoader<T> loader = ServiceLoader.load(type);
-    T service = loader.iterator().next();
-    service.configure(config);
-    return service;
   }
 
 }
