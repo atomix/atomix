@@ -56,7 +56,6 @@ taking place on Copycat**
    * [State machine queries](#state-machine-queries)
    * [The state context](#the-state-context)
    * [Transitioning the state machine state](#transitioning-the-state-machine-state)
-   * [Starting the state machine](#starting-the-state-machine)
    * [Synchronous proxies](#synchronous-proxies)
    * [Asynchronous proxies](#asynchronous-proxies)
 1. [Event logs](#event-logs)
@@ -449,13 +448,129 @@ StateMachineConfig config = new StateMachineConfig()
 
 ### State machine commands
 
+State machine commands are annotated methods on the state machine state interface. Annotating a method with the
+`@Command` annotation indicates that it is a stateful method call, meaning the operation that calls the method should
+be persisted to the log and replicated. It is vital that *all* methods which alter the state machine's state be
+identified by the `@Command` annotation. For this reason, all state machine methods are commands by default.
+
+```java
+public interface AsyncMap<K, V> {
+
+  @Command
+  V put(K key);
+
+}
+```
+
 ### State machine queries
 
+Queries are the counter to commands. The `@Query` annotation is used to identify state machine methods which are
+purely read-only methods. *You should never annotate a method that alters tha state machine state with the query
+annotation.* If methods which alter the state machine state are not annotated as commands, calls to the method will
+*not* be logged and replicated, and thus state will be inconsistent across replicas.
+
+```java
+public interface AsyncMap<K, V> {
+
+  @Query
+  V get(K key);
+
+}
+```
+
+You can specify the required consistency of queries by defining the `@Query` annotation's `consistency` argument.
+The query consistency allows you to control how read operations are performed. Copycat supports three consistency
+levels:
+* `NONE` - reads the state machine from the local node. This is the cheapest/fastest consistency level, but will often
+  result in stale data being read
+* `DEFAULT` - all reads go through the resource leader which performs consistency checks based on a lease period equal to the
+  resource's heartbeat interval
+* `FULL` - all reads go through the resource leader which performs a synchronous consistency check with a majority of
+  the resource's replicas before applying the query to the state machine and returning the result. This is the most
+  expensive consistency level.
+
+Query consistency defaults to `DEFAULT`
+
+```java
+public interface AsyncMap<K, V> {
+
+  @Query(consistency=Consistency.FULL)
+  CompletableFuture<V> get(K key);
+
+}
+```
+
 ### The state context
+Copycat's state machine provides a `StateContext` object in which state implementations should store state. The reason
+for storing state in a separate object rather than in the states themselves is threefold. First, the `StateContext`
+object persists throughout the lifetime of the state machine, even across states. Second, the state machine uses the
+state held within the `StateContext` to take and install snapshots for log compaction. Snapshotting and log compaction
+is performed automatically using the context's state; users need only store state in the context in order for snapshots
+to work. Third, the state context provides a vehicle through which states can transition to other states.
+
+To get the `StateContext` object for the state machine, simply add a method to your state annotated with the
+`@Initializer` annotation.
+
+```java
+public class DefaultMap<K, V> implements Map<K, V> {
+  private StateContext<AsyncMap<K, V>> context;
+
+  @Initializer
+  public void init(StateContext<AsyncMap<K, V>> context) {
+    this.context = context;
+  }
+
+  public V get(K key) {
+    return context.<Map<K, V>>get("the-map").get(key);
+  }
+
+}
+```
 
 ### Transitioning the state machine state
 
-### Starting the state machine
+To transition to another state via the `StateContext`, call the `transition` method. A perfect example of this is
+a lock. This example transitions between two states - locked and unlocked - based on the current state.
+
+```java
+public class UnlockedLockState implements LockState {
+  private StateContext<AsyncMap<K, V>> context;
+
+  @Initializer
+  public void init(StateContext<AsyncMap<K, V>> context) {
+    this.context = context;
+  }
+
+  public void lock() {
+    context.transition(new LockedLockState());
+  }
+
+  public void unlock() {
+    throw new IllegalStateException("Lock is not locked");
+  }
+
+}
+```
+
+```java
+public class LockedLockState implements LockState {
+  private StateContext<AsyncMap<K, V>> context;
+
+  @Initializer
+  public void init(StateContext<AsyncMap<K, V>> context) {
+    this.context = context;
+  }
+
+  public void lock() {
+    throw new IllegalStateException("Lock is locked");
+  }
+
+  public void unlock() {
+    context.transition(new UnlockedLockState());
+  }
+
+}
+```
 
 ### Synchronous proxies
 
