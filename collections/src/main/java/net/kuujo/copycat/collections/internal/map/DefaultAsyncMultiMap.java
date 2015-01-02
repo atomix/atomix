@@ -151,11 +151,6 @@ public class DefaultAsyncMultiMap<K, V> extends AbstractDiscreteResource<AsyncMu
   }
 
   @Override
-  public CompletableFuture<Void> delete() {
-    return stateMachine.delete();
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AsyncMultiMap<K, V>> open() {
     return stateMachine.open().thenRun(() -> {

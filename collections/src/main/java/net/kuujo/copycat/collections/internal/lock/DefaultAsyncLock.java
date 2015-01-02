@@ -70,11 +70,6 @@ public class DefaultAsyncLock extends AbstractDiscreteResource<AsyncLock> implem
   }
 
   @Override
-  public CompletableFuture<Void> delete() {
-    return stateMachine.delete();
-  }
-
-  @Override
   public CompletableFuture<AsyncLock> open() {
     return stateMachine.open().thenRun(() -> {
       this.proxy = stateMachine.createProxy(AsyncLockProxy.class);

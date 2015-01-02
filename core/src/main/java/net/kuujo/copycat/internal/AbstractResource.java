@@ -59,9 +59,4 @@ public abstract class AbstractResource<T extends Resource<T>> extends AbstractMa
     return context.isClosed();
   }
 
-  @Override
-  public CompletableFuture<Void> delete() {
-    return context.delete();
-  }
-
 }

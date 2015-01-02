@@ -204,7 +204,7 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
       }
 
       Resource resource = config.getResourceFactory().apply(new DefaultResourceContext(name, config, partitions.stream()
-        .collect(Collectors.mapping(p -> p.context, Collectors.toList())), this));
+        .collect(Collectors.mapping(p -> p.context, Collectors.toList()))));
       resources.put(name, new ResourceHolder(resource, config, partitions));
     }
   }

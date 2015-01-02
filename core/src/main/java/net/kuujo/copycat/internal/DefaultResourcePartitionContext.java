@@ -31,7 +31,6 @@ import net.kuujo.copycat.protocol.Response;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
 /**
@@ -45,9 +44,7 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
   private final Cluster cluster;
   private final CopycatStateContext context;
   private final DefaultClusterCoordinator coordinator;
-  private final AtomicInteger counter = new AtomicInteger();
   private boolean open;
-  private boolean deleted;
 
   public DefaultResourcePartitionContext(String name, CoordinatedResourcePartitionConfig config, Cluster cluster, CopycatStateContext context, DefaultClusterCoordinator coordinator) {
     this.name = Assert.isNotNull(name, "name");
@@ -102,8 +99,6 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
   public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency) {
     if (!open) {
       return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
-    } else if (deleted) {
-      return Futures.exceptionalFuture(new IllegalStateException("Context has been deleted"));
     }
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
@@ -133,8 +128,6 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
   public synchronized CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
     if (!open) {
       return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
-    } else if (deleted) {
-      return Futures.exceptionalFuture(new IllegalStateException("Context has been deleted"));
     }
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
@@ -183,17 +176,6 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
   @Override
   public boolean isClosed() {
     return !open;
-  }
-
-  @Override
-  public synchronized CompletableFuture<Void> delete() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      deleted = true;
-      context.log().delete();
-      future.complete(null);
-    });
-    return future;
   }
 
   @Override

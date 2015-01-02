@@ -18,7 +18,6 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Copycat resource context.
@@ -55,12 +54,5 @@ public interface ResourceContext extends Managed<ResourceContext> {
    * @return The resource partition context.
    */
   ResourcePartitionContext partition(int partition);
-
-  /**
-   * Deletes the resource.
-   *
-   * @return A completable future to be completed once the resource has been deleted.
-   */
-  CompletableFuture<Void> delete();
 
 }

@@ -18,7 +18,6 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.internal.util.Assert;
 
 import java.util.List;
@@ -33,13 +32,11 @@ public class DefaultResourceContext implements ResourceContext {
   private final String name;
   private final CoordinatedResourceConfig config;
   private final List<ResourcePartitionContext> partitions;
-  private final DefaultClusterCoordinator coordinator;
 
-  public DefaultResourceContext(String name, CoordinatedResourceConfig config, List<ResourcePartitionContext> partitions, DefaultClusterCoordinator coordinator) {
+  public DefaultResourceContext(String name, CoordinatedResourceConfig config, List<ResourcePartitionContext> partitions) {
     this.name = Assert.isNotNull(name, "name");
     this.config = Assert.isNotNull(config, "config");
     this.partitions = Assert.isNotNull(partitions, "partitions");
-    this.coordinator = Assert.isNotNull(coordinator, "coordinator");
   }
 
   @Override
@@ -99,15 +96,6 @@ public class DefaultResourceContext implements ResourceContext {
       }
     }
     return true;
-  }
-
-  @Override
-  public CompletableFuture<Void> delete() {
-    CompletableFuture<Void>[] futures = new CompletableFuture[partitions.size()];
-    for (int i = 0; i < partitions.size(); i++) {
-      futures[i] = partitions.get(i).delete();
-    }
-    return CompletableFuture.allOf(futures);
   }
 
 }

@@ -98,11 +98,4 @@ public interface ResourcePartitionContext extends Executor, Managed<ResourcePart
    */
   CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency);
 
-  /**
-   * Deletes the context.
-   *
-   * @return A completable future to be completed once the context has been deleted.
-   */
-  CompletableFuture<Void> delete();
-
 }

@@ -172,11 +172,6 @@ public class DefaultAsyncMap<K, V> extends AbstractDiscreteResource<AsyncMap<K, 
   }
 
   @Override
-  public CompletableFuture<Void> delete() {
-    return stateMachine.delete();
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<AsyncMap<K, V>> open() {
     return stateMachine.open().thenRun(() -> {

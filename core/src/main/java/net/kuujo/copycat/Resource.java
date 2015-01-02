@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Partitioned Copycat resource.
  *
@@ -30,12 +28,5 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
    * @return The resource name.
    */
   String name();
-
-  /**
-   * Deletes the resource.
-   *
-   * @return A completable future to be completed once the resource has been deleted.
-   */
-  CompletableFuture<Void> delete();
 
 }

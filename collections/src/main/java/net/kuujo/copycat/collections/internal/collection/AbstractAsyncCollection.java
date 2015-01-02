@@ -109,11 +109,6 @@ public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T
   }
 
   @Override
-  public CompletableFuture<Void> delete() {
-    return stateMachine.delete();
-  }
-
-  @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<S> open() {
     return stateMachine.open().thenRun(() -> {

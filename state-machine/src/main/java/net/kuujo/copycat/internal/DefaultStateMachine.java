@@ -154,11 +154,6 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
     return log.isClosed();
   }
 
-  @Override
-  public CompletableFuture<Void> delete() {
-    return log.delete();
-  }
-
   /**
    * Registers commands on the state log.
    */
