@@ -19,6 +19,7 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.log.LogManager;
@@ -43,15 +44,17 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
   private final CoordinatedResourcePartitionConfig config;
   private final Cluster cluster;
   private final CopycatStateContext context;
+  private final DefaultClusterCoordinator coordinator;
   private final AtomicInteger counter = new AtomicInteger();
   private boolean open;
   private boolean deleted;
 
-  public DefaultResourcePartitionContext(String name, CoordinatedResourcePartitionConfig config, Cluster cluster, CopycatStateContext context) {
+  public DefaultResourcePartitionContext(String name, CoordinatedResourcePartitionConfig config, Cluster cluster, CopycatStateContext context, DefaultClusterCoordinator coordinator) {
     this.name = Assert.isNotNull(name, "name");
     this.config = config;
     this.cluster = Assert.isNotNull(cluster, "cluster");
     this.context = Assert.isNotNull(context, "context");
+    this.coordinator = Assert.isNotNull(coordinator, "coordinator");
   }
 
   @Override
@@ -158,23 +161,10 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
 
   @Override
   public synchronized CompletableFuture<ResourcePartitionContext> open() {
-    CompletableFuture<ResourcePartitionContext> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      if (counter.incrementAndGet() == 1) {
-        CompletableFuture.allOf(cluster.open(), context.open()).whenComplete((result, error) -> {
-          if (error == null) {
-            open = true;
-            future.complete(null);
-          } else {
-            counter.decrementAndGet();
-            future.completeExceptionally(error);
-          }
-        });
-      } else {
-        future.complete(null);
-      }
-    });
-    return future;
+    return coordinator.acquirePartition(name, config.getPartition())
+      .thenRun(() -> {
+        open = true;
+      }).thenApply(v -> this);
   }
 
   @Override
@@ -184,22 +174,10 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      open = false;
-      if (counter.decrementAndGet() == 0) {
-        CompletableFuture.allOf(cluster.close(), context.close()).whenComplete((result, error) -> {
-          if (error == null) {
-            future.complete(null);
-          } else {
-            future.completeExceptionally(error);
-          }
-        });
-      } else {
-        future.complete(null);
-      }
-    });
-    return future;
+    return coordinator.releasePartition(name, config.getPartition())
+      .thenRun(() -> {
+        open = false;
+      });
   }
 
   @Override

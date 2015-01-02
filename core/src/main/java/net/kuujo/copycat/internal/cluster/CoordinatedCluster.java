@@ -17,6 +17,7 @@ package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.LocalMember;
+import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
@@ -35,7 +36,7 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedCluster implements Cluster {
+public class CoordinatedCluster implements ManagedCluster {
   private final int id;
   private CoordinatedLocalMember localMember;
   private final Map<String, CoordinatedMember> members = new HashMap<>();

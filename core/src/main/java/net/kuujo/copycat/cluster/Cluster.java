@@ -14,7 +14,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.election.Election;
 
 import java.util.Collection;
@@ -27,7 +26,7 @@ import java.util.Collection;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Cluster extends Managed<Cluster> {
+public interface Cluster {
 
   /**
    * Returns the current cluster leader.

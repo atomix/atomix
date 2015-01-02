@@ -19,6 +19,7 @@ import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.*;
 import net.kuujo.copycat.internal.CopycatStateContext;
@@ -55,7 +56,7 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
   private final DefaultLocalMemberCoordinator localMember;
   private final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
   private final CopycatStateContext context;
-  private final Cluster cluster;
+  private final ManagedCluster cluster;
   private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
   private final AtomicBoolean open = new AtomicBoolean();
 
@@ -121,7 +122,7 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
    * @param partition The partition number.
    * @return A completable future to be completed once the partition has been acquired.
    */
-  CompletableFuture<Void> acquirePartition(String name, int partition) {
+  public CompletableFuture<Void> acquirePartition(String name, int partition) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
@@ -157,7 +158,7 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
    * @param partition The partition number.
    * @return A completable future to be completed once the partition has been released.
    */
-  CompletableFuture<Void> releasePartition(String name, int partition) {
+  public CompletableFuture<Void> releasePartition(String name, int partition) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
@@ -197,8 +198,8 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
       List<PartitionHolder> partitions = new ArrayList<>(config.getPartitions().size());
       for (CoordinatedResourcePartitionConfig partitionConfig : config.getPartitions()) {
         CopycatStateContext state = new CopycatStateContext(name, uri, config, partitionConfig);
-        Cluster cluster = new CoordinatedCluster(name.hashCode(), this, context, new ResourceRouter(name), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
-        ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state);
+        ManagedCluster cluster = new CoordinatedCluster(name.hashCode(), this, context, new ResourceRouter(name), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
+        ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state, this);
         partitions.add(new PartitionHolder(partitionConfig, cluster, state, context));
       }
 
@@ -360,11 +361,11 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
    */
   private static class PartitionHolder {
     private final CoordinatedResourcePartitionConfig config;
-    private final Cluster cluster;
+    private final ManagedCluster cluster;
     private final CopycatStateContext state;
     private final ResourcePartitionContext context;
 
-    private PartitionHolder(CoordinatedResourcePartitionConfig config, Cluster cluster, CopycatStateContext state, ResourcePartitionContext context) {
+    private PartitionHolder(CoordinatedResourcePartitionConfig config, ManagedCluster cluster, CopycatStateContext state, ResourcePartitionContext context) {
       this.config = config;
       this.cluster = cluster;
       this.state = state;
