@@ -41,7 +41,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
     super(config);
   }
 
-  protected StateMachineConfig(Config config) {
+  protected StateMachineConfig(StateMachineConfig config) {
     super(config);
   }
 

@@ -39,7 +39,7 @@ public abstract class PartitionedResourceConfig<T extends PartitionedResourceCon
     super(config);
   }
 
-  protected PartitionedResourceConfig(Config config) {
+  protected PartitionedResourceConfig(T config) {
     super(config);
   }
 

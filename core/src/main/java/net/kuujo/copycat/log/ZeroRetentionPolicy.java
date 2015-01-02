@@ -15,12 +15,27 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.AbstractConfigurable;
+
 /**
  * Retention policy that does not retain any logs.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ZeroRetentionPolicy implements RetentionPolicy {
+public class ZeroRetentionPolicy extends AbstractConfigurable implements RetentionPolicy {
+
+  public ZeroRetentionPolicy() {
+    super();
+  }
+
+  private ZeroRetentionPolicy(ZeroRetentionPolicy policy) {
+    super(policy);
+  }
+
+  @Override
+  public ZeroRetentionPolicy copy() {
+    return new ZeroRetentionPolicy(this);
+  }
 
   @Override
   public boolean retain(LogSegment segment) {

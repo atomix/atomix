@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.log.LogSegment;
+import net.kuujo.copycat.Configurable;
 
 /**
  * Log retention policy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface RetentionPolicy {
+public interface RetentionPolicy extends Configurable {
 
   /**
    * Returns a boolean value indicating whether the given log segment should be retained.

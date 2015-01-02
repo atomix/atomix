@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.AbstractConfigurable;
+
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -22,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TimeBasedRetentionPolicy implements RetentionPolicy {
+public class TimeBasedRetentionPolicy extends AbstractConfigurable implements RetentionPolicy {
   private long time;
 
   public TimeBasedRetentionPolicy() {
@@ -30,6 +32,15 @@ public class TimeBasedRetentionPolicy implements RetentionPolicy {
 
   public TimeBasedRetentionPolicy(long time, TimeUnit unit) {
     this.time = unit.toMillis(time);
+  }
+
+  private TimeBasedRetentionPolicy(TimeBasedRetentionPolicy policy) {
+    super(policy);
+  }
+
+  @Override
+  public TimeBasedRetentionPolicy copy() {
+    return new TimeBasedRetentionPolicy(this);
   }
 
   /**

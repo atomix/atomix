@@ -23,6 +23,7 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Config {
+public abstract class ResourceConfig<T extends ResourceConfig<T>> extends AbstractConfigurable {
   public static final String RESOURCE_SERIALIZER = "serializer";
   public static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
   public static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
@@ -52,8 +53,18 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Config
     super(config);
   }
 
-  protected ResourceConfig(Config config) {
+  protected ResourceConfig(T config) {
     super(config);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public T copy() {
+    try {
+      return (T) getClass().getConstructor(getClass()).newInstance(this);
+    } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+      throw new ConfigurationException("Failed to instantiate configuration via copy constructor", e);
+    }
   }
 
   /**

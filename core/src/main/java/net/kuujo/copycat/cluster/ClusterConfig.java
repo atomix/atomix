@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.Config;
+import net.kuujo.copycat.AbstractConfigurable;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.protocol.Protocol;
@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterConfig extends Config {
+public class ClusterConfig extends AbstractConfigurable {
   public static final String CLUSTER_PROTOCOL = "protocol";
   public static final String CLUSTER_ELECTION_TIMEOUT = "election.timeout";
   public static final String CLUSTER_HEARTBEAT_INTERVAL = "heartbeat.interval";

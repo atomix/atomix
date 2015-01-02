@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Config;
 import net.kuujo.copycat.StateLogConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
@@ -38,7 +37,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
     super(config);
   }
 
-  protected AsyncListConfig(Config config) {
+  protected AsyncListConfig(AsyncListConfig config) {
     super(config);
   }
 

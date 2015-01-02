@@ -15,12 +15,32 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.AbstractConfigurable;
+
+import java.util.Map;
+
 /**
  * Always retains logs.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FullRetentionPolicy implements RetentionPolicy {
+public class FullRetentionPolicy extends AbstractConfigurable implements RetentionPolicy {
+
+  public FullRetentionPolicy() {
+  }
+
+  public FullRetentionPolicy(Map<String, Object> config) {
+    super(config);
+  }
+
+  protected FullRetentionPolicy(FullRetentionPolicy config) {
+    super(config);
+  }
+
+  @Override
+  public FullRetentionPolicy copy() {
+    return new FullRetentionPolicy(this);
+  }
 
   @Override
   public boolean retain(LogSegment segment) {

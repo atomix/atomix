@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,41 +15,27 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.AbstractConfigurable;
 import net.kuujo.copycat.Configurable;
 
-import java.net.URI;
+import java.util.Map;
 
 /**
- * Communication protocol.
+ * Abstract protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol extends Configurable {
+public abstract class AbstractProtocol extends AbstractConfigurable implements Protocol {
 
-  /**
-   * Returns a boolean indicating whether the given URI is valid.
-   *
-   * @param uri The member URI to validate.
-   * @return Indicates whether the given URI is valid.
-   */
-  default boolean isValidUri(URI uri) {
-    return true;
+  protected AbstractProtocol() {
   }
 
-  /**
-   * Creates a new protocol client.
-   *
-   * @param uri The member URI.
-   * @return The protocol client.
-   */
-  ProtocolClient createClient(URI uri);
+  protected AbstractProtocol(Map<String, Object> config) {
+    super(config);
+  }
 
-  /**
-   * Creates a new protocol server.
-   *
-   * @param uri The member URI.
-   * @return The protocol server.
-   */
-  ProtocolServer createServer(URI uri);
+  protected AbstractProtocol(Configurable config) {
+    super(config);
+  }
 
 }

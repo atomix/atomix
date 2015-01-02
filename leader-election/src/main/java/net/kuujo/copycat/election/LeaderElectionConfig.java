@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.election;
 
-import net.kuujo.copycat.Config;
 import net.kuujo.copycat.ResourceConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
@@ -39,7 +38,7 @@ public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
     super(config);
   }
 
-  public LeaderElectionConfig(Config config) {
+  private LeaderElectionConfig(LeaderElectionConfig config) {
     super(config);
   }
 

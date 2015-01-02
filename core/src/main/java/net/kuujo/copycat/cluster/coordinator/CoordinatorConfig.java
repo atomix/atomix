@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.cluster.coordinator;
 
-import net.kuujo.copycat.Config;
+import net.kuujo.copycat.AbstractConfigurable;
+import net.kuujo.copycat.Configurable;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.util.Assert;
 
@@ -27,7 +28,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatorConfig extends Config {
+public class CoordinatorConfig extends AbstractConfigurable {
   public static final String COORDINATOR_CLUSTER = "cluster";
   public static final String COORDINATOR_RESOURCES = "resources";
 
@@ -108,7 +109,7 @@ public class CoordinatorConfig extends Config {
     Map<String, Map<String, Object>> resources = get(COORDINATOR_RESOURCES, new HashMap<>());
     Map<String, CoordinatedResourceConfig> configs = new HashMap<>(resources.size());
     for (Map.Entry<String, Map<String, Object>> entry : resources.entrySet()) {
-      configs.put(entry.getKey(), load(entry.getValue()));
+      configs.put(entry.getKey(), Configurable.load(entry.getValue()));
     }
     return configs;
   }

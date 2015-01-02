@@ -25,7 +25,7 @@ import java.net.URI;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocol extends Protocol {
+public class VertxEventBusProtocol extends AbstractProtocol {
   private final Vertx vertx;
 
   public VertxEventBusProtocol(String host, int port) {

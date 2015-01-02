@@ -15,12 +15,14 @@
  */
 package net.kuujo.copycat.log;
 
+import net.kuujo.copycat.AbstractConfigurable;
+
 /**
  * Size based log compaction strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SizeBasedRetentionPolicy implements RetentionPolicy {
+public class SizeBasedRetentionPolicy extends AbstractConfigurable implements RetentionPolicy {
   private long size;
 
   public SizeBasedRetentionPolicy() {
@@ -28,6 +30,15 @@ public class SizeBasedRetentionPolicy implements RetentionPolicy {
 
   public SizeBasedRetentionPolicy(long size) {
     this.size = size;
+  }
+
+  private SizeBasedRetentionPolicy(SizeBasedRetentionPolicy policy) {
+    super(policy);
+  }
+
+  @Override
+  public SizeBasedRetentionPolicy copy() {
+    return new SizeBasedRetentionPolicy(this);
   }
 
   /**

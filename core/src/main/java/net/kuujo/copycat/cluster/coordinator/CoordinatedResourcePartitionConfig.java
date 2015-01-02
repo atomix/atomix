@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster.coordinator;
 
-import net.kuujo.copycat.Config;
+import net.kuujo.copycat.AbstractConfigurable;
 import net.kuujo.copycat.ResourceConfig;
 import net.kuujo.copycat.internal.util.Assert;
 
@@ -26,7 +26,7 @@ import java.util.*;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedResourcePartitionConfig extends Config {
+public class CoordinatedResourcePartitionConfig extends AbstractConfigurable {
   public static final String RESOURCE_PARTITION_CONFIG = "config";
   public static final String RESOURCE_PARTITION_NUMBER = "partition";
   public static final String RESOURCE_PARTITION_REPLICAS = "replicas";

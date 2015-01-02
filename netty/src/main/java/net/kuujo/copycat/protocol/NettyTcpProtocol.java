@@ -22,7 +22,7 @@ import java.net.URI;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyTcpProtocol extends Protocol {
+public class NettyTcpProtocol extends AbstractProtocol {
   private int threads = 1;
   private int sendBufferSize = 8 * 1024;
   private int receiveBufferSize = 32 * 1024;

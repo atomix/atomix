@@ -17,59 +17,45 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.internal.util.Assert;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Base configuration for configurable types.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class Config implements Copyable<Config>, Iterable<Map.Entry<String, Object>> {
+public abstract class AbstractConfigurable implements Configurable {
   public static final String CONFIG_CLASS = "class";
-  private final Map<String, Object> config;
+  private Map<String, Object> config;
 
-  public Config() {
+  protected AbstractConfigurable() {
     this(new HashMap<>(128));
   }
 
-  public Config(Map<String, Object> config) {
+  protected AbstractConfigurable(Map<String, Object> config) {
     this.config = config;
   }
 
-  protected Config(Config config) {
-    this(new HashMap<>(config.config));
+  protected AbstractConfigurable(Configurable config) {
+    this(config.toMap());
   }
 
-  /**
-   * Loads a configuration object from the given configuration map.
-   *
-   * @param config The configuration map from which to load the configuration object.
-   * @param <T> The configuration object type.
-   * @return The loaded configuration object.
-   */
-  @SuppressWarnings("unchecked")
-  protected static <T extends Config> T load(Map<String, Object> config) {
-    String className = (String) config.get(CONFIG_CLASS);
-    if (className == null) {
-      return (T) new Config(config);
-    }
+  @Override
+  public Configurable copy() {
     try {
-      Class<?> clazz = Class.forName(className);
-      Constructor<?> constructor = clazz.getConstructor(Map.class);
-      return (T) constructor.newInstance(config);
-    } catch (ClassNotFoundException | NoSuchMethodException e) {
-      throw new ConfigurationException("Invalid configuration class", e);
-    } catch (InstantiationException | IllegalAccessException | InvocationTargetException | ClassCastException e) {
-      throw new ConfigurationException("Failed to instantiate configuration object", e);
+      Configurable copy = getClass().newInstance();
+      copy.configure(toMap());
+      return copy;
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to create configuration copy", e);
     }
   }
 
   @Override
-  public Config copy() {
-    return new Config(this);
+  public void configure(Map<String, Object> config) {
+    this.config = config;
   }
 
   /**
@@ -77,22 +63,21 @@ public class Config implements Copyable<Config>, Iterable<Map.Entry<String, Obje
    *
    * @param key The configuration key.
    * @param value The configuration value.
-   * @return The configuration instance.
    */
-  public Config put(String key, Object value) {
-    config.put(Assert.isNotNull(key, "key"), value instanceof Config ? ((Config) value).toMap() : value);
-    return this;
+  @SuppressWarnings("unchecked")
+  protected void put(String key, Object value) {
+    config.put(Assert.isNotNull(key, "key"), value instanceof Configurable ? ((Configurable) value).toMap() : value);
   }
 
   /**
    * Gets a configuration value from the configuration.
    *
    * @param key The configuration key.
-   * @param <T> The configuration value type.
+   * @param <U> The configuration value type.
    * @return The configuration value.
    */
   @SuppressWarnings("unchecked")
-  public <T> T get(String key) {
+  protected <U> U get(String key) {
     return get(key, null);
   }
 
@@ -101,34 +86,34 @@ public class Config implements Copyable<Config>, Iterable<Map.Entry<String, Obje
    *
    * @param key The configuration key.
    * @param defaultValue The default value to return if the configuration does not exist.
-   * @param <T> The configuration type.
+   * @param <U> The configuration type.
    * @return The configuration value.
    */
   @SuppressWarnings("unchecked")
-  public <T> T get(String key, T defaultValue) {
+  protected <U> U get(String key, U defaultValue) {
     Assert.isNotNull(key, "key");
-    Object value = config.containsKey(key) ? (T) config.get(key) : defaultValue;
+    Object value = config.containsKey(key) ? config.get(key) : defaultValue;
     if (value == null) {
       return null;
     } else if (value instanceof Map) {
       String className = (String) ((Map<?, ?>) value).get(CONFIG_CLASS);
       if (className != null) {
-        return (T) load((Map<String, Object>) value);
+        return (U) Configurable.load((Map<String, Object>) value);
       }
     }
-    return (T) value;
+    return (U) value;
   }
 
   /**
    * Removes a configuration value from the configuration.
    *
    * @param key The configuration key.
-   * @param <T> The configuration value type.
+   * @param <U> The configuration value type.
    * @return The configuration value that was removed.
    */
   @SuppressWarnings("unchecked")
-  public <T> T remove(String key) {
-    return (T) config.remove(Assert.isNotNull(key, "key"));
+  protected <U> U remove(String key) {
+    return (U) config.remove(Assert.isNotNull(key, "key"));
   }
 
   /**
@@ -137,7 +122,7 @@ public class Config implements Copyable<Config>, Iterable<Map.Entry<String, Obje
    * @param key The key to check.
    * @return Indicates whether the configuration contains the given key.
    */
-  public boolean containsKey(String key) {
+  protected boolean containsKey(String key) {
     return config.containsKey(Assert.isNotNull(key, "key"));
   }
 
@@ -146,7 +131,7 @@ public class Config implements Copyable<Config>, Iterable<Map.Entry<String, Obje
    *
    * @return The configuration key set.
    */
-  public Set<String> keySet() {
+  protected Set<String> keySet() {
     return config.keySet();
   }
 
@@ -155,40 +140,19 @@ public class Config implements Copyable<Config>, Iterable<Map.Entry<String, Obje
    *
    * @return The configuration entry set.
    */
-  public Set<Map.Entry<String, Object>> entrySet() {
+  protected Set<Map.Entry<String, Object>> entrySet() {
     return config.entrySet();
   }
 
   /**
    * Clears the configuration.
-   *
-   * @return The configuration instance.
    */
-  public Config clear() {
+  @SuppressWarnings("unchecked")
+  protected void clear() {
     config.clear();
-    return this;
   }
 
   @Override
-  public Iterator<Map.Entry<String, Object>> iterator() {
-    return config.entrySet().iterator();
-  }
-
-  @Override
-  public void forEach(Consumer<? super Map.Entry<String, Object>> action) {
-    config.entrySet().forEach(action);
-  }
-
-  @Override
-  public Spliterator<Map.Entry<String, Object>> spliterator() {
-    return config.entrySet().spliterator();
-  }
-
-  /**
-   * Returns the configuration as a map.
-   *
-   * @return The configuration map.
-   */
   public Map<String, Object> toMap() {
     Map<String, Object> config = new HashMap<>(this.config);
     config.put("class", getClass().getName());

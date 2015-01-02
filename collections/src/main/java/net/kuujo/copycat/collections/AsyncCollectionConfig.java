@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Config;
 import net.kuujo.copycat.ResourceConfig;
 
 import java.util.Map;
@@ -34,7 +33,7 @@ public abstract class AsyncCollectionConfig<T extends AsyncCollectionConfig<T>> 
     super(config);
   }
 
-  protected AsyncCollectionConfig(Config config) {
+  protected AsyncCollectionConfig(T config) {
     super(config);
   }
 

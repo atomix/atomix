@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedResourceConfig extends Config {
+public class CoordinatedResourceConfig extends AbstractConfigurable {
   public static final String RESOURCE_CONFIG = "config";
   public static final String RESOURCE_FACTORY = "factory";
   public static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";

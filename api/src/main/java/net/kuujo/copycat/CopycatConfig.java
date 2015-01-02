@@ -31,7 +31,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatConfig extends Config {
+public class CopycatConfig extends AbstractConfigurable {
   public static final String COPYCAT_SERIALIZER = "serializer";
   public static final String COPYCAT_CLUSTER = "cluster";
   public static final String COPYCAT_RESOURCES = "resources";
@@ -46,7 +46,7 @@ public class CopycatConfig extends Config {
     super(config);
   }
 
-  public CopycatConfig(Config config) {
+  private CopycatConfig(CopycatConfig config) {
     super(config);
   }
 
@@ -155,7 +155,7 @@ public class CopycatConfig extends Config {
     Map<String, Map<String, Object>> resources = get(COPYCAT_RESOURCES, new HashMap<>(0));
     Map<String, ResourceConfig> configs = new HashMap<>(resources.size());
     for (Map.Entry<String, Map<String, Object>> entry : resources.entrySet()) {
-      configs.put(entry.getKey(), load(entry.getValue()));
+      configs.put(entry.getKey(), Configurable.load(entry.getValue()));
     }
     return configs;
   }

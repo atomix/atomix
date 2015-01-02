@@ -15,7 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.Config;
+import net.kuujo.copycat.AbstractConfigurable;
+import net.kuujo.copycat.Configurable;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.internal.util.Assert;
 
@@ -26,7 +27,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Log extends Config {
+public abstract class Log extends AbstractConfigurable implements Configurable {
   public static final String LOG_SEGMENT_SIZE = "segment.size";
   public static final String LOG_SEGMENT_INTERVAL = "segment.interval";
   public static final String LOG_FLUSH_ON_WRITE = "flush.on-write";
@@ -37,7 +38,7 @@ public abstract class Log extends Config {
   private static final long DEFAULT_LOG_SEGMENT_INTERVAL = Long.MAX_VALUE;
   private static final boolean DEFAULT_LOG_FLUSH_ON_WRITE = false;
   private static final long DEFAULT_LOG_FLUSH_INTERVAL = Long.MAX_VALUE;
-  private static final RetentionPolicy DEFAULT_LOG_RETENTION_POLICY = segment -> true;
+  private static final RetentionPolicy DEFAULT_LOG_RETENTION_POLICY = new FullRetentionPolicy();
 
   protected Log() {
     super();
