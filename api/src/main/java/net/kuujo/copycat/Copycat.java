@@ -20,8 +20,6 @@ import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.DefaultCopycat;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * Copycat.
  *
@@ -72,7 +70,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T, U> CompletableFuture<EventLog<T, U>> eventLog(String name);
+  <T, U> EventLog<T, U> eventLog(String name);
 
   /**
    * Creates a new state log.
@@ -81,7 +79,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T, U> CompletableFuture<StateLog<T, U>> stateLog(String name);
+  <T, U> StateLog<T, U> stateLog(String name);
 
   /**
    * Creates a new replicated state machine.
@@ -92,7 +90,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The state machine state type.
    * @return A completable future to be completed once the state machine has been created.
    */
-  <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState);
+  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState);
 
   /**
    * Creates a new leader election.
@@ -100,7 +98,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The leader election name.
    * @return A completable future to be completed once the leader election has been created.
    */
-  CompletableFuture<LeaderElection> election(String name);
+  LeaderElection leaderElection(String name);
 
   /**
    * Creates a named asynchronous map.
@@ -110,7 +108,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <V> The map value type.
    * @return A completable future to be completed once the asynchronous map has been created.
    */
-  <K, V> CompletableFuture<AsyncMap<K, V>> map(String name);
+  <K, V> AsyncMap<K, V> map(String name);
 
   /**
    * Creates a named asynchronous multimap.
@@ -120,7 +118,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <V> The map entry type.
    * @return A completable future to be completed once the asynchronous multimap has been created.
    */
-  <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name);
+  <K, V> AsyncMultiMap<K, V> multiMap(String name);
 
   /**
    * Creates a named asynchronous list.
@@ -129,7 +127,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The list entry type.
    * @return A completable future to be completed once the asynchronous list has been created.
    */
-  <T> CompletableFuture<AsyncList<T>> list(String name);
+  <T> AsyncList<T> list(String name);
 
   /**
    * Creates a named asynchronous set.
@@ -138,7 +136,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The set entry type.
    * @return A completable future to be completed once the asynchronous set has been created.
    */
-  <T> CompletableFuture<AsyncSet<T>> set(String name);
+  <T> AsyncSet<T> set(String name);
 
   /**
    * Creates a named asynchronous lock.
@@ -146,6 +144,6 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The lock name.
    * @return A completable future to be completed once the asynchronous lock has been created.
    */
-  CompletableFuture<AsyncLock> lock(String name);
+  AsyncLock lock(String name);
 
 }

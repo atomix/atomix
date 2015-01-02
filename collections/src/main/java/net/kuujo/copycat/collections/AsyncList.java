@@ -61,7 +61,7 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
     try {
       coordinator.open().get();
-      return (AsyncList<T>) ((AbstractManagedResource) coordinator.<AsyncList<T>>getResource(name).get()).withShutdownTask(coordinator::close);
+      return (AsyncList<T>) ((AbstractManagedResource) coordinator.<AsyncList<T>>getResource(name)).withShutdownTask(coordinator::close);
     } catch (InterruptedException e) {
       throw new ResourceException(e);
     } catch (ExecutionException e) {

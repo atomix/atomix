@@ -50,47 +50,47 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public <T, U> CompletableFuture<EventLog<T, U>> eventLog(String name) {
+  public <T, U> EventLog<T, U> eventLog(String name) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public <T, U> CompletableFuture<StateLog<T, U>> stateLog(String name) {
+  public <T, U> StateLog<T, U> stateLog(String name) {
     return null;
   }
 
   @Override
-  public <T> CompletableFuture<StateMachine<T>> stateMachine(String name, Class<T> stateType, T initialState) {
+  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public CompletableFuture<LeaderElection> election(String name) {
+  public LeaderElection leaderElection(String name) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public <K, V> CompletableFuture<AsyncMap<K, V>> map(String name) {
+  public <K, V> AsyncMap<K, V> map(String name) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public <K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name) {
+  public <K, V> AsyncMultiMap<K, V> multiMap(String name) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public <T> CompletableFuture<AsyncList<T>> list(String name) {
+  public <T> AsyncList<T> list(String name) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public <T> CompletableFuture<AsyncSet<T>> set(String name) {
+  public <T> AsyncSet<T> set(String name) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public CompletableFuture<AsyncLock> lock(String name) {
+  public AsyncLock lock(String name) {
     return coordinator.getResource(name);
   }
 

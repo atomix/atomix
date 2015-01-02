@@ -153,6 +153,9 @@ Each protocol implementation is separated into an independent module which can b
 </dependency>
 ```
 
+The `copycat-core` module also contains a `LocalProtocol` which can be used for multi-threaded testing. When using
+the `LocalProtocol` for testing, you should use the same `LocalProtocol` instance across all test instances.
+
 ### Setting up the cluster
 
 In order to connect your `Copycat` instance to the Copycat cluster, you must add a set of protocol-specific URIs to
@@ -175,8 +178,8 @@ recommended that any Copycat cluster have *at least three voting members*.
 ### Configuring resources
 
 Each Copycat instance can support any number of various named resources. *Resource* is an abstract term for all of the
-high level log-based data types provided by Copycat. Ultimately, each structure - whether is be an event log, state
-machine, or collection - is backed by a Raft replicated log that is managed by the Copycat cluster coordinator
+high level log-based data types provided by Copycat. Ultimately, each resource - whether is be an event log, state log,
+state machine, or collection - is backed by a Raft replicated log that is managed by the Copycat cluster coordinator
 internally.
 
 It's important to note that *all cluster resources must be configured prior to opening the Copycat instance.* This is
@@ -258,15 +261,15 @@ creation, usage, and deletion of multiple log-based resources within the same cl
 
 With resources configured and the `Copycat` instance created, resources can be easily retrieved by calling any
 of the resource-specific methods on the `Copycat` instance:
-* `<T, U> CompletableFuture<EventLog<T, U>> eventLog(String name)`
-* `<T, U> CompletableFuture<StateLog<T, U>> stateLog(String name)`
-* `<T> CompletableFuture<StateMachine<T>> stateMachine(String name)`
-* `CompletableFuture<LeaderElection> leaderElection(String name)`
-* `<K, V> CompletableFuture<AsyncMap<K, V>> map(String name)`
-* `<K, V> CompletableFuture<AsyncMultiMap<K, V>> multiMap(String name)`
-* `<T> CompletableFuture<List<T>> list(String name)`
-* `<T> CompletableFuture<Set<T>> set(String name)`
-* `CompletableFuture<Lock> lock(String name)`
+* `<T, U> EventLog<T, U> eventLog(String name)`
+* `<T, U> StateLog<T, U> stateLog(String name)`
+* `<T> StateMachine<T> stateMachine(String name)`
+* `LeaderElection leaderElection(String name)`
+* `<K, V> AsyncMap<K, V> map(String name)`
+* `<K, V> AsyncMultiMap<K, V> multiMap(String name)`
+* `<T> AsyncList<T> list(String name)`
+* `<T> AsyncSet<T> set(String name)`
+* `AsyncLock lock(String name)`
 
 Note that resources are created asynchronously. This is because some resources may not already be running on the local
 cluster. For instance, if the current node is not listed as one of the given resources' replicas, the resource will be
@@ -378,11 +381,9 @@ CopycatConfig config = new CopycatConfig()
     .withStateType(Map.class)
     .withInitialState(DefaultMapState.class));
 
-Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
-copycat.open().get();
+Copycat copycat = Copycat.create("tcp://123.456.789.0", config).open().get();
 
-StateMachine<Map<String, String>> stateMachine = copycat.stateMachine("map").get();
-stateMachine.open().get();
+StateMachine<Map<String, String>> stateMachine = copycat.stateMachine("map").open().get();
 ```
 
 When a Copycat resource - such as a state machine, log, or election - is created, the resource must be opened before
@@ -413,9 +414,8 @@ StateMachineConfig config = new StateMachineConfig()
   .withStateType(Map.class)
   .withInitialState(DefaultMapState.class)'
 
-StateMachine<Map<K, V>> stateMachine = StateMachine.create("tcp://123.456.789.0", config);
-stateMachine.open().get();
-stateMachine.submit("get", "foo", "Hello world!").get();
+StateMachine<Map<K, V>> stateMachine = StateMachine.create("tcp://123.456.789.0", cluster, config).open().get();
+stateMachine.submit("get", "foo").get();
 ```
 
 ### Configuring the state machine
@@ -465,7 +465,7 @@ public interface AsyncMap<K, V> {
 ### State machine queries
 
 Queries are the counter to commands. The `@Query` annotation is used to identify state machine methods which are
-purely read-only methods. *You should never annotate a method that alters tha state machine state with the query
+purely read-only methods. *You should never annotate a method that alters the state machine state with the query
 annotation.* If methods which alter the state machine state are not annotated as commands, calls to the method will
 *not* be logged and replicated, and thus state will be inconsistent across replicas.
 
@@ -492,10 +492,11 @@ levels:
 Query consistency defaults to `DEFAULT`
 
 ```java
-public interface AsyncMap<K, V> {
+public interface MapState<K, V> extends Map<K, V> {
 
+  @Override
   @Query(consistency=Consistency.FULL)
-  CompletableFuture<V> get(K key);
+  V get(K key);
 
 }
 ```

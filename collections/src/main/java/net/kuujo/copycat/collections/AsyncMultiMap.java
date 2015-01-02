@@ -65,7 +65,7 @@ public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, DiscreteR
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
     try {
       coordinator.open().get();
-      return (AsyncMultiMap<K, V>) ((AbstractManagedResource) coordinator.<AsyncMultiMap<K, V>>getResource(name).get()).withShutdownTask(coordinator::close);
+      return (AsyncMultiMap<K, V>) ((AbstractManagedResource) coordinator.<AsyncMultiMap<K, V>>getResource(name)).withShutdownTask(coordinator::close);
     } catch (InterruptedException e) {
       throw new ResourceException(e);
     } catch (ExecutionException e) {

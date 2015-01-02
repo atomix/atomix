@@ -58,7 +58,7 @@ public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, Even
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
     try {
       coordinator.open().get();
-      return (EventLog<T, U>) ((AbstractManagedResource) coordinator.<EventLog<T, U>>getResource(name).get()).withShutdownTask(coordinator::close);
+      return (EventLog<T, U>) ((AbstractManagedResource) coordinator.<EventLog<T, U>>getResource(name)).withShutdownTask(coordinator::close);
     } catch (InterruptedException e) {
       throw new ResourceException(e);
     } catch (ExecutionException e) {

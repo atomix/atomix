@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
@@ -102,21 +103,15 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
     return Collections.unmodifiableCollection(members.values());
   }
 
-  /**
-   * Gets a Copycat resource.
-   *
-   * @param name The resource name.
-   * @return A completable future to be completed once the resource has been retrieved.
-   */
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource> CompletableFuture<T> getResource(String name) {
+  public <T extends Resource<T>> T getResource(String name) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
-    if (resource != null) {
-      return CompletableFuture.completedFuture((T) resource.resource);
+    if (resource == null) {
+      throw new ConfigurationException("Invalid resource " + name);
     }
-    return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
+    return (T) resource.resource;
   }
 
   /**

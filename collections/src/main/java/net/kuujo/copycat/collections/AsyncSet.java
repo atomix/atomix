@@ -61,7 +61,7 @@ public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetPr
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
     try {
       coordinator.open().get();
-      return (AsyncSet<T>) ((AbstractManagedResource) coordinator.<AsyncSet<T>>getResource(name).get()).withShutdownTask(coordinator::close);
+      return (AsyncSet<T>) ((AbstractManagedResource) coordinator.<AsyncSet<T>>getResource(name)).withShutdownTask(coordinator::close);
     } catch (InterruptedException e) {
       throw new ResourceException(e);
     } catch (ExecutionException e) {

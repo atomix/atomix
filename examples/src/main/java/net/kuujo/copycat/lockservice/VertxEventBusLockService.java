@@ -83,23 +83,21 @@ public class VertxEventBusLockService extends Verticle {
       if (copycatError == null) {
 
         // Create and open the log.
-        copycat.lock(address).whenComplete((lock, error) -> {
-          lock.open().whenComplete((lockResult, lockError) -> {
-            if (lockError == null) {
+        copycat.lock(address).open().whenComplete((lock, error) -> {
+          if (error == null) {
 
-              // Register an event bus handler for operating on the lock.
-              vertx.eventBus().registerHandler(address, messageHandler, result -> {
-                if (result.succeeded()) {
-                  vertx.runOnContext(startResult::setResult);
-                } else {
-                  vertx.runOnContext(v -> startResult.setFailure(result.cause()));
-                }
-              });
+            // Register an event bus handler for operating on the lock.
+            vertx.eventBus().registerHandler(address, messageHandler, result -> {
+              if (result.succeeded()) {
+                vertx.runOnContext(startResult::setResult);
+              } else {
+                vertx.runOnContext(v -> startResult.setFailure(result.cause()));
+              }
+            });
 
-            } else {
-              vertx.runOnContext(v -> startResult.setFailure(lockError));
-            }
-          });
+          } else {
+            vertx.runOnContext(v -> startResult.setFailure(error));
+          }
         });
       } else {
         vertx.runOnContext(v -> startResult.setFailure(copycatError));

@@ -60,7 +60,7 @@ public interface LeaderElection extends Resource<LeaderElection> {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
     try {
       coordinator.open().get();
-      return (LeaderElection) ((AbstractManagedResource) coordinator.<LeaderElection>getResource(name).get()).withShutdownTask(coordinator::close);
+      return (LeaderElection) ((AbstractManagedResource) coordinator.<LeaderElection>getResource(name)).withShutdownTask(coordinator::close);
     } catch (InterruptedException e) {
       throw new ResourceException(e);
     } catch (ExecutionException e) {
