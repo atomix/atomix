@@ -16,10 +16,6 @@
 package net.kuujo.copycat.collections.internal.lock;
 
 import net.kuujo.copycat.StateContext;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
 
 /**
  * Unlocked asynchronous lock state.
@@ -35,35 +31,21 @@ public class UnlockedLockState implements LockState {
   }
 
   @Override
-  public void lock() {
-    context.transition(new LockedLockState());
-  }
-
-  @Override
-  public void lockInterruptibly() throws InterruptedException {
-    throw new UnsupportedOperationException("lockInterruptibly");
-  }
-
-  @Override
-  public boolean tryLock() {
+  public boolean lock(String member, String thread) {
+    String currentMember = context.get("member");
+    String currentThread = context.get("thread");
+    if ((currentMember != null && !currentMember.equals(member)) || (currentThread != null && !currentThread.equals(thread))) {
+      throw new IllegalStateException("Lock is owned by another thread");
+    }
+    context.put("member", member);
+    context.put("thread", thread);
     context.transition(new LockedLockState());
     return true;
   }
 
   @Override
-  public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-    context.transition(new LockedLockState());
-    return true;
-  }
-
-  @Override
-  public void unlock() {
-  }
-
-  @NotNull
-  @Override
-  public Condition newCondition() {
-    throw new UnsupportedOperationException("newCondition");
+  public void unlock(String member, String thread) {
+    // Do nothing. The lock is already unlocked.
   }
 
 }

@@ -16,10 +16,7 @@
 package net.kuujo.copycat.collections.internal.lock;
 
 import net.kuujo.copycat.StateContext;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
+import net.kuujo.copycat.cluster.MembershipEvent;
 
 /**
  * Locked asynchronous lock state.
@@ -32,37 +29,44 @@ public class LockedLockState implements LockState {
   @Override
   public void init(StateContext<LockState> context) {
     this.context = context;
+    String currentMember = context.get("member");
+    if (currentMember == null || context.cluster().member(currentMember) == null) {
+      context.transition(new UnlockedLockState());
+    } else {
+      context.cluster().addMembershipListener(this::handleMembershipEvent);
+    }
+  }
+
+  /**
+   * Handles a cluster membership change event.
+   */
+  private void handleMembershipEvent(MembershipEvent event) {
+    if (event.type() == MembershipEvent.Type.LEAVE) {
+      String currentMember = context.get("member");
+      if (event.member().uri().equals(currentMember)) {
+        context.remove("member");
+        context.remove("thread");
+        context.transition(new UnlockedLockState());
+      }
+    }
   }
 
   @Override
-  public void lock() {
-    throw new IllegalStateException("Lock is locked");
-  }
-
-  @Override
-  public void lockInterruptibly() throws InterruptedException {
-    throw new UnsupportedOperationException("lockInterruptibly");
-  }
-
-  @Override
-  public boolean tryLock() {
+  public boolean lock(String member, String thread) {
     return false;
   }
 
   @Override
-  public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-    return false;
-  }
-
-  @Override
-  public void unlock() {
+  public void unlock(String member, String thread) {
+    String currentMember = context.get("member");
+    String currentThread = context.get("thread");
+    if ((currentMember != null && !currentMember.equals(member)) || (currentThread != null && !currentThread.equals(thread))) {
+      throw new IllegalStateException("Lock is owned by another thread");
+    }
+    context.remove("member");
+    context.remove("thread");
+    context.cluster().removeMembershipListener(this::handleMembershipEvent);
     context.transition(new UnlockedLockState());
-  }
-
-  @NotNull
-  @Override
-  public Condition newCondition() {
-    throw new UnsupportedOperationException("newCondition");
   }
 
 }

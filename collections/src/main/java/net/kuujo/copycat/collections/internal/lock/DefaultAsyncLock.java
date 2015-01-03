@@ -55,13 +55,8 @@ public class DefaultAsyncLock extends AbstractDiscreteResource<AsyncLock> implem
   }
 
   @Override
-  public CompletableFuture<Void> lock() {
+  public CompletableFuture<Boolean> lock() {
     return checkOpen(proxy::lock);
-  }
-
-  @Override
-  public CompletableFuture<Boolean> tryLock() {
-    return checkOpen(proxy::tryLock);
   }
 
   @Override

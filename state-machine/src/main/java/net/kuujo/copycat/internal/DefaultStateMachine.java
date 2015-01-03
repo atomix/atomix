@@ -41,6 +41,11 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
   private Method initializer;
   private final StateContext<T> context = new StateContext<T>() {
     @Override
+    public Cluster cluster() {
+      return DefaultStateMachine.this.cluster();
+    }
+
+    @Override
     public T state() {
       return state;
     }

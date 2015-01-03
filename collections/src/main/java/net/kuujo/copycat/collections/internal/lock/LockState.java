@@ -15,19 +15,15 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.Command;
 import net.kuujo.copycat.Initializer;
 import net.kuujo.copycat.StateContext;
-
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
 
 /**
  * Asynchronous lock state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LockState extends Lock {
+public interface LockState {
 
   /**
    * Initializes the lock state.
@@ -35,24 +31,21 @@ public interface LockState extends Lock {
   @Initializer
   public void init(StateContext<LockState> context);
 
-  @Override
-  @Command
-  void lock();
+  /**
+   * Locks the lock.
+   *
+   * @param member The member that is unlocking the lock.
+   * @param thread The thread that is unlocking the lock.
+   * @return Indicates whether the lock was successfully locked.
+   */
+  boolean lock(String member, String thread);
 
-  @Override
-  @Command
-  void lockInterruptibly() throws InterruptedException;
-
-  @Override
-  @Command
-  boolean tryLock();
-
-  @Override
-  @Command
-  boolean tryLock(long time, TimeUnit unit) throws InterruptedException;
-
-  @Override
-  @Command
-  void unlock();
+  /**
+   * Unlocks the lock.
+   *
+   * @param member The member that is unlocking the lock.
+   * @param thread The thread that is unlocking the lock.
+   */
+  void unlock(String member, String thread);
 
 }

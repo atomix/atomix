@@ -15,12 +15,21 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.Cluster;
+
 /**
  * Copycat state context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface StateContext<T> {
+
+  /**
+   * Returns the current state cluster.
+   *
+   * @return The current state cluster.
+   */
+  Cluster cluster();
 
   /**
    * Returns the current state.

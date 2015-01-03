@@ -29,14 +29,7 @@ public interface AsyncLockProxy {
    *
    * @return A completable future to be completed once the lock has been acquired.
    */
-  CompletableFuture<Void> lock();
-
-  /**
-   * Acquires the lock only if its free at the time.
-   *
-   * @return A completable future to be completed indicating whether the lock was acquired.
-   */
-  CompletableFuture<Boolean> tryLock();
+  CompletableFuture<Boolean> lock();
 
   /**
    * Releases the lock.

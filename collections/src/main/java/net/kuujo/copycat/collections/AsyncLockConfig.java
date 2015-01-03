@@ -21,6 +21,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.collections.internal.lock.DefaultAsyncLock;
+import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.log.Log;
 
 import java.util.Map;
 
@@ -30,6 +32,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncLockConfig extends ResourceConfig<AsyncLockConfig> {
+  private static final Log DEFAULT_ASYNC_LOCK_LOG = new BufferedLog();
 
   public AsyncLockConfig() {
   }
@@ -45,6 +48,11 @@ public class AsyncLockConfig extends ResourceConfig<AsyncLockConfig> {
   @Override
   public AsyncLockConfig copy() {
     return new AsyncLockConfig(this);
+  }
+
+  @Override
+  public Log getLog() {
+    return get(RESOURCE_LOG, DEFAULT_ASYNC_LOCK_LOG);
   }
 
   @Override
