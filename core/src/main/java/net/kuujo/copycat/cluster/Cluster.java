@@ -72,6 +72,36 @@ public interface Cluster {
   Members members();
 
   /**
+   * Broadcasts a message to the cluster.
+   *
+   * @param topic The topic to which to broadcast the message.
+   * @param message The message to broadcast.
+   * @param <T> The message type.
+   * @return The cluster.
+   */
+  <T> Cluster broadcast(String topic, T message);
+
+  /**
+   * Adds a broadcast listener to the cluster.
+   *
+   * @param topic The topic to which to listen.
+   * @param listener The broadcast listener to add.
+   * @param <T> The broadcast message type.
+   * @return The cluster.
+   */
+  <T> Cluster addBroadcastListener(String topic, EventListener<T> listener);
+
+  /**
+   * Removes a broadcast listener from the cluster.
+   *
+   * @param topic The topic to which to listen.
+   * @param listener The broadcast listener to remove.
+   * @param <T> The broadcast message type.
+   * @return The cluster.
+   */
+  <T> Cluster removeBroadcastListener(String topic, EventListener<T> listener);
+
+  /**
    * Adds a membership listener to the cluster.
    *
    * @param listener The membership event listener.

@@ -20,7 +20,7 @@ package net.kuujo.copycat;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface EventListener<T extends Event<?>> {
+public interface EventListener<T> {
 
   /**
    * Handles an event.

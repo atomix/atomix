@@ -47,6 +47,10 @@ public abstract class AbstractCluster implements ManagedCluster {
   private final Router router;
   private final CopycatStateContext context;
   private final Set<EventListener<MembershipEvent>> membershipListeners = new ConcurrentSkipListSet<>();
+  @SuppressWarnings("rawtypes")
+  private final Map<String, MessageHandler> broadcastHandlers = new ConcurrentHashMap<>();
+  @SuppressWarnings("rawtypes")
+  private final Map<String, Set<EventListener>> broadcastListeners = new ConcurrentHashMap<>();
   private ScheduledFuture<?> gossipTimer;
 
   protected AbstractCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ScheduledExecutorService executor) {
@@ -226,6 +230,40 @@ public abstract class AbstractCluster implements ManagedCluster {
   @Override
   public Members members() {
     return members;
+  }
+
+  @Override
+  public <T> Cluster broadcast(String topic, T message) {
+    for (Member member : members) {
+      member.send(topic, message);
+    }
+    return null;
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes")
+  public synchronized <T> Cluster addBroadcastListener(String topic, EventListener<T> listener) {
+    Set<EventListener> listeners = broadcastListeners.computeIfAbsent(topic, t -> new ConcurrentSkipListSet<EventListener>());
+    listeners.add(listener);
+    broadcastHandlers.computeIfAbsent(topic, t -> message -> {
+      broadcastListeners.get(t).forEach(l -> l.handle(message));
+      return CompletableFuture.completedFuture(null);
+    });
+    return this;
+  }
+
+  @Override
+  @SuppressWarnings("rawtypes")
+  public synchronized <T> Cluster removeBroadcastListener(String topic, EventListener<T> listener) {
+    Set<EventListener> listeners = broadcastListeners.get(topic);
+    if (listeners != null) {
+      listeners.remove(listener);
+      if (listeners.isEmpty()) {
+        broadcastListeners.remove(topic);
+        broadcastHandlers.remove(topic);
+      }
+    }
+    return this;
   }
 
   @Override
