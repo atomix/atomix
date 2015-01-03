@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.Assert;
+
 import java.net.URI;
 
 /**
@@ -23,15 +25,25 @@ import java.net.URI;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxTcpProtocol extends AbstractProtocol {
-  private int sendBufferSize = 8 * 1024;
-  private int receiveBufferSize = 32 * 1024;
-  private boolean useSsl;
-  private String keyStorePath;
-  private String keyStorePassword;
-  private String trustStorePath;
-  private String trustStorePassword;
-  private int acceptBacklog = 1024;
-  private int connectTimeout = 60000;
+  public static final String VERTX_TCP_SEND_BUFFER_SIZE = "send-buffer-size";
+  public static final String VERTX_TCP_RECEIVE_BUFFER_SIZE = "receive-buffer-size";
+  public static final String VERTX_TCP_USE_SSL = "ssl";
+  public static final String VERTX_TCP_KEY_STORE_PATH = "key-store-path";
+  public static final String VERTX_TCP_KEY_STORE_PASSWORD = "key-store-password";
+  public static final String VERTX_TCP_TRUST_STORE_PATH = "trust-store-path";
+  public static final String VERTX_TCP_TRUST_STORE_PASSWORD = "trust-store-password";
+  public static final String VERTX_TCP_ACCEPT_BACKLOG = "accept-backlog";
+  public static final String VERTX_TCP_CONNECT_TIMEOUT = "connect-timeout";
+
+  private int DEFAULT_VERTX_TCP_SEND_BUFFER_SIZE = 8 * 1024;
+  private int DEFAULT_VERTX_TCP_RECEIVE_BUFFER_SIZE = 32 * 1024;
+  private boolean DEFAULT_VERTX_TCP_USE_SSL;
+  private String DEFAULT_VERTX_TCP_KEY_STORE_PATH;
+  private String DEFAULT_VERTX_TCP_KEY_STORE_PASSWORD;
+  private String DEFAULT_VERTX_TCP_TRUST_STORE_PATH;
+  private String DEFAULT_VERTX_TCP_TRUST_STORE_PASSWORD;
+  private int DEFAULT_VERTX_TCP_ACCEPT_BACKLOG = 1024;
+  private int DEFAULT_VERTX_TCP_CONNECT_TIMEOUT = 60000;
 
   public VertxTcpProtocol() {
   }
@@ -40,9 +52,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the send buffer size.
    *
    * @param bufferSize The send buffer size.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public void setSendBufferSize(int bufferSize) {
-    this.sendBufferSize = bufferSize;
+    put(VERTX_TCP_SEND_BUFFER_SIZE, Assert.arg(bufferSize, bufferSize > 0, "buffer size must be positive"));
   }
 
   /**
@@ -51,7 +64,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The send buffer size.
    */
   public int getSendBufferSize() {
-    return sendBufferSize;
+    return get(VERTX_TCP_SEND_BUFFER_SIZE, DEFAULT_VERTX_TCP_SEND_BUFFER_SIZE);
   }
 
   /**
@@ -59,9 +72,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param bufferSize The send buffer size.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public VertxTcpProtocol withSendBufferSize(int bufferSize) {
-    this.sendBufferSize = bufferSize;
+    setSendBufferSize(bufferSize);
     return this;
   }
 
@@ -69,9 +83,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the receive buffer size.
    *
    * @param bufferSize The receive buffer size.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public void setReceiveBufferSize(int bufferSize) {
-    this.receiveBufferSize = bufferSize;
+    put(VERTX_TCP_RECEIVE_BUFFER_SIZE, Assert.arg(bufferSize, bufferSize > 0, "buffer size must be positive"));
   }
 
   /**
@@ -80,7 +95,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The receive buffer size.
    */
   public int getReceiveBufferSize() {
-    return receiveBufferSize;
+    return get(VERTX_TCP_RECEIVE_BUFFER_SIZE, DEFAULT_VERTX_TCP_RECEIVE_BUFFER_SIZE);
   }
 
   /**
@@ -88,9 +103,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param bufferSize The receive buffer size.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public VertxTcpProtocol withReceiveBufferSize(int bufferSize) {
-    this.receiveBufferSize = bufferSize;
+    setReceiveBufferSize(bufferSize);
     return this;
   }
 
@@ -100,7 +116,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @param useSsl Whether to use SSL encryption.
    */
   public void setSsl(boolean useSsl) {
-    this.useSsl = useSsl;
+    put(VERTX_TCP_USE_SSL, useSsl);
   }
 
   /**
@@ -109,7 +125,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return Indicates whether SSL encryption is enabled.
    */
   public boolean isSsl() {
-    return useSsl;
+    return get(VERTX_TCP_USE_SSL, DEFAULT_VERTX_TCP_USE_SSL);
   }
 
   /**
@@ -119,7 +135,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The TCP protocol.
    */
   public VertxTcpProtocol withSsl(boolean useSsl) {
-    this.useSsl = useSsl;
+    setSsl(useSsl);
     return this;
   }
 
@@ -127,9 +143,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the key store path.
    *
    * @param keyStorePath The key store path.
+   * @throws java.lang.NullPointerException If the key store path is {@code null}
    */
   public void setKeyStorePath(String keyStorePath) {
-    this.keyStorePath = keyStorePath;
+    put(VERTX_TCP_KEY_STORE_PATH, Assert.isNotNull(keyStorePath, "keyStorePath"));
   }
 
   /**
@@ -138,7 +155,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The key store path.
    */
   public String getKeyStorePath() {
-    return keyStorePath;
+    return get(VERTX_TCP_KEY_STORE_PATH, DEFAULT_VERTX_TCP_KEY_STORE_PATH);
   }
 
   /**
@@ -146,9 +163,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param keyStorePath The key store path.
    * @return The TCP protocol.
+   * @throws java.lang.NullPointerException If the key store path is {@code null}
    */
   public VertxTcpProtocol withKeyStorePath(String keyStorePath) {
-    this.keyStorePath = keyStorePath;
+    setKeyStorePath(keyStorePath);
     return this;
   }
 
@@ -156,9 +174,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the key store password.
    *
    * @param keyStorePassword The key store password.
+   * @throws java.lang.NullPointerException If the key store password is {@code null}
    */
   public void setKeyStorePassword(String keyStorePassword) {
-    this.keyStorePassword = keyStorePassword;
+    put(VERTX_TCP_KEY_STORE_PASSWORD, Assert.isNotNull(keyStorePassword, "keyStorePassword"));
   }
 
   /**
@@ -167,7 +186,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The key store password.
    */
   public String getKeyStorePassword() {
-    return keyStorePassword;
+    return get(VERTX_TCP_KEY_STORE_PASSWORD, DEFAULT_VERTX_TCP_KEY_STORE_PASSWORD);
   }
 
   /**
@@ -175,9 +194,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param keyStorePassword The key store password.
    * @return The TCP protocol.
+   * @throws java.lang.NullPointerException If the key store password is {@code null}
    */
   public VertxTcpProtocol withKeyStorePassword(String keyStorePassword) {
-    this.keyStorePassword = keyStorePassword;
+    setKeyStorePassword(keyStorePassword);
     return this;
   }
 
@@ -185,9 +205,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the trust store path.
    *
    * @param path The trust store path.
+   * @throws java.lang.NullPointerException If the trust store path is {@code null}
    */
   public void setTrustStorePath(String path) {
-    this.trustStorePath = path;
+    put(VERTX_TCP_TRUST_STORE_PATH, Assert.isNotNull(path, "path"));
   }
 
   /**
@@ -196,7 +217,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The trust store path.
    */
   public String getTrustStorePath() {
-    return trustStorePath;
+    return get(VERTX_TCP_TRUST_STORE_PATH, DEFAULT_VERTX_TCP_TRUST_STORE_PATH);
   }
 
   /**
@@ -204,9 +225,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param path The trust store path.
    * @return The TCP protocol.
+   * @throws java.lang.NullPointerException If the trust store path is {@code null}
    */
   public VertxTcpProtocol withTrustStorePath(String path) {
-    this.trustStorePath = path;
+    setTrustStorePath(path);
     return this;
   }
 
@@ -214,9 +236,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the trust store password.
    *
    * @param password The trust store password.
+   * @throws java.lang.NullPointerException If the trust store password is {@code null}
    */
   public void setTrustStorePassword(String password) {
-    this.trustStorePassword = password;
+    put(VERTX_TCP_TRUST_STORE_PASSWORD, Assert.isNotNull(password, "password"));
   }
 
   /**
@@ -225,7 +248,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The trust store password.
    */
   public String getTrustStorePassword() {
-    return trustStorePassword;
+    return get(VERTX_TCP_TRUST_STORE_PASSWORD, DEFAULT_VERTX_TCP_TRUST_STORE_PASSWORD);
   }
 
   /**
@@ -233,9 +256,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param password The trust store password.
    * @return The TCP protocol.
+   * @throws java.lang.NullPointerException If the trust store password is {@code null}
    */
   public VertxTcpProtocol withTrustStorePassword(String password) {
-    this.trustStorePassword = password;
+    setTrustStorePassword(password);
     return this;
   }
 
@@ -243,9 +267,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the accept backlog.
    *
    * @param backlog The accept backlog.
+   * @throws java.lang.IllegalArgumentException If the accept backlog is not positive
    */
   public void setAcceptBacklog(int backlog) {
-    this.acceptBacklog = backlog;
+    put(VERTX_TCP_ACCEPT_BACKLOG, Assert.arg(backlog, backlog > -1, "backlog must be positive"));
   }
 
   /**
@@ -254,7 +279,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The accept backlog.
    */
   public int getAcceptBacklog() {
-    return acceptBacklog;
+    return get(VERTX_TCP_ACCEPT_BACKLOG, DEFAULT_VERTX_TCP_ACCEPT_BACKLOG);
   }
 
   /**
@@ -262,9 +287,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param backlog The accept backlog.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the accept backlog is not positive
    */
   public VertxTcpProtocol withAcceptBacklog(int backlog) {
-    this.acceptBacklog = backlog;
+    setAcceptBacklog(backlog);
     return this;
   }
 
@@ -272,9 +298,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * Sets the connection timeout.
    *
    * @param connectTimeout The connection timeout.
+   * @throws java.lang.IllegalArgumentException If the connect timeout is not positive
    */
   public void setConnectTimeout(int connectTimeout) {
-    this.connectTimeout = connectTimeout;
+    put(VERTX_TCP_CONNECT_TIMEOUT, Assert.arg(connectTimeout, connectTimeout > 0, "connect timeout must be greater than zero"));
   }
 
   /**
@@ -283,7 +310,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The connection timeout.
    */
   public int getConnectTimeout() {
-    return connectTimeout;
+    return get(VERTX_TCP_CONNECT_TIMEOUT, DEFAULT_VERTX_TCP_CONNECT_TIMEOUT);
   }
 
   /**
@@ -291,9 +318,10 @@ public class VertxTcpProtocol extends AbstractProtocol {
    *
    * @param connectTimeout The connection timeout.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the connect timeout is not positive
    */
   public VertxTcpProtocol withConnectTimeout(int connectTimeout) {
-    this.connectTimeout = connectTimeout;
+    setConnectTimeout(connectTimeout);
     return this;
   }
 
