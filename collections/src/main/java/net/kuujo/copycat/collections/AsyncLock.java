@@ -22,6 +22,7 @@ import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.internal.AbstractManagedResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -29,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLock extends AsyncLockProxy, DiscreteResource<AsyncLock> {
+public interface AsyncLock extends DiscreteResource<AsyncLock> {
 
   /**
    * Creates a new asynchronous lock.
@@ -64,5 +65,19 @@ public interface AsyncLock extends AsyncLockProxy, DiscreteResource<AsyncLock> {
       throw new ResourceException(e.getCause());
     }
   }
+
+  /**
+   * Acquires the lock.
+   *
+   * @return A completable future to be completed once the lock has been acquired.
+   */
+  CompletableFuture<Boolean> lock();
+
+  /**
+   * Releases the lock.
+   *
+   * @return A completable future to be completed once the lock has been released.
+   */
+  CompletableFuture<Void> unlock();
 
 }

@@ -52,14 +52,14 @@ public class LockedLockState implements LockState {
   }
 
   @Override
-  public boolean lock(String member, String thread) {
+  public boolean lock(String member, long thread) {
     return false;
   }
 
   @Override
-  public void unlock(String member, String thread) {
+  public void unlock(String member, long thread) {
     String currentMember = context.get("member");
-    String currentThread = context.get("thread");
+    Long currentThread = context.get("thread");
     if ((currentMember != null && !currentMember.equals(member)) || (currentThread != null && !currentThread.equals(thread))) {
       throw new IllegalStateException("Lock is owned by another thread");
     }

@@ -17,7 +17,6 @@ package net.kuujo.copycat.collections.internal.lock;
 import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.collections.AsyncLock;
-import net.kuujo.copycat.collections.AsyncLockProxy;
 import net.kuujo.copycat.internal.AbstractDiscreteResource;
 import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
@@ -56,12 +55,12 @@ public class DefaultAsyncLock extends AbstractDiscreteResource<AsyncLock> implem
 
   @Override
   public CompletableFuture<Boolean> lock() {
-    return checkOpen(proxy::lock);
+    return checkOpen(() -> proxy.lock(cluster().member().uri(), Thread.currentThread().getId()));
   }
 
   @Override
   public CompletableFuture<Void> unlock() {
-    return checkOpen(proxy::unlock);
+    return checkOpen(() -> proxy.unlock(cluster().member().uri(), Thread.currentThread().getId()));
   }
 
   @Override

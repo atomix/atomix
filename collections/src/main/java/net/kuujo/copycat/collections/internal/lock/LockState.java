@@ -38,7 +38,7 @@ public interface LockState {
    * @param thread The thread that is unlocking the lock.
    * @return Indicates whether the lock was successfully locked.
    */
-  boolean lock(String member, String thread);
+  boolean lock(String member, long thread);
 
   /**
    * Unlocks the lock.
@@ -46,6 +46,6 @@ public interface LockState {
    * @param member The member that is unlocking the lock.
    * @param thread The thread that is unlocking the lock.
    */
-  void unlock(String member, String thread);
+  void unlock(String member, long thread);
 
 }

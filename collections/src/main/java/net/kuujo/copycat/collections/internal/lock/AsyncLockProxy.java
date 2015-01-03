@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections;
+package net.kuujo.copycat.collections.internal.lock;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,15 +27,19 @@ public interface AsyncLockProxy {
   /**
    * Acquires the lock.
    *
+   * @param member The member locking the lock.
+   * @param thread The thread locking the lock.
    * @return A completable future to be completed once the lock has been acquired.
    */
-  CompletableFuture<Boolean> lock();
+  CompletableFuture<Boolean> lock(String member, long thread);
 
   /**
    * Releases the lock.
    *
+   * @param member The member unlocking the lock.
+   * @param thread The thread unlocking the lock.
    * @return A completable future to be completed once the lock has been released.
    */
-  CompletableFuture<Void> unlock();
+  CompletableFuture<Void> unlock(String member, long thread);
 
 }
