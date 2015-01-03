@@ -16,10 +16,10 @@
 package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
+import net.kuujo.copycat.internal.cluster.MemberInfo;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
@@ -46,12 +46,12 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   @SuppressWarnings("rawtypes") private final Map<String, Map<Integer, MessageHandler>> handlers = new ConcurrentHashMap<>();
   private final Serializer serializer = Serializer.serializer();
 
-  public DefaultLocalMemberCoordinator(String uri, Member.Type type, Member.State state, Protocol protocol, Executor executor) {
-    super(uri, type, state);
+  public DefaultLocalMemberCoordinator(MemberInfo info, Protocol protocol, Executor executor) {
+    super(info);
     try {
-      URI realUri = new URI(uri);
+      URI realUri = new URI(info.uri());
       if (!protocol.isValidUri(realUri)) {
-        throw new ProtocolException(String.format("Invalid protocol URI %s", uri));
+        throw new ProtocolException(String.format("Invalid protocol URI %s", info.uri()));
       }
       this.server = protocol.createServer(realUri);
     } catch (URISyntaxException e) {

@@ -16,7 +16,6 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.internal.util.Quorum;
 import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
@@ -66,7 +65,7 @@ class LeaderState extends ActiveState {
    * Sets the current node as the cluster leader.
    */
   private void takeLeadership() {
-    context.setLeader(context.getLocalMember().uri());
+    context.setLeader(context.getLocalMember());
   }
 
   /**
@@ -80,7 +79,7 @@ class LeaderState extends ActiveState {
         applyEntry(i);
         count++;
       }
-      LOGGER.debug("{} - Applied {} entries to log", context.getLocalMember().uri(), count);
+      LOGGER.debug("{} - Applied {} entries to log", context.getLocalMember(), count);
     }
   }
 
@@ -93,7 +92,7 @@ class LeaderState extends ActiveState {
     // the leader.
     replicator.pingAll();
 
-    LOGGER.debug("{} - Setting ping timer", context.getLocalMember().uri());
+    LOGGER.debug("{} - Setting ping timer", context.getLocalMember());
     setPingTimer();
   }
 
@@ -114,7 +113,7 @@ class LeaderState extends ActiveState {
     } else if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(PingResponse.builder()
         .withId(logRequest(request).id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .build()));
@@ -131,7 +130,7 @@ class LeaderState extends ActiveState {
     } else if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
         .withId(logRequest(request).id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
@@ -155,25 +154,25 @@ class LeaderState extends ActiveState {
       case DEFAULT:
         future.complete(logResponse(QueryResponse.builder()
           .withId(request.id())
-          .withUri(context.getLocalMember().uri())
+          .withUri(context.getLocalMember())
           .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
           .build()));
         break;
       // Consistency mode FULL requires synchronous consistency check prior to applying the query.
       case FULL:
-        LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember().uri(), context.log().lastIndex());
+        LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), context.log().lastIndex());
         replicator.pingAll().whenComplete((index, error) -> {
           if (error == null) {
             try {
               future.complete(logResponse(QueryResponse.builder()
                 .withId(request.id())
-                .withUri(context.getLocalMember().uri())
+                .withUri(context.getLocalMember())
                 .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
                 .build()));
             } catch (Exception e) {
               future.complete(QueryResponse.builder()
                 .withId(request.id())
-                .withUri(context.getLocalMember().uri())
+                .withUri(context.getLocalMember())
                 .withStatus(Response.Status.ERROR)
                 .withError(e)
                 .build());
@@ -181,7 +180,7 @@ class LeaderState extends ActiveState {
           } else {
             future.complete(QueryResponse.builder()
               .withId(request.id())
-              .withUri(context.getLocalMember().uri())
+              .withUri(context.getLocalMember())
               .withStatus(Response.Status.ERROR)
               .withError(error)
               .build());
@@ -204,20 +203,20 @@ class LeaderState extends ActiveState {
     logEntry.put(entry);
     entry.rewind();
     long index = context.log().appendEntry(logEntry);
-    LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember().uri(), index);
-    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember().uri(), index);
+    LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember(), index);
+    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
     replicator.commit(index).whenComplete((resultIndex, error) -> {
       if (error == null) {
         try {
           future.complete(logResponse(CommitResponse.builder()
             .withId(request.id())
-            .withUri(context.getLocalMember().uri())
+            .withUri(context.getLocalMember())
             .withResult(consumer != null ? consumer.apply(index, entry) : null)
             .build()));
         } catch (Exception e) {
           future.complete(CommitResponse.builder()
             .withId(request.id())
-            .withUri(context.getLocalMember().uri())
+            .withUri(context.getLocalMember())
             .withStatus(Response.Status.ERROR)
             .withError(e)
             .build());
@@ -227,7 +226,7 @@ class LeaderState extends ActiveState {
       } else {
         future.complete(CommitResponse.builder()
           .withId(request.id())
-          .withUri(context.getLocalMember().uri())
+          .withUri(context.getLocalMember())
           .withStatus(Response.Status.ERROR)
           .withError(error)
           .build());
@@ -242,7 +241,7 @@ class LeaderState extends ActiveState {
    */
   private void cancelPingTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling ping timer", context.getLocalMember().uri());
+      LOGGER.debug("{} - Cancelling ping timer", context.getLocalMember());
       currentTimer.cancel(true);
     }
   }
@@ -268,12 +267,10 @@ class LeaderState extends ActiveState {
       this.context = context;
       this.replicaMap = new HashMap<>(context.getMembers().size());
       this.replicas = new ArrayList<>(context.getMembers().size());
-      for (MemberInfo member : context.getMembers()) {
-        if (!member.equals(context.getLocalMember()) && member.type() == Member.Type.MEMBER) {
-          Replica replica = new Replica(member.uri(), context);
-          replicaMap.put(member.uri(), replica);
-          replicas.add(replica);
-        }
+      for (String uri : context.getReplicas()) {
+        Replica replica = new Replica(uri, context);
+        replicaMap.put(uri, replica);
+        replicas.add(replica);
       }
       this.readQuorum = (int) (Math.floor(context.getMembers().size() / 2) + 1);
       this.writeQuorum = (int) (Math.floor(context.getMembers().size() / 2) + 1);
@@ -440,20 +437,20 @@ class LeaderState extends ActiveState {
         .withId(UUID.randomUUID().toString())
         .withUri(member)
         .withTerm(context.getTerm())
-        .withLeader(context.getLocalMember().uri())
+        .withLeader(context.getLocalMember())
         .withLogIndex(index)
         .withLogTerm(index != null && context.log().containsIndex(index) ? context.log()
           .getEntry(index)
           .getLong() : null)
         .withCommitIndex(context.getCommitIndex())
         .build();
-      LOGGER.debug("{} - Sent {} to {}", context.getLocalMember().uri(), request, member);
+      LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
       pingHandler.handle(request).whenComplete((response, error) -> {
         context.executor().execute(() -> {
           if (error != null) {
             triggerPingFutures(index, error);
           } else {
-            LOGGER.debug("{} - Received {} from {}", context.getLocalMember().uri(), response, member);
+            LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
             if (response.status().equals(Response.Status.OK)) {
               if (response.term() > context.getTerm()) {
                 context.setTerm(response.term());
@@ -525,7 +522,7 @@ class LeaderState extends ActiveState {
         .withId(UUID.randomUUID().toString())
         .withUri(member)
         .withTerm(context.getTerm())
-        .withLeader(context.getLocalMember().uri())
+        .withLeader(context.getLocalMember())
         .withLogIndex(prevIndex)
         .withLogTerm(prevEntry != null ? prevEntry.getLong() : 0)
         .withEntries(entries)
@@ -534,13 +531,13 @@ class LeaderState extends ActiveState {
 
       sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
 
-      LOGGER.debug("{} - Sent {} to {}", context.getLocalMember().uri(), request, member);
+      LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
       appendHandler.handle(request).whenComplete((response, error) -> {
         context.executor().execute(() -> {
           if (error != null) {
             triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), error);
           } else {
-            LOGGER.debug("{} - Received {} from {}", context.getLocalMember().uri(), response, member);
+            LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
             if (response.status().equals(Response.Status.OK)) {
               if (response.succeeded()) {
                 // Update the next index to send and the last index known to be replicated.

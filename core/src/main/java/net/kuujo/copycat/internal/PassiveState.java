@@ -16,8 +16,7 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.protocol.MemberInfo;
+import net.kuujo.copycat.protocol.ReplicaInfo;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
@@ -84,19 +83,17 @@ public class PassiveState extends AbstractState {
    */
   private void sync() {
     // Create a list of currently active members.
-    List<MemberInfo> activeMembers = new ArrayList<>(context.getMembers().size());
-    for (MemberInfo member : context.getMembers()) {
-      if (!member.equals(context.getLocalMember())
-        && (context.getLocalMember().type() == Member.Type.MEMBER && member.type() == Member.Type.LISTENER)
-        || (context.getLocalMember().type() == Member.Type.LISTENER && member.type() == Member.Type.MEMBER)
-        && (member.state() == Member.State.SUSPICIOUS || member.state() == Member.State.ALIVE)) {
+    List<ReplicaInfo> activeMembers = new ArrayList<>(context.getMembers().size());
+    for (ReplicaInfo member : context.getMemberInfo()) {
+      if (!member.getUri().equals(context.getLocalMember())
+        && (!context.getReplicas().contains(context.getLocalMember()) || !context.getReplicas().contains(member.getUri()))) {
         activeMembers.add(member);
       }
     }
 
     // Create a random list of three active members.
     Random random = new Random();
-    List<MemberInfo> randomMembers = new ArrayList<>(3);
+    List<ReplicaInfo> randomMembers = new ArrayList<>(3);
     for (int i = 0; i < Math.min(activeMembers.size(), 3); i++) {
       randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size() - 1, 2))));
     }
@@ -105,30 +102,28 @@ public class PassiveState extends AbstractState {
     context.setVersion(context.getVersion() + 1);
 
     // For each active member, send membership info to the member.
-    for (MemberInfo member : randomMembers) {
-      LOGGER.debug("{} - sending sync request to {}", context.getLocalMember(), member.uri());
-      List<ByteBuffer> entries = context.log().getEntries(member.index() != null ? member.index() : 1, Math.min(member.index() + 100, context.getCommitIndex()));
+    for (ReplicaInfo member : randomMembers) {
+      LOGGER.debug("{} - sending sync request to {}", context.getLocalMember(), member.getUri());
+      List<ByteBuffer> entries = context.log().getEntries(member.getIndex() != null ? member.getIndex() : 1, Math.min(member.getIndex() + 100, context.getCommitIndex()));
       syncHandler.handle(SyncRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withLeader(context.getLeader())
         .withTerm(context.getTerm())
-        .withLogIndex(member.index())
+        .withLogIndex(member.getIndex())
         .withCommitIndex(context.getCommitIndex())
-        .withMembers(context.getMembers())
+        .withMembers(context.getMemberInfo())
         .withEntries(entries)
         .build()).whenComplete((response, error) -> {
         if (error == null) {
           // If the response succeeded, update membership info with the target node's membership.
           if (response.status() == Response.Status.OK) {
-            context.setMembers(response.members());
-            member.succeed();
+            context.setMemberInfo(response.members());
           } else {
-            LOGGER.warn("{} - received error response from {}", context.getLocalMember(), member.uri());
+            LOGGER.warn("{} - received error response from {}", context.getLocalMember(), member.getUri());
           }
         } else {
           // If the request failed then record the member as INACTIVE.
-          LOGGER.warn("{} - sync to {} failed", context.getLocalMember(), member.uri());
-          member.fail(context.getLocalMember().uri());
+          LOGGER.warn("{} - sync to {} failed", context.getLocalMember(), member);
         }
       });
     }
@@ -143,7 +138,7 @@ public class PassiveState extends AbstractState {
 
     // Increment the local vector clock version and update cluster members.
     context.setVersion(context.getVersion() + 1);
-    context.setMembers(request.members());
+    context.setMemberInfo(request.members());
 
     for (int i = 0; i < request.entries().size(); i++) {
       long index = request.logIndex() != null ? request.logIndex() + i + 1 : i + 1;
@@ -151,8 +146,8 @@ public class PassiveState extends AbstractState {
         if ((index == 1 && context.log().lastIndex() != null) || (index > 1 && context.log().lastIndex() != index - 1)) {
           return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
             .withId(logRequest(request).id())
-            .withUri(context.getLocalMember().uri())
-            .withMembers(context.getMembers())
+            .withUri(context.getLocalMemberInfo().getUri())
+            .withMembers(context.getMemberInfo())
             .build()));
         }
         ByteBuffer entry = request.entries().get(i);
@@ -165,8 +160,8 @@ public class PassiveState extends AbstractState {
 
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
       .withId(logRequest(request).id())
-      .withUri(context.getLocalMember().uri())
-      .withMembers(context.getMembers())
+      .withUri(context.getLocalMemberInfo().getUri())
+      .withMembers(context.getMemberInfo())
       .build()));
   }
 

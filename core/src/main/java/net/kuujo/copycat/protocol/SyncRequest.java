@@ -54,7 +54,7 @@ public class SyncRequest extends AbstractRequest {
   private Long logIndex;
   private Long commitIndex;
   private List<ByteBuffer> entries;
-  private Collection<MemberInfo> members;
+  private Collection<ReplicaInfo> members;
 
   /**
    * Returns the requesting node's current term.
@@ -106,7 +106,7 @@ public class SyncRequest extends AbstractRequest {
    *
    * @return The currently known membership.
    */
-  public Collection<MemberInfo> members() {
+  public Collection<ReplicaInfo> members() {
     return members;
   }
 
@@ -219,7 +219,7 @@ public class SyncRequest extends AbstractRequest {
      * @param members The request membership.
      * @return The sync request builder.
      */
-    public Builder withMembers(Collection<MemberInfo> members) {
+    public Builder withMembers(Collection<ReplicaInfo> members) {
       request.members = Assert.isNotNull(members, "members");
       return this;
     }

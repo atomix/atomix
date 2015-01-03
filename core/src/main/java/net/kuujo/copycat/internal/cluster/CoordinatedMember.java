@@ -28,28 +28,44 @@ import java.util.concurrent.Executor;
  */
 public class CoordinatedMember implements Member {
   protected final int id;
+  private final MemberInfo info;
   private final MemberCoordinator coordinator;
   protected final Executor executor;
 
-  protected CoordinatedMember(int id, MemberCoordinator coordinator, Executor executor) {
+  public CoordinatedMember(int id, MemberInfo info, MemberCoordinator coordinator, Executor executor) {
     this.id = id;
+    this.info = info;
     this.coordinator = coordinator;
     this.executor = executor;
   }
 
+  /**
+   * Returns the member info.
+   */
+  MemberInfo info() {
+    return info;
+  }
+
+  /**
+   * Returns the member coordinator.
+   */
+  public MemberCoordinator coordinator() {
+    return coordinator;
+  }
+
   @Override
   public String uri() {
-    return coordinator.uri();
+    return info.uri();
   }
 
   @Override
   public Type type() {
-    return coordinator.type();
+    return info.type();
   }
 
   @Override
   public State state() {
-    return coordinator.state();
+    return info.state();
   }
 
   @Override

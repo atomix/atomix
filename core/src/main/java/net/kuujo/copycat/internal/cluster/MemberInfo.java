@@ -13,10 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.internal.cluster;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.internal.util.Assert;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -29,46 +28,25 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemberInfo implements Serializable {
-
-  /**
-   * Returns a new member info builder.
-   *
-   * @return A new member info builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
-  /**
-   * Returns a new member info builder.
-   *
-   * @param member The member info to build.
-   * @return A new member info builder.
-   */
-  public static Builder builder(MemberInfo member) {
-    return new Builder(member);
-  }
-
   private Member.Type type;
   private Member.State state;
+  private long changed;
   private String uri;
   private long version = 1;
-  private Long index;
-  private final Set<String> failures = new HashSet<>();
+  private Set<String> failures = new HashSet<>();
 
-  private MemberInfo() {
+  public MemberInfo() {
   }
 
   public MemberInfo(String uri, Member.Type type, Member.State state) {
-    this(uri, type, state, 1, null);
+    this(uri, type, state, 1);
   }
 
-  public MemberInfo(String uri, Member.Type type, Member.State state, long version, Long index) {
+  public MemberInfo(String uri, Member.Type type, Member.State state, long version) {
     this.uri = uri;
     this.type = type;
     this.state = state;
     this.version = version;
-    this.index = index;
   }
 
   /**
@@ -90,6 +68,15 @@ public class MemberInfo implements Serializable {
   }
 
   /**
+   * Returns the last time the member state changed.
+   *
+   * @return The last time the member state changed.
+   */
+  public long changed() {
+    return changed;
+  }
+
+  /**
    * Returns the member URI.
    *
    * @return The member URI.
@@ -108,12 +95,14 @@ public class MemberInfo implements Serializable {
   }
 
   /**
-   * Returns the member index.
+   * Sets the member version.
    *
-   * @return The member index.
+   * @param version The member version.
+   * @return The member info.
    */
-  public Long index() {
-    return index;
+  public MemberInfo version(long version) {
+    this.version = version;
+    return this;
   }
 
   /**
@@ -134,6 +123,7 @@ public class MemberInfo implements Serializable {
     if (type == Member.Type.LISTENER && state != Member.State.ALIVE) {
       failures.clear();
       state = Member.State.ALIVE;
+      changed = System.currentTimeMillis();
     }
     return this;
   }
@@ -149,9 +139,11 @@ public class MemberInfo implements Serializable {
       failures.add(uri);
       if (state == Member.State.ALIVE) {
         state = Member.State.SUSPICIOUS;
+        changed = System.currentTimeMillis();
       } else if (state == Member.State.SUSPICIOUS) {
         if (failures.size() >= 3) {
           state = Member.State.DEAD;
+          changed = System.currentTimeMillis();
         }
       }
     }
@@ -166,15 +158,23 @@ public class MemberInfo implements Serializable {
   public void update(MemberInfo info) {
     if (info.version > this.version) {
       this.version = info.version;
-      this.index = info.index;
 
       // Only passive member types can experience state changes.
       if (this.type == Member.Type.LISTENER) {
         // If the member is marked as alive then clear failures.
         if (info.state == Member.State.ALIVE) {
           this.failures.clear();
+        } else if (info.state == Member.State.SUSPICIOUS) {
+          this.failures.addAll(info.failures);
+        }
+        if (this.state != info.state) {
+          changed = System.currentTimeMillis();
         }
         this.state = info.state;
+        if (this.state == Member.State.SUSPICIOUS && this.failures.size() >= 3) {
+          this.state = Member.State.DEAD;
+          changed = System.currentTimeMillis();
+        }
       }
     }
   }
@@ -186,118 +186,19 @@ public class MemberInfo implements Serializable {
       return member.uri.equals(uri)
         && member.type == type
         && member.state == state
-        && member.version == version
-        && member.index.equals(index);
+        && member.version == version;
     }
     return false;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, type, state, version, index);
+    return Objects.hash(uri, type, state, version);
   }
 
   @Override
   public String toString() {
-    return String.format("MemberInfo[uri=%s, type=%s, state=%s, version=%d, index=%s]", uri, type, state, version, index);
-  }
-
-  /**
-   * Member info builder.
-   */
-  public static class Builder {
-    private final MemberInfo member;
-
-    private Builder() {
-      this(new MemberInfo());
-    }
-
-    private Builder(MemberInfo member) {
-      this.member = member;
-    }
-
-    /**
-     * Sets the member type.
-     *
-     * @param type The member type.
-     * @return The member info builder.
-     */
-    public Builder withType(Member.Type type) {
-      member.type = Assert.isNotNull(type, "type");
-      return this;
-    }
-
-    /**
-     * Sets the member state.
-     *
-     * @param state The member state.
-     * @return The member info builder.
-     */
-    public Builder withState(Member.State state) {
-      member.state = Assert.isNotNull(state, "state");
-      return this;
-    }
-
-    /**
-     * Sets the member URI.
-     *
-     * @param uri The member URI.
-     * @return The member info builder.
-     */
-    public Builder withUri(String uri) {
-      member.uri = Assert.isNotNull(uri, "uri");
-      return this;
-    }
-
-    /**
-     * Sets the member version.
-     *
-     * @param version The member version.
-     * @return The member info builder.
-     */
-    public Builder withVersion(long version) {
-      member.version = Assert.arg(version, version > 0, "version must be greater than zero");
-      return this;
-    }
-
-    /**
-     * Sets the member log commit index.
-     *
-     * @param index The member log commit index.
-     * @return The member info builder.
-     */
-    public Builder withIndex(Long index) {
-      member.index = Assert.arg(index, index == null || index > 0, "index must be greater than zero");
-      return this;
-    }
-
-    /**
-     * Builds the member.
-     *
-     * @return The built member.
-     */
-    public MemberInfo build() {
-      Assert.isNotNull(member.type, "type");
-      Assert.isNotNull(member.state, "state");
-      Assert.isNotNull(member.uri, "uri");
-      return member;
-    }
-
-    @Override
-    public boolean equals(Object object) {
-      return object instanceof Builder && ((Builder) object).member.equals(member);
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(member);
-    }
-
-    @Override
-    public String toString() {
-      return String.format("%s[member=%s]", getClass().getCanonicalName(), member);
-    }
-
+    return String.format("MemberInfo[uri=%s, type=%s, state=%s, version=%d]", uri, type, state, version);
   }
 
 }

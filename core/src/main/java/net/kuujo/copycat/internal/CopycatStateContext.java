@@ -15,11 +15,10 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.CopycatState;
+import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
-import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
@@ -28,14 +27,12 @@ import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.*;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Observable;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
 /**
  * Copycat state context.
@@ -55,7 +52,10 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
   private CompletableFuture<Void> openFuture;
   private final String localMember;
-  private final Map<String, MemberInfo> members = new ConcurrentHashMap<>();
+  private final Set<String> replicas;
+  private Set<String> members;
+  private final ReplicaInfo localMemberInfo;
+  private final Map<String, ReplicaInfo> memberInfo = new HashMap<>();
   private Election.Status status;
   private String leader;
   private long term;
@@ -69,13 +69,74 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
   public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, CoordinatedResourcePartitionConfig partition) {
     this.localMember = uri;
-    for (String member : partition.getReplicas()) {
-      this.members.put(member, new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE));
-    }
-    this.members.put(uri, new MemberInfo(uri, partition.getReplicas().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE));
+    this.replicas = partition.getReplicas();
+    this.members = partition.getReplicas();
+    this.members.add(uri);
+    this.localMemberInfo = new ReplicaInfo(uri);
+    this.memberInfo.put(uri, localMemberInfo);
     this.log = config.getLog().getLogManager(name);
     this.electionTimeout = config.getElectionTimeout();
     this.heartbeatInterval = config.getHeartbeatInterval();
+  }
+
+  /**
+   * Returns the full set of replicas.
+   *
+   * @return The full set of Raft replicas.
+   */
+  public Set<String> getReplicas() {
+    return replicas;
+  }
+
+  /**
+   * Returns the local member URI.
+   *
+   * @return The local member URI.
+   */
+  public String getLocalMember() {
+    return localMember;
+  }
+
+  /**
+   * Returns the full set of Raft members.
+   *
+   * @return The full set of Raft members.
+   */
+  public Set<String> getMembers() {
+    return members;
+  }
+
+  /**
+   * Sets the full set of Raft members.
+   *
+   * @param members The full set of Raft members.
+   * @return The Copycat state context.
+   */
+  public CopycatStateContext setMembers(Collection<String> members) {
+    this.members = new HashSet<>(members);
+    return this;
+  }
+
+  /**
+   * Adds a member to the state context.
+   *
+   * @param member The member URI to add.
+   * @return The Copycat state context.
+   */
+  public CopycatStateContext addMember(String member) {
+    this.members.add(member);
+    return this;
+  }
+
+  /**
+   * Removes a member from the state context.
+   *
+   * @param member The member URI to remove.
+   * @return The Copycat state context.
+   */
+  public CopycatStateContext removeMember(String member) {
+    this.members.remove(member);
+    return this;
   }
 
   /**
@@ -83,8 +144,8 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return The local cluster member.
    */
-  public MemberInfo getLocalMember() {
-    return members.get(localMember);
+  public ReplicaInfo getLocalMemberInfo() {
+    return localMemberInfo;
   }
 
   /**
@@ -92,66 +153,65 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return A set of all members in the state cluster.
    */
-  public Collection<MemberInfo> getMembers() {
-    return members.values();
+  public Collection<ReplicaInfo> getMemberInfo() {
+    return memberInfo.values().stream().filter(info -> members.contains(info.getUri())).collect(Collectors.toList());
   }
 
   /**
-   * Sets all members in the state cluster.
+   * Sets all members info in the state cluster.
    *
    * @param members A collection of all members in the state cluster.
    * @return The Copycat state context.
    */
-  public CopycatStateContext setMembers(Collection<MemberInfo> members) {
+  public CopycatStateContext setMemberInfo(Collection<ReplicaInfo> members) {
     Assert.isNotNull(members, "members");
-    for (MemberInfo member : members) {
-      MemberInfo record = this.members.get(member.uri());
+    for (ReplicaInfo member : members) {
+      ReplicaInfo record = this.memberInfo.get(member.getUri());
       if (record != null) {
         record.update(member);
       } else {
-        this.members.put(member.uri(), member);
+        this.memberInfo.put(member.getUri(), member);
       }
     }
-    getLocalMember().succeed();
     triggerChangeEvent();
     return this;
   }
 
   /**
-   * Returns a member in the state cluster.
+   * Returns a member info in the state cluster.
    *
    * @param uri The member URI.
    * @return The member info.
    */
-  public MemberInfo getMember(String uri) {
-    return members.get(Assert.isNotNull(uri, "uri"));
+  public ReplicaInfo getMemberInfo(String uri) {
+    return memberInfo.get(Assert.isNotNull(uri, "uri"));
   }
 
   /**
-   * Sets a single member in the state cluster.
+   * Sets a single member info in the state cluster.
    *
    * @param member The member to set.
    * @return The Copycat state context.
    */
-  public CopycatStateContext addMember(MemberInfo member) {
-    MemberInfo record = members.get(member.uri());
+  public CopycatStateContext addMemberInfo(ReplicaInfo member) {
+    ReplicaInfo record = memberInfo.get(member.getUri());
     if (record != null) {
       record.update(member);
     } else {
-      this.members.put(member.uri(), member);
+      this.memberInfo.put(member.getUri(), member);
       triggerChangeEvent();
     }
     return this;
   }
 
   /**
-   * Removes a member in the state cluster.
+   * Removes a member info in the state cluster.
    *
    * @param member The member to remove.
    * @return The Copycat state context.
    */
-  public CopycatStateContext removeMember(MemberInfo member) {
-    this.members.remove(member.uri());
+  public CopycatStateContext removeMemberInfo(ReplicaInfo member) {
+    this.members.remove(member.getUri());
     triggerChangeEvent();
     return this;
   }
@@ -240,7 +300,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    */
   public CopycatStateContext setVersion(long version) {
     this.version = Math.max(this.version, version);
-    getLocalMember().update(MemberInfo.builder(getLocalMember()).withVersion(this.version).build());
+    localMemberInfo.setVersion(this.version);
     return this;
   }
 
@@ -290,7 +350,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    */
   public CopycatStateContext setCommitIndex(Long commitIndex) {
     this.commitIndex = Assert.arg(Assert.isNotNull(commitIndex, "commitIndex"), commitIndex >= this.commitIndex, "cannot decrease commit index");
-    getLocalMember().update(MemberInfo.builder(getLocalMember()).withIndex(commitIndex).build());
+    localMemberInfo.setIndex(this.commitIndex);
     return this;
   }
 
@@ -599,7 +659,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       try {
         open = true;
         log.open();
-        transition(getLocalMember().type() == Member.Type.LISTENER ? CopycatState.PASSIVE : CopycatState.FOLLOWER);
+        transition(replicas.contains(localMember) ? CopycatState.FOLLOWER : CopycatState.PASSIVE);
       } catch (Exception e) {
         openFuture.completeExceptionally(e);
         openFuture = null;

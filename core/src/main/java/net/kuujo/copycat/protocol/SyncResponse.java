@@ -46,14 +46,14 @@ public class SyncResponse extends AbstractResponse {
     return new Builder(response);
   }
 
-  private Collection<MemberInfo> members;
+  private Collection<ReplicaInfo> members;
 
   /**
    * Returns the responding node's membership.
    *
    * @return The responding node's membership.
    */
-  public Collection<MemberInfo> members() {
+  public Collection<ReplicaInfo> members() {
     return members;
   }
 
@@ -97,7 +97,7 @@ public class SyncResponse extends AbstractResponse {
      * @param members The request membership.
      * @return The sync response builder.
      */
-    public Builder withMembers(Collection<MemberInfo> members) {
+    public Builder withMembers(Collection<ReplicaInfo> members) {
       response.members = Assert.isNotNull(members, "members");
       return this;
     }

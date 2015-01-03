@@ -72,11 +72,11 @@ abstract class ActiveState extends PassiveState {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getTerm()) {
-      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember().uri(), request, context
+      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember(), request, context
         .getTerm());
       return PingResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .build();
@@ -85,7 +85,7 @@ abstract class ActiveState extends PassiveState {
     }
     return PingResponse.builder()
       .withId(request.id())
-      .withUri(context.getLocalMember().uri())
+      .withUri(context.getLocalMember())
       .withTerm(context.getTerm())
       .withSucceeded(true)
       .build();
@@ -96,10 +96,10 @@ abstract class ActiveState extends PassiveState {
    */
   private PingResponse doCheckPingEntry(PingRequest request) {
     if (request.logIndex() != null && context.log().lastIndex() == null || request.logIndex() > context.log().lastIndex()) {
-      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember().uri(), request, request.logIndex(), context.log().lastIndex());
+      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return PingResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .build();
@@ -113,18 +113,18 @@ abstract class ActiveState extends PassiveState {
     // can be overwritten.
     ByteBuffer entry = context.log().getEntry(request.logIndex());
     if (entry == null) {
-      logger().warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember().uri(), request);
+      logger().warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember(), request);
       return PingResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .build();
     } else if (entry.getLong() != request.logTerm()) {
-      logger().warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember().uri(), request);
+      logger().warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember(), request);
       return PingResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .build();
@@ -132,7 +132,7 @@ abstract class ActiveState extends PassiveState {
       doApplyCommits(request.commitIndex());
       return PingResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(true)
         .build();
@@ -166,10 +166,10 @@ abstract class ActiveState extends PassiveState {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getTerm()) {
-      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember().uri(), request, context.getTerm());
+      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember(), request, context.getTerm());
       return AppendResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
@@ -186,10 +186,10 @@ abstract class ActiveState extends PassiveState {
    */
   private AppendResponse doCheckPreviousEntry(AppendRequest request) {
     if (request.logIndex() != null && context.log().lastIndex() == null || request.logIndex() > context.log().lastIndex()) {
-      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember().uri(), request, request.logIndex(), context.log().lastIndex());
+      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return AppendResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
@@ -204,19 +204,19 @@ abstract class ActiveState extends PassiveState {
     // can be overwritten.
     ByteBuffer entry = context.log().getEntry(request.logIndex());
     if (entry == null) {
-      logger().warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember().uri(), request);
+      logger().warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember(), request);
       return AppendResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
         .build();
     } else if (entry.getLong() != request.logTerm()) {
-      logger().warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember().uri(), request);
+      logger().warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember(), request);
       return AppendResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
@@ -243,14 +243,14 @@ abstract class ActiveState extends PassiveState {
         if (match != null) {
           // Compare the term of the received entry with the matching entry in the log.
           if (entry.getLong() != match.getLong()) {
-            logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember().uri());
+            logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember());
             context.log().removeAfter(index - 1);
             context.log().appendEntry(entry);
-            logger().debug("{} - Appended {} to log at index {}", context.getLocalMember().uri(), entry, index);
+            logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
           }
         } else {
           context.log().appendEntry(entry);
-          logger().debug("{} - Appended {} to log at index {}", context.getLocalMember().uri(), entry, index);
+          logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
         }
       }
       context.log().flush();
@@ -258,7 +258,7 @@ abstract class ActiveState extends PassiveState {
     doApplyCommits(request.commitIndex());
     return AppendResponse.builder()
       .withId(request.id())
-      .withUri(context.getLocalMember().uri())
+      .withUri(context.getLocalMember())
       .withTerm(context.getTerm())
       .withSucceeded(true)
       .withLogIndex(context.log().lastIndex())
@@ -328,7 +328,7 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    logger().debug("{} - Received {}", context.getLocalMember().uri(), request);
+    logger().debug("{} - Received {}", context.getLocalMember(), request);
     return CompletableFuture.completedFuture(logResponse(handlePoll(logRequest(request))));
   }
 
@@ -348,10 +348,10 @@ abstract class ActiveState extends PassiveState {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getTerm()) {
-      logger().debug("{} - Rejected {}: candidate's term is less than the current term", context.getLocalMember().uri(), request);
+      logger().debug("{} - Rejected {}: candidate's term is less than the current term", context.getLocalMember(), request);
       return PollResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build();
@@ -359,12 +359,12 @@ abstract class ActiveState extends PassiveState {
     // If the requesting candidate is our self then always vote for our self. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate().equals(context.getLocalMember().uri())) {
-      context.setLastVotedFor(context.getLocalMember().uri());
-      logger().debug("{} - Accepted {}: candidate is the local node", context.getLocalMember().uri(), request);
+    else if (request.candidate().equals(context.getLocalMember())) {
+      context.setLastVotedFor(context.getLocalMember());
+      logger().debug("{} - Accepted {}: candidate is the local node", context.getLocalMember(), request);
       return PollResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(true)
         .build();
@@ -372,10 +372,10 @@ abstract class ActiveState extends PassiveState {
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.getMembers().contains(request.candidate())) {
-      logger().debug("{} - Rejected {}: candidate is not known do the local node", context.getLocalMember().uri(), request);
+      logger().debug("{} - Rejected {}: candidate is not known do the local node", context.getLocalMember(), request);
       return PollResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build();
@@ -385,10 +385,10 @@ abstract class ActiveState extends PassiveState {
       // If the log is empty then vote for the candidate.
       if (context.log().isEmpty()) {
         context.setLastVotedFor(request.candidate());
-        logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember().uri(), request);
+        logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
         return PollResponse.builder()
           .withId(request.id())
-          .withUri(context.getLocalMember().uri())
+          .withUri(context.getLocalMember())
           .withTerm(context.getTerm())
           .withVoted(true)
           .build();
@@ -400,10 +400,10 @@ abstract class ActiveState extends PassiveState {
           ByteBuffer entry = context.log().getEntry(lastIndex);
           if (entry == null) {
             context.setLastVotedFor(request.candidate());
-            logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember().uri(), request);
+            logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
             return PollResponse.builder()
               .withId(request.id())
-              .withUri(context.getLocalMember().uri())
+              .withUri(context.getLocalMember())
               .withTerm(context.getTerm())
               .withVoted(true)
               .build();
@@ -413,37 +413,37 @@ abstract class ActiveState extends PassiveState {
           if (request.logIndex() != null && request.logIndex() >= lastIndex) {
             if (request.logTerm() >= lastTerm) {
               context.setLastVotedFor(request.candidate());
-              logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember().uri(), request);
+              logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
               return PollResponse.builder()
                 .withId(request.id())
-                .withUri(context.getLocalMember().uri())
+                .withUri(context.getLocalMember())
                 .withTerm(context.getTerm())
                 .withVoted(true)
                 .build();
             } else {
-              logger().debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getLocalMember().uri(), request, request.logTerm(), lastTerm);
+              logger().debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getLocalMember(), request, request.logTerm(), lastTerm);
               return PollResponse.builder()
                 .withId(request.id())
-                .withUri(context.getLocalMember().uri())
+                .withUri(context.getLocalMember())
                 .withTerm(context.getTerm())
                 .withVoted(false)
                 .build();
             }
           } else {
-            logger().debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getLocalMember().uri(), request, request.logIndex(), lastIndex);
+            logger().debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getLocalMember(), request, request.logIndex(), lastIndex);
             return PollResponse.builder()
               .withId(request.id())
-              .withUri(context.getLocalMember().uri())
+              .withUri(context.getLocalMember())
               .withTerm(context.getTerm())
               .withVoted(false)
               .build();
           }
         } else {
           context.setLastVotedFor(request.candidate());
-          logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember().uri(), request);
+          logger().debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
           return PollResponse.builder()
             .withId(request.id())
-            .withUri(context.getLocalMember().uri())
+            .withUri(context.getLocalMember())
             .withTerm(context.getTerm())
             .withVoted(true)
             .build();
@@ -452,10 +452,10 @@ abstract class ActiveState extends PassiveState {
     }
     // In this case, we've already voted for someone else.
     else {
-      logger().debug("{} - Rejected {}: already voted for {}", context.getLocalMember().uri(), request, context.getLastVotedFor());
+      logger().debug("{} - Rejected {}: already voted for {}", context.getLocalMember(), request, context.getLastVotedFor());
       return PollResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build();
@@ -469,13 +469,13 @@ abstract class ActiveState extends PassiveState {
     if (request.consistency() == Consistency.NONE) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withResult(context.consumer() != null ? context.consumer().apply(null, request.entry()) : null)
         .build()));
     } else if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
         .build()));
@@ -490,7 +490,7 @@ abstract class ActiveState extends PassiveState {
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CommitResponse.builder()
         .withId(request.id())
-        .withUri(context.getLocalMember().uri())
+        .withUri(context.getLocalMember())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
         .build()));

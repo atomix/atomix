@@ -104,7 +104,7 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     QueryRequest request = QueryRequest.builder()
       .withId(UUID.randomUUID().toString())
-      .withUri(context.getLocalMember().uri())
+      .withUri(context.getLocalMember())
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
@@ -133,7 +133,7 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     CommitRequest request = CommitRequest.builder()
       .withId(UUID.randomUUID().toString())
-      .withUri(context.getLocalMember().uri())
+      .withUri(context.getLocalMember())
       .withEntry(entry)
       .build();
     context.executor().execute(() -> {

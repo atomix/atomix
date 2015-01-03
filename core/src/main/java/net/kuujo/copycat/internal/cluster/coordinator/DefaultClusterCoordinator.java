@@ -21,13 +21,12 @@ import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.MembershipEvent;
 import net.kuujo.copycat.cluster.coordinator.*;
 import net.kuujo.copycat.internal.CopycatStateContext;
 import net.kuujo.copycat.internal.DefaultResourceContext;
 import net.kuujo.copycat.internal.DefaultResourcePartitionContext;
-import net.kuujo.copycat.internal.cluster.CoordinatedCluster;
-import net.kuujo.copycat.internal.cluster.Router;
-import net.kuujo.copycat.internal.cluster.Topics;
+import net.kuujo.copycat.internal.cluster.*;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
@@ -37,10 +36,7 @@ import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -49,30 +45,39 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultClusterCoordinator extends Observable implements ClusterCoordinator {
+public class DefaultClusterCoordinator implements ClusterCoordinator {
+  private static final String JOIN_TOPIC = "join";
+  private static final int COORDINATOR_ADDRESS = -1;
+  private static final long MEMBER_INFO_EXPIRE_TIME = 1000 * 60;
+
   private final String uri;
-  private final Executor executor;
+  private final ScheduledExecutorService executor;
   private final CoordinatorConfig config;
   private final DefaultLocalMemberCoordinator localMember;
-  private final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
+  final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
   private final CopycatStateContext context;
   private final ManagedCluster cluster;
   private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
+  private ScheduledFuture<?> gossipTimer;
   private final AtomicBoolean open = new AtomicBoolean();
 
   public DefaultClusterCoordinator(String uri, CoordinatorConfig config) {
-    this(uri, config, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+    this(uri, config, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
   }
 
-  public DefaultClusterCoordinator(String uri, CoordinatorConfig config, Executor executor) {
+  public DefaultClusterCoordinator(String uri, CoordinatorConfig config, ScheduledExecutorService executor) {
     this.uri = uri;
     this.config = config.copy();
     this.executor = executor;
-    this.localMember = new DefaultLocalMemberCoordinator(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE, config.getClusterConfig().getProtocol(), executor);
+
+    // Set up permanent cluster members based on the given cluster configuration.
+    this.localMember = new DefaultLocalMemberCoordinator(new MemberInfo(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor);
     this.members.put(uri, localMember);
     for (String member : config.getClusterConfig().getMembers()) {
-      this.members.put(member, new DefaultRemoteMemberCoordinator(member, Member.Type.MEMBER, Member.State.ALIVE, config.getClusterConfig().getProtocol(), executor));
+      this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor));
     }
+
+    // Set up the global Raft state context and cluster.
     CoordinatedResourceConfig resourceConfig = new CoordinatedResourceConfig()
       .withElectionTimeout(config.getClusterConfig().getElectionTimeout())
       .withHeartbeatInterval(config.getClusterConfig().getHeartbeatInterval())
@@ -81,12 +86,34 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
       .withPartition(1)
       .withReplicas(config.getClusterConfig().getMembers());
     this.context = new CopycatStateContext("copycat", uri, resourceConfig, partitionConfig);
-    this.cluster = new CoordinatedCluster(0, this, context, new ResourceRouter("copycat"), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+    this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter("copycat"), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
   }
 
   @Override
   public Cluster cluster() {
     return cluster;
+  }
+
+  /**
+   * Handles a membership change event.
+   */
+  private synchronized void handleMembershipEvent(MembershipEvent event) {
+    if (event.type() == MembershipEvent.Type.JOIN && !members.containsKey(event.member().uri())) {
+      MemberCoordinator coordinator = ((CoordinatedMember) event.member()).coordinator();
+      members.put(coordinator.uri(), (AbstractMemberCoordinator) coordinator);
+    } else if (event.type() == MembershipEvent.Type.LEAVE) {
+      members.remove(event.member().uri());
+    }
+  }
+
+  @Override
+  public CoordinatorConfig config() {
+    return config;
+  }
+
+  @Override
+  public Executor executor() {
+    return executor;
   }
 
   @Override
@@ -198,7 +225,7 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
       List<PartitionHolder> partitions = new ArrayList<>(config.getPartitions().size());
       for (CoordinatedResourcePartitionConfig partitionConfig : config.getPartitions()) {
         CopycatStateContext state = new CopycatStateContext(name, uri, config, partitionConfig);
-        ManagedCluster cluster = new CoordinatedCluster(name.hashCode(), this, context, new ResourceRouter(name), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
+        ManagedCluster cluster = new CoordinatedCluster(name.hashCode(), this, context, new ResourceRouter(name), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
         ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state, this);
         partitions.add(new PartitionHolder(partitionConfig, cluster, state, context));
       }
@@ -253,6 +280,7 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
       .thenComposeAsync(v -> cluster.open(), executor)
       .thenComposeAsync(v -> context.open(), executor)
       .thenComposeAsync(v -> openResources(), executor)
+      .thenRun(() -> cluster.addMembershipListener(this::handleMembershipEvent))
       .thenRun(() -> open.set(true))
       .thenApply(v -> this);
   }
@@ -271,7 +299,15 @@ public class DefaultClusterCoordinator extends Observable implements ClusterCoor
       for (MemberCoordinator member : members.values()) {
         futures[i++] = member.close();
       }
+      cluster.removeMembershipListener(this::handleMembershipEvent);
       return closeResources()
+        .thenRun(() -> {
+          if (gossipTimer != null) {
+            gossipTimer.cancel(false);
+            gossipTimer = null;
+          }
+        })
+        .thenRun(() -> localMember.unregister(JOIN_TOPIC, COORDINATOR_ADDRESS))
         .thenComposeAsync(v -> context.close(), executor)
         .thenComposeAsync(v -> cluster.close(), executor)
         .thenComposeAsync(v -> CompletableFuture.allOf(futures));

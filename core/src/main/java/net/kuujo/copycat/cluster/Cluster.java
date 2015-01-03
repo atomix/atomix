@@ -14,9 +14,9 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.election.Election;
-
-import java.util.Collection;
+import net.kuujo.copycat.election.ElectionEvent;
 
 /**
  * Resource cluster.<p>
@@ -69,6 +69,38 @@ public interface Cluster {
    *
    * @return An immutable set of all cluster members.
    */
-  Collection<Member> members();
+  Members members();
+
+  /**
+   * Adds a membership listener to the cluster.
+   *
+   * @param listener The membership event listener.
+   * @return The cluster.
+   */
+  Cluster addMembershipListener(EventListener<MembershipEvent> listener);
+
+  /**
+   * Removes a membership listener from the cluster.
+   *
+   * @param listener The membership event listener.
+   * @return The cluster.
+   */
+  Cluster removeMembershipListener(EventListener<MembershipEvent> listener);
+
+  /**
+   * Adds an election listener to the cluster.
+   *
+   * @param listener The election event listener.
+   * @return The cluster.
+   */
+  Cluster addElectionListener(EventListener<ElectionEvent> listener);
+
+  /**
+   * Removes an election listener from the cluster.
+   *
+   * @param listener The election event listener.
+   * @return The cluster.
+   */
+  Cluster removeElectionListener(EventListener<ElectionEvent> listener);
 
 }

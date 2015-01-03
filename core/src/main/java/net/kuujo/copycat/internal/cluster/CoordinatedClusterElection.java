@@ -14,9 +14,11 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
+import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
+import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.internal.CopycatStateContext;
 
@@ -24,7 +26,6 @@ import java.util.HashSet;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.Set;
-import java.util.function.Consumer;
 
 /**
  * Coordinated cluster election handler.
@@ -34,8 +35,8 @@ import java.util.function.Consumer;
 class CoordinatedClusterElection implements Election, Observer {
   private final Cluster cluster;
   private CopycatStateContext context;
-  private final Set<Consumer<ElectionResult>> listeners = new HashSet<>();
-  private ElectionResult result;
+  private final Set<EventListener<ElectionEvent>> listeners = new HashSet<>();
+  private ElectionEvent result;
   private boolean handled;
 
   CoordinatedClusterElection(Cluster cluster, CopycatStateContext context) {
@@ -53,10 +54,10 @@ class CoordinatedClusterElection implements Election, Observer {
         if (term > 0) {
           Member member = cluster.member(leader);
           if (member != null) {
-            result = new ClusterElectionResult(term, member);
+            result = new ElectionEvent(ElectionEvent.Type.COMPLETE, term, member);
             handled = true;
-            for (Consumer<ElectionResult> listener : listeners) {
-              listener.accept(result);
+            for (EventListener<ElectionEvent> listener : listeners) {
+              listener.handle(result);
             }
           } else if (result != null) {
             result = null;
@@ -86,18 +87,18 @@ class CoordinatedClusterElection implements Election, Observer {
   }
 
   @Override
-  public synchronized Election addListener(Consumer<ElectionResult> listener) {
+  public synchronized Election addListener(EventListener<ElectionEvent> listener) {
     if (!listeners.contains(listener)) {
       listeners.add(listener);
       if (result != null && handled) {
-        listener.accept(result);
+        listener.handle(result);
       }
     }
     return this;
   }
 
   @Override
-  public synchronized Election removeListener(Consumer<ElectionResult> listener) {
+  public synchronized Election removeListener(EventListener<ElectionEvent> listener) {
     listeners.remove(listener);
     return this;
   }
@@ -119,35 +120,6 @@ class CoordinatedClusterElection implements Election, Observer {
   @Override
   public String toString() {
     return String.format("%s[term=%d, status=%s]", getClass().getCanonicalName(), term(), status());
-  }
-
-  /**
-   * Cluster election result.
-   */
-  private static class ClusterElectionResult implements ElectionResult {
-    private final long term;
-    private final Member winner;
-
-    private ClusterElectionResult(long term, Member winner) {
-      this.term = term;
-      this.winner = winner;
-    }
-
-    @Override
-    public long term() {
-      return term;
-    }
-
-    @Override
-    public Member winner() {
-      return winner;
-    }
-
-    @Override
-    public String toString() {
-      return String.format("%s[term=%d, winner=%s]", getClass().getCanonicalName(), term, winner);
-    }
-
   }
 
 }

@@ -15,9 +15,10 @@
  */
 package net.kuujo.copycat.election.internal;
 
+import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.election.ElectionResult;
+import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
@@ -35,7 +36,7 @@ import java.util.function.Consumer;
 public class DefaultLeaderElection extends AbstractResource<LeaderElection> implements LeaderElection {
   private final Executor executor;
   private Consumer<Member> handler;
-  private final Consumer<ElectionResult> electionListener;
+  private final EventListener<ElectionEvent> electionListener;
 
   public DefaultLeaderElection(ResourceContext context) {
     super(context);

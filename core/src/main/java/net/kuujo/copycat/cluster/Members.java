@@ -6,23 +6,32 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.cluster.MessageHandler;
+import net.kuujo.copycat.EventListener;
 
-import java.nio.ByteBuffer;
+import java.util.Collection;
 
 /**
- * Protocol handler.
+ * Cluster members.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface ProtocolHandler extends MessageHandler<ByteBuffer, ByteBuffer> {
+public interface Members extends Collection<Member> {
+
+  /**
+   * Adds a membership listener to the members set.
+   *
+   * @param listener The membership event listener.
+   * @return The members.
+   */
+  Members addListener(EventListener<MembershipEvent> listener);
+
 }

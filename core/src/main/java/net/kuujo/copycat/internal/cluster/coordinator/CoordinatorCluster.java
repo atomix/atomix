@@ -13,29 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal.cluster;
+package net.kuujo.copycat.internal.cluster.coordinator;
 
+import net.kuujo.copycat.cluster.ClusterException;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.internal.CopycatStateContext;
+import net.kuujo.copycat.internal.cluster.AbstractCluster;
+import net.kuujo.copycat.internal.cluster.CoordinatedMember;
+import net.kuujo.copycat.internal.cluster.MemberInfo;
+import net.kuujo.copycat.internal.cluster.Router;
 
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * Coordinated cluster.
+ * Coordinator cluster.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedCluster extends AbstractCluster {
+public class CoordinatorCluster extends AbstractCluster {
 
-  public CoordinatedCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ScheduledExecutorService executor) {
+  public CoordinatorCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ScheduledExecutorService executor) {
     super(id, coordinator, context, router, executor);
   }
 
   @Override
   protected CoordinatedMember createMember(MemberInfo info) {
-    MemberCoordinator coordinator = this.coordinator.member(info.uri());
-    return coordinator != null ? new CoordinatedMember(id, info, coordinator, executor) : null;
+    AbstractMemberCoordinator memberCoordinator = new DefaultRemoteMemberCoordinator(info, coordinator.config().getClusterConfig().getProtocol(), coordinator.executor());
+    try {
+      memberCoordinator.open().get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new ClusterException(e);
+    }
+    return new CoordinatedMember(id, info, memberCoordinator, executor);
   }
 
 }

@@ -17,6 +17,8 @@ package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
+import net.kuujo.copycat.internal.cluster.MemberInfo;
+import net.kuujo.copycat.internal.util.Assert;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -26,35 +28,30 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class AbstractMemberCoordinator implements MemberCoordinator {
-  private final String uri;
-  private final Member.Type type;
-  private Member.State state;
+  private final MemberInfo info;
   private boolean open;
 
-  protected AbstractMemberCoordinator(String uri, Member.Type type, Member.State state) {
-    this.uri = uri;
-    this.type = type;
-    this.state = state;
+  protected AbstractMemberCoordinator(MemberInfo info) {
+    this.info = Assert.isNotNull(info, "info");
+  }
+
+  MemberInfo info() {
+    return info;
   }
 
   @Override
   public String uri() {
-    return uri;
+    return info.uri();
   }
 
   @Override
   public Member.Type type() {
-    return type;
+    return info.type();
   }
 
   @Override
   public Member.State state() {
-    return state;
-  }
-
-  AbstractMemberCoordinator state(Member.State state) {
-    this.state = state;
-    return this;
+    return info.state();
   }
 
   @Override
@@ -78,4 +75,5 @@ abstract class AbstractMemberCoordinator implements MemberCoordinator {
   public boolean isClosed() {
     return !open;
   }
+
 }

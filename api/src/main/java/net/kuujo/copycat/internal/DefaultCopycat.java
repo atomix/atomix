@@ -20,10 +20,8 @@ import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 
 /**
  * Internal Copycat implementation.
@@ -35,7 +33,7 @@ public class DefaultCopycat implements Copycat {
   private final CopycatConfig config;
 
   public DefaultCopycat(String uri, CopycatConfig config) {
-    this.coordinator = new DefaultClusterCoordinator(uri, config.resolve(), Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+    this.coordinator = new DefaultClusterCoordinator(uri, config.resolve());
     this.config = config;
   }
 

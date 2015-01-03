@@ -31,8 +31,8 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   private final LocalMemberCoordinator coordinator;
   private boolean open;
 
-  public CoordinatedLocalMember(int id, LocalMemberCoordinator coordinator, Executor executor) {
-    super(id, coordinator, executor);
+  public CoordinatedLocalMember(int id, MemberInfo info, LocalMemberCoordinator coordinator, Executor executor) {
+    super(id, info, coordinator, executor);
     this.coordinator = coordinator;
   }
 

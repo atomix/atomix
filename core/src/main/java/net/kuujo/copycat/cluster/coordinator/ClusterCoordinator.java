@@ -20,6 +20,7 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.cluster.Cluster;
 
 import java.util.Collection;
+import java.util.concurrent.Executor;
 
 /**
  * Cluster coordinator.
@@ -29,11 +30,25 @@ import java.util.Collection;
 public interface ClusterCoordinator extends Managed<ClusterCoordinator> {
 
   /**
+   * Returns the coordinator configuration.
+   *
+   * @return The coordinator configuration.
+   */
+  CoordinatorConfig config();
+
+  /**
    * Returns the global coordinator cluster.
    *
    * @return The global coordinator cluster.
    */
   Cluster cluster();
+
+  /**
+   * Returns the global coordinator executor.
+   *
+   * @return The coordinator's executor.
+   */
+  Executor executor();
 
   /**
    * Returns the local member coordinator.

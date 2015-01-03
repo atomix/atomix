@@ -59,7 +59,7 @@ class FollowerState extends ActiveState {
    * Starts the heartbeat timer.
    */
   private void startTimer() {
-    LOGGER.debug("{} - Starting heartbeat timer", context.getLocalMember().uri());
+    LOGGER.debug("{} - Starting heartbeat timer", context.getLocalMember());
     resetTimer();
   }
 
@@ -70,7 +70,7 @@ class FollowerState extends ActiveState {
     if (!shutdown) {
       // If a timer is already set, cancel the timer.
       if (currentTimer != null) {
-        LOGGER.debug("{} - Reset heartbeat timeout", context.getLocalMember().uri());
+        LOGGER.debug("{} - Reset heartbeat timeout", context.getLocalMember());
         currentTimer.cancel(true);
       }
 
@@ -87,7 +87,7 @@ class FollowerState extends ActiveState {
         // candidate and start a new election.
         currentTimer = null;
         if (context.getLastVotedFor() == null) {
-          LOGGER.info("{} - Heartbeat timed out", context.getLocalMember().uri());
+          LOGGER.info("{} - Heartbeat timed out", context.getLocalMember());
           transition(CopycatState.CANDIDATE);
         } else {
           // If the node voted for a candidate then reset the election timer.
@@ -114,7 +114,7 @@ class FollowerState extends ActiveState {
    */
   private void cancelTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling heartbeat timer", context.getLocalMember().uri());
+      LOGGER.debug("{} - Cancelling heartbeat timer", context.getLocalMember());
       currentTimer.cancel(true);
     }
     shutdown = true;

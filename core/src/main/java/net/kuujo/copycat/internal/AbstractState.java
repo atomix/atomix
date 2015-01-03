@@ -15,7 +15,6 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.EventHandler;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
@@ -35,7 +34,7 @@ abstract class AbstractState implements RaftProtocol {
   protected MessageHandler<AppendRequest, AppendResponse> appendHandler;
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
   protected MessageHandler<QueryRequest, QueryResponse> queryHandler;
-  protected EventHandler<CopycatState, CompletableFuture<CopycatState>> transitionHandler;
+  protected MessageHandler<CopycatState, CopycatState> transitionHandler;
   private boolean open;
 
   protected AbstractState(CopycatStateContext context) {
@@ -148,7 +147,7 @@ abstract class AbstractState implements RaftProtocol {
   /**
    * Sets a transition registerHandler on the state.
    */
-  public AbstractState transitionHandler(EventHandler<CopycatState, CompletableFuture<CopycatState>> handler) {
+  public AbstractState transitionHandler(MessageHandler<CopycatState, CopycatState> handler) {
     this.transitionHandler = handler;
     return this;
   }

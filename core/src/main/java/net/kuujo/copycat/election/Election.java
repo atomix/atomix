@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.election;
 
-import java.util.function.Consumer;
+import net.kuujo.copycat.EventListener;
 
 /**
  * Copycat leader election.
@@ -67,7 +67,7 @@ public interface Election {
    * @param listener The election listener to run once the election is complete.
    * @return The election instance.
    */
-  Election addListener(Consumer<ElectionResult> listener);
+  Election addListener(EventListener<ElectionEvent> listener);
 
   /**
    * Unregisters an election completion listener.
@@ -75,6 +75,6 @@ public interface Election {
    * @param listener The election listener to unregister.
    * @return The election instance.
    */
-  Election removeListener(Consumer<ElectionResult> listener);
+  Election removeListener(EventListener<ElectionEvent> listener);
 
 }

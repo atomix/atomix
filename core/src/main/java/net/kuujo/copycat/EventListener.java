@@ -12,17 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
-
-import net.kuujo.copycat.cluster.MessageHandler;
-
-import java.nio.ByteBuffer;
+package net.kuujo.copycat;
 
 /**
- * Protocol handler.
+ * Copycat event handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface ProtocolHandler extends MessageHandler<ByteBuffer, ByteBuffer> {
+public interface EventListener<T extends Event<?>> {
+
+  /**
+   * Handles an event.
+   *
+   * @param event The event to handle.
+   */
+  void handle(T event);
+
 }

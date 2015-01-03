@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,22 +15,44 @@
  */
 package net.kuujo.copycat.cluster;
 
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.Event;
+import net.kuujo.copycat.internal.util.Assert;
 
 /**
- * Message handler.
+ * Member event.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface MessageHandler<T, U> {
+public class MembershipEvent implements Event<MembershipEvent.Type> {
 
   /**
-   * Handles a message.
-   *
-   * @param message The message to handle.
-   * @return A completable future to be called with the message response.
+   * Membership event type.
    */
-  CompletableFuture<U> handle(T message);
+  public static enum Type {
+    JOIN,
+    LEAVE
+  }
+
+  private final Type type;
+  private final Member member;
+
+  public MembershipEvent(Type type, Member member) {
+    this.type = Assert.isNotNull(type, "type");
+    this.member = Assert.isNotNull(member, "member");
+  }
+
+  @Override
+  public Type type() {
+    return type;
+  }
+
+  /**
+   * Returns the member on which this event occurred.
+   *
+   * @return The event member.
+   */
+  public Member member() {
+    return member;
+  }
 
 }
