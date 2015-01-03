@@ -17,6 +17,7 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.ResourcePartitionContext;
+import net.kuujo.copycat.StateLogConfig;
 import net.kuujo.copycat.StateLogPartition;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.protocol.Consistency;
@@ -75,7 +76,7 @@ public class DefaultStateLogPartition<T> extends AbstractResourcePartition<State
   @Override
   public <U extends T, V> StateLogPartition<T> registerQuery(String name, Function<U, V> query) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true));
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, context.config().<StateLogConfig>getResourceConfig().getDefaultConsistency()));
     return this;
   }
 

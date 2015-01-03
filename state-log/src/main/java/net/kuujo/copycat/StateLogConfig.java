@@ -19,8 +19,10 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.internal.DefaultStateLog;
+import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,6 +36,9 @@ import java.util.Map;
  */
 public class StateLogConfig extends PartitionedResourceConfig<StateLogConfig> {
   private static final Log DEFAULT_STATE_LOG_LOG = new FileLog();
+  public static final String STATE_LOG_DEFAULT_CONSISTENCY = "consistency";
+
+  private static final String DEFAULT_STATE_LOG_DEFAULT_CONSISTENCY = "default";
 
   public StateLogConfig() {
     super();
@@ -55,6 +60,59 @@ public class StateLogConfig extends PartitionedResourceConfig<StateLogConfig> {
   @Override
   public Log getLog() {
     return get(RESOURCE_LOG, DEFAULT_STATE_LOG_LOG);
+  }
+
+  /**
+   * Sets the state log read consistency.
+   *
+   * @param consistency The state log read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setDefaultConsistency(String consistency) {
+    put(STATE_LOG_DEFAULT_CONSISTENCY, Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString());
+  }
+
+  /**
+   * Sets the state log read consistency.
+   *
+   * @param consistency The state log read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setDefaultConsistency(Consistency consistency) {
+    put(STATE_LOG_DEFAULT_CONSISTENCY, Assert.isNotNull(consistency, "consistency").toString());
+  }
+
+  /**
+   * Returns the state log read consistency.
+   *
+   * @return The state log read consistency.
+   */
+  public Consistency getDefaultConsistency() {
+    return Consistency.parse(get(STATE_LOG_DEFAULT_CONSISTENCY, DEFAULT_STATE_LOG_DEFAULT_CONSISTENCY));
+  }
+
+  /**
+   * Sets the state log read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The state log read consistency.
+   * @return The state log configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public StateLogConfig withDefaultConsistency(String consistency) {
+    setDefaultConsistency(consistency);
+    return this;
+  }
+
+  /**
+   * Sets the state log read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The state log read consistency.
+   * @return The state log configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public StateLogConfig withDefaultConsistency(Consistency consistency) {
+    setDefaultConsistency(consistency);
+    return this;
   }
 
   @Override

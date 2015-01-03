@@ -20,6 +20,7 @@ import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.protocol.Consistency;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
@@ -32,6 +33,9 @@ import java.util.Map;
 public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
   public static final String STATE_MACHINE_STATE_TYPE = "state-type";
   public static final String STATE_MACHINE_INITIAL_STATE = "initial-state";
+  public static final String STATE_MACHINE_DEFAULT_CONSISTENCY = "consistency";
+
+  private static final String DEFAULT_STATE_MACHINE_DEFAULT_CONSISTENCY = "default";
 
   public StateMachineConfig() {
     super();
@@ -190,9 +194,62 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
     return this;
   }
 
+  /**
+   * Sets the state machine read consistency.
+   *
+   * @param consistency The state machine read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setDefaultConsistency(String consistency) {
+    put(STATE_MACHINE_DEFAULT_CONSISTENCY, Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString());
+  }
+
+  /**
+   * Sets the state machine read consistency.
+   *
+   * @param consistency The state machine read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setDefaultConsistency(Consistency consistency) {
+    put(STATE_MACHINE_DEFAULT_CONSISTENCY, Assert.isNotNull(consistency, "consistency").toString());
+  }
+
+  /**
+   * Returns the state machine read consistency.
+   *
+   * @return The state machine read consistency.
+   */
+  public Consistency getDefaultConsistency() {
+    return Consistency.parse(get(STATE_MACHINE_DEFAULT_CONSISTENCY, DEFAULT_STATE_MACHINE_DEFAULT_CONSISTENCY));
+  }
+
+  /**
+   * Sets the state machine read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The state machine read consistency.
+   * @return The state machine configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public StateMachineConfig withDefaultConsistency(String consistency) {
+    setDefaultConsistency(consistency);
+    return this;
+  }
+
+  /**
+   * Sets the state machine read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The state machine read consistency.
+   * @return The state machine configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public StateMachineConfig withDefaultConsistency(Consistency consistency) {
+    setDefaultConsistency(consistency);
+    return this;
+  }
+
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    StateLogConfig config = new StateLogConfig(toMap());
+    StateLogConfig config = new StateLogConfig(toMap()).withDefaultConsistency(getDefaultConsistency());
     return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())

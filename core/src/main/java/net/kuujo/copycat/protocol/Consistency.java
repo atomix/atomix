@@ -25,16 +25,40 @@ public enum Consistency {
   /**
    * Indicates that consistency is not required to be guaranteed during reads.
    */
-  NONE,
+  NONE("none"),
 
   /**
    * Indicates that consistency should be attempted during reads but is not required.
    */
-  DEFAULT,
+  DEFAULT("default"),
 
   /**
    * Indicates that consistency should be guaranteed for reads.
    */
-  FULL
+  FULL("full");
+
+  public static Consistency parse(String name) {
+    switch (name) {
+      case "none":
+        return NONE;
+      case "default":
+        return DEFAULT;
+      case "full":
+        return FULL;
+      default:
+        throw new IllegalArgumentException("Invalid consistency name " + name);
+    }
+  }
+
+  private final String name;
+
+  private Consistency(String name) {
+    this.name = name;
+  }
+
+  @Override
+  public String toString() {
+    return name;
+  }
 
 }
