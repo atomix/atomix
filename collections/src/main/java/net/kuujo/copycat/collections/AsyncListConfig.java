@@ -48,7 +48,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    StateLogConfig config = new StateLogConfig(toMap());
+    StateLogConfig config = new StateLogConfig(toMap()).withDefaultConsistency(getConsistency());
     return new CoordinatedResourceConfig()
       .withResourceFactory(DefaultAsyncList::new)
       .withResourceConfig(config)

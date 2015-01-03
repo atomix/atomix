@@ -21,6 +21,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.Map;
 
@@ -30,6 +32,9 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
+  public static final String ASYNC_MULTIMAP_CONSISTENCY = "consistency";
+
+  private static final String DEFAULT_ASYNC_MULTIMAP_CONSISTENCY = "default";
 
   public AsyncMultiMapConfig() {
   }
@@ -47,9 +52,62 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
     return new AsyncMultiMapConfig(this);
   }
 
+  /**
+   * Sets the multimap read consistency.
+   *
+   * @param consistency The multimap read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setConsistency(String consistency) {
+    put(ASYNC_MULTIMAP_CONSISTENCY, Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString());
+  }
+
+  /**
+   * Sets the multimap read consistency.
+   *
+   * @param consistency The multimap read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setConsistency(Consistency consistency) {
+    put(ASYNC_MULTIMAP_CONSISTENCY, Assert.isNotNull(consistency, "consistency").toString());
+  }
+
+  /**
+   * Returns the multimap read consistency.
+   *
+   * @return The multimap read consistency.
+   */
+  public Consistency getConsistency() {
+    return Consistency.parse(get(ASYNC_MULTIMAP_CONSISTENCY, DEFAULT_ASYNC_MULTIMAP_CONSISTENCY));
+  }
+
+  /**
+   * Sets the multimap read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The multimap read consistency.
+   * @return The multimap configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public AsyncMultiMapConfig withConsistency(String consistency) {
+    setConsistency(consistency);
+    return this;
+  }
+
+  /**
+   * Sets the multimap read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The multimap read consistency.
+   * @return The multimap configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public AsyncMultiMapConfig withConsistency(Consistency consistency) {
+    setConsistency(consistency);
+    return this;
+  }
+
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    StateLogConfig config = new StateLogConfig(toMap());
+    StateLogConfig config = new StateLogConfig(toMap()).withDefaultConsistency(getConsistency());
     return new CoordinatedResourceConfig()
       .withResourceFactory(DefaultAsyncMultiMap::new)
       .withResourceConfig(config)

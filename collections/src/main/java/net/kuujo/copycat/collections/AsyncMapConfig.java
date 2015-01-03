@@ -21,6 +21,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
+import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.Map;
 
@@ -30,6 +32,9 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
+  public static final String ASYNC_MAP_CONSISTENCY = "consistency";
+
+  private static final String DEFAULT_ASYNC_MAP_CONSISTENCY = "default";
 
   public AsyncMapConfig() {
   }
@@ -47,9 +52,62 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
     return new AsyncMapConfig(this);
   }
 
+  /**
+   * Sets the map read consistency.
+   *
+   * @param consistency The map read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setConsistency(String consistency) {
+    put(ASYNC_MAP_CONSISTENCY, Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString());
+  }
+
+  /**
+   * Sets the map read consistency.
+   *
+   * @param consistency The map read consistency.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public void setConsistency(Consistency consistency) {
+    put(ASYNC_MAP_CONSISTENCY, Assert.isNotNull(consistency, "consistency").toString());
+  }
+
+  /**
+   * Returns the map read consistency.
+   *
+   * @return The map read consistency.
+   */
+  public Consistency getConsistency() {
+    return Consistency.parse(get(ASYNC_MAP_CONSISTENCY, DEFAULT_ASYNC_MAP_CONSISTENCY));
+  }
+
+  /**
+   * Sets the map read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The map read consistency.
+   * @return The map configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public AsyncMapConfig withConsistency(String consistency) {
+    setConsistency(consistency);
+    return this;
+  }
+
+  /**
+   * Sets the map read consistency, returning the configuration for method chaining.
+   *
+   * @param consistency The map read consistency.
+   * @return The map configuration.
+   * @throws java.lang.NullPointerException If the consistency is {@code null}
+   */
+  public AsyncMapConfig withConsistency(Consistency consistency) {
+    setConsistency(consistency);
+    return this;
+  }
+
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    StateLogConfig config = new StateLogConfig(toMap());
+    StateLogConfig config = new StateLogConfig(toMap()).withDefaultConsistency(getConsistency());
     return new CoordinatedResourceConfig()
       .withResourceFactory(DefaultAsyncMap::new)
       .withResourceConfig(config)
