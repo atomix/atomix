@@ -55,6 +55,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
       .withLog(getLog())
+      .withSerializer(getSerializer())
       .withPartitions(new CoordinatedResourcePartitionConfig()
         .withPartition(1)
         .withReplicas(cluster.getMembers())

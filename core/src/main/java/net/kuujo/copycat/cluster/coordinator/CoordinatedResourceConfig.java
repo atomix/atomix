@@ -19,6 +19,8 @@ import net.kuujo.copycat.*;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.util.serializer.KryoSerializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -37,11 +39,13 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   public static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
   public static final String RESOURCE_PARTITIONS = "partitions";
   public static final String RESOURCE_LOG = "log";
+  public static final String RESOURCE_SERIALIZER = "serializer";
 
   private static final long DEFAULT_RESOURCE_ELECTION_TIMEOUT = 300;
   private static final long DEFAULT_RESOURCE_HEARTBEAT_INTERVAL = 150;
   private static final List<Map<String, Object>> DEFAULT_RESOURCE_PARTITIONS = new ArrayList<>();
   private static final Log DEFAULT_RESOURCE_LOG = new BufferedLog();
+  private static final Class<? extends Serializer> DEFAULT_RESOURCE_SERIALIZER = KryoSerializer.class;
 
   public CoordinatedResourceConfig() {
     super();
@@ -287,7 +291,8 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The list of partitions for the resource.
    */
   public List<CoordinatedResourcePartitionConfig> getPartitions() {
-    return get(RESOURCE_PARTITIONS, DEFAULT_RESOURCE_PARTITIONS).stream().collect(Collectors.mapping(CoordinatedResourcePartitionConfig::new, Collectors.toList()));
+    return get(RESOURCE_PARTITIONS, DEFAULT_RESOURCE_PARTITIONS).stream().collect(Collectors.mapping(CoordinatedResourcePartitionConfig::new, Collectors
+      .toList()));
   }
 
   /**
@@ -387,6 +392,71 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    */
   public CoordinatedResourceConfig withLog(Log log) {
     setLog(log);
+    return this;
+  }
+
+  /**
+   * Sets the resource entry serializer class name.
+   *
+   * @param serializer The resource entry serializer class name.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  public void setSerializer(String serializer) {
+    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+  }
+
+  /**
+   * Sets the resource entry serializer.
+   *
+   * @param serializer The resource entry serializer.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  public void setSerializer(Class<? extends Serializer> serializer) {
+    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer").getName());
+  }
+
+  /**
+   * Returns the resource entry serializer.
+   *
+   * @return The resource entry serializer.
+   * @throws net.kuujo.copycat.ConfigurationException If the resource serializer configuration is malformed
+   */
+  @SuppressWarnings("unchecked")
+  public Class<? extends Serializer> getSerializer() {
+    Object serializer = get(RESOURCE_SERIALIZER);
+    if (serializer == null) {
+      return DEFAULT_RESOURCE_SERIALIZER;
+    } else if (serializer instanceof String) {
+      try {
+        return (Class<? extends Serializer>) Class.forName(serializer.toString()).newInstance();
+      } catch(ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate serializer", e);
+      }
+    }
+    throw new ConfigurationException("Invalid serializer configuration");
+  }
+
+  /**
+   * Sets the resource entry serializer class name, returning the configuration for method chaining.
+   *
+   * @param serializer The resource entry serializer class name.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  public CoordinatedResourceConfig withSerializer(String serializer) {
+    setSerializer(serializer);
+    return this;
+  }
+
+  /**
+   * Sets the resource entry serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The resource entry serializer.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  public CoordinatedResourceConfig withSerializer(Class<? extends Serializer> serializer) {
+    setSerializer(serializer);
     return this;
   }
 

@@ -64,6 +64,7 @@ public class EventLogConfig extends PartitionedResourceConfig<EventLogConfig> {
       .withHeartbeatInterval(getHeartbeatInterval())
       .withResourceFactory(DefaultEventLog::new)
       .withLog(getLog())
+      .withSerializer(getSerializer())
       .withResourceConfig(this);
 
     for (int i = 1; i <= getPartitions(); i++) {

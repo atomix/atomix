@@ -255,6 +255,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
       .withHeartbeatInterval(getHeartbeatInterval())
       .withResourceFactory(context -> new DefaultStateMachine<>(context, getStateType(), getInitialState()))
       .withLog(getLog())
+      .withSerializer(getSerializer())
       .withResourceConfig(config)
       .addPartition(new CoordinatedResourcePartitionConfig()
         .withPartition(1)

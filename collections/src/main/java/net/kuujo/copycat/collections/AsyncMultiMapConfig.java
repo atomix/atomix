@@ -114,6 +114,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
       .withLog(getLog())
+      .withSerializer(getSerializer())
       .withPartitions(new CoordinatedResourcePartitionConfig()
         .withPartition(1)
         .withReplicas(cluster.getMembers())

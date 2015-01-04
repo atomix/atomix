@@ -122,6 +122,7 @@ public class StateLogConfig extends PartitionedResourceConfig<StateLogConfig> {
       .withHeartbeatInterval(getHeartbeatInterval())
       .withResourceFactory(DefaultStateLog::new)
       .withLog(getLog())
+      .withSerializer(getSerializer())
       .withResourceConfig(this);
 
     for (int i = 1; i <= getPartitions(); i++) {
