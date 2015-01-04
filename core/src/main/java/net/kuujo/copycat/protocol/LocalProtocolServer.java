@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 import java.nio.ByteBuffer;
@@ -44,22 +45,15 @@ public class LocalProtocolServer implements ProtocolServer {
   }
 
   CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    executor.execute(() -> {
-      if (handler == null) {
-        future.completeExceptionally(new ProtocolException("No protocol handler registered"));
-      } else {
-        handler.handle(request).whenComplete((result, error) -> {
-          if (error == null) {
-            result.rewind();
-            future.complete(result);
-          } else {
-            future.completeExceptionally(error);
-          }
-        });
-      }
-    });
-    return future;
+    if (handler == null) {
+      return Futures.exceptionalFuture(new ProtocolException("No protocol handler registered"));
+    }
+    return CompletableFuture.supplyAsync(() -> handler, executor)
+      .thenComposeAsync(handler -> handler.handle(request))
+      .thenApply(result -> {
+        result.rewind();
+        return result;
+      });
   }
 
   @Override

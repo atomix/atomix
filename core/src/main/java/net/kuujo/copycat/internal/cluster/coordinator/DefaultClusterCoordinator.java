@@ -51,6 +51,7 @@ import java.util.stream.Collectors;
  */
 public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final String uri;
+  private final ThreadFactory threadFactory = new NamedThreadFactory("copycat-coordinator-%d");
   private final ScheduledExecutorService executor;
   private final CoordinatorConfig config;
   private final DefaultLocalMemberCoordinator localMember;
@@ -62,13 +63,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final AtomicBoolean open = new AtomicBoolean();
 
   public DefaultClusterCoordinator(String uri, CoordinatorConfig config) {
-    this(uri, config, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
-  }
-
-  public DefaultClusterCoordinator(String uri, CoordinatorConfig config, ScheduledExecutorService executor) {
     this.uri = uri;
     this.config = config.copy();
-    this.executor = executor;
+    this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
 
     // Set up permanent cluster members based on the given cluster configuration.
     this.localMember = new DefaultLocalMemberCoordinator(new MemberInfo(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor);
@@ -88,7 +85,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withPartition(1)
       .withReplicas(config.getClusterConfig().getMembers());
     this.context = new CopycatStateContext("copycat", uri, resourceConfig, partitionConfig);
-    this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(new KryoSerializer()), new KryoSerializer(), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+    this.cluster = new CoordinatorCluster(0, "copycat-cluster", this, context, new ResourceRouter(new KryoSerializer()), new KryoSerializer());
   }
 
   @Override
@@ -111,11 +108,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   @Override
   public CoordinatorConfig config() {
     return config;
-  }
-
-  @Override
-  public Executor executor() {
-    return executor;
   }
 
   @Override
@@ -228,7 +220,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       for (CoordinatedResourcePartitionConfig partitionConfig : config.getPartitions()) {
         try {
           CopycatStateContext state = new CopycatStateContext(name, uri, config, partitionConfig);
-          ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(config.getSerializer().newInstance()), config.getSerializer().newInstance(), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
+          ClusterManager cluster = new CoordinatedCluster(name.hashCode(), String.format("copycat-cluster-%s-%d", name, partitionConfig.getPartition()), this, state, new ResourceRouter(config.getSerializer().newInstance()), config.getSerializer().newInstance());
           ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state, this);
           partitions.add(new PartitionHolder(partitionConfig, cluster, state, context));
         } catch (InstantiationException | IllegalAccessException e) {
