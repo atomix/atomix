@@ -258,23 +258,25 @@ class LeaderState extends ActiveState {
     private final CopycatStateContext context;
     private final Map<String, Replica> replicaMap;
     private final List<Replica> replicas;
-    private int readQuorum;
-    private int writeQuorum;
+    private int quorum;
     private int quorumIndex;
     private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
 
     private Replicator(CopycatStateContext context) {
       this.context = context;
-      this.replicaMap = new HashMap<>(context.getMembers().size());
-      this.replicas = new ArrayList<>(context.getMembers().size());
+      this.replicaMap = new HashMap<>(context.getReplicas().size());
+      this.replicas = new ArrayList<>(context.getReplicas().size());
       for (String uri : context.getReplicas()) {
-        Replica replica = new Replica(uri, context);
-        replicaMap.put(uri, replica);
-        replicas.add(replica);
+        if (!uri.equals(context.getLocalMember())) {
+          Replica replica = new Replica(uri, context);
+          replicaMap.put(uri, replica);
+          replicas.add(replica);
+        }
       }
-      this.readQuorum = (int) (Math.floor(context.getMembers().size() / 2) + 1);
-      this.writeQuorum = (int) (Math.floor(context.getMembers().size() / 2) + 1);
-      this.quorumIndex = writeQuorum - 1;
+
+      // Quorum is floor(replicas.size / 2) since this node is implicitly counted in the quorum count.
+      this.quorum = (int) Math.floor(context.getReplicas().size() / 2);
+      this.quorumIndex = quorum - 1;
     }
 
     /**
@@ -292,13 +294,13 @@ class LeaderState extends ActiveState {
 
       // Set up a read quorum. Once the required number of replicas have been
       // contacted the quorum will succeed.
-      final Quorum quorum = new Quorum(readQuorum, succeeded -> {
+      final Quorum quorum = new Quorum(this.quorum, succeeded -> {
         if (succeeded) {
           future.complete(index);
         } else {
           future.completeExceptionally(new CopycatException("Failed to obtain quorum"));
         }
-      }).countSelf();
+      });
 
       // Iterate through replicas and ping each replica. Internally, this
       // should cause the replica to send any remaining entries if necessary.
@@ -335,13 +337,13 @@ class LeaderState extends ActiveState {
       // Set up a write quorum. Once the log entry has been replicated to
       // the required number of replicas in order to meet the write quorum
       // requirement, the future will succeed.
-      final Quorum quorum = new Quorum(writeQuorum, succeeded -> {
+      final Quorum quorum = new Quorum(this.quorum, succeeded -> {
         if (succeeded) {
           future.complete(index);
         } else {
           future.completeExceptionally(new CopycatException("Failed to obtain quorum"));
         }
-      }).countSelf();
+      });
 
       // Iterate through replicas and commit all entries up to the given index.
       for (Replica replica : replicaMap.values()) {
