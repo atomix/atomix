@@ -65,12 +65,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @return The Copycat cluster configuration.
    */
   public ClusterConfig getClusterConfig() {
-    Map<String, Object> cluster = get(COORDINATOR_CLUSTER);
-    if (cluster == null) {
-      cluster = new HashMap<>();
-      put(COORDINATOR_CLUSTER, cluster);
-    }
-    return new ClusterConfig(cluster);
+    return get(COORDINATOR_CLUSTER, key -> new ClusterConfig());
   }
 
   /**

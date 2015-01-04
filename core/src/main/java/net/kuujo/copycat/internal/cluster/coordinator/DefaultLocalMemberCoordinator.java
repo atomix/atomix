@@ -16,13 +16,16 @@
 package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.Task;
+import net.kuujo.copycat.cluster.ClusterException;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.internal.cluster.MemberInfo;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.net.URI;
@@ -30,7 +33,6 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 
@@ -42,9 +44,10 @@ import java.util.concurrent.Executor;
 public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements LocalMemberCoordinator {
   private final ProtocolServer server;
   private final Executor executor;
+  @SuppressWarnings("rawtypes")
+  private final Map<String, Map<Integer, MessageHandler>> handlers = new ConcurrentHashMap<>();
   private final Map<Integer, Executor> executors = new ConcurrentHashMap<>();
-  @SuppressWarnings("rawtypes") private final Map<String, Map<Integer, MessageHandler>> handlers = new ConcurrentHashMap<>();
-  private final Serializer serializer = Serializer.serializer();
+  private final Serializer serializer = new KryoSerializer();
 
   public DefaultLocalMemberCoordinator(MemberInfo info, Protocol protocol, Executor executor) {
     super(info);
@@ -60,44 +63,25 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
     this.executor = executor;
   }
 
-  /**
-   * Returns the execution context for a given address.
-   */
-  private Executor getExecutor(int address) {
-    Executor executor = executors.get(address);
-    return executor != null ? executor : this.executor;
-  }
-
   @Override
   @SuppressWarnings({ "unchecked", "rawtypes" })
-  public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
-    CompletableFuture<U> future = new CompletableFuture<>();
+  public synchronized <T, U> CompletableFuture<U> send(String topic, int address, T message) {
     Map<Integer, MessageHandler> topicHandlers = handlers.get(topic);
     if (topicHandlers != null) {
       MessageHandler handler = topicHandlers.get(address);
       if (handler != null) {
-        getExecutor(address).execute(() -> {
-          ((CompletionStage<U>) handler.handle(message)).whenComplete((result, error) -> {
-            if (error == null) {
-              future.complete(result);
-            } else {
-              future.completeExceptionally(error);
-            }
-          });
-        });
-      } else {
-        getExecutor(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
+        return CompletableFuture.completedFuture(null)
+          .thenComposeAsync(v -> handler.handle(message), executor)
+          .thenRunAsync(() -> {
+          }, executor);
       }
-    } else {
-      getExecutor(address).execute(() -> future.completeExceptionally(new IllegalStateException("No handlers")));
     }
-    return future;
+    return Futures.exceptionalFuture(new IllegalStateException("No handlers"));
   }
 
   @Override
   @SuppressWarnings("rawtypes")
-  public <T, U> LocalMemberCoordinator register(String topic, int address,
-    MessageHandler<T, U> handler) {
+  public <T, U> LocalMemberCoordinator register(String topic, int address, MessageHandler<T, U> handler) {
     Map<Integer, MessageHandler> topicHandlers = handlers.computeIfAbsent(topic, t -> new ConcurrentHashMap<>());
     topicHandlers.put(address, handler);
     return this;
@@ -105,7 +89,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
 
   @Override
   @SuppressWarnings("rawtypes")
-  public LocalMemberCoordinator unregister(String topic, int address) {
+  public synchronized LocalMemberCoordinator unregister(String topic, int address) {
     Map<Integer, MessageHandler> topicHandlers = handlers.get(topic);
     if (topicHandlers != null) {
       topicHandlers.remove(address);
@@ -124,21 +108,13 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
    */
   @SuppressWarnings({ "unchecked", "rawtypes" })
   private CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     int type = request.getInt();
     switch (type) {
       case 0:
-        int contextAddress = request.getInt();
+        int taskAddress = request.getInt();
         Task task = serializer.readObject(request.slice());
-        getExecutor(contextAddress).execute(() -> {
-          try {
-            Object result = task.execute();
-            future.complete(serializer.writeObject(result));
-          } catch (Exception e) {
-            future.completeExceptionally(e);
-          }
-        });
-        break;
+        return CompletableFuture.supplyAsync(task::execute, getExecutor(taskAddress))
+          .thenApplyAsync(serializer::writeObject, executor);
       case 1:
         int topicLength = request.getInt();
         byte[] topicBytes = new byte[topicLength];
@@ -150,34 +126,33 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
           MessageHandler handler = topicHandlers.get(address);
           if (handler != null) {
             Object message = serializer.readObject(request.slice());
-            getExecutor(address).execute(() -> {
-              ((CompletionStage<?>) handler.handle(message)).whenComplete((result, error) -> {
-                if (error == null) {
-                  future.complete(serializer.writeObject(result));
-                } else {
-                  future.completeExceptionally(error);
-                }
-              });
-            });
-          } else {
-            future.completeExceptionally(new IllegalStateException("No handlers"));
+            return CompletableFuture.supplyAsync(() -> handler.handle(message), executor)
+              .thenApplyAsync(serializer::writeObject, executor);
           }
-        } else {
-          future.completeExceptionally(new IllegalStateException("No handlers"));
+          Futures.exceptionalFuture(new IllegalStateException("No handlers"));
         }
-        break;
+        return Futures.exceptionalFuture(new IllegalStateException("No handlers"));
+      default:
+        return Futures.exceptionalFuture(new ClusterException("Invalid request type"));
     }
-    return future;
+  }
+
+  /**
+   * Returns the executor for the given address.
+   */
+  private Executor getExecutor(int address) {
+    Executor executor = executors.get(address);
+    return executor != null ? executor : this.executor;
   }
 
   @Override
   public CompletableFuture<Void> execute(int address, Task<Void> task) {
-    return CompletableFuture.supplyAsync(task::execute, getExecutor(address));
+    return CompletableFuture.supplyAsync(task::execute, executor);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(int address, Task<T> task) {
-    return CompletableFuture.supplyAsync(task::execute, getExecutor(address));
+    return CompletableFuture.supplyAsync(task::execute, executor);
   }
 
   @Override
@@ -185,10 +160,10 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
     executors.put(address, executor);
     return this;
   }
-  
+
   @Override
   public LocalMemberCoordinator unregisterExecutor(int address) {
-    executors.remove(address, executor);
+    executors.remove(address);
     return this;
   }
 

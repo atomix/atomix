@@ -20,6 +20,7 @@ import net.kuujo.copycat.internal.util.Assert;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * Base configuration for configurable types.
@@ -78,7 +79,7 @@ public abstract class AbstractConfigurable implements Configurable {
    */
   @SuppressWarnings("unchecked")
   protected <U> U get(String key) {
-    return get(key, null);
+    return get(key, k -> null);
   }
 
   /**
@@ -91,10 +92,24 @@ public abstract class AbstractConfigurable implements Configurable {
    */
   @SuppressWarnings("unchecked")
   protected <U> U get(String key, U defaultValue) {
+    return get(key, k -> defaultValue);
+  }
+
+  /**
+   * Gets a configuration value from the configuration. If the value is not present then it is calculated with the
+   * given value calculator function.
+   *
+   * @param key The configuration key.
+   * @param computer The function with which to compute the value if not present.
+   * @param <U> The configuration type.
+   * @return The configuration value.
+   */
+  @SuppressWarnings("unchecked")
+  protected <U> U get(String key, Function<String, U> computer) {
     Assert.isNotNull(key, "key");
-    Object value = config.containsKey(key) ? config.get(key) : defaultValue;
+    Object value = config.get(key);
     if (value == null) {
-      return null;
+      return computer.apply(key);
     } else if (value instanceof Map) {
       String className = (String) ((Map<?, ?>) value).get(CONFIG_CLASS);
       if (className != null) {

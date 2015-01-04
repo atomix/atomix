@@ -70,17 +70,17 @@ public class CoordinatedMember implements Member {
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    return coordinator.send(topic, id, message);
+    return coordinator.<T, U>send(topic, id, message).<U>thenApplyAsync(v -> v, executor);
   }
 
   @Override
   public CompletableFuture<Void> execute(Task<Void> task) {
-    return coordinator.execute(id, task);
+    return coordinator.execute(id, task).thenRunAsync(() -> {}, executor);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    return coordinator.submit(id, task);
+    return coordinator.submit(id, task).thenApplyAsync(v -> v, executor);
   }
 
   @Override

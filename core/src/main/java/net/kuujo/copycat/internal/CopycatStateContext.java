@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatStateContext extends Observable implements RaftProtocol {
-  private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-%d"));
+  private final ScheduledExecutorService executor;
   private final LogManager log;
   private AbstractState state;
   private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
@@ -68,9 +68,10 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private boolean open;
 
   public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, CoordinatedResourcePartitionConfig partition) {
-    this.localMember = uri;
-    this.replicas = partition.getReplicas();
-    this.members = partition.getReplicas();
+    this.executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-" + name + "-" + partition.getPartition() + "-%d"));
+    this.localMember = Assert.isNotNull(uri, "uri");
+    this.replicas = new HashSet<>(partition.getReplicas());
+    this.members = new HashSet<>(partition.getReplicas());
     this.members.add(uri);
     this.localMemberInfo = new ReplicaInfo(uri);
     this.memberInfo.put(uri, localMemberInfo);

@@ -225,7 +225,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       List<PartitionHolder> partitions = new ArrayList<>(config.getPartitions().size());
       for (CoordinatedResourcePartitionConfig partitionConfig : config.getPartitions()) {
         CopycatStateContext state = new CopycatStateContext(name, uri, config, partitionConfig);
-        ManagedCluster cluster = new CoordinatedCluster(name.hashCode(), this, context, new ResourceRouter(name), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
+        ManagedCluster cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
         ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state, this);
         partitions.add(new PartitionHolder(partitionConfig, cluster, state, context));
       }

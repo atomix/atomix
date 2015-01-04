@@ -100,7 +100,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the cluster configuration is {@code null}
    */
   public void setClusterConfig(ClusterConfig config) {
-    put(COPYCAT_CLUSTER, Assert.isNotNull(config, "config").toMap());
+    put(COPYCAT_CLUSTER, Assert.isNotNull(config, "config"));
   }
 
   /**
@@ -109,12 +109,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat cluster configuration.
    */
   public ClusterConfig getClusterConfig() {
-    Map<String, Object> cluster = get(COPYCAT_CLUSTER);
-    if (cluster == null) {
-      cluster = new HashMap<>(0);
-      put(COPYCAT_CLUSTER, cluster);
-    }
-    return new ClusterConfig(cluster);
+    return get(COPYCAT_CLUSTER, key -> new ClusterConfig());
   }
 
   /**

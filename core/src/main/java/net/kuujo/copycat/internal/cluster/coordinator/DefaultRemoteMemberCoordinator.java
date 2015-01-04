@@ -21,6 +21,7 @@ import net.kuujo.copycat.internal.cluster.MemberInfo;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
+import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.net.URI;
@@ -37,7 +38,7 @@ import java.util.concurrent.Executor;
 public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   private final ProtocolClient client;
   private final Executor executor;
-  private final Serializer serializer = Serializer.serializer();
+  private final Serializer serializer = new KryoSerializer();
 
   public DefaultRemoteMemberCoordinator(MemberInfo info, Protocol protocol, Executor executor) {
     super(info);
@@ -55,23 +56,19 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
-    CompletableFuture<U> future = new CompletableFuture<>();
-    ByteBuffer buffer = serializer.writeObject(message);
-    byte[] topicBytes = topic.getBytes();
-    ByteBuffer request = ByteBuffer.allocateDirect(buffer.capacity() + topicBytes.length + 12);
-    request.putInt(1); // Request type
-    request.putInt(topicBytes.length);
-    request.put(topicBytes);
-    request.putInt(address);
-    request.put(buffer);
-    client.write(request).whenComplete((response, error) -> {
-      if (error == null) {
-        executor.execute(() -> future.complete(serializer.readObject(response)));
-      } else {
-        executor.execute(() -> future.completeExceptionally(error));
-      }
-    });
-    return future;
+    return CompletableFuture.supplyAsync(() -> {
+      ByteBuffer buffer = serializer.writeObject(message);
+      byte[] topicBytes = topic.getBytes();
+      ByteBuffer request = ByteBuffer.allocateDirect(buffer.capacity() + topicBytes.length + 12);
+      request.putInt(1); // Request type
+      request.putInt(topicBytes.length);
+      request.put(topicBytes);
+      request.putInt(address);
+      request.put(buffer);
+      return request;
+    }, executor)
+      .thenCompose(client::write)
+      .thenApply(serializer::readObject);
   }
 
   @Override
@@ -81,20 +78,16 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
 
   @Override
   public <T> CompletableFuture<T> submit(int address, Task<T> task) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    ByteBuffer buffer = serializer.writeObject(task);
-    ByteBuffer request = ByteBuffer.allocate(8 + buffer.capacity());
-    request.putInt(0); // Request type
-    request.putInt(address); // Context address
-    request.put(buffer);
-    client.write(request).whenComplete((response, error) -> {
-      if (error == null) {
-        executor.execute(() -> future.complete(serializer.readObject(response)));
-      } else {
-        executor.execute(() -> future.completeExceptionally(error));
-      }
-    });
-    return future;
+    return CompletableFuture.supplyAsync(() -> {
+      ByteBuffer buffer = serializer.writeObject(task);
+      ByteBuffer request = ByteBuffer.allocate(8 + buffer.capacity());
+      request.putInt(0); // Request type
+      request.putInt(address); // Context address
+      request.put(buffer);
+      return request;
+    }, executor)
+      .thenCompose(client::write)
+      .thenApply(serializer::readObject);
   }
 
   @Override

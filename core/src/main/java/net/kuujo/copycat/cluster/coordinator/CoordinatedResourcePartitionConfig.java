@@ -142,7 +142,7 @@ public class CoordinatedResourcePartitionConfig extends AbstractConfigurable {
    * @return The set of replicas for the resource.
    */
   public Set<String> getReplicas() {
-    return Collections.unmodifiableSet(get(RESOURCE_PARTITION_REPLICAS, DEFAULT_RESOURCE_PARTITION_REPLICAS));
+    return get(RESOURCE_PARTITION_REPLICAS, DEFAULT_RESOURCE_PARTITION_REPLICAS);
   }
 
   /**

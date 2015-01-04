@@ -27,7 +27,7 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember, Managed {
+public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember, Managed<CoordinatedLocalMember> {
   private final LocalMemberCoordinator coordinator;
   private boolean open;
 
@@ -49,10 +49,10 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public CompletableFuture<CoordinatedLocalMember> open() {
     open = true;
     coordinator.registerExecutor(id, executor);
-    return CompletableFuture.completedFuture(null);
+    return CompletableFuture.completedFuture(this);
   }
 
   @Override
