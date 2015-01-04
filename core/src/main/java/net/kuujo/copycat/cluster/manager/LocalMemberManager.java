@@ -18,6 +18,7 @@ package net.kuujo.copycat.cluster.manager;
 import net.kuujo.copycat.Managed;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 /**
  * Local cluster member.<p>
@@ -35,11 +36,12 @@ public interface LocalMemberManager extends MemberManager, LocalMember, Managed<
    * @param topic The topic to handle.
    * @param id The handler ID.
    * @param handler The message registerHandler.
+   * @param serializer The serializer with which to serialize and deserialize the message.
    * @param <T> The request message type.
    * @param <U> The response message type.
    * @return The local member.
    */
-  <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler);
+  <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler, Serializer serializer);
 
   /**
    * Unregisters a message type registerHandler on the local member.

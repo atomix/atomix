@@ -17,7 +17,6 @@ package net.kuujo.copycat.internal.cluster;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.cluster.manager.MemberManager;
-import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
@@ -29,13 +28,13 @@ import java.util.concurrent.Executor;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatedMember implements MemberManager {
+  protected static final String EXECUTE_TOPIC = "execute";
   protected static final int USER_ID = 0;
-  protected static final int EXECUTOR_ID = -1;
+  protected static final int EXECUTE_ID = -1;
   protected final int id;
   private final MemberInfo info;
   private final MemberCoordinator coordinator;
   protected final Serializer serializer;
-  protected final Serializer internalSerializer = new KryoSerializer();
   protected final Executor executor;
 
   public CoordinatedMember(int id, MemberInfo info, MemberCoordinator coordinator, Serializer serializer, Executor executor) {
@@ -77,22 +76,22 @@ public class CoordinatedMember implements MemberManager {
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    return coordinator.send(topic, this.id, USER_ID, serializer.writeObject(message)).thenApplyAsync(serializer::readObject, executor);
+    return send(topic, USER_ID, message, serializer);
   }
 
   @Override
-  public <T, U> CompletableFuture<U> send(String topic, int id, T message) {
-    return coordinator.send(topic, this.id, id, internalSerializer.writeObject(message)).thenApplyAsync(internalSerializer::readObject, executor);
+  public <T, U> CompletableFuture<U> send(String topic, int id, T message, Serializer serializer) {
+    return coordinator.send(topic, this.id, id, serializer.writeObject(message)).thenApplyAsync(serializer::readObject, executor);
   }
 
   @Override
   public CompletableFuture<Void> execute(Task<Void> task) {
-    return coordinator.send("execute", this.id, USER_ID, serializer.writeObject(task)).thenApplyAsync(serializer::readObject, executor);
+    return send(EXECUTE_TOPIC, EXECUTE_ID, task, serializer);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    return coordinator.send("execute", this.id, USER_ID, serializer.writeObject(task)).thenApplyAsync(serializer::readObject, executor);
+    return send(EXECUTE_TOPIC, EXECUTE_ID, task, serializer);
   }
 
   @Override

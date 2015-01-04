@@ -37,6 +37,7 @@ import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.Request;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -85,7 +86,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withPartition(1)
       .withReplicas(config.getClusterConfig().getMembers());
     this.context = new CopycatStateContext("copycat", uri, resourceConfig, partitionConfig);
-    this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter("copycat"), new KryoSerializer(), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
+    this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(new KryoSerializer()), new KryoSerializer(), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator-%d")));
   }
 
   @Override
@@ -225,7 +226,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       for (CoordinatedResourcePartitionConfig partitionConfig : config.getPartitions()) {
         try {
           CopycatStateContext state = new CopycatStateContext(name, uri, config, partitionConfig);
-          ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(name), config.getSerializer().newInstance(), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
+          ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(config.getSerializer().newInstance()), config.getSerializer().newInstance(), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-resource-" + name + "-%d")));
           ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state, this);
           partitions.add(new PartitionHolder(partitionConfig, cluster, state, context));
         } catch (InstantiationException | IllegalAccessException e) {
@@ -332,20 +333,20 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    */
   private static class ResourceRouter implements Router {
     private static final int PROTOCOL_ID = 1;
-    private final String name;
+    private final Serializer serializer;
 
-    private ResourceRouter(String name) {
-      this.name = name;
+    private ResourceRouter(Serializer serializer) {
+      this.serializer = serializer;
     }
 
     @Override
     public void createRoutes(ClusterManager cluster, RaftProtocol protocol) {
-      cluster.member().registerHandler(Topics.SYNC, PROTOCOL_ID, protocol::sync);
-      cluster.member().registerHandler(Topics.PING, PROTOCOL_ID, protocol::ping);
-      cluster.member().registerHandler(Topics.POLL, PROTOCOL_ID, protocol::poll);
-      cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append);
-      cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query);
-      cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit);
+      cluster.member().registerHandler(Topics.SYNC, PROTOCOL_ID, protocol::sync, serializer);
+      cluster.member().registerHandler(Topics.PING, PROTOCOL_ID, protocol::ping, serializer);
+      cluster.member().registerHandler(Topics.POLL, PROTOCOL_ID, protocol::poll, serializer);
+      cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append, serializer);
+      cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query, serializer);
+      cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit, serializer);
       protocol.pingHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
@@ -360,7 +361,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(String topic, T request, ClusterManager cluster) {
       MemberManager member = cluster.member(request.uri());
       if (member != null) {
-        return member.send(topic, PROTOCOL_ID, request);
+        return member.send(topic, PROTOCOL_ID, request, serializer);
       }
       CompletableFuture<U> future = new CompletableFuture<>();
       future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s", request.uri())));

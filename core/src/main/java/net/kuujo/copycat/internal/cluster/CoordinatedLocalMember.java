@@ -42,13 +42,13 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   /**
    * Wraps a message handler in order to perform serialization/deserialization and execute it in the proper thread.
    */
-  private <T, U> MessageHandler<ByteBuffer, ByteBuffer> wrapHandler(MessageHandler<T, U> handler) {
+  private <T, U> MessageHandler<ByteBuffer, ByteBuffer> wrapHandler(MessageHandler<T, U> handler, Serializer serializer) {
     return message -> CompletableFuture.supplyAsync(() -> serializer.writeObject(handler.handle(serializer.readObject(message))), executor);
   }
 
   @Override
-  public <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler) {
-    coordinator.register(topic, this.id, id, wrapHandler(handler));
+  public <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler, Serializer serializer) {
+    coordinator.register(topic, this.id, id, wrapHandler(handler, serializer));
     return this;
   }
 
@@ -60,7 +60,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
 
   @Override
   public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
-    return registerHandler(topic, USER_ID, handler);
+    return registerHandler(topic, USER_ID, handler, serializer);
   }
   
   @Override
@@ -68,17 +68,10 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
     return unregisterHandler(topic, USER_ID);
   }
 
-  /**
-   * Handles remote execution.
-   */
-  private CompletableFuture<ByteBuffer> execute(ByteBuffer task) {
-    return CompletableFuture.supplyAsync(() -> serializer.writeObject(serializer.<Task>readObject(task).execute()), executor);
-  }
-
   @Override
   public CompletableFuture<LocalMemberManager> open() {
     open = true;
-    coordinator.register("execute", this.id, EXECUTOR_ID, this::execute);
+    this.<Task<?>, Object>registerHandler(EXECUTE_TOPIC, EXECUTE_ID, task -> CompletableFuture.supplyAsync(task::execute, executor), serializer);
     return CompletableFuture.completedFuture(this);
   }
 
@@ -90,7 +83,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   @Override
   public CompletableFuture<Void> close() {
     open = false;
-    coordinator.unregister("execute", this.id, EXECUTOR_ID);
+    unregisterHandler(EXECUTE_TOPIC, EXECUTE_ID);
     return CompletableFuture.completedFuture(null);
   }
 
