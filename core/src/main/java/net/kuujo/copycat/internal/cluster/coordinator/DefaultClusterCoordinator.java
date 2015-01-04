@@ -74,7 +74,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     this.localMember = new DefaultLocalMemberCoordinator(new MemberInfo(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor);
     this.members.put(uri, localMember);
     for (String member : config.getClusterConfig().getMembers()) {
-      this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor));
+      if (!this.members.containsKey(member)) {
+        this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor));
+      }
     }
 
     // Set up the global Raft state context and cluster.
