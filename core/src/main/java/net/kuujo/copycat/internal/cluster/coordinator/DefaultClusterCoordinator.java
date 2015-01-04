@@ -86,6 +86,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withReplicas(config.getClusterConfig().getMembers());
     this.context = new CopycatStateContext("copycat", uri, resourceConfig, partitionConfig);
     this.cluster = new CoordinatorCluster(0, "copycat-cluster", this, context, new ResourceRouter(new KryoSerializer()), new KryoSerializer());
+    createResources();
   }
 
   @Override

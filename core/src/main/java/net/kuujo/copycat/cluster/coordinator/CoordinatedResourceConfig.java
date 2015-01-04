@@ -22,10 +22,12 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Resource configuration.
@@ -43,7 +45,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
 
   private static final long DEFAULT_RESOURCE_ELECTION_TIMEOUT = 300;
   private static final long DEFAULT_RESOURCE_HEARTBEAT_INTERVAL = 150;
-  private static final List<Map<String, Object>> DEFAULT_RESOURCE_PARTITIONS = new ArrayList<>();
+  private static final List<CoordinatedResourcePartitionConfig> DEFAULT_RESOURCE_PARTITIONS = new ArrayList<>();
   private static final Log DEFAULT_RESOURCE_LOG = new BufferedLog();
   private static final Class<? extends Serializer> DEFAULT_RESOURCE_SERIALIZER = KryoSerializer.class;
 
@@ -282,7 +284,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If {@code partitions} is {@code null}
    */
   public void setPartitions(List<CoordinatedResourcePartitionConfig> partitions) {
-    put(RESOURCE_PARTITIONS, new HashSet<>(Assert.isNotNull(partitions, "partitions")));
+    put(RESOURCE_PARTITIONS, Assert.isNotNull(partitions, "partitions"));
   }
 
   /**
@@ -291,8 +293,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The list of partitions for the resource.
    */
   public List<CoordinatedResourcePartitionConfig> getPartitions() {
-    return get(RESOURCE_PARTITIONS, DEFAULT_RESOURCE_PARTITIONS).stream().collect(Collectors.mapping(CoordinatedResourcePartitionConfig::new, Collectors
-      .toList()));
+    return get(RESOURCE_PARTITIONS, DEFAULT_RESOURCE_PARTITIONS);
   }
 
   /**
@@ -428,8 +429,8 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
       return DEFAULT_RESOURCE_SERIALIZER;
     } else if (serializer instanceof String) {
       try {
-        return (Class<? extends Serializer>) Class.forName(serializer.toString()).newInstance();
-      } catch(ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        return (Class<? extends Serializer>) Class.forName(serializer.toString());
+      } catch(ClassNotFoundException e) {
         throw new ConfigurationException("Failed to instantiate serializer", e);
       }
     }
