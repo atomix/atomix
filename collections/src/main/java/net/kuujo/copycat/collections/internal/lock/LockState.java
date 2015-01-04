@@ -29,7 +29,7 @@ public interface LockState {
    * Initializes the lock state.
    */
   @Initializer
-  public void init(StateContext<LockState> context);
+  void init(StateContext<LockState> context);
 
   /**
    * Locks the lock.

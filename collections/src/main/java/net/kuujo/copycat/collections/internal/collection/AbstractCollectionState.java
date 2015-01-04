@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
+import net.kuujo.copycat.Initializer;
 import net.kuujo.copycat.StateContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,6 +36,7 @@ public abstract class AbstractCollectionState<T extends CollectionState<T, V>, U
   protected abstract U createCollection();
 
   @Override
+  @Initializer
   public void init(StateContext<T> context) {
     collection = context.get("value");
     if (collection == null) {

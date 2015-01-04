@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
+import net.kuujo.copycat.Initializer;
 import net.kuujo.copycat.StateContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -34,6 +35,7 @@ public class DefaultMapState<K, V> implements MapState<K, V> {
   private Map<K, V> map;
 
   @Override
+  @Initializer
   public void init(StateContext<MapState<K, V>> context) {
     map = context.get("value");
     if (map == null) {

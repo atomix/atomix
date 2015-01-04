@@ -36,7 +36,7 @@ public interface CollectionState<T extends CollectionState<T, U>, U> extends Col
    * @param context The state context.
    */
   @Initializer
-  public void init(StateContext<T> context);
+  void init(StateContext<T> context);
 
   @Override
   @Command

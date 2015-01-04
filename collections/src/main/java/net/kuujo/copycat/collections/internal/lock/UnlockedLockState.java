@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
+import net.kuujo.copycat.Initializer;
 import net.kuujo.copycat.StateContext;
 
 /**
@@ -26,6 +27,7 @@ public class UnlockedLockState implements LockState {
   private StateContext<LockState> context;
 
   @Override
+  @Initializer
   public void init(StateContext<LockState> context) {
     this.context = context;
   }

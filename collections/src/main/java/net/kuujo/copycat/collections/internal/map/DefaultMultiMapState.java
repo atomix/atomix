@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
+import net.kuujo.copycat.Initializer;
 import net.kuujo.copycat.StateContext;
 import org.jetbrains.annotations.NotNull;
 
@@ -30,6 +31,7 @@ public class DefaultMultiMapState<K, V> implements MultiMapState<K, V> {
   private Map<K, Collection<V>> map;
 
   @Override
+  @Initializer
   public void init(StateContext<MultiMapState<K, V>> context) {
     map = context.get("value");
     if (map == null) {
