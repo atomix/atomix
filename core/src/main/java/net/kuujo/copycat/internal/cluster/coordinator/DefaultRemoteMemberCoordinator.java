@@ -15,14 +15,11 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
-import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
 import net.kuujo.copycat.internal.cluster.MemberInfo;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.util.serializer.KryoSerializer;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -38,7 +35,6 @@ import java.util.concurrent.Executor;
 public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   private final ProtocolClient client;
   private final Executor executor;
-  private final Serializer serializer = new KryoSerializer();
 
   public DefaultRemoteMemberCoordinator(MemberInfo info, Protocol protocol, Executor executor) {
     super(info);
@@ -55,39 +51,16 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   }
 
   @Override
-  public <T, U> CompletableFuture<U> send(String topic, int address, T message) {
+  public CompletableFuture<ByteBuffer> send(String topic, int address, int id, ByteBuffer message) {
     return CompletableFuture.supplyAsync(() -> {
-      ByteBuffer buffer = serializer.writeObject(message);
-      byte[] topicBytes = topic.getBytes();
-      ByteBuffer request = ByteBuffer.allocateDirect(buffer.capacity() + topicBytes.length + 12);
-      request.putInt(1); // Request type
-      request.putInt(topicBytes.length);
-      request.put(topicBytes);
+      ByteBuffer request = ByteBuffer.allocateDirect(message.capacity() + 12);
+      request.putInt(topic.hashCode());
       request.putInt(address);
-      request.put(buffer);
+      request.putInt(id);
+      request.put(message);
       return request;
     }, executor)
-      .thenCompose(client::write)
-      .thenApply(serializer::readObject);
-  }
-
-  @Override
-  public CompletableFuture<Void> execute(int address, Task<Void> task) {
-    return submit(address, task);
-  }
-
-  @Override
-  public <T> CompletableFuture<T> submit(int address, Task<T> task) {
-    return CompletableFuture.supplyAsync(() -> {
-      ByteBuffer buffer = serializer.writeObject(task);
-      ByteBuffer request = ByteBuffer.allocate(8 + buffer.capacity());
-      request.putInt(0); // Request type
-      request.putInt(address); // Context address
-      request.put(buffer);
-      return request;
-    }, executor)
-      .thenCompose(client::write)
-      .thenApply(serializer::readObject);
+      .thenCompose(client::write);
   }
 
   @Override

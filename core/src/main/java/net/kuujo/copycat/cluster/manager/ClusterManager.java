@@ -13,14 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.cluster.manager;
 
 import net.kuujo.copycat.Managed;
+import net.kuujo.copycat.cluster.Cluster;
 
 /**
- * Managed cluster.
+ * Resource cluster.<p>
+ *
+ * The cluster contains state information defining the current cluster configuration. Note that cluster configuration
+ * state is potential stale at any given point in time.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ManagedCluster extends Cluster, Managed<Cluster> {
+public interface ClusterManager extends Cluster, Managed<ClusterManager> {
+
+  @Override
+  MemberManager leader();
+
+  @Override
+  LocalMemberManager member();
+
+  @Override
+  MemberManager member(String uri);
+
 }

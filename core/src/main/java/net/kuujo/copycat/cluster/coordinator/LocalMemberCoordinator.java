@@ -17,7 +17,7 @@ package net.kuujo.copycat.cluster.coordinator;
 
 import net.kuujo.copycat.cluster.MessageHandler;
 
-import java.util.concurrent.Executor;
+import java.nio.ByteBuffer;
 
 /**
  * Local member coordinator.
@@ -31,34 +31,20 @@ public interface LocalMemberCoordinator extends MemberCoordinator {
    *
    * @param topic The topic for which to register the registerHandler.
    * @param address The internal address at which to register the registerHandler.
+   * @param id The internal handler identifier.
    * @param handler The registerHandler to register.
    * @return The local member coordinator.
    */
-  <T, U> LocalMemberCoordinator register(String topic, int address, MessageHandler<T, U> handler);
+  LocalMemberCoordinator register(String topic, int address, int id, MessageHandler<ByteBuffer, ByteBuffer> handler);
 
   /**
    * Unregisters a message registerHandler.
    *
    * @param topic The topic for which to unregister the registerHandler.
    * @param address The internal address at which to unregister the registerHandler.
+   * @param id The internal handler identifier.
    * @return The local member coordinator.
    */
-  LocalMemberCoordinator unregister(String topic, int address);
+  LocalMemberCoordinator unregister(String topic, int address, int id);
 
-  /**
-   * Registers an execution context for the given address.
-   *
-   * @param address The address for which to register the context.
-   * @param executor The execution context.
-   * @return The local member coordinator.
-   */
-  LocalMemberCoordinator registerExecutor(int address, Executor executor);
-
-  /**
-   * Unregisters an execution context for the given address.
-   *
-   * @param address The address for which to unregister the context.
-   * @return The local member coordinator.
-   */
-  LocalMemberCoordinator unregisterExecutor(int address);
 }

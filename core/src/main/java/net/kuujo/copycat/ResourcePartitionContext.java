@@ -14,8 +14,8 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
+import net.kuujo.copycat.cluster.manager.ClusterManager;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.Consistency;
 
@@ -57,7 +57,7 @@ public interface ResourcePartitionContext extends Executor, Managed<ResourcePart
    *
    * @return The Copycat cluster.
    */
-  Cluster cluster();
+  ClusterManager cluster();
 
   /**
    * Returns the Copycat log.

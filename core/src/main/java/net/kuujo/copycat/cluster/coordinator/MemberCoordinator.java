@@ -16,9 +16,9 @@
 package net.kuujo.copycat.cluster.coordinator;
 
 import net.kuujo.copycat.Managed;
-import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -54,28 +54,10 @@ public interface MemberCoordinator extends Managed<MemberCoordinator> {
    *
    * @param topic The topic to which to send the message.
    * @param address The internal address to which to send the message.
+   * @param id The internal handler to which to send the message.
    * @param message The message to send.
    * @return A completable future to be completed with the message result.
    */
-  <T, U>CompletableFuture<U> send(String topic, int address, T message);
-
-  /**
-   * Executes a task on the member.
-   *
-   * @param address The internal address to which to send the task.
-   * @param task The task to execute.
-   * @return A completable future to be completed once the task has been executed.
-   */
-  CompletableFuture<Void> execute(int address, Task<Void> task);
-
-  /**
-   * Submits a task to the member.
-   *
-   * @param address The internal address to which to send the task.
-   * @param task The task to commit on the member.
-   * @param <T> The task return type.
-   * @return A completable future to be completed with the task result.
-   */
-  <T> CompletableFuture<T> submit(int address, Task<T> task);
+  CompletableFuture<ByteBuffer> send(String topic, int address, int id, ByteBuffer message);
 
 }

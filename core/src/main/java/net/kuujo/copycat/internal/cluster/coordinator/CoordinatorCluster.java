@@ -22,6 +22,7 @@ import net.kuujo.copycat.internal.cluster.AbstractCluster;
 import net.kuujo.copycat.internal.cluster.CoordinatedMember;
 import net.kuujo.copycat.internal.cluster.MemberInfo;
 import net.kuujo.copycat.internal.cluster.Router;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,8 +34,8 @@ import java.util.concurrent.ScheduledExecutorService;
  */
 public class CoordinatorCluster extends AbstractCluster {
 
-  public CoordinatorCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ScheduledExecutorService executor) {
-    super(id, coordinator, context, router, executor);
+  public CoordinatorCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Serializer serializer, ScheduledExecutorService executor) {
+    super(id, coordinator, context, router, serializer, executor);
   }
 
   @Override
@@ -45,7 +46,7 @@ public class CoordinatorCluster extends AbstractCluster {
     } catch (InterruptedException | ExecutionException e) {
       throw new ClusterException(e);
     }
-    return new CoordinatedMember(id, info, memberCoordinator, executor);
+    return new CoordinatedMember(id, info, memberCoordinator, serializer, executor);
   }
 
 }

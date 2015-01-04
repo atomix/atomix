@@ -19,9 +19,13 @@ import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.MemberCoordinator;
+import net.kuujo.copycat.cluster.manager.ClusterManager;
+import net.kuujo.copycat.cluster.manager.LocalMemberManager;
+import net.kuujo.copycat.cluster.manager.MemberManager;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.internal.CopycatStateContext;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -33,12 +37,13 @@ import java.util.stream.Stream;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractCluster implements ManagedCluster {
+public abstract class AbstractCluster implements ClusterManager {
   private static final String GOSSIP_TOPIC = "_";
   private static final long MEMBER_INFO_EXPIRE_TIME = 1000 * 60;
 
   protected final int id;
   protected final ClusterCoordinator coordinator;
+  protected final Serializer serializer;
   protected final ScheduledExecutorService executor;
   private CoordinatedLocalMember localMember;
   private final CoordinatedMembers members;
@@ -53,14 +58,15 @@ public abstract class AbstractCluster implements ManagedCluster {
   private final Map<String, Set<EventListener>> broadcastListeners = new ConcurrentHashMap<>();
   private ScheduledFuture<?> gossipTimer;
 
-  protected AbstractCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, ScheduledExecutorService executor) {
+  protected AbstractCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Serializer serializer, ScheduledExecutorService executor) {
     this.id = id;
     this.coordinator = coordinator;
+    this.serializer = serializer;
     this.executor = executor;
 
     // Always create a local member based on the local member URI.
     MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getReplicas().contains(coordinator.member().uri()) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE);
-    this.localMember = new CoordinatedLocalMember(id, localMemberInfo, coordinator.member(), executor);
+    this.localMember = new CoordinatedLocalMember(id, localMemberInfo, coordinator.member(), serializer, executor);
     membersInfo.put(localMemberInfo.uri(), localMemberInfo);
 
     // Create a map of coordinated members based on the context's listed replicas. Additional members will be added
@@ -71,7 +77,7 @@ public abstract class AbstractCluster implements ManagedCluster {
       if (!replica.equals(localMember.uri())) {
         MemberCoordinator memberCoordinator = coordinator.member(replica);
         if (memberCoordinator != null) {
-          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.MEMBER, Member.State.ALIVE), memberCoordinator, executor));
+          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.MEMBER, Member.State.ALIVE), memberCoordinator, serializer, executor));
         } else {
           throw new ClusterException("Invalid replica " + replica);
         }
@@ -203,7 +209,7 @@ public abstract class AbstractCluster implements ManagedCluster {
   }
 
   @Override
-  public Member leader() {
+  public MemberManager leader() {
     return context.getLeader() != null ? member(context.getLeader()) : null;
   }
 
@@ -218,12 +224,12 @@ public abstract class AbstractCluster implements ManagedCluster {
   }
 
   @Override
-  public Member member(String uri) {
+  public MemberManager member(String uri) {
     return members.members.get(uri);
   }
 
   @Override
-  public LocalMember member() {
+  public LocalMemberManager member() {
     return localMember;
   }
 
@@ -291,7 +297,7 @@ public abstract class AbstractCluster implements ManagedCluster {
   }
 
   @Override
-  public CompletableFuture<Cluster> open() {
+  public CompletableFuture<ClusterManager> open() {
     router.createRoutes(this, context);
     election.open();
     return localMember.open()

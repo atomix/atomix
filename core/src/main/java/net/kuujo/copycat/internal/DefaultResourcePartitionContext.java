@@ -17,8 +17,8 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.ResourcePartitionContext;
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
+import net.kuujo.copycat.cluster.manager.ClusterManager;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
@@ -41,12 +41,12 @@ import java.util.function.BiFunction;
 public class DefaultResourcePartitionContext implements ResourcePartitionContext {
   private final String name;
   private final CoordinatedResourcePartitionConfig config;
-  private final Cluster cluster;
+  private final ClusterManager cluster;
   private final CopycatStateContext context;
   private final DefaultClusterCoordinator coordinator;
   private boolean open;
 
-  public DefaultResourcePartitionContext(String name, CoordinatedResourcePartitionConfig config, Cluster cluster, CopycatStateContext context, DefaultClusterCoordinator coordinator) {
+  public DefaultResourcePartitionContext(String name, CoordinatedResourcePartitionConfig config, ClusterManager cluster, CopycatStateContext context, DefaultClusterCoordinator coordinator) {
     this.name = Assert.isNotNull(name, "name");
     this.config = config;
     this.cluster = Assert.isNotNull(cluster, "cluster");
@@ -70,7 +70,7 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
   }
 
   @Override
-  public Cluster cluster() {
+  public ClusterManager cluster() {
     return cluster;
   }
 

@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.manager.ClusterManager;
 import net.kuujo.copycat.protocol.RaftProtocol;
 
 /**
@@ -30,7 +30,7 @@ public interface Router {
    * @param cluster The cluster on which to create routes.
    * @param protocol The Raft protocol on which to create routes.
    */
-  void createRoutes(Cluster cluster, RaftProtocol protocol);
+  void createRoutes(ClusterManager cluster, RaftProtocol protocol);
 
   /**
    * Destroys routes from the given cluster to the given Raft protocol.
@@ -38,6 +38,6 @@ public interface Router {
    * @param cluster The cluster on which to destroy routes.
    * @param protocol The Raft protocol on which to destroy routes.
    */
-  void destroyRoutes(Cluster cluster, RaftProtocol protocol);
+  void destroyRoutes(ClusterManager cluster, RaftProtocol protocol);
 
 }

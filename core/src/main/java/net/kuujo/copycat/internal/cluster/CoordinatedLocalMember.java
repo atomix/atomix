@@ -14,11 +14,14 @@
  */
 package net.kuujo.copycat.internal.cluster;
 
-import net.kuujo.copycat.Managed;
+import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.LocalMemberCoordinator;
+import net.kuujo.copycat.cluster.manager.LocalMemberManager;
+import net.kuujo.copycat.util.serializer.Serializer;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -27,31 +30,55 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedLocalMember extends CoordinatedMember implements LocalMember, Managed<CoordinatedLocalMember> {
+public class CoordinatedLocalMember extends CoordinatedMember implements LocalMemberManager {
   private final LocalMemberCoordinator coordinator;
   private boolean open;
 
-  public CoordinatedLocalMember(int id, MemberInfo info, LocalMemberCoordinator coordinator, Executor executor) {
-    super(id, info, coordinator, executor);
+  public CoordinatedLocalMember(int id, MemberInfo info, LocalMemberCoordinator coordinator, Serializer serializer, Executor executor) {
+    super(id, info, coordinator, serializer, executor);
     this.coordinator = coordinator;
   }
 
-  @Override
-  public synchronized <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
-    coordinator.register(topic, id, handler);
-    return this;
+  /**
+   * Wraps a message handler in order to perform serialization/deserialization and execute it in the proper thread.
+   */
+  private <T, U> MessageHandler<ByteBuffer, ByteBuffer> wrapHandler(MessageHandler<T, U> handler) {
+    return message -> CompletableFuture.supplyAsync(() -> serializer.writeObject(handler.handle(serializer.readObject(message))), executor);
   }
-  
+
   @Override
-  public synchronized LocalMember unregisterHandler(String topic) {
-    coordinator.unregister(topic, id);
+  public <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler) {
+    coordinator.register(topic, this.id, id, wrapHandler(handler));
     return this;
   }
 
   @Override
-  public CompletableFuture<CoordinatedLocalMember> open() {
+  public LocalMemberManager unregisterHandler(String topic, int id) {
+    coordinator.unregister(topic, this.id, id);
+    return this;
+  }
+
+  @Override
+  public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
+    return registerHandler(topic, USER_ID, handler);
+  }
+  
+  @Override
+  public LocalMember unregisterHandler(String topic) {
+    return unregisterHandler(topic, USER_ID);
+  }
+
+  /**
+   * Handles remote execution.
+   */
+  private CompletableFuture<ByteBuffer> execute(ByteBuffer task) {
+    return CompletableFuture.supplyAsync(() -> serializer.writeObject(serializer.<Task>readObject(task).execute()), executor);
+  }
+
+  @Override
+  public CompletableFuture<LocalMemberManager> open() {
     open = true;
-    coordinator.registerExecutor(id, executor);
+    coordinator.register("execute", this.id, EXECUTOR_ID, this::execute);
     return CompletableFuture.completedFuture(this);
   }
 
@@ -63,7 +90,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   @Override
   public CompletableFuture<Void> close() {
     open = false;
-    coordinator.unregisterExecutor(id);
+    coordinator.unregister("execute", this.id, EXECUTOR_ID);
     return CompletableFuture.completedFuture(null);
   }
 
