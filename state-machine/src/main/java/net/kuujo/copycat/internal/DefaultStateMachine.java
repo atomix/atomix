@@ -38,7 +38,7 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
   private final StateLog<Integer, List<Object>> log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
   private Map<String, Object> data = new HashMap<>(1024);
-  private Method initializer;
+  private final Map<Class<?>, Method> initializers = new HashMap<>();
   private final StateContext<T> context = new StateContext<T>() {
     @Override
     public Cluster cluster() {
@@ -175,18 +175,26 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
           log.registerCommand(method.getName(), wrapOperation(method));
         }
       }
-      Initializer initializer = method.getAnnotation(Initializer.class);
-      if (initializer != null) {
-        this.initializer = method;
-      }
     }
     initialize();
   }
 
   /**
-   * Initializes the current state.
+   * Initializes the current state by locating the @Initializer method on the state class and caching the method.
    */
   private void initialize() {
+    Method initializer = initializers.get(state.getClass());
+    if (initializer == null) {
+      for (Method method : state.getClass().getMethods()) {
+        if (method.isAnnotationPresent(Initializer.class)) {
+          initializer = method;
+          break;
+        }
+      }
+      if (initializer != null) {
+        initializers.put(state.getClass(), initializer);
+      }
+    }
     if (initializer != null) {
       try {
         initializer.invoke(state, context);
