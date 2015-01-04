@@ -43,7 +43,19 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
    * Wraps a message handler in order to perform serialization/deserialization and execute it in the proper thread.
    */
   private <T, U> MessageHandler<ByteBuffer, ByteBuffer> wrapHandler(MessageHandler<T, U> handler, Serializer serializer) {
-    return message -> CompletableFuture.supplyAsync(() -> serializer.writeObject(handler.handle(serializer.readObject(message))), executor);
+    return message -> {
+      CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+      executor.execute(() -> {
+        handler.handle(serializer.readObject(message)).whenComplete((result, error) -> {
+          if (error == null) {
+            future.complete(serializer.writeObject(result));
+          } else {
+            future.completeExceptionally(error);
+          }
+        });
+      });
+      return future;
+    };
   }
 
   @Override

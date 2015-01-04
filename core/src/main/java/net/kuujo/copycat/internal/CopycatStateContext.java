@@ -478,13 +478,13 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
   @Override
   public RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
-    this.syncHandler = wrapHandler(handler);
+    this.syncHandler = handler;
     return this;
   }
 
   @Override
   public CopycatStateContext pingHandler(MessageHandler<PingRequest, PingResponse> handler) {
-    this.pingHandler = wrapHandler(handler);
+    this.pingHandler = handler;
     return this;
   }
 
@@ -495,7 +495,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
   @Override
   public CopycatStateContext pollHandler(MessageHandler<PollRequest, PollResponse> handler) {
-    this.pollHandler = wrapHandler(handler);
+    this.pollHandler = handler;
     return this;
   }
 
@@ -506,7 +506,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
   @Override
   public CopycatStateContext appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
-    this.appendHandler = wrapHandler(handler);
+    this.appendHandler = handler;
     return this;
   }
 
@@ -517,7 +517,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
   @Override
   public CopycatStateContext queryHandler(MessageHandler<QueryRequest, QueryResponse> handler) {
-    this.queryHandler = wrapHandler(handler);
+    this.queryHandler = handler;
     return this;
   }
 
@@ -528,7 +528,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
   @Override
   public CopycatStateContext commitHandler(MessageHandler<CommitRequest, CommitResponse> handler) {
-    this.commitHandler = wrapHandler(handler);
+    this.commitHandler = handler;
     return this;
   }
 
@@ -549,22 +549,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       });
     });
     return future;
-  }
-
-  private <T extends Request, U extends Response> MessageHandler<T, U> wrapHandler(MessageHandler<T, U> handler) {
-    return request -> {
-      CompletableFuture<U> future = new CompletableFuture<>();
-      executor.execute(() -> {
-        handler.handle(request).whenComplete((response, error) -> {
-          if (error == null) {
-            future.complete(response);
-          } else {
-            future.completeExceptionally(error);
-          }
-        });
-      });
-      return future;
-    };
   }
 
   /**
