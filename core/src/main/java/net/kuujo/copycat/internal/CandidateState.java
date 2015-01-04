@@ -127,23 +127,21 @@ class CandidateState extends ActiveState {
         .withLogTerm(lastTerm)
         .build();
       pollHandler.handle(request).whenComplete((response, error) -> {
-        context.executor().execute(() -> {
-          if (!complete.get()) {
-            if (error != null) {
-              LOGGER.warn(context.getLocalMember(), error);
-              quorum.fail();
-            } else if (!response.voted()) {
-              LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
-              quorum.fail();
-            } else if (response.term() != context.getTerm()) {
-              LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember(), member);
-              quorum.fail();
-            } else {
-              LOGGER.info("{} - Received successful vote from {}", context.getLocalMember(), member);
-              quorum.succeed();
-            }
+        if (!complete.get()) {
+          if (error != null) {
+            LOGGER.warn(context.getLocalMember(), error);
+            quorum.fail();
+          } else if (!response.voted()) {
+            LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
+            quorum.fail();
+          } else if (response.term() != context.getTerm()) {
+            LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember(), member);
+            quorum.fail();
+          } else {
+            LOGGER.info("{} - Received successful vote from {}", context.getLocalMember(), member);
+            quorum.succeed();
           }
-        });
+        }
       });
     }
   }

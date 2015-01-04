@@ -473,68 +473,98 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
   @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    return state.sync(request);
+    return wrapCall(request, state::sync);
   }
 
   @Override
   public RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
-    this.syncHandler = handler;
+    this.syncHandler = wrapHandler(handler);
     return this;
   }
 
   @Override
   public CopycatStateContext pingHandler(MessageHandler<PingRequest, PingResponse> handler) {
-    this.pingHandler = handler;
+    this.pingHandler = wrapHandler(handler);
     return this;
   }
 
   @Override
   public CompletableFuture<PingResponse> ping(PingRequest request) {
-    return state.ping(request);
+    return wrapCall(request, state::ping);
   }
 
   @Override
   public CopycatStateContext pollHandler(MessageHandler<PollRequest, PollResponse> handler) {
-    this.pollHandler = handler;
+    this.pollHandler = wrapHandler(handler);
     return this;
   }
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
-    return state.poll(request);
+    return wrapCall(request, state::poll);
   }
 
   @Override
   public CopycatStateContext appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
-    this.appendHandler = handler;
+    this.appendHandler = wrapHandler(handler);
     return this;
   }
 
   @Override
   public CompletableFuture<AppendResponse> append(AppendRequest request) {
-    return state.append(request);
+    return wrapCall(request, state::append);
   }
 
   @Override
   public CopycatStateContext queryHandler(MessageHandler<QueryRequest, QueryResponse> handler) {
-    this.queryHandler = handler;
+    this.queryHandler = wrapHandler(handler);
     return this;
   }
 
   @Override
   public CompletableFuture<QueryResponse> query(QueryRequest request) {
-    return state.query(request);
+    return wrapCall(request, state::query);
   }
 
   @Override
   public CopycatStateContext commitHandler(MessageHandler<CommitRequest, CommitResponse> handler) {
-    this.commitHandler = handler;
+    this.commitHandler = wrapHandler(handler);
     return this;
   }
 
   @Override
   public CompletableFuture<CommitResponse> commit(CommitRequest request) {
-    return state.commit(request);
+    return wrapCall(request, state::commit);
+  }
+
+  private <T extends Request, U extends Response> CompletableFuture<U> wrapCall(T request, MessageHandler<T, U> handler) {
+    CompletableFuture<U> future = new CompletableFuture<>();
+    executor.execute(() -> {
+      handler.handle(request).whenComplete((response, error) -> {
+        if (error == null) {
+          future.complete(response);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
+  }
+
+  private <T extends Request, U extends Response> MessageHandler<T, U> wrapHandler(MessageHandler<T, U> handler) {
+    return request -> {
+      CompletableFuture<U> future = new CompletableFuture<>();
+      executor.execute(() -> {
+        handler.handle(request).whenComplete((response, error) -> {
+          if (error == null) {
+            future.complete(response);
+          } else {
+            future.completeExceptionally(error);
+          }
+        });
+      });
+      return future;
+    };
   }
 
   /**
