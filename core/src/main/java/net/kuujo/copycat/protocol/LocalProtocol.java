@@ -14,8 +14,6 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.AbstractConfigurable;
-
 import java.net.URI;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,19 +23,21 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocol extends AbstractConfigurable implements Protocol {
-  private final Map<String, LocalProtocolServer> registry = new ConcurrentHashMap<>();
+public class LocalProtocol extends AbstractProtocol {
 
   public LocalProtocol() {
     super();
+    config.computeIfAbsent("registry", key -> new ConcurrentHashMap<>());
   }
 
   public LocalProtocol(Map<String, Object> config) {
     super(config);
+    config.computeIfAbsent("registry", key -> new ConcurrentHashMap<>());
   }
 
   private LocalProtocol(LocalProtocol protocol) {
     super(protocol);
+    config.computeIfAbsent("registry", key -> new ConcurrentHashMap<>());
   }
 
   @Override
@@ -46,13 +46,15 @@ public class LocalProtocol extends AbstractConfigurable implements Protocol {
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public ProtocolClient createClient(URI uri) {
-    return new LocalProtocolClient(uri.getAuthority(), registry);
+    return new LocalProtocolClient(uri.getAuthority(), (Map<String, LocalProtocolServer>) config.get("registry"));
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public ProtocolServer createServer(URI uri) {
-    return new LocalProtocolServer(uri.getAuthority(), registry);
+    return new LocalProtocolServer(uri.getAuthority(), (Map<String, LocalProtocolServer>) config.get("registry"));
   }
 
 }

@@ -29,7 +29,7 @@ import java.util.function.Function;
  */
 public abstract class AbstractConfigurable implements Configurable {
   public static final String CONFIG_CLASS = "class";
-  private Map<String, Object> config;
+  protected Map<String, Object> config;
 
   protected AbstractConfigurable() {
     this(new HashMap<>(128));
