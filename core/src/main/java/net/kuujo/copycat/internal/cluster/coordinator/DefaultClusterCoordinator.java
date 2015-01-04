@@ -68,11 +68,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
 
     // Set up permanent cluster members based on the given cluster configuration.
-    this.localMember = new DefaultLocalMemberCoordinator(new MemberInfo(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor);
+    this.localMember = new DefaultLocalMemberCoordinator(new MemberInfo(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), Executors.newSingleThreadExecutor(threadFactory));
     this.members.put(uri, localMember);
     for (String member : config.getClusterConfig().getMembers()) {
       if (!this.members.containsKey(member)) {
-        this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), executor));
+        this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.MEMBER, Member.State.ALIVE), config.getClusterConfig().getProtocol(), Executors.newSingleThreadExecutor(threadFactory)));
       }
     }
 
