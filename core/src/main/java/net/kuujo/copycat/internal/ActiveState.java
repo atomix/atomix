@@ -80,7 +80,7 @@ abstract class ActiveState extends PassiveState {
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .build();
-    } else if (request.logIndex() > 0 && request.logTerm() > 0) {
+    } else if (request.logIndex() != null && request.logTerm() != null) {
       return doCheckPingEntry(request);
     }
     return PingResponse.builder()
@@ -95,7 +95,15 @@ abstract class ActiveState extends PassiveState {
    * Checks the ping log entry for consistency.
    */
   private PingResponse doCheckPingEntry(PingRequest request) {
-    if (request.logIndex() != null && context.log().lastIndex() == null || request.logIndex() > context.log().lastIndex()) {
+    if (request.logIndex() != null && context.log().lastIndex() == null) {
+      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
+      return PingResponse.builder()
+        .withId(request.id())
+        .withUri(context.getLocalMember())
+        .withTerm(context.getTerm())
+        .withSucceeded(false)
+        .build();
+    } else if (request.logIndex() != null && context.log().lastIndex() != null && request.logIndex() > context.log().lastIndex()) {
       logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return PingResponse.builder()
         .withId(request.id())
@@ -174,7 +182,7 @@ abstract class ActiveState extends PassiveState {
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
         .build();
-    } else if (request.logIndex() > 0 && request.logTerm() > 0) {
+    } else if (request.logIndex() != null && request.logTerm() != null) {
       return doCheckPreviousEntry(request);
     } else {
       return doAppendEntries(request);
@@ -185,7 +193,16 @@ abstract class ActiveState extends PassiveState {
    * Checks the previous log entry for consistency.
    */
   private AppendResponse doCheckPreviousEntry(AppendRequest request) {
-    if (request.logIndex() != null && context.log().lastIndex() == null || request.logIndex() > context.log().lastIndex()) {
+    if (request.logIndex() != null && context.log().lastIndex() == null) {
+      logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
+      return AppendResponse.builder()
+        .withId(request.id())
+        .withUri(context.getLocalMember())
+        .withTerm(context.getTerm())
+        .withSucceeded(false)
+        .withLogIndex(context.log().lastIndex())
+        .build();
+    } else if (request.logIndex() != null && context.log().lastIndex() != null && request.logIndex() > context.log().lastIndex()) {
       logger().warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return AppendResponse.builder()
         .withId(request.id())
