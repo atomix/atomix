@@ -170,20 +170,20 @@ class LeaderState extends ActiveState {
                 .withResult(consumer.apply(null, request.entry()))
                 .build()));
             } catch (Exception e) {
-              future.complete(QueryResponse.builder()
+              future.complete(logResponse(QueryResponse.builder()
                 .withId(request.id())
                 .withUri(context.getLocalMember())
                 .withStatus(Response.Status.ERROR)
                 .withError(e)
-                .build());
+                .build()));
             }
           } else {
-            future.complete(QueryResponse.builder()
+            future.complete(logResponse(QueryResponse.builder()
               .withId(request.id())
               .withUri(context.getLocalMember())
               .withStatus(Response.Status.ERROR)
               .withError(error)
-              .build());
+              .build()));
           }
         });
         break;
@@ -214,22 +214,22 @@ class LeaderState extends ActiveState {
             .withResult(consumer.apply(index, entry))
             .build()));
         } catch (Exception e) {
-          future.complete(CommitResponse.builder()
+          future.complete(logResponse(CommitResponse.builder()
             .withId(request.id())
             .withUri(context.getLocalMember())
             .withStatus(Response.Status.ERROR)
             .withError(e)
-            .build());
+            .build()));
         } finally {
           context.setLastApplied(index);
         }
       } else {
-        future.complete(CommitResponse.builder()
+        future.complete(logResponse(CommitResponse.builder()
           .withId(request.id())
           .withUri(context.getLocalMember())
           .withStatus(Response.Status.ERROR)
           .withError(error)
-          .build());
+          .build()));
       }
     });
     return future;
