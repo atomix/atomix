@@ -20,16 +20,14 @@ import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.Cluster;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Copycat context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractResourcePartition<T extends ResourcePartition<T>> extends AbstractManagedResource<T> implements ResourcePartition<T> {
+public abstract class AbstractResourcePartition<T extends ResourcePartition<T>> implements ResourcePartition<T> {
   protected ResourcePartitionContext context;
-  private AtomicBoolean open = new AtomicBoolean();
 
   protected AbstractResourcePartition(ResourcePartitionContext context) {
     this.context = context;
@@ -56,30 +54,24 @@ public abstract class AbstractResourcePartition<T extends ResourcePartition<T>> 
   }
 
   @Override
-  @SuppressWarnings("all")
+  @SuppressWarnings("unchecked")
   public CompletableFuture<T> open() {
-    if (open.compareAndSet(false, true)) {
-      return super.open().thenComposeAsync(v -> context.open(), context).thenApply(v -> (T) this);
-    }
-    return CompletableFuture.completedFuture((T) this);
+    return context.open().thenApply(v -> (T) this);
   }
 
   @Override
   public synchronized boolean isOpen() {
-    return open.get();
+    return context.isOpen();
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    if (open.compareAndSet(true, false)) {
-      return context.close().thenCompose(v -> super.close());
-    }
-    return CompletableFuture.completedFuture(null);
+    return context.close();
   }
 
   @Override
   public synchronized boolean isClosed() {
-    return !open.get();
+    return context.isClosed();
   }
 
 }

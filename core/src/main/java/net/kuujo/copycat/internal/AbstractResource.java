@@ -17,8 +17,12 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.ResourceContext;
+import net.kuujo.copycat.Task;
 import net.kuujo.copycat.internal.util.Assert;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -26,11 +30,37 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractResource<T extends Resource<T>> extends AbstractManagedResource<T> implements Resource<T> {
+public abstract class AbstractResource<T extends Resource<T>> implements Resource<T> {
+  private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
+  private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
   protected final ResourceContext context;
 
   protected AbstractResource(ResourceContext context) {
     this.context = Assert.isNotNull(context, "context");
+  }
+
+  /**
+   * Adds a startup task to the event log.
+   *
+   * @param task The startup task to add.
+   * @return The Copycat context.
+   */
+  @SuppressWarnings("unchecked")
+  public synchronized T withStartupTask(Task<CompletableFuture<Void>> task) {
+    startupTasks.add(task);
+    return (T) this;
+  }
+
+  /**
+   * Adds a shutdown task to the event log.
+   *
+   * @param task The shutdown task to remove.
+   * @return The Copycat context.
+   */
+  @SuppressWarnings("unchecked")
+  public synchronized T withShutdownTask(Task<CompletableFuture<Void>> task) {
+    shutdownTasks.add(task);
+    return (T) this;
   }
 
   @Override
@@ -39,9 +69,14 @@ public abstract class AbstractResource<T extends Resource<T>> extends AbstractMa
   }
 
   @Override
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings("all")
   public synchronized CompletableFuture<T> open() {
-    return super.open().thenCompose(v -> context.open()).thenApply(v -> (T) this);
+    if (!context.isOpen()) {
+      return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]))
+        .thenCompose(v -> context.open())
+        .thenApply(v -> (T) this);
+    }
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
@@ -50,8 +85,10 @@ public abstract class AbstractResource<T extends Resource<T>> extends AbstractMa
   }
 
   @Override
+  @SuppressWarnings("all")
   public synchronized CompletableFuture<Void> close() {
-    return context.close().thenCompose(v -> super.close());
+    return context.close()
+      .thenCompose(v -> CompletableFuture.allOf(shutdownTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size])));
   }
 
   @Override
