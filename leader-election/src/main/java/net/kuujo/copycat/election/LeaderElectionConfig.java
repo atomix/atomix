@@ -20,6 +20,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
+import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.log.Log;
 
 import java.util.Map;
 
@@ -29,6 +31,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
+  private static final Log DEFAULT_LEADER_ELECTION_LOG = new BufferedLog();
 
   public LeaderElectionConfig() {
     super();
@@ -45,6 +48,11 @@ public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
   @Override
   public LeaderElectionConfig copy() {
     return new LeaderElectionConfig(this);
+  }
+
+  @Override
+  public Log getLog() {
+    return get(RESOURCE_LOG, DEFAULT_LEADER_ELECTION_LOG);
   }
 
   @Override

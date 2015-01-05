@@ -45,8 +45,12 @@ taking place on Copycat**
    * [Configuring the protocol](#configuring-the-protocol)
    * [Configuring resources](#configuring-resources)
    * [Creating a Copycat instance](#creating-a-copycat-instance)
+1. [The Copycat API](#the-copycat-api)
+   * [The Copycat cluster](#the-copycat-cluster)
+1. [Resources](#resources)
+   * [Resource lifecycle](#resource-lifecycle)
    * [Creating resources](#creating-resources)
-1. [The Copycat dependency hierarchy](#the-copycat-dependency-hierarchy)
+   * [Resource clusters](#resource-clusters)
 1. [State machines](#state-machines)
    * [Creating a state machine](#creating-a-state-machine)
    * [Creating a standalone state machine](#creating-a-state-machine-as-a-standalone-service)
@@ -112,6 +116,7 @@ taking place on Copycat**
    * [Eventual consistency and Copycat's gossip protocol](#eventual-consistency-and-copycats-gossip-protocol)
       * [Log replication](#log-replication)
       * [Failure detection](#failure-detection)
+1. [The Copycat dependency hierarchy](#the-copycat-dependency-hierarchy)
 
 ## Getting started
 
@@ -275,47 +280,6 @@ Note that resources are created asynchronously. This is because some resources m
 cluster. For instance, if the current node is not listed as one of the given resources' replicas, the resource will be
 created and join the resource's replica cluster via a gossip protocol. For more information read about
 [the Copycat cluster](#the-copycat-cluster)
-
-## The Copycat dependency hierarchy
-The Copycat project is organized into a number of modules based on specific use cases.
-
-#### copycat-api
-The `copycat-api` module is a high-level project that aggregates all the separate Copycat modules.
-
-#### copycat-core
-The `copycat-core` module is the core of Copycat which provides the base Raft implementation, configuration,
-cluster management, messaging, logs, and protocol interfaces.
-
-#### event-log
-The `copycat-event-log` module is an event log implementation built on the Raft consensus protocol.
-The event log supports both small strongly consistent event logs and large eventually consistent event
-logs via a gossip protocol.
-
-#### state-log
-The `copycat-state-log` module is a strongly consistent, snapshottable log built on the Raft consensus protocol.
-
-#### state-machine
-The `copycat-state-machine` module provides a high-level state machine API on top of the `copycat-state-log` API.
-
-#### leader-election
-The `copycat-leader-election` module provides a simple Raft-based distributed leader election API.
-
-#### collections
-The `copycat-collections` module provides strongly- and eventually-consistent log-based distributed data
-structures including `AsyncMap`, `AsyncMultiMap`, `AsyncList`, `AsyncSet`, and `AsyncLock`.
-
-#### copycat-chronicle
-The `copycat-chronicle` module is a fast [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log
-implementation.
-
-#### netty
-The `copycat-netty` module provides a [Netty](http://netty.io) based protocol implementation.
-
-#### vertx
-The `copycat-vertx` module provides a [Vert.x 2](http://vertx.io) based protocol implementation.
-
-#### vertx3
-The `copycat-vertx3` module provides a [Vert.x 3](http://vertx.io) based protocol implementation.
 
 ## State machines
 
@@ -735,5 +699,46 @@ map.put("foo", "Hello world!").thenRun(() -> {
 #### Log replication
 
 #### Failure detection
+
+## The Copycat dependency hierarchy
+The Copycat project is organized into a number of modules based on specific use cases.
+
+#### copycat-api
+The `copycat-api` module is a high-level project that aggregates all the separate Copycat modules.
+
+#### copycat-core
+The `copycat-core` module is the core of Copycat which provides the base Raft implementation, configuration,
+cluster management, messaging, logs, and protocol interfaces.
+
+#### event-log
+The `copycat-event-log` module is an event log implementation built on the Raft consensus protocol.
+The event log supports both small strongly consistent event logs and large eventually consistent event
+logs via a gossip protocol.
+
+#### state-log
+The `copycat-state-log` module is a strongly consistent, snapshottable log built on the Raft consensus protocol.
+
+#### state-machine
+The `copycat-state-machine` module provides a high-level state machine API on top of the `copycat-state-log` API.
+
+#### leader-election
+The `copycat-leader-election` module provides a simple Raft-based distributed leader election API.
+
+#### collections
+The `copycat-collections` module provides strongly- and eventually-consistent log-based distributed data
+structures including `AsyncMap`, `AsyncMultiMap`, `AsyncList`, `AsyncSet`, and `AsyncLock`.
+
+#### copycat-chronicle
+The `copycat-chronicle` module is a fast [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log
+implementation.
+
+#### netty
+The `copycat-netty` module provides a [Netty](http://netty.io) based protocol implementation.
+
+#### vertx
+The `copycat-vertx` module provides a [Vert.x 2](http://vertx.io) based protocol implementation.
+
+#### vertx3
+The `copycat-vertx3` module provides a [Vert.x 3](http://vertx.io) based protocol implementation.
 
 ### [User Manual](#user-manual)

@@ -15,14 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous set.
@@ -59,14 +56,10 @@ public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetPr
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, AsyncSetConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    try {
-      coordinator.open().get();
-      return (AsyncSet<T>) ((AbstractManagedResource) coordinator.<AsyncSet<T>>getResource(name)).withShutdownTask(coordinator::close);
-    } catch (InterruptedException e) {
-      throw new ResourceException(e);
-    } catch (ExecutionException e) {
-      throw new ResourceException(e.getCause());
-    }
+    AsyncSet<T> set = coordinator.getResource(name);
+    ((AbstractResource) set).withStartupTask(() -> coordinator.open().thenApply(v -> null));
+    ((AbstractResource) set).withShutdownTask(coordinator::close);
+    return set;
   }
 
 }

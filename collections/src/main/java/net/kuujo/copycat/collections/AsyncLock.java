@@ -15,15 +15,13 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.DiscreteResource;
-import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous lock.
@@ -56,14 +54,10 @@ public interface AsyncLock extends DiscreteResource<AsyncLock> {
   @SuppressWarnings({"unchecked", "rawtypes"})
   static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    try {
-      coordinator.open().get();
-      return (AsyncLock) ((AbstractManagedResource) coordinator.<AsyncLock>getResource(name)).withShutdownTask(coordinator::close);
-    } catch (InterruptedException e) {
-      throw new ResourceException(e);
-    } catch (ExecutionException e) {
-      throw new ResourceException(e.getCause());
-    }
+    AsyncLock lock = coordinator.getResource(name);
+    ((AbstractResource) lock).withStartupTask(() -> coordinator.open().thenApply(v -> null));
+    ((AbstractResource) lock).withShutdownTask(coordinator::close);
+    return lock;
   }
 
   /**

@@ -17,11 +17,10 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 /**
@@ -56,14 +55,10 @@ public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, Even
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <T, U> EventLog<T, U> create(String name, String uri, ClusterConfig cluster, EventLogConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    try {
-      coordinator.open().get();
-      return (EventLog<T, U>) ((AbstractManagedResource) coordinator.<EventLog<T, U>>getResource(name)).withShutdownTask(coordinator::close);
-    } catch (InterruptedException e) {
-      throw new ResourceException(e);
-    } catch (ExecutionException e) {
-      throw new ResourceException(e.getCause());
-    }
+    EventLog<T, U> eventLog = coordinator.getResource(name);
+    ((AbstractResource) eventLog).withStartupTask(() -> coordinator.open().thenApply(v -> null));
+    ((AbstractResource) eventLog).withShutdownTask(coordinator::close);
+    return eventLog;
   }
 
   /**

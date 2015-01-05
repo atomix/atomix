@@ -16,15 +16,13 @@
 package net.kuujo.copycat.election;
 
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 /**
@@ -58,14 +56,10 @@ public interface LeaderElection extends Resource<LeaderElection> {
   @SuppressWarnings("rawtypes")
   static LeaderElection create(String name, String uri, ClusterConfig cluster, LeaderElectionConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    try {
-      coordinator.open().get();
-      return (LeaderElection) ((AbstractManagedResource) coordinator.<LeaderElection>getResource(name)).withShutdownTask(coordinator::close);
-    } catch (InterruptedException e) {
-      throw new ResourceException(e);
-    } catch (ExecutionException e) {
-      throw new ResourceException(e.getCause());
-    }
+    LeaderElection election = coordinator.getResource(name);
+    ((AbstractResource) election).withStartupTask(() -> coordinator.open().thenApply(v -> null));
+    ((AbstractResource) election).withShutdownTask(coordinator::close);
+    return election;
   }
 
   /**

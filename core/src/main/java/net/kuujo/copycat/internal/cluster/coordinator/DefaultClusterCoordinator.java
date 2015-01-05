@@ -129,7 +129,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <T extends Resource<T>> T getResource(String name) {
-    Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource == null) {
       throw new ConfigurationException("Invalid resource " + name);

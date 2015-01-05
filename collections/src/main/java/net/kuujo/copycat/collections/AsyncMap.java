@@ -16,14 +16,11 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.DiscreteResource;
-import net.kuujo.copycat.ResourceException;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractManagedResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-
-import java.util.concurrent.ExecutionException;
 
 /**
  * Asynchronous map.
@@ -63,14 +60,10 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, DiscreteResource<As
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMapConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    try {
-      coordinator.open().get();
-      return (AsyncMap<K, V>) ((AbstractManagedResource) coordinator.<AsyncMap<K, V>>getResource(name)).withShutdownTask(coordinator::close);
-    } catch (InterruptedException e) {
-      throw new ResourceException(e);
-    } catch (ExecutionException e) {
-      throw new ResourceException(e.getCause());
-    }
+    AsyncMap<K, V> map = coordinator.getResource(name);
+    ((AbstractResource) map).withStartupTask(() -> coordinator.open().thenApply(v -> null));
+    ((AbstractResource) map).withShutdownTask(coordinator::close);
+    return map;
   }
 
 }
