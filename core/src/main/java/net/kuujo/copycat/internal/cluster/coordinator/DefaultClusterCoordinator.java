@@ -128,7 +128,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
   @Override
   @SuppressWarnings("unchecked")
-  public <T extends Resource<T>> T getResource(String name) {
+  public synchronized <T extends Resource<T>> T getResource(String name) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource == null) {
@@ -144,7 +144,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    * @param partition The partition number.
    * @return A completable future to be completed once the partition has been acquired.
    */
-  public CompletableFuture<Void> acquirePartition(String name, int partition) {
+  public synchronized CompletableFuture<Void> acquirePartition(String name, int partition) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
@@ -169,6 +169,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
           future.complete(null);
         }
       });
+      return future;
     }
     return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
   }
@@ -180,7 +181,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    * @param partition The partition number.
    * @return A completable future to be completed once the partition has been released.
    */
-  public CompletableFuture<Void> releasePartition(String name, int partition) {
+  public synchronized CompletableFuture<Void> releasePartition(String name, int partition) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
@@ -205,6 +206,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
           future.complete(null);
         }
       });
+      return future;
     }
     return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
   }
