@@ -53,7 +53,7 @@ public abstract class AbstractCluster implements ClusterManager {
   private final CoordinatedClusterElection election;
   private final Router router;
   private final CopycatStateContext context;
-  private final Set<EventListener<MembershipEvent>> membershipListeners = new ConcurrentSkipListSet<>();
+  private final Set<EventListener<MembershipEvent>> membershipListeners = new CopyOnWriteArraySet<>();
   @SuppressWarnings("rawtypes")
   private final Map<String, MessageHandler> broadcastHandlers = new ConcurrentHashMap<>();
   @SuppressWarnings("rawtypes")
@@ -252,7 +252,7 @@ public abstract class AbstractCluster implements ClusterManager {
   @Override
   @SuppressWarnings("rawtypes")
   public synchronized <T> Cluster addBroadcastListener(String topic, EventListener<T> listener) {
-    Set<EventListener> listeners = broadcastListeners.computeIfAbsent(topic, t -> new ConcurrentSkipListSet<EventListener>());
+    Set<EventListener> listeners = broadcastListeners.computeIfAbsent(topic, t -> new CopyOnWriteArraySet<EventListener>());
     listeners.add(listener);
     broadcastHandlers.computeIfAbsent(topic, t -> message -> {
       broadcastListeners.get(t).forEach(l -> l.handle(message));

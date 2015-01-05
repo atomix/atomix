@@ -44,11 +44,11 @@ public class LocalProtocolClient implements ProtocolClient {
     executor.execute(() -> {
       LocalProtocolServer server = registry.get(address);
       if (server != null) {
-        server.handle(request).whenComplete((result, error) -> {
+        server.handle(request).whenComplete((response, error) -> {
           if (error != null) {
             executor.execute(() -> future.completeExceptionally(error));
           } else {
-            executor.execute(() -> future.complete(result));
+            executor.execute(() -> future.complete(response));
           }
         });
       } else {

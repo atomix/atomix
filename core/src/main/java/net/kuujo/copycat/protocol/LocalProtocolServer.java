@@ -50,9 +50,9 @@ public class LocalProtocolServer implements ProtocolServer {
     }
     return CompletableFuture.supplyAsync(() -> handler, executor)
       .thenComposeAsync(handler -> handler.handle(request))
-      .thenApply(result -> {
-        result.rewind();
-        return result;
+      .thenApply(response -> {
+        response.rewind();
+        return response;
       });
   }
 
