@@ -44,7 +44,7 @@ public class KryoSerializer implements Serializer {
     output.setBuffer(buffer);
     kryo.writeClassAndObject(output, object);
     buffer.flip();
-    return buffer;
+    return buffer.slice();
   }
 
 }
