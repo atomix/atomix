@@ -243,7 +243,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     for (ResourceHolder resource : resources.values()) {
       for (PartitionHolder partition : resource.partitions) {
         if (partition.config.getReplicas().contains(uri)) {
-          futures.add(partition.cluster.open().thenCompose(v -> partition.context.open()));
+          futures.add(partition.cluster.open().thenCompose(v -> partition.state.open()).thenApply(v -> null));
         }
       }
     }
