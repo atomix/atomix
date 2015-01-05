@@ -51,6 +51,7 @@ public class DefaultStateLogPartition<T> extends AbstractResourcePartition<State
 
   public DefaultStateLogPartition(ResourcePartitionContext context, Executor executor) {
     super(context);
+    context.consumer(this::consume);
     try {
       this.serializer = context.config().getResourceConfig().getSerializer().newInstance();
     } catch (InstantiationException | IllegalAccessException e) {

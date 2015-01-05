@@ -36,6 +36,7 @@ public class DefaultEventLogPartition<T> extends AbstractResourcePartition<Event
 
   public DefaultEventLogPartition(ResourcePartitionContext context, Executor executor) {
     super(context);
+    context.consumer(this::consume);
     try {
       this.serializer = context.config().getResourceConfig().getSerializer().newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
@@ -86,20 +87,6 @@ public class DefaultEventLogPartition<T> extends AbstractResourcePartition<Event
       executor.execute(() -> consumer.accept(serializer.readObject(entry)));
     }
     return result;
-  }
-
-  @Override
-  public CompletableFuture<EventLogPartition<T>> open() {
-    context.consumer(this::consume);
-    return super.open();
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    if (isOpen()) {
-      context.consumer(null);
-    }
-    return super.close();
   }
 
 }
