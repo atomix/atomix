@@ -56,6 +56,7 @@ class LeaderState extends ActiveState {
   @Override
   public CompletableFuture<Void> open() {
     return super.open()
+      .thenRun(replicator::pingAll)
       .thenRun(this::takeLeadership)
       .thenRun(this::applyEntries)
       .thenRun(this::startPingTimer);
@@ -90,8 +91,6 @@ class LeaderState extends ActiveState {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
-    replicator.pingAll();
-
     LOGGER.debug("{} - Setting ping timer", context.getLocalMember());
     setPingTimer();
   }
@@ -408,9 +407,8 @@ class LeaderState extends ActiveState {
     private static final int BATCH_SIZE = 100;
     private final String member;
     private final CopycatStateContext context;
-    private volatile Long nextIndex;
-    private volatile Long matchIndex;
-    private volatile Long sendIndex;
+    private Long nextIndex;
+    private Long matchIndex;
     private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
     private final Map<Long, CompletableFuture<Long>> replicateFutures = new HashMap<>(1024);
 
@@ -418,7 +416,6 @@ class LeaderState extends ActiveState {
       this.member = member;
       this.context = context;
       this.nextIndex = context.log().lastIndex() != null ? context.log().lastIndex() + 1 : null;
-      this.sendIndex = nextIndex;
     }
 
     public CompletableFuture<Long> ping(Long index) {
@@ -486,7 +483,7 @@ class LeaderState extends ActiveState {
       future = new CompletableFuture<>();
       replicateFutures.put(index, future);
 
-      if (sendIndex == null || index >= sendIndex) {
+      if (matchIndex == null || index >= matchIndex) {
         doSync();
       }
       return future;
@@ -497,21 +494,27 @@ class LeaderState extends ActiveState {
      */
     private void doSync() {
       if (!context.log().isEmpty()) {
-        final Long prevIndex = sendIndex == null ? null : (sendIndex - 1 == 0 ? null : sendIndex - 1);
-        final ByteBuffer prevEntry = prevIndex != null ? context.log().getEntry(prevIndex) : null;
-
-        // Create a list of up to ten entries to send to the follower.
-        // We can only send one snapshot entry in any given request. So, if any of
-        // the entries are snapshot entries, send all entries up to the snapshot and
-        // then send snapshot entries individually.
-        List<ByteBuffer> entries = new ArrayList<>(BATCH_SIZE);
-        long lastIndex = Math.min((sendIndex == null ? context.log().firstIndex() : sendIndex) + BATCH_SIZE - 1, context.log().lastIndex());
-        for (long i = (sendIndex == null ? context.log().firstIndex() : sendIndex); i <= lastIndex; i++) {
-          entries.add(context.log().getEntry(i));
+        if (nextIndex == null) {
+          nextIndex = context.log().lastIndex();
         }
 
-        if (!entries.isEmpty()) {
-          doSync(prevIndex, prevEntry, entries);
+        if (context.log().containsIndex(nextIndex)) {
+          final Long prevIndex = nextIndex - 1 == 0 ? null : nextIndex - 1;
+          final ByteBuffer prevEntry = prevIndex != null ? context.log().getEntry(prevIndex) : null;
+
+          // Create a list of up to ten entries to send to the follower.
+          // We can only send one snapshot entry in any given request. So, if any of
+          // the entries are snapshot entries, send all entries up to the snapshot and
+          // then send snapshot entries individually.
+          List<ByteBuffer> entries = new ArrayList<>(BATCH_SIZE);
+          long lastIndex = Math.min(nextIndex + BATCH_SIZE - 1, context.log().lastIndex());
+          for (long i = nextIndex; i <= lastIndex; i++) {
+            entries.add(context.log().getEntry(i));
+          }
+
+          if (!entries.isEmpty()) {
+            doSync(prevIndex, prevEntry, entries);
+          }
         }
       }
     }
@@ -531,44 +534,41 @@ class LeaderState extends ActiveState {
         .withCommitIndex(context.getCommitIndex())
         .build();
 
-      sendIndex = Math.max(sendIndex != null ? sendIndex + 1 : 0, prevIndex != null ? prevIndex + entries.size() + 1 : context.log().firstIndex() + entries.size() + 1);
-
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
       appendHandler.handle(request).whenComplete((response, error) -> {
         context.executor().execute(() -> {
           if (error != null) {
-            triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), error);
+            triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, error);
           } else {
             LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
             if (response.status().equals(Response.Status.OK)) {
               if (response.succeeded()) {
                 // Update the next index to send and the last index known to be replicated.
                 if (!entries.isEmpty()) {
-                  nextIndex = nextIndex != null ? Math.max(nextIndex + 1, prevIndex + entries.size() + 1) : prevIndex + entries.size() + 1;
-                  matchIndex = matchIndex != null ? Math.max(matchIndex, prevIndex + entries.size()) : prevIndex + entries.size();
-                  triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size());
+                  matchIndex = matchIndex != null ? Math.max(matchIndex, prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1) : prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1;
+                  nextIndex = matchIndex + 1;
+                  triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), matchIndex);
                   doSync();
                 }
               } else {
                 if (response.term() > context.getTerm()) {
-                  triggerReplicateFutures(prevIndex, prevIndex, new CopycatException("Not the leader"));
+                  triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, new CopycatException("Not the leader"));
                   transition(CopycatState.FOLLOWER);
                 } else {
                   // If replication failed then use the last log index indicated by
                   // the replica in the response to generate a new nextIndex. This allows
                   // us to skip repeatedly replicating one entry at a time if it's not
                   // necessary.
-                  nextIndex = sendIndex = response.logIndex() != null ? Math.max(response.logIndex() + 1, context.log().firstIndex()) : prevIndex != null ? prevIndex : context.log().firstIndex();
+                  nextIndex = response.logIndex() != null ? response.logIndex() + 1 : prevIndex != null ? prevIndex : context.log().firstIndex();
                   doSync();
                 }
               }
             } else {
-              triggerReplicateFutures(prevIndex + 1, prevIndex + entries.size(), response.error());
+              triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, response.error());
             }
           }
         });
       });
-      doSync();
     }
 
     /**
