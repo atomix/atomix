@@ -155,7 +155,7 @@ class LeaderState extends ActiveState {
         future.complete(logResponse(QueryResponse.builder()
           .withId(request.id())
           .withUri(context.getLocalMember())
-          .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
+          .withResult(consumer.apply(null, request.entry()))
           .build()));
         break;
       // Consistency mode FULL requires synchronous consistency check prior to applying the query.
@@ -167,7 +167,7 @@ class LeaderState extends ActiveState {
               future.complete(logResponse(QueryResponse.builder()
                 .withId(request.id())
                 .withUri(context.getLocalMember())
-                .withResult(consumer != null ? consumer.apply(null, request.entry()) : null)
+                .withResult(consumer.apply(null, request.entry()))
                 .build()));
             } catch (Exception e) {
               future.complete(QueryResponse.builder()
@@ -211,7 +211,7 @@ class LeaderState extends ActiveState {
           future.complete(logResponse(CommitResponse.builder()
             .withId(request.id())
             .withUri(context.getLocalMember())
-            .withResult(consumer != null ? consumer.apply(index, entry) : null)
+            .withResult(consumer.apply(index, entry))
             .build()));
         } catch (Exception e) {
           future.complete(CommitResponse.builder()

@@ -21,7 +21,6 @@ import net.kuujo.copycat.protocol.*;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.BiFunction;
 
 /**
  * Abstract active state.
@@ -328,16 +327,11 @@ abstract class ActiveState extends PassiveState {
       entry.position(8);
       ByteBuffer userEntry = entry.slice();
 
-      BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
-      if (consumer != null) {
-        try {
-          consumer.apply(index, userEntry);
-        } catch (Exception e) {
-          logger().warn(e.getMessage());
-        } finally {
-          context.setLastApplied(index);
-        }
-      } else {
+      try {
+        context.consumer().apply(index, userEntry);
+      } catch (Exception e) {
+        logger().warn(e.getMessage());
+      } finally {
         context.setLastApplied(index);
       }
     }
@@ -487,7 +481,7 @@ abstract class ActiveState extends PassiveState {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withId(request.id())
         .withUri(context.getLocalMember())
-        .withResult(context.consumer() != null ? context.consumer().apply(null, request.entry()) : null)
+        .withResult(context.consumer().apply(null, request.entry()))
         .build()));
     } else if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
