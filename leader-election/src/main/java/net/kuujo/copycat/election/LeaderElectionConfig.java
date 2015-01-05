@@ -65,7 +65,7 @@ public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
       .withResourceConfig(this)
       .addPartition(new CoordinatedResourcePartitionConfig()
         .withPartition(1)
-        .withReplicas(getReplicas())
+        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
         .withResourceConfig(this));
   }
 

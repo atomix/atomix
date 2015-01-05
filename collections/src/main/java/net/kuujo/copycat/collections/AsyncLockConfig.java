@@ -67,7 +67,7 @@ public class AsyncLockConfig extends ResourceConfig<AsyncLockConfig> {
       .withSerializer(getSerializer())
       .withPartitions(new CoordinatedResourcePartitionConfig()
         .withPartition(1)
-        .withReplicas(cluster.getMembers())
+        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
         .withResourceConfig(config));
   }
 

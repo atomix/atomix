@@ -117,7 +117,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
       .withSerializer(getSerializer())
       .withPartitions(new CoordinatedResourcePartitionConfig()
         .withPartition(1)
-        .withReplicas(cluster.getMembers())
+        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
         .withResourceConfig(config));
   }
 

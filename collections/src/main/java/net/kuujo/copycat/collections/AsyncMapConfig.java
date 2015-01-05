@@ -117,7 +117,7 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
       .withSerializer(getSerializer())
       .withPartitions(new CoordinatedResourcePartitionConfig()
         .withPartition(1)
-        .withReplicas(cluster.getMembers())
+        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
         .withResourceConfig(config));
   }
 

@@ -58,7 +58,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
       .withSerializer(getSerializer())
       .withPartitions(new CoordinatedResourcePartitionConfig()
         .withPartition(1)
-        .withReplicas(cluster.getMembers())
+        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
         .withResourceConfig(config));
   }
 
