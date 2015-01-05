@@ -71,8 +71,7 @@ abstract class ActiveState extends PassiveState {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getTerm()) {
-      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember(), request, context
-        .getTerm());
+      logger().warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember(), request, context.getTerm());
       return PingResponse.builder()
         .withId(request.id())
         .withUri(context.getLocalMember())
@@ -255,9 +254,9 @@ abstract class ActiveState extends PassiveState {
         // Replicated snapshot entries are *always* immediately logged and applied to the state machine
         // since snapshots are only taken of committed state machine state. This will cause all previous
         // entries to be removed from the log.
-        ByteBuffer match = context.log().getEntry(index);
-        if (match != null) {
+        if (context.log().containsIndex(index)) {
           // Compare the term of the received entry with the matching entry in the log.
+          ByteBuffer match = context.log().getEntry(index);
           if (entry.getLong() != match.getLong()) {
             logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember());
             context.log().removeAfter(index - 1);
@@ -292,7 +291,7 @@ abstract class ActiveState extends PassiveState {
     // local commit index is greater than last applied. If all the state machine
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (commitIndex != null) {
-      if (commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
+      if (context.getCommitIndex() == null || commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
         // Update the local commit index with min(request commit, last log // index)
         Long lastIndex = context.log().lastIndex();
         if (lastIndex != null) {
@@ -300,10 +299,10 @@ abstract class ActiveState extends PassiveState {
 
           // If the updated commit index indicates that commits remain to be
           // applied to the state machine, iterate entries and apply them.
-          if (context.getCommitIndex() > context.getLastApplied()) {
+          if (context.getLastApplied() == null || context.getCommitIndex() > context.getLastApplied()) {
             // Starting after the last applied entry, iterate through new entries
             // and apply them to the state machine up to the commit index.
-            for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
+            for (long i = (context.getLastApplied() != null ? context.getLastApplied() + 1 : context.log().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
               // Apply the entry to the state machine.
               applyEntry(i);
             }
@@ -317,7 +316,7 @@ abstract class ActiveState extends PassiveState {
    * Applies the given entry.
    */
   protected void applyEntry(long index) {
-    if (context.getLastApplied() == index-1) {
+    if ((context.getLastApplied() == null && index == context.log().firstIndex()) || (context.getLastApplied() != null && context.getLastApplied() == index - 1)) {
       ByteBuffer entry = context.log().getEntry(index);
 
       // Ensure that the entry exists.

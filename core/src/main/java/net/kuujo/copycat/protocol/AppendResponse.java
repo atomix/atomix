@@ -96,7 +96,7 @@ public class AppendResponse extends AbstractResponse {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, status=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), status, id, term, succeeded, logIndex);
+    return String.format("%s[id=%s, status=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), id, status, term, succeeded, logIndex);
   }
 
   /**

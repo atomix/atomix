@@ -350,7 +350,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @return The Copycat state context.
    */
   public CopycatStateContext setCommitIndex(Long commitIndex) {
-    this.commitIndex = Assert.arg(Assert.isNotNull(commitIndex, "commitIndex"), commitIndex >= this.commitIndex, "cannot decrease commit index");
+    this.commitIndex = this.commitIndex != null ? Assert.arg(Assert.isNotNull(commitIndex, "commitIndex"), commitIndex >= this.commitIndex, "cannot decrease commit index") : commitIndex;
     localMemberInfo.setIndex(this.commitIndex);
     return this;
   }
@@ -371,7 +371,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @return The Copycat state context.
    */
   public CopycatStateContext setLastApplied(Long lastApplied) {
-    this.lastApplied = Assert.arg(Assert.isNotNull(lastApplied, "lastApplied"), lastApplied >= this.lastApplied, "cannot decrease last applied index");
+    this.lastApplied = this.lastApplied != null ? Assert.arg(Assert.isNotNull(lastApplied, "lastApplied"), lastApplied >= this.lastApplied, "cannot decrease last applied index") : lastApplied;
     return this;
   }
 
