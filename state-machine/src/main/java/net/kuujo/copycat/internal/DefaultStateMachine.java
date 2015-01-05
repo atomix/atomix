@@ -228,9 +228,9 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       Class<?> returnType = method.getReturnType();
       if (returnType == CompletableFuture.class) {
-        return submit(method.getName(), args);
+        return submit(method.getName(), args != null ? args : new Object[0]);
       }
-      return submit(method.getName(), args).get();
+      return submit(method.getName(), args != null ? args : new Object[0]).get();
     }
   }
 
