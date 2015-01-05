@@ -249,7 +249,7 @@ abstract class ActiveState extends PassiveState {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
-      long index = request.logIndex();
+      long index = request.logIndex() != null ? request.logIndex() : 0;
       for (ByteBuffer entry : request.entries()) {
         index++;
         // Replicated snapshot entries are *always* immediately logged and applied to the state machine
@@ -284,27 +284,29 @@ abstract class ActiveState extends PassiveState {
   /**
    * Applies commits to the local state machine.
    */
-  private void doApplyCommits(long commitIndex) {
+  private void doApplyCommits(Long commitIndex) {
     // If the synced commit index is greater than the local commit index then
     // apply commits to the local state machine.
     // Also, it's possible that one of the previous command applications failed
     // due to asynchronous communication errors, so alternatively check if the
     // local commit index is greater than last applied. If all the state machine
     // commands have not yet been applied then we want to re-attempt to apply them.
-    if (commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
-      // Update the local commit index with min(request commit, last log // index)
-      Long lastIndex = context.log().lastIndex();
-      if (lastIndex != null) {
-        context.setCommitIndex(Math.min(Math.max(commitIndex, context.getCommitIndex()), lastIndex));
+    if (commitIndex != null) {
+      if (commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
+        // Update the local commit index with min(request commit, last log // index)
+        Long lastIndex = context.log().lastIndex();
+        if (lastIndex != null) {
+          context.setCommitIndex(Math.min(Math.max(commitIndex, context.getCommitIndex() != null ? context.getCommitIndex() : commitIndex), lastIndex));
 
-        // If the updated commit index indicates that commits remain to be
-        // applied to the state machine, iterate entries and apply them.
-        if (context.getCommitIndex() > context.getLastApplied()) {
-          // Starting after the last applied entry, iterate through new entries
-          // and apply them to the state machine up to the commit index.
-          for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
-            // Apply the entry to the state machine.
-            applyEntry(i);
+          // If the updated commit index indicates that commits remain to be
+          // applied to the state machine, iterate entries and apply them.
+          if (context.getCommitIndex() > context.getLastApplied()) {
+            // Starting after the last applied entry, iterate through new entries
+            // and apply them to the state machine up to the commit index.
+            for (long i = context.getLastApplied() + 1; i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
+              // Apply the entry to the state machine.
+              applyEntry(i);
+            }
           }
         }
       }

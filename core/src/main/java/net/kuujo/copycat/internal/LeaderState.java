@@ -441,9 +441,7 @@ class LeaderState extends ActiveState {
         .withTerm(context.getTerm())
         .withLeader(context.getLocalMember())
         .withLogIndex(index)
-        .withLogTerm(index != null && context.log().containsIndex(index) ? context.log()
-          .getEntry(index)
-          .getLong() : null)
+        .withLogTerm(index != null && context.log().containsIndex(index) ? context.log().getEntry(index).getLong() : null)
         .withCommitIndex(context.getCommitIndex())
         .build();
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
@@ -528,12 +526,12 @@ class LeaderState extends ActiveState {
         .withTerm(context.getTerm())
         .withLeader(context.getLocalMember())
         .withLogIndex(prevIndex)
-        .withLogTerm(prevEntry != null ? prevEntry.getLong() : 0)
+        .withLogTerm(prevEntry != null ? prevEntry.getLong() : null)
         .withEntries(entries)
         .withCommitIndex(context.getCommitIndex())
         .build();
 
-      sendIndex = Math.max(sendIndex + 1, prevIndex + entries.size() + 1);
+      sendIndex = Math.max(sendIndex != null ? sendIndex + 1 : 0, prevIndex != null ? prevIndex + entries.size() + 1 : context.log().firstIndex() + entries.size() + 1);
 
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
       appendHandler.handle(request).whenComplete((response, error) -> {
@@ -560,7 +558,7 @@ class LeaderState extends ActiveState {
                   // the replica in the response to generate a new nextIndex. This allows
                   // us to skip repeatedly replicating one entry at a time if it's not
                   // necessary.
-                  nextIndex = sendIndex = response.logIndex() != null ? Math.max(response.logIndex() + 1, context.log().firstIndex()) : prevIndex;
+                  nextIndex = sendIndex = response.logIndex() != null ? Math.max(response.logIndex() + 1, context.log().firstIndex()) : prevIndex != null ? prevIndex : context.log().firstIndex();
                   doSync();
                 }
               }

@@ -110,7 +110,9 @@ public class BufferedLogSegment extends AbstractLogSegment {
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
     assertContainsIndex(index);
-    return log.get(index);
+    ByteBuffer buffer = log.get(index);
+    if (buffer != null) buffer.rewind();
+    return buffer;
   }
 
   @Override
