@@ -19,11 +19,9 @@ import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.StateLog;
 import net.kuujo.copycat.StateLogPartition;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
@@ -40,7 +38,7 @@ public class DefaultStateLog<T, U> extends AbstractPartitionedResource<StateLog<
 
   @Override
   protected StateLogPartition<U> createPartition(ResourcePartitionContext context) {
-    return new DefaultStateLogPartition<>(context, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-resource-" + context.name() + "-partition-" + context.config().getPartition() + "-%d")));
+    return new DefaultStateLogPartition<>(context);
   }
 
   @Override

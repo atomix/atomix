@@ -27,10 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -42,14 +38,12 @@ import java.util.function.Supplier;
  */
 public class DefaultStateLogPartition<T> extends AbstractResourcePartition<StateLogPartition<T>> implements StateLogPartition<T> {
   private final Serializer serializer;
-  private final Executor executor;
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
   private Supplier snapshotter;
   private Consumer installer;
   private long commitIndex;
-  private final AtomicBoolean snapshotting = new AtomicBoolean();
 
-  public DefaultStateLogPartition(ResourcePartitionContext context, Executor executor) {
+  public DefaultStateLogPartition(ResourcePartitionContext context) {
     super(context);
     context.consumer(this::consume);
     try {
@@ -57,7 +51,6 @@ public class DefaultStateLogPartition<T> extends AbstractResourcePartition<State
     } catch (InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
-    this.executor = executor;
   }
 
   @Override
@@ -136,9 +129,9 @@ public class DefaultStateLogPartition<T> extends AbstractResourcePartition<State
     commandEntry.put(buffer);
     commandEntry.rewind();
     if (operationInfo.readOnly) {
-      return context.query(commandEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
+      return context.query(commandEntry, operationInfo.consistency).thenApply(serializer::readObject);
     } else {
-      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
+      return context.commit(commandEntry).thenApply(serializer::readObject);
     }
   }
 
@@ -151,34 +144,21 @@ public class DefaultStateLogPartition<T> extends AbstractResourcePartition<State
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   private ByteBuffer consume(Long index, ByteBuffer entry) {
-    AtomicReference reference = new AtomicReference();
-    CountDownLatch latch = new CountDownLatch(1);
-    context.execute(() -> {
-      int entryType = entry.getInt();
-      switch (entryType) {
-        case 0: // Snapshot entry
-          installSnapshot(entry.slice());
-          reference.set(ByteBuffer.allocate(0));
-          break;
-        case 1: // Command entry
-          int commandCode = entry.getInt();
-          OperationInfo operationInfo = operations.get(commandCode);
-          if (operationInfo != null) {
-            reference.set(operationInfo.execute(index, serializer.readObject(entry.slice())));
-          }
-          reference.set(ByteBuffer.allocate(0));
-          break;
-        default:
-          throw new IllegalArgumentException("Invalid entry type");
-      }
-      latch.countDown();
-    });
-    try {
-      latch.await();
-    } catch (InterruptedException e) {
-      throw new RuntimeException(e);
+    int entryType = entry.getInt();
+    switch (entryType) {
+      case 0: // Snapshot entry
+        installSnapshot(entry.slice());
+        return ByteBuffer.allocate(0);
+      case 1: // Command entry
+        int commandCode = entry.getInt();
+        OperationInfo operationInfo = operations.get(commandCode);
+        if (operationInfo != null) {
+          return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
+        }
+        throw new IllegalStateException("Invalid state log operation");
+      default:
+        throw new IllegalArgumentException("Invalid entry type");
     }
-    return serializer.writeObject(reference.get());
   }
 
   /**
@@ -194,13 +174,8 @@ public class DefaultStateLogPartition<T> extends AbstractResourcePartition<State
    * Takes a snapshot and compacts the log.
    */
   private void takeSnapshot() {
-    if (snapshotting.compareAndSet(false, true)) {
-      Object snapshot = snapshotter != null ? snapshotter.get() : null;
-      context.execute(() -> {
-        context.log().compact(commitIndex, serializer.writeObject(snapshot));
-        snapshotting.set(false);
-      });
-    }
+    Object snapshot = snapshotter != null ? snapshotter.get() : null;
+    context.log().compact(commitIndex, serializer.writeObject(snapshot));
   }
 
   /**
@@ -235,7 +210,9 @@ public class DefaultStateLogPartition<T> extends AbstractResourcePartition<State
 
     private U execute(Long index, TT entry) {
       U result = function.apply(entry);
-      commitIndex = index;
+      if (index != null) {
+        commitIndex = index;
+      }
       checkSnapshot();
       return result;
     }
