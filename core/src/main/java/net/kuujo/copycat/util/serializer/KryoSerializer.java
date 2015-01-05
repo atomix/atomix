@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
  */
 public class KryoSerializer implements Serializer {
   private final Kryo kryo = new Kryo();
-  private final ByteBufferOutput output = new ByteBufferOutput();
+  private final ByteBufferOutput output = new ByteBufferOutput(ByteBuffer.allocate(8192));
   private final ByteBufferInput input = new ByteBufferInput();
 
   @Override
@@ -40,11 +40,10 @@ public class KryoSerializer implements Serializer {
 
   @Override
   public synchronized ByteBuffer writeObject(Object object) {
-    ByteBuffer buffer = ByteBuffer.allocate(4096);
-    output.setBuffer(buffer);
     kryo.writeClassAndObject(output, object);
-    buffer.flip();
-    return buffer.slice();
+    byte[] bytes = output.toBytes();
+    output.clear();
+    return ByteBuffer.wrap(bytes);
   }
 
 }

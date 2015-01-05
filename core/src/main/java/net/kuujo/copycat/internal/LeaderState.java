@@ -498,21 +498,23 @@ class LeaderState extends ActiveState {
      * Performs a commit operation.
      */
     private void doSync() {
-      final Long prevIndex = sendIndex == null ? null : (sendIndex - 1 == 0 ? null : sendIndex - 1);
-      final ByteBuffer prevEntry = context.log().getEntry(prevIndex);
+      if (!context.log().isEmpty()) {
+        final Long prevIndex = sendIndex == null ? null : (sendIndex - 1 == 0 ? null : sendIndex - 1);
+        final ByteBuffer prevEntry = prevIndex != null ? context.log().getEntry(prevIndex) : null;
 
-      // Create a list of up to ten entries to send to the follower.
-      // We can only send one snapshot entry in any given request. So, if any of
-      // the entries are snapshot entries, send all entries up to the snapshot and
-      // then send snapshot entries individually.
-      List<ByteBuffer> entries = new ArrayList<>(BATCH_SIZE);
-      long lastIndex = Math.min(sendIndex + BATCH_SIZE - 1, context.log().lastIndex());
-      for (long i = sendIndex; i <= lastIndex; i++) {
-        entries.add(context.log().getEntry(i));
-      }
+        // Create a list of up to ten entries to send to the follower.
+        // We can only send one snapshot entry in any given request. So, if any of
+        // the entries are snapshot entries, send all entries up to the snapshot and
+        // then send snapshot entries individually.
+        List<ByteBuffer> entries = new ArrayList<>(BATCH_SIZE);
+        long lastIndex = Math.min((sendIndex == null ? context.log().firstIndex() : sendIndex) + BATCH_SIZE - 1, context.log().lastIndex());
+        for (long i = (sendIndex == null ? context.log().firstIndex() : sendIndex); i <= lastIndex; i++) {
+          entries.add(context.log().getEntry(i));
+        }
 
-      if (!entries.isEmpty()) {
-        doSync(prevIndex, prevEntry, entries);
+        if (!entries.isEmpty()) {
+          doSync(prevIndex, prevEntry, entries);
+        }
       }
     }
 
