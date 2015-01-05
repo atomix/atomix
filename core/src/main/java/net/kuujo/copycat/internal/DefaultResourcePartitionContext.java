@@ -108,18 +108,16 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
-    context.executor().execute(() -> {
-      context.query(request).whenComplete((response, error) -> {
-        if (error == null) {
-          if (response.status() == Response.Status.OK) {
-            future.complete(response.result());
-          } else {
-            future.completeExceptionally(response.error());
-          }
+    context.query(request).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete(response.result());
         } else {
-          future.completeExceptionally(error);
+          future.completeExceptionally(response.error());
         }
-      });
+      } else {
+        future.completeExceptionally(error);
+      }
     });
     return future;
   }
@@ -136,18 +134,16 @@ public class DefaultResourcePartitionContext implements ResourcePartitionContext
       .withUri(context.getLocalMember())
       .withEntry(entry)
       .build();
-    context.executor().execute(() -> {
-      context.commit(request).whenComplete((response, error) -> {
-        if (error == null) {
-          if (response.status() == Response.Status.OK) {
-            future.complete(response.result());
-          } else {
-            future.completeExceptionally(response.error());
-          }
+    context.commit(request).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete(response.result());
         } else {
-          future.completeExceptionally(error);
+          future.completeExceptionally(response.error());
         }
-      });
+      } else {
+        future.completeExceptionally(error);
+      }
     });
     return future;
   }

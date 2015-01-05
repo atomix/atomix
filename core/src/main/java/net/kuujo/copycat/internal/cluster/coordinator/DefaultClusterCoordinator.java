@@ -278,9 +278,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     return CompletableFuture.allOf(futures)
       .thenComposeAsync(v -> cluster.open(), executor)
       .thenComposeAsync(v -> context.open(), executor)
-      .thenComposeAsync(v -> openResources(), executor)
-      .thenRun(() -> cluster.addMembershipListener(this::handleMembershipEvent))
       .thenRun(() -> open.set(true))
+      .thenCompose(v -> openResources())
+      .thenRun(() -> cluster.addMembershipListener(this::handleMembershipEvent))
       .thenApply(v -> this);
   }
 
