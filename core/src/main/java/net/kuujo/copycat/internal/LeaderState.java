@@ -488,7 +488,7 @@ class LeaderState extends ActiveState {
       future = new CompletableFuture<>();
       replicateFutures.put(index, future);
 
-      if (index >= sendIndex) {
+      if (sendIndex == null || index >= sendIndex) {
         doSync();
       }
       return future;
@@ -498,7 +498,7 @@ class LeaderState extends ActiveState {
      * Performs a commit operation.
      */
     private void doSync() {
-      final long prevIndex = sendIndex - 1;
+      final Long prevIndex = sendIndex == null ? null : (sendIndex - 1 == 0 ? null : sendIndex - 1);
       final ByteBuffer prevEntry = context.log().getEntry(prevIndex);
 
       // Create a list of up to ten entries to send to the follower.
@@ -519,7 +519,7 @@ class LeaderState extends ActiveState {
     /**
      * Sends a append request.
      */
-    private void doSync(final long prevIndex, final ByteBuffer prevEntry, final List<ByteBuffer> entries) {
+    private void doSync(final Long prevIndex, final ByteBuffer prevEntry, final List<ByteBuffer> entries) {
       AppendRequest request = AppendRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withUri(member)
