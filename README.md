@@ -80,20 +80,10 @@ taking place on Copycat**
    * [Creating a leader election](#creating-a-leader-election)
 1. [Collections](#collections)
    * [AsyncMap](#asyncmap)
-      * [Creating an AsyncMap](#creating-an-asyncmap)
-      * [Configuring the AsyncMap](#configuring-the-asyncmap)
    * [AsyncList](#asynclist)
-      * [Creating an AsyncList](#creating-an-asynclist)
-      * [Configuring the AsyncList](#configuring-the-asynclist)
    * [AsyncSet](#asyncset)
-      * [Creating an AsyncSet](#creating-an-asyncset)
-      * [Configuring the AsyncSet](#configuring-the-asyncset)
    * [AsyncMultiMap](#asyncmultimap)
-      * [Creating an AsyncMultiMap](#creating-an-asyncmultimap)
-      * [Configuring the AsyncMultiMap](#configuring-the-asyncmultimap)
    * [AsyncLock](#asynclock)
-      * [Creating an AsyncLock](#creating-an-asynclock)
-      * [Configuring the AsyncLock](#configuring-the-asynclock)
 1. [The Copycat cluster](#the-copycat-cluster)
    * [Cluster architecture](#cluster-architecture)
       * [Members](#members)
@@ -107,7 +97,6 @@ taking place on Copycat**
    * [Netty protocol](#netty-protocol)
    * [Vert.x protocol](#vertx-protocol)
    * [Vert.x 3 protocol](#vertx-3-protocol)
-   * [Writing a custom protocol](#writing-a-custom-protocol)
 1. [Architecture](#architecture)
    * [Strong consistency and Copycat's Raft consensus protocol](#strong-consistency-and-copycats-raft-consensus-protocol)
       * [Leader election](#leader-election-2)
@@ -1259,15 +1248,29 @@ AsyncLock.create("tcp://123.456.789.0", cluster, config).open().thenAccept(lock 
 
 ## Protocols
 
+Copycat's communication system provides a pluggable framework that allows the underlying message transport to be
+configured based on the environment in which Copycat is deployed. Copycat provides a number of existing protocol
+implementations for various asynchronous frameworks.
+
 ### The local protocol
+
+The local protocol is a special protocol that is implemented purely for testing purposes. It supports passing messages
+across threads via a `ConcurrentHashMap` member registry.
 
 ### Netty protocol
 
+The Netty protocol is a fast [Netty](http://netty.io) based TCP protocol.
+
 ### Vert.x protocol
+
+The Vert.x protocol module provides several protocol implementations for [Vert.x 2](http://vertx.io), including:
+* `VertxEventBusProtocol`
+* `VertxTcpProtocol`
+* `VertxHttpProtocol`
 
 ### Vert.x 3 protocol
 
-### Writing a custom protocol
+Teh Vert.x 3 protocol module provides an event bus protocol implementation for [Vert.x 3](http://vertx.io)
 
 ## Architecture
 
