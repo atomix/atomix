@@ -478,7 +478,7 @@ abstract class ActiveState extends PassiveState {
   public CompletableFuture<QueryResponse> query(QueryRequest request) {
     logRequest(request);
     // If the request allows inconsistency, immediately execute the query and return the result.
-    if (request.consistency() == Consistency.NONE) {
+    if (request.consistency() == Consistency.WEAK) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withId(request.id())
         .withUri(context.getLocalMember())

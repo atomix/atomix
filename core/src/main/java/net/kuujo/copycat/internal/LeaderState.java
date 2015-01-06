@@ -148,8 +148,8 @@ class LeaderState extends ActiveState {
     BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
 
     switch (request.consistency()) {
-      // Consistency mode NONE or DEFAULT is immediately evaluated and returned.
-      case NONE:
+      // Consistency mode WEAK or DEFAULT is immediately evaluated and returned.
+      case WEAK:
       case DEFAULT:
         future.complete(logResponse(QueryResponse.builder()
           .withId(request.id())
@@ -157,8 +157,8 @@ class LeaderState extends ActiveState {
           .withResult(consumer.apply(null, request.entry()))
           .build()));
         break;
-      // Consistency mode FULL requires synchronous consistency check prior to applying the query.
-      case FULL:
+      // Consistency mode STRONG requires synchronous consistency check prior to applying the query.
+      case STRONG:
         LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), context.log().lastIndex());
         replicator.pingAll().whenComplete((index, error) -> {
           if (error == null) {

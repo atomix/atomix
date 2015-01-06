@@ -541,11 +541,11 @@ public interface AsyncMap<K, V> {
 You can specify the required consistency of queries by defining the `@Query` annotation's `consistency` argument.
 The query consistency allows you to control how read operations are performed. Copycat supports three consistency
 levels:
-* `NONE` - reads the state machine from the local node. This is the cheapest/fastest consistency level, but will often
+* `WEAK` - reads the state machine from the local node. This is the cheapest/fastest consistency level, but will often
   result in stale data being read
 * `DEFAULT` - all reads go through the resource leader which performs consistency checks based on a lease period equal to the
   resource's heartbeat interval
-* `FULL` - all reads go through the resource leader which performs a synchronous consistency check with a majority of
+* `STRONG` - all reads go through the resource leader which performs a synchronous consistency check with a majority of
   the resource's replicas before applying the query to the state machine and returning the result. This is the most
   expensive consistency level.
 
@@ -555,7 +555,7 @@ Query consistency defaults to `DEFAULT`
 public interface MapState<K, V> extends Map<K, V> {
 
   @Override
-  @Query(consistency=Consistency.FULL)
+  @Query(consistency=Consistency.STRONG)
   V get(K key);
 
 }
@@ -943,11 +943,11 @@ stateLog.registerQuery("get", (partitionKey, index) -> data.get(index));
 
 Because of the flexibility of read-only operations, Copycat provides several consistency modes with which users can
 trade consistency for performance and vice versa.
-* `FULL` - Guarantees strong consistency of all reads by performing reads through the leader which contacts a majority
+* `STRONG` - Guarantees strong consistency of all reads by performing reads through the leader which contacts a majority
   of nodes to verify the cluster state prior to responding to the request
 * `DEFAULT` - Promotes consistency using a leader lease with which the leader assumes consistency for a period of time
   before contacting a majority of the cluster in order to check consistency
-* `NONE` - Allows stale reads from the local node
+* `WEAK` - Allows stale reads from the local node
 
 To specify the query consistency, simply pass an additional `Consistency` parameter to `registerQuery`:
 
@@ -1051,35 +1051,195 @@ copycat.open()
 
 ## Collections
 
+In a partially academic effort, Copycat provides a variety of strongly consistent data structures built on top of its
+[state machine](#state-machines) framework.
+
 ### AsyncMap
 
-#### Creating an AsyncMap
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 
-#### Configuring the AsyncMap
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addMapConfig("test-map", new AsyncMapConfig()
+    .withConsistency(Consistency.STRONG));
+
+Copycat.copycat("tcp://123.456.789.0", config).open()
+  .thenApply(copycat -> copycat.<String, String>map("test-map"))
+  .thenCompose(map -> map.open())
+  .thenAccept(map -> {
+    map.put("foo", "Hello world!").thenRun(() -> {
+      map.get("foo").thenAccept(result -> System.out.println(result));
+    });
+  });
+```
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+AsyncMapConfig config = new AsyncMapConfig()
+  .withConsistency(Consistency.STRONG);
+
+AsyncMap.<String, String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(map -> {
+  map.put("foo", "Hello world!").thenRun(() -> {
+    map.get("foo").thenAccept(result -> System.out.println(result));
+  });
+});
+```
 
 ### AsyncList
 
-#### Creating an AsyncList
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 
-#### Configuring the AsyncList
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addListConfig("test-list", new AsyncListConfig()
+    .withConsistency(Consistency.STRONG));
+
+Copycat.copycat("tcp://123.456.789.0", config).open()
+  .thenApply(copycat -> copycat.<String>list("test-list"))
+  .thenCompose(list -> list.open())
+  .thenAccept(list -> {
+    list.add("Hello world!").thenRun(() -> {
+      list.get(0).thenAccept(result -> System.out.println(result));
+    });
+  });
+```
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+AsyncListConfig config = new AsyncListConfig()
+  .withConsistency(Consistency.STRONG);
+
+AsyncList.<String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(list -> {
+  list.add("Hello world!").thenRun(() -> {
+    list.get(0).thenAccept(result -> System.out.println(result));
+  });
+});
+```
 
 ### AsyncSet
 
-#### Creating an AsyncSet
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 
-#### Configuring the AsyncSet
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addSetConfig("test-set", new AsyncSetConfig()
+    .withConsistency(Consistency.STRONG));
+
+Copycat.copycat("tcp://123.456.789.0", config).open()
+  .thenApply(copycat -> copycat.<String>set("test-set"))
+  .thenCompose(set -> set.open())
+  .thenAccept(set -> {
+    set.add("Hello world!").thenRun(() -> {
+      set.get(0).thenAccept(result -> System.out.println(result));
+    });
+  });
+```
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+AsyncSetConfig config = new AsyncSetConfig()
+  .withConsistency(Consistency.STRONG);
+
+AsyncSet.<String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(set -> {
+  set.add("Hello world!").thenRun(() -> {
+    set.get(0).thenAccept(result -> System.out.println(result));
+  });
+});
+```
 
 ### AsyncMultiMap
 
-#### Creating an AsyncMultiMap
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 
-#### Configuring the AsyncMultiMap
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addMultiMapConfig("test-multimap", new AsyncMultiMapConfig()
+    .withConsistency(Consistency.STRONG));
+
+Copycat.copycat("tcp://123.456.789.0", config).open()
+  .thenApply(copycat -> copycat.<String, String>multiMap("test-multimap"))
+  .thenCompose(multiMap -> multiMap.open())
+  .thenAccept(multiMap -> {
+    multiMap.put("foo", "Hello world!").thenRun(() -> {
+      multiMap.get("foo").thenAccept(result -> System.out.println(result));
+    });
+  });
+```
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+AsyncMultiMapConfig config = new AsyncMultiMapConfig()
+  .withConsistency(Consistency.STRONG);
+
+AsyncMultiMap.<String, String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(multiMap -> {
+  multiMap.put("foo", "Hello world!").thenRun(() -> {
+    multiMap.get("foo").thenAccept(result -> System.out.println(result));
+  });
+});
+```
 
 ### AsyncLock
 
-#### Creating an AsyncLock
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 
-#### Configuring the AsyncLock
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addLockConfig("test-lock", new AsyncLockConfig()
+    .withConsistency(Consistency.STRONG));
+
+Copycat.copycat("tcp://123.456.789.0", config).open()
+  .thenApply(copycat -> copycat.lock("test-lock"))
+  .thenCompose(lock -> lock.open())
+  .thenAccept(lock -> {
+    lock.lock().thenRun(() -> {
+      System.out.println("Lock locked");
+      lock.unlock().thenRun(() -> System.out.println("Lock unlocked");
+    });
+  });
+```
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+AsyncLockConfig config = new AsyncLockConfig()
+  .withConsistency(Consistency.STRONG);
+
+AsyncLock.create("tcp://123.456.789.0", cluster, config).open().thenAccept(lock -> {
+  lock.lock().thenRun(() -> {
+    System.out.println("Lock locked");
+    lock.unlock().thenRun(() -> System.out.println("Lock unlocked");
+  });
+});
+```
 
 ## The Copycat cluster
 

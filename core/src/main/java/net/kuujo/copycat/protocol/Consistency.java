@@ -25,7 +25,7 @@ public enum Consistency {
   /**
    * Indicates that consistency is not required to be guaranteed during reads.
    */
-  NONE("none"),
+  WEAK("weak"),
 
   /**
    * Indicates that consistency should be attempted during reads but is not required.
@@ -35,16 +35,16 @@ public enum Consistency {
   /**
    * Indicates that consistency should be guaranteed for reads.
    */
-  FULL("full");
+  STRONG("strong");
 
   public static Consistency parse(String name) {
     switch (name) {
-      case "none":
-        return NONE;
+      case "weak":
+        return WEAK;
       case "default":
         return DEFAULT;
-      case "full":
-        return FULL;
+      case "strong":
+        return STRONG;
       default:
         throw new IllegalArgumentException("Invalid consistency name " + name);
     }

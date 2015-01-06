@@ -1364,12 +1364,12 @@ public class RequestResponseTest {
       .withId("test")
       .withUri("foo")
       .withEntry(ByteBuffer.wrap("Hello world!".getBytes()))
-      .withConsistency(Consistency.FULL)
+      .withConsistency(Consistency.STRONG)
       .build();
     assertEquals(request.id(), "test");
     assertEquals(request.uri(), "foo");
     assertEquals(new String(request.entry().array()), "Hello world!");
-    assertEquals(request.consistency(), Consistency.FULL);
+    assertEquals(request.consistency(), Consistency.STRONG);
   }
 
   /**
