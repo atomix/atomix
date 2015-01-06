@@ -43,12 +43,12 @@ taking place on Copycat**
    * [Adding Copycat as a Maven dependency](#adding-copycat-as-a-maven-dependency)
    * [Setting up the cluster](#setting-up-the-cluster)
    * [Configuring the protocol](#configuring-the-protocol)
-   * [Configuring resources](#configuring-resources)
-   * [Creating a Copycat instance](#creating-a-copycat-instance)
 1. [The Copycat API](#the-copycat-api)
+   * [Creating a Copycat instance](#creating-a-copycat-instance)
    * [The Copycat cluster](#the-copycat-cluster)
 1. [Resources](#resources)
    * [Resource lifecycle](#resource-lifecycle)
+   * [Configuring resources](#configuring-resources)
    * [Creating resources](#creating-resources)
    * [Resource clusters](#resource-clusters)
 1. [State machines](#state-machines)
@@ -180,12 +180,68 @@ at configuration time for validity.
 Because of the design of the [Raft algorithm](#strong-consistency-and-copycats-raft-consensus-protocol), it is strongly
 recommended that any Copycat cluster have *at least three voting members*.
 
-### Configuring resources
+## The Copycat API
+Copycat provides a high-level `Copycat` API that aggregates each of the Copycat [resource types](#resources) into a
+single fluent API.
+
+### Creating a Copycat instance
+
+To create a `Copycat` instance, call one of the overloaded `Copycat.create()` methods:
+* `Copycat.create(String uri, ClusterConfig cluster)`
+* `Copycat.create(String uri, CopycatConfig config)`
+
+Note that the first argument to any `Copycat.create()` method is a `uri`. This is the protocol specific URI of the
+*local* member, and it may or may not be a member defined in the provided `ClusterConfig`. This is because Copycat
+actually supports eventually consistent replication for clusters much larger than the core Raft cluster - the cluster
+of *seed* members defined in the cluster configuration.
+
+```java
+Copycat copycat = Copycat.create("tcp://123.456.789.3", cluster);
+```
+
+When a `Copycat` instance is constructed, a central replicated state machine is created for the entire Copycat cluster.
+This state machine is responsible for maintaining the state of all cluster resources. In other words, it acts as a
+central registry for other log based structures created within the cluster. This allows Copycat to coordinate the
+creation, usage, and deletion of multiple log-based resources within the same cluster.
+
+Once the `Copycat` instance has been created, you must open the `Copycat` instance by calling the `open` method.
+
+```java
+CompletableFuture<Copycat> future = copycat.open();
+future.get();
+```
+
+When the `Copycat` instance is opened, all the [resources](#resources) defined in the
+[configuration](#configuring-resources) will be opened and begin participating in leader election and log replication.
+
+### The Copycat Cluster
+Each `Copycat` instance contains a reference to the global `Cluster`. The cluster handles communication between
+Copycat instances and provides a vehicle through which users can [communicate](#messaging) with other Copycat instances
+as well. To get a copy of the Copycat `Cluster` simply call the `cluster` getter on the `Copycat` instance.
+
+```java
+Cluster cluster = copycat.cluster();
+```
+
+For more information on using the `Cluster` object to communicate with other members of the cluster see the section
+on [the Copycat cluster](#the-copycat-cluster).
+
+## Resources
 
 Each Copycat instance can support any number of various named resources. *Resource* is an abstract term for all of the
 high level log-based data types provided by Copycat. Ultimately, each resource - whether is be an event log, state log,
 state machine, or collection - is backed by a Raft replicated log that is managed by the Copycat cluster coordinator
 internally.
+
+### Resource lifecycle
+
+When a Copycat instance is created and opened, any resources for which the local `Copycat` instance is listed as a
+replica will be opened internally and immediately begin participating in leader election and replication for that
+resource. Leader election and replication for resources occur separately from the global Copycat cluster. Therefore,
+the leader for a given resource may frequently differ from the global Copycat cluster leader. This ensures that Copycat
+can maintain consistency across multiple resources within the same cluster.
+
+### Configuring resources
 
 It's important to note that *all cluster resources must be configured prior to opening the Copycat instance.* This is
 because Copycat needs a full view of the cluster's resources in order to properly configure and open various resources
@@ -242,26 +298,6 @@ configMap.put("log", logConfigMap);
 EventLogConfig config = new EventLogConfig(configMap);
 ```
 
-### Creating a Copycat instance
-
-To create a `Copycat` instance, call one of the overloaded `Copycat.create()` methods:
-* `Copycat.create(String uri, ClusterConfig cluster)`
-* `Copycat.create(String uri, CopycatConfig config)`
-
-Note that the first argument to any `Copycat.create()` method is a `uri`. This is the protocol specific URI of the
-*local* member, and it may or may not be a member defined in the provided `ClusterConfig`. This is because Copycat
-actually supports eventually consistent replication for clusters much larger than the core Raft cluster - the cluster
-of *seed* members defined in the cluster configuration.
-
-```java
-Copycat copycat = Copycat.create("tcp://123.456.789.3", cluster);
-```
-
-When a `Copycat` instance is constructed, a central replicated state machine is created for the entire Copycat cluster.
-This state machine is responsible for maintaining the state of all cluster resources. In other words, it acts as a
-central registry for other log based structures created within the cluster. This allows Copycat to coordinate the
-creation, usage, and deletion of multiple log-based resources within the same cluster.
-
 ### Creating resources
 
 With resources configured and the `Copycat` instance created, resources can be easily retrieved by calling any
@@ -276,10 +312,49 @@ of the resource-specific methods on the `Copycat` instance:
 * `<T> AsyncSet<T> set(String name)`
 * `AsyncLock lock(String name)`
 
-Note that resources are created asynchronously. This is because some resources may not already be running on the local
-cluster. For instance, if the current node is not listed as one of the given resources' replicas, the resource will be
-created and join the resource's replica cluster via a gossip protocol. For more information read about
-[the Copycat cluster](#the-copycat-cluster)
+```java
+Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+
+copycat.open().thenRun(() -> {
+  StateMachine<String> stateMachine = copycat.stateMachine("test");
+  stateMachine.open().thenRun(() -> {
+    Map<String, String> map = stateMachine.createProxy(Map.class);
+    map.put("foo", "Hello world!").thenRun(() -> {
+      map.get("foo").thenAccept(value -> {
+        System.out.println(value);
+      });
+    });
+  });
+});
+```
+
+Java 8's `CompletableFuture` framework is extremely powerful. For instance, the previous code sample could be rewritten
+as so:
+
+```java
+Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+
+copycat.open()
+  .thenCompose(copycat.stateMachine("test").open())
+  .thenApply(stateMachine -> stateMachine.createProxy(Map.class))
+  .thenAccept(map -> {
+    map.put("foo", "Hello world!")
+      .thenCompose(v -> map.get("foo"))
+      .thenAccept(value -> System.out.println(value));
+  });
+```
+
+### Resource clusters
+
+In order to ensure consistency across resources, each resource performs leader election and replication separately
+from the global `Copycat` cluster. Additionally, because each resource can be replicated on a separate set of nodes
+than that which is defined in the global `ClusterConfig`, resources maintain a separate membership list as well.
+Each resource exposes a separate `Cluster` instance that contains state regarding the resource's leader election and
+membership. This `Cluster` can be used to communicate with other members in the resource's cluster.
+
+```java
+Cluster cluster = stateMachine.cluster();
+```
 
 ## State machines
 
