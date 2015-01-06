@@ -689,7 +689,7 @@ map.put("foo", "Hello world!").thenRun(() -> {
 
 ## Event logs
 
-Event logs are eventually consistent Raft replicated logs that are designed to be compacted based on time or space.
+Event logs are eventually consistent Raft replicated logs that are designed to be compacted based on time or size.
 Event logs are inherently partitioned - allowing high-throughput concurrent writes to leaders of multiple partitions -
 and entries are consumed as they are received.
 
@@ -716,8 +716,23 @@ copycat.open().thenRun(() -> {
 });
 ```
 
+Alternatively, an event log can be created independent of the high-level `Copycat` API by simply adding the
+`copycat-event-log` module as a dependency directly and instantiating a new event log via the `EventLog.create`
+static interface method:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+EventLogConfig config = new EventLogConfig())
+  .withPartitions(3);
+
+EventLog<String, String> eventLog = EventLog.create("tcp:/123.456.789.0", cluster, config);
+```
+
 Note that the event log API requires two generic types. The first generic - `T` - is the partition key type. This is
-the data type of the keys used to select partitions to which to commit entries. The second genric type - `U` - is the
+the data type of the keys used to select partitions to which to commit entries. The second generic type - `U` - is the
 log entry type.
 
 ### Configuring the event log
@@ -816,18 +831,193 @@ eventLog.partition(1).cluster().election().addListener(result -> System.out.prin
 ```
 
 ## State logs
+State logs are strongly consistent Raft replicated logs designed for persisting state. These logs are the basis of
+Copycat's state machine and the data structures built on top of it. Whereas event logs are designed for time/size based
+compaction, state logs support log compaction via snapshotting, allowing state to be persisted to the log and
+replicated to other nodes in the cluster whenever necessary.
 
 ### Creating a state log
 
+To create a state log, call the `stateLog` method on the `Copycat` instance.
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addStateLogConfig("state-log", new StateLogConfig())
+    .withPartitions(3);
+
+Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+
+copycat.open().thenRun(() -> {
+  copycat.<String, String>stateLog("state-log").open().thenAccept(stateLog -> {
+    stateLog.commit("Hello world!");
+  });
+});
+```
+
+Alternatively, a state log can be created independent of the high-level `Copycat` API by simply adding the
+`copycat-state-log` module as a dependency directly and instantiating a new state log via the `StateLog.create`
+static interface method:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+StateLogConfig config = new StateLogConfig())
+  .withPartitions(3);
+
+StateLog<String, String> stateLog = StateLog.create("tcp:/123.456.789.0", cluster, config);
+```
+
+Note that the state log API requires two generic types. The first generic - `T` - is the partition key type. This is
+the data type of the keys used to select partitions to which to commit entries. The second generic type - `U` - is the
+log entry type.
+
 ### Configuring the state log
+
+Copycat state logs are partitioned and replicated. Thus, the `StateLogConfig` API provides various methods for
+configuring the partitioning and replication of each state log.
+
+To set the number of state log partitions, use the `setPartitions` method or `withPartitions` fluent method.
+
+```java
+StateLogConfig config = new StateLogConfig()
+  .withPartitions(3);
+```
+
+The number of partitions indicated will dictate the number of separate replicated log instances that are created for
+the state log. For each log partition, a separate leader will be elected and separate instance of the Raft consensus
+algorithm will be run.
+
+In order to control the amount of cluster resources each state log partition consumes, Copycat provides a *replication
+factor* option which configures the number of nodes on which each partition is synchronously replicated. For each
+level of replication factor, two additional nodes are required for replication for each partition. In other words:
+* A replication factor of `0` indicates that each partition resides only on a single node
+* A replication factor of `1` indicates that each partition resides on three nodes, and writes require data to be
+  written to the leader and one other node
+* A replication factor of `2` indicates that each partition resides on five nodes, and writes require data to be written
+  to the leader and two other nodes
+
+To configure the replication factor, use the `setReplicationFactor` method or `withReplicationFactor` fluent method.
+
+```java
+StateLogConfig config = new StateLogConfig()
+  .withPartitions(3)
+  .withReplicationFactor(1);
+```
+
+By default the replication factor is `-1`, indicating that each partition should be replicated to the entire cluster.
 
 ### State commands
 
+State logs work to alter state by applying log entries to registered state commands. Commands are operations which
+alter the state machine state. When submitted to the state log, all commands (writes) go through the resource leader
+and are logged and replicated prior to being applied to the command function.
+
+To register a state command, use the `registerCommand` method.
+
+```java
+stateLog.registerCommand("add", (partitionKey, entry) -> data.add(entry));
+```
+
+Note also that commands can be registered on each partition of the state log individually.
+
+```java
+stateLog.partition(1).registerCommand("put", entry -> data.add(entry));
+```
+
 ### State queries
+
+As you can see above state logs separate *read* operations from *write* operations, and for good reason. Write
+operations require strong consistency and persistence, while read operations - which don't alter the state of the log -
+can be performed without persistence. To register a read operation on the state log, use the `registerQuery` method:
+
+```java
+stateLog.registerQuery("get", (partitionKey, index) -> data.get(index));
+```
+
+Because of the flexibility of read-only operations, Copycat provides several consistency modes with which users can
+trade consistency for performance and vice versa.
+* `FULL` - Guarantees strong consistency of all reads by performing reads through the leader which contacts a majority
+  of nodes to verify the cluster state prior to responding to the request
+* `DEFAULT` - Promotes consistency using a leader lease with which the leader assumes consistency for a period of time
+  before contacting a majority of the cluster in order to check consistency
+* `NONE` - Allows stale reads from the local node
+
+To specify the query consistency, simply pass an additional `Consistency` parameter to `registerQuery`:
+
+```java
+stateLog.registerQuery("get", (partitionKey, index) -> data.get(index), Consistency.FULL);
+```
+
+Note also that queries can be registered on each partition of the state log individually.
+
+```java
+stateLog.partition(1).registerQuery("get", index -> data.get(index));
+```
 
 ### Submitting operations to the state log
 
+Once [commands](#state-commands) and [queries](#state-queries) have been registered on the log, commands and queries
+can be submitted to the log. To submit a named operation to the log, call the `submit` method.
+
+```java
+stateLog.submit("add", "Hello world!");
+```
+
+As with the event log, state logs perform partitioning internally using a simple mod hash algorithm. To provide a custom
+partition key by which to partition the log, pass the partition key as the second argument to `submit`.
+
+```java
+stateLog.submit("add", "fruit", "apple");
+```
+
+Alternatively, you can access the state log partitions directly:
+
+```java
+stateLog.partition(1).submit("add", "Hello world!");
+```
+
 ### Snapshotting
+
+Up until this point, if the state log were allowed to run unencumbered for a long enough period of time, presumably
+your machines would run out of disk space for the log. Fortunately, the Raft algorithm has a mechanism for compacting
+the state log: snapshots. By registering a snapshot handler on the state log, Copycat will periodically call the handler
+and replace a portion of the log with the state returned by the snapshot provider. Then, in the event of a failure the
+snapshot installer will be called to repopulate the state from the last snapshot.
+
+To register a snapshot provider on the state log, use the `snapshotWith` methods:
+
+```java
+stateLog.snapshotWith(partition -> data);
+```
+
+```java
+stateLog.partition(1).snapshotWith(() -> data);
+```
+
+Any snapshot provider should be accompanied by a snapshot installer as well.
+
+```java
+stateLog.installWith((partition, data) -> {
+  this.data = data;
+});
+```
+
+```java
+stateLog.partition(1).installWith(data -> {
+  this.data = data;
+});
+```
+
+Don't worry, Copycat will handle all the complexity of persisting, loading, and replicating snapshots. If you want to
+see what can be built on top of the Copycat state log, see Copycat's replicated [state machine](#state-machine)
+implementation.
 
 ## Leader elections
 
