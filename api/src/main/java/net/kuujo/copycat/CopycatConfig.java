@@ -604,7 +604,9 @@ public class CopycatConfig extends AbstractConfigurable {
     CoordinatorConfig config = new CoordinatorConfig()
       .withClusterConfig(getClusterConfig());
     for (Map.Entry<String, ResourceConfig> entry : getResourceConfigs().entrySet()) {
-      config.addResourceConfig(entry.getKey(), entry.getValue().resolve(getClusterConfig()));
+      config.addResourceConfig(entry.getKey(), entry.getValue()
+        .withDefaultSerializer(getDefaultSerializer())
+        .resolve(getClusterConfig()));
     }
     return config;
   }
