@@ -16,7 +16,6 @@
 package net.kuujo.copycat;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 /**
  * Event log partition.
@@ -31,7 +30,7 @@ public interface EventLogPartition<T> extends ResourcePartition<EventLogPartitio
    * @param consumer The log entry consumer.
    * @return The event log.
    */
-  EventLogPartition<T> consumer(Consumer<T> consumer);
+  EventLogPartition<T> consumer(EventListener<T> consumer);
 
   /**
    * Gets an entry from the log.

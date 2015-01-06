@@ -21,7 +21,6 @@ import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 /**
  * Copycat event log.
@@ -67,7 +66,7 @@ public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, Even
    * @param consumer The log entry consumer.
    * @return The event log.
    */
-  EventLog<T, U> consumer(Consumer<U> consumer);
+  EventLog<T, U> consumer(EventListener<U> consumer);
 
   /**
    * Commits an entry to the log.

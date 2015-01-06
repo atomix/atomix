@@ -14,15 +14,11 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.EventLog;
-import net.kuujo.copycat.EventLogPartition;
-import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.ResourcePartitionContext;
+import net.kuujo.copycat.*;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
-import java.util.function.Consumer;
 
 /**
  * Event log implementation.
@@ -41,7 +37,7 @@ public class DefaultEventLog<T, U> extends AbstractPartitionedResource<EventLog<
   }
 
   @Override
-  public synchronized EventLog<T, U> consumer(Consumer<U> consumer) {
+  public synchronized EventLog<T, U> consumer(EventListener<U> consumer) {
     partitions.forEach(p -> p.consumer(consumer));
     return this;
   }

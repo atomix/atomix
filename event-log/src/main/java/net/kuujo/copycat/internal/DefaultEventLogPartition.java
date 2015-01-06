@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.EventLogPartition;
 import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -22,7 +23,6 @@ import net.kuujo.copycat.util.serializer.Serializer;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 
 /**
  * Default event log partition implementation.
@@ -31,7 +31,7 @@ import java.util.function.Consumer;
  */
 public class DefaultEventLogPartition<T> extends AbstractResourcePartition<EventLogPartition<T>> implements EventLogPartition<T> {
   private final Serializer serializer;
-  private Consumer<T> consumer;
+  private EventListener<T> consumer;
   private final Executor executor;
 
   public DefaultEventLogPartition(ResourcePartitionContext context, Executor executor) {
@@ -46,7 +46,7 @@ public class DefaultEventLogPartition<T> extends AbstractResourcePartition<Event
   }
 
   @Override
-  public EventLogPartition<T> consumer(Consumer<T> consumer) {
+  public EventLogPartition<T> consumer(EventListener<T> consumer) {
     this.consumer = consumer;
     return this;
   }
@@ -84,7 +84,7 @@ public class DefaultEventLogPartition<T> extends AbstractResourcePartition<Event
     ByteBuffer result = ByteBuffer.allocateDirect(8);
     result.putLong(index);
     if (consumer != null) {
-      executor.execute(() -> consumer.accept(serializer.readObject(entry)));
+      executor.execute(() -> consumer.handle(serializer.readObject(entry)));
     }
     return result;
   }
