@@ -21,12 +21,9 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.internal.AbstractResource;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.function.Consumer;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Default leader election implementation.
@@ -34,38 +31,29 @@ import java.util.function.Consumer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultLeaderElection extends AbstractResource<LeaderElection> implements LeaderElection {
-  private final Executor executor;
-  private Consumer<Member> handler;
-  private final EventListener<ElectionEvent> electionListener;
+  private final Map<EventListener<Member>, EventListener<ElectionEvent>> listeners = new HashMap<>();
 
   public DefaultLeaderElection(ResourceContext context) {
     super(context);
-    this.executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-election-" + context.name() + "-%d"));
-    this.electionListener = result -> {
-      if (handler != null) {
-        executor.execute(() -> handler.accept(result.winner()));
-      }
-    };
   }
 
   @Override
-  public LeaderElection handler(Consumer<Member> handler) {
-    this.handler = handler;
+  public synchronized LeaderElection addListener(EventListener<Member> listener) {
+    if (!listeners.containsKey(listener)) {
+      EventListener<ElectionEvent> wrapper = event -> listener.handle(event.winner());
+      listeners.put(listener, wrapper);
+      context.partition(1).cluster().election().addListener(wrapper);
+    }
     return this;
   }
 
   @Override
-  public CompletableFuture<LeaderElection> open() {
-    return super.open().thenApply(result -> {
-      context.partition(1).cluster().election().addListener(electionListener);
-      return this;
-    });
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    context.partition(1).cluster().election().removeListener(electionListener);
-    return super.close();
+  public synchronized LeaderElection removeListener(EventListener<Member> listener) {
+    EventListener<ElectionEvent> wrapper = listeners.remove(listener);
+    if (wrapper != null) {
+      context.partition(1).cluster().election().removeListener(wrapper);
+    }
+    return this;
   }
 
 }

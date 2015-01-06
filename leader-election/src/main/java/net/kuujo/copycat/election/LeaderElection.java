@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.election;
 
+import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
@@ -22,8 +23,6 @@ import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
-
-import java.util.function.Consumer;
 
 /**
  * Leader election.
@@ -63,11 +62,19 @@ public interface LeaderElection extends Resource<LeaderElection> {
   }
 
   /**
-   * Registers a leader election handler.
+   * Registers a leader election listener.
    *
-   * @param handler The leader election handler.
+   * @param listener The leader election listener.
    * @return The leader election.
    */
-  LeaderElection handler(Consumer<Member> handler);
+  LeaderElection addListener(EventListener<Member> listener);
+
+  /**
+   * Removes a leader election listener.
+   *
+   * @param listener The leader election listener.
+   * @return The leader election.
+   */
+  LeaderElection removeListener(EventListener<Member> listener);
 
 }

@@ -831,7 +831,33 @@ eventLog.partition(1).cluster().election().addListener(result -> System.out.prin
 
 ## Leader elections
 
+Leader elections are perhaps the simplest feature of Copycat, but often one of the most useful as well. One of the more
+significant challenges faced by many distributed systems is coordinating leadership among a set of nodes. Copycat's
+simple Raft based leader election implementation allows users to elect a leader within a resource cluster and then
+use Copycat's messaging and remote execution features to react on that leader election.
+
 ### Creating a leader election
+
+To create a `LeaderElection` via the `Copycat` API, add the `LeaderElectionConfig` to your `CopycatConfig`.
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addElectionConfig("election", new LeaderElectionConfig());
+```
+
+Once the leader election has been defined as a cluster resource, create a new `Copycat` instance and get the leader
+election. To register a handler to be notified once a node has become leader, use the `addListener` method.
+
+```java
+Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+
+copycat.open()
+  .thenCompose(c -> c.leaderElection("election").open())
+  .thenAccept(election -> {
+    election.addListener(member -> System.out.println(member.uri() + " was elected leader!");
+  });
+```
 
 ## Collections
 
