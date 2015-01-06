@@ -67,7 +67,8 @@ taking place on Copycat**
    * [Configuring the event log](#configuring-the-event-log)
    * [Writing events to the event log](#writing-events-to-the-event-log)
    * [Consuming events from the event log](#consuming-events-from-the-event-log)
-   * [Replaying the log](#replaying-the-log)
+   * [Working with event log partitions](#working-with-event-log-partitions)
+   * [Event log clusters](#event-log-clusters)
 1. [State logs](#state-logs)
    * [Creating a state log](#creating-a-state-log)
    * [Configuring the state log](#configuring-the-state-log)
@@ -269,6 +270,26 @@ config.addEventLogConfig("event-log", new EventLogConfig()
 The first argument to any `addResourceConfig` type method is always the unique resource name. Resource names are unique
 across the entire cluster, not just for the specific resource type. So, if you attempt to overwrite an existing
 resource configuration with a resource configuration of a different type, a `ConfigurationException` will occur.
+
+Each resource can optionally define a set of replicas separate from the global cluster configuration. The set of
+replicas in the resource configuration *must be contained within the set of seed nodes defined in the cluster
+configuration*. The resource's replica set defines the members that should participate in leader election and
+synchronous replication for the resource. Therefore, in a five node Copycat cluster, if a resource is configured with
+only three replicas, writes will only need to be persisted on two nodes in order to be successful.
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(new ClusterConfig()
+    .withProtocol(new NettyTcpProtocol())
+    .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2", "tcp://123.456.789.3", "tcp://123.456.789.4"));
+
+config.addEventLogConfig("event-log", new EventLogConfig()
+  .withSerializer(KryoSerializer.class)
+  .withReplicas("tcp://123.456.789.1", "tcp://123.456.789.2", "tcp://123.456.789.3")
+  .withLog(new FileLog()
+    .withSegmentSize(1024 * 1024)
+    .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024)));
+```
 
 The Copycat configuration API is designed to support arbitrary `Map` based configurations as well. Simply pass a map
 with the proper configuration options for the given configuration type to the configuration object constructor:
@@ -541,6 +562,7 @@ public interface MapState<K, V> extends Map<K, V> {
 ```
 
 ### The state context
+
 Copycat's state machine provides a `StateContext` object in which state implementations should store state. The reason
 for storing state in a separate object rather than in the states themselves is threefold. First, the `StateContext`
 object persists throughout the lifetime of the state machine, even across states. Second, the state machine uses the
@@ -665,19 +687,133 @@ map.put("foo", "Hello world!").thenRun(() -> {
 });
 ```
 
-### Serialization
-
 ## Event logs
+
+Event logs are eventually consistent Raft replicated logs that are designed to be compacted based on time or space.
+Event logs are inherently partitioned - allowing high-throughput concurrent writes to leaders of multiple partitions -
+and entries are consumed as they are received.
 
 ### Creating an event log
 
+To create an event log, call the `eventLog` method on the `Copycat` instance.
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addEventLogConfig("event-log", new EventLogConfig())
+    .withPartitions(3);
+
+Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+
+copycat.open().thenRun(() -> {
+  copycat.<String, String>eventLog("event-log").open().thenAccept(eventLog -> {
+    eventLog.commit("Hello world!");
+  });
+});
+```
+
+Note that the event log API requires two generic types. The first generic - `T` - is the partition key type. This is
+the data type of the keys used to select partitions to which to commit entries. The second genric type - `U` - is the
+log entry type.
+
 ### Configuring the event log
+
+Copycat event logs are partitioned and replicated. Thus, the `EventLogConfig` API provides various methods for
+configuring the partitioning and replication of each event log.
+
+To set the number of event log partitions, use the `setPartitions` method or `withPartitions` fluent method.
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withPartitions(3);
+```
+
+The number of partitions indicated will dictate the number of separate replicated log instances that are created for
+the event log. For each log partition, a separate leader will be elected and separate instance of the Raft consensus
+algorithm will be run.
+
+In order to control the amount of cluster resources each event log partition consumes, Copycat provides a *replication
+factor* option which configures the number of nodes on which each partition is synchronously replicated. For each
+level of replication factor, two additional nodes are required for replication for each partition. In other words:
+* A replication factor of `0` indicates that each partition resides only on a single node
+* A replication factor of `1` indicates that each partition resides on three nodes, and writes require data to be
+  written to the leader and one other node
+* A replication factor of `2` indicates that each partition resides on five nodes, and writes require data to be written
+  to the leader and two other nodes
+
+To configure the replication factor, use the `setReplicationFactor` method or `withReplicationFactor` fluent method.
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withPartitions(3)
+  .withReplicationFactor(1);
+```
+
+By default the replication factor is `-1`, indicating that each partition should be replicated to the entire cluster.
 
 ### Writing events to the event log
 
+The `EventLog` API provides several methods for writing events to the log. The simplest method is by simply using
+the `commit(U entry)` method.
+
+```java
+eventLog.commit("Hello world!");
+```
+
+Because the event log is partitioned, each entry committed to the event log must be
+routed to a specific partition. In the case of the `commit(U entry)` method, a partition is selected by simply using
+the mod hash of the given entry to select a partition.
+
+If you want to get more control over how logs are partitioned, the second method for committing entries to the event
+log is via the `commit(T partitionKey, U entry)` method.
+
+```java
+eventLog.commit("fruit", "apple");
+eventLog.commit("vegetable", "carrot");
+```
+
+This method accepts a partition key which is used to perform the same simple mod hash algorithm to select a partition
+to which to commit the entry.
+
+Finally, `EventLog` is a `PartitionedResource` which exposes methods for directly accessing log partitions. This allows
+users to arbitrarily partition event log entries in whatever way they want.
+
+To get a list of event log partitions, use the `partitions` method:
+
+```java
+for (EventLogPartition partition : eventLog.partitions()) {
+  partition.commit(entry);
+}
+```
+
+To get a specific event log partition, use the `partition` method, passing the partition number to get. Note that
+partition numbers start at `1`, not `0`.
+
+```java
+eventLog.partition(1).commit("Hello world!");
+```
+
 ### Consuming events from the event log
 
-### Replaying the log
+To consume messages from the event log, register a message consumer via the `consumer` method:
+
+```java
+eventLog.consumer(entry -> System.out.println(entry));
+```
+
+### Event log clusters
+
+Because the `EventLog` is a partitioned resource, and because each partition performs leader election and replication
+separate from its sibling partitions, the `EventLog` API itself does not expose a `Cluster` as with other resources.
+Instead, event log clusters must be accessed on a per-partition basis.
+
+```java
+eventLog.partition(1).cluster().election().addListener(result -> System.out.println("Winner: " + result.winner()));
+```
 
 ## State logs
 
