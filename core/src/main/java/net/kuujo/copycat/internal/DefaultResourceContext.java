@@ -61,7 +61,7 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public CompletableFuture<ResourceContext> open() {
+  public synchronized CompletableFuture<ResourceContext> open() {
     CompletableFuture<ResourcePartitionContext>[] futures = new CompletableFuture[partitions.size()];
     for (int i = 0; i < partitions.size(); i++) {
       futures[i] = partitions.get(i).open();
@@ -70,7 +70,7 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public boolean isOpen() {
+  public synchronized boolean isOpen() {
     for (ResourcePartitionContext partition : partitions) {
       if (!partition.isOpen()) {
         return false;
@@ -80,7 +80,7 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     CompletableFuture<Void>[] futures = new CompletableFuture[partitions.size()];
     for (int i = 0; i < partitions.size(); i++) {
       futures[i] = partitions.get(i).close();
@@ -89,7 +89,7 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public boolean isClosed() {
+  public synchronized boolean isClosed() {
     for (ResourcePartitionContext partition : partitions) {
       if (!partition.isClosed()) {
         return false;
