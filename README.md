@@ -45,7 +45,7 @@ taking place on Copycat**
    * [Configuring the protocol](#configuring-the-protocol)
 1. [The Copycat API](#the-copycat-api)
    * [Creating a Copycat instance](#creating-a-copycat-instance)
-   * [The Copycat cluster](#the-copycat-cluster)
+   * [Accessing the Copycat cluster](#accessing-the-copycat-cluster)
 1. [Resources](#resources)
    * [Resource lifecycle](#resource-lifecycle)
    * [Configuring resources](#configuring-resources)
@@ -204,7 +204,7 @@ future.get();
 When the `Copycat` instance is opened, all the [resources](#resources) defined in the
 [configuration](#configuring-resources) will be opened and begin participating in leader election and log replication.
 
-### The Copycat Cluster
+### Accessing the Copycat cluster
 Each `Copycat` instance contains a reference to the global `Cluster`. The cluster handles communication between
 Copycat instances and provides a vehicle through which users can [communicate](#messaging) with other Copycat instances
 as well. To get a copy of the Copycat `Cluster` simply call the `cluster` getter on the `Copycat` instance.
@@ -1232,19 +1232,105 @@ AsyncLock.create("tcp://123.456.789.0", cluster, config).open().thenAccept(lock 
 
 ## The Copycat cluster
 
+The Copycat cluster is designed not only to support leader election and replication for Copycat and its resources, but
+it also serves as a general messaging utility for users as well.
+
 ### Cluster architecture
 
-#### Members
+The Copycat cluster uses a variety of methods for managing resources, coordinating communication, and facilitating
+leader election and replication. At the core of the Copycat cluster is the `ClusterCoordinator`. The coordinator's
+responsibility is to provide a global view of the entire Copycat cluster. As with much of Copycat, the coordinator uses
+a Raft replicated log to perform leader election and maintain state for permanent [member](#members) nodes.
+Additionally, the coordinator uses a simple gossip protocol for [passive](#listeners) membership discovery and failure
+detection.
 
-#### Listeners
+### Members
+
+Members are the core nodes in the Copycat cluster. When the Copycat cluster is first stated, the cluster configuration
+provided to Copycat lists a set of seed members. These seed members represent the set of full voting members in the
+Copycat cluster. Seed members are the only nodes which participate in the synchronous Raft replication process. All
+[other nodes](#listeners) perform replication asynchronously.
+
+### Listeners
+
+Listeners are passive nodes in the Copycat cluster. In contrast to permanent seed members, listeners are expected to
+be able to join and leave the cluster at will without negatively affecting the consistency of the core Raft algorithm.
 
 ### Cluster configuration
 
+The Copycat cluster is configured via the `ClusterConfig` API. It's important to note that the `ClusterConfig` only
+represents the configuration for the core of the Copycat cluster - the seed nodes - and not necessarily the entire
+cluster. While frequently three, five, or seven nodes may be added to the core cluster configuration, in reality the
+Copycat cluster may support many more members via its eventually consistent gossip protocol.
+
+Copycat differentiates between seed members and passive members simply based on the URI of the local node. IF the
+`ClusterCoordinator` is started with a local URI which is contained within the cluster configuration, the local node
+is considered a seed member of the cluster. Otherwise, the local node is considered a passive member which performs
+replication purely via the gossip protocol.
+
 ### Leader election
+
+Leader election in Copycat is performed on a per-resource basis, and thus each resource cluster maintains a separate
+leader election state. For the global `Copycat` cluster and each resource cluster, leader election can be monitored
+by registering event listeners on the cluster's `Election` instance.
+
+```java
+copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
+  stateMachine.cluster().election().addListener(result -> {
+    System.out.println(result.winner() + " elected leader!");
+  });
+});
+```
 
 ### Messaging
 
+Copycat uses a simple messaging framework to communicate between nodes in order to perform coordination, leader election,
+and replication, and that framework is exposed to the user for each resource as well. Copycat's messaging framework
+uses topics to route messages to specific message handlers on any given node.
+
+To register a handler to receive messages for a topic, call the `registerHandler` method on the `LocalMember` instance.
+
+```java
+copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
+  stateMachine.cluster().member().registerHandler(message -> {
+    return CompletableFuture.completedFuture("world!");
+  });
+});
+```
+
+Cluster message handlers must return a `CompletableFuture`. If the message is handled synchronously, simply return
+an immediately completed future as demonstrated above. Otherwise, asynchronous calls to Copycat resources can be made
+within the message handler without blocking the Copycat event loop.
+
+To send a message to another member in the cluster, call the `send` method on any `Member` instance.
+
+```java
+copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
+  stateMachine.cluster().members().forEach(member -> {
+    member.send("Hello").thenAccept(reply -> {
+      System.out.println("Hello " + reply); // Hello world!
+    });
+  });
+});
+```
+
 ### Remote execution
+
+In addition to sending messages to other members of the cluster, Copycat also supports execution of arbitrary tasks on
+remote nodes. For example, this is particularly useful for executing code on a resource's leader node once a leader has
+been elected.
+
+```java
+Task<String> sayHello = () -> "Hello world!";
+
+copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
+  stateMachine.cluster().election().addListener(result -> {
+    result.winner().submit(sayHello).thenAccept(result -> {
+      System.out.println(result); // Hello world!
+    });
+  });
+});
+```
 
 ## Protocols
 
