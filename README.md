@@ -99,12 +99,14 @@ taking place on Copycat**
    * [Vert.x protocol](#vertx-protocol)
    * [Vert.x 3 protocol](#vertx-3-protocol)
 1. [Architecture](#architecture)
+   * [Logs](#logs)
    * [Strong consistency and Copycat's Raft consensus protocol](#strong-consistency-and-copycats-raft-consensus-protocol)
       * [Leader election](#leader-election-2)
-      * [Command replication](#command-replication)
-      * [Query consistency](#query-consistency)
+      * [Write replication](#command-replication)
+      * [Read consistency](#query-consistency)
       * [Log compaction](#log-compaction)
    * [Eventual consistency and Copycat's gossip protocol](#eventual-consistency-and-copycats-gossip-protocol)
+      * [Passive membership](#passive-membership)
       * [Log replication](#log-replication)
       * [Failure detection](#failure-detection)
 1. [The Copycat dependency hierarchy](#the-copycat-dependency-hierarchy)
@@ -1595,20 +1597,218 @@ ClusterConfig cluster = new ClusterConfig()
 
 ## Architecture
 
+Much of the documentation proceeding documentation has revolved around the features of Copycat and how to use them.
+However, many users and potential contributors may want to get a better understanding of how Copycat works. This section
+will detail precisely how Copycat performs tasks like leader election and log replication via the
+[Raft consensus protocol](https://raftconsensus.github.io/) and dynamic membership and failure detection via
+[gossip](http://en.wikipedia.org/wiki/Gossip_protocol).
+
+### Logs
+
+Logs are the center of the universe in the Copycat world. The global Copycat cluster and each of the resources contained
+within it are all ultimately built on a consistent, Raft replicated log. Because logs are such a central component to
+Copycat, much development effort has gone into the design and implementation of each of Copycat's logs.
+
+Copycat's logs are designed with three things in mind:
+* Fast writes
+* Fast reads
+* Compaction
+
+In order to support these three vital functions, Copycat's logs are broken into segments. Each log may consist of
+several segments of a configurable size, and each segment typically has a related index. The index is a simple list
+of 8-bit pairs of integers indicating the entry index and position within a given segment. This allows Copycat to
+quickly locate and read entries from the log.
+
+Additionally, each log implementation supports [log compaction](#log-compaction) on an arbitrary index.
+
 ### Strong consistency and Copycat's Raft consensus protocol
 
-#### Leader election
+Copycat uses a unique, extensible implementation of the
+[Raft distributed consensus algorithm](https://raftconsensus.github.io/) to provide strong consistency guarantees for
+resource management, leader elections, and the log replication which underlies all of Copycat's resources.
 
-#### Command replication
+Raft is the simpler implementation of only a few known algorithms for achieving consensus in a distributed system
+(the other more common implementation is [Paxos](http://en.wikipedia.org/wiki/Paxos_%28computer_science%29).
+Designed for understandability, Raft uses a mixture of RPCs and timeouts to orchestrate leader election and replication
+of a distributed log. In terms of the [CAP theorem](http://en.wikipedia.org/wiki/CAP_theorem), Raft and by extension
+Copycat is a CP system, meaning in the face of a partition, Raft and Copycat give up availability in favor of
+consistency. This makes Raft a perfect fit for storing small amounts of mission critical state.
 
-#### Query consistency
+### Leader election
 
-#### Log compaction
+In Raft, all writes are required to go through a cluster leader. Because Raft is designed to tolerate failures, this
+means the algorithm must be designed to elect a leader when an existing leader's node crashes.
+
+In Copycat, since each resource maintains its own replicated log, leader elections are performed among the
+[active member](#active-member) replicas for each resource in the cluster. This means at any given point in time,
+leaders for various resources could reside on different members of the cluster. However,
+[passive members](#passive-members) cannot be elected leader as they do not participate in the Raft consensus algorithm.
+For instance, in a cluster with three active members and ten passive members, the leader for an event log partition
+could be active member *A*, while a state machine's leader could be active member *C*, but neither resource's leader
+could be any passive member of the cluster. Copycat's `Cluster` and its related Raft implementation are designed to act
+completely independently of other `Cluster` and Raft instances within the same Copycat instance.
+
+In order to ensure consistency, leader election in Copycat is performed largely by comparing the logs of different
+members of the cluster. When a member of the Copycat cluster stops receiving heartbeats from the cluster's leader, the
+member transitions into the `CANDIDATE` state and begins a new election. Elections consist of sending a `PollRequest`
+to each member of the cluster requesting a vote. Upon receiving a poll request, each member will compare information
+about the candidate's log with its own log and either accept or reject the candidate's request based on that
+information. If the candidate's log as as up-to-date or more recent than the polled member's log, the polled member
+will accept the vote request. Otherwise, the polled member will reject the vote request. Once the candidate has received
+successful votes from a majority of the cluster (including itself) it transitions to `LEADER` and begins accepting
+requests and replicating the resource log.
+
+Note that since Raft requires a leader to perform writes, during the leader election period the resource will be
+unavailable. However, the period of time between a node crashing and a new leader being elected is typically very small
+- on the order of milliseconds or seconds.
+
+The consistency checks present in the Raft consensus algorithm ensure that the member with the most up-to-date log in
+the cluster will be elected leader. In other words, through various restrictions on how logs are replicated and how
+leaders are elected, Raft guarantees that *no member with an out of date log will be elected leader*, ensuring that once
+entries are committed to the Copycat cluster, they are guaranteed to remain in the log until removed either via
+compaction or deletion.
+
+### Write replication
+
+Once a leader is elected via the Raft consensus protocol, the Copycat cluster can begin accepting new entries for the
+log. All writes to any Copycat resource are *always* directed through the resource's cluster leader, and writes are
+replicated from the leader to followers. This allows writes to the resource log to be coordinated from a single
+location.
+
+Commands - write operations - can be submitted to any member of the Copycat cluster. If a command is submitted to a
+member that is not the leader, the command will be forwarded to the cluster leader. When the leader receives a command,
+it immediately logs the entry to its local persistent log. Once the entry has been logged the leader attempts to
+synchronously replicate the entry to a majority of the [active members](#active-members) of the cluster. Once a
+majority of the cluster has received the entry and written it to its log, the leader will apply the entry to its state
+machine and reply with the result.
+
+Note that writes to a Copycat resource are *not* synchronously replicated to [passive members](#passive-members).
+Passive members receive only successfully committed log entries via a
+[gossip protocol](#eventual-consistency-and-copycats-gossip-protocol).
+
+Logging commands to a replicated log allows Copycat to recover from failures by simply replaying log entries. For
+instance, when a state machine resource crashes and restarts, Copycat will automatically replay all of the entries
+written to that state machine's log in order to rebuild the state machine state. Because all logs are built from
+writes to a single leader, and because Raft guarantees that entries are replicated on a majority of the servers
+prior to being applied to the state machine, all state machines within the Copycat cluster are guaranteed to receive
+commands in the same order.
+
+### Read consistency
+
+While Raft dictates that writes to the replicated log go through the resource's leader, reads allow for slightly more
+flexibility depending on the specific use case. Copycat supports several read consistency modes.
+
+In order to achieve strong consistency in any Raft cluster, though, reads must go through the cluster leader. This is
+because, as with any distributed system, there is always some period of time before full consistency can be achieved.
+Once a leader commits a write to the replicated log and applies the entry to its state machine, it still needs to notify
+followers that the entry has been committed. During that period of time, querying the leader's state will result in
+fully consistent state, but reading state from followers will result in stale output.
+
+Without additional measures, though, reading directly from the leader still does not guarantee consistency. Information
+only travels at the speed of light, after all. What if the leader being queried is no longer the leader? Raft and
+Copycat guard against this scenario by polling a majority of the active members of the cluster to ensure that the
+leader is still who he thinks he is.
+
+This all may sound very inefficient for reads, and it is. That's why Copycat provides some options for making
+trade-offs. Copycat provides three different `Consistency` modes:
+* `STRONG` - Queries go through the cluster leader. When handling a query request, the leader performs a leadership
+  consistency check by polling a majority of the cluster. If any member of the cluster known of a leader with a higher
+  term, the member will respond to the consistency check notifying the queried leader of the new leader, and the
+  queried leader will ultimately step down. This consistency mode guarantees strong consistency for all queries
+* `DEFAULT` - Queries go through the cluster leader, but the leader performs consistency checks only periodically. For
+  most requests, this mode provides strong consistency. Because the default consistency mode uses leader lease
+  timeouts that are less than the cluster's election timeout, only a unique set of circumstances could result in
+  inconsistency when this mode is used. Specifically, the leader would theoretically need to be blocked due to log
+  compaction on the most recent log segment (indicating misconfiguration) or some other long-running process while
+  simultaneously a network partition occurs, another leader is elected, and the new leader accepts writes. That's a
+  pretty crazy set of circumstances if you ask me :-)
+* `WEAK` - Queries can be performed on any member of the cluster. When a member receives a query request, if the query's
+  consistency mode is `WEAK` then the query will be immediately applied to that member's state machine. This rule
+  also applies for [passive members](#passive-members).
+
+While this functionality is not exposed by all resource APIs externally, Copycat allows read consistency to be specified
+on a per-request basis via the `QueryRequest`.
+
+### Log compaction
+
+One of the most important features of Raft is log compaction. While this is a feature that is often overlooked by many
+Raft implementations, it is truly essential to the operation of a Raft based system in production. Over time, as
+commands are written to Copycat's logs, the logs continue to grow. Log compaction is used to periodically reduce the
+size of logs while maintaining the effective history of the logs.
+
+Because Copycat's replicated log is designed to be agnostic about the structures built on top it, Copycat's Raft
+implementation is effectively unopinionated about compaction. Event logs are designed to for arbitrary time or
+size based compaction, while state logs and the state machines and data structures built on top of them are designed
+to support compaction without losing important state information.
+
+In order to support compaction, Copycat's logs are broken into segments. Once a log segment reaches a certain size,
+the log creates a new segment and frees the written segment for compaction. Logs are compacted according to configurable
+retention policies, but no policy can affect the segment that is currently being written to. This allows
+historical segments to be compacted in a background thread while new segments are still being written.
+
+For state logs, state machines, and the collections which are built on top of state machines, snapshots are used to
+compact logs while preserving state. When the log grows larger than a single segment, a snapshot is taken of the state
+machine state, serialized, placed at the *beginning* of the last segment, and all prior segments are permanently
+deleted. This is a different pattern than is used by many other systems that support snapshots.
+
+Because of how files are written, compacting a log segment technically requires rewriting the segment with the snapshot
+at the beginning of the file. During this process, Copycat protects against data loss by creating a series of copies
+of the log. If a failure occurs during compaction, persistent logs will recover gracefully by restoring the state of
+the compacted segment prior to the start of compaction.
+
+In some cases, a replica can become out of sync during the period in which the leader takes a snapshot and compacts
+its log. In this case, since the leader has removed the entries prior to its snapshot it can no longer replicate those
+entries to an out-of-sync follower. This is resolved by replicating the snapshot directly. By placing snapshots as
+regular entries at the beginning of the log, snapshots become part of the log and thus are automatically replicated
+via the Raft algorithm.
+
+Additionally, when a resource crashes and recovers, the resource's log is replayed in order to rebuild the system's
+state. By placing the snapshot at the beginning of the log, the snapshot is guaranteed to be the first entry applied
+to the state machine.
 
 ### Eventual consistency and Copycat's gossip protocol
 
-#### Log replication
+While the [active members](#active-members) of the Copycat cluster perform consistent replication of
+[resources](#resources) via the [Raft consensus protocol](#strong-consistency-and-copycats-raft-consensus-protocol),
+[passive members](#passive-members) receive replicated logs via a simple gossip protocol. This allows Copycat to
+support clusters much larger than a standard Raft cluster by making some consistency concessions.
 
-#### Failure detection
+### Passive membership
+
+Every member of the Copycat cluster participates in a simple gossip protocol that aids in cluster membership detection.
+When a [passive member](#passive-members) joins the Copycat cluster, it immediately begins gossiping with the
+configured [active members](#active-members) of the cluster. This gossip causes the active members to add the new
+passive member to the cluster configuration, which they gossip with other members of the cluster, including passive
+members. All gossip is performed by periodically selecting three random members of the cluster with which to share
+membership information. The gossip protocol uses a vector clock to share membership information between nodes. When
+a member gossips membership information to another member, it sends member and version information for each member
+of the cluster. When a member receives gossiped membership information, it updates its local membership according to
+the version of each member in the vector clock. This helps prevent false positives due to out-of-date cluster membership
+information.
+
+### Log replication
+
+Committed entries in resource logs are replicated to passive members of the cluster via the gossip protocol. Each member
+of the cluster - both active and passive members - participates in gossip-based log replication, periodically selecting
+three random members with which to gossip. A vector clock on each node is used to determine which entries to replicate
+to each member in the random set of members. When a member gossips with another member, it increments its local version
+and sends its vector clock containing last known indexes of each other member with the gossip. When a member receives
+gossip from another member, it updates its local vector clock with the received vector clock, appends replicated entries
+if the entries are consistent with its local log, increments its local version, and replies with its updated vector
+clock of member indexes. Tracking indexes via vector clocks helps reduce the number of duplicate entries within the
+gossip replication protocol.
+
+### Failure detection
+
+Just as Copycat uses gossip for membership, so to does the global cluster and resource clusters use gossip for failure
+detection. The failure detection protocol is designed to reduce the risk of that false failures due to network
+partitions. This is done by piggybacking failure information on to the cluster membership vector shared during gossip.
+When an attempt to gossip with another member of the cluster fails for the first time, the *state* of that member in
+the membership vector clock is changed to `SUSPICIOUS`. Additionally, the URI of the member that failed to communicate
+with the suspicious member is added to a set of failed attempts in the membership vector clock. When a membership vector
+containing a suspicious member is received by another member in the cluster, that member will immediately attempt to
+gossip with the suspicious member. If gossip with the suspicious member fails, the member attempting the gossip will
+again add its URI to the set of failed attempts. Once the set of failed attempts grows to a certain size (`3` by
+default), the member's state will be changed `DEAD` and the member removed from the cluster.
 
 ### [User Manual](#user-manual)
