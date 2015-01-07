@@ -17,29 +17,40 @@ package net.kuujo.copycat.protocol;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
+import net.kuujo.copycat.internal.util.Assert;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Vert.x event bus protocol implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocol extends Protocol {
-  private String host;
-  private int port;
-  private Vertx vertx;
+public class VertxEventBusProtocol extends AbstractProtocol {
+  public static final String VERTX = "vertx";
+  public static final String VERTX_HOST = "host";
+  public static final String VERTX_PORT = "port";
+
+  private static final String DEFAULT_VERTX_HOST = "localhost";
+  private static final int DEFAULT_VERTX_PORT = 0;
 
   public VertxEventBusProtocol() {
+    super();
   }
 
   public VertxEventBusProtocol(String host, int port) {
-    this.host = host;
-    this.port = port;
+    super();
+    setHost(host);
+    setPort(port);
   }
 
   public VertxEventBusProtocol(Vertx vertx) {
-    this.vertx = vertx;
+    setVertx(vertx);
+  }
+
+  public VertxEventBusProtocol(Map<String, Object> config) {
+    super(config);
   }
 
   /**
@@ -48,7 +59,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @param vertx The Vert.x instance.
    */
   public void setVertx(Vertx vertx) {
-    this.vertx = vertx;
+    put(VERTX, Assert.isNotNull(vertx, "vertx"));
   }
 
   /**
@@ -57,7 +68,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @return The Vert.x instance.
    */
   public Vertx getVertx() {
-    return vertx;
+    return get(VERTX);
   }
 
   /**
@@ -67,7 +78,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @return The event bus protocol.
    */
   public VertxEventBusProtocol withVertx(Vertx vertx) {
-    this.vertx = vertx;
+    setVertx(vertx);
     return this;
   }
 
@@ -75,9 +86,10 @@ public class VertxEventBusProtocol extends Protocol {
    * Sets the Vert.x host.
    *
    * @param host The Vert.x host.
+   * @throws java.lang.NullPointerException If the host is {@code null}
    */
   public void setHost(String host) {
-    this.host = host;
+    put(VERTX_HOST, Assert.isNotNull(host, "host"));
   }
 
   /**
@@ -86,7 +98,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @return The Vert.x host.
    */
   public String getHost() {
-    return host;
+    return get(VERTX_HOST, DEFAULT_VERTX_HOST);
   }
 
   /**
@@ -96,7 +108,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @return The event bus protocol.
    */
   public VertxEventBusProtocol withHost(String host) {
-    this.host = host;
+    setHost(host);
     return this;
   }
 
@@ -106,7 +118,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @param port The Vert.x port.
    */
   public void setPort(int port) {
-    this.port = port;
+    put(VERTX_PORT, Assert.arg(port, port > -1, "port must be positive"));
   }
 
   /**
@@ -115,7 +127,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @return The Vert.x port.
    */
   public int getPort() {
-    return port;
+    return get(VERTX_PORT, DEFAULT_VERTX_PORT);
   }
 
   /**
@@ -125,7 +137,7 @@ public class VertxEventBusProtocol extends Protocol {
    * @return The event bus protocol.
    */
   public VertxEventBusProtocol withPort(int port) {
-    this.port = port;
+    setPort(port);
     return this;
   }
 
@@ -134,14 +146,16 @@ public class VertxEventBusProtocol extends Protocol {
    */
   private Vertx createVertx() {
     VertxOptions options = new VertxOptions();
-    options.setClusterPort(port);
-    options.setClusterHost(host);
-    vertx = Vertx.vertx(options);
+    options.setClusterPort(getPort());
+    options.setClusterHost(getHost());
+    Vertx vertx = Vertx.vertx(options);
+    setVertx(vertx);
     return vertx;
   }
 
   @Override
   public synchronized ProtocolServer createServer(URI uri) {
+    Vertx vertx = getVertx();
     if (vertx != null) {
       return new VertxEventBusProtocolServer(uri.getAuthority(), vertx);
     } else {
@@ -151,6 +165,7 @@ public class VertxEventBusProtocol extends Protocol {
 
   @Override
   public synchronized ProtocolClient createClient(URI uri) {
+    Vertx vertx = getVertx();
     if (vertx != null) {
       return new VertxEventBusProtocolClient(uri.getAuthority(), vertx);
     } else {
@@ -160,7 +175,7 @@ public class VertxEventBusProtocol extends Protocol {
 
   @Override
   public String toString() {
-    return String.format("EventBusProtocol[host=%s, port=%d]", host, port);
+    return String.format("EventBusProtocol[host=%s, port=%d]", getHost(), getPort());
   }
 
 }

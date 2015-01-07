@@ -1517,7 +1517,30 @@ The Vert.x protocol module provides several protocol implementations for [Vert.x
 
 ### Vert.x 3 protocol
 
-Teh Vert.x 3 protocol module provides an event bus protocol implementation for [Vert.x 3](http://vertx.io)
+The Vert.x 3 protocol module provides an event bus protocol implementation for [Vert.x 3](http://vertx.io). To add the
+Vert.x 3 protocol to your Maven project, add the `copycat-vertx3` module to your `pom.xml`
+
+```
+<dependency>
+  <groupId>net.kuujo.copycat</groupId>
+  <artifactId>copycat-vertx3</artifactId>
+  <version>0.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+Then add the Vert.x 3 TCP protocol to your Copycat cluster configuration:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new VertxEventBusProtocol("localhost", 1234));
+```
+
+You can also pass a `Vertx` instance in to the protocol:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new VertxEventBusProtocol(vertx));
+```
 
 ## Architecture
 
@@ -1536,46 +1559,5 @@ Teh Vert.x 3 protocol module provides an event bus protocol implementation for [
 #### Log replication
 
 #### Failure detection
-
-## The Copycat dependency hierarchy
-The Copycat project is organized into a number of modules based on specific use cases.
-
-#### copycat-api
-The `copycat-api` module is a high-level project that aggregates all the separate Copycat modules.
-
-#### copycat-core
-The `copycat-core` module is the core of Copycat which provides the base Raft implementation, configuration,
-cluster management, messaging, logs, and protocol interfaces.
-
-#### event-log
-The `copycat-event-log` module is an event log implementation built on the Raft consensus protocol.
-The event log supports both small strongly consistent event logs and large eventually consistent event
-logs via a gossip protocol.
-
-#### state-log
-The `copycat-state-log` module is a strongly consistent, snapshottable log built on the Raft consensus protocol.
-
-#### state-machine
-The `copycat-state-machine` module provides a high-level state machine API on top of the `copycat-state-log` API.
-
-#### leader-election
-The `copycat-leader-election` module provides a simple Raft-based distributed leader election API.
-
-#### collections
-The `copycat-collections` module provides strongly- and eventually-consistent log-based distributed data
-structures including `AsyncMap`, `AsyncMultiMap`, `AsyncList`, `AsyncSet`, and `AsyncLock`.
-
-#### copycat-chronicle
-The `copycat-chronicle` module is a fast [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log
-implementation.
-
-#### netty
-The `copycat-netty` module provides a [Netty](http://netty.io) based protocol implementation.
-
-#### vertx
-The `copycat-vertx` module provides a [Vert.x 2](http://vertx.io) based protocol implementation.
-
-#### vertx3
-The `copycat-vertx3` module provides a [Vert.x 3](http://vertx.io) based protocol implementation.
 
 ### [User Manual](#user-manual)
