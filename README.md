@@ -1047,6 +1047,19 @@ copycat.open()
 
 In a partially academic effort, Copycat provides a variety of strongly consistent data structures built on top of its
 [state machine](#state-machines) framework.
+* [AsyncMap](#asyncmap)
+* [AsyncList](#asynclist)
+* [AsyncSet](#asyncset)
+* [AsyncMultiMap](#asyncmultimap)
+* [AsyncLock](#asynclock)
+
+Each collection provides options for configuring the consistency of read operations. To configure the consistency,
+use the `setConsistency` method or `withConsistency` fluent method on the respective data structure configuration:
+
+```java
+AsyncMapConfig config = new AsyncMapConfig()
+  .withConsistency(Consistency.STRONG);
+```
 
 ### AsyncMap
 
