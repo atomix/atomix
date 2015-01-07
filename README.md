@@ -43,7 +43,6 @@ taking place on Copycat**
 1. [Getting started](#getting-started)
    * [Setting up the cluster](#setting-up-the-cluster)
    * [Configuring the protocol](#configuring-the-protocol)
-1. [The Copycat API](#the-copycat-api)
    * [Creating a Copycat instance](#creating-a-copycat-instance)
    * [Accessing the Copycat cluster](#accessing-the-copycat-cluster)
 1. [Resources](#resources)
@@ -222,10 +221,6 @@ recommended that any Copycat cluster have *at least three active voting members*
 cluster to be available in order to accept writes. Since passive members don't participate in the Raft protocol, only
 active members contribute towards this membership count. So, for instance, a cluster of three active members can
 tolerate one failure, a cluster of five active members can tolerate two failures, and so on.
-
-## The Copycat API
-Copycat provides a high-level `Copycat` API that aggregates each of the Copycat [resource types](#resources) into a
-single fluent API.
 
 ### Creating a Copycat instance
 
