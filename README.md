@@ -1050,6 +1050,11 @@ In a partially academic effort, Copycat provides a variety of strongly consisten
 
 ### AsyncMap
 
+Copycat's map implementation uses a simple [state machine](#state-machines) to provide access to a consistent
+distributed map via state machine [proxies](#synchronous-proxies).
+
+To create a map via the `Copycat` API, use the `map` method:
+
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
@@ -1070,6 +1075,8 @@ Copycat.copycat("tcp://123.456.789.0", config).open()
   });
 ```
 
+To create a map directly, use the `AsyncMap.create` factory method:
+
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
@@ -1086,6 +1093,11 @@ AsyncMap.<String, String>create("tcp://123.456.789.0", cluster, config).open().t
 ```
 
 ### AsyncList
+
+Copycat's list implementation uses a simple [state machine](#state-machines) to provide access to a consistent
+distributed list via state machine [proxies](#synchronous-proxies).
+
+To create a list via the `Copycat` API, use the `list` method:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -1107,6 +1119,8 @@ Copycat.copycat("tcp://123.456.789.0", config).open()
   });
 ```
 
+To create a list directly, use the `AsyncList.create` factory method:
+
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
@@ -1123,6 +1137,11 @@ AsyncList.<String>create("tcp://123.456.789.0", cluster, config).open().thenAcce
 ```
 
 ### AsyncSet
+
+Copycat's set implementation uses a simple [state machine](#state-machines) to provide access to a consistent
+distributed set via state machine [proxies](#synchronous-proxies).
+
+To create a set via the `Copycat` API, use the `set` method:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -1144,6 +1163,8 @@ Copycat.copycat("tcp://123.456.789.0", config).open()
   });
 ```
 
+To create a set directly, use the `AsyncSet.create` factory method:
+
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
@@ -1160,6 +1181,11 @@ AsyncSet.<String>create("tcp://123.456.789.0", cluster, config).open().thenAccep
 ```
 
 ### AsyncMultiMap
+
+Copycat's multimap implementation uses a simple [state machine](#state-machines) to provide access to a consistent
+distributed multimap via state machine [proxies](#synchronous-proxies).
+
+To create a multimap via the `Copycat` API, use the `multiMap` method:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -1181,6 +1207,8 @@ Copycat.copycat("tcp://123.456.789.0", config).open()
   });
 ```
 
+To create a multimap directly, use the `AsyncMultiMap.create` factory method:
+
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
@@ -1197,6 +1225,11 @@ AsyncMultiMap.<String, String>create("tcp://123.456.789.0", cluster, config).ope
 ```
 
 ### AsyncLock
+
+Copycat's lock implementation uses a simple [state machine](#state-machines) to provide access to a consistent
+distributed lock via state machine [proxies](#synchronous-proxies).
+
+To create a lock via the `Copycat` API, use the `lock` method:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -1218,6 +1251,8 @@ Copycat.copycat("tcp://123.456.789.0", config).open()
     });
   });
 ```
+
+To create a lock directly, use the `AsyncLock.create` factory method:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
