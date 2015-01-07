@@ -128,7 +128,7 @@ using a simple gossip protocol.
 
 The following image demonstrates the relationship between active and passive members in the Copycat cluster:
 
-![Copycat cluster](http://s9.postimg.org/llp18s7fj/Copycat_Cluster_New_Page.png)
+![Copycat cluster](http://s8.postimg.org/5dm2xzbz9/Copycat_Cluster_New_Page.png)
 
 Active members participate in synchronous log replication via the Raft consensus protocol and ultimately gossip
 committed log entries to passive members, while passive members gossip among each other.
@@ -142,7 +142,7 @@ different partitions to different members in the cluster.
 
 The following image demonstrates how Copycat's resources can be partitioned across a cluster:
 
-![Copycat resources](http://s16.postimg.org/f1vavmjp1/Copycat_Resources_New_Page.png)
+![Copycat resources](http://s15.postimg.org/56oyaa7cr/Copycat_Resources_New_Page.png)
 
 Each resource in the cluster has its own related logical `Cluster` through which it communicates with other members
 of the resource's cluster. Just as each resource performs replication for its associated log, so too does each resource
