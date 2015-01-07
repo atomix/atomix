@@ -40,7 +40,6 @@ User Manual
 taking place on Copycat**
 
 1. [Introduction](#introduction)
-   * [Concepts](#concepts)
 1. [Getting started](#getting-started)
    * [Setting up the cluster](#setting-up-the-cluster)
    * [Configuring the protocol](#configuring-the-protocol)
