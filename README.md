@@ -24,14 +24,14 @@ to provide a set of high level APIs that solve a variety of distributed systems 
 Copycat also provides integration with asynchronous networking frameworks like [Netty](http://netty.io) and
 [Vert.x](http://vertx.io).
 
-**Please note that Copycat is still undergoing heavy development, and until a beta release,
-the API is subject to change.**
+**Copycat is still undergoing heavy development. The `master` branch is the current development branch and is
+only recommended for testing. For the original implementation of the Raft algorithm see the
+[0.4.0](https://github.com/kuujo/copycat/tree/0.4.0) branch.**
 
-Copycat *will* be published to Maven Central once it is feature complete and well tested. Follow
+A beta release of Copycat *will* be published to Maven Central once it is feature complete and well tested. Follow
 the project for updates!
 
-*Copycat requires Java 8. Though it has been requested, there are currently no imminent
-plans for supporting Java 7.*
+*Copycat requires Java 8*
 
 User Manual
 ===========
