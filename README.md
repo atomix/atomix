@@ -85,12 +85,13 @@ taking place on Copycat**
    * [AsyncMultiMap](#asyncmultimap)
    * [AsyncLock](#asynclock)
 1. [The Copycat cluster](#the-copycat-cluster)
-   * [Cluster architecture](#cluster-architecture)
-      * [Members](#members)
-      * [Listeners](#listeners)
-   * [Cluster configuration](#cluster-configuration)
+   * [Members](#members)
+      * [Active members](#active-members)
+      * [Passive members](#passive-members)
+      * [Member states](#member-states)
    * [Leader election](#leader-election)
-   * [Messaging](#messaging)
+   * [Direct messaging](#direct-messaging)
+   * [Broadcast messaging](#broadcast-messaging)
    * [Remote execution](#remote-execution)
 1. [Protocols](#protocols)
    * [The local protocol](#the-local-protocol)
@@ -1015,6 +1016,10 @@ significant challenges faced by many distributed systems is coordinating leaders
 simple Raft based leader election implementation allows users to elect a leader within a resource cluster and then
 use Copycat's messaging and remote execution features to react on that leader election.
 
+Note that the leader election resource type simply wraps the resource `Cluster` based `LeaderElection` API. In reality,
+all Copycat resources participate in elections, and resource elections can be accessed via each respective resource's
+`Cluster`.
+
 ### Creating a leader election
 
 To create a `LeaderElection` via the `Copycat` API, add the `LeaderElectionConfig` to your `CopycatConfig`.
@@ -1235,44 +1240,117 @@ AsyncLock.create("tcp://123.456.789.0", cluster, config).open().thenAccept(lock 
 The Copycat cluster is designed not only to support leader election and replication for Copycat and its resources, but
 it also serves as a general messaging utility for users as well.
 
-### Cluster architecture
-
-The Copycat cluster uses a variety of methods for managing resources, coordinating communication, and facilitating
-leader election and replication. At the core of the Copycat cluster is the `ClusterCoordinator`. The coordinator's
-responsibility is to provide a global view of the entire Copycat cluster. As with much of Copycat, the coordinator uses
-a Raft replicated log to perform leader election and maintain state for permanent [member](#members) nodes.
-Additionally, the coordinator uses a simple gossip protocol for [passive](#listeners) membership discovery and failure
-detection.
-
 ### Members
 
-Members are the core nodes in the Copycat cluster. When the Copycat cluster is first stated, the cluster configuration
-provided to Copycat lists a set of seed members. These seed members represent the set of full voting members in the
-Copycat cluster. Seed members are the only nodes which participate in the synchronous Raft replication process. All
-[other nodes](#listeners) perform replication asynchronously.
+The Copycat cluster consists of two different types of members, [active](#active) and [passive](#passive). Copycat's
+resource behavior differs on each member of the cluster according to the member type. Additionally, each Copycat
+instance maintains several versions of the cluster configuration - one global version and a cluster for each partition
+of each resource. This allows for a flexible replication model where different resources within the same Copycat
+cluster operate completely independently from each other in terms of leader election and log replication.
 
-### Listeners
+### Active members
 
-Listeners are passive nodes in the Copycat cluster. In contrast to permanent seed members, listeners are expected to
-be able to join and leave the cluster at will without negatively affecting the consistency of the core Raft algorithm.
+The core of the Copycat cluster consists of a set of *active members*. Active members are required, permanent, voting
+members of the Copycat cluster. Active members are defined for each Copycat instance prior to startup:
 
-### Cluster configuration
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
-The Copycat cluster is configured via the `ClusterConfig` API. It's important to note that the `ClusterConfig` only
-represents the configuration for the core of the Copycat cluster - the seed nodes - and not necessarily the entire
-cluster. While frequently three, five, or seven nodes may be added to the core cluster configuration, in reality the
-Copycat cluster may support many more members via its eventually consistent gossip protocol.
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addResourceConfig(...);
 
-Copycat differentiates between seed members and passive members simply based on the URI of the local node. IF the
-`ClusterCoordinator` is started with a local URI which is contained within the cluster configuration, the local node
-is considered a seed member of the cluster. Otherwise, the local node is considered a passive member which performs
-replication purely via the gossip protocol.
+Copycat copycat = Copycat.create("tcp://123.456.789.0:5000", config);
+```
+
+By creating a Copycat instance with a URI that is defined as an active member in the cluster configuration, Copycat
+knows that this is an active member of the cluster:
+
+```java
+assert copycat.cluster().member().type() == Member.Type.ACTIVE;
+```
+
+It is important that *all members of the Copycat cluster contain identical cluster configurations*. Note that this
+cluster configuration identifies *only* the core active members of the Copycat cluster, and each cluster configuration
+must specify at least one active cluster member. Members that are not represented in the cluster configuration are
+known as [passive members](#passive-members).
+
+Active members are distinguished from passive members in that they fully participate in log replication via the
+[Raft consensus protocol](https://raftconsensus.github.io/). This means that only active cluster members can become
+leader, and only active members can serve as synchronous replicas to cluster resources.
+
+Since each Copycat resource (and partition) contains its own separate `Cluster`, Copycat allows the resource's active
+membership to differ from the global Copycat cluster membership. This means that even though the Copycat cluster may
+consist of five nodes, a resource can perform synchronous replication on only three of those nodes. In that case, the
+resource's Raft algorithm would run on those three nodes, and an asynchronous gossip protocol would perform replication
+to the remainder of the resource's cluster.
+
+### Passive members
+
+Passive members are members of the Copycat cluster that do not participate in synchronous replication via the Raft
+consensus protocol. Instead, Copycat uses a simple gossip protocol to asynchronously replicate committed log entries
+to passive members of the cluster.
+
+Members are defined as nodes which are not represented in the Copycat cluster configuration. Thus, starting a `Copycat`
+instance or any resource with a local member URI that is not contained within the provided `ClusterConfig` indicates
+that the member is passive and should thus receive replicated logs passively:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol())
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
+
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(cluster)
+  .addResourceConfig(...);
+
+Copycat copycat = Copycat.create("tcp://123.456.789.4:5000", config);
+```
+
+By simply passing a URI that is not defined as an active member of the Copycat cluster, the Copycat instance becomes
+a passive member of the cluster:
+
+```java
+assert copycat.cluster().member().type() == Member.Type.PASSIVE;
+```
+
+See below for more information on
+[eventual consistency and Copycat's gossip protocol](#eventual-consistency-and-copycats-gossip-protocol).
+
+### Member states
+
+Throughout the lifecycle of a Copycat cluster, passive members can join and leave the cluster at will. In the case of
+passive members, Copycat does not distinguish between a member leaving the cluster and a member crashing. From the
+perspective of any given member in the cluster, each other member of the cluster can be in one of three states at any
+given time. These three states are defined by the `Member.State` enum:
+* `ALIVE` - The member is alive and available for messaging and replication
+* `SUSPICIOUS` - The member is unreachable and may have crashed or left the cluster voluntarily
+* `DEAD` - The member is no longer part of the cluster
+
+Just as cluster membership can differ across resources, so to can individual member states. Each member within a
+resource cluster is guaranteed to also be present in the global Copycat cluster, but members in the Copycat cluster
+may not be present in each resource cluster. This is because some passive members of the Copycat cluster may not have
+opened all resources. Only once a resource is opened on a passive member of the cluster will it join the resource's
+cluster and participate in asynchronous replication via the
+[gossip protocol](#eventual-consistency-and-copycats-gossip-protocol).
 
 ### Leader election
 
-Leader election in Copycat is performed on a per-resource basis, and thus each resource cluster maintains a separate
-leader election state. For the global `Copycat` cluster and each resource cluster, leader election can be monitored
-by registering event listeners on the cluster's `Election` instance.
+Leader election within the Copycat cluster is performed on a global and per-resource basis. Each Copycat cluster -
+including the global cluster and per-resource clusters - maintains separate leader election state. Copycat provides
+a simple API for listening for election events throughout the Copycat cluster.
+
+To register an election listener for the entire Copycat cluster, use the `Copycat` instance's `Cluster`:
+
+```java
+copycat.cluster().election().addListener(result -> {
+  System.out.println(result.winner() + " elected leader!");
+});
+```
+
+Additionally, each resource contains the same method for accessing the resource specific cluster's election:
 
 ```java
 copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
@@ -1282,7 +1360,16 @@ copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
 });
 ```
 
-### Messaging
+Note, however, that for partitioned resources ([state log](#state-logs) and [event log](#event-logs)), because logs
+are created and replicated on a per-partition basis, so are elections performed on a per-partition basis.
+
+```java
+eventLog.partition(1).cluster().election().addListener(result -> {
+  System.out.println(result.winner() + " elected leader!");
+});
+```
+
+### Direct messaging
 
 Copycat uses a simple messaging framework to communicate between nodes in order to perform coordination, leader election,
 and replication, and that framework is exposed to the user for each resource as well. Copycat's messaging framework
@@ -1313,6 +1400,32 @@ copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
   });
 });
 ```
+
+### Broadcast messaging
+
+Copycat also allows the exposed `Cluster` to be used to broadcast messages to all members of the cluster. Note that
+Copycat's broadcast functionality is *not* guaranteed, and Copycat makes no promises about either the order in which
+messages will be delivered or even whether they'll be delivered at all.
+
+Cluster-wide broadcast messages work similarly to direct messages in that they are topic based. To register a broadcast
+message listener call `addBroadcastListener` on any `Cluster` instance:
+
+```java
+copycat.cluster().addBroadcastListener(message -> {
+  System.out.println("Got message " + message);
+});
+```
+
+To broadcast a message to all members of a cluster use the `broadcast` method on the `Cluster` instance:
+
+```java
+copycat.cluster().broadcast("Hello world!");
+```
+
+Note that broadcasts apply *only to the membership for the cluster on which the message was broadcast*. In other words,
+broadcast messages will only be sent to `ALIVE` members of the cluster through which the message was sent. If you want
+to broadcast a message to *all* of the members of the Copycat cluster, use the global `Cluster` which can be retrieved
+through the `Copycat` instance.
 
 ### Remote execution
 

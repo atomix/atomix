@@ -68,7 +68,7 @@ public abstract class AbstractCluster implements ClusterManager {
     this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
 
     // Always create a local member based on the local member URI.
-    MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getReplicas().contains(coordinator.member().uri()) ? Member.Type.MEMBER : Member.Type.LISTENER, Member.State.ALIVE);
+    MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getReplicas().contains(coordinator.member().uri()) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.State.ALIVE);
     this.localMember = new CoordinatedLocalMember(id, localMemberInfo, coordinator.member(), serializer, Executors.newSingleThreadExecutor(threadFactory));
     membersInfo.put(localMemberInfo.uri(), localMemberInfo);
 
@@ -80,7 +80,7 @@ public abstract class AbstractCluster implements ClusterManager {
       if (!replica.equals(localMember.uri())) {
         MemberCoordinator memberCoordinator = coordinator.member(replica);
         if (memberCoordinator != null) {
-          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.MEMBER, Member.State.ALIVE), memberCoordinator, serializer, Executors.newSingleThreadExecutor(threadFactory)));
+          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.ACTIVE, Member.State.ALIVE), memberCoordinator, serializer, Executors.newSingleThreadExecutor(threadFactory)));
         } else {
           throw new ClusterException("Invalid replica " + replica);
         }
@@ -195,8 +195,8 @@ public abstract class AbstractCluster implements ClusterManager {
   private Collection<CoordinatedMember> getGossipMembers() {
     try (Stream<CoordinatedMember> membersStream = this.members.members.values().stream();
          Stream<CoordinatedMember> activeStream = membersStream.filter(member -> !member.uri().equals(localMember.uri())
-           && (localMember.type() == Member.Type.MEMBER && member.type() == Member.Type.LISTENER)
-           || (localMember.type() == Member.Type.LISTENER && member.type() == Member.Type.MEMBER)
+           && (localMember.type() == Member.Type.ACTIVE && member.type() == Member.Type.PASSIVE)
+           || (localMember.type() == Member.Type.PASSIVE && member.type() == Member.Type.ACTIVE)
            && (member.state() == Member.State.SUSPICIOUS || member.state() == Member.State.ALIVE))) {
 
       List<CoordinatedMember> activeMembers = activeStream.collect(Collectors.toList());

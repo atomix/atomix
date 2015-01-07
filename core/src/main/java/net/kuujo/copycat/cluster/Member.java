@@ -33,12 +33,12 @@ public interface Member {
     /**
      * Indicates that the member is a passive, non-voting member of the cluster.
      */
-    LISTENER,
+    PASSIVE,
 
     /**
-     * Indicates that the member is a full voting member of the cluster.
+     * Indicates that the member is an active voting member of the cluster.
      */
-    MEMBER
+    ACTIVE
 
   }
 

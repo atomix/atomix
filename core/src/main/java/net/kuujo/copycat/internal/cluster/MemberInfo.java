@@ -120,7 +120,7 @@ public class MemberInfo implements Serializable {
    * @return The member info.
    */
   public MemberInfo succeed() {
-    if (type == Member.Type.LISTENER && state != Member.State.ALIVE) {
+    if (type == Member.Type.PASSIVE && state != Member.State.ALIVE) {
       failures.clear();
       state = Member.State.ALIVE;
       changed = System.currentTimeMillis();
@@ -135,7 +135,7 @@ public class MemberInfo implements Serializable {
    * @return The member info.
    */
   public MemberInfo fail(String uri) {
-    if (type == Member.Type.LISTENER) {
+    if (type == Member.Type.PASSIVE) {
       failures.add(uri);
       if (state == Member.State.ALIVE) {
         state = Member.State.SUSPICIOUS;
@@ -160,7 +160,7 @@ public class MemberInfo implements Serializable {
       this.version = info.version;
 
       // Only passive member types can experience state changes.
-      if (this.type == Member.Type.LISTENER) {
+      if (this.type == Member.Type.PASSIVE) {
         // If the member is marked as alive then clear failures.
         if (info.state == Member.State.ALIVE) {
           this.failures.clear();
