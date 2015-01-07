@@ -39,8 +39,9 @@ User Manual
 **Note: Some of this documentation may be inaccurate due to the rapid development currently
 taking place on Copycat**
 
+1. [Introduction](#introduction)
+   * [Concepts](#concepts)
 1. [Getting started](#getting-started)
-   * [Adding Copycat as a Maven dependency](#adding-copycat-as-a-maven-dependency)
    * [Setting up the cluster](#setting-up-the-cluster)
    * [Configuring the protocol](#configuring-the-protocol)
 1. [The Copycat API](#the-copycat-api)
@@ -111,15 +112,50 @@ taking place on Copycat**
       * [Failure detection](#failure-detection)
 1. [The Copycat dependency hierarchy](#the-copycat-dependency-hierarchy)
 
+## Introduction
+
+Copycat is a distributed coordination framework built on the
+[Raft consensus protocol](https://raftconsensus.github.io/). Copycat facilitates numerous types of strongly consistent
+distributed data structures - referred to as [resources](#resources) - based on a replicated log. Each Copycat cluster
+can support multiple resources, and each resource within a cluster runs a separate instance of the Raft consensus
+algorithm to perform leader election and log replication.
+
+The Copycat cluster consists of a core set of [active members](#active-members) which participate in the Raft leader
+election and replication protocol and perform all synchronous replication. Additionally, the cluster may contain
+a set of additional [passive members](#passive-members) which can be added and removed from the cluster dynamically.
+While active members participate in replication of logs via Raft, passive members perform replication asynchronously
+using a simple gossip protocol.
+
+The following image demonstrates the relationship between active and passive members in the Copycat cluster:
+
+![Copycat cluster](http://s9.postimg.org/llp18s7fj/Copycat_Cluster_New_Page.png)
+
+Active members participate in synchronous log replication via the Raft consensus protocol and ultimately gossip
+committed log entries to passive members, while passive members gossip among each other.
+
+For more information on Copycat's leader election and replication implementation see the [architecture](#architecture)
+section.
+
+In addition to supporting multiple resources within the same cluster, Copycat supports different cluster configurations
+on a per-resource basis. This allows Copycat's resources to be optimized be partitioning resources and assigning
+different partitions to different members in the cluster.
+
+The following image demonstrates how Copycat's resources can be partitioned across a cluster:
+
+![Copycat resources](http://s16.postimg.org/f1vavmjp1/Copycat_Resources_New_Page.png)
+
+Each resource in the cluster has its own related logical `Cluster` through which it communicates with other members
+of the resource's cluster. Just as each resource performs replication for its associated log, so too does each resource
+cluster perform leader elections independently of other resources in the cluster. Additionally, Copycat's global
+and resource clusters can be used to send arbitrary messages between members of the cluster or execute tasks on
+members remotely.
+
 ## Getting started
 
-### Adding Copycat as a Maven dependency
-While Copycat provides many high level features for distributed coordination, the Copycat code base and architecture
-is designed to allow each of the individual pieces of Copycat to be used independently of the others. However,
-each Copycat component does have a common dependency on `copycat-core`.
+The Copycat project is structured as several Maven submodules.
 
-Additionally, Copycat provides a single high-level `copycat-api` module which aggregates all the features provided
-by Copycat. For first time users it is recommended that the `copycat-api` module be used.
+The primary module for Copycat is the `copycat-api` module. The Copycat API module aggregates all of the resource
+modules into a single API, and allows multiple distributed resources to be created within a single Copycat instance.
 
 ```
 <dependency>
@@ -128,6 +164,17 @@ by Copycat. For first time users it is recommended that the `copycat-api` module
   <version>0.5.0-SNAPSHOT</version>
 </dependency>
 ```
+
+Additionally, the following resource modules are provided:
+* `copycat-event-log` - A partitioned replicated log designed for recording event histories
+* `copycat-state-log` - A partitioned replicated log designed for strongly consistent recording of state machine
+  command histories
+* `copycat-state-machine` - A replicated state machine framework built on top of `copycat-state-log` using proxies
+* `copycat-leader-election` - A simple leader election framework built on top of `copycat-state-log`
+* `copycat-collections` - A set of strongly consistent distributed collection APIs built on top of `copycat-state-log`
+
+Each of the Copycat resource modules can be used independently of one another and independently of the high level
+`copycat-api`.
 
 ### Configuring the protocol
 
@@ -140,7 +187,7 @@ ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol());
 ```
 
-Copycat core protocol implementations include [Netty](#netty-protocol), [Vert.x](#vertx), and [#Vert.x 3](vertx-3).
+Copycat core protocol implementations include [Netty](#netty-protocol), [Vert.x](#vertx), and [Vert.x 3](vertx-3).
 Each protocol implementation is separated into an independent module which can be added as a Maven dependency.
 
 ```
@@ -157,9 +204,10 @@ the `LocalProtocol` for testing, you should use the same `LocalProtocol` instanc
 ### Setting up the cluster
 
 In order to connect your `Copycat` instance to the Copycat cluster, you must add a set of protocol-specific URIs to
-the `ClusterConfig`. The cluster configuration specifies how to find the *seed* nodes - the core voting members of the
-Copycat cluster - by defining a simple list of seed node URIs. For more about seed nodes see the section on
-[cluster members](#members).
+the `ClusterConfig`. The cluster configuration specifies how to find the *active* members - the core voting members of
+the Copycat cluster - by defining a simple list of active members URIs. Passive members are not defined in the cluster
+configuration. Rather, they are added dynamically to the cluster via a gossip protocol. For more about active members
+see the section on [cluster members](#active-members).
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -167,11 +215,14 @@ ClusterConfig cluster = new ClusterConfig()
   .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 ```
 
-Note that member URIs must be unique and must agree with the configured protocol instance. Member URIs will be checked
-at configuration time for validity.
+Note that member URIs must be unique and all members of the cluster must agree with the configured protocol. Member URIs
+will be checked at configuration time for validity.
 
 Because of the design of the [Raft algorithm](#strong-consistency-and-copycats-raft-consensus-protocol), it is strongly
-recommended that any Copycat cluster have *at least three voting members*.
+recommended that any Copycat cluster have *at least three active voting members*. Raft requires a majority of the
+cluster to be available in order to accept writes. Since passive members don't participate in the Raft protocol, only
+active members contribute towards this membership count. So, for instance, a cluster of three active members can
+tolerate one failure, a cluster of five active members can tolerate two failures, and so on.
 
 ## The Copycat API
 Copycat provides a high-level `Copycat` API that aggregates each of the Copycat [resource types](#resources) into a
@@ -186,7 +237,7 @@ To create a `Copycat` instance, call one of the overloaded `Copycat.create()` me
 Note that the first argument to any `Copycat.create()` method is a `uri`. This is the protocol specific URI of the
 *local* member, and it may or may not be a member defined in the provided `ClusterConfig`. This is because Copycat
 actually supports eventually consistent replication for clusters much larger than the core Raft cluster - the cluster
-of *seed* members defined in the cluster configuration.
+of *active* members defined in the cluster configuration.
 
 ```java
 Copycat copycat = Copycat.create("tcp://123.456.789.3", cluster);
@@ -264,7 +315,7 @@ across the entire cluster, not just for the specific resource type. So, if you a
 resource configuration with a resource configuration of a different type, a `ConfigurationException` will occur.
 
 Each resource can optionally define a set of replicas separate from the global cluster configuration. The set of
-replicas in the resource configuration *must be contained within the set of seed nodes defined in the cluster
+replicas in the resource configuration *must be contained within the set of active members defined in the cluster
 configuration*. The resource's replica set defines the members that should participate in leader election and
 synchronous replication for the resource. Therefore, in a five node Copycat cluster, if a resource is configured with
 only three replicas, writes will only need to be persisted on two nodes in order to be successful.
@@ -1609,10 +1660,10 @@ Logs are the center of the universe in the Copycat world. The global Copycat clu
 within it are all ultimately built on a consistent, Raft replicated log. Because logs are such a central component to
 Copycat, much development effort has gone into the design and implementation of each of Copycat's logs.
 
-Copycat's logs are designed with three things in mind:
+Copycat's logs are designed with three features in mind:
 * Fast writes
 * Fast reads
-* Compaction
+* Fast compaction
 
 In order to support these three vital functions, Copycat's logs are broken into segments. Each log may consist of
 several segments of a configurable size, and each segment typically has a related index. The index is a simple list
@@ -1627,12 +1678,12 @@ Copycat uses a unique, extensible implementation of the
 [Raft distributed consensus algorithm](https://raftconsensus.github.io/) to provide strong consistency guarantees for
 resource management, leader elections, and the log replication which underlies all of Copycat's resources.
 
-Raft is the simpler implementation of only a few known algorithms for achieving consensus in a distributed system
-(the other more common implementation is [Paxos](http://en.wikipedia.org/wiki/Paxos_%28computer_science%29).
+Raft is the simpler implementation of only a few provable algorithms for achieving consensus in a distributed system
+(the other more common implementation is [Paxos](http://en.wikipedia.org/wiki/Paxos_%28computer_science%29)).
 Designed for understandability, Raft uses a mixture of RPCs and timeouts to orchestrate leader election and replication
-of a distributed log. In terms of the [CAP theorem](http://en.wikipedia.org/wiki/CAP_theorem), Raft and by extension
-Copycat is a CP system, meaning in the face of a partition, Raft and Copycat give up availability in favor of
-consistency. This makes Raft a perfect fit for storing small amounts of mission critical state.
+of a distributed log. In terms of the [CAP theorem](http://en.wikipedia.org/wiki/CAP_theorem), Raft - and by
+extension - Copycat is a CP system, meaning in the face of a partition, Raft and Copycat favor consistency over
+availability. This makes Raft a perfect fit for storing small amounts of mission critical state.
 
 ### Leader election
 
@@ -1659,8 +1710,8 @@ successful votes from a majority of the cluster (including itself) it transition
 requests and replicating the resource log.
 
 Note that since Raft requires a leader to perform writes, during the leader election period the resource will be
-unavailable. However, the period of time between a node crashing and a new leader being elected is typically very small
-- on the order of milliseconds or seconds.
+unavailable. However, the period of time between a node crashing and a new leader being elected is typically very
+small - on the order of milliseconds or seconds.
 
 The consistency checks present in the Raft consensus algorithm ensure that the member with the most up-to-date log in
 the cluster will be elected leader. In other words, through various restrictions on how logs are replicated and how
@@ -1698,11 +1749,11 @@ commands in the same order.
 While Raft dictates that writes to the replicated log go through the resource's leader, reads allow for slightly more
 flexibility depending on the specific use case. Copycat supports several read consistency modes.
 
-In order to achieve strong consistency in any Raft cluster, though, reads must go through the cluster leader. This is
-because, as with any distributed system, there is always some period of time before full consistency can be achieved.
-Once a leader commits a write to the replicated log and applies the entry to its state machine, it still needs to notify
-followers that the entry has been committed. During that period of time, querying the leader's state will result in
-fully consistent state, but reading state from followers will result in stale output.
+In order to achieve strong consistency in any Raft cluster, though, queries - read operations - must go through the
+cluster leader. This is because, as with any distributed system, there is always some period of time before full
+consistency can be achieved. Once a leader commits a write to the replicated log and applies the entry to its state
+machine, it still needs to notify followers that the entry has been committed. During that period of time, querying the
+leader's state will result in fully consistent state, but reading state from followers will result in stale output.
 
 Without additional measures, though, reading directly from the leader still does not guarantee consistency. Information
 only travels at the speed of light, after all. What if the leader being queried is no longer the leader? Raft and
