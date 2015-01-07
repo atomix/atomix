@@ -129,6 +129,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    *
    * @return The resource factory.
    */
+  @SuppressWarnings("rawtypes")
   public Function<ResourceContext, Resource> getResourceFactory() {
     return get(RESOURCE_FACTORY);
   }

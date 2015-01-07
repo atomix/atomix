@@ -24,10 +24,10 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxExecutionContext implements Executor {
+public class VertxEventLoopExecutor implements Executor {
   private final Vertx vertx;
 
-  public VertxExecutionContext(Vertx vertx) {
+  public VertxEventLoopExecutor(Vertx vertx) {
     this.vertx = vertx;
   }
 
