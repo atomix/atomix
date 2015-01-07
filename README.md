@@ -1374,13 +1374,13 @@ known as [passive members](#passive-members).
 
 Active members are distinguished from passive members in that they fully participate in log replication via the
 [Raft consensus protocol](https://raftconsensus.github.io/). This means that only active cluster members can become
-leader, and only active members can serve as synchronous replicas to cluster resources.
+leaders, and only active members can serve as synchronous replicas to cluster resources.
 
 Since each Copycat resource (and partition) contains its own separate `Cluster`, Copycat allows the resource's active
 membership to differ from the global Copycat cluster membership. This means that even though the Copycat cluster may
-consist of five nodes, a resource can perform synchronous replication on only three of those nodes. In that case, the
-resource's Raft algorithm would run on those three nodes, and an asynchronous gossip protocol would perform replication
-to the remainder of the resource's cluster.
+consist of five total nodes with three active member nodes, a resource can perform synchronous replication on only
+three of those nodes. In that case, the resource's Raft algorithm would run on those three nodes, and an asynchronous
+gossip protocol would perform replication to the remainder of the resource's cluster.
 
 ### Passive members
 
@@ -1424,12 +1424,12 @@ given time. These three states are defined by the `Member.State` enum:
 * `SUSPICIOUS` - The member is unreachable and may have crashed or left the cluster voluntarily
 * `DEAD` - The member is no longer part of the cluster
 
-Just as cluster membership can differ across resources, so to can individual member states. Each member within a
+Just as cluster membership can differ across resources, so too can individual member states. Each member within a
 resource cluster is guaranteed to also be present in the global Copycat cluster, but members in the Copycat cluster
 may not be present in each resource cluster. This is because some passive members of the Copycat cluster may not have
-opened all resources. Only once a resource is opened on a passive member of the cluster will it join the resource's
-cluster and participate in asynchronous replication via the
-[gossip protocol](#eventual-consistency-and-copycats-gossip-protocol).
+opened all resources, and some resources may simply not be assigned to some active members of the cluster. Only once a
+resource is opened on a passive member of the cluster will it join the resource's cluster and participate in
+asynchronous replication via the [gossip protocol](#eventual-consistency-and-copycats-gossip-protocol).
 
 ### Leader election
 
@@ -1588,7 +1588,7 @@ The Vert.x protocol module provides several protocol implementations for [Vert.x
 * `VertxTcpProtocol`
 * `VertxHttpProtocol`
 
-The Vert.x 2 protocol module provides an event bus protocol implementation for [Vert.x 3](http://vertx.io). To add the
+The Vert.x 2 protocol module provides an event bus protocol implementation for [Vert.x](http://vertx.io). To add the
 Vert.x 2 protocol to your Maven project, add the `copycat-vertx` module to your `pom.xml`:
 
 ```
@@ -1642,7 +1642,7 @@ ClusterConfig cluster = new ClusterConfig()
 
 ## Architecture
 
-Much of the documentation proceeding documentation has revolved around the features of Copycat and how to use them.
+Much of the preceding documentation has revolved around the features of Copycat and how to use them.
 However, many users and potential contributors may want to get a better understanding of how Copycat works. This section
 will detail precisely how Copycat performs tasks like leader election and log replication via the
 [Raft consensus protocol](https://raftconsensus.github.io/) and dynamic membership and failure detection via
@@ -1845,7 +1845,7 @@ gossip replication protocol.
 
 ### Failure detection
 
-Just as Copycat uses gossip for membership, so to does the global cluster and resource clusters use gossip for failure
+Just as Copycat uses gossip for membership, so too does the global cluster and resource clusters use gossip for failure
 detection. The failure detection protocol is designed to reduce the risk of that false failures due to network
 partitions. This is done by piggybacking failure information on to the cluster membership vector shared during gossip.
 When an attempt to gossip with another member of the cluster fails for the first time, the *state* of that member in
