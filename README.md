@@ -1496,17 +1496,43 @@ copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
 ## Protocols
 
 Copycat's communication system provides a pluggable framework that allows the underlying message transport to be
-configured based on the environment in which Copycat is deployed. Copycat provides a number of existing protocol
-implementations for various asynchronous frameworks.
+configured based on the environment in which Copycat is deployed. Copycat uses the cluster protocol to perform all
+messaging around the cluster, including for leader elections, replication, and other communication. *It is essential
+that all members of the cluster configure the same protocol*, otherwise communication will fail and the cluster will
+be deadlocked. Copycat provides a number of existing protocol implementations for various asynchronous frameworks.
 
 ### The local protocol
 
 The local protocol is a special protocol that is implemented purely for testing purposes. It supports passing messages
 across threads via a `ConcurrentHashMap` member registry.
 
+The local protocol is part of `copycat-core` and thus can be simply added to any `ClusterConfig` within the need for
+dependencies:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new LocalProtocol());
+```
+
 ### Netty protocol
 
-The Netty protocol is a fast [Netty](http://netty.io) based TCP protocol.
+The Netty protocol is a fast [Netty](http://netty.io) based TCP protocol. To add the Netty protocol to your Maven
+project, add the `copycat-netty` module to your `pom.xml`:
+
+```
+<dependency>
+  <groupId>net.kuujo.copycat</groupId>
+  <artifactId>copycat-netty</artifactId>
+  <version>0.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+Then add the netty TCP protocol to your Copycat cluster configuration:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new NettyTcpProtocol());
+```
 
 ### Vert.x protocol
 
@@ -1515,10 +1541,35 @@ The Vert.x protocol module provides several protocol implementations for [Vert.x
 * `VertxTcpProtocol`
 * `VertxHttpProtocol`
 
+The Vert.x 2 protocol module provides an event bus protocol implementation for [Vert.x 3](http://vertx.io). To add the
+Vert.x 2 protocol to your Maven project, add the `copycat-vertx` module to your `pom.xml`:
+
+```
+<dependency>
+  <groupId>net.kuujo.copycat</groupId>
+  <artifactId>copycat-vertx</artifactId>
+  <version>0.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+Then add the Vert.x 2 event bus protocol to your Copycat cluster configuration:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new VertxEventBusProtocol("localhost", 1234));
+```
+
+You can also pass a `Vertx` instance in to the protocol:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withProtocol(new VertxEventBusProtocol(vertx));
+```
+
 ### Vert.x 3 protocol
 
 The Vert.x 3 protocol module provides an event bus protocol implementation for [Vert.x 3](http://vertx.io). To add the
-Vert.x 3 protocol to your Maven project, add the `copycat-vertx3` module to your `pom.xml`
+Vert.x 3 protocol to your Maven project, add the `copycat-vertx3` module to your `pom.xml`:
 
 ```
 <dependency>
@@ -1528,7 +1579,7 @@ Vert.x 3 protocol to your Maven project, add the `copycat-vertx3` module to your
 </dependency>
 ```
 
-Then add the Vert.x 3 TCP protocol to your Copycat cluster configuration:
+Then add the Vert.x 3 event bus protocol to your Copycat cluster configuration:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
