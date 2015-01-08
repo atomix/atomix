@@ -1,12 +1,13 @@
 Copycat
 =======
 
-## [User Manual](#user-manual)
+# I Totally <3 Logs Too!
 
 Copycat is an extensible log-based distributed coordination framework for Java 8 built on the
 [Raft consensus protocol](https://raftconsensus.github.io/).
 
-### Overview
+### [User Manual](#user-manual)
+### [Architecture](#architecture)
 
 Copycat is a CP (consistent/partition-tolerant) oriented exercise in distributed coordination built on a consistent
 replicated log. The core of Copycat is an extensible asynchronous framework that uses a mixture of
@@ -25,8 +26,8 @@ Copycat also provides integration with asynchronous networking frameworks like [
 [Vert.x](http://vertx.io).
 
 **Copycat is still undergoing heavy development. The `master` branch is the current development branch and is
-only recommended for testing. For the original implementation of the Raft algorithm see the
-[0.4.0](https://github.com/kuujo/copycat/tree/0.4.0) branch.**
+largely untested and thus not recommended for production.** We need contributions! We accept failing tests and
+[Butterfinger&reg;](http://www.butterfinger.com/).
 
 A beta release of Copycat *will* be published to Maven Central once it is feature complete and well tested. Follow
 the project for updates!
