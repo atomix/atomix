@@ -1,7 +1,7 @@
 Copycat
 =======
 
-# I Totally <3 Logs Too!
+## I <3 Logs More!
 
 Copycat is an extensible log-based distributed coordination framework for Java 8 built on the
 [Raft consensus protocol](https://raftconsensus.github.io/).
