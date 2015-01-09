@@ -41,6 +41,7 @@ taking place on Copycat**
 
 1. [Introduction](#introduction)
 1. [Getting started](#getting-started)
+   * [Thread safety](#thread-safety)
    * [Setting up the cluster](#setting-up-the-cluster)
    * [Configuring the protocol](#configuring-the-protocol)
    * [Creating a Copycat instance](#creating-a-copycat-instance)
@@ -102,7 +103,7 @@ taking place on Copycat**
 1. [Architecture](#architecture)
    * [Logs](#logs)
    * [Strong consistency and Copycat's Raft consensus protocol](#strong-consistency-and-copycats-raft-consensus-protocol)
-      * [Leader election](#leader-election-2)
+      * [Leader election](#leader-election-1)
       * [Write replication](#command-replication)
       * [Read consistency](#query-consistency)
       * [Log compaction](#log-compaction)
@@ -110,21 +111,21 @@ taking place on Copycat**
       * [Passive membership](#passive-membership)
       * [Log replication](#log-replication)
       * [Failure detection](#failure-detection)
-1. [The Copycat dependency hierarchy](#the-copycat-dependency-hierarchy)
 
 ## Introduction
 
 Copycat is a distributed coordination framework built on the
 [Raft consensus protocol](https://raftconsensus.github.io/). Copycat facilitates numerous types of strongly consistent
-distributed data structures - referred to as [resources](#resources) - based on a replicated log. Each Copycat cluster
-can support multiple resources, and each resource within a cluster runs a separate instance of the Raft consensus
+distributed data structures - referred to as [resources](#resources) - based on a replicated log. Each Copycat
+cluster can support multiple resources, and each resource within a cluster runs a separate instance of the consensus
 algorithm to perform leader election and log replication.
 
-The Copycat cluster consists of a core set of [active members](#active-members) which participate in the Raft leader
-election and replication protocol and perform all synchronous replication. Additionally, the cluster may contain
-a set of additional [passive members](#passive-members) which can be added and removed from the cluster dynamically.
-While active members participate in replication of logs via Raft, passive members perform replication asynchronously
-using a simple gossip protocol.
+The Copycat [cluster](#the-copycat-cluster) consists of a core set of [active members](#active-members) which
+participate in the [Raft leader election and replication protocol](#strong-consistency-and-the-raft-consensus-algorithm)
+and perform all synchronous replication. Additionally, the cluster may contain a set of additional
+[passive members](#passive-members) which can be added and removed from the cluster dynamically. While active members
+participate in replication of logs via Raft, passive members
+[perform replication asynchronously using a simple gossip protocol](#eventual-consistency-and-copycats-gossip-protocol).
 
 The following image demonstrates the relationship between active and passive members in the Copycat cluster:
 
@@ -133,22 +134,22 @@ The following image demonstrates the relationship between active and passive mem
 Active members participate in synchronous log replication via the Raft consensus protocol and ultimately gossip
 committed log entries to passive members, while passive members gossip among each other.
 
-For more information on Copycat's leader election and replication implementation see the [architecture](#architecture)
-section.
+For more information on Copycat's leader election and replication implementation see the in depth explanation of
+[Copycat's architecture](#architecture).
 
 In addition to supporting multiple resources within the same cluster, Copycat supports different cluster configurations
 on a per-resource basis. This allows Copycat's resources to be optimized by partitioning resources and assigning
 different partitions to different members in the cluster.
 
-The following image demonstrates how Copycat's resources can be partitioned across a cluster:
+The following image depicts the partitioning of resources across the Copycat cluster:
 
 ![Copycat resources](http://s15.postimg.org/56oyaa7cr/Copycat_Resources_New_Page.png)
 
-Each resource in the cluster has its own related logical `Cluster` through which it communicates with other members
-of the resource's cluster. Just as each resource performs replication for its associated log, so too does each resource
-cluster perform leader elections independently of other resources in the cluster. Additionally, Copycat's global
-and resource clusters can be used to send arbitrary messages between members of the cluster or execute tasks on
-members remotely.
+Each [resource](#resources) in the cluster has its own related logical `Cluster` through which it communicates with
+other members of the [resource's cluster](#resource-clusters). Just as each resource performs replication for its
+associated [log](#logs), so too does each resource cluster perform leader elections independently of other resources
+in the cluster. Additionally, Copycat's global and resource clusters can be used to send arbitrary messages between
+members of the cluster or execute tasks on members remotely.
 
 ## Getting started
 
@@ -175,6 +176,11 @@ Additionally, the following resource modules are provided:
 
 Each of the Copycat resource modules can be used independently of one another and independently of the high level
 `copycat-api`.
+
+#### Thread safety
+
+All of Copycat's user-facing APIs are thread safe. Additionally, each of Copycat's [resources](#resources) and their
+related [clusters](#resource-clusters) are executed on a single thread-per-resource.
 
 ### Configuring the protocol
 
@@ -203,11 +209,11 @@ the `LocalProtocol` for testing, you should use the same `LocalProtocol` instanc
 
 ### Setting up the cluster
 
-In order to connect your `Copycat` instance to the Copycat cluster, you must add a set of protocol-specific URIs to
-the `ClusterConfig`. The cluster configuration specifies how to find the *active* members - the core voting members of
-the Copycat cluster - by defining a simple list of active members URIs. Passive members are not defined in the cluster
-configuration. Rather, they are added dynamically to the cluster via a gossip protocol. For more about active members
-see the section on [cluster members](#active-members).
+In order to connect your `Copycat` instance to [the Copycat cluster](#the-copycat-cluster), you must add a set of
+protocol-specific URIs to the `ClusterConfig`. The cluster configuration specifies how to find the *active* members -
+the core voting members of the Copycat cluster - by defining a simple list of active members URIs. Passive members are
+not defined in the cluster configuration. Rather, they are added dynamically to the cluster via a gossip protocol.
+For more about active members see the section on [cluster members](#active-members).
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -240,9 +246,9 @@ Copycat copycat = Copycat.create("tcp://123.456.789.3", cluster);
 ```
 
 When a `Copycat` instance is constructed, a central replicated state machine is created for the entire Copycat cluster.
-This state machine is responsible for maintaining the state of all cluster resources. In other words, it acts as a
-central registry for other log based structures created within the cluster. This allows Copycat to coordinate the
-creation, usage, and deletion of multiple log-based resources within the same cluster.
+This state machine is responsible for maintaining the state of all [cluster resources](#resources). In other words, it
+acts as a central registry for other log based structures created within the cluster. This allows Copycat to
+coordinate the creation, usage, and deletion of multiple log-based resources within the same cluster.
 
 Once the `Copycat` instance has been created, you must open the `Copycat` instance by calling the `open` method.
 
@@ -269,9 +275,9 @@ on [the Copycat cluster](#the-copycat-cluster).
 ## Resources
 
 Each Copycat instance can support any number of various named resources. *Resource* is an abstract term for all of the
-high level log-based data types provided by Copycat. Ultimately, each resource - whether is be an event log, state log,
-state machine, or collection - is backed by a Raft replicated log that is managed by the Copycat cluster coordinator
-internally.
+high level log-based data types provided by Copycat. Ultimately, each resource - whether is be an
+[event log](#event-logs), [state log](#state-logs), [state machine](#state-machines), or [collection](#collections) -
+is backed by a Raft replicated [log](#logs) that is managed by the Copycat cluster coordinator internally.
 
 ### Resource lifecycle
 
@@ -355,10 +361,16 @@ CopycatConfig config = new CopycatConfig()
 
 #### Log configuration
 
-Each replica of each resource in the Copycat cluster writes to a separate, configurable log. Many resource configuration
-options involve configuring the log itself. Users can configure the performance and reliability of all Copycat logs by
-tuning the underlying file log configuration options, for instance, by configuring the frequency with which Copycat
-flushes logs to disk.
+Each replica of each resource in the Copycat cluster writes to a separate, configurable log. Logs are defined in the
+resource configuration via the `setLog` and `withLog` methods. Copycat provides several different log implementations
+for different use cases:
+* `FileLog` - A simple `FileChannel` based log. This is the default log for most Copycat data structures.
+* `BufferedLog` - An in-memory log implementation built on `TreeMap`.
+* `ChronicleLog` - A very efficient [Chronicle Queue](https://github.com/OpenHFT/Chronicle-Queue) based log.
+
+Many resource configuration options involve configuring the log itself. Users can configure the performance and
+reliability of all Copycat logs by tuning the underlying file log configuration options, for instance, by configuring
+the frequency with which Copycat flushes logs to disk.
 
 ```java
 EventLogConfig config = new EventLogConfig()
@@ -626,6 +638,32 @@ StateMachineConfig config = new StateMachineConfig()
 
 ### Designing state machine states
 
+State machines consist of a series of states and transitions between them. Backed by a state log, Copycat guarantees
+that commands (state method calls) will be applied to the state machine in the same order on all nodes of a Copycat
+cluster. Given the same commands in the same order, state machines should always arrive at the same state with the
+same output (return value). That means all commands (methods) of a state machine state *must be deterministic*; commands
+cannot depend on the state of shared external systems such as a database or file system.
+
+State machines are defined by simply defining an interface. While a state machine can consist of many states (state
+interface implementations), all states must implement the same interface. This allows Copycat to expose a consistent
+interface regardless of the current state of the state machine.
+
+State machine states do not have to extend any particular interface. Simply define the interface itself:
+
+```java
+public interface LockState {
+
+  void lock();
+
+  void unlock();
+
+}
+```
+
+When the state machine is created, the state interface must be provided to the state machine via the
+`StateMachineConfig`. Copycat uses the state interface to expose [commands](#state-machine-commands) and
+[queries](#state-machine-queries) to the state machine client.
+
 ### State machine commands
 
 State machine commands are annotated methods on the state machine state interface. Annotating a method with the
@@ -634,7 +672,7 @@ be persisted to the log and replicated. It is vital that *all* methods which alt
 identified by the `@Command` annotation. For this reason, all state machine methods are commands by default.
 
 ```java
-public interface AsyncMap<K, V> {
+public interface MapState<K, V> {
 
   @Command
   V put(K key);
@@ -650,7 +688,7 @@ annotation.* If methods which alter the state machine state are not annotated as
 *not* be logged and replicated, and thus state will be inconsistent across replicas.
 
 ```java
-public interface AsyncMap<K, V> {
+public interface MapState<K, V> {
 
   @Query
   V get(K key);
@@ -827,15 +865,24 @@ CopycatConfig config = new CopycatConfig()
 Copycat copycat = Copycat.create("tcp://123.456.789.0:5000", config);
 
 copycat.open().thenRun(() -> {
-  copycat.<String, String>eventLog("event-log").open().thenAccept(eventLog -> {
+  copycat.<String>eventLog("event-log").open().thenAccept(eventLog -> {
     eventLog.commit("Hello world!");
   });
 });
 ```
 
 Alternatively, an event log can be created independent of the high-level `Copycat` API by simply adding the
-`copycat-event-log` module as a dependency directly and instantiating a new event log via the `EventLog.create`
-static interface method:
+`copycat-event-log` module as a dependency directly:
+
+```
+<dependency>
+  <groupId>net.kuujo.copycat</groupId>
+  <artifactId>copycat-event-log</artifactId>
+  <version>0.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+The `EventLog` interface exposes a static method for creating a standalone event log:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -845,10 +892,11 @@ ClusterConfig cluster = new ClusterConfig()
 EventLogConfig config = new EventLogConfig()
   .withLog(new FileLog());
 
-EventLog<String, String> eventLog = EventLog.create("tcp:/123.456.789.0", cluster, config);
+EventLog<String> eventLog = EventLog.create("tcp:/123.456.789.0", cluster, config);
 ```
 
-The generic type - `T` - is the log entry type. Copycat logs support arbitrary entry types.
+When a standalone event log is created via the `EventLog.create` static factory method, a `ClusterCoordinator` is
+created and will be automatically shut down once `close` is called on the created `EventLog`.
 
 ### Event log configuration
 
@@ -937,26 +985,28 @@ CopycatConfig config = new CopycatConfig()
 Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
 
 copycat.open().thenRun(() -> {
-  copycat.<String, String>stateLog("state-log").open().thenAccept(stateLog -> {
+  copycat.<String>stateLog("state-log").open().thenAccept(stateLog -> {
     stateLog.commit("Hello world!");
   });
 });
 ```
 
-Alternatively, a state log can be created independent of the high-level `Copycat` API by simply adding the
-`copycat-state-log` module as a dependency directly and instantiating a new state log via the `StateLog.create`
-static interface method:
+The `StateLog` interface exposes a static method for creating a standalone state log:
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 StateLogConfig config = new StateLogConfig()
-  .withLog(new FileLog());
+  .withLog(new FileLog()
+    .withFlushOnWrite(true));
 
-StateLog<String, String> stateLog = StateLog.create("tcp:/123.456.789.0", cluster, config);
+StateLog<String> stateLog = StateLog.create("tcp:/123.456.789.0", cluster, config);
 ```
+
+When a standalone state log is created via the `StateLog.create` static factory method, a `ClusterCoordinator` is
+created and will be automatically shut down once `close` is called on the created `StateLog`.
 
 The generic type - `T` - is the log entry type.
 
@@ -1072,6 +1122,9 @@ CopycatConfig config = new CopycatConfig()
   .addElectionConfig("election", new LeaderElectionConfig());
 ```
 
+By default, leader elections use an in-memory log - `BufferedLog`. Since leader elections only use a lightweight
+implementation of the Raft election algorithm to elect leaders, persistent logs are unnecessary for most use cases.
+
 Once the leader election has been defined as a cluster resource, create a new `Copycat` instance and get the leader
 election. To register a handler to be notified once a node has become leader, use the `addListener` method.
 
@@ -1085,10 +1138,34 @@ copycat.open()
   });
 ```
 
+Alternatively, users can use the `LeaderElection` API as a standalone service by adding the `copycat-leader-election`
+module as a direct dependency:
+
+```
+<dependency>
+  <groupId>net.kuujo.copycat</groupId>
+  <artifactId>copycat-leader-election</artifactId>
+  <version>0.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+The `LeaderElection` interface exposes a static factory method for creating standalone leader election instances:
+
+```java
+ClusterConfig cluster = new ClusterConfig()
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
+
+LeaderElection.create("election", cluster).open().thenAccept(election -> {
+  election.addListener(member -> {
+    System.out.println(member.uri() + " was elected leader!");
+  });
+});
+```
+
 ## Collections
 
-In a partially academic effort, Copycat provides a variety of strongly consistent data structures built on top of its
-[state machine](#state-machines) framework.
+In a partially academic effort, Copycat provides a variety of strongly consistent distributed data structures built on
+top of its [state machine](#state-machines) framework.
 * [AsyncMap](#asyncmap)
 * [AsyncList](#asynclist)
 * [AsyncSet](#asyncset)
@@ -1101,6 +1178,29 @@ use the `setConsistency` method or `withConsistency` fluent method on the respec
 ```java
 AsyncMapConfig config = new AsyncMapConfig()
   .withConsistency(Consistency.STRONG);
+```
+
+Collections can either be created via the high-level `Copycat` API or through the respective collection constructors
+themselves. Each collection interface exposes a static `create` factory method which creates a standalone instance of
+the distributed collection.
+
+To access collection factory methods directly add the `copycat-collections` module as a direct dependency:
+
+```
+<dependency>
+  <groupId>net.kuujo.copycat</groupId>
+  <artifactId>copycat-collections</artifactId>
+  <version>0.5.0-SNAPSHOT</version>
+</dependency>
+```
+
+To create a collection, call the static `create` factory method on the collection's interface, passing the collection
+name, cluster configuration, and optional collection configuration.
+
+```java
+AsyncList.<String>create("my-list", cluster).open().thenAccept(list -> {
+  list.add("Hello world!");
+});
 ```
 
 ### AsyncMap
@@ -1328,7 +1428,11 @@ AsyncLock.create("tcp://123.456.789.0", cluster, config).open().thenAccept(lock 
 ## The Copycat cluster
 
 The Copycat cluster is designed not only to support leader election and replication for Copycat and its resources, but
-it also serves as a general messaging utility for users as well.
+it also serves as a general messaging utility for users as well. At the center of Copycat's cluster is the
+*cluster coordinator*. The coordinator is responsible for managing communication and resources throughout the cluster.
+Each `Copycat` or standalone log instance contains a single `ClusterCoordinator` through which all resources
+communicate. Resource clusters wrap the central cluster coordinator to provide resource-specific leader election and
+messaging. This allows Copycat to support multiple contexts within the same cluster.
 
 ### Members
 
@@ -1665,7 +1769,7 @@ of a distributed log. In terms of the [CAP theorem](http://en.wikipedia.org/wiki
 extension - Copycat is a CP system, meaning in the face of a partition, Raft and Copycat favor consistency over
 availability. This makes Raft a perfect fit for storing small amounts of mission critical state.
 
-### Leader election
+#### Leader election
 
 In Raft, all writes are required to go through a cluster leader. Because Raft is designed to tolerate failures, this
 means the algorithm must be designed to elect a leader when an existing leader's node crashes.
@@ -1699,7 +1803,7 @@ leaders are elected, Raft guarantees that *no member with an out of date log wil
 entries are committed to the Copycat cluster, they are guaranteed to remain in the log until removed either via
 compaction or deletion.
 
-### Write replication
+#### Write replication
 
 Once a leader is elected via the Raft consensus protocol, the Copycat cluster can begin accepting new entries for the
 log. All writes to any Copycat resource are *always* directed through the resource's cluster leader, and writes are
@@ -1724,7 +1828,7 @@ writes to a single leader, and because Raft guarantees that entries are replicat
 prior to being applied to the state machine, all state machines within the Copycat cluster are guaranteed to receive
 commands in the same order.
 
-### Read consistency
+#### Read consistency
 
 While Raft dictates that writes to the replicated log go through the resource's leader, reads allow for slightly more
 flexibility depending on the specific use case. Copycat supports several read consistency modes.
@@ -1760,7 +1864,7 @@ trade-offs. Copycat provides three different `Consistency` modes:
 While this functionality is not exposed by all resource APIs externally, Copycat allows read consistency to be specified
 on a per-request basis via the `QueryRequest`.
 
-### Log compaction
+#### Log compaction
 
 One of the most important features of Raft is log compaction. While this is a feature that is often overlooked by many
 Raft implementations, it is truly essential to the operation of a Raft based system in production. Over time, as
@@ -1804,7 +1908,7 @@ While the [active members](#active-members) of the Copycat cluster perform consi
 [passive members](#passive-members) receive replicated logs via a simple gossip protocol. This allows Copycat to
 support clusters much larger than a standard Raft cluster by making some consistency concessions.
 
-### Passive membership
+#### Passive membership
 
 Every member of the Copycat cluster participates in a simple gossip protocol that aids in cluster membership detection.
 When a [passive member](#passive-members) joins the Copycat cluster, it immediately begins gossiping with the
@@ -1817,7 +1921,7 @@ of the cluster. When a member receives gossiped membership information, it updat
 the version of each member in the vector clock. This helps prevent false positives due to out-of-date cluster membership
 information.
 
-### Log replication
+#### Log replication
 
 Committed entries in resource logs are replicated to passive members of the cluster via the gossip protocol. Each member
 of the cluster - both active and passive members - participates in gossip-based log replication, periodically selecting
@@ -1829,7 +1933,7 @@ if the entries are consistent with its local log, increments its local version, 
 clock of member indexes. Tracking indexes via vector clocks helps reduce the number of duplicate entries within the
 gossip replication protocol.
 
-### Failure detection
+#### Failure detection
 
 Just as Copycat uses gossip for membership, so too does the global cluster and resource clusters use gossip for failure
 detection. The failure detection protocol is designed to reduce the risk of that false failures due to network
