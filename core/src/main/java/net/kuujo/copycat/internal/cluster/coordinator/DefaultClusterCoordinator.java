@@ -79,8 +79,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withHeartbeatInterval(config.getClusterConfig().getHeartbeatInterval())
       .withReplicas(config.getClusterConfig().getMembers())
       .withLog(new BufferedLog());
-    this.context = new CopycatStateContext("copycat", uri, resourceConfig);
-    this.cluster = new CoordinatorCluster(0, "copycat-cluster", this, context, new ResourceRouter(new KryoSerializer()), new KryoSerializer());
+    ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-%d"));
+    this.context = new CopycatStateContext("copycat", uri, resourceConfig, executor);
+    this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(executor), new KryoSerializer(), executor, config.getExecutor());
     createResources();
   }
 
@@ -174,8 +175,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     for (Map.Entry<String, CoordinatedResourceConfig> entry : this.config.getResourceConfigs().entrySet()) {
       String name = entry.getKey();
       CoordinatedResourceConfig config = entry.getValue();
-      CopycatStateContext state = new CopycatStateContext(name, uri, config);
-      ClusterManager cluster = new CoordinatedCluster(name.hashCode(), String.format("copycat-cluster-%s", name), this, state, new ResourceRouter(config.getSerializer()), config.getSerializer());
+      ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-" + name + "-%d"));
+      CopycatStateContext state = new CopycatStateContext(name, uri, config, executor);
+      ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
       ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
       resources.put(name, new ResourceHolder(config.getResourceFactory().apply(context), config, cluster, state, context));
     }
@@ -270,10 +272,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    */
   private static class ResourceRouter implements Router {
     private static final int PROTOCOL_ID = 1;
-    private final Serializer serializer;
+    private final Serializer serializer = new KryoSerializer();
+    private final Executor executor;
 
-    private ResourceRouter(Serializer serializer) {
-      this.serializer = serializer;
+    private ResourceRouter(Executor executor) {
+      this.executor = executor;
     }
 
     @Override
@@ -298,7 +301,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     private <T extends Request, U extends Response> CompletableFuture<U> handleOutboundRequest(String topic, T request, ClusterManager cluster) {
       MemberManager member = cluster.member(request.uri());
       if (member != null) {
-        return member.send(topic, PROTOCOL_ID, request, serializer);
+        return member.send(topic, PROTOCOL_ID, request, serializer, executor);
       }
       CompletableFuture<U> future = new CompletableFuture<>();
       future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s", request.uri())));

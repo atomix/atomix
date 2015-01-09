@@ -18,7 +18,6 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.EventLog;
 import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -29,13 +28,11 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements EventLog<T> {
-  private final Serializer serializer;
   private EventListener<T> consumer;
 
   public DefaultEventLog(ResourceContext context) {
     super(context);
     context.consumer(this::consume);
-    this.serializer = context.config().getResourceConfig().getSerializer();
   }
 
   @Override
@@ -49,14 +46,14 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
     CompletableFuture<T> future = new CompletableFuture<>();
     context.execute(() -> {
       if (!context.log().containsIndex(index)) {
-        future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index)));
+        executor.execute(() -> future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index))));
       } else {
         ByteBuffer buffer = context.log().getEntry(index);
         if (buffer != null) {
           T entry = serializer.readObject(buffer);
-          future.complete(entry);
+          executor.execute(() -> future.complete(entry));
         } else {
-          future.complete(null);
+          executor.execute(() -> future.complete(null));
         }
       }
     });
@@ -65,7 +62,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
 
   @Override
   public CompletableFuture<Long> commit(T entry) {
-    return context.commit(serializer.writeObject(entry)).thenApply(ByteBuffer::getLong);
+    return context.commit(serializer.writeObject(entry)).thenApplyAsync(ByteBuffer::getLong, executor);
   }
 
   /**
@@ -75,7 +72,8 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
     ByteBuffer result = ByteBuffer.allocateDirect(8);
     result.putLong(index);
     if (consumer != null) {
-      consumer.handle(serializer.readObject(entry));
+      T value = serializer.readObject(entry);
+      executor.execute(() -> consumer.handle(value));
     }
     return result;
   }

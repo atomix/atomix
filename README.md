@@ -52,6 +52,7 @@ taking place on Copycat**
       * [Resource replicas](#resource-replicas)
       * [Log configuration](#log-configuration)
       * [Serialization](#serialization)
+      * [Executors](#executors)
       * [Configuration maps](#configuration-maps)
    * [Creating resources](#creating-resources)
    * [Resource clusters](#resource-clusters)
@@ -419,6 +420,31 @@ Alternatively, users can provide a custom serializer for logs via the log config
 ```java
 EventLogConfig config = new EventLogConfig()
   .withSerializer(new MySerializer());
+```
+
+#### Executors
+
+Copycat makes heavy use of Java 8's `CompletableFuture`. Each Copycat resource guarantees that completable future
+callbacks will be executed on the same thread-per-resource. However, in some cases the user needs control over the
+context in which resource callbacks are executed. For instance, when running Copycat within Vert.x, it can be useful
+to execute `CompletableFuture` callbacks, election result handlers, message handlers, and other callbacks on the
+Vert.x event loop. Copycat allows users to configure the `Executor` used by each resource instance.
+
+To configure the `Executor` instance for a resource, add the executor to the resource's configuration:
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withExecutor(new VertxEventLoopExecutor(vertx));
+```
+
+All user facing callbacks within the resource and its related [cluster](#resource-clusters) will be executed with
+the given `Executor` instance.
+
+To configure the executor for the global Copycat cluster and instance, add an `Executor` to the `CopycatConfig`:
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withExecutor(new VertxEventLoopExecutor(vertx));
 ```
 
 #### Configuration maps
@@ -1703,6 +1729,24 @@ ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new VertxEventBusProtocol(vertx));
 ```
 
+The Vert.x module also provides a `VertxEventLoopExecutor` which executes resource callbacks on the Vert.x event loop.
+To ensure callbacks are executed on the Vert.x event loop context, add the `VertxEventLoopExecutor` to the resource
+configuration:
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withLog(new FileLog()
+    .withRetentionPolicy(new TimeBasedRetentionPolicy(1, TimeUnit.HOURS)))
+  .withExecutor(new VertxEventLoopExecutor(vertx));
+```
+
+To configure the executor for the global Copycat cluster and instance, add an `Executor` to the `CopycatConfig`:
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withExecutor(new VertxEventLoopExecutor(vertx));
+```
+
 ### Vert.x 3 protocol
 
 The Vert.x 3 protocol module provides an event bus protocol implementation for [Vert.x 3](http://vertx.io). To add the
@@ -1728,6 +1772,24 @@ You can also pass a `Vertx` instance in to the protocol:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new VertxEventBusProtocol(vertx));
+```
+
+The Vert.x 3 module also provides a `VertxEventLoopExecutor` which executes resource callbacks on the Vert.x event loop.
+To ensure callbacks are executed on the Vert.x event loop context, add the `VertxEventLoopExecutor` to the resource
+configuration:
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withLog(new FileLog()
+    .withRetentionPolicy(new TimeBasedRetentionPolicy(1, TimeUnit.HOURS)))
+  .withExecutor(new VertxEventLoopExecutor(vertx));
+```
+
+To configure the executor for the global Copycat cluster and instance, add an `Executor` to the `CopycatConfig`:
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withExecutor(new VertxEventLoopExecutor(vertx));
 ```
 
 ## Architecture

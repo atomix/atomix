@@ -119,6 +119,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
       .withResourceFactory(DefaultStateLog::new)
       .withLog(getLog())
       .withSerializer(getSerializer())
+      .withExecutor(getExecutor())
       .withResourceConfig(this)
       .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }

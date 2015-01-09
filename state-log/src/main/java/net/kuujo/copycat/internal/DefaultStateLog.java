@@ -20,13 +20,16 @@ import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateLog;
 import net.kuujo.copycat.StateLogConfig;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -36,8 +39,8 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@SuppressWarnings("rawtypes")
 public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements StateLog<T> {
-  private final Serializer serializer;
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
   private Supplier snapshotter;
   private Consumer installer;
@@ -46,7 +49,6 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   public DefaultStateLog(ResourceContext context) {
     super(context);
     context.consumer(this::consume);
-    this.serializer = context.config().getResourceConfig().getSerializer();
   }
 
   @Override
@@ -66,7 +68,9 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, context.config().<StateLogConfig>getResourceConfig().getDefaultConsistency()));
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, context.config()
+      .<StateLogConfig>getResourceConfig()
+      .getDefaultConsistency()));
     return this;
   }
 
@@ -106,13 +110,12 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public <U> CompletableFuture<U> submit(String command, T entry) {
     Assert.state(isOpen(), "State log not open");
     OperationInfo<T, U> operationInfo = operations.get(command.hashCode());
     if (operationInfo == null) {
-      CompletableFuture<U> future = new CompletableFuture<>();
-      future.completeExceptionally(new CopycatException(String.format("Invalid state log command %s", command)));
-      return future;
+      return Futures.exceptionalFutureAsync(new CopycatException(String.format("Invalid state log command %s", command)), executor);
     }
 
     // If this is a read-only command, check if the command is consistent. For consistent operations,
@@ -125,9 +128,9 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     commandEntry.put(buffer);
     commandEntry.rewind();
     if (operationInfo.readOnly) {
-      return context.query(commandEntry, operationInfo.consistency).thenApply(serializer::readObject);
+      return context.query(commandEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
     } else {
-      return context.commit(commandEntry).thenApply(serializer::readObject);
+      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
     }
   }
 
@@ -149,12 +152,52 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
         int commandCode = entry.getInt();
         OperationInfo operationInfo = operations.get(commandCode);
         if (operationInfo != null) {
-          return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
+          T value = serializer.readObject(entry.slice());
+          return serializer.writeObject(executeInUserThread(() -> operationInfo.execute(index, value)));
         }
         throw new IllegalStateException("Invalid state log operation");
       default:
         throw new IllegalArgumentException("Invalid entry type");
     }
+  }
+
+  /**
+   * Executes a callable in the user's thread.
+   */
+  @SuppressWarnings("unchecked")
+  private <U> U executeInUserThread(Callable<U> callable) {
+    AtomicBoolean complete = new AtomicBoolean();
+    AtomicReference<Object> reference = new AtomicReference<>();
+
+    executor.execute(() -> {
+      synchronized (reference) {
+        try {
+          reference.set(callable.call());
+          complete.set(true);
+          reference.notify();
+        } catch (Exception e) {
+          reference.set(e);
+          complete.set(true);
+          reference.notify();
+        }
+      }
+    });
+
+    synchronized (reference) {
+      try {
+        while (!complete.get()) {
+          reference.wait(1000);
+        }
+      } catch (InterruptedException e) {
+        throw new CopycatException(e);
+      }
+    }
+
+    Object result = reference.get();
+    if (result instanceof Throwable) {
+      throw new CopycatException((Throwable) result);
+    }
+    return (U) result;
   }
 
   /**
@@ -170,7 +213,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
    * Takes a snapshot and compacts the log.
    */
   private void takeSnapshot() {
-    Object snapshot = snapshotter != null ? snapshotter.get() : null;
+    Object snapshot = snapshotter != null ? executeInUserThread(snapshotter::get) : null;
     context.log().compact(commitIndex, serializer.writeObject(snapshot));
   }
 
@@ -180,7 +223,11 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   @SuppressWarnings("unchecked")
   private void installSnapshot(ByteBuffer snapshot) {
     if (installer != null) {
-      installer.accept(serializer.readObject(snapshot));
+      Object value = serializer.readObject(snapshot);
+      executeInUserThread(() -> {
+        installer.accept(value);
+        return null;
+      });
     }
   }
 

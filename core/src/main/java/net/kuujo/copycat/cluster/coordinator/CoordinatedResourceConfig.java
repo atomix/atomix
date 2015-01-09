@@ -23,6 +23,7 @@ import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -39,6 +40,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   public static final String RESOURCE_REPLICAS = "replicas";
   public static final String RESOURCE_LOG = "log";
   public static final String RESOURCE_SERIALIZER = "serializer";
+  public static final String RESOURCE_EXECUTOR = "executor";
 
   private static final long DEFAULT_RESOURCE_ELECTION_TIMEOUT = 300;
   private static final long DEFAULT_RESOURCE_HEARTBEAT_INTERVAL = 150;
@@ -424,6 +426,35 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    */
   public CoordinatedResourceConfig withSerializer(Serializer serializer) {
     setSerializer(serializer);
+    return this;
+  }
+
+  /**
+   * Sets the resource executor.
+   *
+   * @param executor The resource executor.
+   */
+  public void setExecutor(Executor executor) {
+    put(RESOURCE_EXECUTOR, executor);
+  }
+
+  /**
+   * Returns the resource executor.
+   *
+   * @return The resource executor or {@code null} if no executor was specified.
+   */
+  public Executor getExecutor() {
+    return get(RESOURCE_EXECUTOR);
+  }
+
+  /**
+   * Sets the resource executor, returning the configuration for method chaining.
+   *
+   * @param executor The resource executor.
+   * @return The resource configuration.
+   */
+  public CoordinatedResourceConfig withExecutor(Executor executor) {
+    setExecutor(executor);
     return this;
   }
 

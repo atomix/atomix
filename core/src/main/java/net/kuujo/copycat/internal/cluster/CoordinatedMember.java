@@ -76,22 +76,22 @@ public class CoordinatedMember implements MemberManager {
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    return send(topic, USER_ID, message, serializer);
+    return send(topic, USER_ID, message, serializer, executor);
   }
 
   @Override
-  public <T, U> CompletableFuture<U> send(String topic, int id, T message, Serializer serializer) {
+  public <T, U> CompletableFuture<U> send(String topic, int id, T message, Serializer serializer, Executor executor) {
     return coordinator.send(topic, this.id, id, serializer.writeObject(message)).thenApplyAsync(serializer::readObject, executor);
   }
 
   @Override
   public CompletableFuture<Void> execute(Task<Void> task) {
-    return send(EXECUTE_TOPIC, EXECUTE_ID, task, serializer);
+    return send(EXECUTE_TOPIC, EXECUTE_ID, task, serializer, executor);
   }
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    return send(EXECUTE_TOPIC, EXECUTE_ID, task, serializer);
+    return send(EXECUTE_TOPIC, EXECUTE_ID, task, serializer, executor);
   }
 
   @Override

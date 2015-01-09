@@ -25,6 +25,7 @@ import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ResourceConfig<T extends ResourceConfig<T>> extends AbstractConfigurable {
+  public static final String RESOURCE_EXECUTOR = "executor";
   public static final String RESOURCE_SERIALIZER = "serializer";
   public static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
   public static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
@@ -68,6 +70,12 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
     }
   }
 
+  /**
+   * Sets the default resource serializer.
+   *
+   * @param serializer The default resource serializer.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
   void setDefaultSerializer(String serializer) {
     try {
       this.defaultSerializer = Class.forName(serializer);
@@ -257,6 +265,36 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   @SuppressWarnings("unchecked")
   public T withSerializer(Serializer serializer) {
     setSerializer(serializer);
+    return (T) this;
+  }
+
+  /**
+   * Sets the resource executor.
+   *
+   * @param executor The resource executor.
+   */
+  public void setExecutor(Executor executor) {
+    put(RESOURCE_EXECUTOR, executor);
+  }
+
+  /**
+   * Returns the resource executor.
+   *
+   * @return The resource executor or {@code null} if no executor was specified.
+   */
+  public Executor getExecutor() {
+    return get(RESOURCE_EXECUTOR);
+  }
+
+  /**
+   * Sets the resource executor, returning the configuration for method chaining.
+   *
+   * @param executor The resource executor.
+   * @return The resource configuration.
+   */
+  @SuppressWarnings("unchecked")
+  public T withExecutor(Executor executor) {
+    setExecutor(executor);
     return (T) this;
   }
 

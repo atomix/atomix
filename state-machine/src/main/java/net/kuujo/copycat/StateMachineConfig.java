@@ -255,6 +255,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
       .withResourceFactory(context -> new DefaultStateMachine<>(context, getStateType(), getInitialState()))
       .withLog(getLog())
       .withSerializer(getSerializer())
+      .withExecutor(getExecutor())
       .withResourceConfig(config)
       .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }

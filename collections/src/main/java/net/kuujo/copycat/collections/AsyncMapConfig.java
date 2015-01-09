@@ -114,6 +114,7 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
       .withHeartbeatInterval(getHeartbeatInterval())
       .withLog(getLog())
       .withSerializer(getSerializer())
+      .withExecutor(getExecutor())
       .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 

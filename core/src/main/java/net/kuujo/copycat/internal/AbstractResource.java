@@ -21,11 +21,15 @@ import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Abstract resource implementation.
@@ -36,9 +40,13 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
   protected final ResourceContext context;
+  protected final Serializer serializer;
+  protected final Executor executor;
 
   protected AbstractResource(ResourceContext context) {
     this.context = Assert.isNotNull(context, "context");
+    this.serializer = context.config().getSerializer();
+    this.executor = context.config().getExecutor() != null ? context.config().getExecutor() : Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-" + context.name() + "-%d"));
   }
 
   @Override

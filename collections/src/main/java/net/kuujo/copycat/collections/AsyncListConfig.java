@@ -55,6 +55,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
       .withHeartbeatInterval(getHeartbeatInterval())
       .withLog(getLog())
       .withSerializer(getSerializer())
+      .withExecutor(getExecutor())
       .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 

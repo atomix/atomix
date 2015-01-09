@@ -63,7 +63,7 @@ public class AsyncLockConfig extends ResourceConfig<AsyncLockConfig> {
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
       .withLog(getLog())
-      .withSerializer(getSerializer())
+      .withExecutor(getExecutor())
       .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 

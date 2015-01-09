@@ -20,11 +20,14 @@ import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Copycat configuration.
@@ -33,10 +36,12 @@ import java.util.Map;
  */
 public class CopycatConfig extends AbstractConfigurable {
   public static final String COPYCAT_SERIALIZER = "serializer";
+  public static final String COPYCAT_EXECUTOR = "executor";
   public static final String COPYCAT_CLUSTER = "cluster";
   public static final String COPYCAT_RESOURCES = "resources";
 
   private static final String DEFAULT_COPYCAT_SERIALIZER = KryoSerializer.class.getName();
+  private final Executor DEFAULT_COPYCAT_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-%d"));
 
   public CopycatConfig() {
     super();
@@ -595,6 +600,35 @@ public class CopycatConfig extends AbstractConfigurable {
   }
 
   /**
+   * Sets the Copycat executor.
+   *
+   * @param executor The Copycat executor.
+   */
+  public void setExecutor(Executor executor) {
+    put(COPYCAT_EXECUTOR, executor);
+  }
+
+  /**
+   * Returns the Copycat executor.
+   *
+   * @return The Copycat executor or {@code null} if no executor was specified.
+   */
+  public Executor getExecutor() {
+    return get(COPYCAT_EXECUTOR, DEFAULT_COPYCAT_EXECUTOR);
+  }
+
+  /**
+   * Sets the Copycat executor, returning the configuration for method chaining.
+   *
+   * @param executor The Copycat executor.
+   * @return The Copycat configuration.
+   */
+  public CopycatConfig withExecutor(Executor executor) {
+    setExecutor(executor);
+    return this;
+  }
+
+  /**
    * Resolves the Copycat configuration to a coordinator configuration.
    *
    * @return A coordinator configuration for this Copycat configuration.
@@ -602,6 +636,7 @@ public class CopycatConfig extends AbstractConfigurable {
   @SuppressWarnings("rawtypes")
   public CoordinatorConfig resolve() {
     CoordinatorConfig config = new CoordinatorConfig()
+      .withExecutor(getExecutor())
       .withClusterConfig(getClusterConfig());
     for (Map.Entry<String, ResourceConfig> entry : getResourceConfigs().entrySet()) {
       config.addResourceConfig(entry.getKey(), entry.getValue()

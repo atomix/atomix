@@ -19,6 +19,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Cluster member.
@@ -34,10 +35,11 @@ public interface MemberManager extends Member {
    * @param id The handler to which to send the message.
    * @param message The message to send.
    * @param serializer The serializer with which to serialize and deserialize the message.
+   * @param executor The executor on which to execute the result.
    * @param <T> The message type.
    * @param <U> The response type.
    * @return A completable future to be completed with the message response.
    */
-  <T, U> CompletableFuture<U> send(String topic, int id, T message, Serializer serializer);
+  <T, U> CompletableFuture<U> send(String topic, int id, T message, Serializer serializer, Executor executor);
 
 }

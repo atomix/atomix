@@ -59,6 +59,7 @@ public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
     return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
+      .withExecutor(getExecutor())
       .withResourceFactory(DefaultLeaderElection::new)
       .withLog(getLog())
       .withResourceConfig(this)

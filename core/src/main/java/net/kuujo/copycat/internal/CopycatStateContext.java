@@ -66,8 +66,8 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private boolean open;
 
-  public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config) {
-    this.executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-" + name + "-%d"));
+  public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, ScheduledExecutorService executor) {
+    this.executor = executor;
     this.localMember = Assert.isNotNull(uri, "uri");
     this.replicas = new HashSet<>(config.getReplicas());
     this.members = new HashSet<>(config.getReplicas());

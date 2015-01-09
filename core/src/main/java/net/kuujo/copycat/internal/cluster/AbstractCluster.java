@@ -25,7 +25,6 @@ import net.kuujo.copycat.cluster.manager.MemberManager;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.internal.CopycatStateContext;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
@@ -43,10 +42,10 @@ public abstract class AbstractCluster implements ClusterManager {
   private static final long MEMBER_INFO_EXPIRE_TIME = 1000 * 60;
 
   protected final int id;
-  protected final ThreadFactory threadFactory;
   protected final ClusterCoordinator coordinator;
   protected final Serializer serializer;
   protected final ScheduledExecutorService executor;
+  protected final Executor userExecutor;
   private CoordinatedLocalMember localMember;
   private final CoordinatedMembers members;
   private final Map<String, MemberInfo> membersInfo = new ConcurrentHashMap<>();
@@ -60,16 +59,16 @@ public abstract class AbstractCluster implements ClusterManager {
   private final Map<String, Set<EventListener>> broadcastListeners = new ConcurrentHashMap<>();
   private ScheduledFuture<?> gossipTimer;
 
-  protected AbstractCluster(int id, String name, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Serializer serializer) {
+  protected AbstractCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Serializer serializer, ScheduledExecutorService executor, Executor userExecutor) {
     this.id = id;
-    this.threadFactory = new NamedThreadFactory(name + "-%d");
     this.coordinator = coordinator;
     this.serializer = serializer;
-    this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
+    this.executor = executor;
+    this.userExecutor = userExecutor;
 
     // Always create a local member based on the local member URI.
     MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getReplicas().contains(coordinator.member().uri()) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.State.ALIVE);
-    this.localMember = new CoordinatedLocalMember(id, localMemberInfo, coordinator.member(), serializer, Executors.newSingleThreadExecutor(threadFactory));
+    this.localMember = new CoordinatedLocalMember(id, localMemberInfo, coordinator.member(), serializer, executor);
     membersInfo.put(localMemberInfo.uri(), localMemberInfo);
 
     // Create a map of coordinated members based on the context's listed replicas. Additional members will be added
@@ -80,7 +79,7 @@ public abstract class AbstractCluster implements ClusterManager {
       if (!replica.equals(localMember.uri())) {
         MemberCoordinator memberCoordinator = coordinator.member(replica);
         if (memberCoordinator != null) {
-          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.ACTIVE, Member.State.ALIVE), memberCoordinator, serializer, Executors.newSingleThreadExecutor(threadFactory)));
+          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.ACTIVE, Member.State.ALIVE), memberCoordinator, serializer, executor));
         } else {
           throw new ClusterException("Invalid replica " + replica);
         }
@@ -242,7 +241,7 @@ public abstract class AbstractCluster implements ClusterManager {
   }
 
   @Override
-  public <T> Cluster broadcast(String topic, T message) {
+  public synchronized <T> Cluster broadcast(String topic, T message) {
     for (Member member : members) {
       member.send(topic, message);
     }

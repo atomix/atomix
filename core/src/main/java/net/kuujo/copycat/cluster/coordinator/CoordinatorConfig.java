@@ -19,9 +19,12 @@ import net.kuujo.copycat.AbstractConfigurable;
 import net.kuujo.copycat.Configurable;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Copycat configuration.
@@ -31,6 +34,9 @@ import java.util.Map;
 public class CoordinatorConfig extends AbstractConfigurable {
   public static final String COORDINATOR_CLUSTER = "cluster";
   public static final String COORDINATOR_RESOURCES = "resources";
+  public static final String COORDINATOR_EXECUTOR = "executor";
+
+  private final Executor DEFAULT_COORDINATOR_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d"));
 
   public CoordinatorConfig() {
     super();
@@ -167,6 +173,35 @@ public class CoordinatorConfig extends AbstractConfigurable {
         remove(COORDINATOR_RESOURCES);
       }
     }
+    return this;
+  }
+
+  /**
+   * Sets the coordinator executor.
+   *
+   * @param executor The coordinator executor.
+   */
+  public void setExecutor(Executor executor) {
+    put(COORDINATOR_EXECUTOR, executor);
+  }
+
+  /**
+   * Returns the coordinator executor.
+   *
+   * @return The coordinator executor or {@code null} if no executor was specified.
+   */
+  public Executor getExecutor() {
+    return get(COORDINATOR_EXECUTOR, DEFAULT_COORDINATOR_EXECUTOR);
+  }
+
+  /**
+   * Sets the coordinator executor, returning the configuration for method chaining.
+   *
+   * @param executor The coordinator executor.
+   * @return The coordinator configuration.
+   */
+  public CoordinatorConfig withExecutor(Executor executor) {
+    setExecutor(executor);
     return this;
   }
 
