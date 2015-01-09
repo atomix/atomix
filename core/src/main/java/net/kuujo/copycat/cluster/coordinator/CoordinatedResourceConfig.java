@@ -22,10 +22,7 @@ import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -39,15 +36,15 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   public static final String RESOURCE_FACTORY = "factory";
   public static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
   public static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
-  public static final String RESOURCE_PARTITIONS = "partitions";
+  public static final String RESOURCE_REPLICAS = "replicas";
   public static final String RESOURCE_LOG = "log";
   public static final String RESOURCE_SERIALIZER = "serializer";
 
   private static final long DEFAULT_RESOURCE_ELECTION_TIMEOUT = 300;
   private static final long DEFAULT_RESOURCE_HEARTBEAT_INTERVAL = 150;
-  private static final List<CoordinatedResourcePartitionConfig> DEFAULT_RESOURCE_PARTITIONS = new ArrayList<>();
+  private static final Set<String> DEFAULT_RESOURCE_REPLICAS = new HashSet<>();
   private static final Log DEFAULT_RESOURCE_LOG = new BufferedLog();
-  private static final Class<? extends Serializer> DEFAULT_RESOURCE_SERIALIZER = KryoSerializer.class;
+  private final Serializer DEFAULT_RESOURCE_SERIALIZER = new KryoSerializer();
 
   public CoordinatedResourceConfig() {
     super();
@@ -269,100 +266,100 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the list of partitions for the resource.
+   * Sets the set of replicas for the resource.
    *
-   * @param partitions The list of partitions for the resource.
-   * @throws java.lang.NullPointerException If {@code partitions} is {@code null}
+   * @param replicas The set of replicas for the resource.
+   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
-  public void setPartitions(CoordinatedResourcePartitionConfig... partitions) {
-    setPartitions(Arrays.asList(partitions));
+  public void setReplicas(String... replicas) {
+    setReplicas(Arrays.asList(replicas));
   }
 
   /**
-   * Sets the list of partitions for the resource.
+   * Sets the set of replicas for the resource.
    *
-   * @param partitions The list of partitions for the resource.
-   * @throws java.lang.NullPointerException If {@code partitions} is {@code null}
+   * @param replicas The set of replicas for the resource.
+   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
-  public void setPartitions(List<CoordinatedResourcePartitionConfig> partitions) {
-    put(RESOURCE_PARTITIONS, Assert.isNotNull(partitions, "partitions"));
+  public void setReplicas(Collection<String> replicas) {
+    put(RESOURCE_REPLICAS, new HashSet<>(Assert.isNotNull(replicas, "replicas")));
   }
 
   /**
-   * Returns the list of partitions for the resource.
+   * Returns the set of replicas for the resource.
    *
-   * @return The list of partitions for the resource.
+   * @return The set of replicas for the resource.
    */
-  public List<CoordinatedResourcePartitionConfig> getPartitions() {
-    return get(RESOURCE_PARTITIONS, DEFAULT_RESOURCE_PARTITIONS);
+  public Set<String> getReplicas() {
+    return get(RESOURCE_REPLICAS, DEFAULT_RESOURCE_REPLICAS);
   }
 
   /**
-   * Sets the list of partitions for the resource, returning the configuration for method chaining.
+   * Sets the set of replicas for the resource, returning the configuration for method chaining.
    *
-   * @param partitions The list of partitions for the resource.
+   * @param replicas The set of replicas for the resource.
    * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code partitions} is {@code null}
+   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
-  public CoordinatedResourceConfig withPartitions(CoordinatedResourcePartitionConfig... partitions) {
-    setPartitions(Arrays.asList(partitions));
+  public CoordinatedResourceConfig withReplicas(String... replicas) {
+    setReplicas(Arrays.asList(replicas));
     return this;
   }
 
   /**
-   * Sets the list of partitions for the resource, returning the configuration for method chaining.
+   * Sets the set of replicas for the resource, returning the configuration for method chaining.
    *
-   * @param partitions The list of partitions for the resource.
+   * @param replicas The set of replicas for the resource.
    * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code partitions} is {@code null}
+   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
-  public CoordinatedResourceConfig withPartitions(List<CoordinatedResourcePartitionConfig> partitions) {
-    setPartitions(partitions);
+  public CoordinatedResourceConfig withReplicas(Collection<String> replicas) {
+    setReplicas(replicas);
     return this;
   }
 
   /**
-   * Adds a partition to the set of partitions for the resource.
+   * Adds a replica to the set of replicas for the resource.
    *
-   * @param partition The partition configuration to add.
+   * @param replica The replica URI to add.
    * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code partition} is {@code null}
+   * @throws java.lang.NullPointerException If {@code replica} is {@code null}
    */
-  public CoordinatedResourceConfig addPartition(CoordinatedResourcePartitionConfig partition) {
-    List<CoordinatedResourcePartitionConfig> partitions = get(RESOURCE_PARTITIONS);
-    if (partitions == null) {
-      partitions = new ArrayList<>(10);
-      put(RESOURCE_PARTITIONS, partitions);
+  public CoordinatedResourceConfig addReplica(String replica) {
+    Set<String> replicas = get(RESOURCE_REPLICAS);
+    if (replicas == null) {
+      replicas = new HashSet<>();
+      put(RESOURCE_REPLICAS, replicas);
     }
-    partitions.add(Assert.isNotNull(partition, "partition"));
+    replicas.add(Assert.isNotNull(replica, "replica"));
     return this;
   }
 
   /**
-   * Removes a partition from the set of partitions for the resource.
+   * Removes a replica from the set of replicas for the resource.
    *
-   * @param partition The partition configuration to remove.
+   * @param replica The replica URI to remove.
    * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code partition} is {@code null}
+   * @throws java.lang.NullPointerException If {@code replica} is {@code null}
    */
-  public CoordinatedResourceConfig removePartition(CoordinatedResourcePartitionConfig partition) {
-    List<CoordinatedResourcePartitionConfig> partitions = get(RESOURCE_PARTITIONS);
-    if (partitions != null) {
-      partitions.remove(Assert.isNotNull(partition, "partition"));
-      if (partitions.isEmpty()) {
-        remove(RESOURCE_PARTITIONS);
+  public CoordinatedResourceConfig removeReplica(String replica) {
+    Set<String> replicas = get(RESOURCE_REPLICAS);
+    if (replicas != null) {
+      replicas.remove(Assert.isNotNull(replica, "replica"));
+      if (replicas.isEmpty()) {
+        remove(RESOURCE_REPLICAS);
       }
     }
     return this;
   }
 
   /**
-   * Clears the set of partitions for the resource.
+   * Clears the set of replicas for the resource.
    *
    * @return The resource configuration.
    */
-  public CoordinatedResourceConfig clearPartitions() {
-    remove(RESOURCE_PARTITIONS);
+  public CoordinatedResourceConfig clearReplicas() {
+    remove(RESOURCE_REPLICAS);
     return this;
   }
 
@@ -398,23 +395,13 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource entry serializer class name.
-   *
-   * @param serializer The resource entry serializer class name.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  public void setSerializer(String serializer) {
-    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
-  }
-
-  /**
    * Sets the resource entry serializer.
    *
    * @param serializer The resource entry serializer.
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
-  public void setSerializer(Class<? extends Serializer> serializer) {
-    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer").getName());
+  public void setSerializer(Serializer serializer) {
+    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
   }
 
   /**
@@ -424,30 +411,8 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws net.kuujo.copycat.ConfigurationException If the resource serializer configuration is malformed
    */
   @SuppressWarnings("unchecked")
-  public Class<? extends Serializer> getSerializer() {
-    Object serializer = get(RESOURCE_SERIALIZER);
-    if (serializer == null) {
-      return DEFAULT_RESOURCE_SERIALIZER;
-    } else if (serializer instanceof String) {
-      try {
-        return (Class<? extends Serializer>) Class.forName(serializer.toString());
-      } catch(ClassNotFoundException e) {
-        throw new ConfigurationException("Failed to instantiate serializer", e);
-      }
-    }
-    throw new ConfigurationException("Invalid serializer configuration");
-  }
-
-  /**
-   * Sets the resource entry serializer class name, returning the configuration for method chaining.
-   *
-   * @param serializer The resource entry serializer class name.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  public CoordinatedResourceConfig withSerializer(String serializer) {
-    setSerializer(serializer);
-    return this;
+  public Serializer getSerializer() {
+    return get(RESOURCE_SERIALIZER, DEFAULT_RESOURCE_SERIALIZER);
   }
 
   /**
@@ -457,7 +422,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
-  public CoordinatedResourceConfig withSerializer(Class<? extends Serializer> serializer) {
+  public CoordinatedResourceConfig withSerializer(Serializer serializer) {
     setSerializer(serializer);
     return this;
   }

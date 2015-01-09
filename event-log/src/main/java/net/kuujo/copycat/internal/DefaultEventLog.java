@@ -6,6 +6,7 @@
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,45 +15,69 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.*;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.EventLog;
+import net.kuujo.copycat.ResourceContext;
+import net.kuujo.copycat.util.serializer.Serializer;
 
+import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 
 /**
- * Event log implementation.
+ * Default event log partition implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultEventLog<T, U> extends AbstractPartitionedResource<EventLog<T, U>, EventLogPartition<U>> implements EventLog<T, U> {
+public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements EventLog<T> {
+  private final Serializer serializer;
+  private EventListener<T> consumer;
 
   public DefaultEventLog(ResourceContext context) {
     super(context);
+    context.consumer(this::consume);
+    this.serializer = context.config().getResourceConfig().getSerializer();
   }
 
   @Override
-  protected EventLogPartition<U> createPartition(ResourcePartitionContext context) {
-    return new DefaultEventLogPartition<>(context, Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-resource-" + context.name() + "-partition-" + context.config().getPartition() + "-%d")));
-  }
-
-  @Override
-  public synchronized EventLog<T, U> consumer(EventListener<U> consumer) {
-    partitions.forEach(p -> p.consumer(consumer));
+  public EventLog<T> consumer(EventListener<T> consumer) {
+    this.consumer = consumer;
     return this;
   }
 
   @Override
-  public synchronized CompletableFuture<Void> commit(U entry) {
-    if (partitions.size() == 1) {
-      return partitions.get(0).commit(entry).thenApply(index -> null);
-    }
-    return partitions.get(entry.hashCode() % partitions.size()).commit(entry).thenApply(index -> null);
+  public CompletableFuture<T> get(long index) {
+    CompletableFuture<T> future = new CompletableFuture<>();
+    context.execute(() -> {
+      if (!context.log().containsIndex(index)) {
+        future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index)));
+      } else {
+        ByteBuffer buffer = context.log().getEntry(index);
+        if (buffer != null) {
+          T entry = serializer.readObject(buffer);
+          future.complete(entry);
+        } else {
+          future.complete(null);
+        }
+      }
+    });
+    return future;
   }
 
   @Override
-  public synchronized CompletableFuture<Void> commit(T partitionKey, U entry) {
-    return partitions.get(partitionKey.hashCode() % partitions.size()).commit(entry).thenApply(index -> null);
+  public CompletableFuture<Long> commit(T entry) {
+    return context.commit(serializer.writeObject(entry)).thenApply(ByteBuffer::getLong);
+  }
+
+  /**
+   * Handles a log write.
+   */
+  private ByteBuffer consume(Long index, ByteBuffer entry) {
+    ByteBuffer result = ByteBuffer.allocateDirect(8);
+    result.putLong(index);
+    if (consumer != null) {
+      consumer.handle(serializer.readObject(entry));
+    }
+    return result;
   }
 
 }

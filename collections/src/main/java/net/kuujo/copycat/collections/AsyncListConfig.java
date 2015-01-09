@@ -18,7 +18,6 @@ package net.kuujo.copycat.collections;
 import net.kuujo.copycat.StateLogConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
 
 import java.util.Map;
@@ -56,10 +55,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
       .withHeartbeatInterval(getHeartbeatInterval())
       .withLog(getLog())
       .withSerializer(getSerializer())
-      .withPartitions(new CoordinatedResourcePartitionConfig()
-        .withPartition(1)
-        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
-        .withResourceConfig(config));
+      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 
 }

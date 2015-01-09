@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.DiscreteResource;
+import net.kuujo.copycat.Resource;
 
 /**
  * Asynchronous collection.
@@ -24,5 +24,5 @@ import net.kuujo.copycat.DiscreteResource;
  *
  * @param <T> The collection data type.
  */
-public interface AsyncCollection<T extends AsyncCollection<T, U>, U> extends AsyncCollectionProxy<U>, DiscreteResource<T> {
+public interface AsyncCollection<T extends AsyncCollection<T, U>, U> extends AsyncCollectionProxy<U>, Resource<T> {
 }

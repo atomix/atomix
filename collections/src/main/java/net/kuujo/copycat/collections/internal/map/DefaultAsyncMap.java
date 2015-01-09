@@ -19,7 +19,7 @@ import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.collections.AsyncMap;
 import net.kuujo.copycat.collections.AsyncMapProxy;
-import net.kuujo.copycat.internal.AbstractDiscreteResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
@@ -36,7 +36,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncMap<K, V> extends AbstractDiscreteResource<AsyncMap<K, V>> implements AsyncMap<K, V> {
+public class DefaultAsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> implements AsyncMap<K, V> {
   private final StateMachine<MapState<K, V>> stateMachine;
   private AsyncMapProxy<K, V> proxy;
 

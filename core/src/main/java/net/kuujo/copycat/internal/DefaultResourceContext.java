@@ -15,13 +15,23 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.ResourcePartitionContext;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.manager.ClusterManager;
+import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.internal.util.concurrent.Futures;
+import net.kuujo.copycat.log.LogManager;
+import net.kuujo.copycat.protocol.CommitRequest;
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.QueryRequest;
+import net.kuujo.copycat.protocol.Response;
 
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 /**
  * Default resource context.
@@ -31,12 +41,17 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultResourceContext implements ResourceContext {
   private final String name;
   private final CoordinatedResourceConfig config;
-  private final List<ResourcePartitionContext> partitions;
+  private final ClusterManager cluster;
+  private final CopycatStateContext context;
+  private final DefaultClusterCoordinator coordinator;
+  private boolean open;
 
-  public DefaultResourceContext(String name, CoordinatedResourceConfig config, List<ResourcePartitionContext> partitions) {
+  public DefaultResourceContext(String name, CoordinatedResourceConfig config, ClusterManager cluster, CopycatStateContext context, DefaultClusterCoordinator coordinator) {
     this.name = Assert.isNotNull(name, "name");
     this.config = Assert.isNotNull(config, "config");
-    this.partitions = Assert.isNotNull(partitions, "partitions");
+    this.cluster = Assert.isNotNull(cluster, "cluster");
+    this.context = Assert.isNotNull(context, "context");
+    this.coordinator = Assert.isNotNull(coordinator, "coordinator");
   }
 
   @Override
@@ -51,51 +66,113 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public List<ResourcePartitionContext> partitions() {
-    return partitions;
+  public CopycatState state() {
+    return context.state();
   }
 
   @Override
-  public ResourcePartitionContext partition(int partition) {
-    return partitions.get(partition - 1);
+  public ClusterManager cluster() {
+    return cluster;
+  }
+
+  @Override
+  public LogManager log() {
+    return context.log();
+  }
+
+  @Override
+  public void execute(Runnable command) {
+    context.executor().execute(command);
+  }
+
+  @Override
+  public synchronized ResourceContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
+    context.consumer(consumer);
+    return this;
+  }
+
+  @Override
+  public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry) {
+    return query(entry, Consistency.DEFAULT);
+  }
+
+  @Override
+  public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency) {
+    if (!open) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+    }
+
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+    QueryRequest request = QueryRequest.builder()
+      .withId(UUID.randomUUID().toString())
+      .withUri(context.getLocalMember())
+      .withEntry(entry)
+      .withConsistency(consistency)
+      .build();
+    context.query(request).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete(response.result());
+        } else {
+          future.completeExceptionally(response.error());
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
+  }
+
+  @Override
+  public synchronized CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
+    if (!open) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+    }
+
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+    CommitRequest request = CommitRequest.builder()
+      .withId(UUID.randomUUID().toString())
+      .withUri(context.getLocalMember())
+      .withEntry(entry)
+      .build();
+    context.commit(request).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete(response.result());
+        } else {
+          future.completeExceptionally(response.error());
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
   }
 
   @Override
   public synchronized CompletableFuture<ResourceContext> open() {
-    CompletableFuture<ResourcePartitionContext>[] futures = new CompletableFuture[partitions.size()];
-    for (int i = 0; i < partitions.size(); i++) {
-      futures[i] = partitions.get(i).open();
-    }
-    return CompletableFuture.allOf(futures).thenApply(v -> this);
+    return coordinator.acquireResource(name)
+      .thenRun(() -> {
+        open = true;
+      }).thenApply(v -> this);
   }
 
   @Override
-  public synchronized boolean isOpen() {
-    for (ResourcePartitionContext partition : partitions) {
-      if (!partition.isOpen()) {
-        return false;
-      }
-    }
-    return true;
+  public boolean isOpen() {
+    return open;
   }
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    CompletableFuture<Void>[] futures = new CompletableFuture[partitions.size()];
-    for (int i = 0; i < partitions.size(); i++) {
-      futures[i] = partitions.get(i).close();
-    }
-    return CompletableFuture.allOf(futures);
+    return coordinator.releaseResource(name)
+      .thenRun(() -> {
+        open = false;
+      });
   }
 
   @Override
-  public synchronized boolean isClosed() {
-    for (ResourcePartitionContext partition : partitions) {
-      if (!partition.isClosed()) {
-        return false;
-      }
-    }
-    return true;
+  public boolean isClosed() {
+    return !open;
   }
 
 }

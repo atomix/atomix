@@ -17,9 +17,8 @@ package net.kuujo.copycat.internal.cluster.coordinator;
 
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.ResourcePartitionContext;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.ClusterException;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MembershipEvent;
 import net.kuujo.copycat.cluster.coordinator.*;
@@ -27,7 +26,6 @@ import net.kuujo.copycat.cluster.manager.ClusterManager;
 import net.kuujo.copycat.cluster.manager.MemberManager;
 import net.kuujo.copycat.internal.CopycatStateContext;
 import net.kuujo.copycat.internal.DefaultResourceContext;
-import net.kuujo.copycat.internal.DefaultResourcePartitionContext;
 import net.kuujo.copycat.internal.cluster.*;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
@@ -42,7 +40,6 @@ import net.kuujo.copycat.util.serializer.Serializer;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 /**
  * Default cluster coordinator implementation.
@@ -80,11 +77,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     CoordinatedResourceConfig resourceConfig = new CoordinatedResourceConfig()
       .withElectionTimeout(config.getClusterConfig().getElectionTimeout())
       .withHeartbeatInterval(config.getClusterConfig().getHeartbeatInterval())
+      .withReplicas(config.getClusterConfig().getMembers())
       .withLog(new BufferedLog());
-    CoordinatedResourcePartitionConfig partitionConfig = new CoordinatedResourcePartitionConfig()
-      .withPartition(1)
-      .withReplicas(config.getClusterConfig().getMembers());
-    this.context = new CopycatStateContext("copycat", uri, resourceConfig, partitionConfig);
+    this.context = new CopycatStateContext("copycat", uri, resourceConfig);
     this.cluster = new CoordinatorCluster(0, "copycat-cluster", this, context, new ResourceRouter(new KryoSerializer()), new KryoSerializer());
     createResources();
   }
@@ -137,75 +132,37 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   }
 
   /**
-   * Acquires a resource partition.
+   * Acquires a resource.
    *
    * @param name The resource name.
-   * @param partition The partition number.
-   * @return A completable future to be completed once the partition has been acquired.
+   * @return A completable future to be completed once the resource has been acquired.
    */
-  public synchronized CompletableFuture<Void> acquirePartition(String name, int partition) {
+  public synchronized CompletableFuture<Void> acquireResource(String name) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
-      PartitionHolder partitionHolder = resource.partitions.get(partition - 1);
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      partitionHolder.state.executor().execute(() -> {
-        if (!partitionHolder.config.getReplicas().contains(uri) && partitionHolder.state.isClosed()) {
-          partitionHolder.cluster.open().whenComplete((r1, e1) -> {
-            if (e1 == null) {
-              partitionHolder.state.open().whenComplete((r2, e2) -> {
-                if (e2 == null) {
-                  future.complete(null);
-                } else {
-                  future.completeExceptionally(e2);
-                }
-              });
-            } else {
-              future.completeExceptionally(e1);
-            }
-          });
-        } else {
-          future.complete(null);
-        }
-      });
-      return future;
+      if (!resource.config.getReplicas().contains(uri) && resource.state.isClosed()) {
+        return resource.cluster.open().thenCompose(v -> resource.state.open());
+      }
+      return CompletableFuture.completedFuture(null);
     }
     return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
   }
 
   /**
-   * Releases a resource partition.
+   * Releases a resource.
    *
    * @param name The resource name.
-   * @param partition The partition number.
-   * @return A completable future to be completed once the partition has been released.
+   * @return A completable future to be completed once the resource has been released.
    */
-  public synchronized CompletableFuture<Void> releasePartition(String name, int partition) {
+  public synchronized CompletableFuture<Void> releaseResource(String name) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
-      PartitionHolder partitionHolder = resource.partitions.get(partition - 1);
-      CompletableFuture<Void> future = new CompletableFuture<>();
-      partitionHolder.state.executor().execute(() -> {
-        if (!partitionHolder.config.getReplicas().contains(uri) && partitionHolder.state.isOpen()) {
-          partitionHolder.state.close().whenComplete((r1, e1) -> {
-            if (e1 == null) {
-              partitionHolder.cluster.close().whenComplete((r2, e2) -> {
-                if (e2 == null) {
-                  future.complete(null);
-                } else {
-                  future.completeExceptionally(e2);
-                }
-              });
-            } else {
-              future.completeExceptionally(e1);
-            }
-          });
-        } else {
-          future.complete(null);
-        }
-      });
-      return future;
+      if (!resource.config.getReplicas().contains(uri) && resource.state.isOpen()) {
+        return resource.state.close().thenCompose(v -> resource.cluster.close());
+      }
+      return CompletableFuture.completedFuture(null);
     }
     return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
   }
@@ -217,22 +174,10 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     for (Map.Entry<String, CoordinatedResourceConfig> entry : this.config.getResourceConfigs().entrySet()) {
       String name = entry.getKey();
       CoordinatedResourceConfig config = entry.getValue();
-
-      List<PartitionHolder> partitions = new ArrayList<>(config.getPartitions().size());
-      for (CoordinatedResourcePartitionConfig partitionConfig : config.getPartitions()) {
-        try {
-          CopycatStateContext state = new CopycatStateContext(name, uri, config, partitionConfig);
-          ClusterManager cluster = new CoordinatedCluster(name.hashCode(), String.format("copycat-cluster-%s-%d", name, partitionConfig.getPartition()), this, state, new ResourceRouter(config.getSerializer().newInstance()), config.getSerializer().newInstance());
-          ResourcePartitionContext context = new DefaultResourcePartitionContext(name, partitionConfig, cluster, state, this);
-          partitions.add(new PartitionHolder(partitionConfig, cluster, state, context));
-        } catch (InstantiationException | IllegalAccessException e) {
-          throw new ClusterException(e);
-        }
-      }
-
-      Resource resource = config.getResourceFactory().apply(new DefaultResourceContext(name, config, partitions.stream()
-        .collect(Collectors.mapping(p -> p.context, Collectors.toList()))));
-      resources.put(name, new ResourceHolder(resource, config, partitions));
+      CopycatStateContext state = new CopycatStateContext(name, uri, config);
+      ClusterManager cluster = new CoordinatedCluster(name.hashCode(), String.format("copycat-cluster-%s", name), this, state, new ResourceRouter(config.getSerializer()), config.getSerializer());
+      ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
+      resources.put(name, new ResourceHolder(config.getResourceFactory().apply(context), config, cluster, state, context));
     }
   }
 
@@ -240,12 +185,10 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    * Opens all cluster resources.
    */
   private CompletableFuture<Void> openResources() {
-    List<CompletableFuture<ResourcePartitionContext>> futures = new ArrayList<>();
+    List<CompletableFuture<ResourceContext>> futures = new ArrayList<>(resources.size());
     for (ResourceHolder resource : resources.values()) {
-      for (PartitionHolder partition : resource.partitions) {
-        if (partition.config.getReplicas().contains(uri)) {
-          futures.add(partition.cluster.open().thenCompose(v -> partition.state.open()).thenApply(v -> null));
-        }
+      if (resource.config.getReplicas().contains(uri)) {
+        futures.add(resource.cluster.open().thenCompose(v -> resource.state.open()).thenApply(v -> null));
       }
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
@@ -257,9 +200,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private CompletableFuture<Void> closeResources() {
     List<CompletableFuture<Void>> futures = new ArrayList<>();
     for (ResourceHolder resource : resources.values()) {
-      for (PartitionHolder partition : resource.partitions) {
-        futures.add(partition.context.close().thenCompose(v -> partition.cluster.close()));
-      }
+      futures.add(resource.state.close().thenCompose(v -> resource.cluster.close()));
     }
     return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
   }
@@ -387,25 +328,12 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private static class ResourceHolder {
     private final Resource resource;
     private final CoordinatedResourceConfig config;
-    private final List<PartitionHolder> partitions;
-
-    private ResourceHolder(Resource resource, CoordinatedResourceConfig config, List<PartitionHolder> partitions) {
-      this.resource = resource;
-      this.config = config;
-      this.partitions = partitions;
-    }
-  }
-
-  /**
-   * Container for resource partitions.
-   */
-  private static class PartitionHolder {
-    private final CoordinatedResourcePartitionConfig config;
     private final ClusterManager cluster;
     private final CopycatStateContext state;
-    private final ResourcePartitionContext context;
+    private final ResourceContext context;
 
-    private PartitionHolder(CoordinatedResourcePartitionConfig config, ClusterManager cluster, CopycatStateContext state, ResourcePartitionContext context) {
+    private ResourceHolder(Resource resource, CoordinatedResourceConfig config, ClusterManager cluster, CopycatStateContext state, ResourceContext context) {
+      this.resource = resource;
       this.config = config;
       this.cluster = cluster;
       this.state = state;

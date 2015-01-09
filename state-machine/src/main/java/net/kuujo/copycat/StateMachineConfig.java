@@ -17,7 +17,6 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.protocol.Consistency;
@@ -257,10 +256,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
       .withLog(getLog())
       .withSerializer(getSerializer())
       .withResourceConfig(config)
-      .addPartition(new CoordinatedResourcePartitionConfig()
-        .withPartition(1)
-        .withReplicas(getReplicas())
-        .withResourceConfig(config));
+      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 
 }

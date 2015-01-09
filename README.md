@@ -49,6 +49,10 @@ taking place on Copycat**
 1. [Resources](#resources)
    * [Resource lifecycle](#resource-lifecycle)
    * [Configuring resources](#configuring-resources)
+      * [Resource replicas](#resource-replicas)
+      * [Log configuration](#log-configuration)
+      * [Serialization](#serialization)
+      * [Configuration maps](#configuration-maps)
    * [Creating resources](#creating-resources)
    * [Resource clusters](#resource-clusters)
 1. [State machines](#state-machines)
@@ -64,14 +68,12 @@ taking place on Copycat**
    * [Asynchronous proxies](#asynchronous-proxies)
 1. [Event logs](#event-logs)
    * [Creating an event log](#creating-an-event-log)
-   * [Configuring the event log](#configuring-the-event-log)
    * [Writing events to the event log](#writing-events-to-the-event-log)
    * [Consuming events from the event log](#consuming-events-from-the-event-log)
    * [Working with event log partitions](#working-with-event-log-partitions)
    * [Event log clusters](#event-log-clusters)
 1. [State logs](#state-logs)
    * [Creating a state log](#creating-a-state-log)
-   * [Configuring the state log](#configuring-the-state-log)
    * [State commands](#state-commands)
    * [State queries](#state-queries)
    * [Submitting operations to the state log](#submitting-operations-to-the-state-log)
@@ -329,6 +331,87 @@ config.addEventLogConfig("event-log", new EventLogConfig()
     .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024)));
 ```
 
+
+#### Resource replicas
+
+Each of the resources in Copycat's cluster do not have to be replicated on all [active members](#active-members) on
+the core cluster. Instead, Copycat allows replicas to be configured on a per-resource basis. This allows users to
+configure replication for a specific resource on a subset of the core cluster of active members.
+
+```java
+CopycatConfig config = new CopycatConfig()
+  .withClusterConfig(new ClusterConfig()
+    .withMembers(
+      "tcp://123.456.789.0:5000",
+      "tcp://123.456.789.1:5000",
+      "tcp://123.456.789.2:5000",
+      "tcp://123.456.789.3:5000",
+      "tcp://123.456.789.4:5000"))
+  .addResource("event-log", new EventLogConfig()
+    .withReplicas(
+      "tcp://123.456.789.1:5000",
+      "tcp://123.456.789.2:5000",
+      "tcp://123.456.789.3:5000"));
+```
+
+#### Log configuration
+
+Each replica of each resource in the Copycat cluster writes to a separate, configurable log. Many resource configuration
+options involve configuring the log itself. Users can configure the performance and reliability of all Copycat logs by
+tuning the underlying file log configuration options, for instance, by configuring the frequency with which Copycat
+flushes logs to disk.
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withLog(new FileLog()
+    .withFlushInterval(60, TimeUnit.SECONDS));
+```
+
+Additionally, all Copycat file logs support configurable retention policies. Retention policies dictate the amount of
+time for which a *segment* of the log is held on disk. For instance, the `FullRetentionPolicy` keeps logs forever,
+while the `TimeBasedRetentionPolicy` allows segments of the log to be deleted after a certain amount of time has passed
+since the segment was created.
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withLog(new FileLog()
+    .withSegmentSize(1024 * 1024 * 32)
+    .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 128));
+```
+
+Copycat provides the following log retention policies:
+* `FullRetentionPolicy` - keeps all log segments forever
+* `ZeroRetentionPolicy` - deletes segments immediately after the log has been rotated
+* `TimeBasedRetentionPolicy` - deletes segments after a period of time has passed since they were *created*
+* `SizeBasedRetentionPolicy` - deletes segments once the complete log grows to a certain size
+
+#### Serialization
+
+By default, entries to Copycat's logs are serialized using the default [Kryo](https://github.com/EsotericSoftware/kryo)
+based serializer, so users can implement custom serializer for log entries by implementing `KryoSerializable`:
+
+```java
+public class MyEntry implements KryoSerializable {
+
+  public void write (Kryo kryo, Output output) {
+    // ...
+  }
+
+  public void read (Kryo kryo, Input input) {
+     // ...
+  }
+}
+```
+
+Alternatively, users can provide a custom serializer for logs via the log configuration:
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withSerializer(new MySerializer());
+```
+
+#### Configuration maps
+
 The Copycat configuration API is designed to support arbitrary `Map` based configurations as well. Simply pass a map
 with the proper configuration options for the given configuration type to the configuration object constructor:
 
@@ -361,8 +444,8 @@ EventLogConfig config = new EventLogConfig(configMap);
 
 With resources configured and the `Copycat` instance created, resources can be easily retrieved by calling any
 of the resource-specific methods on the `Copycat` instance:
-* `<T, U> EventLog<T, U> eventLog(String name)`
-* `<T, U> StateLog<T, U> stateLog(String name)`
+* `<T> EventLog<T> eventLog(String name)`
+* `<T> StateLog<T> stateLog(String name)`
 * `<T> StateMachine<T> stateMachine(String name)`
 * `LeaderElection leaderElection(String name)`
 * `<K, V> AsyncMap<K, V> map(String name)`
@@ -728,8 +811,6 @@ map.put("foo", "Hello world!").thenRun(() -> {
 ## Event logs
 
 Event logs are eventually consistent Raft replicated logs that are designed to be compacted based on time or size.
-Event logs are inherently partitioned - allowing high-throughput concurrent writes to leaders of multiple partitions -
-and entries are consumed as they are received.
 
 ### Creating an event log
 
@@ -742,10 +823,9 @@ ClusterConfig cluster = new ClusterConfig()
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
-  .addEventLogConfig("event-log", new EventLogConfig())
-    .withPartitions(3);
+  .addEventLogConfig("event-log", new EventLogConfig());
 
-Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+Copycat copycat = Copycat.create("tcp://123.456.789.0:5000", config);
 
 copycat.open().thenRun(() -> {
   copycat.<String, String>eventLog("event-log").open().thenAccept(eventLog -> {
@@ -761,52 +841,16 @@ static interface method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
-EventLogConfig config = new EventLogConfig())
-  .withPartitions(3);
+EventLogConfig config = new EventLogConfig()
+  .withLog(new FileLog());
 
 EventLog<String, String> eventLog = EventLog.create("tcp:/123.456.789.0", cluster, config);
 ```
 
-Note that the event log API requires two generic types. The first generic - `T` - is the partition key type. This is
-the data type of the keys used to select partitions to which to commit entries. The second generic type - `U` - is the
-log entry type.
-
-### Configuring the event log
-
-Copycat event logs are partitioned and replicated. Thus, the `EventLogConfig` API provides various methods for
-configuring the partitioning and replication of each event log.
-
-To set the number of event log partitions, use the `setPartitions` method or `withPartitions` fluent method.
-
-```java
-EventLogConfig config = new EventLogConfig()
-  .withPartitions(3);
-```
-
-The number of partitions indicated will dictate the number of separate replicated log instances that are created for
-the event log. For each log partition, a separate leader will be elected and separate instance of the Raft consensus
-algorithm will be run.
-
-In order to control the amount of cluster resources each event log partition consumes, Copycat provides a *replication
-factor* option which configures the number of nodes on which each partition is synchronously replicated. For each
-level of replication factor, two additional nodes are required for replication for each partition. In other words:
-* A replication factor of `0` indicates that each partition resides only on a single node
-* A replication factor of `1` indicates that each partition resides on three nodes, and writes require data to be
-  written to the leader and one other node
-* A replication factor of `2` indicates that each partition resides on five nodes, and writes require data to be written
-  to the leader and two other nodes
-
-To configure the replication factor, use the `setReplicationFactor` method or `withReplicationFactor` fluent method.
-
-```java
-EventLogConfig config = new EventLogConfig()
-  .withPartitions(3)
-  .withReplicationFactor(1);
-```
-
-By default the replication factor is `-1`, indicating that each partition should be replicated to the entire cluster.
+Note that the event log API requires two generic types. The generic type - `T` - is the log entry type. Copycat logs
+support arbitrary entry types.
 
 ### Writing events to the event log
 
@@ -915,41 +959,6 @@ StateLog<String, String> stateLog = StateLog.create("tcp:/123.456.789.0", cluste
 Note that the state log API requires two generic types. The first generic - `T` - is the partition key type. This is
 the data type of the keys used to select partitions to which to commit entries. The second generic type - `U` - is the
 log entry type.
-
-### Configuring the state log
-
-Copycat state logs are partitioned and replicated. Thus, the `StateLogConfig` API provides various methods for
-configuring the partitioning and replication of each state log.
-
-To set the number of state log partitions, use the `setPartitions` method or `withPartitions` fluent method.
-
-```java
-StateLogConfig config = new StateLogConfig()
-  .withPartitions(3);
-```
-
-The number of partitions indicated will dictate the number of separate replicated log instances that are created for
-the state log. For each log partition, a separate leader will be elected and separate instance of the Raft consensus
-algorithm will be run.
-
-In order to control the amount of cluster resources each state log partition consumes, Copycat provides a *replication
-factor* option which configures the number of nodes on which each partition is synchronously replicated. For each
-level of replication factor, two additional nodes are required for replication for each partition. In other words:
-* A replication factor of `0` indicates that each partition resides only on a single node
-* A replication factor of `1` indicates that each partition resides on three nodes, and writes require data to be
-  written to the leader and one other node
-* A replication factor of `2` indicates that each partition resides on five nodes, and writes require data to be written
-  to the leader and two other nodes
-
-To configure the replication factor, use the `setReplicationFactor` method or `withReplicationFactor` fluent method.
-
-```java
-StateLogConfig config = new StateLogConfig()
-  .withPartitions(3)
-  .withReplicationFactor(1);
-```
-
-By default the replication factor is `-1`, indicating that each partition should be replicated to the entire cluster.
 
 ### State commands
 

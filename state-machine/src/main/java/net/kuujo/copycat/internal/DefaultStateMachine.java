@@ -32,10 +32,10 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachine<T>> implements StateMachine<T> {
+public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> implements StateMachine<T> {
   private final Class<T> stateType;
   private T state;
-  private final StateLog<Integer, List<Object>> log;
+  private final StateLog<List<Object>> log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
   private Map<String, Object> data = new HashMap<>(1024);
   private final Map<Class<?>, Method> initializers = new HashMap<>();
@@ -101,12 +101,12 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
 
   @Override
   public Cluster cluster() {
-    return log.partition(1).cluster();
+    return log.cluster();
   }
 
   @Override
   public CopycatState state() {
-    return log.partition(1).state();
+    return log.state();
   }
 
   @Override
@@ -136,8 +136,8 @@ public class DefaultStateMachine<T> extends AbstractDiscreteResource<StateMachin
 
   @Override
   public synchronized CompletableFuture<StateMachine<T>> open() {
-    log.partition(1).snapshotWith(this::snapshot);
-    log.partition(1).installWith(this::install);
+    log.snapshotWith(this::snapshot);
+    log.installWith(this::install);
     return log.open().thenApply(v -> this);
   }
 

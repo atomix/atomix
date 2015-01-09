@@ -18,20 +18,20 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Copycat event log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, StateLogPartition<U>> {
+public interface StateLog<T> extends Resource<StateLog<T>> {
 
   /**
    * Creates a new state log.
@@ -42,7 +42,7 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @param <T> The state log entry type.
    * @return A new state log instance.
    */
-  static <T, U> StateLog<T, U> create(String name, String uri, ClusterConfig cluster) {
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster) {
     return create(name, uri, cluster, new StateLogConfig());
   }
 
@@ -57,12 +57,11 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @return A new state log instance.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <T, U> StateLog<T, U> create(String name, String uri, ClusterConfig cluster, StateLogConfig config) {
+  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, StateLogConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    StateLog<T, U> stateLog = coordinator.getResource(name);
-    ((AbstractResource) stateLog).withStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((AbstractResource) stateLog).withShutdownTask(coordinator::close);
-    return stateLog;
+    return coordinator.<StateLog<T>>getResource(name)
+      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .withShutdownTask(coordinator::close);
   }
 
   /**
@@ -70,11 +69,11 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    *
    * @param name The command name.
    * @param command The command function.
-   * @param <V> The command input type.
-   * @param <W> The command output type.
+   * @param <U> The command input type.
+   * @param <V> The command output type.
    * @return The state log.
    */
-  <V extends U, W> StateLog<T, U> registerCommand(String name, Function<V, W> command);
+  <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command);
 
   /**
    * Unregisters a state command.
@@ -82,18 +81,18 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @param name The command name.
    * @return The state log.
    */
-  StateLog<T, U> unregisterCommand(String name);
+  StateLog<T> unregisterCommand(String name);
 
   /**
    * Registers a state query.
    *
    * @param name The query name.
    * @param query The query function.
-   * @param <V> The query input type.
-   * @param <W> The query output type.
+   * @param <U> The query input type.
+   * @param <V> The query output type.
    * @return The state log.
    */
-  <V extends U, W> StateLog<T, U> registerQuery(String name, Function<V, W> query);
+  <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query);
 
   /**
    * Registers a state query.
@@ -101,11 +100,11 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @param name The query name.
    * @param query The query function.
    * @param consistency The default query consistency.
-   * @param <V> The query input type.
-   * @param <W> The query output type.
+   * @param <U> The query input type.
+   * @param <V> The query output type.
    * @return The state log.
    */
-  <V extends U, W> StateLog<T, U> registerQuery(String name, Function<V, W> query, Consistency consistency);
+  <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency);
 
   /**
    * Unregisters a state query.
@@ -113,7 +112,7 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @param name The query name.
    * @return The state log.
    */
-  StateLog<T, U> unregisterQuery(String name);
+  StateLog<T> unregisterQuery(String name);
 
   /**
    * Unregisters a state command or query.
@@ -121,7 +120,7 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @param name The command or query name.
    * @return The state log.
    */
-  StateLog<T, U> unregister(String name);
+  StateLog<T> unregister(String name);
 
   /**
    * Registers a state log snapshot function.
@@ -129,7 +128,7 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @param snapshotter The snapshot function.
    * @return The state log.
    */
-  <V> StateLog<T, U> snapshotWith(Function<Integer, V> snapshotter);
+  <V> StateLog<T> snapshotWith(Supplier<V> snapshotter);
 
   /**
    * Registers a state log snapshot installer.
@@ -137,27 +136,16 @@ public interface StateLog<T, U> extends PartitionedResource<StateLog<T, U>, Stat
    * @param installer The snapshot installer.
    * @return The state log.
    */
-  <V> StateLog<T, U> installWith(BiConsumer<Integer, V> installer);
+  <V> StateLog<T> installWith(Consumer<V> installer);
 
   /**
    * Submits a state command or query to the log.
    *
    * @param command The command name.
    * @param entry The command entry.
-   * @param <V> The command return type.
+   * @param <U> The command return type.
    * @return A completable future to be completed once the command output is received.
    */
-  <V> CompletableFuture<V> submit(String command, U entry);
-
-  /**
-   * Submits a state command or query to the log.
-   *
-   * @param command The command name.
-   * @param partitionKey The command partition key.
-   * @param entry The command entry.
-   * @param <V> The command return type.
-   * @return A completable future to be completed once the command output is received.
-   */
-  <V> CompletableFuture<V> submit(String command, T partitionKey, U entry);
+  <U> CompletableFuture<U> submit(String command, T entry);
 
 }

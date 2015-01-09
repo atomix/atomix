@@ -15,6 +15,10 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.cluster.Cluster;
+
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Partitioned Copycat resource.
  *
@@ -28,5 +32,35 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
    * @return The resource name.
    */
   String name();
+
+  /**
+   * Returns the resource cluster.
+   *
+   * @return The resource cluster.
+   */
+  Cluster cluster();
+
+  /**
+   * Returns the resource state.
+   *
+   * @return The current resource state.
+   */
+  CopycatState state();
+
+  /**
+   * Adds a startup task to the event log.
+   *
+   * @param task The startup task to add.
+   * @return The Copycat context.
+   */
+  public T withStartupTask(Task<CompletableFuture<Void>> task);
+
+  /**
+   * Adds a shutdown task to the event log.
+   *
+   * @param task The shutdown task to remove.
+   * @return The Copycat context.
+   */
+  public T withShutdownTask(Task<CompletableFuture<Void>> task);
 
 }

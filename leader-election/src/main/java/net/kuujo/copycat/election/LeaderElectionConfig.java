@@ -18,7 +18,6 @@ package net.kuujo.copycat.election;
 import net.kuujo.copycat.ResourceConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.Log;
@@ -63,10 +62,7 @@ public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
       .withResourceFactory(DefaultLeaderElection::new)
       .withLog(getLog())
       .withResourceConfig(this)
-      .addPartition(new CoordinatedResourcePartitionConfig()
-        .withPartition(1)
-        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
-        .withResourceConfig(this));
+      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 
 }

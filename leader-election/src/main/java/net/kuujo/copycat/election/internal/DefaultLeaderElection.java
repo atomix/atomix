@@ -42,7 +42,7 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
     if (!listeners.containsKey(listener)) {
       EventListener<ElectionEvent> wrapper = event -> listener.handle(event.winner());
       listeners.put(listener, wrapper);
-      context.partition(1).cluster().election().addListener(wrapper);
+      context.cluster().election().addListener(wrapper);
     }
     return this;
   }
@@ -51,7 +51,7 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
   public synchronized LeaderElection removeListener(EventListener<Member> listener) {
     EventListener<ElectionEvent> wrapper = listeners.remove(listener);
     if (wrapper != null) {
-      context.partition(1).cluster().election().removeListener(wrapper);
+      context.cluster().election().removeListener(wrapper);
     }
     return this;
   }

@@ -17,16 +17,12 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.internal.DefaultStateLog;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.protocol.Consistency;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,7 +30,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateLogConfig extends PartitionedResourceConfig<StateLogConfig> {
+public class StateLogConfig extends ResourceConfig<StateLogConfig> {
   private static final Log DEFAULT_STATE_LOG_LOG = new FileLog();
   public static final String STATE_LOG_DEFAULT_CONSISTENCY = "consistency";
 
@@ -117,28 +113,14 @@ public class StateLogConfig extends PartitionedResourceConfig<StateLogConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    CoordinatedResourceConfig config = new CoordinatedResourceConfig(super.toMap())
+    return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
       .withResourceFactory(DefaultStateLog::new)
       .withLog(getLog())
       .withSerializer(getSerializer())
-      .withResourceConfig(this);
-
-    for (int i = 1; i <= getPartitions(); i++) {
-      CoordinatedResourcePartitionConfig partition = new CoordinatedResourcePartitionConfig().withPartition(i).withResourceConfig(this);
-
-      List<String> sortedReplicas = new ArrayList<>(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
-      Collections.sort(sortedReplicas);
-
-      if (getReplicationFactor() > -1) {
-        for (int j = i; j < 1 + getReplicationFactor() * 2; j++) {
-          partition.addReplica(sortedReplicas.get(sortedReplicas.size() % j));
-        }
-      }
-      config.addPartition(partition);
-    }
-    return config;
+      .withResourceConfig(this)
+      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 
 }

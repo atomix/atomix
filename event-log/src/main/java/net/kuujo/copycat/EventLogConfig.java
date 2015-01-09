@@ -17,14 +17,10 @@ package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.internal.DefaultEventLog;
 import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.log.Log;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -32,7 +28,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventLogConfig extends PartitionedResourceConfig<EventLogConfig> {
+public class EventLogConfig extends ResourceConfig<EventLogConfig> {
   private static final Log DEFAULT_EVENT_LOG = new FileLog();
 
   public EventLogConfig() {
@@ -59,28 +55,14 @@ public class EventLogConfig extends PartitionedResourceConfig<EventLogConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    CoordinatedResourceConfig config = new CoordinatedResourceConfig(super.toMap())
+    return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
       .withResourceFactory(DefaultEventLog::new)
       .withLog(getLog())
       .withSerializer(getSerializer())
-      .withResourceConfig(this);
-
-    for (int i = 1; i <= getPartitions(); i++) {
-      CoordinatedResourcePartitionConfig partition = new CoordinatedResourcePartitionConfig().withPartition(i).withResourceConfig(this);
-
-      List<String> sortedReplicas = new ArrayList<>(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
-      Collections.sort(sortedReplicas);
-
-      if (getReplicationFactor() > -1) {
-        for (int j = i; j < 1 + getReplicationFactor() * 2; j++) {
-          partition.addReplica(sortedReplicas.get(sortedReplicas.size() % j));
-        }
-      }
-      config.addPartition(partition);
-    }
-    return config;
+      .withResourceConfig(this)
+      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 
 }

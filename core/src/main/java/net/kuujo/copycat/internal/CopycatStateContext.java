@@ -18,7 +18,6 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
@@ -67,11 +66,11 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private boolean open;
 
-  public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, CoordinatedResourcePartitionConfig partition) {
-    this.executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-" + name + "-" + partition.getPartition() + "-%d"));
+  public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config) {
+    this.executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-" + name + "-%d"));
     this.localMember = Assert.isNotNull(uri, "uri");
-    this.replicas = new HashSet<>(partition.getReplicas());
-    this.members = new HashSet<>(partition.getReplicas());
+    this.replicas = new HashSet<>(config.getReplicas());
+    this.members = new HashSet<>(config.getReplicas());
     this.members.add(uri);
     this.localMemberInfo = new ReplicaInfo(uri);
     this.memberInfo.put(uri, localMemberInfo);

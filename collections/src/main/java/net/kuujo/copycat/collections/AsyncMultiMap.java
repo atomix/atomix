@@ -15,11 +15,10 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.DiscreteResource;
+import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
 /**
@@ -30,7 +29,7 @@ import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
  * @param <K> The multimap key type.
  * @param <V> The multimap entry type.
  */
-public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, DiscreteResource<AsyncMultiMap<K, V>> {
+public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, Resource<AsyncMultiMap<K, V>> {
 
   /**
    * Creates a new asynchronous multimap.
@@ -60,10 +59,9 @@ public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, DiscreteR
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMultiMapConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    AsyncMultiMap<K, V> map = coordinator.getResource(name);
-    ((AbstractResource) map).withStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((AbstractResource) map).withShutdownTask(coordinator::close);
-    return map;
+    return coordinator.<AsyncMultiMap<K, V>>getResource(name)
+      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .withShutdownTask(coordinator::close);
   }
 
 }

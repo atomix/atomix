@@ -19,7 +19,7 @@ import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.collections.AsyncMultiMap;
 import net.kuujo.copycat.collections.AsyncMultiMapProxy;
-import net.kuujo.copycat.internal.AbstractDiscreteResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
@@ -35,7 +35,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncMultiMap<K, V> extends AbstractDiscreteResource<AsyncMultiMap<K, V>> implements AsyncMultiMap<K, V> {
+public class DefaultAsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K, V>> implements AsyncMultiMap<K, V> {
   private final StateMachine<MultiMapState<K, V>> stateMachine;
   private AsyncMultiMapProxy<K, V> proxy;
 

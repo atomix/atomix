@@ -70,7 +70,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> the event log entry type.
    * @return A completable future to be completed once the event log has been created.
    */
-  <T, U> EventLog<T, U> eventLog(String name);
+  <T> EventLog<T> eventLog(String name);
 
   /**
    * Creates a new state log.
@@ -79,7 +79,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The state log entry type.
    * @return A completable future to be completed once the state log has been created.
    */
-  <T, U> StateLog<T, U> stateLog(String name);
+  <T> StateLog<T> stateLog(String name);
 
   /**
    * Creates a new replicated state machine.

@@ -19,7 +19,6 @@ import net.kuujo.copycat.ResourceConfig;
 import net.kuujo.copycat.StateLogConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourcePartitionConfig;
 import net.kuujo.copycat.collections.internal.lock.DefaultAsyncLock;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.Log;
@@ -65,10 +64,7 @@ public class AsyncLockConfig extends ResourceConfig<AsyncLockConfig> {
       .withHeartbeatInterval(getHeartbeatInterval())
       .withLog(getLog())
       .withSerializer(getSerializer())
-      .withPartitions(new CoordinatedResourcePartitionConfig()
-        .withPartition(1)
-        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas())
-        .withResourceConfig(config));
+      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
   }
 
 }

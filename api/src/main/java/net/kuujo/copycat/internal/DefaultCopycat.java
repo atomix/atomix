@@ -48,12 +48,12 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public <T, U> EventLog<T, U> eventLog(String name) {
+  public <T> EventLog<T> eventLog(String name) {
     return coordinator.getResource(name);
   }
 
   @Override
-  public <T, U> StateLog<T, U> stateLog(String name) {
+  public <T> StateLog<T> stateLog(String name) {
     return null;
   }
 

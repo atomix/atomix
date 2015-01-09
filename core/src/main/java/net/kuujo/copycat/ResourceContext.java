@@ -16,15 +16,21 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.manager.ClusterManager;
+import net.kuujo.copycat.log.LogManager;
+import net.kuujo.copycat.protocol.Consistency;
 
-import java.util.List;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
 
 /**
  * Copycat resource context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ResourceContext extends Managed<ResourceContext> {
+public interface ResourceContext extends Managed<ResourceContext>, Executor {
 
   /**
    * Returns the resource name.
@@ -41,18 +47,56 @@ public interface ResourceContext extends Managed<ResourceContext> {
   CoordinatedResourceConfig config();
 
   /**
-   * Returns a list of resource partition contexts.
+   * Returns the current Copycat state.
    *
-   * @return A list of resource partition contexts.
+   * @return The current Copycat state.
    */
-  List<ResourcePartitionContext> partitions();
+  CopycatState state();
 
   /**
-   * Returns a partition context for the given partition number.
+   * Returns the Copycat cluster.
    *
-   * @param partition The resource partition number.
-   * @return The resource partition context.
+   * @return The Copycat cluster.
    */
-  ResourcePartitionContext partition(int partition);
+  ClusterManager cluster();
+
+  /**
+   * Returns the Copycat log.
+   *
+   * @return The Copycat log.
+   */
+  LogManager log();
+
+  /**
+   * Registers an entry consumer on the context.
+   *
+   * @param consumer The entry consumer.
+   * @return The Copycat context.
+   */
+  ResourceContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer);
+
+  /**
+   * Submits a persistent entry to the context.
+   *
+   * @param entry The entry to commit.
+   * @return A completable future to be completed once the entry has been committed.
+   */
+  CompletableFuture<ByteBuffer> commit(ByteBuffer entry);
+
+  /**
+   * Submits a synchronous entry to the context.
+   *
+   * @param entry The entry to query.
+   * @return A completable future to be completed once the cluster has been synchronized.
+   */
+  CompletableFuture<ByteBuffer> query(ByteBuffer entry);
+
+  /**
+   * Submits a synchronous entry to the context.
+   *
+   * @param entry The entry to query.
+   * @return A completable future to be completed once the cluster has been synchronized.
+   */
+  CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency);
 
 }

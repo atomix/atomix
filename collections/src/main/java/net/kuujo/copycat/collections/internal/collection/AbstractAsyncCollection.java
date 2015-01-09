@@ -19,7 +19,7 @@ import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.StateMachine;
 import net.kuujo.copycat.collections.AsyncCollection;
 import net.kuujo.copycat.collections.AsyncCollectionProxy;
-import net.kuujo.copycat.internal.AbstractDiscreteResource;
+import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.Collection;
@@ -31,7 +31,7 @@ import java.util.function.Supplier;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T extends CollectionState<T, V>, U extends AsyncCollectionProxy<V>, V> extends AbstractDiscreteResource<S> implements AsyncCollection<S, V> {
+public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T extends CollectionState<T, V>, U extends AsyncCollectionProxy<V>, V> extends AbstractResource<S> implements AsyncCollection<S, V> {
   private final StateMachine<T> stateMachine;
   private final Class<U> proxyClass;
   protected U proxy;

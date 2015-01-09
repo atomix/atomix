@@ -44,7 +44,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   private static final Set<String> DEFAULT_RESOURCE_REPLICAS = new HashSet<>(10);
   private static final Log DEFAULT_RESOURCE_LOG = new FileLog();
 
-  private Class<? extends Serializer> defaultSerializer = KryoSerializer.class;
+  private Object defaultSerializer = KryoSerializer.class;
 
   protected ResourceConfig() {
     super();
@@ -68,6 +68,14 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
     }
   }
 
+  void setDefaultSerializer(String serializer) {
+    try {
+      this.defaultSerializer = Class.forName(serializer);
+    } catch (ClassNotFoundException e) {
+      throw new ConfigurationException("Failed to locate default serializer class", e);
+    }
+  }
+
   /**
    * Sets the default resource serializer.
    *
@@ -79,12 +87,53 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   }
 
   /**
+   * Sets the default resource serializer.
+   *
+   * @param serializer The default resource serializer.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  void setDefaultSerializer(Serializer serializer) {
+    this.defaultSerializer = Assert.isNotNull(serializer, "serializer");
+  }
+
+  /**
    * Returns the default resource serializer.
    *
    * @return The default resource serializer.
    */
-  Class<? extends Serializer> getDefaultSerializer() {
-    return defaultSerializer;
+  @SuppressWarnings("unchecked")
+  Serializer getDefaultSerializer() {
+    if (defaultSerializer instanceof Serializer) {
+      return (Serializer) defaultSerializer;
+    } else if (defaultSerializer instanceof Class) {
+      try {
+        return ((Class<? extends Serializer>) defaultSerializer).newInstance();
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate default serializer", e);
+      }
+    } else if (defaultSerializer instanceof String) {
+      try {
+        return ((Class<? extends Serializer>) Class.forName(defaultSerializer.toString())).newInstance();
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate default serializer", e);
+      } catch (ClassNotFoundException e) {
+        throw new ConfigurationException("Failed to locate default serializer class", e);
+      }
+    }
+    throw new IllegalStateException("Invalid default serializer configuration");
+  }
+
+  /**
+   * Sets the default resource serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The default resource serializer.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  T withDefaultSerializer(String serializer) {
+    setDefaultSerializer(serializer);
+    return (T) this;
   }
 
   /**
@@ -96,6 +145,19 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   @SuppressWarnings("unchecked")
   T withDefaultSerializer(Class<? extends Serializer> serializer) {
+    setDefaultSerializer(serializer);
+    return (T) this;
+  }
+
+  /**
+   * Sets the default resource serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The default resource serializer.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  T withDefaultSerializer(Serializer serializer) {
     setDefaultSerializer(serializer);
     return (T) this;
   }
@@ -117,7 +179,17 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setSerializer(Class<? extends Serializer> serializer) {
-    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer").getName());
+    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+  }
+
+  /**
+   * Sets the resource entry serializer.
+   *
+   * @param serializer The resource entry serializer.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  public void setSerializer(Serializer serializer) {
+    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
   }
 
   /**
@@ -127,13 +199,26 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws net.kuujo.copycat.ConfigurationException If the resource serializer configuration is malformed
    */
   @SuppressWarnings("unchecked")
-  public Class<? extends Serializer> getSerializer() {
+  public Serializer getSerializer() {
     Object serializer = get(RESOURCE_SERIALIZER, defaultSerializer);
-    try {
-      return (Class<? extends Serializer>) Class.forName(serializer.toString()).newInstance();
-    } catch(ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-      throw new ConfigurationException("Failed to instantiate serializer", e);
+    if (serializer instanceof Serializer) {
+      return (Serializer) serializer;
+    } else if (serializer instanceof Class) {
+      try {
+        return ((Class<? extends Serializer>) serializer).newInstance();
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate serializer", e);
+      }
+    } else if (serializer instanceof String) {
+      try {
+        return ((Class<? extends Serializer>) Class.forName(serializer.toString())).newInstance();
+      } catch (InstantiationException | IllegalAccessException e) {
+        throw new ConfigurationException("Failed to instantiate serializer", e);
+      } catch (ClassNotFoundException e) {
+        throw new ConfigurationException("Failed to locate serializer class", e);
+      }
     }
+    throw new IllegalStateException("Invalid default serializer configuration");
   }
 
   /**
@@ -158,6 +243,19 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   @SuppressWarnings("unchecked")
   public T withSerializer(Class<? extends Serializer> serializer) {
+    setSerializer(serializer);
+    return (T) this;
+  }
+
+  /**
+   * Sets the resource entry serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The resource entry serializer.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  public T withSerializer(Serializer serializer) {
     setSerializer(serializer);
     return (T) this;
   }

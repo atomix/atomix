@@ -17,7 +17,6 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, EventLogPartition<U>> {
+public interface EventLog<T> extends Resource<EventLog<T>> {
 
   /**
    * Creates a new event log.
@@ -37,7 +36,7 @@ public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, Even
    * @param cluster The event log cluster.
    * @return A new event log instance.
    */
-  static <T, U> EventLog<T, U> create(String name, String uri, ClusterConfig cluster) {
+  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster) {
     return create(name, uri, cluster, new EventLogConfig());
   }
 
@@ -52,12 +51,11 @@ public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, Even
    * @return A new event log instance.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <T, U> EventLog<T, U> create(String name, String uri, ClusterConfig cluster, EventLogConfig config) {
+  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, EventLogConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    EventLog<T, U> eventLog = coordinator.getResource(name);
-    ((AbstractResource) eventLog).withStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((AbstractResource) eventLog).withShutdownTask(coordinator::close);
-    return eventLog;
+    return coordinator.<EventLog<T>>getResource(name)
+      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .withShutdownTask(coordinator::close);
   }
 
   /**
@@ -66,7 +64,15 @@ public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, Even
    * @param consumer The log entry consumer.
    * @return The event log.
    */
-  EventLog<T, U> consumer(EventListener<U> consumer);
+  EventLog<T> consumer(EventListener<T> consumer);
+
+  /**
+   * Gets an entry from the log.
+   *
+   * @param index The index from which to get the entry.
+   * @return A completable future to be completed with the retrieved entry.
+   */
+  CompletableFuture<T> get(long index);
 
   /**
    * Commits an entry to the log.
@@ -74,15 +80,6 @@ public interface EventLog<T, U> extends PartitionedResource<EventLog<T, U>, Even
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
-  CompletableFuture<Void> commit(U entry);
-
-  /**
-   * Commits an entry to the log.
-   *
-   * @param partitionKey The entry partition key.
-   * @param entry The entry to commit.
-   * @return A completable future to be completed once the entry has been committed.
-   */
-  CompletableFuture<Void> commit(T partitionKey, U entry);
+  CompletableFuture<Long> commit(T entry);
 
 }

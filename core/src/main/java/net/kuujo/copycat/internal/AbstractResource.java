@@ -15,9 +15,11 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.Task;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.util.Assert;
 
 import java.util.ArrayList;
@@ -39,24 +41,24 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
     this.context = Assert.isNotNull(context, "context");
   }
 
-  /**
-   * Adds a startup task to the event log.
-   *
-   * @param task The startup task to add.
-   * @return The Copycat context.
-   */
+  @Override
+  public Cluster cluster() {
+    return context.cluster();
+  }
+
+  @Override
+  public CopycatState state() {
+    return context.state();
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public synchronized T withStartupTask(Task<CompletableFuture<Void>> task) {
     startupTasks.add(task);
     return (T) this;
   }
 
-  /**
-   * Adds a shutdown task to the event log.
-   *
-   * @param task The shutdown task to remove.
-   * @return The Copycat context.
-   */
+  @Override
   @SuppressWarnings("unchecked")
   public synchronized T withShutdownTask(Task<CompletableFuture<Void>> task) {
     shutdownTasks.add(task);

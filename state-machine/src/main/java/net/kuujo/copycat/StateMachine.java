@@ -19,7 +19,6 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
 import java.util.concurrent.CompletableFuture;
@@ -29,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface StateMachine<T> extends DiscreteResource<StateMachine<T>> {
+public interface StateMachine<T> extends Resource<StateMachine<T>> {
 
   /**
    * Creates a new state machine.
@@ -57,10 +56,9 @@ public interface StateMachine<T> extends DiscreteResource<StateMachine<T>> {
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> StateMachine<T> create(String name, String uri, ClusterConfig cluster, StateMachineConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    StateMachine<T> stateMachine = coordinator.getResource(name);
-    ((AbstractResource) stateMachine).withStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((AbstractResource) stateMachine).withShutdownTask(coordinator::close);
-    return stateMachine;
+    return coordinator.<StateMachine<T>>getResource(name)
+      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .withShutdownTask(coordinator::close);
   }
 
   /**
