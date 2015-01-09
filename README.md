@@ -18,7 +18,6 @@ to provide a set of high level APIs that solve a variety of distributed systems 
 * [Strongly consistent state logs](#state-logs)
 * [Eventually consistent event logs](#event-logs)
 * [Distributed collections](#collections)
-* [Resource partitioning](#resource-partitioning)
 * [Failure detection](#failure-detection)
 * [Remote execution](#remote-execution)
 
@@ -68,12 +67,12 @@ taking place on Copycat**
    * [Asynchronous proxies](#asynchronous-proxies)
 1. [Event logs](#event-logs)
    * [Creating an event log](#creating-an-event-log)
+   * [Event log configuration](#event-log-configuration)
    * [Writing events to the event log](#writing-events-to-the-event-log)
    * [Consuming events from the event log](#consuming-events-from-the-event-log)
-   * [Working with event log partitions](#working-with-event-log-partitions)
-   * [Event log clusters](#event-log-clusters)
 1. [State logs](#state-logs)
    * [Creating a state log](#creating-a-state-log)
+   * [State log configuration](#state-log-configuration)
    * [State commands](#state-commands)
    * [State queries](#state-queries)
    * [Submitting operations to the state log](#submitting-operations-to-the-state-log)
@@ -138,7 +137,7 @@ For more information on Copycat's leader election and replication implementation
 section.
 
 In addition to supporting multiple resources within the same cluster, Copycat supports different cluster configurations
-on a per-resource basis. This allows Copycat's resources to be optimized be partitioning resources and assigning
+on a per-resource basis. This allows Copycat's resources to be optimized by partitioning resources and assigning
 different partitions to different members in the cluster.
 
 The following image demonstrates how Copycat's resources can be partitioned across a cluster:
@@ -167,8 +166,8 @@ modules into a single API, and allows multiple distributed resources to be creat
 ```
 
 Additionally, the following resource modules are provided:
-* `copycat-event-log` - A partitioned replicated log designed for recording event histories
-* `copycat-state-log` - A partitioned replicated log designed for strongly consistent recording of state machine
+* `copycat-event-log` - A replicated log designed for recording event histories
+* `copycat-state-log` - A replicated log designed for strongly consistent recording of state machine
   command histories
 * `copycat-state-machine` - A replicated state machine framework built on top of `copycat-state-log` using proxies
 * `copycat-leader-election` - A simple leader election framework built on top of `copycat-state-log`
@@ -849,50 +848,63 @@ EventLogConfig config = new EventLogConfig()
 EventLog<String, String> eventLog = EventLog.create("tcp:/123.456.789.0", cluster, config);
 ```
 
-Note that the event log API requires two generic types. The generic type - `T` - is the log entry type. Copycat logs
-support arbitrary entry types.
+The generic type - `T` - is the log entry type. Copycat logs support arbitrary entry types.
+
+### Event log configuration
+
+Event logs are designed to maintain long histories of events. Copycat provides a number of configuration options for
+the file logs underlying event log resources which allow users to configure both the size of the event log and the
+time for which event log segments are retained.
+
+The three most notable `Log` configuration options for event logs are the segment size, the flush interval, and
+retention policies.
+
+All Copycat logs are broken into segments internally. In order for a segment of the log to be freed (deleted from disk),
+the segment must not be the last segment in the log. This means if segments were configured with the size
+`Long.MAX_VALUE` then Copycat would never clean the log. The segment size and interval can be configured by using the
+`withSegmentSize` and `withSegmentInterval` methods of the `Log` interface respectively:
+
+```java
+Log log = new FileLog()
+  .withSegmentSize(1024 * 1024)
+  .withSegmentInterval(60, TimeUnit.MINUTES);
+```
+
+The segment size dictates the maximum size of any given segment, and the interval indicates that maximum amount of
+time a segment can exist before the log is rolled over to a new segment.
+
+Users can also configure the interval at which Copycat flushes logs to disk. For event logs, typically the flush
+interval does not need to be configured, allowing the `FileChannel` implementation to handle flushing to disk
+internally. However, to configure the event log's flush interval use the `withFlushInterval` method:
+
+```java
+Log log = new FileLog()
+  .withFlushInterval(60, TimeUnit.SECONDS);
+```
+
+Finally, [retention policies](#retention-policies) dictate the amount of time for which freed segments of the log are
+allowed to remain on disk before being deleted. By default, event logs never delete segments from disk. However, this
+is unsustainable in most production environments. Therefore, it may be prudent to configure your event log with a
+time-based retention policy:
+
+```java
+Log log = new FileLog()
+  .withRetentionPolicy(new TimeBasedRetentionPolicy(7, TimeUnit.DAYS));
+```
+
+Note that additional logs such as the `ChronicleLog` may provide additional configuration options related to their
+specific implementation.
 
 ### Writing events to the event log
 
-The `EventLog` API provides several methods for writing events to the log. The simplest method is by simply using
-the `commit(U entry)` method.
+To write events to an event log, simply call the `commit(T entry)` method:
 
 ```java
 eventLog.commit("Hello world!");
 ```
 
-Because the event log is partitioned, each entry committed to the event log must be
-routed to a specific partition. In the case of the `commit(U entry)` method, a partition is selected by simply using
-the mod hash of the given entry to select a partition.
-
-If you want to get more control over how logs are partitioned, the second method for committing entries to the event
-log is via the `commit(T partitionKey, U entry)` method.
-
-```java
-eventLog.commit("fruit", "apple");
-eventLog.commit("vegetable", "carrot");
-```
-
-This method accepts a partition key which is used to perform the same simple mod hash algorithm to select a partition
-to which to commit the entry.
-
-Finally, `EventLog` is a `PartitionedResource` which exposes methods for directly accessing log partitions. This allows
-users to arbitrarily partition event log entries in whatever way they want.
-
-To get a list of event log partitions, use the `partitions` method:
-
-```java
-for (EventLogPartition partition : eventLog.partitions()) {
-  partition.commit(entry);
-}
-```
-
-To get a specific event log partition, use the `partition` method, passing the partition number to get. Note that
-partition numbers start at `1`, not `0`.
-
-```java
-eventLog.partition(1).commit("Hello world!");
-```
+The `CompletableFuture` returned by the `commit` method will be completed once the entry has been logged and replicated
+to a majority of the resource's replica set.
 
 ### Consuming events from the event log
 
@@ -900,16 +912,6 @@ To consume messages from the event log, register a message consumer via the `con
 
 ```java
 eventLog.consumer(entry -> System.out.println(entry));
-```
-
-### Event log clusters
-
-Because the `EventLog` is a partitioned resource, and because each partition performs leader election and replication
-separate from its sibling partitions, the `EventLog` API itself does not expose a `Cluster` as with other resources.
-Instead, event log clusters must be accessed on a per-partition basis.
-
-```java
-eventLog.partition(1).cluster().election().addListener(result -> System.out.println("Winner: " + result.winner()));
 ```
 
 ## State logs
@@ -929,8 +931,8 @@ ClusterConfig cluster = new ClusterConfig()
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
-  .addStateLogConfig("state-log", new StateLogConfig())
-    .withPartitions(3);
+  .addStateLogConfig("state-log", new StateLogConfig()
+    .withLog(new FileLog());
 
 Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
 
@@ -950,15 +952,30 @@ ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
   .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 
-StateLogConfig config = new StateLogConfig())
-  .withPartitions(3);
+StateLogConfig config = new StateLogConfig()
+  .withLog(new FileLog());
 
 StateLog<String, String> stateLog = StateLog.create("tcp:/123.456.789.0", cluster, config);
 ```
 
-Note that the state log API requires two generic types. The first generic - `T` - is the partition key type. This is
-the data type of the keys used to select partitions to which to commit entries. The second generic type - `U` - is the
-log entry type.
+The generic type - `T` - is the log entry type.
+
+### State log configuration
+
+Since state logs are designed to assist in managing state - including for Copycat's state machines and data structures -
+it is strongly recommended that the state logs use persistent logs such as the `FileLog` and configure the log to
+frequently flush the log to disk.
+
+```java
+StateLogConfig config = new StateLogConfig()
+  .withFileLog(new FileLog()
+    .withFlushOnWrite(true)
+    .withSegmentSize(1024 * 1024 * 32));
+```
+
+The state log implementation uses the segment size to determine when to take snapshots. Once the log grows beyond a
+single segment, the state log will take a snapshot and remove all but the first segment in the log. In order to prevent
+performance issues from snapshotting too frequently, segments should not be made too small.
 
 ### State commands
 
@@ -969,13 +986,7 @@ and are logged and replicated prior to being applied to the command function.
 To register a state command, use the `registerCommand` method.
 
 ```java
-stateLog.registerCommand("add", (partitionKey, entry) -> data.add(entry));
-```
-
-Note also that commands can be registered on each partition of the state log individually.
-
-```java
-stateLog.partition(1).registerCommand("put", entry -> data.add(entry));
+stateLog.registerCommand("add", entry -> data.add(entry));
 ```
 
 ### State queries
@@ -985,7 +996,7 @@ operations require strong consistency and persistence, while read operations - w
 can be performed without persistence. To register a read operation on the state log, use the `registerQuery` method:
 
 ```java
-stateLog.registerQuery("get", (partitionKey, index) -> data.get(index));
+stateLog.registerQuery("get", index -> data.get(index));
 ```
 
 Because of the flexibility of read-only operations, Copycat provides several consistency modes with which users can
@@ -999,13 +1010,7 @@ trade consistency for performance and vice versa.
 To specify the query consistency, simply pass an additional `Consistency` parameter to `registerQuery`:
 
 ```java
-stateLog.registerQuery("get", (partitionKey, index) -> data.get(index), Consistency.FULL);
-```
-
-Note also that queries can be registered on each partition of the state log individually.
-
-```java
-stateLog.partition(1).registerQuery("get", index -> data.get(index));
+stateLog.registerQuery("get", index -> data.get(index), Consistency.FULL);
 ```
 
 ### Submitting operations to the state log
@@ -1017,18 +1022,8 @@ can be submitted to the log. To submit a named operation to the log, call the `s
 stateLog.submit("add", "Hello world!");
 ```
 
-As with the event log, state logs perform partitioning internally using a simple mod hash algorithm. To provide a custom
-partition key by which to partition the log, pass the partition key as the second argument to `submit`.
-
-```java
-stateLog.submit("add", "fruit", "apple");
-```
-
-Alternatively, you can access the state log partitions directly:
-
-```java
-stateLog.partition(1).submit("add", "Hello world!");
-```
+The `CompletableFuture` returned by the `submit` method will be completed once the entry has been logged and replicated
+on a majority of the resource's [active member](#active-members) replicas.
 
 ### Snapshotting
 
@@ -1041,23 +1036,13 @@ snapshot installer will be called to repopulate the state from the last snapshot
 To register a snapshot provider on the state log, use the `snapshotWith` methods:
 
 ```java
-stateLog.snapshotWith(partition -> data);
-```
-
-```java
-stateLog.partition(1).snapshotWith(() -> data);
+stateLog.snapshotWith(() -> data);
 ```
 
 Any snapshot provider should be accompanied by a snapshot installer as well.
 
 ```java
-stateLog.installWith((partition, data) -> {
-  this.data = data;
-});
-```
-
-```java
-stateLog.partition(1).installWith(data -> {
+stateLog.installWith(data -> {
   this.data = data;
 });
 ```
@@ -1349,9 +1334,9 @@ it also serves as a general messaging utility for users as well.
 
 The Copycat cluster consists of two different types of members, [active](#active) and [passive](#passive). Copycat's
 resource behavior differs on each member of the cluster according to the member type. Additionally, each Copycat
-instance maintains several versions of the cluster configuration - one global version and a cluster for each partition
-of each resource. This allows for a flexible replication model where different resources within the same Copycat
-cluster operate completely independently from each other in terms of leader election and log replication.
+instance maintains several versions of the cluster configuration - one global version and a cluster for each
+resource. This allows for a flexible replication model where different resources within the same Copycat cluster
+operate completely independently from each other in terms of leader election and log replication.
 
 ### Active members
 
@@ -1386,11 +1371,11 @@ Active members are distinguished from passive members in that they fully partici
 [Raft consensus protocol](https://raftconsensus.github.io/). This means that only active cluster members can become
 leaders, and only active members can serve as synchronous replicas to cluster resources.
 
-Since each Copycat resource (and partition) contains its own separate `Cluster`, Copycat allows the resource's active
-membership to differ from the global Copycat cluster membership. This means that even though the Copycat cluster may
-consist of five total nodes with three active member nodes, a resource can perform synchronous replication on only
-three of those nodes. In that case, the resource's Raft algorithm would run on those three nodes, and an asynchronous
-gossip protocol would perform replication to the remainder of the resource's cluster.
+Since each Copycat resource contains its own separate `Cluster`, Copycat allows the resource's active membership to
+differ from the global Copycat cluster membership. This means that even though the Copycat cluster may consist of five
+total nodes with three active member nodes, a resource can perform synchronous replication on only three of those nodes.
+In that case, the resource's Raft algorithm would run on those three nodes, and an asynchronous gossip protocol would
+perform replication to the remainder of the resource's cluster.
 
 ### Passive members
 
@@ -1462,15 +1447,6 @@ copycat.stateMachine("my-state-machine").open().thenAccept(stateMachine -> {
   stateMachine.cluster().election().addListener(result -> {
     System.out.println(result.winner() + " elected leader!");
   });
-});
-```
-
-Note, however, that for partitioned resources ([state log](#state-logs) and [event log](#event-logs)), because logs
-are created and replicated on a per-partition basis, so are elections performed on a per-partition basis.
-
-```java
-eventLog.partition(1).cluster().election().addListener(result -> {
-  System.out.println(result.winner() + " elected leader!");
 });
 ```
 
@@ -1698,7 +1674,7 @@ In Copycat, since each resource maintains its own replicated log, leader electio
 [active member](#active-member) replicas for each resource in the cluster. This means at any given point in time,
 leaders for various resources could reside on different members of the cluster. However,
 [passive members](#passive-members) cannot be elected leader as they do not participate in the Raft consensus algorithm.
-For instance, in a cluster with three active members and ten passive members, the leader for an event log partition
+For instance, in a cluster with three active members and ten passive members, the leader for an event log
 could be active member *A*, while a state machine's leader could be active member *C*, but neither resource's leader
 could be any passive member of the cluster. Copycat's `Cluster` and its related Raft implementation are designed to act
 completely independently of other `Cluster` and Raft instances within the same Copycat instance.
