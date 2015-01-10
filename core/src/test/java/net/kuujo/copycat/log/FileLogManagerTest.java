@@ -32,11 +32,6 @@ import java.util.UUID;
 @Test
 public class FileLogManagerTest extends AbstractLogManagerTest {
 
-  public void testCreateFileLog() throws Throwable {
-    AbstractLogManager log = createLog();
-    log.open();
-  }
-
   @AfterTest
   protected void cleanLogDir() throws IOException {
     Path directory = Paths.get("target/test-logs/");

@@ -84,7 +84,9 @@ public class FileLogSegment extends AbstractLogSegment {
     }
 
     logFileChannel = FileChannel.open(this.logFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+    logFileChannel.position(logFileChannel.size());
     indexFileChannel = FileChannel.open(this.indexFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+    indexFileChannel.position(indexFileChannel.size());
 
     if (indexFileChannel.size() > 0) {
       firstIndex = super.firstIndex;
@@ -136,6 +138,7 @@ public class FileLogSegment extends AbstractLogSegment {
     assertIsOpen();
     long index = nextIndex();
     try {
+      entry.rewind();
       long position = logFileChannel.position();
       logFileChannel.write(entry);
       storePosition(index, position);
@@ -150,7 +153,7 @@ public class FileLogSegment extends AbstractLogSegment {
    */
   private void storePosition(long index, long position) {
     try {
-      indexBuffer.reset();
+      indexBuffer.clear();
       indexBuffer.putLong(index).putLong(position);
       indexFileChannel.write(indexBuffer, (index - firstIndex) * 8);
     } catch (IOException e) {
@@ -195,7 +198,11 @@ public class FileLogSegment extends AbstractLogSegment {
     try {
       logFileChannel.read(entryBuffer, findPosition(index));
       entryBuffer.flip();
-      return entryBuffer.duplicate();
+      ByteBuffer buffer = ByteBuffer.allocate(entryBuffer.capacity());
+      buffer.put(entryBuffer);
+      entryBuffer.clear();
+      buffer.flip();
+      return buffer;
     } catch (IOException e) {
       throw new LogException(e);
     }
@@ -263,7 +270,9 @@ public class FileLogSegment extends AbstractLogSegment {
       Files.delete(historyMetadataFile.toPath());
 
       logFileChannel = FileChannel.open(logFile.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+      logFileChannel.position(logFileChannel.size());
       indexFileChannel = FileChannel.open(indexFile.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+      indexFileChannel.position(indexFileChannel.size());
     } catch (IOException e) {
       throw new LogException(e);
     }
