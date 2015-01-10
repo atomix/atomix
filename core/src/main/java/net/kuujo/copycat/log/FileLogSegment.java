@@ -166,8 +166,12 @@ public class FileLogSegment extends AbstractLogSegment {
    */
   private long findPosition(long index) {
     try {
+      long indexPosition = (index - firstIndex) * 16;
+      if (indexPosition < 0) {
+        return 0;
+      }
       indexBuffer.rewind();
-      if (indexFileChannel.read(indexBuffer, (index - firstIndex) * 16) == 16) {
+      if (indexFileChannel.read(indexBuffer, indexPosition) == 16) {
         indexBuffer.flip();
         indexBuffer.position(8);
         return indexBuffer.getLong();
@@ -218,6 +222,12 @@ public class FileLogSegment extends AbstractLogSegment {
       try {
         logFileChannel.truncate(findPosition(index + 1));
         indexFileChannel.truncate(((index + 1) - firstIndex) * 8);
+        if (index >= firstIndex) {
+          lastIndex = index;
+        } else {
+          lastIndex = null;
+          firstIndex = null;
+        }
       } catch (IOException e) {
         throw new LogException(e);
       }
