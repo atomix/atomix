@@ -30,7 +30,7 @@ import java.util.UUID;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class FileLogManagerTest extends AbstractLogManagerTest {
+public class FileLogTest extends AbstractLogTest {
 
   @AfterTest
   protected void cleanLogDir() throws IOException {

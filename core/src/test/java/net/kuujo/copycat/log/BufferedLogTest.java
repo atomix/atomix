@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class BufferedLogManagerTest extends AbstractLogManagerTest {
+public class BufferedLogTest extends AbstractLogTest {
 
   @Override
   protected AbstractLogManager createLog() throws Throwable {

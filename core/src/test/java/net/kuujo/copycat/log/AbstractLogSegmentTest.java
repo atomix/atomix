@@ -28,7 +28,7 @@ import org.testng.annotations.Test;
  * @author Jonathan Halterman
  */
 @Test
-public abstract class AbstractLogManagerSegmentTest {
+public abstract class AbstractLogSegmentTest {
   protected AbstractLogManager log;
   protected int segmentSize = 100;
   protected int entriesPerSegment = (segmentSize / entrySize()) + 1;

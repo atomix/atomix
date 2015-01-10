@@ -15,7 +15,7 @@ import java.util.UUID;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class ChronicleLogManagerTest extends AbstractLogManagerTest {
+public class ChronicleLogTest extends AbstractLogTest {
   @AfterTest
   protected void cleanLogDir() throws IOException {
     Path directory = Paths.get("target/test-logs/");
