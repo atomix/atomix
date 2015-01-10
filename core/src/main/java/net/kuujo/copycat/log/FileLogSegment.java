@@ -155,7 +155,8 @@ public class FileLogSegment extends AbstractLogSegment {
     try {
       indexBuffer.clear();
       indexBuffer.putLong(index).putLong(position);
-      indexFileChannel.write(indexBuffer, (index - firstIndex) * 8);
+      indexBuffer.flip();
+      indexFileChannel.write(indexBuffer, (index - firstIndex) * 16);
     } catch (IOException e) {
       throw new LogException(e);
     }
@@ -166,9 +167,13 @@ public class FileLogSegment extends AbstractLogSegment {
    */
   private long findPosition(long index) {
     try {
-      indexFileChannel.read(indexBuffer, (index - firstIndex) * 8);
-      indexBuffer.position(4);
-      return indexBuffer.getLong();
+      indexBuffer.rewind();
+      if (indexFileChannel.read(indexBuffer, (index - firstIndex) * 16) == 16) {
+        indexBuffer.flip();
+        indexBuffer.position(8);
+        return indexBuffer.getLong();
+      }
+      return logFileChannel.size();
     } catch (IOException e) {
       throw new LogException(e);
     }
@@ -196,9 +201,12 @@ public class FileLogSegment extends AbstractLogSegment {
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
     try {
-      logFileChannel.read(entryBuffer, findPosition(index));
+      long startPosition = findPosition(index);
+      long endPosition = findPosition(index + 1);
+      logFileChannel.read(entryBuffer, startPosition);
+      entryBuffer.position((int) (endPosition - startPosition));
       entryBuffer.flip();
-      ByteBuffer buffer = ByteBuffer.allocate(entryBuffer.capacity());
+      ByteBuffer buffer = ByteBuffer.allocate(entryBuffer.limit());
       buffer.put(entryBuffer);
       entryBuffer.clear();
       buffer.flip();
