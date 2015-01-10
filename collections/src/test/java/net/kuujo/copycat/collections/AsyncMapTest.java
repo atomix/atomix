@@ -16,16 +16,8 @@
 package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.Resource;
-import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.protocol.LocalProtocol;
 import org.testng.annotations.Test;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 /**
  * Asynchronous map test.
@@ -35,66 +27,42 @@ import java.util.stream.Collectors;
 @Test
 public class AsyncMapTest extends ConcurrentTestCase {
 
-  public static class TestCluster<T extends Resource<T>> {
-    private final List<T> resources;
-
-    private TestCluster(List<T> resources) {
-      this.resources = resources;
-    }
-
-    /**
-     * Creates a test cluster for the given resource factory.
-     */
-    public static <T extends Resource<T>> TestCluster<T> of(BiFunction<String, ClusterConfig, T> factory) {
-      ClusterConfig cluster = new ClusterConfig()
-        .withProtocol(new LocalProtocol());
-      for (int i = 1; i <= 5; i++) {
-        cluster.addMember(String.format("local://%d", i));
-      }
-      return new TestCluster<T>(cluster.getMembers().stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors.toList())));
-    }
-
-    /**
-     * Returns a list of cluster resources.
-     */
-    public List<T> resources() {
-      return resources;
-    }
-
-    /**
-     * Opens all resources.
-     */
-    @SuppressWarnings("unchecked")
-    public CompletableFuture<Void> open() {
-      CompletableFuture<Void>[] futures = new CompletableFuture[resources.size()];
-      for (int i = 0; i < resources.size(); i++) {
-        T resource = resources.get(i);
-        futures[i] = resources.get(i).open().thenRun(() -> System.out.println(resource.cluster()
-          .member()
-          .uri() + " started successfully!")).thenApply(v -> null);
-      }
-      return CompletableFuture.allOf(futures);
-    }
-
-    /**
-     * Closes all resources.
-     */
-    @SuppressWarnings("unchecked")
-    public CompletableFuture<Void> close() {
-      CompletableFuture<Void>[] futures = new CompletableFuture[resources.size()];
-      for (int i = 0; i < resources.size(); i++) {
-        futures[i] = resources.get(i).close();
-      }
-      return CompletableFuture.allOf(futures);
-    }
+  /**
+   * Tests putting a value in an asynchronous map and then reading the value.
+   */
+  public void testAsyncMapPutGet() throws Throwable {
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
+    cluster.open().thenRun(this::resume);
+    await(5000);
+    AsyncMap<String, String> map = cluster.resources().get(0);
+    map.put("foo", "Hello world!").thenRun(() -> {
+      map.get("foo").thenAccept(result -> {
+        threadAssertEquals(result, "Hello world!");
+        resume();
+      });
+    });
+    await(5000);
   }
 
   /**
-   * Tests putting a value in an asynchronous map.
+   * Tests putting a value in an asynchronous map and then removing it.
    */
-  public void testAsyncMapPut() throws Throwable {
+  public void testAsyncMapPutRemote() throws Throwable {
     TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
     cluster.open().thenRun(this::resume);
+    await(5000);
+    AsyncMap<String, String> map = cluster.resources().get(0);
+    map.put("foo", "Hello world!").thenRun(() -> {
+      map.get("foo").thenAccept(r1 -> {
+        threadAssertEquals(r1, "Hello world!");
+        map.remove("foo").thenRun(() -> {
+          map.get("foo").thenAccept(r2 -> {
+            threadAssertNull(r2);
+            resume();
+          });
+        });
+      });
+    });
     await(5000);
   }
 
