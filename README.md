@@ -1,13 +1,13 @@
 Copycat
 =======
 
-## I <3 Logs More!
+### I <3 Logs Too!
 
 Copycat is an extensible log-based distributed coordination framework for Java 8 built on the
 [Raft consensus protocol](https://raftconsensus.github.io/).
 
-### [User Manual](#user-manual)
-### [Architecture](#architecture)
+#### [User Manual](#user-manual)
+#### [Architecture](#architecture)
 
 Copycat is a CP (consistent/partition-tolerant) oriented exercise in distributed coordination built on a consistent
 replicated log. The core of Copycat is an extensible asynchronous framework that uses a mixture of
