@@ -248,7 +248,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   }
 
   @Override
-  public void compact(long index, ByteBuffer entry) {
+  public void compact(long index, ByteBuffer entry) throws IOException {
     assertIsOpen();
     assertContainsIndex(index);
     LogSegment segment = null;

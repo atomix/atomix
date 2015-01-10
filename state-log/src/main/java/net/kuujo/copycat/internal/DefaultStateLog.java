@@ -23,6 +23,7 @@ import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.protocol.Consistency;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -227,7 +228,11 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
    */
   private void takeSnapshot() {
     Object snapshot = snapshotter != null ? executeInUserThread(snapshotter::get) : null;
-    context.log().compact(commitIndex, serializer.writeObject(snapshot));
+    try {
+      context.log().compact(commitIndex, serializer.writeObject(snapshot));
+    } catch (IOException e) {
+      throw new CopycatException("Failed to compact state log", e);
+    }
   }
 
   /**

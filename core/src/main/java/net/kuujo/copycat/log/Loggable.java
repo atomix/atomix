@@ -123,7 +123,7 @@ public interface Loggable extends Closeable {
    * @param entry The entry to write to the log at the given index.
    * @throws IndexOutOfBoundsException if the log does not contain the {@code index}
    */
-  void compact(long index, ByteBuffer entry);
+  void compact(long index, ByteBuffer entry) throws IOException;
 
   /**
    * Flushes the log to disk.

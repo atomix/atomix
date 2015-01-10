@@ -239,7 +239,7 @@ public abstract class AbstractLogTest {
   /**
    * Tests {@link AbstractLogManager#compact(long, ByteBuffer)} on the log head.
    */
-  public void testCompactLogHead() {
+  public void testCompactLogHead() throws Throwable {
     appendEntries(entriesPerSegment * 3);
 
     log.compact(1, Bytes.of(5000));
@@ -277,7 +277,7 @@ public abstract class AbstractLogTest {
   /**
    * Tests {@link AbstractLogManager#compact(long, ByteBuffer)} on the log tail.
    */
-  public void testCompactLogTail() {
+  public void testCompactLogTail() throws Throwable {
     appendEntries(entriesPerSegment * 3);
     log.compact(entriesPerSegment * 3, Bytes.of(5000));
 
@@ -313,7 +313,7 @@ public abstract class AbstractLogTest {
   /**
    * Tests {@link AbstractLogManager#compact(long, ByteBuffer)} on the log middle.
    */
-  public void testCompactLogMiddle() {
+  public void testCompactLogMiddle() throws Throwable {
     appendEntries(entriesPerSegment * 3);
     log.compact(entriesPerSegment + 3, Bytes.of(3000));
 
@@ -352,13 +352,13 @@ public abstract class AbstractLogTest {
   }
 
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
-  public void testCompactNegativeIndex() {
+  public void testCompactNegativeIndex() throws Throwable {
     appendEntries(3);
     log.compact(-2, Bytes.of(5000));
   }
 
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
-  public void testCompactHighIndex() {
+  public void testCompactHighIndex() throws Throwable {
     appendEntries(entriesPerSegment + 3);
     log.compact(entriesPerSegment * 5, Bytes.of(5000));
   }
