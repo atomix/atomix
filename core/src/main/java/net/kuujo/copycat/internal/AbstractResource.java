@@ -50,6 +50,11 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   }
 
   @Override
+  public String name() {
+    return context.name();
+  }
+
+  @Override
   public Cluster cluster() {
     return context.cluster();
   }
@@ -61,44 +66,37 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized T withStartupTask(Task<CompletableFuture<Void>> task) {
+  public T withStartupTask(Task<CompletableFuture<Void>> task) {
     startupTasks.add(task);
     return (T) this;
   }
 
+  /**
+   * Runs the resource's startup tasks.
+   */
+  @SuppressWarnings("all")
+  protected final CompletableFuture<Void> runStartupTasks() {
+    return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]));
+  }
+
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized T withShutdownTask(Task<CompletableFuture<Void>> task) {
+  public T withShutdownTask(Task<CompletableFuture<Void>> task) {
     shutdownTasks.add(task);
     return (T) this;
   }
 
-  @Override
-  public String name() {
-    return context.name();
-  }
-
-  @Override
+  /**
+   * Runs the resource's startup tasks.
+   */
   @SuppressWarnings("all")
-  public synchronized CompletableFuture<T> open() {
-    if (!context.isOpen()) {
-      return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]))
-        .thenCompose(v -> context.open())
-        .thenApply(v -> (T) this);
-    }
-    return CompletableFuture.completedFuture(null);
+  protected final CompletableFuture<Void> runShutdownTasks() {
+    return CompletableFuture.allOf(shutdownTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]));
   }
 
   @Override
   public boolean isOpen() {
     return context.isOpen();
-  }
-
-  @Override
-  @SuppressWarnings("all")
-  public synchronized CompletableFuture<Void> close() {
-    return context.close()
-      .thenCompose(v -> CompletableFuture.allOf(shutdownTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size])));
   }
 
   @Override

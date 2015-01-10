@@ -24,6 +24,7 @@ import net.kuujo.copycat.internal.AbstractResource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Default leader election implementation.
@@ -54,6 +55,19 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
       context.cluster().election().removeListener(wrapper);
     }
     return this;
+  }
+
+  @Override
+  public CompletableFuture<LeaderElection> open() {
+    return runStartupTasks()
+      .thenCompose(v -> context.open())
+      .thenApply(v -> this);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return context.close()
+      .thenCompose(v -> runShutdownTasks());
   }
 
 }

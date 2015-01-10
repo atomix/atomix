@@ -138,7 +138,9 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
   public synchronized CompletableFuture<StateMachine<T>> open() {
     log.snapshotWith(this::snapshot);
     log.installWith(this::install);
-    return log.open().thenApply(v -> this);
+    return runStartupTasks()
+      .thenComposeAsync(v -> log.open(), executor)
+      .thenApply(v -> this);
   }
 
   @Override
@@ -151,7 +153,7 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     return log.close().whenComplete((result, error) -> {
       log.snapshotWith(null);
       log.installWith(null);
-    });
+    }).thenComposeAsync(v -> runShutdownTasks(), executor);
   }
 
   @Override

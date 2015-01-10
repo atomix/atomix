@@ -65,15 +65,18 @@ public class DefaultAsyncLock extends AbstractResource<AsyncLock> implements Asy
 
   @Override
   public CompletableFuture<AsyncLock> open() {
-    return stateMachine.open().thenRun(() -> {
-      this.proxy = stateMachine.createProxy(AsyncLockProxy.class);
-    }).thenApply(v -> this);
+    return runStartupTasks()
+      .thenCompose(v -> stateMachine.open())
+      .thenRun(() -> {
+        this.proxy = stateMachine.createProxy(AsyncLockProxy.class);
+      }).thenApply(v -> this);
   }
 
   @Override
   public CompletableFuture<Void> close() {
     proxy = null;
-    return stateMachine.close();
+    return stateMachine.close()
+      .thenCompose(v -> runShutdownTasks());
   }
 
 }

@@ -78,4 +78,17 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
     return result;
   }
 
+  @Override
+  public CompletableFuture<EventLog<T>> open() {
+    return runStartupTasks()
+      .thenComposeAsync(v -> context.open(), executor)
+      .thenApply(v -> this);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return context.close()
+      .thenCompose(v -> runShutdownTasks());
+  }
+
 }
