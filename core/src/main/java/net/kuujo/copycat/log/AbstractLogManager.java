@@ -349,8 +349,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   private void checkRetention() {
     for (Iterator<Map.Entry<Long, LogSegment>> i = segments.entrySet().iterator(); i.hasNext();) {
       Map.Entry<Long, LogSegment> entry = i.next();
-      if (!segments.isEmpty() && segments.lastKey() != entry.getKey()
-        && !config.getRetentionPolicy().retain(entry.getValue())) {
+      if (!segments.isEmpty() && !segments.lastKey().equals(entry.getKey()) && !config.getRetentionPolicy().retain(entry.getValue())) {
         i.remove();
       }
     }

@@ -37,10 +37,9 @@ public class FileLogSegment extends AbstractLogSegment {
   private long timestamp;
   private FileChannel logFileChannel;
   private FileChannel indexFileChannel;
-  private final ByteBuffer indexBuffer = ByteBuffer.allocateDirect(16);
   private Long firstIndex;
   private Long lastIndex;
-  private int indexOffset;
+  private long indexOffset;
 
   FileLogSegment(FileLogManager log, long id, long firstIndex) {
     super(id, firstIndex);
@@ -73,7 +72,7 @@ public class FileLogSegment extends AbstractLogSegment {
       try (RandomAccessFile metaFile = new RandomAccessFile(metadataFile, "rw")) {
         metaFile.writeLong(super.firstIndex); // First index of the segment.
         metaFile.writeLong(timestamp); // Timestamp of the time at which the segment was created.
-        metaFile.writeInt(0); // The segment index offset.
+        metaFile.writeLong(0); // The segment index offset.
       }
     } else {
       try (RandomAccessFile metaFile = new RandomAccessFile(metadataFile, "r")) {
@@ -81,7 +80,7 @@ public class FileLogSegment extends AbstractLogSegment {
           throw new LogException("Segment metadata out of sync");
         }
         timestamp = metaFile.readLong();
-        indexOffset = metaFile.readInt();
+        indexOffset = metaFile.readLong();
       }
     }
 
@@ -155,10 +154,9 @@ public class FileLogSegment extends AbstractLogSegment {
    */
   private void storePosition(long index, long position) {
     try {
-      indexBuffer.clear();
-      indexBuffer.putLong(index).putLong(position);
-      indexBuffer.flip();
-      indexFileChannel.write(indexBuffer, (index - firstIndex) * 16);
+      ByteBuffer buffer = ByteBuffer.allocate(8).putLong(position);
+      buffer.flip();
+      indexFileChannel.write(buffer, (index - firstIndex) * 8);
     } catch (IOException e) {
       throw new LogException(e);
     }
@@ -169,17 +167,15 @@ public class FileLogSegment extends AbstractLogSegment {
    */
   private long findPosition(long index) {
     try {
-      long indexPosition = (index - firstIndex) * 16;
-      if (indexPosition < 0) {
+      if (firstIndex == null || index <= firstIndex) {
         return 0;
+      } else if (lastIndex == null || index > lastIndex) {
+        return logFileChannel.size();
       }
-      indexBuffer.rewind();
-      if (indexFileChannel.read(indexBuffer, indexPosition) == 16) {
-        indexBuffer.flip();
-        indexBuffer.position(8);
-        return indexBuffer.getLong() + indexOffset;
-      }
-      return logFileChannel.size();
+      ByteBuffer buffer = ByteBuffer.allocate(8);
+      indexFileChannel.read(buffer, (index - firstIndex) * 8);
+      buffer.flip();
+      return buffer.getLong() + indexOffset;
     } catch (IOException e) {
       throw new LogException(e);
     }
@@ -206,6 +202,7 @@ public class FileLogSegment extends AbstractLogSegment {
   @Override
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
+    assertContainsIndex(index);
     try {
       long startPosition = findPosition(index);
       long endPosition = findPosition(index + 1);
@@ -252,7 +249,7 @@ public class FileLogSegment extends AbstractLogSegment {
       }
 
       // Calculate the offset of the entry index once the snapshot has been written to the log.
-      int indexOffset = this.indexOffset + (entry.limit() - (int) (findPosition(index + 1) - findPosition(index)));
+      long indexOffset;
 
       // Create temporary log, index, and metadata file channels for writing.
       try (FileChannel tempLogFileChannel = FileChannel.open(tempLogFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
@@ -262,10 +259,14 @@ public class FileLogSegment extends AbstractLogSegment {
         // Transfer logs and indexes from the given index.
         tempLogFileChannel.write(entry);
         logFileChannel.transferTo(findPosition(index + 1), Integer.MAX_VALUE, tempLogFileChannel);
+
         indexFileChannel.transferTo((index - firstIndex) * 8, Integer.MAX_VALUE, tempIndexFileChannel);
 
         // Write the temporary metadata file.
-        tempMetadataFileChannel.write(ByteBuffer.allocateDirect(20).putLong(index).putLong(timestamp).putInt(indexOffset));
+        indexOffset = this.indexOffset + (tempLogFileChannel.size() - logFileChannel.size());
+        ByteBuffer buffer = ByteBuffer.allocateDirect(24).putLong(index).putLong(timestamp).putLong(indexOffset);
+        buffer.flip();
+        tempMetadataFileChannel.write(buffer);
 
         // Flush temporary log, index, and metadata file contents to disk.
         tempLogFileChannel.force(true);
@@ -298,6 +299,8 @@ public class FileLogSegment extends AbstractLogSegment {
       logFileChannel.position(logFileChannel.size());
       indexFileChannel = FileChannel.open(indexFile.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
       indexFileChannel.position(indexFileChannel.size());
+
+      this.firstIndex = index;
       this.indexOffset = indexOffset;
     } catch (IOException e) {
       throw new LogException(e);

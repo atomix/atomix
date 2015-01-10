@@ -359,7 +359,7 @@ public abstract class AbstractLogTest {
 
   @Test(expectedExceptions = IndexOutOfBoundsException.class)
   public void testCompactHighIndex() throws Throwable {
-    appendEntries(entriesPerSegment + 3);
+    appendEntries(entriesPerSegment * 3);
     log.compact(entriesPerSegment * 5, Bytes.of(5000));
   }
 
