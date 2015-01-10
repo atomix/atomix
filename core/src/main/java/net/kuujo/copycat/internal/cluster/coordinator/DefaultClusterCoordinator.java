@@ -281,12 +281,12 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public void createRoutes(ClusterManager cluster, RaftProtocol protocol) {
-      cluster.member().registerHandler(Topics.SYNC, PROTOCOL_ID, protocol::sync, serializer);
-      cluster.member().registerHandler(Topics.PING, PROTOCOL_ID, protocol::ping, serializer);
-      cluster.member().registerHandler(Topics.POLL, PROTOCOL_ID, protocol::poll, serializer);
-      cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append, serializer);
-      cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query, serializer);
-      cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit, serializer);
+      cluster.member().registerHandler(Topics.SYNC, PROTOCOL_ID, protocol::sync, serializer, executor);
+      cluster.member().registerHandler(Topics.PING, PROTOCOL_ID, protocol::ping, serializer, executor);
+      cluster.member().registerHandler(Topics.POLL, PROTOCOL_ID, protocol::poll, serializer, executor);
+      cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append, serializer, executor);
+      cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query, serializer, executor);
+      cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit, serializer, executor);
       protocol.pingHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));

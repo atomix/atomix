@@ -42,7 +42,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   /**
    * Wraps a message handler in order to perform serialization/deserialization and execute it in the proper thread.
    */
-  private <T, U> MessageHandler<ByteBuffer, ByteBuffer> wrapHandler(MessageHandler<T, U> handler, Serializer serializer) {
+  private <T, U> MessageHandler<ByteBuffer, ByteBuffer> wrapHandler(MessageHandler<T, U> handler, Serializer serializer, Executor executor) {
     return message -> {
       CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
       executor.execute(() -> {
@@ -59,8 +59,8 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   }
 
   @Override
-  public <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler, Serializer serializer) {
-    coordinator.register(topic, this.id, id, wrapHandler(handler, serializer));
+  public <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler, Serializer serializer, Executor executor) {
+    coordinator.register(topic, this.id, id, wrapHandler(handler, serializer, executor));
     return this;
   }
 
@@ -72,7 +72,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
 
   @Override
   public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
-    return registerHandler(topic, USER_ID, handler, serializer);
+    return registerHandler(topic, USER_ID, handler, serializer, executor);
   }
   
   @Override
@@ -83,7 +83,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
   @Override
   public CompletableFuture<LocalMemberManager> open() {
     open = true;
-    this.<Task<?>, Object>registerHandler(EXECUTE_TOPIC, EXECUTE_ID, task -> CompletableFuture.supplyAsync(task::execute, executor), serializer);
+    this.<Task<?>, Object>registerHandler(EXECUTE_TOPIC, EXECUTE_ID, task -> CompletableFuture.completedFuture(task.execute()), serializer, executor);
     return CompletableFuture.completedFuture(this);
   }
 

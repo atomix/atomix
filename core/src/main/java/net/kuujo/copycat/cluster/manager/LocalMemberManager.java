@@ -20,6 +20,8 @@ import net.kuujo.copycat.cluster.LocalMember;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.util.serializer.Serializer;
 
+import java.util.concurrent.Executor;
+
 /**
  * Local cluster member.<p>
  *
@@ -37,11 +39,12 @@ public interface LocalMemberManager extends MemberManager, LocalMember, Managed<
    * @param id The handler ID.
    * @param handler The message registerHandler.
    * @param serializer The serializer with which to serialize and deserialize the message.
+   * @param executor The executor with which to execute the handler.
    * @param <T> The request message type.
    * @param <U> The response message type.
    * @return The local member.
    */
-  <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler, Serializer serializer);
+  <T, U> LocalMemberManager registerHandler(String topic, int id, MessageHandler<T, U> handler, Serializer serializer, Executor executor);
 
   /**
    * Unregisters a message type registerHandler on the local member.
