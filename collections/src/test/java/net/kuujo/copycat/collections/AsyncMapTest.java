@@ -23,7 +23,6 @@ import org.testng.annotations.Test;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -69,7 +68,9 @@ public class AsyncMapTest extends ConcurrentTestCase {
       CompletableFuture<Void>[] futures = new CompletableFuture[resources.size()];
       for (int i = 0; i < resources.size(); i++) {
         T resource = resources.get(i);
-        futures[i] = resources.get(i).open().thenRun(() -> System.out.println(resource.cluster().member().uri() + " started successfully!")).thenApply(v -> null);
+        futures[i] = resources.get(i).open().thenRun(() -> System.out.println(resource.cluster()
+          .member()
+          .uri() + " started successfully!")).thenApply(v -> null);
       }
       return CompletableFuture.allOf(futures);
     }
