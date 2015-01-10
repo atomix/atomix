@@ -38,7 +38,6 @@ public class FileLogSegment extends AbstractLogSegment {
   private FileChannel logFileChannel;
   private FileChannel indexFileChannel;
   private final ByteBuffer indexBuffer = ByteBuffer.allocateDirect(16);
-  private final ByteBuffer entryBuffer = ByteBuffer.allocateDirect(1024 * 1024);
   private Long firstIndex;
   private Long lastIndex;
 
@@ -203,12 +202,8 @@ public class FileLogSegment extends AbstractLogSegment {
     try {
       long startPosition = findPosition(index);
       long endPosition = findPosition(index + 1);
-      logFileChannel.read(entryBuffer, startPosition);
-      entryBuffer.position((int) (endPosition - startPosition));
-      entryBuffer.flip();
-      ByteBuffer buffer = ByteBuffer.allocate(entryBuffer.limit());
-      buffer.put(entryBuffer);
-      entryBuffer.clear();
+      ByteBuffer buffer = ByteBuffer.allocate((int) (endPosition - startPosition));
+      logFileChannel.read(buffer, startPosition);
       buffer.flip();
       return buffer;
     } catch (IOException e) {
