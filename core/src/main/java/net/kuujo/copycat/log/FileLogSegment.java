@@ -70,12 +70,12 @@ public class FileLogSegment extends AbstractLogSegment {
 
     if (!metadataFile.exists()) {
       timestamp = System.currentTimeMillis();
-      try (RandomAccessFile metaFile = new RandomAccessFile(metadataFile, "w+")) {
+      try (RandomAccessFile metaFile = new RandomAccessFile(metadataFile, "rw")) {
         metaFile.writeLong(super.firstIndex);
         metaFile.writeLong(timestamp);
       }
     } else {
-      try (RandomAccessFile metaFile = new RandomAccessFile(metadataFile, "r+")) {
+      try (RandomAccessFile metaFile = new RandomAccessFile(metadataFile, "r")) {
         if (metaFile.readLong() != super.firstIndex) {
           throw new LogException("Segment metadata out of sync");
         }
@@ -83,8 +83,8 @@ public class FileLogSegment extends AbstractLogSegment {
       }
     }
 
-    logFileChannel = FileChannel.open(this.logFile.toPath(), StandardOpenOption.CREATE_NEW);
-    indexFileChannel = FileChannel.open(this.indexFile.toPath(), StandardOpenOption.CREATE_NEW);
+    logFileChannel = FileChannel.open(this.logFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+    indexFileChannel = FileChannel.open(this.indexFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
 
     if (indexFileChannel.size() > 0) {
       firstIndex = super.firstIndex;
@@ -224,9 +224,9 @@ public class FileLogSegment extends AbstractLogSegment {
       File tempMetadataFile = new File(log.base.getParent(), String.format("%s-%d.metadata.tmp", log.base.getName(), id));
 
       // Create temporary log, index, and metadata file channels for writing.
-      try (FileChannel tempLogFileChannel = FileChannel.open(tempLogFile.toPath(), StandardOpenOption.CREATE_NEW);
-          FileChannel tempIndexFileChannel = FileChannel.open(tempIndexFile.toPath(), StandardOpenOption.CREATE_NEW);
-          FileChannel tempMetadataFileChannel = FileChannel.open(tempMetadataFile.toPath(), StandardOpenOption.CREATE_NEW)) {
+      try (FileChannel tempLogFileChannel = FileChannel.open(tempLogFile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+          FileChannel tempIndexFileChannel = FileChannel.open(tempIndexFile.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.READ, StandardOpenOption.WRITE);
+          FileChannel tempMetadataFileChannel = FileChannel.open(tempMetadataFile.toPath(), StandardOpenOption.CREATE_NEW, StandardOpenOption.READ, StandardOpenOption.WRITE)) {
 
         // Transfer logs and indexes from the given index.
         logFileChannel.transferTo(findPosition(index), Integer.MAX_VALUE, tempLogFileChannel);
@@ -262,8 +262,8 @@ public class FileLogSegment extends AbstractLogSegment {
       Files.delete(historyIndexFile.toPath());
       Files.delete(historyMetadataFile.toPath());
 
-      logFileChannel = FileChannel.open(logFile.toPath());
-      indexFileChannel = FileChannel.open(indexFile.toPath());
+      logFileChannel = FileChannel.open(logFile.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
+      indexFileChannel = FileChannel.open(indexFile.toPath(), StandardOpenOption.READ, StandardOpenOption.WRITE);
     } catch (IOException e) {
       throw new LogException(e);
     }

@@ -18,6 +18,7 @@ package net.kuujo.copycat.collections;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import org.testng.annotations.Test;
 
@@ -92,7 +93,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
    * Tests putting a value in an asynchronous map.
    */
   public void testAsyncMapPut() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config));
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
     cluster.open().thenRun(this::resume);
     await(5000);
   }

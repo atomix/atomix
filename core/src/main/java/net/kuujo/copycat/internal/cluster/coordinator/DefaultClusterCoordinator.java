@@ -200,7 +200,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    * Closes all cluster resources.
    */
   private CompletableFuture<Void> closeResources() {
-    List<CompletableFuture<Void>> futures = new ArrayList<>();
+    List<CompletableFuture<Void>> futures = new ArrayList<>(resources.size());
     for (ResourceHolder resource : resources.values()) {
       futures.add(resource.state.close().thenCompose(v -> resource.cluster.close()));
     }

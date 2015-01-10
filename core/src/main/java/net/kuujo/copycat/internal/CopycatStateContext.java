@@ -239,6 +239,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
         this.status = Election.Status.COMPLETE;
         if (openFuture != null) {
           openFuture.complete(null);
+          openFuture = null;
         }
         triggerChangeEvent();
       }
