@@ -166,7 +166,7 @@ public class SyncRequest extends AbstractRequest {
      * @return The sync request builder.
      */
     public Builder withLeader(String leader) {
-      request.leader = Assert.isNotNull(leader, "leader");
+      request.leader = leader;
       return this;
     }
 
