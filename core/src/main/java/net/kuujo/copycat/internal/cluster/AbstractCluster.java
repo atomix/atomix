@@ -25,7 +25,9 @@ import net.kuujo.copycat.cluster.manager.MemberManager;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.internal.CopycatStateContext;
+import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
+import org.slf4j.Logger;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -38,7 +40,7 @@ import java.util.stream.Stream;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractCluster implements ClusterManager {
-  private static final String GOSSIP_TOPIC = "_";
+  private static final String GOSSIP_TOPIC = "*";
   private static final long MEMBER_INFO_EXPIRE_TIME = 1000 * 60;
 
   protected final int id;
@@ -46,9 +48,11 @@ public abstract class AbstractCluster implements ClusterManager {
   protected final Serializer serializer;
   protected final ScheduledExecutorService executor;
   protected final Executor userExecutor;
+  private final Serializer internalSerializer = new KryoSerializer();
+  private Thread thread;
   private CoordinatedLocalMember localMember;
   private final CoordinatedMembers members;
-  private final Map<String, MemberInfo> membersInfo = new ConcurrentHashMap<>();
+  private final Map<String, MemberInfo> membersInfo = new HashMap<>();
   private final CoordinatedClusterElection election;
   private final Router router;
   private final CopycatStateContext context;
@@ -58,6 +62,7 @@ public abstract class AbstractCluster implements ClusterManager {
   @SuppressWarnings("rawtypes")
   private final Map<String, Set<EventListener>> broadcastListeners = new ConcurrentHashMap<>();
   private ScheduledFuture<?> gossipTimer;
+  private final Random random = new Random();
 
   protected AbstractCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Serializer serializer, ScheduledExecutorService executor, Executor userExecutor) {
     this.id = id;
@@ -89,26 +94,53 @@ public abstract class AbstractCluster implements ClusterManager {
     this.election = new CoordinatedClusterElection(this, context);
     this.router = router;
     this.context = context;
+    try {
+      executor.submit(() -> this.thread = Thread.currentThread()).get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new ClusterException(e);
+    }
+  }
+
+  /**
+   * Returns the cluster logger.
+   *
+   * @return The cluster logger.
+   */
+  protected abstract Logger logger();
+
+  /**
+   * Checks that cluster logic runs on the correct thread.
+   */
+  private void checkThread() {
+    if (Thread.currentThread() != thread) {
+      throw new IllegalStateException("Cluster not running on the correct thread");
+    }
   }
 
   /**
    * Sends member join requests.
    */
   private void sendJoins() {
+    checkThread();
+
     // Increment the local member version.
     localMember.info().version(localMember.info().version() + 1);
 
     // For a random set of three members, send all member info.
     for (CoordinatedMember member : getGossipMembers()) {
-      member.<Collection<MemberInfo>, Collection<MemberInfo>>send(GOSSIP_TOPIC, membersInfo.values()).whenComplete((membersInfo, error) -> {
+      Collection<MemberInfo> members = new ArrayList<>(membersInfo.values());
+      member.<Collection<MemberInfo>, Collection<MemberInfo>>send(GOSSIP_TOPIC, id, members, internalSerializer, executor).whenComplete((membersInfo, error) -> {
         // If the response was successfully received then indicate that the member is alive and update all member info.
         // Otherwise, indicate that communication with the member failed. This information will be used to determine
         // whether the member should be considered dead by informing other members that it appears unreachable.
-        if (error == null) {
-          member.info().succeed();
-          updateMemberInfo(membersInfo);
-        } else {
-          member.info().fail(localMember.uri());
+        checkThread();
+        if (isOpen()) {
+          if (error == null) {
+            member.info().succeed();
+            updateMemberInfo(membersInfo);
+          } else {
+            member.info().fail(localMember.uri());
+          }
         }
       });
     }
@@ -118,16 +150,19 @@ public abstract class AbstractCluster implements ClusterManager {
    * Receives member join requests.
    */
   private CompletableFuture<Collection<MemberInfo>> handleJoin(Collection<MemberInfo> members) {
+    checkThread();
     // Increment the local member version.
     localMember.info().version(localMember.info().version() + 1);
     updateMemberInfo(members);
-    return CompletableFuture.completedFuture(membersInfo.values());
+    return CompletableFuture.completedFuture(new ArrayList<>(membersInfo.values()));
   }
 
   /**
    * Updates member info for all members.
    */
   private void updateMemberInfo(Collection<MemberInfo> membersInfo) {
+    checkThread();
+
     // Iterate through the member info and use it to update local member information.
     membersInfo.forEach(memberInfo -> {
 
@@ -151,6 +186,8 @@ public abstract class AbstractCluster implements ClusterManager {
             CoordinatedMember member = createMember(updatedInfo);
             if (member != null) {
               members.members.put(member.uri(), member);
+              context.addMember(member.uri());
+              logger().info("{} - {} joined the cluster", context.getLocalMember(), member.uri());
               membershipListeners.forEach(listener -> listener.handle(new MembershipEvent(MembershipEvent.Type.JOIN, member)));
             }
           }
@@ -159,6 +196,8 @@ public abstract class AbstractCluster implements ClusterManager {
         synchronized (members.members) {
           CoordinatedMember member = members.members.remove(updatedInfo.uri());
           if (member != null) {
+            context.removeMember(member.uri());
+            logger().info("{} - {} left the cluster", context.getLocalMember(), member.uri());
             membershipListeners.forEach(listener -> listener.handle(new MembershipEvent(MembershipEvent.Type.LEAVE, member)));
           }
         }
@@ -179,6 +218,7 @@ public abstract class AbstractCluster implements ClusterManager {
    * Cleans expired member info for members that have been dead for MEMBER_INFO_EXPIRE_TIME milliseconds.
    */
   private synchronized void cleanMemberInfo() {
+    checkThread();
     Iterator<Map.Entry<String, MemberInfo>> iterator = membersInfo.entrySet().iterator();
     while (iterator.hasNext()) {
       MemberInfo info = iterator.next().getValue();
@@ -201,7 +241,6 @@ public abstract class AbstractCluster implements ClusterManager {
       List<CoordinatedMember> activeMembers = activeStream.collect(Collectors.toList());
 
       // Create a random list of three active members.
-      Random random = new Random();
       Collection<CoordinatedMember> randomMembers = new HashSet<>(3);
       for (int i = 0; i < Math.min(activeMembers.size(), 3); i++) {
         randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size() - 1, 2))));
@@ -305,7 +344,7 @@ public abstract class AbstractCluster implements ClusterManager {
       election.open();
     }, executor)
       .thenCompose(v -> localMember.open())
-      .thenRun(() -> localMember.registerHandler(GOSSIP_TOPIC, this::handleJoin))
+      .thenRun(() -> localMember.registerHandler(GOSSIP_TOPIC, id, this::handleJoin, internalSerializer, executor))
       .thenRun(() -> {
         gossipTimer = executor.scheduleAtFixedRate(this::sendJoins, 0, 1, TimeUnit.SECONDS);
       }).thenApply(m -> this);
@@ -321,7 +360,7 @@ public abstract class AbstractCluster implements ClusterManager {
     localMember.close();
     router.destroyRoutes(this, context);
     election.close();
-    localMember.unregisterHandler(GOSSIP_TOPIC);
+    localMember.unregisterHandler(GOSSIP_TOPIC, id);
     if (gossipTimer != null) {
       gossipTimer.cancel(false);
       gossipTimer = null;

@@ -121,7 +121,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param members The full set of Raft members.
    * @return The Copycat state context.
    */
-  CopycatStateContext setMembers(Collection<String> members) {
+  public CopycatStateContext setMembers(Collection<String> members) {
     this.members = new HashSet<>(members);
     return this;
   }
@@ -132,7 +132,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param member The member URI to add.
    * @return The Copycat state context.
    */
-  CopycatStateContext addMember(String member) {
+  public CopycatStateContext addMember(String member) {
     this.members.add(member);
     return this;
   }
@@ -143,7 +143,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param member The member URI to remove.
    * @return The Copycat state context.
    */
-  CopycatStateContext removeMember(String member) {
+  public CopycatStateContext removeMember(String member) {
     this.members.remove(member);
     return this;
   }
@@ -153,7 +153,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return The local cluster member.
    */
-  public ReplicaInfo getLocalMemberInfo() {
+  ReplicaInfo getLocalMemberInfo() {
     return localMemberInfo;
   }
 
@@ -162,7 +162,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return A set of all members in the state cluster.
    */
-  public Collection<ReplicaInfo> getMemberInfo() {
+  Collection<ReplicaInfo> getMemberInfo() {
     return memberInfo.values().stream().filter(info -> members.contains(info.getUri())).collect(Collectors.toList());
   }
 
@@ -182,7 +182,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
         this.memberInfo.put(member.getUri(), member);
       }
     }
-    triggerChangeEvent();
     return this;
   }
 
@@ -192,7 +191,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param uri The member URI.
    * @return The member info.
    */
-  public ReplicaInfo getMemberInfo(String uri) {
+  ReplicaInfo getMemberInfo(String uri) {
     return memberInfo.get(Assert.isNotNull(uri, "uri"));
   }
 
@@ -208,7 +207,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       record.update(member);
     } else {
       this.memberInfo.put(member.getUri(), member);
-      triggerChangeEvent();
     }
     return this;
   }
@@ -221,7 +219,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    */
   CopycatStateContext removeMemberInfo(ReplicaInfo member) {
     this.members.remove(member.getUri());
-    triggerChangeEvent();
     return this;
   }
 

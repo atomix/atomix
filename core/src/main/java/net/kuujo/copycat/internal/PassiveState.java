@@ -138,16 +138,20 @@ public class PassiveState extends AbstractState {
     context.setVersion(context.getVersion() + 1);
     context.setMemberInfo(request.members());
 
+    // If the local log doesn't contain the previous index then reply immediately.
+    if (request.logIndex() != null && !context.log().containsIndex(request.logIndex())) {
+      return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
+        .withId(logRequest(request).id())
+        .withUri(context.getLocalMember())
+        .withMembers(context.getMemberInfo())
+        .build()));
+    }
+
+    // Iterate through provided entries and append any that are missing from the log. Only committed entries are
+    // replicated via gossip, so we don't have to worry about consistency checks here.
     for (int i = 0; i < request.entries().size(); i++) {
       long index = request.logIndex() != null ? request.logIndex() + i + 1 : i + 1;
       if (!context.log().containsIndex(index)) {
-        if ((index == 1 && context.log().lastIndex() != null) || (index > 1 && context.log().lastIndex() != index - 1)) {
-          return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-            .withId(logRequest(request).id())
-            .withUri(context.getLocalMemberInfo().getUri())
-            .withMembers(context.getMemberInfo())
-            .build()));
-        }
         ByteBuffer entry = request.entries().get(i);
         context.log().appendEntry(entry);
         context.setCommitIndex(index);
@@ -156,6 +160,7 @@ public class PassiveState extends AbstractState {
       }
     }
 
+    // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
       .withId(logRequest(request).id())
       .withUri(context.getLocalMemberInfo().getUri())
