@@ -243,6 +243,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
         this.leader = leader;
         this.lastVotedFor = null;
         this.status = Election.Status.COMPLETE;
+        LOGGER.debug("{} - Found leader {}", localMember, leader);
         if (openFuture != null) {
           openFuture.complete(null);
           openFuture = null;
@@ -254,6 +255,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
         this.leader = leader;
         this.lastVotedFor = null;
         this.status = Election.Status.COMPLETE;
+        LOGGER.debug("{} - Found leader {}", localMember, leader);
         triggerChangeEvent();
       }
     } else {
@@ -285,6 +287,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       this.leader = null;
       this.status = Election.Status.IN_PROGRESS;
       this.lastVotedFor = null;
+      LOGGER.debug("{} - Incremented term {}", localMember, term);
       triggerChangeEvent();
     }
     return this;
@@ -336,6 +339,11 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
     }
     this.lastVotedFor = candidate;
     this.status = Election.Status.IN_PROGRESS;
+    if (candidate != null) {
+      LOGGER.debug("{} - Voted for {}", localMember, candidate);
+    } else {
+      LOGGER.debug("{} - Reset last voted for", localMember);
+    }
     triggerChangeEvent();
     return this;
   }
@@ -579,46 +587,38 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       return CompletableFuture.completedFuture(this.state.state());
     }
 
-    LOGGER.info("{} - transitioning to {}", localMember, state);
+    LOGGER.info("{} - Transitioning to {}", localMember, state);
 
-    CompletableFuture<CopycatState> future = new CompletableFuture<>();
+    // Force state transitions to occur synchronously in order to prevent race conditions.
     if (this.state != null) {
-      this.state.close().whenComplete((result, error) -> {
-        checkThread();
-        unregisterHandlers(this.state);
-        if (error == null) {
-          switch (state) {
-            case START:
-              this.state = new StartState(this);
-              break;
-            case PASSIVE:
-              this.state = new PassiveState(this);
-              break;
-            case FOLLOWER:
-              this.state = new FollowerState(this);
-              break;
-            case CANDIDATE:
-              this.state = new CandidateState(this);
-              break;
-            case LEADER:
-              this.state = new LeaderState(this);
-              break;
-            default:
-              this.state = new StartState(this);
-              break;
-          }
-
-          registerHandlers(this.state);
-          this.state.open().whenComplete((result2, error2) -> {
-            checkThread();
-            if (error2 == null) {
-              future.complete(this.state.state());
-            } else {
-              future.completeExceptionally(error2);
-            }
-          });
+      try {
+        this.state.close().get();
+        switch (state) {
+          case START:
+            this.state = new StartState(this);
+            break;
+          case PASSIVE:
+            this.state = new PassiveState(this);
+            break;
+          case FOLLOWER:
+            this.state = new FollowerState(this);
+            break;
+          case CANDIDATE:
+            this.state = new CandidateState(this);
+            break;
+          case LEADER:
+            this.state = new LeaderState(this);
+            break;
+          default:
+            this.state = new StartState(this);
+            break;
         }
-      });
+
+        registerHandlers(this.state);
+        this.state.open().get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new CopycatException(e);
+      }
     } else {
       switch (state) {
         case START:
@@ -641,17 +641,15 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
           break;
       }
 
+      // Force state transitions to occur synchronously in order to prevent race conditions.
       registerHandlers(this.state);
-      this.state.open().whenComplete((result, error) -> {
-        checkThread();
-        if (error == null) {
-          future.complete(this.state.state());
-        } else {
-          future.completeExceptionally(error);
-        }
-      });
+      try {
+        this.state.open().get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new CopycatException(e);
+      }
     }
-    return future;
+    return CompletableFuture.completedFuture(null);
   }
 
   /**

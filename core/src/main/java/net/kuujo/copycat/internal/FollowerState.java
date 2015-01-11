@@ -50,7 +50,7 @@ class FollowerState extends ActiveState {
 
   @Override
   public CompletableFuture<Void> open() {
-    return super.open().thenRunAsync(this::startTimer, context.executor());
+    return super.open().thenRun(this::startTimer);
   }
 
   /**
@@ -128,7 +128,7 @@ class FollowerState extends ActiveState {
 
   @Override
   public CompletableFuture<Void> close() {
-    return super.close().thenRunAsync(this::cancelTimer, context.executor());
+    return super.close().thenRun(this::cancelTimer);
   }
 
 }

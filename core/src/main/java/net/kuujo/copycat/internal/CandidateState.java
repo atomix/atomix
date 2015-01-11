@@ -58,7 +58,7 @@ class CandidateState extends ActiveState {
 
   @Override
   public CompletableFuture<Void> open() {
-    return super.open().thenRunAsync(this::startElection, context.executor());
+    return super.open().thenRun(this::startElection);
   }
 
   /**
@@ -67,13 +67,6 @@ class CandidateState extends ActiveState {
   private void startElection() {
     LOGGER.info("{} - Starting election", context.getLocalMember());
     resetTimer();
-  }
-
-  /**
-   * Requests votes from a majority of the cluster.
-   */
-  private void requestVotes() {
-
   }
 
   /**
@@ -221,7 +214,7 @@ class CandidateState extends ActiveState {
 
   @Override
   public CompletableFuture<Void> close() {
-    return super.close().thenRunAsync(this::cancelElection, context.executor());
+    return super.close().thenRun(this::cancelElection);
   }
 
 }

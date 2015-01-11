@@ -76,7 +76,7 @@ public class SyncResponse extends AbstractResponse {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, status=%s]", getClass().getSimpleName(), status, id);
+    return String.format("%s[id=%s, status=%s]", getClass().getSimpleName(), id, status);
   }
 
   /**

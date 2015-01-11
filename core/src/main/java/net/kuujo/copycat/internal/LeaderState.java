@@ -92,7 +92,7 @@ class LeaderState extends ActiveState {
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
     LOGGER.debug("{} - Setting ping timer", context.getLocalMember());
-    currentTimer = context.executor().scheduleAtFixedRate(this::pingMembers, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    currentTimer = context.executor().scheduleAtFixedRate(this::pingMembers, 0, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -257,7 +257,7 @@ class LeaderState extends ActiveState {
 
   @Override
   public CompletableFuture<Void> close() {
-    return super.close().thenRunAsync(this::cancelPingTimer, context.executor());
+    return super.close().thenRun(this::cancelPingTimer);
   }
 
   /**
