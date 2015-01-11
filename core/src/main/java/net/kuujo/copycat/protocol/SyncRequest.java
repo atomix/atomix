@@ -155,7 +155,7 @@ public class SyncRequest extends AbstractRequest {
      * @return The sync request builder.
      */
     public Builder withTerm(long term) {
-      request.term = Assert.arg(term, term > 0, "term must be greater than zero");
+      request.term = Assert.arg(term, term >= 0, "term must be greater than zero");
       return this;
     }
 
@@ -227,8 +227,7 @@ public class SyncRequest extends AbstractRequest {
     @Override
     public SyncRequest build() {
       super.build();
-      Assert.isNotNull(request.leader, "leader");
-      Assert.arg(request.term, request.term > 0, "term must be greater than zero");
+      Assert.arg(request.term, request.term >= 0, "term must be greater than zero");
       Assert.isNotNull(request.entries, "entries");
       Assert.isNotNull(request.members, "members");
       return request;

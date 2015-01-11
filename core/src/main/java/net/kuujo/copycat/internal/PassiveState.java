@@ -109,6 +109,7 @@ public class PassiveState extends AbstractState {
       List<ByteBuffer> entries = context.getCommitIndex() != null ? context.log().getEntries(member.getIndex() != null ? member.getIndex() : 1, Math.min(member.getIndex() != null ? member.getIndex() + 100 : 100, context.getCommitIndex())) : new ArrayList<>(0);
       syncHandler.handle(SyncRequest.builder()
         .withId(UUID.randomUUID().toString())
+        .withUri(member.getUri())
         .withLeader(context.getLeader())
         .withTerm(context.getTerm())
         .withLogIndex(member.getIndex())
