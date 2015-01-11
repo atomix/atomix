@@ -32,11 +32,6 @@ import java.lang.annotation.Target;
 public @interface Query {
 
   /**
-   * The query name.
-   */
-  String name() default "";
-
-  /**
    * The query consistency.
    */
   Consistency consistency() default Consistency.DEFAULT;

@@ -42,11 +42,10 @@ public class TestCluster<T extends Resource<T>> {
   public static <T extends Resource<T>> TestCluster<T> of(BiFunction<String, ClusterConfig, T> factory) {
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol());
-    for (int i = 1; i <= 5; i++) {
-      cluster.addMember(String.format("local://%d", i));
+    for (int i = 1; i <= 3; i++) {
+      cluster.addMember(String.format("local://test%d", i));
     }
-    return new TestCluster<T>(cluster.getMembers().stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors
-      .toList())));
+    return new TestCluster<T>(cluster.getMembers().stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors.toList())));
   }
 
   /**
@@ -64,9 +63,7 @@ public class TestCluster<T extends Resource<T>> {
     CompletableFuture<Void>[] futures = new CompletableFuture[resources.size()];
     for (int i = 0; i < resources.size(); i++) {
       T resource = resources.get(i);
-      futures[i] = resources.get(i).open().thenRun(() -> System.out.println(resource.cluster()
-        .member()
-        .uri() + " started successfully!")).thenApply(v -> null);
+      futures[i] = resources.get(i).open().thenRun(() -> System.out.println(resource.cluster().member().uri() + " started successfully!")).thenApply(v -> null);
     }
     return CompletableFuture.allOf(futures);
   }

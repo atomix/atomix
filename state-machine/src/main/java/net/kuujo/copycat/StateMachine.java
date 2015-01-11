@@ -21,8 +21,6 @@ import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * State machine.
  *
@@ -83,15 +81,5 @@ public interface StateMachine<T> extends Resource<StateMachine<T>> {
    * @return The proxy object.
    */
   <U> U createProxy(Class<U> type);
-
-  /**
-   * Submits a command to the state machine.
-   *
-   * @param command The command to commit.
-   * @param args The command arguments.
-   * @param <U> The command output type.
-   * @return A completable future to be completed with the command result.
-   */
-  <U> CompletableFuture<U> submit(String command, Object... args);
 
 }

@@ -28,10 +28,4 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Command {
-
-  /**
-   * The command name.
-   */
-  String name() default "";
-
 }

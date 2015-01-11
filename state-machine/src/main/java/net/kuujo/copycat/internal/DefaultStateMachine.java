@@ -19,13 +19,12 @@ import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.internal.util.Assert;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Default state machine implementation.
@@ -39,6 +38,7 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
   private final InvocationHandler handler = new StateProxyInvocationHandler();
   private Map<String, Object> data = new HashMap<>(1024);
   private final Map<Class<?>, Method> initializers = new HashMap<>();
+  private final Map<Method, String> methodCache = new ConcurrentHashMap<>();
   private final StateContext<T> context = new StateContext<T>() {
     @Override
     public Cluster cluster() {
@@ -115,11 +115,6 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     return (U) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{type}, handler);
   }
 
-  @Override
-  public <U> CompletableFuture<U> submit(String command, Object... args) {
-    return log.submit(command, new ArrayList<>(Arrays.asList(args)));
-  }
-
   /**
    * Takes a snapshot of the state machine state.
    */
@@ -168,13 +163,11 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     for (Method method : stateType.getMethods()) {
       Query query = method.getAnnotation(Query.class);
       if (query != null) {
-        log.registerQuery(query.name().equals("") ? method.getName() : query.name(), wrapOperation(method), query.consistency());
+        log.registerQuery(getOperationName(method), wrapOperation(method), query.consistency());
       } else {
         Command command = method.getAnnotation(Command.class);
-        if (command != null) {
-          log.registerCommand(command.name().equals("") ? method.getName() : command.name(), wrapOperation(method));
-        } else if (method.isAccessible()) {
-          log.registerCommand(method.getName(), wrapOperation(method));
+        if (command != null || Modifier.isPublic(method.getModifiers())) {
+          log.registerCommand(getOperationName(method), wrapOperation(method));
         }
       }
     }
@@ -207,6 +200,21 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
   }
 
   /**
+   * Gets the cached method operation name or generates and caches an operation name if it's not already cached.
+   */
+  private String getOperationName(Method method) {
+    return methodCache.computeIfAbsent(method, m -> {
+      return new StringBuilder()
+        .append(m.getName())
+        .append('(')
+        .append(String.join(",", Arrays.asList(m.getParameterTypes())
+          .stream().collect(Collectors.mapping(Class::getCanonicalName, Collectors.toList()))))
+        .append(')')
+        .toString();
+    });
+  }
+
+  /**
    * Wraps a state log operation for the given method.
    *
    * @param method The method for which to create the state log command.
@@ -230,9 +238,9 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
       Class<?> returnType = method.getReturnType();
       if (returnType == CompletableFuture.class) {
-        return submit(method.getName(), args != null ? args : new Object[0]);
+        return log.submit(getOperationName(method), new ArrayList<>(Arrays.asList(args != null ? args : new Object[0])));
       }
-      return submit(method.getName(), args != null ? args : new Object[0]).get();
+      return log.submit(getOperationName(method), new ArrayList<>(Arrays.asList(args != null ? args : new Object[0]))).get();
     }
   }
 

@@ -47,7 +47,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
   /**
    * Tests putting a value in an asynchronous map and then removing it.
    */
-  public void testAsyncMapPutRemote() throws Throwable {
+  public void testAsyncMapPutRemove() throws Throwable {
     TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
     cluster.open().thenRun(this::resume);
     await(5000);
