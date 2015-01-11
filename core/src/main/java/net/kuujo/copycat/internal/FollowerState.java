@@ -74,9 +74,6 @@ class FollowerState extends ActiveState {
       currentTimer.cancel(false);
     }
 
-    // Reset the last voted for candidate.
-    context.setLastVotedFor(null);
-
     // Set the election timeout in a semi-random fashion with the random range
     // being election timeout and 2 * election timeout.
     long delay = context.getElectionTimeout() + (random.nextInt((int) context.getElectionTimeout()) % context.getElectionTimeout());
