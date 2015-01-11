@@ -287,7 +287,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append, serializer, executor);
       cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query, serializer, executor);
       cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit, serializer, executor);
-      protocol.pingHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
+      protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
       protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
       protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
@@ -316,6 +316,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       cluster.member().unregisterHandler(Topics.APPEND, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.QUERY, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.COMMIT, PROTOCOL_ID);
+      protocol.syncHandler(null);
       protocol.pingHandler(null);
       protocol.pollHandler(null);
       protocol.appendHandler(null);
