@@ -166,18 +166,24 @@ class CandidateState extends ActiveState {
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
       transition(CopycatState.FOLLOWER);
+      return super.poll(request);
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (!request.candidate().equals(context.getLocalMember())) {
+    if (request.candidate().equals(context.getLocalMember())) {
+      return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+        .withId(logRequest(request).id())
+        .withUri(context.getLocalMember())
+        .withTerm(context.getTerm())
+        .withVoted(true)
+        .build()));
+    } else {
       return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
         .withId(logRequest(request).id())
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build()));
-    } else {
-      return super.poll(request);
     }
   }
 

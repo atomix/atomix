@@ -347,13 +347,11 @@ abstract class ActiveState extends PassiveState {
   /**
    * Handles a vote request.
    */
-  private PollResponse handlePoll(PollRequest request) {
+  protected PollResponse handlePoll(PollRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
-      context.setLeader(null);
-      context.setLastVotedFor(null);
     }
 
     // If the request term is not as great as the current context term then don't
@@ -373,7 +371,7 @@ abstract class ActiveState extends PassiveState {
     // doesn't make sense for a leader.
     else if (request.candidate().equals(context.getLocalMember())) {
       context.setLastVotedFor(context.getLocalMember());
-      logger().debug("{} - Accepted {}: candidate is the local node", context.getLocalMember(), request);
+      logger().debug("{} - Accepted {}: candidate is the local member", context.getLocalMember(), request);
       return PollResponse.builder()
         .withId(request.id())
         .withUri(context.getLocalMember())
@@ -384,7 +382,7 @@ abstract class ActiveState extends PassiveState {
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.getMembers().contains(request.candidate())) {
-      logger().debug("{} - Rejected {}: candidate is not known do the local node", context.getLocalMember(), request);
+      logger().debug("{} - Rejected {}: candidate is not known do the local member", context.getLocalMember(), request);
       return PollResponse.builder()
         .withId(request.id())
         .withUri(context.getLocalMember())

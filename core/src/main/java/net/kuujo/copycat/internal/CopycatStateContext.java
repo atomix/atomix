@@ -21,14 +21,14 @@ import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatStateContext extends Observable implements RaftProtocol {
+  private final Logger LOGGER = LoggerFactory.getLogger(CopycatStateContext.class);
   private final ScheduledExecutorService executor;
   private final LogManager log;
   private AbstractState state;
@@ -558,6 +559,8 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
     if (this.state != null && state == this.state.state()) {
       return CompletableFuture.completedFuture(this.state.state());
     }
+
+    LOGGER.info("{} - transitioning to {}", localMember, state);
 
     CompletableFuture<CopycatState> future = new CompletableFuture<>();
     if (this.state != null) {
