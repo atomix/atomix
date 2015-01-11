@@ -65,17 +65,17 @@ public class PassiveState extends AbstractState {
    */
   private void startSyncTimer() {
     LOGGER.debug("{} - Setting sync timer", context.getLocalMember());
-    setSyncTimer();
+    resetSyncTimer();
   }
 
   /**
    * Sets the sync timer.
    */
-  private void setSyncTimer() {
+  private void resetSyncTimer() {
     currentTimer = context.executor().schedule(() -> {
       if (isOpen()) {
         sync();
-        setSyncTimer();
+        resetSyncTimer();
       }
     }, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
@@ -84,6 +84,9 @@ public class PassiveState extends AbstractState {
    * Synchronizes with random nodes via a gossip protocol.
    */
   private void sync() {
+    context.checkThread();
+    if (isClosed()) return;
+
     // Create a list of currently active members.
     List<ReplicaInfo> activeMembers = new ArrayList<>(context.getMembers().size());
     for (ReplicaInfo member : context.getMemberInfo()) {
@@ -136,6 +139,8 @@ public class PassiveState extends AbstractState {
 
   @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
+    context.checkThread();
+
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
       context.setLeader(request.leader());
@@ -176,7 +181,7 @@ public class PassiveState extends AbstractState {
   private void cancelSyncTimer() {
     if (currentTimer != null) {
       LOGGER.debug("{} - Cancelling sync timer", context.getLocalMember());
-      currentTimer.cancel(true);
+      currentTimer.cancel(false);
     }
   }
 

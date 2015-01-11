@@ -61,20 +61,20 @@ class FollowerState extends ActiveState {
    */
   private void startTimer() {
     LOGGER.debug("{} - Starting heartbeat timer", context.getLocalMember());
-    resetTimer();
+    resetHeartbeatTimer();
   }
 
   /**
    * Resets the heartbeat timer.
    */
-  private void resetTimer() {
+  private void resetHeartbeatTimer() {
     context.checkThread();
     if (isClosed()) return;
 
     // If a timer is already set, cancel the timer.
     if (currentTimer != null) {
       LOGGER.debug("{} - Reset heartbeat timeout", context.getLocalMember());
-      currentTimer.cancel(true);
+      currentTimer.cancel(false);
     }
 
     // Reset the last voted for candidate.
@@ -92,20 +92,20 @@ class FollowerState extends ActiveState {
         transition(CopycatState.CANDIDATE);
       } else {
         // If the node voted for a candidate then reset the election timer.
-        resetTimer();
+        resetHeartbeatTimer();
       }
     }, delay, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public CompletableFuture<PingResponse> ping(PingRequest request) {
-    resetTimer();
+    resetHeartbeatTimer();
     return super.ping(request);
   }
 
   @Override
   public CompletableFuture<AppendResponse> append(AppendRequest request) {
-    resetTimer();
+    resetHeartbeatTimer();
     return super.append(request);
   }
 
@@ -115,7 +115,7 @@ class FollowerState extends ActiveState {
   private void cancelTimer() {
     if (currentTimer != null) {
       LOGGER.debug("{} - Cancelling heartbeat timer", context.getLocalMember());
-      currentTimer.cancel(true);
+      currentTimer.cancel(false);
     }
   }
 

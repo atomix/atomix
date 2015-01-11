@@ -88,7 +88,7 @@ class CandidateState extends ActiveState {
 
     // Cancel the current timer task and purge the election timer of cancelled tasks.
     if (currentTimer != null) {
-      currentTimer.cancel(true);
+      currentTimer.cancel(false);
     }
 
     // When the election timer is reset, increment the current term and

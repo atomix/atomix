@@ -345,7 +345,6 @@ abstract class ActiveState extends PassiveState {
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
     context.checkThread();
-    logger().debug("{} - Received {}", context.getLocalMember(), request);
     return CompletableFuture.completedFuture(logResponse(handlePoll(logRequest(request))));
   }
 

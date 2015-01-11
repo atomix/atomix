@@ -251,7 +251,7 @@ class LeaderState extends ActiveState {
   private void cancelPingTimer() {
     if (currentTimer != null) {
       LOGGER.debug("{} - Cancelling ping timer", context.getLocalMember());
-      currentTimer.cancel(true);
+      currentTimer.cancel(false);
     }
   }
 
