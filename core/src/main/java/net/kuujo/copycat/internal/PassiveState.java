@@ -114,16 +114,19 @@ public class PassiveState extends AbstractState {
         .withMembers(context.getMemberInfo())
         .withEntries(entries)
         .build()).whenComplete((response, error) -> {
-        if (error == null) {
-          // If the response succeeded, update membership info with the target node's membership.
-          if (response.status() == Response.Status.OK) {
-            context.setMemberInfo(response.members());
+        context.checkThread();
+        if (isOpen()) {
+          if (error == null) {
+            // If the response succeeded, update membership info with the target node's membership.
+            if (response.status() == Response.Status.OK) {
+              context.setMemberInfo(response.members());
+            } else {
+              LOGGER.warn("{} - received error response from {}", context.getLocalMember(), member.getUri());
+            }
           } else {
-            LOGGER.warn("{} - received error response from {}", context.getLocalMember(), member.getUri());
+            // If the request failed then record the member as INACTIVE.
+            LOGGER.warn("{} - sync to {} failed", context.getLocalMember(), member);
           }
-        } else {
-          // If the request failed then record the member as INACTIVE.
-          LOGGER.warn("{} - sync to {} failed", context.getLocalMember(), member);
         }
       });
     }

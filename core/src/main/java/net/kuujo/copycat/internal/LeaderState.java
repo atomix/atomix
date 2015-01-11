@@ -107,6 +107,7 @@ class LeaderState extends ActiveState {
 
   @Override
   public CompletableFuture<PingResponse> ping(final PingRequest request) {
+    context.checkThread();
     if (request.term() > context.getTerm()) {
       return super.ping(request);
     } else if (request.term() < context.getTerm()) {
@@ -124,6 +125,7 @@ class LeaderState extends ActiveState {
 
   @Override
   public CompletableFuture<AppendResponse> append(final AppendRequest request) {
+    context.checkThread();
     if (request.term() > context.getTerm()) {
       return super.append(request);
     } else if (request.term() < context.getTerm()) {
@@ -142,6 +144,7 @@ class LeaderState extends ActiveState {
 
   @Override
   public CompletableFuture<QueryResponse> query(QueryRequest request) {
+    context.checkThread();
     logRequest(request);
 
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
@@ -161,28 +164,31 @@ class LeaderState extends ActiveState {
       case STRONG:
         LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), context.log().lastIndex());
         replicator.pingAll().whenComplete((index, error) -> {
-          if (error == null) {
-            try {
-              future.complete(logResponse(QueryResponse.builder()
-                .withId(request.id())
-                .withUri(context.getLocalMember())
-                .withResult(consumer.apply(null, request.entry()))
-                .build()));
-            } catch (Exception e) {
+          context.checkThread();
+          if (isOpen()) {
+            if (error == null) {
+              try {
+                future.complete(logResponse(QueryResponse.builder()
+                  .withId(request.id())
+                  .withUri(context.getLocalMember())
+                  .withResult(consumer.apply(null, request.entry()))
+                  .build()));
+              } catch (Exception e) {
+                future.complete(logResponse(QueryResponse.builder()
+                  .withId(request.id())
+                  .withUri(context.getLocalMember())
+                  .withStatus(Response.Status.ERROR)
+                  .withError(e)
+                  .build()));
+              }
+            } else {
               future.complete(logResponse(QueryResponse.builder()
                 .withId(request.id())
                 .withUri(context.getLocalMember())
                 .withStatus(Response.Status.ERROR)
-                .withError(e)
+                .withError(error)
                 .build()));
             }
-          } else {
-            future.complete(logResponse(QueryResponse.builder()
-              .withId(request.id())
-              .withUri(context.getLocalMember())
-              .withStatus(Response.Status.ERROR)
-              .withError(error)
-              .build()));
           }
         });
         break;
@@ -192,6 +198,7 @@ class LeaderState extends ActiveState {
 
   @Override
   public CompletableFuture<CommitResponse> commit(final CommitRequest request) {
+    context.checkThread();
     logRequest(request);
 
     CompletableFuture<CommitResponse> future = new CompletableFuture<>();
@@ -205,30 +212,33 @@ class LeaderState extends ActiveState {
     LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember(), index);
     LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
     replicator.commit(index).whenComplete((resultIndex, error) -> {
-      if (error == null) {
-        try {
-          future.complete(logResponse(CommitResponse.builder()
-            .withId(request.id())
-            .withUri(context.getLocalMember())
-            .withResult(consumer.apply(index, entry))
-            .build()));
-        } catch (Exception e) {
+      context.checkThread();
+      if (isOpen()) {
+        if (error == null) {
+          try {
+            future.complete(logResponse(CommitResponse.builder()
+              .withId(request.id())
+              .withUri(context.getLocalMember())
+              .withResult(consumer.apply(index, entry))
+              .build()));
+          } catch (Exception e) {
+            future.complete(logResponse(CommitResponse.builder()
+              .withId(request.id())
+              .withUri(context.getLocalMember())
+              .withStatus(Response.Status.ERROR)
+              .withError(e)
+              .build()));
+          } finally {
+            context.setLastApplied(index);
+          }
+        } else {
           future.complete(logResponse(CommitResponse.builder()
             .withId(request.id())
             .withUri(context.getLocalMember())
             .withStatus(Response.Status.ERROR)
-            .withError(e)
+            .withError(error)
             .build()));
-        } finally {
-          context.setLastApplied(index);
         }
-      } else {
-        future.complete(logResponse(CommitResponse.builder()
-          .withId(request.id())
-          .withUri(context.getLocalMember())
-          .withStatus(Response.Status.ERROR)
-          .withError(error)
-          .build()));
       }
     });
     return future;
@@ -289,6 +299,8 @@ class LeaderState extends ActiveState {
      * Pings the log using the given index for the consistency check.
      */
     public CompletableFuture<Long> ping(Long index) {
+      context.checkThread();
+
       CompletableFuture<Long> future = new CompletableFuture<>();
 
       // Set up a read quorum. Once the required number of replicas have been
@@ -305,6 +317,7 @@ class LeaderState extends ActiveState {
       // should cause the replica to send any remaining entries if necessary.
       for (Replica replica : replicaMap.values()) {
         replica.ping(index).whenComplete((resultIndex, error) -> {
+          context.checkThread();
           if (error == null) {
             quorum.succeed();
           } else {
@@ -326,6 +339,8 @@ class LeaderState extends ActiveState {
      * Commits the log up to the given index.
      */
     public CompletableFuture<Long> commit(Long index) {
+      context.checkThread();
+
       if (index == null) {
         return ping(null);
       }
@@ -347,6 +362,7 @@ class LeaderState extends ActiveState {
       // Iterate through replicas and commit all entries up to the given index.
       for (Replica replica : replicaMap.values()) {
         replica.commit(index).whenComplete((resultIndex, error) -> {
+          context.checkThread();
           // Once the commit succeeds, check the commit index of all replicas.
           if (error == null) {
             quorum.succeed();
@@ -363,6 +379,7 @@ class LeaderState extends ActiveState {
      * Determines which message have been committed.
      */
     private void checkCommits() {
+      context.checkThread();
       if (!replicas.isEmpty() && quorumIndex >= 0) {
         // Sort the list of replicas, order by the last index that was replicated
         // to the replica. This will allow us to determine the median index
@@ -418,6 +435,9 @@ class LeaderState extends ActiveState {
       this.nextIndex = context.log().lastIndex() != null ? context.log().lastIndex() + 1 : null;
     }
 
+    /**
+     * Pings all replicas up to the given index.
+     */
     public CompletableFuture<Long> ping(Long index) {
       if (index != null && (matchIndex == null || index > matchIndex)) {
         return commit(index);
@@ -442,8 +462,9 @@ class LeaderState extends ActiveState {
         .withCommitIndex(context.getCommitIndex())
         .build();
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
-      pingHandler.handle(request).whenComplete((response, error) -> {
-        context.executor().execute(() -> {
+      pingHandler.handle(request).whenCompleteAsync((response, error) -> {
+        context.checkThread();
+        if (isOpen()) {
           if (error != null) {
             triggerPingFutures(index, error);
           } else {
@@ -462,8 +483,8 @@ class LeaderState extends ActiveState {
               triggerPingFutures(index, response.error());
             }
           }
-        });
-      });
+        }
+      }, context.executor());
       return future;
     }
 
@@ -535,40 +556,49 @@ class LeaderState extends ActiveState {
         .build();
 
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
-      appendHandler.handle(request).whenComplete((response, error) -> {
-        context.executor().execute(() -> {
+      appendHandler.handle(request).whenCompleteAsync((response, error) -> {
+        context.checkThread();
+        if (isOpen()) {
           if (error != null) {
-            triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, error);
+            triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
+              prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, error);
           } else {
             LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
             if (response.status().equals(Response.Status.OK)) {
               if (response.succeeded()) {
                 // Update the next index to send and the last index known to be replicated.
                 if (!entries.isEmpty()) {
-                  matchIndex = matchIndex != null ? Math.max(matchIndex, prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1) : prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1;
+                  matchIndex = matchIndex != null ? Math.max(matchIndex,
+                    prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1)
+                    : prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1;
                   nextIndex = matchIndex + 1;
                   triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), matchIndex);
                   doSync();
                 }
               } else {
                 if (response.term() > context.getTerm()) {
-                  triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, new CopycatException("Not the leader"));
+                  triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
+                    prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1,
+                    new CopycatException("Not the leader"));
                   transition(CopycatState.FOLLOWER);
                 } else {
                   // If replication failed then use the last log index indicated by
                   // the replica in the response to generate a new nextIndex. This allows
                   // us to skip repeatedly replicating one entry at a time if it's not
                   // necessary.
-                  nextIndex = response.logIndex() != null ? response.logIndex() + 1 : prevIndex != null ? prevIndex : context.log().firstIndex();
+                  nextIndex = response.logIndex() != null ? response.logIndex() + 1
+                    : prevIndex != null ? prevIndex : context.log().firstIndex();
                   doSync();
                 }
               }
             } else {
-              triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, response.error());
+              triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
+                prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1,
+                response.error());
             }
           }
-        });
-      });
+        }
+      }, context.executor());
     }
 
     /**

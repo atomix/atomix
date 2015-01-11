@@ -154,6 +154,7 @@ abstract class AbstractState implements RaftProtocol {
 
   @Override
   public CompletableFuture<Void> open() {
+    context.checkThread();
     open = true;
     return CompletableFuture.completedFuture(null);
   }
@@ -165,6 +166,7 @@ abstract class AbstractState implements RaftProtocol {
 
   @Override
   public CompletableFuture<Void> close() {
+    context.checkThread();
     open = false;
     return CompletableFuture.completedFuture(null);
   }

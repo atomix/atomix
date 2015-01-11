@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class ActiveState extends PassiveState {
-  private final AtomicBoolean transition = new AtomicBoolean();
+  protected boolean transition;
 
   protected ActiveState(CopycatStateContext context) {
     super(context);
@@ -46,11 +46,13 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   public CompletableFuture<PingResponse> ping(final PingRequest request) {
+    context.checkThread();
     CompletableFuture<PingResponse> future = CompletableFuture.completedFuture(logResponse(handlePing(logRequest(request))));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
-    if (transition.get()) {
+    if (transition) {
       transition(CopycatState.FOLLOWER);
+      transition = false;
     }
     return future;
   }
@@ -64,7 +66,7 @@ abstract class ActiveState extends PassiveState {
     if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
       context.setTerm(request.term());
       context.setLeader(request.leader());
-      transition.set(true);
+      transition = true;
     }
 
     // If the request term is less than the current term then immediately
@@ -147,11 +149,13 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   public CompletableFuture<AppendResponse> append(final AppendRequest request) {
+    context.checkThread();
     CompletableFuture<AppendResponse> future = CompletableFuture.completedFuture(logResponse(handleAppend(logRequest(request))));
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
-    if (transition.get()) {
+    if (transition) {
       transition(CopycatState.FOLLOWER);
+      transition = false;
     }
     return future;
   }
@@ -165,7 +169,7 @@ abstract class ActiveState extends PassiveState {
     if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
       context.setTerm(request.term());
       context.setLeader(request.leader());
-      transition.set(true);
+      transition = true;
     }
 
     // If the request term is less than the current term then immediately
@@ -340,6 +344,7 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
+    context.checkThread();
     logger().debug("{} - Received {}", context.getLocalMember(), request);
     return CompletableFuture.completedFuture(logResponse(handlePoll(logRequest(request))));
   }
@@ -474,6 +479,7 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   public CompletableFuture<QueryResponse> query(QueryRequest request) {
+    context.checkThread();
     logRequest(request);
     // If the request allows inconsistency, immediately execute the query and return the result.
     if (request.consistency() == Consistency.WEAK) {
@@ -496,6 +502,7 @@ abstract class ActiveState extends PassiveState {
 
   @Override
   public CompletableFuture<CommitResponse> commit(CommitRequest request) {
+    context.checkThread();
     logRequest(request);
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CommitResponse.builder()

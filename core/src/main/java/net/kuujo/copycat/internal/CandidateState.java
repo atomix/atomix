@@ -71,6 +71,8 @@ class CandidateState extends ActiveState {
    * Resets the election timer.
    */
   private void resetTimer() {
+    context.checkThread();
+
     // Cancel the current timer task and purge the election timer of cancelled tasks.
     if (currentTimer != null) {
       currentTimer.cancel(true);
@@ -102,8 +104,6 @@ class CandidateState extends ActiveState {
       complete.set(true);
       if (elected) {
         transition(CopycatState.LEADER);
-      } else {
-        transition(CopycatState.FOLLOWER);
       }
     });
 
@@ -126,30 +126,31 @@ class CandidateState extends ActiveState {
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
-      pollHandler.handle(request).whenComplete((response, error) -> {
-        context.executor().execute(() -> {
-          if (!complete.get()) {
-            if (error != null) {
-              LOGGER.warn(context.getLocalMember(), error);
-              quorum.fail();
-            } else if (!response.voted()) {
-              LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
-              quorum.fail();
-            } else if (response.term() != context.getTerm()) {
-              LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember(), member);
-              quorum.fail();
-            } else {
-              LOGGER.info("{} - Received successful vote from {}", context.getLocalMember(), member);
-              quorum.succeed();
-            }
+      pollHandler.handle(request).whenCompleteAsync((response, error) -> {
+        context.checkThread();
+        if (isOpen() && !complete.get()) {
+          if (error != null) {
+            LOGGER.warn(context.getLocalMember(), error);
+            quorum.fail();
+          } else if (!response.voted()) {
+            LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
+            quorum.fail();
+          } else if (response.term() != context.getTerm()) {
+            LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember(), member);
+            quorum.fail();
+          } else {
+            LOGGER.info("{} - Received successful vote from {}", context.getLocalMember(), member);
+            quorum.succeed();
           }
-        });
-      });
+        }
+      }, context.executor());
     }
   }
 
   @Override
   public CompletableFuture<PingResponse> ping(PingRequest request) {
+    context.checkThread();
+
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() >= context.getTerm()) {
@@ -161,6 +162,8 @@ class CandidateState extends ActiveState {
 
   @Override
   public CompletableFuture<PollResponse> poll(PollRequest request) {
+    context.checkThread();
+
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() > context.getTerm()) {
@@ -191,9 +194,10 @@ class CandidateState extends ActiveState {
    * Cancels the election.
    */
   private void cancelElection() {
+    context.checkThread();
     if (currentTimer != null) {
       LOGGER.debug("{} - Cancelling election", context.getLocalMember());
-      currentTimer.cancel(true);
+      currentTimer.cancel(false);
     }
     if (quorum != null) {
       quorum.cancel();

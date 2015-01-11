@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
@@ -29,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -41,6 +43,7 @@ import java.util.stream.Collectors;
 public class CopycatStateContext extends Observable implements RaftProtocol {
   private final Logger LOGGER = LoggerFactory.getLogger(CopycatStateContext.class);
   private final ScheduledExecutorService executor;
+  private Thread thread;
   private final LogManager log;
   private AbstractState state;
   private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
@@ -78,6 +81,11 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
     this.log = config.getLog().getLogManager(name);
     this.electionTimeout = config.getElectionTimeout();
     this.heartbeatInterval = config.getHeartbeatInterval();
+    try {
+      executor.submit(() -> this.thread = Thread.currentThread()).get();
+    } catch (InterruptedException | ExecutionException e) {
+      throw new CopycatException(e);
+    }
   }
 
   /**
@@ -538,6 +546,9 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
     return wrapCall(request, state::commit);
   }
 
+  /**
+   * Wraps a call to the state context in the context executor.
+   */
   private <T extends Request, U extends Response> CompletableFuture<U> wrapCall(T request, MessageHandler<T, U> handler) {
     CompletableFuture<U> future = new CompletableFuture<>();
     executor.execute(() -> {
@@ -553,9 +564,20 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   /**
+   * Checks that the current thread is the state context thread.
+   */
+  void checkThread() {
+    if (Thread.currentThread() != thread) {
+      throw new IllegalStateException("State not running on correct thread");
+    }
+  }
+
+  /**
    * Transition registerHandler.
    */
   CompletableFuture<CopycatState> transition(CopycatState state) {
+    checkThread();
+
     if (this.state != null && state == this.state.state()) {
       return CompletableFuture.completedFuture(this.state.state());
     }
@@ -565,6 +587,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
     CompletableFuture<CopycatState> future = new CompletableFuture<>();
     if (this.state != null) {
       this.state.close().whenComplete((result, error) -> {
+        checkThread();
         unregisterHandlers(this.state);
         if (error == null) {
           switch (state) {
@@ -590,6 +613,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
           registerHandlers(this.state);
           this.state.open().whenComplete((result2, error2) -> {
+            checkThread();
             if (error2 == null) {
               future.complete(this.state.state());
             } else {
@@ -622,6 +646,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
       registerHandlers(this.state);
       this.state.open().whenComplete((result, error) -> {
+        checkThread();
         if (error == null) {
           future.complete(this.state.state());
         } else {
