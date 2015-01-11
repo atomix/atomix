@@ -100,8 +100,11 @@ class LeaderState extends ActiveState {
    */
   private void setPingTimer() {
     currentTimer = context.executor().schedule(() -> {
-      replicator.pingAll();
-      setPingTimer();
+      context.checkThread();
+      if (isOpen()) {
+        replicator.pingAll();
+        setPingTimer();
+      }
     }, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 

@@ -73,8 +73,10 @@ public class PassiveState extends AbstractState {
    */
   private void setSyncTimer() {
     currentTimer = context.executor().schedule(() -> {
-      sync();
-      setSyncTimer();
+      if (isOpen()) {
+        sync();
+        setSyncTimer();
+      }
     }, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 

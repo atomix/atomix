@@ -73,6 +73,8 @@ class CandidateState extends ActiveState {
   private void resetTimer() {
     context.checkThread();
 
+    if (isClosed()) return;
+
     // Cancel the current timer task and purge the election timer of cancelled tasks.
     if (currentTimer != null) {
       currentTimer.cancel(true);

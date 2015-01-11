@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 class FollowerState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(FollowerState.class);
   private ScheduledFuture<?> currentTimer;
-  private boolean shutdown;
 
   FollowerState(CopycatStateContext context) {
     super(context);
@@ -67,34 +66,35 @@ class FollowerState extends ActiveState {
    * Resets the heartbeat timer.
    */
   private void resetTimer() {
-    if (!shutdown) {
-      // If a timer is already set, cancel the timer.
-      if (currentTimer != null) {
-        LOGGER.debug("{} - Reset heartbeat timeout", context.getLocalMember());
-        currentTimer.cancel(true);
-      }
+    context.checkThread();
+    if (isClosed()) return;
 
-      // Reset the last voted for candidate.
-      context.setLastVotedFor(null);
-
-      // Set the election timeout in a semi-random fashion with the random range
-      // being somewhere between .75 * election timeout and 1.25 * election
-      // timeout.
-      long delay = context.getElectionTimeout() - (context.getElectionTimeout() / 4)
-        + (Math.round(Math.random() * (context.getElectionTimeout() / 2)));
-      currentTimer = context.executor().schedule(() -> {
-        // If the node has not yet voted for anyone then transition to
-        // candidate and start a new election.
-        currentTimer = null;
-        if (context.getLastVotedFor() == null) {
-          LOGGER.info("{} - Heartbeat timed out", context.getLocalMember());
-          transition(CopycatState.CANDIDATE);
-        } else {
-          // If the node voted for a candidate then reset the election timer.
-          resetTimer();
-        }
-      }, delay, TimeUnit.MILLISECONDS);
+    // If a timer is already set, cancel the timer.
+    if (currentTimer != null) {
+      LOGGER.debug("{} - Reset heartbeat timeout", context.getLocalMember());
+      currentTimer.cancel(true);
     }
+
+    // Reset the last voted for candidate.
+    context.setLastVotedFor(null);
+
+    // Set the election timeout in a semi-random fashion with the random range
+    // being somewhere between .75 * election timeout and 1.25 * election
+    // timeout.
+    long delay = context.getElectionTimeout() - (context.getElectionTimeout() / 4)
+      + (Math.round(Math.random() * (context.getElectionTimeout() / 2)));
+    currentTimer = context.executor().schedule(() -> {
+      // If the node has not yet voted for anyone then transition to
+      // candidate and start a new election.
+      currentTimer = null;
+      if (context.getLastVotedFor() == null) {
+        LOGGER.info("{} - Heartbeat timed out", context.getLocalMember());
+        transition(CopycatState.CANDIDATE);
+      } else {
+        // If the node voted for a candidate then reset the election timer.
+        resetTimer();
+      }
+    }, delay, TimeUnit.MILLISECONDS);
   }
 
   @Override
@@ -117,7 +117,6 @@ class FollowerState extends ActiveState {
       LOGGER.debug("{} - Cancelling heartbeat timer", context.getLocalMember());
       currentTimer.cancel(true);
     }
-    shutdown = true;
   }
 
   @Override
