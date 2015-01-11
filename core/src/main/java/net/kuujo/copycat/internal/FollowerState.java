@@ -22,6 +22,7 @@ import net.kuujo.copycat.protocol.PingResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
  */
 class FollowerState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(FollowerState.class);
+  private final Random random = new Random();
   private ScheduledFuture<?> currentTimer;
 
   FollowerState(CopycatStateContext context) {
@@ -79,10 +81,8 @@ class FollowerState extends ActiveState {
     context.setLastVotedFor(null);
 
     // Set the election timeout in a semi-random fashion with the random range
-    // being somewhere between .75 * election timeout and 1.25 * election
-    // timeout.
-    long delay = context.getElectionTimeout() - (context.getElectionTimeout() / 4)
-      + (Math.round(Math.random() * (context.getElectionTimeout() / 2)));
+    // being election timeout and 2 * election timeout.
+    long delay = context.getElectionTimeout() + (random.nextInt((int) context.getElectionTimeout()) % context.getElectionTimeout());
     currentTimer = context.executor().schedule(() -> {
       // If the node has not yet voted for anyone then transition to
       // candidate and start a new election.

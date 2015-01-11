@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
@@ -37,6 +38,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 class CandidateState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(CandidateState.class);
+  private final Random random = new Random();
   private Quorum quorum;
   private ScheduledFuture<?> currentTimer;
 
@@ -68,11 +70,20 @@ class CandidateState extends ActiveState {
   }
 
   /**
+   * Requests votes from a majority of the cluster.
+   */
+  private void requestVotes() {
+
+  }
+
+  /**
    * Resets the election timer.
    */
   private void resetTimer() {
     context.checkThread();
 
+    // Because of asynchronous execution, the candidate state could have already been closed. In that case,
+    // simply skip the election.
     if (isClosed()) return;
 
     // Cancel the current timer task and purge the election timer of cancelled tasks.
@@ -83,7 +94,8 @@ class CandidateState extends ActiveState {
     // When the election timer is reset, increment the current term and
     // restart the election.
     context.setTerm(context.getTerm() + 1);
-    long delay = context.getElectionTimeout() - (context.getElectionTimeout() / 4) + (Math.round(Math.random() * (context.getElectionTimeout() / 2)));
+
+    long delay = context.getElectionTimeout() + (random.nextInt((int) context.getElectionTimeout()) % context.getElectionTimeout());
     currentTimer = context.executor().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
