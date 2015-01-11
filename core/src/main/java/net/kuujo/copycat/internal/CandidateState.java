@@ -131,7 +131,7 @@ class CandidateState extends ActiveState {
     LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getReplicas());
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
     for (String member : context.getReplicas()) {
-      LOGGER.debug("{} - Polling {}", context.getLocalMember(), member);
+      LOGGER.debug("{} - Polling {} for term {}", context.getLocalMember(), member, context.getTerm());
       PollRequest request = PollRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withUri(member)

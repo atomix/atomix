@@ -15,10 +15,7 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
-import net.kuujo.copycat.protocol.AppendRequest;
-import net.kuujo.copycat.protocol.AppendResponse;
-import net.kuujo.copycat.protocol.PingRequest;
-import net.kuujo.copycat.protocol.PingResponse;
+import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +85,7 @@ class FollowerState extends ActiveState {
       // candidate and start a new election.
       currentTimer = null;
       if (context.getLastVotedFor() == null) {
-        LOGGER.info("{} - Heartbeat timed out", context.getLocalMember());
+        LOGGER.info("{} - Heartbeat timed out in {} milliseconds", context.getLocalMember(), delay);
         transition(CopycatState.CANDIDATE);
       } else {
         // If the node voted for a candidate then reset the election timer.
@@ -107,6 +104,16 @@ class FollowerState extends ActiveState {
   public CompletableFuture<AppendResponse> append(AppendRequest request) {
     resetHeartbeatTimer();
     return super.append(request);
+  }
+
+  @Override
+  protected PollResponse handlePoll(PollRequest request) {
+    // Reset the heartbeat timer if we voted for another candidate.
+    PollResponse response = super.handlePoll(request);
+    if (response.voted()) {
+      resetHeartbeatTimer();
+    }
+    return response;
   }
 
   /**
