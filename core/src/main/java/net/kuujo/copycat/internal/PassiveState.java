@@ -65,19 +65,7 @@ public class PassiveState extends AbstractState {
    */
   private void startSyncTimer() {
     LOGGER.debug("{} - Setting sync timer", context.getLocalMember());
-    resetSyncTimer();
-  }
-
-  /**
-   * Sets the sync timer.
-   */
-  private void resetSyncTimer() {
-    currentTimer = context.executor().schedule(() -> {
-      if (isOpen()) {
-        sync();
-        resetSyncTimer();
-      }
-    }, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    currentTimer = context.executor().scheduleAtFixedRate(this::sync, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**
