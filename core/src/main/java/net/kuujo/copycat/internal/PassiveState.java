@@ -77,10 +77,19 @@ public class PassiveState extends AbstractState {
 
     // Create a list of currently active members.
     List<ReplicaInfo> activeMembers = new ArrayList<>(context.getMembers().size());
-    for (ReplicaInfo member : context.getMemberInfo()) {
-      if (!member.getUri().equals(context.getLocalMember())
-        && (!context.getReplicas().contains(context.getLocalMember()) || !context.getReplicas().contains(member.getUri()))) {
-        activeMembers.add(member);
+    for (String uri : context.getMembers()) {
+      if (!uri.equals(context.getLocalMember())) {
+        ReplicaInfo member = context.getMemberInfo(uri);
+        if (member == null) {
+          member = new ReplicaInfo(uri);
+          context.addMemberInfo(member);
+        }
+        // If the local node is an active member of the cluster, only gossip with passive members. If the local node
+        // is a passive member of the cluster, gossip with both active and passive members.
+        if ((context.getActiveMembers().contains(context.getLocalMember()) && !context.getActiveMembers().contains(member.getUri()))
+          || !context.getActiveMembers().contains(context.getLocalMember())) {
+          activeMembers.add(member);
+        }
       }
     }
 
@@ -97,7 +106,7 @@ public class PassiveState extends AbstractState {
     // For each active member, send membership info to the member.
     for (ReplicaInfo member : randomMembers) {
       LOGGER.debug("{} - sending sync request to {}", context.getLocalMember(), member.getUri());
-      List<ByteBuffer> entries = context.log().getEntries(member.getIndex() != null ? member.getIndex() : 1, Math.min(member.getIndex() + 100, context.getCommitIndex()));
+      List<ByteBuffer> entries = context.getCommitIndex() != null ? context.log().getEntries(member.getIndex() != null ? member.getIndex() : 1, Math.min(member.getIndex() != null ? member.getIndex() + 100 : 100, context.getCommitIndex())) : new ArrayList<>(0);
       syncHandler.handle(SyncRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withLeader(context.getLeader())

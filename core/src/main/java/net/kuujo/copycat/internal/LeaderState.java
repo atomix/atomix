@@ -273,9 +273,9 @@ class LeaderState extends ActiveState {
 
     private Replicator(CopycatStateContext context) {
       this.context = context;
-      this.replicaMap = new HashMap<>(context.getReplicas().size());
-      this.replicas = new ArrayList<>(context.getReplicas().size());
-      for (String uri : context.getReplicas()) {
+      this.replicaMap = new HashMap<>(context.getActiveMembers().size());
+      this.replicas = new ArrayList<>(context.getActiveMembers().size());
+      for (String uri : context.getActiveMembers()) {
         if (!uri.equals(context.getLocalMember())) {
           Replica replica = new Replica(uri, context);
           replicaMap.put(uri, replica);
@@ -284,7 +284,7 @@ class LeaderState extends ActiveState {
       }
 
       // Quorum is floor(replicas.size / 2) since this node is implicitly counted in the quorum count.
-      this.quorum = (int) Math.floor(context.getReplicas().size() / 2);
+      this.quorum = (int) Math.floor(context.getActiveMembers().size() / 2);
       this.quorumIndex = quorum - 1;
     }
 

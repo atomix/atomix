@@ -55,7 +55,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
   private CompletableFuture<Void> openFuture;
   private final String localMember;
-  private final Set<String> replicas;
+  private final Set<String> activeMembers;
   private Set<String> members;
   private final ReplicaInfo localMemberInfo;
   private final Map<String, ReplicaInfo> memberInfo = new HashMap<>();
@@ -73,7 +73,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
     this.localMember = Assert.isNotNull(uri, "uri");
-    this.replicas = new HashSet<>(config.getReplicas());
+    this.activeMembers = new HashSet<>(config.getReplicas());
     this.members = new HashSet<>(config.getReplicas());
     this.members.add(uri);
     this.localMemberInfo = new ReplicaInfo(uri);
@@ -89,12 +89,12 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   /**
-   * Returns the full set of replicas.
+   * Returns the full set of active members.
    *
-   * @return The full set of Raft replicas.
+   * @return The full set of active members.
    */
-  public Set<String> getReplicas() {
-    return replicas;
+  public Set<String> getActiveMembers() {
+    return activeMembers;
   }
 
   /**
@@ -699,7 +699,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       try {
         open = true;
         log.open();
-        transition(replicas.contains(localMember) ? CopycatState.FOLLOWER : CopycatState.PASSIVE);
+        transition(activeMembers.contains(localMember) ? CopycatState.FOLLOWER : CopycatState.PASSIVE);
       } catch (Exception e) {
         openFuture.completeExceptionally(e);
         openFuture = null;

@@ -114,7 +114,7 @@ class CandidateState extends ActiveState {
     // to this node will be automatically successful.
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
-    final Quorum quorum = new Quorum((int) Math.floor(context.getReplicas().size() / 2) + 1, (elected) -> {
+    final Quorum quorum = new Quorum((int) Math.floor(context.getActiveMembers().size() / 2) + 1, (elected) -> {
       complete.set(true);
       if (elected) {
         transition(CopycatState.LEADER);
@@ -128,9 +128,9 @@ class CandidateState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and poll each member for a vote.
-    LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getReplicas());
+    LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getActiveMembers());
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
-    for (String member : context.getReplicas()) {
+    for (String member : context.getActiveMembers()) {
       LOGGER.debug("{} - Polling {} for term {}", context.getLocalMember(), member, context.getTerm());
       PollRequest request = PollRequest.builder()
         .withId(UUID.randomUUID().toString())

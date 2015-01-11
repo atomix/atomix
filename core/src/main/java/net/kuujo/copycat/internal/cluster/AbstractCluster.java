@@ -72,7 +72,7 @@ public abstract class AbstractCluster implements ClusterManager {
     this.userExecutor = userExecutor;
 
     // Always create a local member based on the local member URI.
-    MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getReplicas().contains(coordinator.member().uri()) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.State.ALIVE);
+    MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getActiveMembers().contains(coordinator.member().uri()) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.State.ALIVE);
     this.localMember = new CoordinatedLocalMember(id, localMemberInfo, coordinator.member(), serializer, executor);
     membersInfo.put(localMemberInfo.uri(), localMemberInfo);
 
@@ -80,7 +80,7 @@ public abstract class AbstractCluster implements ClusterManager {
     // only via the gossip protocol.
     Map<String, CoordinatedMember> members = new ConcurrentHashMap<>();
     members.put(localMember.uri(), localMember);
-    for (String replica : context.getReplicas()) {
+    for (String replica : context.getActiveMembers()) {
       if (!replica.equals(localMember.uri())) {
         MemberCoordinator memberCoordinator = coordinator.member(replica);
         if (memberCoordinator != null) {
