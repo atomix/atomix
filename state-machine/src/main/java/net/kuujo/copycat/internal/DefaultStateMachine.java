@@ -207,8 +207,7 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
       return new StringBuilder()
         .append(m.getName())
         .append('(')
-        .append(String.join(",", Arrays.asList(m.getParameterTypes())
-          .stream().collect(Collectors.mapping(Class::getCanonicalName, Collectors.toList()))))
+        .append(String.join(",", Arrays.asList(m.getParameterTypes()).stream().map(Class::getCanonicalName).collect(Collectors.toList())))
         .append(')')
         .toString();
     });
