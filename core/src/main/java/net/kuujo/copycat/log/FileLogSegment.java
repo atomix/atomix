@@ -40,6 +40,7 @@ public class FileLogSegment extends AbstractLogSegment {
   private Long firstIndex;
   private Long lastIndex;
   private long indexOffset;
+  private final ByteBuffer indexBuffer = ByteBuffer.allocate(8);
 
   FileLogSegment(FileLogManager log, long id, long firstIndex) {
     super(id, firstIndex);
@@ -172,10 +173,11 @@ public class FileLogSegment extends AbstractLogSegment {
       } else if (lastIndex == null || index > lastIndex) {
         return logFileChannel.size();
       }
-      ByteBuffer buffer = ByteBuffer.allocate(8);
-      indexFileChannel.read(buffer, (index - firstIndex) * 8);
-      buffer.flip();
-      return buffer.getLong() + indexOffset;
+      indexFileChannel.read(indexBuffer, (index - firstIndex) * 8);
+      indexBuffer.flip();
+      long position = indexBuffer.getLong() + indexOffset;
+      indexBuffer.clear();
+      return position;
     } catch (IOException e) {
       throw new LogException(e);
     }
