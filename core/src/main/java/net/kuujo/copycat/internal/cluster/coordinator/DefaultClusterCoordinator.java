@@ -56,7 +56,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final CopycatStateContext context;
   private final ClusterManager cluster;
   private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
-  private ScheduledFuture<?> gossipTimer;
   private final AtomicBoolean open = new AtomicBoolean();
 
   public DefaultClusterCoordinator(String uri, CoordinatorConfig config) {
@@ -171,7 +170,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   /**
    * Creates all Copycat resources.
    */
-  private void createResources() {
+  private synchronized void createResources() {
     for (Map.Entry<String, CoordinatedResourceConfig> entry : this.config.getResourceConfigs().entrySet()) {
       String name = entry.getKey();
       CoordinatedResourceConfig config = entry.getValue();
@@ -186,7 +185,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   /**
    * Opens all cluster resources.
    */
-  private CompletableFuture<Void> openResources() {
+  private synchronized CompletableFuture<Void> openResources() {
     List<CompletableFuture<ResourceContext>> futures = new ArrayList<>(resources.size());
     for (ResourceHolder resource : resources.values()) {
       if (resource.config.getReplicas().contains(uri)) {
@@ -199,7 +198,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   /**
    * Closes all cluster resources.
    */
-  private CompletableFuture<Void> closeResources() {
+  private synchronized CompletableFuture<Void> closeResources() {
     List<CompletableFuture<Void>> futures = new ArrayList<>(resources.size());
     for (ResourceHolder resource : resources.values()) {
       futures.add(resource.state.close().thenCompose(v -> resource.cluster.close()));
@@ -209,7 +208,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<ClusterCoordinator> open() {
+  public synchronized CompletableFuture<ClusterCoordinator> open() {
     if (open.get()) {
       return CompletableFuture.completedFuture(null);
     }
@@ -235,7 +234,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     if (open.compareAndSet(true, false)) {
       CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
       int i = 0;
@@ -244,12 +243,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       }
       cluster.removeMembershipListener(this::handleMembershipEvent);
       return closeResources()
-        .thenRun(() -> {
-          if (gossipTimer != null) {
-            gossipTimer.cancel(false);
-            gossipTimer = null;
-          }
-        })
         .thenComposeAsync(v -> context.close(), executor)
         .thenComposeAsync(v -> cluster.close(), executor)
         .thenComposeAsync(v -> CompletableFuture.allOf(futures));
