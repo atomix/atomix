@@ -27,7 +27,7 @@ public class BufferedLogTest extends AbstractLogTest {
 
   @Override
   protected AbstractLogManager createLog() throws Throwable {
-    return (AbstractLogManager) new BufferedLog().getLogManager("test");
+    return (AbstractLogManager) new BufferedLog().withSegmentSize(segmentSize).getLogManager("test");
   }
 
   @Override

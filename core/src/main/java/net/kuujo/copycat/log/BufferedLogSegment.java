@@ -16,6 +16,8 @@
 package net.kuujo.copycat.log;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
 import net.kuujo.copycat.internal.util.Assert;
@@ -104,6 +106,19 @@ public class BufferedLogSegment extends AbstractLogSegment {
   public boolean containsIndex(long index) {
     assertIsOpen();
     return log.containsKey(index);
+  }
+
+  @Override
+  public List<ByteBuffer> getEntries(long from, long to) {
+    assertIsOpen();
+    assertContainsIndex(from);
+    assertContainsIndex(to);
+    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
+    for (ByteBuffer entry : log.subMap(from, true, to, true).values()) {
+      entry.rewind();
+      entries.add(entry);
+    }
+    return entries;
   }
 
   @Override

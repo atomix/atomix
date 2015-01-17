@@ -205,13 +205,27 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   @Override
   public List<ByteBuffer> getEntries(long from, long to) {
     assertIsOpen();
+    assertContainsIndex(from);
+    assertContainsIndex(to);
 
     List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
-    LogSegment segment = currentSegment;
-    for (long i = from; i <= to; i++) {
-      if (!segment.containsIndex(i))
-        segment = segment(i);
-      entries.add(segment.getEntry(i));
+
+    // If the current segment contains the first index then just get the entries.
+    if (currentSegment.containsIndex(from)) {
+      return currentSegment.getEntries(from, to);
+    }
+
+    // Iterate through segments and build the entries list.
+    for (LogSegment segment : segments.values()) {
+      if (segment.containsIndex(from) && segment.containsIndex(to)) {
+        return segment.getEntries(from, to);
+      } else if (segment.containsIndex(from)) {
+        entries.addAll(segment.getEntries(from, segment.lastIndex()));
+      } else if (segment.containsIndex(to)) {
+        entries.addAll(segment.getEntries(segment.firstIndex(), to));
+      } else if (segment.firstIndex() != null && segment.firstIndex() > from && segment.lastIndex() != null && segment.lastIndex() < to) {
+        entries.addAll(segment.getEntries(segment.firstIndex(), segment.lastIndex()));
+      }
     }
 
     return entries;

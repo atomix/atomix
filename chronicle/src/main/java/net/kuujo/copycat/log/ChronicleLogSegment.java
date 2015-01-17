@@ -21,6 +21,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 import net.openhft.chronicle.Chronicle;
@@ -156,6 +158,18 @@ public class ChronicleLogSegment extends AbstractLogSegment {
   }
 
   @Override
+  public List<ByteBuffer> getEntries(long from, long to) {
+    assertIsOpen();
+    assertContainsIndex(from);
+    assertContainsIndex(to);
+    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
+    for (long i = from; i <= to; i++) {
+      entries.add(getEntry(i));
+    }
+    return entries;
+  }
+
+  @Override
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
     assertContainsIndex(index);
@@ -163,6 +177,7 @@ public class ChronicleLogSegment extends AbstractLogSegment {
       do {
         ByteBuffer entry = extractEntry(tailer, index);
         if (entry != null) {
+          entry.flip();
           return entry;
         }
       } while (tailer.nextIndex());

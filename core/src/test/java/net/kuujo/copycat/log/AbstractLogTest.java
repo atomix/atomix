@@ -481,7 +481,8 @@ public abstract class AbstractLogTest {
   }
 
   protected static void assertBytesEqual(ByteBuffer b1, int number) {
-    assertEquals(new BigInteger(b1.array()), new BigInteger(ByteBuffer.allocate(4).putInt(number).array()));
+    assertEquals(b1.limit(), 4);
+    assertEquals(b1.getInt(), number);
   }
 
   protected static void assertBytesEqual(ByteBuffer b1, String string) {

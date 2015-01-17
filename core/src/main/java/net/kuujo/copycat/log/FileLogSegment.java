@@ -23,6 +23,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * File log segment.
@@ -30,6 +32,7 @@ import java.nio.file.StandardOpenOption;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileLogSegment extends AbstractLogSegment {
+  private static final int BUFFER_SIZE = 1024 * 2;
   private final FileLogManager log;
   private final File logFile;
   private final File indexFile;
@@ -41,6 +44,8 @@ public class FileLogSegment extends AbstractLogSegment {
   private Long lastIndex;
   private long indexOffset;
   private final ByteBuffer indexBuffer = ByteBuffer.allocate(8);
+  private final ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);
+  private final List<ByteBuffer> pool = new ArrayList<>(1024);
 
   FileLogSegment(FileLogManager log, long id, long firstIndex) {
     super(id, firstIndex);
@@ -201,6 +206,41 @@ public class FileLogSegment extends AbstractLogSegment {
     return firstIndex != null && lastIndex != null && firstIndex <= index && index <= lastIndex;
   }
 
+  private ByteBuffer getBuffer(int index) {
+    if (pool.size() > index) {
+      ByteBuffer buffer = pool.get(index);
+      buffer.clear();
+      return buffer;
+    } else {
+      ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+      pool.add(buffer);
+      return buffer;
+    }
+  }
+
+  @Override
+  public List<ByteBuffer> getEntries(long from, long to) {
+    assertIsOpen();
+    assertContainsIndex(from);
+    assertContainsIndex(to);
+    List<ByteBuffer> entries = new ArrayList<>((int)(to - from + 1));
+    int index = 0;
+    for (long i = from; i <= to; i++) {
+      long startPosition = findPosition(i);
+      long endPosition = findPosition(i + 1);
+      try {
+        ByteBuffer buffer = getBuffer(index+1);
+        buffer.limit((int) (endPosition - startPosition));
+        logFileChannel.read(buffer, startPosition);
+        buffer.flip();
+        entries.add(buffer);
+      } catch (IOException e) {
+        throw new LogException(e);
+      }
+    }
+    return entries;
+  }
+
   @Override
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
@@ -208,7 +248,8 @@ public class FileLogSegment extends AbstractLogSegment {
     try {
       long startPosition = findPosition(index);
       long endPosition = findPosition(index + 1);
-      ByteBuffer buffer = ByteBuffer.allocate((int) (endPosition - startPosition));
+      ByteBuffer buffer = getBuffer(0);
+      buffer.limit((int) (endPosition - startPosition));
       logFileChannel.read(buffer, startPosition);
       buffer.flip();
       return buffer;
