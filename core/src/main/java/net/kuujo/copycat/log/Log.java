@@ -34,7 +34,7 @@ public abstract class Log extends AbstractConfigurable implements Configurable {
   public static final String LOG_FLUSH_INTERVAL = "flush.interval";
   public static final String LOG_RETENTION_POLICY = "retention-policy";
 
-  private static final int DEFAULT_LOG_SEGMENT_SIZE = 1024 * 1024;
+  private static final int DEFAULT_LOG_SEGMENT_SIZE = 1024 * 1024 * 1024;
   private static final long DEFAULT_LOG_SEGMENT_INTERVAL = Long.MAX_VALUE;
   private static final boolean DEFAULT_LOG_FLUSH_ON_WRITE = false;
   private static final long DEFAULT_LOG_FLUSH_INTERVAL = Long.MAX_VALUE;
@@ -53,9 +53,9 @@ public abstract class Log extends AbstractConfigurable implements Configurable {
   }
 
   /**
-   * Sets the log segment size.
+   * Sets the log segment size in bytes.
    *
-   * @param segmentSize The log segment size.
+   * @param segmentSize The log segment size in bytes.
    * @throws java.lang.IllegalArgumentException If the segment size is not positive
    */
   public void setSegmentSize(int segmentSize) {
@@ -63,9 +63,9 @@ public abstract class Log extends AbstractConfigurable implements Configurable {
   }
 
   /**
-   * Returns the log segment size.
+   * Returns the log segment size in bytes.
    *
-   * @return The log segment size.
+   * @return The log segment size in bytes.
    */
   public int getSegmentSize() {
     return get(LOG_SEGMENT_SIZE, DEFAULT_LOG_SEGMENT_SIZE);

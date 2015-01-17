@@ -74,9 +74,9 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   /**
    * Runs the resource's startup tasks.
    */
-  @SuppressWarnings("all")
+  @SuppressWarnings("unchecked")
   protected final CompletableFuture<Void> runStartupTasks() {
-    return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]));
+    return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).<CompletableFuture<Void>>toArray(size -> new CompletableFuture[size]));
   }
 
   @Override
@@ -89,9 +89,9 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   /**
    * Runs the resource's startup tasks.
    */
-  @SuppressWarnings("all")
+  @SuppressWarnings("unchecked")
   protected final CompletableFuture<Void> runShutdownTasks() {
-    return CompletableFuture.allOf(shutdownTasks.stream().map(t -> t.execute()).toArray(size -> new CompletableFuture[size]));
+    return CompletableFuture.allOf(shutdownTasks.stream().map(t -> t.execute()).<CompletableFuture<Void>>toArray(size -> new CompletableFuture[size]));
   }
 
   @Override
