@@ -30,7 +30,10 @@ import net.kuujo.copycat.protocol.Response;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 /**
@@ -83,6 +86,26 @@ public class DefaultResourceContext implements ResourceContext {
   @Override
   public void execute(Runnable command) {
     context.executor().execute(command);
+  }
+
+  @Override
+  public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+    return context.executor().schedule(command, delay, unit);
+  }
+
+  @Override
+  public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
+    return context.executor().schedule(callable, delay, unit);
+  }
+
+  @Override
+  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+    return context.executor().scheduleAtFixedRate(command, initialDelay, period, unit);
+  }
+
+  @Override
+  public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    return context.executor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
   }
 
   @Override

@@ -21,8 +21,10 @@ import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.Consistency;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 /**
@@ -30,7 +32,7 @@ import java.util.function.BiFunction;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ResourceContext extends Managed<ResourceContext>, Executor {
+public interface ResourceContext extends Managed<ResourceContext> {
 
   /**
    * Returns the resource name.
@@ -74,6 +76,55 @@ public interface ResourceContext extends Managed<ResourceContext>, Executor {
    * @return The Copycat context.
    */
   ResourceContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer);
+
+  /**
+   * Executes a command on the context.
+   *
+   * @param command The command to execute.
+   */
+  void execute(Runnable command);
+
+  /**
+   * Schedules a command on the context.
+   *
+   * @param command The command to schedule.
+   * @param delay The delay after which to run the command.
+   * @param unit The delay time unit.
+   * @return The scheduled future.
+   */
+  ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
+
+  /**
+   * Schedules a callable on the context.
+   *
+   * @param callable The callable to schedule.
+   * @param delay The delay after which to run the callable.
+   * @param unit The delay time unit.
+   * @return The scheduled future.
+   */
+  <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit);
+
+  /**
+   * Schedules a command to run at a fixed rate on the context.
+   *
+   * @param command The command to schedule.
+   * @param initialDelay The initial delay after which to execute the command for the first time.
+   * @param period The period at which to run the command.
+   * @param unit The period time unit.
+   * @return The scheduled future.
+   */
+  ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
+
+  /**
+   * Schedules a command to run at a fixed delay on the context.
+   *
+   * @param command The command to schedule.
+   * @param initialDelay The initial delay after which to execute the command for the first time.
+   * @param delay The delay at which to run the command.
+   * @param unit The delay time unit.
+   * @return The scheduled future.
+   */
+  ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);
 
   /**
    * Submits a persistent entry to the context.
