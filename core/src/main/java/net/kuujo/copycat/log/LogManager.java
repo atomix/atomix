@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.log;
 
-import java.nio.ByteBuffer;
-import java.util.List;
+import java.io.IOException;
+import java.util.TreeMap;
 
 /**
  * Log manager.
@@ -24,16 +24,48 @@ import java.util.List;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface LogManager extends Loggable {
-  
+
   /**
-   * Appends a list of entries to the log.
+   * Returns the log configuration.
    *
-   * @param entries A list of entries to append.
-   * @return A list of appended entry indices.
-   * @throws IllegalStateException If the log is not open.
-   * @throws NullPointerException If the entries list is null.
-   * @throws LogException If a new segment cannot be opened
+   * @return The log configuration.
    */
-  List<Long> appendEntries(List<ByteBuffer> entries);
+  LogConfig config();
+
+  /**
+   * Returns a map of all segments in the log.
+   *
+   * @return A map of segments in the log.
+   */
+  TreeMap<Long, LogSegment> segments();
+
+  /**
+   * Returns the current log segment.
+   */
+  LogSegment segment();
+
+  /**
+   * Returns a log segment by index.
+   *
+   * @throws IndexOutOfBoundsException if no segment exists for the {@code index}
+   */
+  LogSegment segment(long index);
+
+  /**
+   * Returns the first log segment.
+   */
+  LogSegment firstSegment();
+
+  /**
+   * Returns the last log segment.
+   */
+  LogSegment lastSegment();
+
+  /**
+   * Forces the log to roll over to a new segment.
+   *
+   * @return The new log segment.
+   */
+  LogSegment rollOver() throws IOException;
 
 }

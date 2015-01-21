@@ -13,40 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections.internal.collection;
+package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.protocol.Consistency;
-
-import java.util.Collection;
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Asynchronous list state.
+ * State machine command annotation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ListState<T> extends CollectionState<ListState<T>, T>, List<T> {
-
-  @Override
-  @Query(consistency=Consistency.DEFAULT)
-  T get(int index);
-
-  @Override
-  @Command
-  T set(int index, T element);
-
-  @Override
-  @Command
-  void add(int index, T element);
-
-  @Override
-  @Command
-  boolean addAll(int index, Collection<? extends T> c);
-
-  @Override
-  @Command
-  T remove(int index);
-
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Command {
 }

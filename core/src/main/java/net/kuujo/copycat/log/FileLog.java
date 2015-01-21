@@ -123,12 +123,6 @@ public class FileLog extends Log {
   }
 
   @Override
-  public FileLog withRetentionPolicy(RetentionPolicy retentionPolicy) {
-    setRetentionPolicy(retentionPolicy);
-    return this;
-  }
-
-  @Override
   public LogManager getLogManager(String name) {
     return new FileLogManager(name, this);
   }

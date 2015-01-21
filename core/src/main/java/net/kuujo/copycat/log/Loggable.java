@@ -18,7 +18,6 @@ package net.kuujo.copycat.log;
 import java.io.Closeable;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.List;
 
 /**
  * Logger.
@@ -69,9 +68,9 @@ public interface Loggable extends Closeable {
    * @return The appended entry index.
    * @throws IllegalStateException If the log is not open.
    * @throws NullPointerException If the entry is null.
-   * @throws LogException If a new segment cannot be opened
+   * @throws java.io.IOException If a new segment cannot be opened
    */
-  long appendEntry(ByteBuffer entry);
+  long appendEntry(ByteBuffer entry) throws IOException;
 
   /**
    * Returns the index of the first entry in the log.
@@ -108,16 +107,6 @@ public interface Loggable extends Closeable {
   ByteBuffer getEntry(long index);
 
   /**
-   * Gets a list of entries from the log.
-   *
-   * @param from The index of the start of the list of entries to get (inclusive).
-   * @param to The index of the end of the list of entries to get (inclusive).
-   * @return A list of entries from the given start index to the given end index.
-   * @throws IllegalStateException If the log is not open.
-   */
-  List<ByteBuffer> getEntries(long from, long to);
-
-  /**
    * Removes all entries after the given index (exclusive).
    *
    * @param index The index after which to remove entries.
@@ -127,29 +116,11 @@ public interface Loggable extends Closeable {
   void removeAfter(long index);
 
   /**
-   * Compacts the log, dropping all entries up to the {@code index} (exclusive) and placing the
-   * {@code entry} at the {@code index}.
-   *
-   * @param index The index at which to compact the log.
-   * @param entry The entry to write to the log at the given index.
-   * @throws IndexOutOfBoundsException if the log does not contain the {@code index}
-   */
-  void compact(long index, ByteBuffer entry) throws IOException;
-
-  /**
    * Flushes the log to disk.
    *
    * @throws IllegalStateException If the log is not open.
    */
   void flush();
-
-  /**
-   * Flushes the log to disk, optionally forcing the flush.
-   *
-   * @param force Whether to force the log to be flushed to disk even if the flush is blocked by
-   *          configuration.
-   */
-  void flush(boolean force);
 
   /**
    * Closes the logger.

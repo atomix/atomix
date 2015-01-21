@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.Configurable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Log retention policy.
+ * Annotates a state initializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface RetentionPolicy extends Configurable {
-
-  /**
-   * Returns a boolean value indicating whether the given log segment should be retained.
-   *
-   * @param segment The segment to check.
-   * @return Indicates whether the given log segment should be retained.
-   */
-  boolean retain(LogSegment segment);
-
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Initializer {
 }

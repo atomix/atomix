@@ -205,43 +205,37 @@ public class ChronicleLog extends FileLog {
 
   @Override
   public ChronicleLog withDirectory(String directory) {
-    super.setDirectory(directory);
+    setDirectory(directory);
     return this;
   }
 
   @Override
   public ChronicleLog withDirectory(File directory) {
-    super.setDirectory(directory);
+    setDirectory(directory);
     return this;
   }
 
   @Override
   public ChronicleLog withSegmentSize(int segmentSize) {
-    super.setSegmentSize(segmentSize);
+    setSegmentSize(segmentSize);
     return this;
   }
 
   @Override
   public ChronicleLog withSegmentInterval(long segmentInterval) {
-    super.setSegmentInterval(segmentInterval);
+    setSegmentInterval(segmentInterval);
     return this;
   }
 
   @Override
   public ChronicleLog withFlushOnWrite(boolean flushOnWrite) {
-    super.setFlushOnWrite(flushOnWrite);
+    setFlushOnWrite(flushOnWrite);
     return this;
   }
 
   @Override
   public ChronicleLog withFlushInterval(long flushInterval) {
-    super.setFlushInterval(flushInterval);
-    return this;
-  }
-
-  @Override
-  public ChronicleLog withRetentionPolicy(RetentionPolicy retentionPolicy) {
-    super.setRetentionPolicy(retentionPolicy);
+    setFlushInterval(flushInterval);
     return this;
   }
 

@@ -16,11 +16,11 @@
 package net.kuujo.copycat.collections.internal.map;
 
 import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.collections.AsyncMultiMap;
 import net.kuujo.copycat.collections.AsyncMultiMapProxy;
 import net.kuujo.copycat.internal.AbstractResource;
-import net.kuujo.copycat.internal.DefaultStateMachine;
+import net.kuujo.copycat.state.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.Collection;

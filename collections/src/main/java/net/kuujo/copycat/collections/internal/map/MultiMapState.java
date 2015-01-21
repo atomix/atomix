@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.Command;
-import net.kuujo.copycat.Initializer;
-import net.kuujo.copycat.Query;
-import net.kuujo.copycat.StateContext;
+import net.kuujo.copycat.state.Command;
+import net.kuujo.copycat.state.Initializer;
+import net.kuujo.copycat.state.Query;
+import net.kuujo.copycat.state.StateContext;
 import net.kuujo.copycat.protocol.Consistency;
 import org.jetbrains.annotations.NotNull;
 

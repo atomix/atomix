@@ -13,19 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.event;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.AbstractConfigurable;
+import net.kuujo.copycat.log.LogSegment;
+
+import java.util.Map;
 
 /**
- * State machine command annotation.
+ * Always retains logs.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Command {
+public class FullRetentionPolicy extends AbstractConfigurable implements RetentionPolicy {
+
+  public FullRetentionPolicy() {
+  }
+
+  public FullRetentionPolicy(Map<String, Object> config) {
+    super(config);
+  }
+
+  protected FullRetentionPolicy(FullRetentionPolicy config) {
+    super(config);
+  }
+
+  @Override
+  public FullRetentionPolicy copy() {
+    return new FullRetentionPolicy(this);
+  }
+
+  @Override
+  public boolean retain(LogSegment segment) {
+    return true;
+  }
+
 }

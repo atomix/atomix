@@ -19,7 +19,10 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
+import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.state.StateLog;
+import net.kuujo.copycat.state.StateMachine;
 
 import java.util.concurrent.CompletableFuture;
 

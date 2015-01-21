@@ -309,8 +309,7 @@ CopycatConfig config = new CopycatConfig()
 config.addEventLogConfig("event-log", new EventLogConfig()
   .withSerializer(KryoSerializer.class)
   .withLog(new FileLog()
-    .withSegmentSize(1024 * 1024)
-    .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024)));
+    .withSegmentSize(1024 * 1024);
 ```
 
 The first argument to any `addResourceConfig` type method is always the unique resource name. Resource names are unique
@@ -333,8 +332,7 @@ config.addEventLogConfig("event-log", new EventLogConfig()
   .withSerializer(KryoSerializer.class)
   .withReplicas("tcp://123.456.789.1", "tcp://123.456.789.2", "tcp://123.456.789.3")
   .withLog(new FileLog()
-    .withSegmentSize(1024 * 1024)
-    .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024)));
+    .withSegmentSize(1024 * 1024);
 ```
 
 
@@ -378,24 +376,6 @@ EventLogConfig config = new EventLogConfig()
   .withLog(new FileLog()
     .withFlushInterval(60, TimeUnit.SECONDS));
 ```
-
-Additionally, all Copycat file logs support configurable retention policies. Retention policies dictate the amount of
-time for which a *segment* of the log is held on disk. For instance, the `FullRetentionPolicy` keeps logs forever,
-while the `TimeBasedRetentionPolicy` allows segments of the log to be deleted after a certain amount of time has passed
-since the segment was created.
-
-```java
-EventLogConfig config = new EventLogConfig()
-  .withLog(new FileLog()
-    .withSegmentSize(1024 * 1024 * 32)
-    .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 128));
-```
-
-Copycat provides the following log retention policies:
-* `FullRetentionPolicy` - keeps all log segments forever
-* `ZeroRetentionPolicy` - deletes segments immediately after the log has been rotated
-* `TimeBasedRetentionPolicy` - deletes segments after a period of time has passed since they were *created*
-* `SizeBasedRetentionPolicy` - deletes segments once the complete log grows to a certain size
 
 #### Serialization
 
@@ -462,16 +442,16 @@ Map<String, Object> logConfigMap = new HashMap<>();
 logConfigMap.put("class", "net.kuujo.copycat.log.FileLog");
 logConfigMap.put("segment.size", 1024 * 1024);
 
-// Create a log retention policy configuration map.
+// Add the log configuration map to the event log configuration.
+configMap.put("log", logConfigMap);
+
+// Create an event log retention policy configuration map.
 Map<String, Object> retentionConfigMap = new HashMap<>();
 retentionConfigMap.put("class", "net.kuujo.copycat.log.SizeBasedRetentionPolicy");
 retentionConfigMap.put("size", 1024 * 1024);
 
 // Add the log retention policy to the log configuration map.
-logConfigMap.put("retention-policy", retentionConfigMap);
-
-// Add the log configuration map to the event log configuration.
-configMap.put("log", logConfigMap);
+configMap.put("retention-policy", retentionConfigMap);
 
 // Construct the event log.
 EventLogConfig config = new EventLogConfig(configMap);
@@ -956,15 +936,22 @@ Log log = new FileLog()
   .withFlushInterval(60, TimeUnit.SECONDS);
 ```
 
-Finally, [retention policies](#retention-policies) dictate the amount of time for which freed segments of the log are
-allowed to remain on disk before being deleted. By default, event logs never delete segments from disk. However, this
-is unsustainable in most production environments. Therefore, it may be prudent to configure your event log with a
-time-based retention policy:
+Finally, event logs support configurable retention policies. Retention policies dictate the amount of
+time for which a *segment* of the log is held on disk. For instance, the `FullRetentionPolicy` keeps logs forever,
+while the `TimeBasedRetentionPolicy` allows segments of the log to be deleted after a certain amount of time has passed
+since the segment was created.
 
 ```java
-Log log = new FileLog()
-  .withRetentionPolicy(new TimeBasedRetentionPolicy(7, TimeUnit.DAYS));
+EventLogConfig config = new EventLogConfig()
+  .withLog(new FileLog().withSegmentSize(1024 * 1024 * 32))
+  .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 128));
 ```
+
+Copycat provides the following log retention policies:
+* `FullRetentionPolicy` - keeps all log segments forever
+* `ZeroRetentionPolicy` - deletes segments immediately after the log has been rotated
+* `TimeBasedRetentionPolicy` - deletes segments after a period of time has passed since they were *created*
+* `SizeBasedRetentionPolicy` - deletes segments once the complete log grows to a certain size
 
 Note that additional logs such as the `ChronicleLog` may provide additional configuration options related to their
 specific implementation.

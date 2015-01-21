@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.state;
 
+import net.kuujo.copycat.ConfigurationException;
+import net.kuujo.copycat.ResourceConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.internal.DefaultStateMachine;
+import net.kuujo.copycat.state.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.protocol.Consistency;
 

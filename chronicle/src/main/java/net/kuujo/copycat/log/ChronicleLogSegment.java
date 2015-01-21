@@ -15,21 +15,13 @@
  */
 package net.kuujo.copycat.log;
 
+import net.openhft.chronicle.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
-import net.openhft.chronicle.Chronicle;
-import net.openhft.chronicle.Excerpt;
-import net.openhft.chronicle.ExcerptAppender;
-import net.openhft.chronicle.ExcerptTailer;
-import net.openhft.chronicle.IndexedChronicle;
 
 /**
  * Chronicle based log segment.
@@ -158,18 +150,6 @@ public class ChronicleLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public List<ByteBuffer> getEntries(long from, long to) {
-    assertIsOpen();
-    assertContainsIndex(from);
-    assertContainsIndex(to);
-    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
-    for (long i = from; i <= to; i++) {
-      entries.add(getEntry(i));
-    }
-    return entries;
-  }
-
-  @Override
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
     assertContainsIndex(index);
@@ -225,99 +205,10 @@ public class ChronicleLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public void compact(long index, ByteBuffer entry) {
-    assertIsOpen();
-    assertContainsIndex(index);
-
-    // Create a new log file using the most recent timestamp.
-    File tempBaseFile = new File(basePath.getParent(), String.format("%s-%d.tmp", basePath.getName(), id));
-    File tempDataFile = new File(basePath.getParent(), String.format("%s-%d.tmp.data", basePath.getName(), id));
-    File tempIndexFile = new File(basePath.getParent(), String.format("%s-%d.tmp.index", basePath.getName(), id));
-    int[] newSize = new int[] { 0 };
-    int[] newEntries = new int[] { 0 };
-
-    // Create a new chronicle for the new log file.
-    try (Chronicle tempChronicle = new IndexedChronicle(tempBaseFile.getAbsolutePath(), parent.chronicleConfig);
-      ExcerptAppender tempAppender = tempChronicle.createAppender()) {
-      long[] copycatIndex = new long[] { index };
-      long[] chronicleIndex = new long[] { index - firstIndex };
-
-      Consumer<ByteBuffer> appender = e -> {
-        if (e != null) {
-          if (e.remaining() == 0)
-            e.flip();
-          tempAppender.startExcerpt();
-          tempAppender.writeLong(copycatIndex[0]);
-          tempAppender.writeByte(ACTIVE);
-          tempAppender.writeInt(e.limit());
-          tempAppender.write(e);
-          tempAppender.finish();
-          newSize[0] += e.limit() + ENTRY_INFO_LEN;
-          newEntries[0]++;
-          copycatIndex[0]++;
-          chronicleIndex[0]++;
-        }
-      };
-
-      // Write the new entry
-      appender.accept(entry);
-
-      // Iterate through entries greater than the given index and copy them to the new chronicle.
-      if (tailer.index(chronicleIndex[0])) {
-        do {
-          ByteBuffer currentEntry = extractEntry(tailer, copycatIndex[0]);
-          appender.accept(currentEntry);
-        } while (tailer.nextIndex());
-      }
-
-      // Close the existing chronicle.
-      this.excerpt.close();
-      this.appender.close();
-      this.tailer.close();
-      this.chronicle.close();
-
-      // First, create a copy of the existing log files. This can be used to restore the logs
-      // during recovery if the compaction fails.
-      File historyDataFile = new File(basePath.getParent(), String.format("%s-%d.history.data", basePath.getName(), id));
-      File historyIndexFile = new File(basePath.getParent(), String.format("%s-%d.history.index", basePath.getName(),
-        id));
-      Files.copy(dataFile.toPath(), historyDataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-      Files.copy(indexFile.toPath(), historyIndexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-      // Now rename temporary log files.
-      Files.move(tempDataFile.toPath(), dataFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-      Files.move(tempIndexFile.toPath(), indexFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-
-      // Delete the history files if we've made it this far.
-      historyDataFile.delete();
-      historyIndexFile.delete();
-
-      // Reset chronicle log types.
-      this.chronicle = new IndexedChronicle(basePath.getAbsolutePath(), parent.chronicleConfig);
-      this.excerpt = chronicle.createExcerpt();
-      this.appender = chronicle.createAppender();
-      this.tailer = chronicle.createTailer();
-      this.firstIndex = index;
-      this.size = newSize[0];
-      this.entries = newEntries[0];
-    } catch (IOException e) {
-      throw new LogException(e, "Failed to compact log segment at index %s", index);
-    }
-  }
-
-  @Override
   public void flush() {
-    flush(false);
-  }
-
-  @Override
-  public void flush(boolean force) {
     assertIsOpen();
-    if (force || parent.config.isFlushOnWrite()) {
-      excerpt.flush();
-      appender.flush();
-      tailer.flush();
-    }
+    excerpt.flush();
+    appender.flush();
   }
 
   @Override

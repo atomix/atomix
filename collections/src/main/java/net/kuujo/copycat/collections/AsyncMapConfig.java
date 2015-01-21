@@ -16,7 +16,7 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.ResourceConfig;
-import net.kuujo.copycat.StateLogConfig;
+import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;

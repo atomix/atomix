@@ -20,7 +20,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Abstract log. Not threadsafe.
@@ -36,7 +39,12 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   private long lastFlush;
 
   protected AbstractLogManager(Log config) {
-    this.config = (Log) config.copy();
+    this.config = config.copy();
+  }
+
+  @Override
+  public LogConfig config() {
+    return config;
   }
 
   /**
@@ -67,14 +75,16 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   /**
    * Returns a collection of log segments.
    */
-  Collection<LogSegment> segments() {
-    return segments.values();
+  @Override
+  public TreeMap<Long, LogSegment> segments() {
+    return segments;
   }
 
   /**
    * Returns the current log segment.
    */
-  LogSegment segment() {
+  @Override
+  public LogSegment segment() {
     return currentSegment;
   }
 
@@ -83,7 +93,8 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
    * 
    * @throws IndexOutOfBoundsException if no segment exists for the {@code index}
    */
-  LogSegment segment(long index) {
+  @Override
+  public LogSegment segment(long index) {
     assertIsOpen();
     Map.Entry<Long, LogSegment> segment = segments.floorEntry(index);
     Assert.index(index, segment != null, "Invalid log index %d", index);
@@ -93,7 +104,8 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   /**
    * Returns the first log segment.
    */
-  LogSegment firstSegment() {
+  @Override
+  public LogSegment firstSegment() {
     assertIsOpen();
     Map.Entry<Long, LogSegment> segment = segments.firstEntry();
     return segment != null ? segment.getValue() : null;
@@ -102,7 +114,8 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   /**
    * Returns the last log segment.
    */
-  LogSegment lastSegment() {
+  @Override
+  public LogSegment lastSegment() {
     assertIsOpen();
     Map.Entry<Long, LogSegment> segment = segments.lastEntry();
     return segment != null ? segment.getValue() : null;
@@ -145,24 +158,10 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   }
 
   @Override
-  public long appendEntry(ByteBuffer entry) {
+  public long appendEntry(ByteBuffer entry) throws IOException {
     assertIsOpen();
     checkRollOver();
-    checkFlush();
     return currentSegment.appendEntry(entry);
-  }
-
-  @Override
-  public List<Long> appendEntries(List<ByteBuffer> entries) {
-    assertIsOpen();
-    List<Long> indices = new ArrayList<>(entries.size());
-    for (ByteBuffer entry : entries) {
-      checkRollOver();
-      indices.add(currentSegment.appendEntry(entry));
-    }
-
-    checkFlush();
-    return indices;
   }
 
   @Override
@@ -198,39 +197,6 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
     return segment.getEntry(index);
   }
 
-  /**
-   * Returns the entries for the given {@code from}-{@code to} range, inclusive, by starting at the
-   * current segment first and looking up segments through segments as needed.
-   */
-  @Override
-  public List<ByteBuffer> getEntries(long from, long to) {
-    assertIsOpen();
-    assertContainsIndex(from);
-    assertContainsIndex(to);
-
-    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
-
-    // If the current segment contains the first index then just get the entries.
-    if (currentSegment.containsIndex(from)) {
-      return currentSegment.getEntries(from, to);
-    }
-
-    // Iterate through segments and build the entries list.
-    for (LogSegment segment : segments.values()) {
-      if (segment.containsIndex(from) && segment.containsIndex(to)) {
-        return segment.getEntries(from, to);
-      } else if (segment.containsIndex(from)) {
-        entries.addAll(segment.getEntries(from, segment.lastIndex()));
-      } else if (segment.containsIndex(to)) {
-        entries.addAll(segment.getEntries(segment.firstIndex(), to));
-      } else if (segment.firstIndex() != null && segment.firstIndex() > from && segment.lastIndex() != null && segment.lastIndex() < to) {
-        entries.addAll(segment.getEntries(segment.firstIndex(), segment.lastIndex()));
-      }
-    }
-
-    return entries;
-  }
-
   @Override
   public void removeAfter(long index) {
     assertIsOpen();
@@ -262,35 +228,39 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   }
 
   @Override
-  public void compact(long index, ByteBuffer entry) throws IOException {
-    assertIsOpen();
-    assertContainsIndex(index);
-    LogSegment segment = null;
-    for (Iterator<LogSegment> i = segments.values().iterator(); i.hasNext();) {
-      segment = i.next();
-      i.remove();
-      if (segment.lastIndex() < index) {
-        segment.delete();
-      } else {
-        segment.compact(index, entry);
-        segments.put(segment.firstIndex(), segment);
-        break;
-      }
-    }
+  public LogSegment rollOver() throws IOException {
+    // If the current segment is empty then don't roll over to a new segment, just keep the existing segment.
+    Long lastIndex = currentSegment.lastIndex();
+    if (lastIndex == null)
+      return currentSegment;
 
-    currentSegment = segments.lastEntry().getValue();
+    // Flush the segment and create a new segment.
+    currentSegment.flush();
+    long nextIndex = lastIndex + 1;
+    currentSegment = createSegment(++nextSegmentId, nextIndex);
+    LOGGER.debug("Rolling over to new segment at new index {}", nextIndex);
+
+    // Open the new segment.
+    currentSegment.open();
+
+    segments.put(nextIndex, currentSegment);
+
+    // Reset the segment flush time and check whether old segments need to be deleted.
+    lastFlush = System.currentTimeMillis();
+    return currentSegment;
   }
 
   @Override
   public void flush() {
     assertIsOpen();
-    currentSegment.flush();
-  }
-
-  @Override
-  public void flush(boolean force) {
-    assertIsOpen();
-    currentSegment.flush(force);
+    // Only flush the current segment is flush-on-write is enabled or the flush timeout has passed since the last flush.
+    // Flushes will be attempted each time the algorithm is done writing entries to the log.
+    if (config.isFlushOnWrite()) {
+      currentSegment.flush();
+    } else if (System.currentTimeMillis() - lastFlush > config.getFlushInterval()) {
+      currentSegment.flush();
+      lastFlush = System.currentTimeMillis();
+    }
   }
 
   @Override
@@ -317,7 +287,12 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   public String toString() {
     return segments.toString();
   }
-  
+
+  /**
+   * Creates an initial segment for the log.
+   *
+   * @throws IOException If the segment could not be opened.
+   */
   private void createInitialSegment() throws IOException {
     currentSegment = createSegment(++nextSegmentId, 1);
     currentSegment.open();
@@ -329,7 +304,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
    * 
    * @throws LogException if a new segment cannot be opened
    */
-  private void checkRollOver() {
+  private void checkRollOver() throws IOException {
     Long lastIndex = currentSegment.lastIndex();
     if (lastIndex == null)
       return;
@@ -339,42 +314,8 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
       && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval();
 
     if (segmentSizeExceeded || segmentExpired) {
-      currentSegment.flush();
-      long nextIndex = lastIndex + 1;
-      currentSegment = createSegment(++nextSegmentId, nextIndex);
-      LOGGER.debug("Rolling over to new segment at new index {}", nextIndex);
-
-      try {
-        currentSegment.open();
-      } catch (IOException e) {
-        throw new LogException(e, "Failed to open new segment");
-      }
-
-      segments.put(nextIndex, currentSegment);
-      lastFlush = System.currentTimeMillis();
-      checkRetention();
+      rollOver();
     }
   }
 
-  /**
-   * Checks whether any existing segments need to be deleted. Does not allow the last log segment to
-   * be checked.
-   */
-  private void checkRetention() {
-    for (Iterator<Map.Entry<Long, LogSegment>> i = segments.entrySet().iterator(); i.hasNext();) {
-      Map.Entry<Long, LogSegment> entry = i.next();
-      if (!segments.isEmpty() && !segments.lastKey().equals(entry.getKey()) && !config.getRetentionPolicy().retain(entry.getValue())) {
-        i.remove();
-      }
-    }
-  }
-
-  /**
-   * Checks whether the current segment needs to be flushed to disk.
-   */
-  private void checkFlush() {
-    if (System.currentTimeMillis() - lastFlush > config.getFlushInterval()) {
-      flush(true);
-    }
-  }
 }

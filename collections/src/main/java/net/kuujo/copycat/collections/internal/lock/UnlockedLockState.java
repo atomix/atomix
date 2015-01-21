@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.Initializer;
-import net.kuujo.copycat.StateContext;
+import net.kuujo.copycat.state.Initializer;
+import net.kuujo.copycat.state.StateContext;
 
 /**
  * Unlocked asynchronous lock state.

@@ -15,10 +15,10 @@
 package net.kuujo.copycat.collections.internal.lock;
 
 import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.collections.AsyncLock;
 import net.kuujo.copycat.internal.AbstractResource;
-import net.kuujo.copycat.internal.DefaultStateMachine;
+import net.kuujo.copycat.state.internal.DefaultStateMachine;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 
 import java.util.concurrent.CompletableFuture;

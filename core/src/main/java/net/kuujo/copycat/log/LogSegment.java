@@ -41,4 +41,5 @@ public interface LogSegment extends Loggable {
    * @return The segment timestamp.
    */
   long timestamp();
+
 }

@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal;
+package net.kuujo.copycat.event.internal;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.EventLog;
+import net.kuujo.copycat.event.EventLog;
+import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.ResourceContext;
+import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.log.LogSegment;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Default event log partition implementation.
@@ -29,6 +37,8 @@ import java.util.concurrent.CompletableFuture;
  */
 public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements EventLog<T> {
   private EventListener<T> consumer;
+  private ScheduledFuture<?> retentionFuture;
+  private Long commitIndex;
 
   public DefaultEventLog(ResourceContext context) {
     super(context);
@@ -75,18 +85,53 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
       T value = serializer.readObject(entry);
       executor.execute(() -> consumer.handle(value));
     }
+    commitIndex = index;
     return result;
+  }
+
+  /**
+   * Compacts the log.
+   */
+  private void compact() {
+    if (commitIndex != null) {
+      // Iterate through segments in the log and remove/close/delete segments that should no longer be retained.
+      // A segment is no longer retained if all of the following conditions are met:
+      // - The segment is not the last segment in the log
+      // - The segment's last index is less than or equal to the commit index
+      // - The configured retention policy's retain(LogSegment) method returns false.
+      for (Iterator<Map.Entry<Long, LogSegment>> iterator = context.log().segments().entrySet().iterator(); iterator.hasNext(); ) {
+        Map.Entry<Long, LogSegment> entry = iterator.next();
+        LogSegment segment = entry.getValue();
+        if (context.log().lastSegment() != segment
+          && segment.lastIndex() != null
+          && segment.lastIndex() <= commitIndex
+          && !context.config().<EventLogConfig>getResourceConfig().getRetentionPolicy().retain(entry.getValue())) {
+          iterator.remove();
+          try {
+            segment.close();
+            segment.delete();
+          } catch (IOException e) {
+          }
+        }
+      }
+    }
   }
 
   @Override
   public CompletableFuture<EventLog<T>> open() {
     return runStartupTasks()
       .thenComposeAsync(v -> context.open(), executor)
+      .thenRun(() -> {
+        retentionFuture = context.scheduleWithFixedDelay(this::compact, 0, context.config().<EventLogConfig>getResourceConfig().getRetentionCheckInterval(), TimeUnit.MILLISECONDS);
+      })
       .thenApply(v -> this);
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
+    if (retentionFuture != null) {
+      retentionFuture.cancel(false);
+    }
     return context.close()
       .thenCompose(v -> runShutdownTasks());
   }

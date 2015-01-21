@@ -16,7 +16,7 @@
 package net.kuujo.copycat.collections.internal.collection;
 
 import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.StateMachine;
+import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.collections.AsyncCollection;
 import net.kuujo.copycat.collections.AsyncCollectionProxy;
 import net.kuujo.copycat.internal.AbstractResource;

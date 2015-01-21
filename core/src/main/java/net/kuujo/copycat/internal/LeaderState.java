@@ -21,6 +21,7 @@ import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -204,13 +205,27 @@ class LeaderState extends ActiveState {
     CompletableFuture<CommitResponse> future = new CompletableFuture<>();
     ByteBuffer entry = request.entry();
     BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
+
+    // Create a log entry containing the current term and entry.
     ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 8);
     logEntry.putLong(context.getTerm());
     logEntry.put(entry);
-    entry.rewind();
-    long index = context.log().appendEntry(logEntry);
+    entry.flip();
+
+    // Try to append the entry to the log. If appending the entry fails then just reply with an exception immediately.
+    final long index;
+    try {
+      index = context.log().appendEntry(logEntry);
+      context.log().flush();
+    } catch (IOException e) {
+      future.completeExceptionally(new CopycatException(e));
+      return future;
+    }
+
     LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember(), index);
     LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
+
+    // Attempt to replicate the entry to a quorum of the cluster.
     replicator.commit(index).whenComplete((resultIndex, error) -> {
       context.checkThread();
       if (isOpen()) {
@@ -421,7 +436,6 @@ class LeaderState extends ActiveState {
    * Remote replica.
    */
   private class Replica {
-    private static final int BATCH_SIZE = 100;
     private final String member;
     private final CopycatStateContext context;
     private Long nextIndex;
@@ -523,14 +537,15 @@ class LeaderState extends ActiveState {
           final Long prevIndex = nextIndex - 1 == 0 ? null : nextIndex - 1;
           final ByteBuffer prevEntry = prevIndex != null ? context.log().getEntry(prevIndex) : null;
 
-          // Create a list of up to ten entries to send to the follower.
-          // We can only send one snapshot entry in any given request. So, if any of
-          // the entries are snapshot entries, send all entries up to the snapshot and
-          // then send snapshot entries individually.
-          List<ByteBuffer> entries = new ArrayList<>(BATCH_SIZE);
-          long lastIndex = Math.min(nextIndex + BATCH_SIZE - 1, context.log().lastIndex());
-          for (long i = nextIndex; i <= lastIndex; i++) {
-            entries.add(context.log().getEntry(i));
+          // Create a list of up to 1MB of entries to send to the follower.
+          List<ByteBuffer> entries = new ArrayList<>(1024);
+          long index = nextIndex;
+          int size = 0;
+          while (size < 1024 * 1024 && index < context.log().lastIndex()) {
+            ByteBuffer entry = context.log().getEntry(index);
+            size += entry.limit();
+            entries.add(entry);
+            index++;
           }
 
           if (!entries.isEmpty()) {

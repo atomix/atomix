@@ -19,8 +19,11 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElectionConfig;
+import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.state.StateLogConfig;
+import net.kuujo.copycat.state.StateMachineConfig;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 

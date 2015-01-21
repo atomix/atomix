@@ -18,9 +18,9 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.protocol.*;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Abstract active state.
@@ -262,16 +262,43 @@ abstract class ActiveState extends PassiveState {
           // Compare the term of the received entry with the matching entry in the log.
           ByteBuffer match = context.log().getEntry(index);
           if (entry.getLong() != match.getLong()) {
+            // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
+            // If appending to the log fails, apply commits and reply false to the append request.
             logger().warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember());
-            context.log().removeAfter(index - 1);
-            context.log().appendEntry(entry);
+            try {
+              context.log().removeAfter(index - 1);
+              context.log().appendEntry(entry);
+            } catch (IOException e) {
+              doApplyCommits(request.commitIndex());
+              return AppendResponse.builder()
+                .withId(request.id())
+                .withUri(context.getLocalMember())
+                .withTerm(context.getTerm())
+                .withSucceeded(false)
+                .withLogIndex(context.log().lastIndex())
+                .build();
+            }
             logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
           }
         } else {
-          context.log().appendEntry(entry);
+          // If appending to the log fails, apply commits and reply false to the append request.
+          try {
+            context.log().appendEntry(entry);
+          } catch (IOException e) {
+            doApplyCommits(request.commitIndex());
+            return AppendResponse.builder()
+              .withId(request.id())
+              .withUri(context.getLocalMember())
+              .withTerm(context.getTerm())
+              .withSucceeded(false)
+              .withLogIndex(context.log().lastIndex())
+              .build();
+          }
           logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
         }
       }
+
+      // Flush the log to disk.
       context.log().flush();
     }
     doApplyCommits(request.commitIndex());

@@ -13,19 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.state.internal;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.log.LogManager;
 
 /**
- * Annotates a state initializer.
+ * Log decorator that handles snapshots.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Initializer {
+public class SnapshottableLog extends Log {
+  private final Log log;
+
+  public SnapshottableLog(Log log) {
+    this.log = log;
+  }
+
+  @Override
+  public SnapshottableLog copy() {
+    return new SnapshottableLog(log.copy());
+  }
+
+  @Override
+  public LogManager getLogManager(String name) {
+    LogManager logManager = log.getLogManager(name);
+    return new SnapshottableLogManager(logManager, log.copy()
+      .getLogManager(String.format("%s.snapshot", name)));
+  }
+
 }

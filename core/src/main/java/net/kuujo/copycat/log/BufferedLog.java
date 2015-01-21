@@ -66,12 +66,6 @@ public class BufferedLog extends Log {
   }
 
   @Override
-  public BufferedLog withRetentionPolicy(RetentionPolicy retentionPolicy) {
-    setRetentionPolicy(retentionPolicy);
-    return this;
-  }
-
-  @Override
   public LogManager getLogManager(String name) {
     return new BufferedLogManager(this);
   }

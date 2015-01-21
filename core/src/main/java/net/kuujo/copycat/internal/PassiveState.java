@@ -23,6 +23,7 @@ import net.kuujo.copycat.protocol.SyncResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,7 +107,18 @@ public class PassiveState extends AbstractState {
     // For each active member, send membership info to the member.
     for (ReplicaInfo member : randomMembers) {
       LOGGER.debug("{} - sending sync request to {}", context.getLocalMember(), member.getUri());
-      List<ByteBuffer> entries = context.getCommitIndex() != null ? context.log().getEntries(member.getIndex() != null ? member.getIndex() : 1, Math.min(member.getIndex() != null ? member.getIndex() + 100 : 100, context.getCommitIndex())) : new ArrayList<>(0);
+
+      // Get a list of entries up to 1MB in size.
+      List<ByteBuffer> entries = new ArrayList<>(1024);
+      long index = member.getIndex();
+      int size = 0;
+      while (size < 1024 * 1024 && index < context.getCommitIndex()) {
+        ByteBuffer entry = context.log().getEntry(index);
+        size += entry.limit();
+        entries.add(entry);
+        index++;
+      }
+
       syncHandler.handle(SyncRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withUri(member.getUri())
@@ -118,6 +130,7 @@ public class PassiveState extends AbstractState {
         .withEntries(entries)
         .build()).whenComplete((response, error) -> {
         context.checkThread();
+        // Always check if the context is still open in order to prevent race conditions in asynchronous callbacks.
         if (isOpen()) {
           if (error == null) {
             // If the response succeeded, update membership info with the target node's membership.
@@ -163,12 +176,20 @@ public class PassiveState extends AbstractState {
       long index = request.logIndex() != null ? request.logIndex() + i + 1 : i + 1;
       if (!context.log().containsIndex(index)) {
         ByteBuffer entry = request.entries().get(i);
-        context.log().appendEntry(entry);
-        context.setCommitIndex(index);
-        context.consumer().apply(index, entry);
-        context.setLastApplied(index);
+        try {
+          context.log().appendEntry(entry);
+          context.setCommitIndex(index);
+          context.consumer().apply(index, entry);
+          context.setLastApplied(index);
+          logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
+        } catch (IOException e) {
+          break;
+        }
       }
     }
+
+    // Flush the log to disk and compact the log.
+    context.log().flush();
 
     // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()

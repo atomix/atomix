@@ -18,7 +18,10 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
+import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.internal.DefaultCopycat;
+import net.kuujo.copycat.state.StateLog;
+import net.kuujo.copycat.state.StateMachine;
 
 /**
  * Copycat.
@@ -52,7 +55,7 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Returns the global Copycat configuration.
    *
-   * @return The gloabl Copycat configuration.
+   * @return The global Copycat configuration.
    */
   CopycatConfig config();
 

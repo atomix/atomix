@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.Initializer;
-import net.kuujo.copycat.StateContext;
+import net.kuujo.copycat.state.Initializer;
+import net.kuujo.copycat.state.StateContext;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;

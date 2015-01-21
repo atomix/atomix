@@ -13,38 +13,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.log;
+package net.kuujo.copycat.event;
 
 import net.kuujo.copycat.AbstractConfigurable;
-
-import java.util.Map;
+import net.kuujo.copycat.log.LogSegment;
 
 /**
- * Always retains logs.
+ * Retention policy that does not retain any logs.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FullRetentionPolicy extends AbstractConfigurable implements RetentionPolicy {
+public class ZeroRetentionPolicy extends AbstractConfigurable implements RetentionPolicy {
 
-  public FullRetentionPolicy() {
+  public ZeroRetentionPolicy() {
+    super();
   }
 
-  public FullRetentionPolicy(Map<String, Object> config) {
-    super(config);
-  }
-
-  protected FullRetentionPolicy(FullRetentionPolicy config) {
-    super(config);
+  private ZeroRetentionPolicy(ZeroRetentionPolicy policy) {
+    super(policy);
   }
 
   @Override
-  public FullRetentionPolicy copy() {
-    return new FullRetentionPolicy(this);
+  public ZeroRetentionPolicy copy() {
+    return new ZeroRetentionPolicy(this);
   }
 
   @Override
   public boolean retain(LogSegment segment) {
-    return true;
+    return false;
   }
 
 }

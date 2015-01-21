@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.internal;
+package net.kuujo.copycat.state.internal;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.StateLog;
-import net.kuujo.copycat.StateLogConfig;
+import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.state.StateLog;
+import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.Futures;
 import net.kuujo.copycat.protocol.Consistency;
@@ -42,13 +43,16 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings("rawtypes")
 public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements StateLog<T> {
+  private static final int SNAPSHOT_ENTRY = 0;
+  private static final int COMMAND_ENTRY = 1;
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
+  private final SnapshottableLogManager log;
   private Supplier snapshotter;
   private Consumer installer;
-  private long commitIndex;
 
   public DefaultStateLog(ResourceContext context) {
     super(context);
+    this.log = (SnapshottableLogManager) context.log();
     context.consumer(this::consume);
   }
 
@@ -124,7 +128,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     // read stale data from the local node.
     ByteBuffer buffer = serializer.writeObject(entry);
     ByteBuffer commandEntry = ByteBuffer.allocate(8 + buffer.capacity());
-    commandEntry.putInt(1); // Entry type
+    commandEntry.putInt(COMMAND_ENTRY); // Entry type
     commandEntry.putInt(command.hashCode());
     commandEntry.put(buffer);
     commandEntry.rewind();
@@ -159,10 +163,10 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   private ByteBuffer consume(Long index, ByteBuffer entry) {
     int entryType = entry.getInt();
     switch (entryType) {
-      case 0: // Snapshot entry
+      case SNAPSHOT_ENTRY: // Snapshot entry
         installSnapshot(entry.slice());
         return ByteBuffer.allocate(0);
-      case 1: // Command entry
+      case COMMAND_ENTRY: // Command entry
         int commandCode = entry.getInt();
         OperationInfo operationInfo = operations.get(commandCode);
         if (operationInfo != null) {
@@ -217,19 +221,27 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   /**
    * Checks whether to take a snapshot.
    */
-  private void checkSnapshot() {
-    if (context.log().size() > context.config().getResourceConfig().getLog().getSegmentSize()) {
-      takeSnapshot();
+  private void checkSnapshot(long index) {
+    // If the given index is the last index of a lot segment and the segment is not the last segment in the log
+    // then the index is considered snapshottable.
+    if (log.isSnapshottable(index)) {
+      takeSnapshot(index);
     }
   }
 
   /**
    * Takes a snapshot and compacts the log.
    */
-  private void takeSnapshot() {
+  private void takeSnapshot(long index) {
     Object snapshot = snapshotter != null ? executeInUserThread(snapshotter::get) : null;
+    ByteBuffer snapshotBuffer = serializer.writeObject(snapshot);
+    snapshotBuffer.flip();
+    ByteBuffer snapshotEntry = ByteBuffer.allocate(snapshotBuffer.limit() + 4);
+    snapshotEntry.putInt(SNAPSHOT_ENTRY);
+    snapshotEntry.put(snapshotBuffer);
+    snapshotEntry.flip();
     try {
-      context.log().compact(commitIndex, serializer.writeObject(snapshot));
+      log.appendSnapshot(index, snapshotEntry);
     } catch (IOException e) {
       throw new CopycatException("Failed to compact state log", e);
     }
@@ -270,12 +282,9 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     }
 
     private U execute(Long index, TT entry) {
-      U result = function.apply(entry);
-      if (index != null) {
-        commitIndex = index;
-      }
-      checkSnapshot();
-      return result;
+      if (index != null)
+        checkSnapshot(index);
+      return function.apply(entry);
     }
   }
 

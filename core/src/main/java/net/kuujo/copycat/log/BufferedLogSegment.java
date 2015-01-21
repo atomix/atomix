@@ -15,12 +15,10 @@
  */
 package net.kuujo.copycat.log;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeMap;
-
 import net.kuujo.copycat.internal.util.Assert;
+
+import java.nio.ByteBuffer;
+import java.util.TreeMap;
 
 /**
  * In-memory log segment.
@@ -109,24 +107,11 @@ public class BufferedLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public List<ByteBuffer> getEntries(long from, long to) {
-    assertIsOpen();
-    assertContainsIndex(from);
-    assertContainsIndex(to);
-    List<ByteBuffer> entries = new ArrayList<>((int) (to - from + 1));
-    for (ByteBuffer entry : log.subMap(from, true, to, true).values()) {
-      entry.rewind();
-      entries.add(entry);
-    }
-    return entries;
-  }
-
-  @Override
   public ByteBuffer getEntry(long index) {
     assertIsOpen();
     assertContainsIndex(index);
     ByteBuffer buffer = log.get(index);
-    if (buffer != null) buffer.rewind();
+    buffer.rewind();
     return buffer;
   }
 
@@ -148,27 +133,7 @@ public class BufferedLogSegment extends AbstractLogSegment {
   }
 
   @Override
-  public void compact(long index, ByteBuffer entry) {
-    assertIsOpen();
-    assertContainsIndex(index);
-    log.put(index, entry);
-    if (log.firstKey() != index) {
-      for (long i = log.firstKey(); i < index; i++) {
-        ByteBuffer value = log.remove(i);
-        if (value != null) {
-          size -= value.limit();
-        }
-      }
-    }
-  }
-
-  @Override
   public void flush() {
-    assertIsOpen();
-  }
-
-  @Override
-  public void flush(boolean force) {
     assertIsOpen();
   }
 

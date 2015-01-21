@@ -30,4 +30,5 @@ public abstract class AbstractLogSegment extends AbstractLoggable implements Log
   public String toString() {
     return String.format("%s..%s", firstIndex(), lastIndex());
   }
+
 }
