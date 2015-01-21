@@ -524,7 +524,7 @@ class LeaderState extends ActiveState {
           List<ByteBuffer> entries = new ArrayList<>(1024);
           long index = nextIndex;
           int size = 0;
-          while (size < 1024 * 1024 && index < context.log().lastIndex()) {
+          while (size < 1024 * 1024 && index <= context.log().lastIndex()) {
             ByteBuffer entry = context.log().getEntry(index);
             size += entry.limit();
             entries.add(entry);

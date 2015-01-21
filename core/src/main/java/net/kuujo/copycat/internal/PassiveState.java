@@ -113,7 +113,7 @@ public class PassiveState extends AbstractState {
       if (!context.log().isEmpty()) {
         long index = Math.max(member.getIndex() != null ? member.getIndex() + 1 : context.log().firstIndex(), context.log().lastIndex());
         int size = 0;
-        while (size < 1024 * 1024 && index < context.getCommitIndex()) {
+        while (size < 1024 * 1024 && index <= context.getCommitIndex()) {
           ByteBuffer entry = context.log().getEntry(index);
           size += entry.limit();
           entries.add(entry);
