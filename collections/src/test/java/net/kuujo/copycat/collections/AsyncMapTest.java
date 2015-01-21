@@ -34,7 +34,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
     TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
     cluster.open().thenRun(this::resume);
     await(5000);
-    AsyncMap<String, String> map = cluster.resources().get(0);
+    AsyncMap<String, String> map = cluster.activeResources().iterator().next();
     map.put("foo", "Hello world!").thenRun(() -> {
       map.get("foo").thenAccept(result -> {
         threadAssertEquals(result, "Hello world!");
@@ -51,7 +51,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
     TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
     cluster.open().thenRun(this::resume);
     await(5000);
-    AsyncMap<String, String> map = cluster.resources().get(0);
+    AsyncMap<String, String> map = cluster.activeResources().iterator().next();
     map.put("foo", "Hello world!").thenRun(() -> {
       map.get("foo").thenAccept(r1 -> {
         threadAssertEquals(r1, "Hello world!");

@@ -19,6 +19,7 @@ import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.protocol.LocalProtocol;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
@@ -30,29 +31,45 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestCluster<T extends Resource<T>> {
-  private final List<T> resources;
+  private final List<T> activeResources;
+  private final List<T> passiveResources;
 
-  private TestCluster(List<T> resources) {
-    this.resources = resources;
+  private TestCluster(List<T> activeResources, List<T> passiveResources) {
+    this.activeResources = activeResources;
+    this.passiveResources = passiveResources;
   }
 
   /**
    * Creates a test cluster for the given resource factory.
    */
+  @SuppressWarnings("all")
   public static <T extends Resource<T>> TestCluster<T> of(BiFunction<String, ClusterConfig, T> factory) {
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol());
     for (int i = 1; i <= 3; i++) {
       cluster.addMember(String.format("local://test%d", i));
     }
-    return new TestCluster<T>(cluster.getMembers().stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors.toList())));
+    List<T> activeResources = cluster.getMembers().stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors.toList()));
+    List<T> passiveResources = Arrays.asList("local://test4", "local://test5").stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors.toList()));
+    return new TestCluster<T>(activeResources, passiveResources);
   }
 
   /**
-   * Returns a list of cluster resources.
+   * Returns a list of active cluster resources.
+   *
+   * @return A list of active cluster resources.
    */
-  public List<T> resources() {
-    return resources;
+  public List<T> activeResources() {
+    return activeResources;
+  }
+
+  /**
+   * Returns a list of passive cluster resources.
+   *
+   * @return A list of passive cluster resources.
+   */
+  public List<T> passiveResources() {
+    return passiveResources;
   }
 
   /**
@@ -60,10 +77,13 @@ public class TestCluster<T extends Resource<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> open() {
-    CompletableFuture<Void>[] futures = new CompletableFuture[resources.size()];
-    for (int i = 0; i < resources.size(); i++) {
-      T resource = resources.get(i);
-      futures[i] = resources.get(i).open().thenRun(() -> System.out.println(resource.cluster().member().uri() + " started successfully!")).thenApply(v -> null);
+    CompletableFuture<Void>[] futures = new CompletableFuture[activeResources.size() + passiveResources.size()];
+    int i = 0;
+    for (T resource : activeResources) {
+      futures[i++] = resource.open().thenRun(() -> System.out.println(resource.cluster().member().uri() + " started successfully!")).thenApply(v -> null);
+    }
+    for (T resource : passiveResources) {
+      futures[i++] = resource.open().thenRun(() -> System.out.println(resource.cluster().member().uri() + " started successfully!")).thenApply(v -> null);
     }
     return CompletableFuture.allOf(futures);
   }
@@ -73,9 +93,13 @@ public class TestCluster<T extends Resource<T>> {
    */
   @SuppressWarnings("unchecked")
   public CompletableFuture<Void> close() {
-    CompletableFuture<Void>[] futures = new CompletableFuture[resources.size()];
-    for (int i = 0; i < resources.size(); i++) {
-      futures[i] = resources.get(i).close();
+    CompletableFuture<Void>[] futures = new CompletableFuture[activeResources.size() + passiveResources.size()];
+    int i = 0;
+    for (T resource : passiveResources) {
+      futures[i++] = resource.close();
+    }
+    for (T resource : activeResources) {
+      futures[i++] = resource.close();
     }
     return CompletableFuture.allOf(futures);
   }
