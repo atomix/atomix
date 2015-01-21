@@ -18,6 +18,7 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.internal.DefaultStateLog;
+import net.kuujo.copycat.internal.SnapshottableLog;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.log.Log;
@@ -117,7 +118,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
       .withResourceFactory(DefaultStateLog::new)
-      .withLog(getLog())
+      .withLog(new SnapshottableLog(getLog()))
       .withSerializer(getSerializer())
       .withExecutor(getExecutor())
       .withResourceConfig(this)

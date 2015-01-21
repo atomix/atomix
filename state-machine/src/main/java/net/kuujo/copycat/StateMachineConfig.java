@@ -248,16 +248,9 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    StateLogConfig config = new StateLogConfig(toMap()).withDefaultConsistency(getDefaultConsistency());
-    return new CoordinatedResourceConfig(super.toMap())
-      .withElectionTimeout(getElectionTimeout())
-      .withHeartbeatInterval(getHeartbeatInterval())
-      .withResourceFactory(context -> new DefaultStateMachine<>(context, getStateType(), getInitialState()))
-      .withLog(getLog())
-      .withSerializer(getSerializer())
-      .withExecutor(getExecutor())
-      .withResourceConfig(config)
-      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
+    return new StateLogConfig(toMap())
+      .resolve(cluster)
+      .withResourceFactory(context -> new DefaultStateMachine<>(context, getStateType(), getInitialState()));
   }
 
 }

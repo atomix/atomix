@@ -47,16 +47,9 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-    StateLogConfig config = new StateLogConfig(toMap()).withDefaultConsistency(getConsistency());
-    return new CoordinatedResourceConfig()
-      .withResourceFactory(DefaultAsyncList::new)
-      .withResourceConfig(config)
-      .withElectionTimeout(getElectionTimeout())
-      .withHeartbeatInterval(getHeartbeatInterval())
-      .withLog(getLog())
-      .withSerializer(getSerializer())
-      .withExecutor(getExecutor())
-      .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
+    return new StateLogConfig(toMap())
+      .resolve(cluster)
+      .withResourceFactory(DefaultAsyncList::new);
   }
 
 }
