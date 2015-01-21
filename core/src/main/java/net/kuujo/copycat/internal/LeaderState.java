@@ -37,11 +37,10 @@ import java.util.function.BiFunction;
 class LeaderState extends ActiveState {
   private static final Logger LOGGER = LoggerFactory.getLogger(LeaderState.class);
   private ScheduledFuture<?> currentTimer;
-  private Replicator replicator;
+  private final Replicator replicator = new Replicator();
 
   LeaderState(CopycatStateContext context) {
     super(context);
-    this.replicator = new Replicator(context);
   }
 
   @Override
@@ -279,15 +278,13 @@ class LeaderState extends ActiveState {
    * Log replicator.
    */
   private class Replicator {
-    private final CopycatStateContext context;
     private final Map<String, Replica> replicaMap;
     private final List<Replica> replicas;
     private int quorum;
     private int quorumIndex;
     private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
 
-    private Replicator(CopycatStateContext context) {
-      this.context = context;
+    private Replicator() {
       this.replicaMap = new HashMap<>(context.getActiveMembers().size());
       this.replicas = new ArrayList<>(context.getActiveMembers().size());
       for (String uri : context.getActiveMembers()) {
@@ -363,27 +360,13 @@ class LeaderState extends ActiveState {
       CompletableFuture<Long> future = new CompletableFuture<>();
       commitFutures.put(index, future);
 
-      // Set up a write quorum. Once the log entry has been replicated to
-      // the required number of replicas in order to meet the write quorum
-      // requirement, the future will succeed.
-      final Quorum quorum = new Quorum(this.quorum, succeeded -> {
-        if (succeeded) {
-          future.complete(index);
-        } else {
-          future.completeExceptionally(new CopycatException("Failed to obtain quorum"));
-        }
-      });
-
       // Iterate through replicas and commit all entries up to the given index.
       for (Replica replica : replicaMap.values()) {
         replica.commit(index).whenComplete((resultIndex, error) -> {
           context.checkThread();
           // Once the commit succeeds, check the commit index of all replicas.
           if (error == null) {
-            quorum.succeed();
             checkCommits();
-          } else {
-            quorum.fail();
           }
         });
       }
@@ -441,7 +424,8 @@ class LeaderState extends ActiveState {
     private Long nextIndex;
     private Long matchIndex;
     private final TreeMap<Long, CompletableFuture<Long>> pingFutures = new TreeMap<>();
-    private final Map<Long, CompletableFuture<Long>> replicateFutures = new HashMap<>(1024);
+    private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
+    private boolean committing;
 
     private Replica(String member, CopycatStateContext context) {
       this.member = member;
@@ -510,17 +494,16 @@ class LeaderState extends ActiveState {
         return CompletableFuture.completedFuture(index);
       }
 
-      CompletableFuture<Long> future = replicateFutures.get(index);
-      if (future != null) {
-        return future;
+      // If a future exists for an entry with a greater index then return that future.
+      Map.Entry<Long, CompletableFuture<Long>> entry = commitFutures.ceilingEntry(index);
+      if (entry != null) {
+        return entry.getValue();
       }
 
-      future = new CompletableFuture<>();
-      replicateFutures.put(index, future);
+      CompletableFuture<Long> future = new CompletableFuture<>();
+      commitFutures.put(index, future);
 
-      if (matchIndex == null || index >= matchIndex) {
-        doSync();
-      }
+      doSync();
       return future;
     }
 
@@ -528,7 +511,7 @@ class LeaderState extends ActiveState {
      * Performs a commit operation.
      */
     private void doSync() {
-      if (!context.log().isEmpty()) {
+      if (!committing && !context.log().isEmpty()) {
         if (nextIndex == null) {
           nextIndex = context.log().lastIndex();
         }
@@ -549,6 +532,7 @@ class LeaderState extends ActiveState {
           }
 
           if (!entries.isEmpty()) {
+            committing = true;
             doSync(prevIndex, prevEntry, entries);
           }
         }
@@ -573,10 +557,12 @@ class LeaderState extends ActiveState {
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
       appendHandler.handle(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
+        committing = false;
         if (isOpen()) {
           if (error != null) {
-            triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
+            triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
               prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, error);
+            doSync();
           } else {
             LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
             if (response.status().equals(Response.Status.OK)) {
@@ -587,12 +573,12 @@ class LeaderState extends ActiveState {
                     prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1)
                     : prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1;
                   nextIndex = matchIndex + 1;
-                  triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), matchIndex);
+                  triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), matchIndex);
                   doSync();
                 }
               } else {
                 if (response.term() > context.getTerm()) {
-                  triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
+                  triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
                     prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1,
                     new CopycatException("Not the leader"));
                   transition(CopycatState.FOLLOWER);
@@ -607,9 +593,10 @@ class LeaderState extends ActiveState {
                 }
               }
             } else {
-              triggerReplicateFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
+              triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
                 prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1,
                 response.error());
+              doSync();
             }
           }
         }
@@ -644,10 +631,10 @@ class LeaderState extends ActiveState {
     /**
      * Triggers replicate futures with an error result.
      */
-    private void triggerReplicateFutures(long startIndex, long endIndex, Throwable t) {
+    private void triggerCommitFutures(long startIndex, long endIndex, Throwable t) {
       if (endIndex >= startIndex) {
         for (long i = startIndex; i <= endIndex; i++) {
-          CompletableFuture<Long> future = replicateFutures.remove(i);
+          CompletableFuture<Long> future = commitFutures.remove(i);
           if (future != null) {
             future.completeExceptionally(t);
           }
@@ -658,10 +645,10 @@ class LeaderState extends ActiveState {
     /**
      * Triggers replicate futures with a completion result
      */
-    private void triggerReplicateFutures(long startIndex, long endIndex) {
+    private void triggerCommitFutures(long startIndex, long endIndex) {
       if (endIndex >= startIndex) {
         for (long i = startIndex; i <= endIndex; i++) {
-          CompletableFuture<Long> future = replicateFutures.remove(i);
+          CompletableFuture<Long> future = commitFutures.remove(i);
           if (future != null) {
             future.complete(i);
           }
