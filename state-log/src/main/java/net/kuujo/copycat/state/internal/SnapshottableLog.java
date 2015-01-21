@@ -18,25 +18,34 @@ package net.kuujo.copycat.state.internal;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogManager;
 
+import java.util.Map;
+
 /**
  * Log decorator that handles snapshots.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SnapshottableLog extends Log {
-  private final Log log;
+
+  public SnapshottableLog() {
+  }
+
+  public SnapshottableLog(Map<String, Object> config) {
+    super(config);
+  }
 
   public SnapshottableLog(Log log) {
-    this.log = log;
+    put("log", log);
   }
 
   @Override
   public SnapshottableLog copy() {
-    return new SnapshottableLog(log.copy());
+    return new SnapshottableLog(toMap());
   }
 
   @Override
   public LogManager getLogManager(String name) {
+    Log log = get("log");
     LogManager logManager = log.getLogManager(name);
     return new SnapshottableLogManager(logManager, log.copy()
       .getLogManager(String.format("%s.snapshot", name)));
