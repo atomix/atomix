@@ -243,7 +243,7 @@ public abstract class AbstractCluster implements ClusterManager {
       // Create a random list of three active members.
       Collection<CoordinatedMember> randomMembers = new HashSet<>(3);
       for (int i = 0; i < Math.min(activeMembers.size(), 3); i++) {
-        randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size() - 1, 2))));
+        randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size(), 2))));
       }
       return randomMembers;
     }

@@ -98,7 +98,7 @@ public class PassiveState extends AbstractState {
     Random random = new Random();
     List<ReplicaInfo> randomMembers = new ArrayList<>(3);
     for (int i = 0; i < Math.min(activeMembers.size(), 3); i++) {
-      randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size() - 1, 2))));
+      randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size(), 2))));
     }
 
     // Increment the local member version in the vector clock.
