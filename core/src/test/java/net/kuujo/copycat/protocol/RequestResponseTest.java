@@ -112,7 +112,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithoutId() {
-    CommitResponse.builder().withUri("foo").withResult("Hello world!").build();
+    CommitResponse.builder().withUri("foo").withResult("Hello world!".getBytes()).build();
   }
 
   /**
@@ -128,7 +128,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithoutMember() {
-    CommitResponse.builder().withId("test").withResult("Hello world!").build();
+    CommitResponse.builder().withId("test").withResult("Hello world!".getBytes()).build();
   }
 
   /**
@@ -160,7 +160,7 @@ public class RequestResponseTest {
     CommitResponse response = CommitResponse.builder()
       .withId("test")
       .withUri("foo")
-      .withResult("Hello world!")
+      .withResult("Hello world!".getBytes())
       .build();
     assertEquals(response.id(), "test");
     assertEquals(response.uri(), "foo");

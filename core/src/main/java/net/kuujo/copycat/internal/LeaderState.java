@@ -222,10 +222,13 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (error == null) {
           try {
+            ByteBuffer result = consumer.apply(index, entry);
+            byte[] bytes = new byte[result.remaining()];
+            result.get(bytes);
             future.complete(logResponse(CommitResponse.builder()
               .withId(request.id())
               .withUri(context.getLocalMember())
-              .withResult(consumer.apply(index, entry))
+              .withResult(bytes)
               .build()));
           } catch (Exception e) {
             future.complete(logResponse(CommitResponse.builder()

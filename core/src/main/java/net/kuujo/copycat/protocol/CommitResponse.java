@@ -42,16 +42,15 @@ public class CommitResponse extends AbstractResponse {
     return new Builder(response);
   }
 
-  private Object result;
+  private byte[] result;
 
   /**
    * Returns the commit result.
    *
    * @return The commit result.
    */
-  @SuppressWarnings("unchecked")
-  public <T> T result() {
-    return (T) result;
+  public byte[] result() {
+    return result;
   }
 
   @Override
@@ -95,7 +94,7 @@ public class CommitResponse extends AbstractResponse {
      * @param result The response result.
      * @return The response builder.
      */
-    public Builder withResult(Object result) {
+    public Builder withResult(byte[] result) {
       response.result = result;
       return this;
     }

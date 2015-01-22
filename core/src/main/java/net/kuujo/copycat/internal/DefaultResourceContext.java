@@ -161,7 +161,7 @@ public class DefaultResourceContext implements ResourceContext {
     context.commit(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
+          future.complete(ByteBuffer.wrap(response.result()));
         } else {
           future.completeExceptionally(response.error());
         }
