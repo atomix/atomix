@@ -13,37 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.vertx;
 
 import org.vertx.java.core.Vertx;
-import org.vertx.java.core.VertxFactory;
 
-import java.net.URI;
+import java.util.concurrent.Executor;
 
 /**
- * Vert.x event bus protocol implementation.
+ * Vert.x execution context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocol extends AbstractProtocol {
+public class VertxEventLoopExecutor implements Executor {
   private final Vertx vertx;
 
-  public VertxEventBusProtocol(String host, int port) {
-    this(VertxFactory.newVertx(port, host));
-  }
-
-  public VertxEventBusProtocol(Vertx vertx) {
+  public VertxEventLoopExecutor(Vertx vertx) {
     this.vertx = vertx;
   }
 
   @Override
-  public ProtocolClient createClient(URI uri) {
-    return new VertxEventBusProtocolClient(uri.getAuthority(), vertx);
-  }
-
-  @Override
-  public ProtocolServer createServer(URI uri) {
-    return new VertxEventBusProtocolServer(uri.getAuthority(), vertx);
+  public void execute(Runnable command) {
+    vertx.runOnContext(v -> command.run());
   }
 
 }
