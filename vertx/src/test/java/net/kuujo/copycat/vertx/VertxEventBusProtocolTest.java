@@ -19,6 +19,10 @@ import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.EventLog;
+import net.kuujo.copycat.event.EventLogConfig;
+import net.kuujo.copycat.event.SizeBasedRetentionPolicy;
+import net.kuujo.copycat.event.ZeroRetentionPolicy;
+import net.kuujo.copycat.log.BufferedLog;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Future;
@@ -94,6 +98,14 @@ public class VertxEventBusProtocolTest extends TestVerticle {
           CopycatConfig config = new CopycatConfig()
             .withClusterConfig(cluster)
             .withExecutor(new VertxEventLoopExecutor(vertx));
+
+          // Add the event log resource configuration with a Vert.x event loop executor to the Copycat instance.
+          config.addEventLogConfig("log", new EventLogConfig()
+            .withLog(new BufferedLog()
+              .withFlushInterval(1000 * 60)
+              .withSegmentSize(1024 * 1024))
+            .withExecutor(new VertxEventLoopExecutor(vertx))
+            .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 32)));
 
           // Create and open a new Copycat instance.
           copycat = Copycat.create(String.format("eventbus://%s", container.config().getString("address")), config);
@@ -215,7 +227,7 @@ public class VertxEventBusProtocolTest extends TestVerticle {
         .putString("name", name)
         .putString("address", member)
         .putArray("cluster", new JsonArray((List) members));
-      container.deployVerticle(EventLogVerticle.class.getName(), config, result -> {result.cause().printStackTrace();
+      container.deployVerticle(EventLogVerticle.class.getName(), config, result -> {
         assertTrue(result.succeeded());
         if (count.incrementAndGet() == members.size()) {
           new DefaultFutureResult<>((Void) null).setHandler(doneHandler);
