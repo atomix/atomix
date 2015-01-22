@@ -52,6 +52,7 @@ public class AppendRequest extends AbstractRequest {
   private Long logIndex;
   private Long logTerm;
   private List<ByteBuffer> entries;
+  private boolean firstIndex;
   private Long commitIndex;
 
   /**
@@ -100,6 +101,15 @@ public class AppendRequest extends AbstractRequest {
   }
 
   /**
+   * Returns a boolean indicating whether the first entry is the first index in the log.
+   *
+   * @return Indicates whether the first entry is the first index in the log.
+   */
+  public boolean firstIndex() {
+    return firstIndex;
+  }
+
+  /**
    * Returns the leader's commit index.
    *
    * @return The leader commit index.
@@ -110,7 +120,7 @@ public class AppendRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, term, leader, logIndex, logTerm, entries, commitIndex);
+    return Objects.hash(id, member, term, leader, logIndex, logTerm, entries, firstIndex, commitIndex);
   }
 
   @Override
@@ -124,6 +134,7 @@ public class AppendRequest extends AbstractRequest {
         && request.logIndex.equals(logIndex)
         && request.logTerm.equals(logTerm)
         && request.entries.equals(entries)
+        && request.firstIndex == firstIndex
         && request.commitIndex.equals(commitIndex);
     }
     return false;
@@ -208,6 +219,17 @@ public class AppendRequest extends AbstractRequest {
      */
     public Builder withEntries(List<ByteBuffer> entries) {
       request.entries = Assert.isNotNull(entries, "entries");
+      return this;
+    }
+
+    /**
+     * Sets whether the first entry is the first index in the log.
+     *
+     * @param firstIndex Whether the first entry is the first index in the log.
+     * @return The append request builder.
+     */
+    public Builder withFirstIndex(boolean firstIndex) {
+      request.firstIndex = firstIndex;
       return this;
     }
 

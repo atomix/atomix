@@ -52,7 +52,7 @@ public class SyncRequest extends AbstractRequest {
   private long term;
   private String leader;
   private Long logIndex;
-  private Long commitIndex;
+  private boolean firstIndex;
   private List<ByteBuffer> entries;
   private Collection<ReplicaInfo> members;
 
@@ -84,12 +84,12 @@ public class SyncRequest extends AbstractRequest {
   }
 
   /**
-   * Returns the requesting node's commit index.
+   * Returns a boolean value indicating whether the first entry is the first index in the replicator's log.
    *
-   * @return The requesting node's commit index.
+   * @return Indicates whether the first entry is the first index in the replicator's log.
    */
-  public Long commitIndex() {
-    return commitIndex;
+  public boolean firstIndex() {
+    return firstIndex;
   }
 
   /**
@@ -124,7 +124,7 @@ public class SyncRequest extends AbstractRequest {
         && request.term == term
         && request.leader.equals(leader)
         && request.logIndex.equals(logIndex)
-        && request.commitIndex.equals(commitIndex)
+        && request.firstIndex == firstIndex
         && request.entries.equals(entries)
         && request.members.equals(members);
     }
@@ -133,7 +133,7 @@ public class SyncRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%s, commitIndex=%s, entries=[...]]", getClass().getSimpleName(), id, term, leader, logIndex, commitIndex);
+    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%s, firstIndex=%b, entries=[...]]", getClass().getSimpleName(), id, term, leader, logIndex, firstIndex);
   }
 
   /**
@@ -203,13 +203,13 @@ public class SyncRequest extends AbstractRequest {
     }
 
     /**
-     * Sets the request commit index.
+     * Sets whether the first entry is the first index in the log.
      *
-     * @param commitIndex The request commit index.
+     * @param firstIndex Whether the first entry is the first index in the log.
      * @return The request builder.
      */
-    public Builder withCommitIndex(Long commitIndex) {
-      request.commitIndex = commitIndex;
+    public Builder withFirstIndex(boolean firstIndex) {
+      request.firstIndex = firstIndex;
       return this;
     }
 
