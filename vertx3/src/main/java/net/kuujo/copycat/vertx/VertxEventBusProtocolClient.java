@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.vertx;
 
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Handler;
@@ -21,6 +21,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.Message;
 import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.protocol.ProtocolClient;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
