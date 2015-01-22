@@ -15,12 +15,17 @@
  */
 package net.kuujo.copycat.vertx;
 
+import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.protocol.ProtocolClient;
+import net.kuujo.copycat.protocol.ProtocolException;
 import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
+import org.vertx.java.core.eventbus.ReplyException;
+import org.vertx.java.core.eventbus.ReplyFailure;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -32,22 +37,33 @@ import java.util.concurrent.CompletableFuture;
  */
 public class VertxEventBusProtocolClient implements ProtocolClient {
   private final String address;
-  private Vertx vertx;
+  private final Vertx vertx;
+  private final Context context;
 
   public VertxEventBusProtocolClient(String address, Vertx vertx) {
     this.address = Assert.isNotNull(address, "Vert.x event bus address cannot be null");
     this.vertx = Assert.isNotNull(vertx, "Vert.x instance cannot be null");
+    this.context = vertx.currentContext();
   }
 
   @Override
   public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
     final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    vertx.eventBus().sendWithTimeout(address, request.array(), 5000, (Handler<AsyncResult<Message<byte[]>>>) result -> {
-      if (result.succeeded()) {
-        future.complete(ByteBuffer.wrap(result.result().body()));
-      } else {
-        future.completeExceptionally(result.cause());
-      }
+    byte[] bytes = new byte[request.remaining()];
+    request.get(bytes);
+    context.runOnContext(v -> {
+      vertx.eventBus().sendWithTimeout(address, bytes, 5000, (Handler<AsyncResult<Message<byte[]>>>) result -> {
+        if (result.succeeded()) {
+          future.complete(ByteBuffer.wrap(result.result().body()));
+        } else {
+          ReplyException exception = (ReplyException) result.cause();
+          if (exception.failureType() == ReplyFailure.NO_HANDLERS || exception.failureType() == ReplyFailure.TIMEOUT) {
+            future.completeExceptionally(new ProtocolException(exception));
+          } else {
+            future.completeExceptionally(new CopycatException(exception.getMessage()));
+          }
+        }
+      });
     });
     return future;
   }

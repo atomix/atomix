@@ -17,7 +17,7 @@ package net.kuujo.copycat.vertx;
 
 import net.kuujo.copycat.protocol.ProtocolHandler;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import org.vertx.java.core.AsyncResult;
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.eventbus.Message;
@@ -31,22 +31,35 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocolServer implements ProtocolServer {
+public class VertxEventBusProtocolServer implements ProtocolServer, Handler<Message<byte[]>> {
   private final String address;
-  private Vertx vertx;
+  private final Vertx vertx;
+  private final Context context;
   private ProtocolHandler handler;
-
-  private final Handler<Message<byte[]>> messageHandler = message -> {
-    if (handler != null) {
-      handler.handle(ByteBuffer.wrap(message.body()));
-    } else {
-      message.fail(ReplyFailure.NO_HANDLERS.toInt(), "No message handler registered");
-    }
-  };
 
   public VertxEventBusProtocolServer(String address, Vertx vertx) {
     this.address = address;
     this.vertx = vertx;
+    this.context = vertx.currentContext();
+  }
+
+  @Override
+  public void handle(Message<byte[]> message) {
+    if (handler != null) {
+      handler.handle(ByteBuffer.wrap(message.body())).whenComplete((reply, error) -> {
+        context.runOnContext(v -> {
+          if (error != null) {
+            message.fail(0, error.getMessage());
+          } else {
+            byte[] bytes = new byte[reply.remaining()];
+            reply.get(bytes);
+            message.reply(bytes);
+          }
+        });
+      });
+    } else {
+      message.fail(ReplyFailure.NO_HANDLERS.toInt(), "No message handler registered");
+    }
   }
 
   @Override
@@ -57,14 +70,11 @@ public class VertxEventBusProtocolServer implements ProtocolServer {
   @Override
   public CompletableFuture<Void> listen() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    vertx.eventBus().registerHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          future.completeExceptionally(result.cause());
-        } else {
-          future.complete(null);
-        }
+    vertx.eventBus().registerHandler(address, this, result -> {
+      if (result.failed()) {
+        future.completeExceptionally(result.cause());
+      } else {
+        future.complete(null);
       }
     });
     return future;
@@ -73,14 +83,11 @@ public class VertxEventBusProtocolServer implements ProtocolServer {
   @Override
   public CompletableFuture<Void> close() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    vertx.eventBus().unregisterHandler(address, messageHandler, new Handler<AsyncResult<Void>>() {
-      @Override
-      public void handle(AsyncResult<Void> result) {
-        if (result.failed()) {
-          future.completeExceptionally(result.cause());
-        } else {
-          future.complete(null);
-        }
+    vertx.eventBus().unregisterHandler(address, this, result -> {
+      if (result.failed()) {
+        future.completeExceptionally(result.cause());
+      } else {
+        future.complete(null);
       }
     });
     return future;

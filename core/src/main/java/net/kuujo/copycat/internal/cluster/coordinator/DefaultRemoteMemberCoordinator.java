@@ -58,6 +58,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
       request.putInt(address);
       request.putInt(id);
       request.put(message);
+      request.flip();
       return request;
     }, executor)
       .thenCompose(client::write);
