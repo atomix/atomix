@@ -16,9 +16,9 @@
 package net.kuujo.copycat.event.internal;
 
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
-import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.log.LogSegment;
 
@@ -93,7 +93,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   /**
    * Compacts the log.
    */
-  private void compact() {
+  private synchronized void compact() {
     if (commitIndex != null) {
       // Iterate through segments in the log and remove/close/delete segments that should no longer be retained.
       // A segment is no longer retained if all of the following conditions are met:

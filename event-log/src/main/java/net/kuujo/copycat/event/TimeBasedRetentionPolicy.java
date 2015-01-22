@@ -18,6 +18,7 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.AbstractConfigurable;
 import net.kuujo.copycat.log.LogSegment;
 
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,10 +30,15 @@ public class TimeBasedRetentionPolicy extends AbstractConfigurable implements Re
   private long time;
 
   public TimeBasedRetentionPolicy() {
+    super();
   }
 
   public TimeBasedRetentionPolicy(long time, TimeUnit unit) {
     this.time = unit.toMillis(time);
+  }
+
+  public TimeBasedRetentionPolicy(Map<String, Object> config) {
+    super(config);
   }
 
   private TimeBasedRetentionPolicy(TimeBasedRetentionPolicy policy) {

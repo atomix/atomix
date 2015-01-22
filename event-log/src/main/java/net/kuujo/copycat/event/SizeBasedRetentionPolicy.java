@@ -18,6 +18,8 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.AbstractConfigurable;
 import net.kuujo.copycat.log.LogSegment;
 
+import java.util.Map;
+
 /**
  * Size based log compaction strategy.
  *
@@ -27,10 +29,15 @@ public class SizeBasedRetentionPolicy extends AbstractConfigurable implements Re
   private long size;
 
   public SizeBasedRetentionPolicy() {
+    super();
   }
 
   public SizeBasedRetentionPolicy(long size) {
     this.size = size;
+  }
+
+  public SizeBasedRetentionPolicy(Map<String, Object> config) {
+    super(config);
   }
 
   private SizeBasedRetentionPolicy(SizeBasedRetentionPolicy policy) {

@@ -18,6 +18,8 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.AbstractConfigurable;
 import net.kuujo.copycat.log.LogSegment;
 
+import java.util.Map;
+
 /**
  * Retention policy that does not retain any logs.
  *
@@ -27,6 +29,10 @@ public class ZeroRetentionPolicy extends AbstractConfigurable implements Retenti
 
   public ZeroRetentionPolicy() {
     super();
+  }
+
+  public ZeroRetentionPolicy(Map<String, Object> config) {
+    super(config);
   }
 
   private ZeroRetentionPolicy(ZeroRetentionPolicy policy) {
