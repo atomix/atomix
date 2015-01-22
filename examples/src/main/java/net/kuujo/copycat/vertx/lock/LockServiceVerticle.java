@@ -13,15 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx;
+package net.kuujo.copycat.vertx.lock;
 
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.StateMachineConfig;
+import net.kuujo.copycat.vertx.VertxEventBusProtocol;
+import net.kuujo.copycat.vertx.VertxEventLoopExecutor;
 import org.vertx.java.core.Future;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.eventbus.Message;

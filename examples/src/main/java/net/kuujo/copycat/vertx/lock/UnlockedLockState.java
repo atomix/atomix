@@ -13,25 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx;
+package net.kuujo.copycat.vertx.lock;
 
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.state.Initializer;
+import net.kuujo.copycat.state.StateContext;
 
 /**
- * Lock state proxy.
+ * Unlocked lock state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LockStateProxy {
+public class UnlockedLockState implements LockState {
+  private StateContext<LockState> context;
 
-  /**
-   * Locks the lock.
-   */
-  CompletableFuture<Void> lock(String holder);
+  @Initializer
+  public void init(StateContext<LockState> context) {
+    this.context = context;
+  }
 
-  /**
-   * Unlocks the lock.
-   */
-  CompletableFuture<Void> unlock(String holder);
+  @Override
+  public void lock(String holder) {
+    context.put("holder", holder);
+    context.transition(new LockedLockState());
+  }
+
+  @Override
+  public void unlock(String holder) {
+    throw new IllegalStateException("Lock is not locked");
+  }
 
 }

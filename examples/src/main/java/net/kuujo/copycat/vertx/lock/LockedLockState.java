@@ -13,17 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx;
+package net.kuujo.copycat.vertx.lock;
 
 import net.kuujo.copycat.state.Initializer;
 import net.kuujo.copycat.state.StateContext;
 
 /**
- * Unlocked lock state.
+ * Locked lock state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class UnlockedLockState implements LockState {
+public class LockedLockState implements LockState {
   private StateContext<LockState> context;
 
   @Initializer
@@ -33,13 +33,13 @@ public class UnlockedLockState implements LockState {
 
   @Override
   public void lock(String holder) {
-    context.put("holder", holder);
-    context.transition(new LockedLockState());
+    throw new IllegalStateException("Lock is already locked by " + context.get("holder"));
   }
 
   @Override
   public void unlock(String holder) {
-    throw new IllegalStateException("Lock is not locked");
+    context.remove("holder");
+    context.transition(new UnlockedLockState());
   }
 
 }
