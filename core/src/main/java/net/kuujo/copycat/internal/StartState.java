@@ -15,8 +15,6 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Start state.
@@ -24,7 +22,6 @@ import org.slf4j.LoggerFactory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class StartState extends AbstractState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(StartState.class);
 
   StartState(CopycatStateContext context) {
     super(context);
@@ -33,11 +30,6 @@ class StartState extends AbstractState {
   @Override
   public CopycatState state() {
     return CopycatState.START;
-  }
-
-  @Override
-  protected Logger logger() {
-    return LOGGER;
   }
 
 }

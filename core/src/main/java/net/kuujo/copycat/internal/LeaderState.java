@@ -18,8 +18,6 @@ import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.internal.util.Quorum;
 import net.kuujo.copycat.protocol.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -35,7 +33,6 @@ import java.util.function.BiFunction;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class LeaderState extends ActiveState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(LeaderState.class);
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
 
@@ -46,11 +43,6 @@ class LeaderState extends ActiveState {
   @Override
   public CopycatState state() {
     return CopycatState.LEADER;
-  }
-
-  @Override
-  protected Logger logger() {
-    return LOGGER;
   }
 
   @Override
@@ -353,6 +345,12 @@ class LeaderState extends ActiveState {
     public CompletableFuture<Long> commit(Long index) {
       context.checkThread();
 
+      // If there are no replicas in the replica set the immediately indicate that the entry is committed.
+      if (replicas.isEmpty()) {
+        return CompletableFuture.completedFuture(null);
+      }
+
+      // If the index is null then we have no entry to commit. Just ping all the replicas in the cluster.
       if (index == null) {
         return ping(null);
       }
@@ -551,6 +549,7 @@ class LeaderState extends ActiveState {
         .withLogIndex(prevIndex)
         .withLogTerm(prevEntry != null ? prevEntry.getLong() : null)
         .withEntries(entries)
+        .withFirstIndex(prevIndex == null || context.log().firstIndex() == prevIndex + 1)
         .withCommitIndex(context.getCommitIndex())
         .build();
 

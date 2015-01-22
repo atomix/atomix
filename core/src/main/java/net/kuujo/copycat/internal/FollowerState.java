@@ -16,8 +16,6 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.protocol.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -30,7 +28,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class FollowerState extends ActiveState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(FollowerState.class);
   private final Random random = new Random();
   private ScheduledFuture<?> currentTimer;
 
@@ -41,11 +38,6 @@ class FollowerState extends ActiveState {
   @Override
   public CopycatState state() {
     return CopycatState.FOLLOWER;
-  }
-
-  @Override
-  protected Logger logger() {
-    return LOGGER;
   }
 
   @Override

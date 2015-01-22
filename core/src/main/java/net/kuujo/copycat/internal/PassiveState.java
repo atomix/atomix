@@ -20,8 +20,6 @@ import net.kuujo.copycat.protocol.ReplicaInfo;
 import net.kuujo.copycat.protocol.Response;
 import net.kuujo.copycat.protocol.SyncRequest;
 import net.kuujo.copycat.protocol.SyncResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -39,7 +37,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PassiveState extends AbstractState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(PassiveState.class);
   private ScheduledFuture<?> currentTimer;
 
   public PassiveState(CopycatStateContext context) {
@@ -49,11 +46,6 @@ public class PassiveState extends AbstractState {
   @Override
   public CopycatState state() {
     return CopycatState.PASSIVE;
-  }
-
-  @Override
-  protected Logger logger() {
-    return LOGGER;
   }
 
   @Override
@@ -110,8 +102,10 @@ public class PassiveState extends AbstractState {
 
       // Get a list of entries up to 1MB in size.
       List<ByteBuffer> entries = new ArrayList<>(1024);
+      Long firstIndex = null;
       if (!context.log().isEmpty()) {
-        long index = Math.max(member.getIndex() != null ? member.getIndex() + 1 : context.log().firstIndex(), context.log().lastIndex());
+        firstIndex = Math.max(member.getIndex() != null ? member.getIndex() + 1 : context.log().firstIndex(), context.log().lastIndex());
+        long index = firstIndex;
         int size = 0;
         while (size < 1024 * 1024 && index <= context.getCommitIndex()) {
           ByteBuffer entry = context.log().getEntry(index);
@@ -127,7 +121,7 @@ public class PassiveState extends AbstractState {
         .withLeader(context.getLeader())
         .withTerm(context.getTerm())
         .withLogIndex(member.getIndex())
-        .withCommitIndex(context.getCommitIndex())
+        .withFirstIndex(firstIndex != null && firstIndex.equals(context.log().firstIndex()))
         .withMembers(context.getMemberInfo())
         .withEntries(entries)
         .build()).whenComplete((response, error) -> {
@@ -157,19 +151,39 @@ public class PassiveState extends AbstractState {
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
       context.setLeader(request.leader());
+    } else if (request.term() == context.getTerm() && context.getLeader() == null && request.leader() != null) {
+      context.setLeader(request.leader());
     }
 
     // Increment the local vector clock version and update cluster members.
     context.setVersion(context.getVersion() + 1);
     context.setMemberInfo(request.members());
 
-    // If the local log doesn't contain the previous index then reply immediately.
-    if (request.logIndex() != null && !context.log().containsIndex(request.logIndex())) {
+    // If the local log doesn't contain the previous index and the given index is not the first index in the
+    // requestor's log then reply immediately.
+    if (!request.firstIndex() && request.logIndex() != null && !context.log().containsIndex(request.logIndex())) {
       return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
         .withId(logRequest(request).id())
         .withUri(context.getLocalMember())
         .withMembers(context.getMemberInfo())
         .build()));
+    }
+
+    // If the given previous log index is not null and the requestor indicated that the first entry in the entry set
+    // is the first entry in the log then roll over the local log to a new segment with the given starting index.
+    Long rollOverIndex = null;
+    if (!request.entries().isEmpty() && request.logIndex() != null && request.firstIndex()) {
+      rollOverIndex = request.logIndex() + 1;
+      try {
+        context.log().rollOver(rollOverIndex);
+      } catch (IOException e) {
+        LOGGER.error("{} - Failed to roll over log", context.getLocalMember());
+        return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
+          .withId(logRequest(request).id())
+          .withUri(context.getLocalMember())
+          .withMembers(context.getMemberInfo())
+          .build()));
+      }
     }
 
     // Iterate through provided entries and append any that are missing from the log. Only committed entries are
@@ -183,20 +197,30 @@ public class PassiveState extends AbstractState {
           context.setCommitIndex(index);
           context.consumer().apply(index, entry);
           context.setLastApplied(index);
-          logger().debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
+          LOGGER.debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
         } catch (IOException e) {
           break;
         }
       }
     }
 
-    // Flush the log to disk and compact the log.
-    context.log().flush();
+    // If the given previous log index is not null and the requestor indicates that the first entry in the entry set
+    // is the first entry in the log then compact the log up to the given first index.
+    try {
+      if (rollOverIndex != null) {
+        context.log().compact(rollOverIndex);
+      }
+    } catch (IOException e) {
+      LOGGER.error("{} - Failed to compact log", context.getLocalMember());
+    } finally {
+      // Flush the log to disk.
+      context.log().flush();
+    }
 
     // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
       .withId(logRequest(request).id())
-      .withUri(context.getLocalMemberInfo().getUri())
+      .withUri(context.getLocalMember())
       .withMembers(context.getMemberInfo())
       .build()));
   }

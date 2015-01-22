@@ -18,6 +18,7 @@ import net.kuujo.copycat.CopycatState;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.protocol.*;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -27,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class AbstractState implements RaftProtocol {
+  protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
   protected final CopycatStateContext context;
   protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
   protected MessageHandler<PingRequest, PingResponse> pingHandler;
@@ -58,15 +60,10 @@ abstract class AbstractState implements RaftProtocol {
   public abstract CopycatState state();
 
   /**
-   * Returns the state logger.
-   */
-  protected abstract Logger logger();
-
-  /**
    * Logs a request.
    */
   protected final <R extends Request> R logRequest(R request) {
-    logger().debug("{} - Received {}", context.getLocalMember(), request);
+    LOGGER.debug("{} - Received {}", context.getLocalMember(), request);
     return request;
   }
 
@@ -74,7 +71,7 @@ abstract class AbstractState implements RaftProtocol {
    * Logs a response.
    */
   protected final <R extends Response> R logResponse(R response) {
-    logger().debug("{} - Sent {}", context.getLocalMember(), response);
+    LOGGER.debug("{} - Sent {}", context.getLocalMember(), response);
     return response;
   }
 

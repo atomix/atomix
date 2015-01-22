@@ -20,8 +20,6 @@ import net.kuujo.copycat.protocol.PingRequest;
 import net.kuujo.copycat.protocol.PingResponse;
 import net.kuujo.copycat.protocol.PollRequest;
 import net.kuujo.copycat.protocol.PollResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
@@ -37,7 +35,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class CandidateState extends ActiveState {
-  private static final Logger LOGGER = LoggerFactory.getLogger(CandidateState.class);
   private final Random random = new Random();
   private Quorum quorum;
   private ScheduledFuture<?> currentTimer;
@@ -49,11 +46,6 @@ class CandidateState extends ActiveState {
   @Override
   public CopycatState state() {
     return CopycatState.CANDIDATE;
-  }
-
-  @Override
-  protected Logger logger() {
-    return LOGGER;
   }
 
   @Override
