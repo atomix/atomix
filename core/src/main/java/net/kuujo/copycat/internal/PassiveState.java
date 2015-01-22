@@ -195,7 +195,12 @@ public class PassiveState extends AbstractState {
         try {
           context.log().appendEntry(entry);
           context.setCommitIndex(index);
-          context.consumer().apply(index, entry);
+
+          // Extract a view of the entry after the entry term.
+          entry.position(8);
+          ByteBuffer userEntry = entry.slice();
+          context.consumer().apply(index, userEntry);
+
           context.setLastApplied(index);
           LOGGER.debug("{} - Appended {} to log at index {}", context.getLocalMember(), entry, index);
         } catch (IOException e) {
