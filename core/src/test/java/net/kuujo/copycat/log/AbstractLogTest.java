@@ -105,7 +105,7 @@ public abstract class AbstractLogTest {
 
     // Fetch 3 segments worth of entries, spanning 4 segments
     for (long index = 3; index <= entriesPerSegment * 3 + 2; index++) {
-      assertBytesEqual(log.getEntry(index), index + 3);
+      assertBytesEqual(log.getEntry(index), index);
     }
   }
 

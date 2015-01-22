@@ -63,7 +63,7 @@ public class BufferedLogSegment extends AbstractLogSegment {
   
   @Override
   public boolean isEmpty() {
-    return log != null && !log.isEmpty();
+    return log == null || log.isEmpty();
   }
 
   @Override
