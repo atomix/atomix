@@ -86,6 +86,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
       executor.execute(() -> consumer.handle(value));
     }
     commitIndex = index;
+    result.flip();
     return result;
   }
 
