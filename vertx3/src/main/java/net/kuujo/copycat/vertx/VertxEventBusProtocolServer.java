@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.vertx;
 
+import io.vertx.core.Context;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.Message;
@@ -31,26 +32,36 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxEventBusProtocolServer implements ProtocolServer {
+public class VertxEventBusProtocolServer implements ProtocolServer, Handler<Message<byte[]>> {
   private final String address;
-  private Vertx vertx;
+  private final Vertx vertx;
+  private final Context context;
   private MessageConsumer<byte[]> consumer;
   private ProtocolHandler handler;
-
-  private final Handler<Message<byte[]>> messageHandler = new Handler<Message<byte[]>>() {
-    @Override
-    public void handle(Message<byte[]> message) {
-      if (handler != null) {
-        handler.handle(ByteBuffer.wrap(message.body()));
-      } else {
-        message.fail(ReplyFailure.NO_HANDLERS.toInt(), "No handler registered");
-      }
-    }
-  };
 
   public VertxEventBusProtocolServer(String address, Vertx vertx) {
     this.address = address;
     this.vertx = vertx;
+    this.context = vertx.getOrCreateContext();
+  }
+
+  @Override
+  public void handle(Message<byte[]> message) {
+    if (handler != null) {
+      handler.handle(ByteBuffer.wrap(message.body())).whenComplete((reply, error) -> {
+        context.runOnContext(v -> {
+          if (error != null) {
+            message.fail(0, error.getMessage());
+          } else {
+            byte[] bytes = new byte[reply.remaining()];
+            reply.get(bytes);
+            message.reply(bytes);
+          }
+        });
+      });
+    } else {
+      message.fail(ReplyFailure.NO_HANDLERS.toInt(), "No message handler registered");
+    }
   }
 
   @Override
@@ -60,7 +71,7 @@ public class VertxEventBusProtocolServer implements ProtocolServer {
 
   @Override
   public CompletableFuture<Void> listen() {
-    consumer = vertx.eventBus().<byte[]>consumer(address).handler(messageHandler);
+    consumer = vertx.eventBus().<byte[]>consumer(address).handler(this);
     return CompletableFuture.completedFuture(null);
   }
 
