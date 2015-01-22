@@ -406,7 +406,6 @@ abstract class ActiveState extends PassiveState {
       try {
         context.consumer().apply(index, userEntry);
       } catch (Exception e) {
-        LOGGER.warn(e.getMessage());
       } finally {
         context.setLastApplied(index);
       }
