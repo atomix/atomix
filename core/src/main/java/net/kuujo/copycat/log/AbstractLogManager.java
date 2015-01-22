@@ -16,6 +16,7 @@
 package net.kuujo.copycat.log;
 
 import net.kuujo.copycat.internal.util.Assert;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -31,7 +32,7 @@ import java.util.TreeMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractLogManager extends AbstractLoggable implements LogManager {
-  private final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(getClass());
+  private final Logger LOGGER = LoggerFactory.getLogger(getClass());
   private Log config;
   protected final TreeMap<Long, LogSegment> segments = new TreeMap<>();
   protected LogSegment currentSegment;
@@ -124,14 +125,42 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   @Override
   public synchronized void open() throws IOException {
     assertIsNotOpen();
+
+    // Load existing log segments from disk.
     for (LogSegment segment : loadSegments()) {
       segment.open();
       segments.put(segment.firstIndex(), segment);
     }
+
+    // If a segment doesn't already exist, create an initial segment starting at index 1.
     if (!segments.isEmpty()) {
       currentSegment = segments.lastEntry().getValue();
     } else {
       createInitialSegment();
+    }
+
+    clean();
+  }
+
+  /**
+   * Cleans the log at startup.
+   *
+   * In the event that a failure occurred during compaction, it's possible that the log could contain a significant
+   * gap in indexes between segments. When the log is opened, check segments to ensure that first and last indexes of
+   * each segment agree with other segments in the log. If not, remove all segments that appear prior to any index gap.
+   */
+  private void clean() throws IOException {
+    Long lastIndex = null;
+    Long compactIndex = null;
+    for (LogSegment segment : segments.values()) {
+      if (lastIndex == null || segment.firstIndex() > lastIndex + 1) {
+        compactIndex = segment.firstIndex();
+      }
+      lastIndex = segment.lastIndex();
+    }
+
+    if (compactIndex != null) {
+      compact(compactIndex);
     }
   }
 
@@ -148,11 +177,13 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
 
   @Override
   public long entryCount() {
+    assertIsOpen();
     return segments.values().stream().mapToLong(LogSegment::entryCount).sum();
   }
 
   @Override
   public boolean isEmpty() {
+    assertIsOpen();
     LogSegment firstSegment = firstSegment();
     return firstSegment == null || firstSegment.size() == 0;
   }
@@ -180,6 +211,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
 
   @Override
   public boolean containsIndex(long index) {
+    assertIsOpen();
     Long firstIndex = firstIndex();
     Long lastIndex = lastIndex();
     return firstIndex != null && lastIndex != null && firstIndex <= index && index <= lastIndex;
@@ -228,26 +260,45 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   }
 
   @Override
-  public LogSegment rollOver() throws IOException {
-    // If the current segment is empty then don't roll over to a new segment, just keep the existing segment.
-    Long lastIndex = currentSegment.lastIndex();
-    if (lastIndex == null)
-      return currentSegment;
+  public void rollOver(long index) throws IOException {
+    // If the current segment is empty then just remove it.
+    if (currentSegment.isEmpty()) {
+      segments.remove(currentSegment.firstIndex());
+      currentSegment.close();
+      currentSegment.delete();
+      currentSegment = null;
+    } else {
+      currentSegment.flush();
+    }
 
-    // Flush the segment and create a new segment.
-    currentSegment.flush();
-    long nextIndex = lastIndex + 1;
-    currentSegment = createSegment(++nextSegmentId, nextIndex);
-    LOGGER.debug("Rolling over to new segment at new index {}", nextIndex);
+    currentSegment = createSegment(++nextSegmentId, index);
+    LOGGER.debug("Rolling over to new segment at new index {}", index);
 
     // Open the new segment.
     currentSegment.open();
 
-    segments.put(nextIndex, currentSegment);
+    segments.put(index, currentSegment);
 
     // Reset the segment flush time and check whether old segments need to be deleted.
     lastFlush = System.currentTimeMillis();
-    return currentSegment;
+  }
+
+  @Override
+  public void compact(long index) throws IOException {
+    // Iterate through all segments in the log. If a segment's first index matches the given index or its last index
+    // is less than the given index then remove/close/delete the segment.
+    for (Iterator<Map.Entry<Long, LogSegment>> iterator = segments.entrySet().iterator(); iterator.hasNext();) {
+      Map.Entry<Long, LogSegment> entry = iterator.next();
+      LogSegment segment = entry.getValue();
+      if (index == segment.firstIndex() || (segment.lastIndex() != null && index > segment.lastIndex())) {
+        iterator.remove();
+        try {
+          segment.close();
+          segment.delete();
+        } catch (IOException e) {
+        }
+      }
+    }
   }
 
   @Override
@@ -314,7 +365,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
       && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval();
 
     if (segmentSizeExceeded || segmentExpired) {
-      rollOver();
+      rollOver(lastIndex + 1);
     }
   }
 

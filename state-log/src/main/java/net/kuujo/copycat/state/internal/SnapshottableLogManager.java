@@ -34,7 +34,6 @@ import java.util.TreeMap;
 public class SnapshottableLogManager implements LogManager {
   private final LogManager logManager;
   private final LogManager snapshotManager;
-  private Long snapshotIndex;
 
   public SnapshottableLogManager(LogManager logManager, LogManager snapshotManager) {
     this.logManager = logManager;
@@ -72,23 +71,14 @@ public class SnapshottableLogManager implements LogManager {
   }
 
   @Override
-  public LogSegment rollOver() throws IOException {
-    return logManager.rollOver();
-  }
-
-  @Override
   public void open() throws IOException {
     snapshotManager.open();
     logManager.open();
-    if (!snapshotManager.isEmpty()) {
-      ByteBuffer snapshot = snapshotManager.getEntry(snapshotManager.lastIndex());
-      snapshotIndex = snapshot.getLong();
-    }
   }
 
   @Override
   public boolean isEmpty() {
-    return snapshotIndex == null && logManager.isEmpty();
+    return snapshotManager.isEmpty() && logManager.isEmpty();
   }
 
   @Override
@@ -145,9 +135,8 @@ public class SnapshottableLogManager implements LogManager {
     // When appending a snapshot, force the snapshot log manager to roll over to a new segment, append the snapshot
     // to the log, and then compact the log once the snapshot has been appended.
     ByteBuffer entry = ByteBuffer.allocate(8 + snapshot.limit());
-    entry.putLong(index);
     entry.put(snapshot);
-    snapshotManager.rollOver();
+    snapshotManager.rollOver(index);
     snapshotManager.appendEntry(entry);
     compact(snapshotManager);
     compact(logManager);
@@ -189,12 +178,7 @@ public class SnapshottableLogManager implements LogManager {
   @Override
   public boolean containsIndex(long index) {
     Assert.state(isOpen(), "Log is not open");
-    if (logManager.containsIndex(index)) {
-      return true;
-    } else if (snapshotManager.isEmpty()) {
-      return false;
-    }
-    return snapshotIndex != null && snapshotIndex == index;
+    return logManager.containsIndex(index) || snapshotManager.containsIndex(index);
   }
 
   @Override
@@ -202,8 +186,8 @@ public class SnapshottableLogManager implements LogManager {
     Assert.state(isOpen(), "Log is not open");
     if (logManager.containsIndex(index)) {
       return logManager.getEntry(index);
-    } else if (snapshotIndex != null && snapshotIndex == index) {
-      return snapshotManager.getEntry(snapshotIndex);
+    } else if (snapshotManager.containsIndex(index)) {
+      return snapshotManager.getEntry(index);
     }
     throw new IndexOutOfBoundsException("No entry at index " + index);
   }
@@ -216,6 +200,17 @@ public class SnapshottableLogManager implements LogManager {
   }
 
   @Override
+  public void rollOver(long index) throws IOException {
+    logManager.rollOver(index);
+  }
+
+  @Override
+  public void compact(long index) throws IOException {
+    logManager.compact(index);
+    snapshotManager.compact(index);
+  }
+
+  @Override
   public void flush() {
     logManager.flush();
   }
@@ -224,7 +219,6 @@ public class SnapshottableLogManager implements LogManager {
   public void close() throws IOException {
     logManager.close();
     snapshotManager.close();
-    snapshotIndex = null;
   }
 
   @Override
