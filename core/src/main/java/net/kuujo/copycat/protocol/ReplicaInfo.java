@@ -33,7 +33,7 @@ public class ReplicaInfo implements Serializable {
   private Long index;
   private final Set<String> failures = new HashSet<>();
 
-  private ReplicaInfo() {
+  public ReplicaInfo() {
   }
 
   public ReplicaInfo(String uri) {
