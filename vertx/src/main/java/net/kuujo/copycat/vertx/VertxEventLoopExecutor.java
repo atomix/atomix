@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.vertx;
 
+import org.vertx.java.core.Context;
 import org.vertx.java.core.Vertx;
 
 import java.util.concurrent.Executor;
@@ -25,15 +26,15 @@ import java.util.concurrent.Executor;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventLoopExecutor implements Executor {
-  private final Vertx vertx;
+  private final Context context;
 
   public VertxEventLoopExecutor(Vertx vertx) {
-    this.vertx = vertx;
+    this.context = vertx.currentContext();
   }
 
   @Override
   public void execute(Runnable command) {
-    vertx.runOnContext(v -> command.run());
+    context.runOnContext(v -> command.run());
   }
 
 }
