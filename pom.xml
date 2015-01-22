@@ -79,6 +79,7 @@
     <module>vertx</module>
     <module>vertx3</module>
     <module>chronicle</module>
+    <module>test-tools</module>
     <module>examples</module>
   </modules>
 

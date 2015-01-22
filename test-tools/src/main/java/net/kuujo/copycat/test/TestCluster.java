@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.collections;
+package net.kuujo.copycat.test;
 
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;

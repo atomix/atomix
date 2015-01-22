@@ -17,6 +17,7 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
 /**
