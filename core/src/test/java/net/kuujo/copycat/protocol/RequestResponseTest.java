@@ -164,7 +164,7 @@ public class RequestResponseTest {
       .build();
     assertEquals(response.id(), "test");
     assertEquals(response.uri(), "foo");
-    assertEquals(response.result(), "Hello world!");
+    assertEquals(new String(response.result()), "Hello world!");
   }
 
   /**
