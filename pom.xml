@@ -11,7 +11,7 @@
   <artifactId>copycat-parent</artifactId>
   <version>0.5.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>CopyCat</name>
+  <name>Copycat</name>
   <description>Replicated state machine framework based on the Raft consensus algorithm.</description>
   <url>http://github.com/kuujo/copycat</url>
   <inceptionYear>2013</inceptionYear>
@@ -27,7 +27,7 @@
     <maven.resources.plugin.version>2.6</maven.resources.plugin.version>
     <maven.dependency.plugin.version>2.7</maven.dependency.plugin.version>
     <maven.assembly.plugin.version>2.4</maven.assembly.plugin.version>
-    <maven.javadoc.plugin.version>2.8.1</maven.javadoc.plugin.version>
+    <maven.javadoc.plugin.version>2.10.1</maven.javadoc.plugin.version>
   </properties>
 
   <licenses>
@@ -80,7 +80,6 @@
     <module>vertx3</module>
     <module>chronicle</module>
     <module>test-tools</module>
-    <module>examples</module>
   </modules>
 
   <dependencies>
@@ -190,7 +189,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.1</version>
+            <version>1.6</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
