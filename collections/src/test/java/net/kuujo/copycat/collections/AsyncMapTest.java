@@ -17,6 +17,7 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
@@ -62,6 +63,26 @@ public class AsyncMapTest extends ConcurrentTestCase {
             resume();
           });
         });
+      });
+    });
+    await(5000);
+  }
+
+  /**
+   * Tests getting a value from a passive member of the cluster.
+   */
+  public void testAsyncMapGetFromPassiveMember() throws Throwable {
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig()
+      .withConsistency(Consistency.WEAK)
+      .withLog(new BufferedLog())));
+    cluster.open().thenRun(this::resume);
+    await(5000);
+    AsyncMap<String, String> activeMap = cluster.activeResources().iterator().next();
+    AsyncMap<String, String> passiveMap = cluster.passiveResources().iterator().next();
+    activeMap.put("foo", "Hello world!").thenRun(() -> {
+      passiveMap.get("foo").thenAccept(r1 -> {
+        threadAssertEquals(r1, "Hello world!");
+        resume();
       });
     });
     await(5000);

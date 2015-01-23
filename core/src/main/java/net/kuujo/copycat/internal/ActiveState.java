@@ -546,43 +546,4 @@ abstract class ActiveState extends PassiveState {
     }
   }
 
-  @Override
-  public CompletableFuture<QueryResponse> query(QueryRequest request) {
-    context.checkThread();
-    logRequest(request);
-    // If the request allows inconsistency, immediately execute the query and return the result.
-    if (request.consistency() == Consistency.WEAK) {
-      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withResult(context.consumer().apply(null, request.entry()))
-        .build()));
-    } else if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withStatus(Response.Status.ERROR)
-        .withError(new IllegalStateException("Not the leader"))
-        .build()));
-    } else {
-      return queryHandler.handle(QueryRequest.builder(request).withUri(context.getLeader()).build());
-    }
-  }
-
-  @Override
-  public CompletableFuture<CommitResponse> commit(CommitRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == null) {
-      return CompletableFuture.completedFuture(logResponse(CommitResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withStatus(Response.Status.ERROR)
-        .withError(new IllegalStateException("Not the leader"))
-        .build()));
-    } else {
-      return commitHandler.handle(CommitRequest.builder(request).withUri(context.getLeader()).build());
-    }
-  }
-
 }
