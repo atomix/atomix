@@ -38,11 +38,13 @@ import java.util.concurrent.Executors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CopycatConfig extends AbstractConfigurable {
+  public static final String COPYCAT_NAME = "name";
   public static final String COPYCAT_SERIALIZER = "serializer";
   public static final String COPYCAT_EXECUTOR = "executor";
   public static final String COPYCAT_CLUSTER = "cluster";
   public static final String COPYCAT_RESOURCES = "resources";
 
+  private static final String DEFAULT_COPYCAT_NAME = "copycat";
   private static final String DEFAULT_COPYCAT_SERIALIZER = KryoSerializer.class.getName();
   private final Executor DEFAULT_COPYCAT_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-%d"));
 
@@ -61,6 +63,37 @@ public class CopycatConfig extends AbstractConfigurable {
   @Override
   public CopycatConfig copy() {
     return new CopycatConfig(this);
+  }
+
+  /**
+   * Sets the Copycat instance name.
+   *
+   * @param name The Copycat instance name.
+   * @throws java.lang.NullPointerException If the name is {@code null}
+   */
+  public void setName(String name) {
+    put(COPYCAT_NAME, Assert.isNotNull(name, "name"));
+  }
+
+  /**
+   * Returns the Copycat instance name.
+   *
+   * @return The Copycat instance name.
+   */
+  public String getName() {
+    return get(COPYCAT_NAME, DEFAULT_COPYCAT_NAME);
+  }
+
+  /**
+   * Sets the Copycat instance name, returning the configuration for method chaining.
+   *
+   * @param name The Copycat instance name.
+   * @return The Copycat configuration.
+   * @throws java.lang.NullPointerException If the name is {@code null}
+   */
+  public CopycatConfig withName(String name) {
+    setName(name);
+    return this;
   }
 
   /**
