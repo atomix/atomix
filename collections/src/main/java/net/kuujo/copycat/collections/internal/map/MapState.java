@@ -44,23 +44,23 @@ public interface MapState<K, V> extends Map<K, V> {
   public void init(StateContext<MapState<K, V>> context);
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   int size();
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   boolean isEmpty();
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   boolean containsKey(Object key);
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   boolean containsValue(Object value);
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   V get(Object key);
 
   @Override
@@ -81,21 +81,21 @@ public interface MapState<K, V> extends Map<K, V> {
 
   @NotNull
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   Set<K> keySet();
 
   @NotNull
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   Collection<V> values();
 
   @NotNull
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   Set<Entry<K, V>> entrySet();
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Query
   V getOrDefault(Object key, V defaultValue);
 
   @Override

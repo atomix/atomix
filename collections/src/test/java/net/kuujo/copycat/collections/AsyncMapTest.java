@@ -83,6 +83,10 @@ public class AsyncMapTest extends ConcurrentTestCase {
     AsyncMap<String, String> activeMap = cluster.activeResources().iterator().next();
     AsyncMap<String, String> passiveMap = cluster.passiveResources().iterator().next();
     activeMap.put("foo", "Hello world!").thenRun(() -> {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+      }
       passiveMap.get("foo").thenAccept(r1 -> {
         threadAssertEquals(r1, "Hello world!");
         resume();

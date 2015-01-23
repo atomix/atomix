@@ -43,6 +43,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   private static final int SNAPSHOT_ENTRY = 0;
   private static final int COMMAND_ENTRY = 1;
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
+  private final Consistency defaultConsistency;
   private final SnapshottableLogManager log;
   private Supplier snapshotter;
   private Consumer installer;
@@ -50,6 +51,9 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   public DefaultStateLog(ResourceContext context) {
     super(context);
     this.log = (SnapshottableLogManager) context.log();
+    defaultConsistency = context.config()
+      .<StateLogConfig>getResourceConfig()
+      .getDefaultConsistency();
     context.consumer(this::consume);
   }
 
@@ -70,16 +74,18 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, context.config()
-      .<StateLogConfig>getResourceConfig()
-      .getDefaultConsistency()));
+    Assert.isNotNull(name, "name");
+    Assert.isNotNull(query, "query");
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, defaultConsistency));
     return this;
   }
 
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, consistency));
+    Assert.isNotNull(name, "name");
+    Assert.isNotNull(query, "query");
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, consistency == null || consistency == Consistency.DEFAULT ? defaultConsistency : consistency));
     return this;
   }
 
