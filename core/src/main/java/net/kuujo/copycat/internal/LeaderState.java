@@ -33,6 +33,7 @@ import java.util.function.BiFunction;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class LeaderState extends ActiveState {
+  private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
 
@@ -525,7 +526,7 @@ class LeaderState extends ActiveState {
           List<ByteBuffer> entries = new ArrayList<>(1024);
           long index = nextIndex;
           int size = 0;
-          while (size < 1024 * 1024 && index <= context.log().lastIndex()) {
+          while (size < MAX_BATCH_SIZE && index <= context.log().lastIndex()) {
             ByteBuffer entry = context.log().getEntry(index);
             size += entry.limit();
             entries.add(entry);

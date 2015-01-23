@@ -23,10 +23,7 @@ import net.kuujo.copycat.protocol.SyncResponse;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -37,7 +34,9 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class PassiveState extends AbstractState {
+  private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
+  private Set<String> synchronizing = new HashSet<>();
 
   public PassiveState(CopycatStateContext context) {
     super(context);
@@ -98,22 +97,45 @@ public class PassiveState extends AbstractState {
 
     // For each active member, send membership info to the member.
     for (ReplicaInfo member : randomMembers) {
-      LOGGER.debug("{} - sending sync request to {}", context.getLocalMember(), member.getUri());
-
-      // Get a list of entries up to 1MB in size.
-      List<ByteBuffer> entries = new ArrayList<>(1024);
-      Long firstIndex = null;
-      if (!context.log().isEmpty()) {
-        firstIndex = Math.max(member.getIndex() != null ? member.getIndex() + 1 : context.log().firstIndex(), context.log().lastIndex());
-        long index = firstIndex;
-        int size = 0;
-        while (size < 1024 * 1024 && index <= context.getCommitIndex()) {
-          ByteBuffer entry = context.log().getEntry(index);
-          size += entry.limit();
-          entries.add(entry);
-          index++;
-        }
+      // If we're already synchronizing with the given node then skip the synchronization. This is possible in the event
+      // that we began sending sync requests during another gossip pass and continue to send entries recursively.
+      if (synchronizing.add(member.getUri())) {
+        recursiveSync(member).whenComplete((result, error) -> synchronizing.remove(member.getUri()));
       }
+    }
+  }
+
+  /**
+   * Recursively sends sync request to the given member.
+   */
+  private CompletableFuture<Void> recursiveSync(ReplicaInfo member) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    recursiveSync(member, false, future);
+    return future;
+  }
+
+  /**
+   * Recursively sends sync requests to the given member.
+   */
+  private void recursiveSync(ReplicaInfo member, boolean requireEntries, CompletableFuture<Void> future) {
+    // Get a list of entries up to 1MB in size.
+    List<ByteBuffer> entries = new ArrayList<>(1024);
+    Long firstIndex = null;
+    if (!context.log().isEmpty()) {
+      firstIndex = Math.max(member.getIndex() != null ? member.getIndex() + 1 : context.log().firstIndex(), context.log().lastIndex());
+      long index = firstIndex;
+      int size = 0;
+      while (size < MAX_BATCH_SIZE && index <= context.getCommitIndex()) {
+        ByteBuffer entry = context.log().getEntry(index);
+        size += entry.limit();
+        entries.add(entry);
+        index++;
+      }
+    }
+
+    // If we have entries to send or if entries are not required for this request then send the sync request.
+    if (!requireEntries || !entries.isEmpty()) {
+      LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember(), member.getUri());
 
       syncHandler.handle(SyncRequest.builder()
         .withId(UUID.randomUUID().toString())
@@ -132,15 +154,20 @@ public class PassiveState extends AbstractState {
             // If the response succeeded, update membership info with the target node's membership.
             if (response.status() == Response.Status.OK) {
               context.setMemberInfo(response.members());
+              recursiveSync(member, true, future);
             } else {
-              LOGGER.warn("{} - received error response from {}", context.getLocalMember(), member.getUri());
+              LOGGER.warn("{} - Received error response from {}", context.getLocalMember(), member.getUri());
+              future.completeExceptionally(response.error());
             }
           } else {
             // If the request failed then record the member as INACTIVE.
-            LOGGER.warn("{} - sync to {} failed", context.getLocalMember(), member);
+            LOGGER.warn("{} - Sync to {} failed", context.getLocalMember(), member);
+            future.completeExceptionally(error);
           }
         }
       });
+    } else {
+      future.complete(null);
     }
   }
 
