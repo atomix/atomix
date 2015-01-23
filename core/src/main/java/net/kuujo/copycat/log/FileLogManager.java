@@ -44,7 +44,7 @@ public class FileLogManager extends AbstractLogManager {
     for (File file : config.getDirectory().listFiles(File::isFile)) {
       if (file.getName().startsWith(base.getName() + "-") && file.getName().endsWith(".metadata")) {
         try {
-          long id = Long.valueOf(file.getName().substring(file.getName().lastIndexOf('-')), file.getName().lastIndexOf('.')).longValue();
+          long id = Long.valueOf(file.getName().substring(file.getName().lastIndexOf('-') + 1), file.getName().lastIndexOf('.')).longValue();
           if (!segments.containsKey(id)) {
             // Open the metadata file, determine the segment's first index, and create a log segment.
             try (RandomAccessFile metaFile = new RandomAccessFile(file, "r")) {
