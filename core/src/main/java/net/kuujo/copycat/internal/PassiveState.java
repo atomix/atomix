@@ -116,7 +116,7 @@ public class PassiveState extends AbstractState {
     // Get a list of entries up to 1MB in size.
     List<ByteBuffer> entries = new ArrayList<>(1024);
     Long firstIndex = null;
-    if (!context.log().isEmpty()) {
+    if (!context.log().isEmpty() && context.getCommitIndex() != null) {
       firstIndex = Math.max(member.getIndex() != null ? member.getIndex() + 1 : context.log().firstIndex(), context.log().lastIndex());
       long index = firstIndex;
       int size = 0;
