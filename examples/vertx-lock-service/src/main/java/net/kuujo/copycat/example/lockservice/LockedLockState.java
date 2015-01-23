@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.lock;
+package net.kuujo.copycat.example.lockservice;
 
 import net.kuujo.copycat.state.Initializer;
 import net.kuujo.copycat.state.StateContext;

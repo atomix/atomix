@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.vertx.lock;
-
-import java.util.concurrent.CompletableFuture;
+package net.kuujo.copycat.example.lockservice;
 
 /**
- * Lock state proxy.
+ * Lock service state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LockStateProxy {
+public interface LockState {
 
   /**
-   * Locks the lock.
+   * Locks the lock for the given holder.
+   *
+   * @param holder The holder for which to lock the lock.
    */
-  CompletableFuture<Void> lock(String holder);
+  void lock(String holder);
 
   /**
-   * Unlocks the lock.
+   * Unlocks the lock for the given holder.
+   *
+   * @param holder The holder for which to unlock the lock.
    */
-  CompletableFuture<Void> unlock(String holder);
+  void unlock(String holder);
 
 }
