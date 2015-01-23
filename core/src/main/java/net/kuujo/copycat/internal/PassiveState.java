@@ -67,29 +67,24 @@ public class PassiveState extends AbstractState {
     context.checkThread();
     if (isClosed()) return;
 
-    // Create a list of currently active members.
-    List<ReplicaInfo> activeMembers = new ArrayList<>(context.getMembers().size());
+    // Create a list of passive members.
+    List<ReplicaInfo> passiveMembers = new ArrayList<>(context.getMembers().size());
     for (String uri : context.getMembers()) {
-      if (!uri.equals(context.getLocalMember())) {
+      if (!uri.equals(context.getLocalMember()) && !context.getActiveMembers().contains(uri)) {
         ReplicaInfo member = context.getMemberInfo(uri);
         if (member == null) {
           member = new ReplicaInfo(uri);
           context.addMemberInfo(member);
         }
-        // If the local node is an active member of the cluster, only gossip with passive members. If the local node
-        // is a passive member of the cluster, gossip with both active and passive members.
-        if ((context.getActiveMembers().contains(context.getLocalMember()) && !context.getActiveMembers().contains(member.getUri()))
-          || !context.getActiveMembers().contains(context.getLocalMember())) {
-          activeMembers.add(member);
-        }
+        passiveMembers.add(member);
       }
     }
 
     // Create a random list of three active members.
     Random random = new Random();
     List<ReplicaInfo> randomMembers = new ArrayList<>(3);
-    for (int i = 0; i < Math.min(activeMembers.size(), 3); i++) {
-      randomMembers.add(activeMembers.get(random.nextInt(Math.min(activeMembers.size(), 3))));
+    for (int i = 0; i < Math.min(passiveMembers.size(), 3); i++) {
+      randomMembers.add(passiveMembers.get(random.nextInt(Math.min(passiveMembers.size(), 3))));
     }
 
     // Increment the local member version in the vector clock.
