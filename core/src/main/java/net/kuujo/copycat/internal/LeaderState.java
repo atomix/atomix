@@ -117,6 +117,21 @@ class LeaderState extends ActiveState {
   }
 
   @Override
+  public CompletableFuture<PollResponse> poll(final PollRequest request) {
+    if (request.term() > context.getTerm()) {
+      transition(CopycatState.FOLLOWER);
+      return super.poll(request);
+    } else {
+      return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+        .withId(request.id())
+        .withUri(context.getLocalMember())
+        .withTerm(context.getTerm())
+        .withVoted(false)
+        .build()));
+    }
+  }
+
+  @Override
   public CompletableFuture<AppendResponse> append(final AppendRequest request) {
     context.checkThread();
     if (request.term() > context.getTerm()) {
