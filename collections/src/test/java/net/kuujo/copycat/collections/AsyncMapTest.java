@@ -21,6 +21,9 @@ import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Asynchronous map test.
  *
@@ -86,6 +89,48 @@ public class AsyncMapTest extends ConcurrentTestCase {
       });
     });
     await(5000);
+  }
+
+  /**
+   * Tests putting enough entries in the map's log to roll over the log to a new segment.
+   */
+  public void testAsyncMapPutMany() throws Throwable {
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig()
+      .withConsistency(Consistency.WEAK)
+      .withLog(new BufferedLog()
+        .withSegmentSize(1024)
+        .withFlushOnWrite(true))));
+    cluster.open().thenRun(this::resume);
+    await(5000);
+    AsyncMap<String, String> map = cluster.activeResources().iterator().next();
+    putMany(map).thenRun(this::resume);
+    await(5000);
+  }
+
+  /**
+   * Puts many entries in the map.
+   */
+  private CompletableFuture<Void> putMany(AsyncMap<String, String> map) {
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    putMany(0, 100, map, future);
+    return future;
+  }
+
+  /**
+   * Puts many entries in the map recursively.
+   */
+  private void putMany(int count, int total, AsyncMap<String, String> map, CompletableFuture<Void> future) {
+    if (count < total) {
+      map.put(UUID.randomUUID().toString(), "Hello world!").whenComplete((result, error) -> {
+        if (error == null) {
+          putMany(count + 1, total, map, future);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    } else {
+      future.complete(null);
+    }
   }
 
 }
