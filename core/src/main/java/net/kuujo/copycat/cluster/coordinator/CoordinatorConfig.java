@@ -32,10 +32,12 @@ import java.util.concurrent.Executors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatorConfig extends AbstractConfigurable {
+  public static final String COORDINATOR_NAME = "name";
   public static final String COORDINATOR_CLUSTER = "cluster";
   public static final String COORDINATOR_RESOURCES = "resources";
   public static final String COORDINATOR_EXECUTOR = "executor";
 
+  private static final String DEFAULT_COORDINATOR_NAME = "copycat";
   private final Executor DEFAULT_COORDINATOR_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d"));
 
   public CoordinatorConfig() {
@@ -53,6 +55,37 @@ public class CoordinatorConfig extends AbstractConfigurable {
   @Override
   public CoordinatorConfig copy() {
     return new CoordinatorConfig(this);
+  }
+
+  /**
+   * Sets the Copycat instance name.
+   *
+   * @param name The Copycat instance name.
+   * @throws java.lang.NullPointerException If the name is {@code null}
+   */
+  public void setName(String name) {
+    put(COORDINATOR_NAME, Assert.isNotNull(name, "name"));
+  }
+
+  /**
+   * Returns the Copycat instance name.
+   *
+   * @return The Copycat instance name.
+   */
+  public String getName() {
+    return get(COORDINATOR_NAME, DEFAULT_COORDINATOR_NAME);
+  }
+
+  /**
+   * Sets the Copycat instance name, returning the configuration for method chaining.
+   *
+   * @param name The Copycat instance name.
+   * @return The Copycat configuration.
+   * @throws java.lang.NullPointerException If the name is {@code null}
+   */
+  public CoordinatorConfig withName(String name) {
+    setName(name);
+    return this;
   }
 
   /**

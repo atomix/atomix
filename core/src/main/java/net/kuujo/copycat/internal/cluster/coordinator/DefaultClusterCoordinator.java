@@ -79,7 +79,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withReplicas(config.getClusterConfig().getMembers())
       .withLog(new BufferedLog());
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator"));
-    this.context = new CopycatStateContext("copycat", uri, resourceConfig, executor);
+    this.context = new CopycatStateContext(config.getName(), uri, resourceConfig, executor);
     this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(executor), new KryoSerializer(), executor, config.getExecutor());
     createResources();
   }

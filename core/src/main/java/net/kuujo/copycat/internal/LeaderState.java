@@ -33,6 +33,7 @@ import java.util.function.BiFunction;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class LeaderState extends ActiveState {
+  private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
 
@@ -112,6 +113,21 @@ class LeaderState extends ActiveState {
     } else {
       transition(CopycatState.FOLLOWER);
       return super.ping(request);
+    }
+  }
+
+  @Override
+  public CompletableFuture<PollResponse> poll(final PollRequest request) {
+    if (request.term() > context.getTerm()) {
+      transition(CopycatState.FOLLOWER);
+      return super.poll(request);
+    } else {
+      return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+        .withId(request.id())
+        .withUri(context.getLocalMember())
+        .withTerm(context.getTerm())
+        .withVoted(false)
+        .build()));
     }
   }
 
@@ -525,7 +541,7 @@ class LeaderState extends ActiveState {
           List<ByteBuffer> entries = new ArrayList<>(1024);
           long index = nextIndex;
           int size = 0;
-          while (size < 1024 * 1024 && index <= context.log().lastIndex()) {
+          while (size < MAX_BATCH_SIZE && index <= context.log().lastIndex()) {
             ByteBuffer entry = context.log().getEntry(index);
             size += entry.limit();
             entries.add(entry);

@@ -27,11 +27,8 @@ import net.kuujo.copycat.state.StateLogConfig;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -46,6 +43,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   private static final int SNAPSHOT_ENTRY = 0;
   private static final int COMMAND_ENTRY = 1;
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
+  private final Consistency defaultConsistency;
   private final SnapshottableLogManager log;
   private Supplier snapshotter;
   private Consumer installer;
@@ -53,6 +51,9 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   public DefaultStateLog(ResourceContext context) {
     super(context);
     this.log = (SnapshottableLogManager) context.log();
+    defaultConsistency = context.config()
+      .<StateLogConfig>getResourceConfig()
+      .getDefaultConsistency();
     context.consumer(this::consume);
   }
 
@@ -73,16 +74,18 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, context.config()
-      .<StateLogConfig>getResourceConfig()
-      .getDefaultConsistency()));
+    Assert.isNotNull(name, "name");
+    Assert.isNotNull(query, "query");
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, defaultConsistency));
     return this;
   }
 
   @Override
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, consistency));
+    Assert.isNotNull(name, "name");
+    Assert.isNotNull(query, "query");
+    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, consistency == null || consistency == Consistency.DEFAULT ? defaultConsistency : consistency));
     return this;
   }
 
@@ -171,51 +174,12 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
         OperationInfo operationInfo = operations.get(commandCode);
         if (operationInfo != null) {
           T value = serializer.readObject(entry.slice());
-          return serializer.writeObject(executeInUserThread(() -> operationInfo.execute(index, value)));
+          return serializer.writeObject(operationInfo.execute(index, value));
         }
         throw new IllegalStateException("Invalid state log operation");
       default:
         throw new IllegalArgumentException("Invalid entry type");
     }
-  }
-
-  /**
-   * Executes a callable in the user's thread.
-   */
-  @SuppressWarnings("unchecked")
-  private <U> U executeInUserThread(Callable<U> callable) {
-    AtomicBoolean complete = new AtomicBoolean();
-    AtomicReference<Object> reference = new AtomicReference<>();
-
-    executor.execute(() -> {
-      synchronized (reference) {
-        try {
-          reference.set(callable.call());
-          complete.set(true);
-          reference.notify();
-        } catch (Exception e) {
-          reference.set(e);
-          complete.set(true);
-          reference.notify();
-        }
-      }
-    });
-
-    synchronized (reference) {
-      try {
-        while (!complete.get()) {
-          reference.wait(1000);
-        }
-      } catch (InterruptedException e) {
-        throw new CopycatException(e);
-      }
-    }
-
-    Object result = reference.get();
-    if (result instanceof Throwable) {
-      throw new CopycatException((Throwable) result);
-    }
-    return (U) result;
   }
 
   /**
@@ -233,7 +197,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
    * Takes a snapshot and compacts the log.
    */
   private void takeSnapshot(long index) {
-    Object snapshot = snapshotter != null ? executeInUserThread(snapshotter::get) : null;
+    Object snapshot = snapshotter != null ? snapshotter.get() : null;
     ByteBuffer snapshotBuffer = serializer.writeObject(snapshot);
     snapshotBuffer.flip();
     ByteBuffer snapshotEntry = ByteBuffer.allocate(snapshotBuffer.limit() + 4);
@@ -254,10 +218,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   private void installSnapshot(ByteBuffer snapshot) {
     if (installer != null) {
       Object value = serializer.readObject(snapshot);
-      executeInUserThread(() -> {
-        installer.accept(value);
-        return null;
-      });
+      installer.accept(value);
     }
   }
 
