@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.election;
 
-import net.kuujo.copycat.ResourceConfig;
+import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.Log;

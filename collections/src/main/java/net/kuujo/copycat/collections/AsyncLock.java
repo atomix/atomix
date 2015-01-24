@@ -14,11 +14,11 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -54,8 +54,8 @@ public interface AsyncLock extends Resource<AsyncLock> {
   static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
     return coordinator.<AsyncLock>getResource(name, config.resolve(cluster))
-      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
-      .withShutdownTask(coordinator::close);
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
   /**

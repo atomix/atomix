@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.Configurable;
+import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.log.LogSegment;
 
 /**

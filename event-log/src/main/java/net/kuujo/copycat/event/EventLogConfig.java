@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.ResourceConfig;
+import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.event.internal.DefaultEventLog;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.log.Log;
 
@@ -101,7 +101,7 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
    * Returns the event log retention policy.
    *
    * @return The event log retention policy.
-   * @throws net.kuujo.copycat.ConfigurationException If the retention policy cannot be instantiated
+   * @throws net.kuujo.copycat.util.ConfigurationException If the retention policy cannot be instantiated
    */
   public RetentionPolicy getRetentionPolicy() {
     Object retentionPolicy = get(EVENT_LOG_RETENTION_POLICY);

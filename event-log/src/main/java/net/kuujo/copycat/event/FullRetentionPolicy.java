@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.AbstractConfigurable;
+import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.log.LogSegment;
 
 import java.util.Map;

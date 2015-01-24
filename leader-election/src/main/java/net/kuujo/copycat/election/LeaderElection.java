@@ -16,12 +16,12 @@
 package net.kuujo.copycat.election;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 
 /**
  * Leader election.
@@ -55,8 +55,8 @@ public interface LeaderElection extends Resource<LeaderElection> {
   static LeaderElection create(String name, String uri, ClusterConfig cluster, LeaderElectionConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
     return coordinator.<LeaderElection>getResource(name, config.resolve(cluster))
-      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
-      .withShutdownTask(coordinator::close);
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
   /**

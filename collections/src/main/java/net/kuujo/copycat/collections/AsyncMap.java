@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.Resource;
+import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 
 /**
  * Asynchronous map.
@@ -60,8 +60,8 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
   static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMapConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
     return coordinator.<AsyncMap<K, V>>getResource(name, config.resolve(cluster))
-      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
-      .withShutdownTask(coordinator::close);
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
 }

@@ -23,6 +23,13 @@ package net.kuujo.copycat;
 public interface Event<T> {
 
   /**
+   * Returns the unique event identifier.
+   *
+   * @return The unique event identifier.
+   */
+  String id();
+
+  /**
    * Returns the event type.
    *
    * @return The event type.

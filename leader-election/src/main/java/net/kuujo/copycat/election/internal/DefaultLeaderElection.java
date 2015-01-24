@@ -16,11 +16,11 @@
 package net.kuujo.copycat.election.internal;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceContext;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.LeaderElection;
-import net.kuujo.copycat.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.AbstractResource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -41,7 +41,7 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
   @Override
   public synchronized LeaderElection addListener(EventListener<Member> listener) {
     if (!listeners.containsKey(listener)) {
-      EventListener<ElectionEvent> wrapper = event -> listener.handle(event.winner());
+      EventListener<ElectionEvent> wrapper = event -> listener.accept(event.winner());
       listeners.put(listener, wrapper);
       context.cluster().election().addListener(wrapper);
     }

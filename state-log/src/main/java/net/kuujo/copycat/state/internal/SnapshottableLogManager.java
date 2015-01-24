@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.state.internal;
 
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.log.LogSegment;

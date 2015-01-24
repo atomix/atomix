@@ -16,9 +16,9 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 
 /**
  * Asynchronous set.
@@ -56,8 +56,8 @@ public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetPr
   static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, AsyncSetConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
     return coordinator.<AsyncSet<T>>getResource(name, config.resolve(cluster))
-      .withStartupTask(() -> coordinator.open().thenApply(v -> null))
-      .withShutdownTask(coordinator::close);
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
 }

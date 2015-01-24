@@ -16,10 +16,10 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.AbstractResource;
-import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 
 /**
  * Asynchronous list.
@@ -57,8 +57,8 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
   static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
     AsyncList<T> list = coordinator.getResource(name, config.resolve(cluster));
-    ((AbstractResource) list).withStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((AbstractResource) list).withShutdownTask(coordinator::close);
+    ((AbstractResource) list).addStartupTask(() -> coordinator.open().thenApply(v -> null));
+    ((AbstractResource) list).addShutdownTask(coordinator::close);
     return list;
   }
 

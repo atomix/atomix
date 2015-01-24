@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.AbstractConfigurable;
-import net.kuujo.copycat.Configurable;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.Configurable;
 
 import java.util.Map;
 

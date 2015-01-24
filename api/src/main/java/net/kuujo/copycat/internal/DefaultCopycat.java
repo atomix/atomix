@@ -17,13 +17,13 @@ package net.kuujo.copycat.internal;
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
-import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.state.StateMachine;
@@ -181,6 +181,11 @@ public class DefaultCopycat implements Copycat {
   @Override
   public synchronized boolean isClosed() {
     return coordinator.isClosed();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[cluster=%s]", getClass().getSimpleName(), cluster());
   }
 
 }

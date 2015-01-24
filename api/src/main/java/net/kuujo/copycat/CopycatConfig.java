@@ -16,9 +16,11 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.internal.Assert;
+import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -154,7 +156,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * Returns the default resource entry serializer.
    *
    * @return The default resource entry serializer.
-   * @throws net.kuujo.copycat.ConfigurationException If the resource serializer configuration is malformed
+   * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
    */
   @SuppressWarnings("unchecked")
   public Serializer getDefaultSerializer() {

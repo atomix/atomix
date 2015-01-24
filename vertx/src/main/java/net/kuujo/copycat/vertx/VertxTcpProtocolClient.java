@@ -17,7 +17,7 @@ package net.kuujo.copycat.vertx;
 
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.Response;
+import net.kuujo.copycat.protocol.rpc.Response;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;

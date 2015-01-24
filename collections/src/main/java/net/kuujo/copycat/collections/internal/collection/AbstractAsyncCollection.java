@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceContext;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.collections.AsyncCollection;
 import net.kuujo.copycat.collections.AsyncCollectionProxy;
-import net.kuujo.copycat.internal.AbstractResource;
-import net.kuujo.copycat.internal.util.concurrent.Futures;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;

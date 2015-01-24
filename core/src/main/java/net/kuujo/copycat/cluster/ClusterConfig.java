@@ -14,8 +14,8 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.AbstractConfigurable;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.protocol.Protocol;
 

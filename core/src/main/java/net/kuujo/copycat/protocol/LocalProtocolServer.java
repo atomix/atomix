@@ -14,8 +14,8 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.internal.util.concurrent.Futures;
-import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
 import java.nio.ByteBuffer;
 import java.util.Map;

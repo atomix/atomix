@@ -15,8 +15,11 @@
  */
 package net.kuujo.copycat.election;
 
-import net.kuujo.copycat.Event;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.Event;
+
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Election event.
@@ -32,6 +35,7 @@ public class ElectionEvent implements ElectionResult, Event<ElectionEvent.Type> 
     COMPLETE
   }
 
+  private final String id = UUID.randomUUID().toString();
   private final Type type;
   private final long term;
   private final Member winner;
@@ -40,6 +44,11 @@ public class ElectionEvent implements ElectionResult, Event<ElectionEvent.Type> 
     this.type = type;
     this.term = term;
     this.winner = winner;
+  }
+
+  @Override
+  public String id() {
+    return id;
   }
 
   @Override
@@ -55,6 +64,21 @@ public class ElectionEvent implements ElectionResult, Event<ElectionEvent.Type> 
   @Override
   public Member winner() {
     return winner;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof ElectionEvent && ((ElectionEvent) object).id.equals(id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, type, term, winner);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, type=%s, term=%d, winner=%s]", getClass().getSimpleName(), id, type, term, winner);
   }
 
 }

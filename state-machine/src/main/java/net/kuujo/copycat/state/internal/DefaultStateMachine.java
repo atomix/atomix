@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.state.internal;
 
-import net.kuujo.copycat.*;
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.internal.AbstractResource;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.ResourceContext;
 import net.kuujo.copycat.state.*;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -94,21 +94,6 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     }
     this.log = new DefaultStateLog<>(context);
     registerCommands();
-  }
-
-  @Override
-  public String name() {
-    return log.name();
-  }
-
-  @Override
-  public Cluster cluster() {
-    return log.cluster();
-  }
-
-  @Override
-  public CopycatState state() {
-    return log.state();
   }
 
   @Override

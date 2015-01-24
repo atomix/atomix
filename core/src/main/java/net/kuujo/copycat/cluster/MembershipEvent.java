@@ -16,7 +16,10 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Event;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.internal.Assert;
+
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Member event.
@@ -33,12 +36,18 @@ public class MembershipEvent implements Event<MembershipEvent.Type> {
     LEAVE
   }
 
+  private final String id = UUID.randomUUID().toString();
   private final Type type;
   private final Member member;
 
   public MembershipEvent(Type type, Member member) {
     this.type = Assert.isNotNull(type, "type");
     this.member = Assert.isNotNull(member, "member");
+  }
+
+  @Override
+  public String id() {
+    return id;
   }
 
   @Override
@@ -53,6 +62,21 @@ public class MembershipEvent implements Event<MembershipEvent.Type> {
    */
   public Member member() {
     return member;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof MembershipEvent && ((MembershipEvent) object).id.equals(id);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, type, member);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[id=%s, type=%s, member=%s]", getClass().getSimpleName(), id, type, member);
   }
 
 }

@@ -57,4 +57,9 @@ public class LocalProtocol extends AbstractProtocol {
     return new LocalProtocolServer(uri.getAuthority(), (Map<String, LocalProtocolServer>) config.get("registry"));
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[registry=%s]", getClass().getSimpleName(), config.get("registry"));
+  }
+
 }

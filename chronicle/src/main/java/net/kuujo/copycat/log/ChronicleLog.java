@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.io.File;
 

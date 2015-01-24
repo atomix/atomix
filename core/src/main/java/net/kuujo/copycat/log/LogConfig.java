@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.AbstractConfigurable;
-import net.kuujo.copycat.Configurable;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.Configurable;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Map;
 

@@ -14,8 +14,9 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.Managed;
+import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.cluster.MessageHandler;
+import net.kuujo.copycat.protocol.rpc.*;
 
 import java.util.concurrent.CompletableFuture;
 

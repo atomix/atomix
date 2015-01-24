@@ -16,11 +16,11 @@
 package net.kuujo.copycat.event.internal;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
-import net.kuujo.copycat.internal.AbstractResource;
 import net.kuujo.copycat.log.LogSegment;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.ResourceContext;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -83,7 +83,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
     result.putLong(index);
     if (consumer != null) {
       T value = serializer.readObject(entry);
-      executor.execute(() -> consumer.handle(value));
+      executor.execute(() -> consumer.accept(value));
     }
     commitIndex = index;
     result.flip();

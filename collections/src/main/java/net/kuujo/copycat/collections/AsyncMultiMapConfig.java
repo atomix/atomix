@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.ResourceConfig;
+import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.Map;

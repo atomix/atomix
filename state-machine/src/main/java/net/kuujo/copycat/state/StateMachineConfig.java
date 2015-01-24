@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.ResourceConfig;
+import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.Consistency;
 
 import java.lang.reflect.Modifier;
@@ -60,7 +60,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
    *
    * @param stateType The state machine state interface.
    * @throws java.lang.NullPointerException If the {@code stateType} is {@code null}
-   * @throws net.kuujo.copycat.ConfigurationException If the given class is not found
+   * @throws net.kuujo.copycat.util.ConfigurationException If the given class is not found
    * @throws java.lang.IllegalArgumentException If the given class is not a valid interface
    */
   public void setStateType(String stateType) {
@@ -86,7 +86,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
    * Returns the state machine state type.
    *
    * @return The state machine state type.
-   * @throws net.kuujo.copycat.ConfigurationException If the configured class is not found
+   * @throws net.kuujo.copycat.util.ConfigurationException If the configured class is not found
    */
   @SuppressWarnings("unchecked")
   public <T> Class<T> getStateType() {
@@ -103,7 +103,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
    * @param stateType The state machine state type.
    * @return The state machine configuration.
    * @throws java.lang.NullPointerException If the {@code stateType} is {@code null}
-   * @throws net.kuujo.copycat.ConfigurationException If the given class is not found
+   * @throws net.kuujo.copycat.util.ConfigurationException If the given class is not found
    * @throws java.lang.IllegalArgumentException If the given class is not a valid interface
    */
   public StateMachineConfig withStateType(String stateType) {
@@ -129,7 +129,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
    *
    * @param initialState The state machine's initial state.
    * @throws java.lang.NullPointerException If the {@code stateType} is {@code null}
-   * @throws net.kuujo.copycat.ConfigurationException If the given class is not found
+   * @throws net.kuujo.copycat.util.ConfigurationException If the given class is not found
    * @throws java.lang.IllegalArgumentException If the given class is not a valid interface
    */
   public void setInitialState(String initialState) {
@@ -157,7 +157,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
    * Returns the state machine's initial state.
    *
    * @return The state machine's initial state.
-   * @throws net.kuujo.copycat.ConfigurationException If the configured class is not found
+   * @throws net.kuujo.copycat.util.ConfigurationException If the configured class is not found
    */
   @SuppressWarnings("unchecked")
   public <T> Class<T> getInitialState() {
@@ -174,7 +174,7 @@ public class StateMachineConfig extends ResourceConfig<StateMachineConfig> {
    * @param initialState The state machine's initial state.
    * @return The state machine configuration.
    * @throws java.lang.NullPointerException If the {@code stateType} is {@code null}
-   * @throws net.kuujo.copycat.ConfigurationException If the given class is not found
+   * @throws net.kuujo.copycat.util.ConfigurationException If the given class is not found
    * @throws java.lang.IllegalArgumentException If the given class is not a valid interface
    */
   public StateMachineConfig withInitialState(String initialState) {

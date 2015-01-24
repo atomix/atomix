@@ -16,10 +16,10 @@
 package net.kuujo.copycat.state.internal;
 
 import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.ResourceContext;
-import net.kuujo.copycat.internal.AbstractResource;
-import net.kuujo.copycat.internal.util.Assert;
-import net.kuujo.copycat.internal.util.concurrent.Futures;
+import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.util.internal.Assert;
+import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.protocol.rpc.*;
 import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;

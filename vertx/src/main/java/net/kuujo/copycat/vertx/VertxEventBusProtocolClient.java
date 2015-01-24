@@ -16,7 +16,7 @@
 package net.kuujo.copycat.vertx;
 
 import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.internal.util.Assert;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
 import org.vertx.java.core.AsyncResult;

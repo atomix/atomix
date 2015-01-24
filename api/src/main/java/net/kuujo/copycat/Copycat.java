@@ -26,6 +26,7 @@ import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.StateMachineConfig;
+import net.kuujo.copycat.util.Managed;
 
 /**
  * Copycat.
