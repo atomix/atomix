@@ -23,7 +23,7 @@
   </parent>
 
   <artifactId>copycat-test-tools</artifactId>
-  <name>Copycat Event Log</name>
+  <name>Copycat Test Tools</name>
 
   <dependencies>
     <dependency>
