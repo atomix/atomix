@@ -172,7 +172,7 @@ public class NettyTcpProtocolServer implements ProtocolServer {
       ByteBuffer request = ByteBuffer.wrap((byte[]) message);
       long requestId = request.getLong();
       if (server.handler != null) {
-        context.channel().eventLoop().submit(() -> server.handler.handle(request.slice()).whenComplete((result, error) -> {
+        context.channel().eventLoop().submit(() -> server.handler.apply(request.slice()).whenComplete((result, error) -> {
           ByteBuffer response = ByteBuffer.allocate(8 + result.capacity());
           response.putLong(requestId);
           response.put(result);

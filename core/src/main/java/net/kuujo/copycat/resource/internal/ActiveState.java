@@ -38,7 +38,7 @@ abstract class ActiveState extends PassiveState {
    */
   protected CompletableFuture<CopycatState> transition(CopycatState state) {
     if (transitionHandler != null) {
-      return transitionHandler.handle(state);
+      return transitionHandler.apply(state);
     }
     return exceptionalFuture(new IllegalStateException("No transition handler registered"));
   }

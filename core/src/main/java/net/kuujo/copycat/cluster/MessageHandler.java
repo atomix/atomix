@@ -15,21 +15,17 @@
 package net.kuujo.copycat.cluster;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
- * Message handler.
+ * Cluster message handler.<p>
+ *
+ * Message handlers a simple extension of {@link java.util.function.Function} which perform asynchronous functions in
+ * response to received messages. Messages handlers should always return a {@link java.util.concurrent.CompletableFuture}
+ * instance even if the future is immediately completed.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface MessageHandler<T, U> {
-
-  /**
-   * Handles a message.
-   *
-   * @param message The message to handle.
-   * @return A completable future to be called with the message response.
-   */
-  CompletableFuture<U> handle(T message);
-
+public interface MessageHandler<T, U> extends Function<T, CompletableFuture<U>> {
 }

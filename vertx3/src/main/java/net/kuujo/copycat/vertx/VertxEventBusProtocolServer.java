@@ -48,7 +48,7 @@ public class VertxEventBusProtocolServer implements ProtocolServer, Handler<Mess
   @Override
   public void handle(Message<byte[]> message) {
     if (handler != null) {
-      handler.handle(ByteBuffer.wrap(message.body())).whenComplete((reply, error) -> {
+      handler.apply(ByteBuffer.wrap(message.body())).whenComplete((reply, error) -> {
         context.runOnContext(v -> {
           if (error != null) {
             message.fail(0, error.getMessage());

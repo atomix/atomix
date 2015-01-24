@@ -557,7 +557,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private <T extends Request, U extends Response> CompletableFuture<U> wrapCall(T request, MessageHandler<T, U> handler) {
     CompletableFuture<U> future = new CompletableFuture<>();
     executor.execute(() -> {
-      handler.handle(request).whenComplete((response, error) -> {
+      handler.apply(request).whenComplete((response, error) -> {
         if (error == null) {
           future.complete(response);
         } else {

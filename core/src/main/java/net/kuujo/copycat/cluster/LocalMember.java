@@ -25,10 +25,19 @@ package net.kuujo.copycat.cluster;
 public interface LocalMember extends Member {
 
   /**
-   * Registers a message type registerHandler on the local member.
+   * Registers a message handler on the local member.<p>
    *
-   * @param topic The topic to handle.
-   * @param handler The message registerHandler.
+   * The message handler can be used to receive direct messages from other members of the resource cluster. Messages
+   * are sent between members of the cluster using a topic based messaging system. Handlers registered on this local
+   * member instance apply only to messaging within the resource to which the cluster belongs. Message handlers
+   * registered on other resource clusters cannot receive messages from members in this cluster and vice versa. Only
+   * one handler for any given topic for a cluster can be registered at any given time.
+   *
+   * @param topic The topic for which to register the handler. Messages sent to this member via the given topic will
+   *              be handled by the given message handler.
+   * @param handler The message handler to register. This handler will be invoked whenever a message is received for
+   *                the given topic. The message handler should return a {@link java.util.concurrent.CompletableFuture}
+   *                that will be completed with the message response.
    * @param <T> The request message type.
    * @param <U> The response message type.
    * @return The local member.
@@ -36,9 +45,9 @@ public interface LocalMember extends Member {
   <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler);
 
   /**
-   * Unregisters a message type registerHandler on the local member.
+   * Unregisters a message handler on the local member.
    *
-   * @param topic The topic to handle.
+   * @param topic The topic for which to unregister the handler.
    * @return The local member.
    */
   LocalMember unregisterHandler(String topic);

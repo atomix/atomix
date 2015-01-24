@@ -145,7 +145,7 @@ public class VertxTcpProtocolServer implements ProtocolServer {
    */
   private void handleRequest(final Object id, final NetSocket socket, ByteBuffer request) {
     if (handler != null) {
-      handler.handle(request).whenComplete((response, error) -> respond(socket, id, response, error));
+      handler.apply(request).whenComplete((response, error) -> respond(socket, id, response, error));
     }
   }
 

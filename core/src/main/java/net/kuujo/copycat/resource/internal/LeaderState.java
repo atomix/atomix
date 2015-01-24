@@ -477,7 +477,7 @@ class LeaderState extends ActiveState {
         .withCommitIndex(context.getCommitIndex())
         .build();
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
-      pingHandler.handle(request).whenCompleteAsync((response, error) -> {
+      pingHandler.apply(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen()) {
           if (error != null) {
@@ -573,7 +573,7 @@ class LeaderState extends ActiveState {
         .build();
 
       LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
-      appendHandler.handle(request).whenCompleteAsync((response, error) -> {
+      appendHandler.apply(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         committing = false;
         if (isOpen()) {

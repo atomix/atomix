@@ -129,7 +129,7 @@ public class PassiveState extends AbstractState {
     if (!requireEntries || !entries.isEmpty()) {
       LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember(), member.getUri());
 
-      syncHandler.handle(SyncRequest.builder()
+      syncHandler.apply(SyncRequest.builder()
         .withId(UUID.randomUUID().toString())
         .withUri(member.getUri())
         .withLeader(context.getLeader())
@@ -272,7 +272,7 @@ public class PassiveState extends AbstractState {
         .withError(new IllegalStateException("Not the leader"))
         .build()));
     } else {
-      return queryHandler.handle(QueryRequest.builder(request).withUri(context.getLeader()).build());
+      return queryHandler.apply(QueryRequest.builder(request).withUri(context.getLeader()).build());
     }
   }
 
@@ -288,7 +288,7 @@ public class PassiveState extends AbstractState {
         .withError(new IllegalStateException("Not the leader"))
         .build()));
     } else {
-      return commitHandler.handle(CommitRequest.builder(request).withUri(context.getLeader()).build());
+      return commitHandler.apply(CommitRequest.builder(request).withUri(context.getLeader()).build());
     }
   }
 

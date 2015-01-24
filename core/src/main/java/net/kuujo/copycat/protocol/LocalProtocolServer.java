@@ -49,7 +49,7 @@ public class LocalProtocolServer implements ProtocolServer {
       return Futures.exceptionalFuture(new ProtocolException("No protocol handler registered"));
     }
     return CompletableFuture.supplyAsync(() -> handler, executor)
-      .thenComposeAsync(handler -> handler.handle(request))
+      .thenComposeAsync(handler -> handler.apply(request))
       .thenApply(response -> {
         response.rewind();
         return response;

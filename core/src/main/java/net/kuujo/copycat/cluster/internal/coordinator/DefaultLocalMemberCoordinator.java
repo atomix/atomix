@@ -17,10 +17,10 @@ package net.kuujo.copycat.cluster.internal.coordinator;
 
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.internal.MemberInfo;
-import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -64,7 +64,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
         MessageHandler<ByteBuffer, ByteBuffer> handler = addressHandlers.get(id);
         if (handler != null) {
           return CompletableFuture.completedFuture(null)
-            .thenComposeAsync(v -> handler.handle(message), executor)
+            .thenComposeAsync(v -> handler.apply(message), executor)
             .thenApplyAsync(v -> v, executor);
         }
       }
@@ -121,7 +121,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
       if (addressHandlers != null) {
         MessageHandler<ByteBuffer, ByteBuffer> handler = addressHandlers.get(request.getInt());
         if (handler != null) {
-          return CompletableFuture.runAsync(() -> {}, executor).thenCompose(v -> handler.handle(request.slice()));
+          return CompletableFuture.runAsync(() -> {}, executor).thenCompose(v -> handler.apply(request.slice()));
         }
       }
     }

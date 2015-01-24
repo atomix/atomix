@@ -46,7 +46,7 @@ public class CoordinatedLocalMember extends CoordinatedMember implements LocalMe
     return message -> {
       CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
       executor.execute(() -> {
-        handler.handle(serializer.readObject(message)).whenComplete((result, error) -> {
+        handler.apply(serializer.readObject(message)).whenComplete((result, error) -> {
           if (error == null) {
             future.complete(serializer.writeObject(result));
           } else {

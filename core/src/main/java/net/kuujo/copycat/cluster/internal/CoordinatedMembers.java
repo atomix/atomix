@@ -110,4 +110,30 @@ public class CoordinatedMembers implements Members {
     return this;
   }
 
+  @Override
+  public Members removeListener(EventListener<MembershipEvent> listener) {
+    cluster.removeMembershipListener(listener);
+    return this;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    if (object instanceof CoordinatedMembers) {
+      return ((CoordinatedMembers) object).members.equals(members);
+    } else if (object instanceof Collection) {
+      return object.equals(members);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+    return members.hashCode();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s%s", getClass().getSimpleName(), members);
+  }
+
 }

@@ -26,7 +26,12 @@ import java.util.concurrent.CompletableFuture;
 public interface Member {
 
   /**
-   * Member type.
+   * Cluster member type.<p>
+   *
+   * The member type indicates how cluster members behave in terms of joining and leaving the cluster and how the
+   * members participate in log replication. {@link Type#ACTIVE} members are full voting members of the cluster that
+   * participate in Copycat's consensus protocol. {@link Type#PASSIVE} members may join and leave the cluster at will
+   * without impacting the availability of a resource and receive only committed log entries via a gossip protocol.
    */
   public static enum Type {
 
@@ -43,7 +48,15 @@ public interface Member {
   }
 
   /**
-   * Member state.
+   * Cluster member state.<p>
+   *
+   * The member state indicates how a given member is perceived by the local node. Members can be in one of three states
+   * at any given time, {@link State#ALIVE}, {@link State#SUSPICIOUS}, and {@link State#DEAD}. Member states are changed
+   * according to the local node's ability to communicate with a given member. All members begin with an
+   * {@link State#ALIVE} state upon joining the cluster. If the member appears to be unreachable, its state will be
+   * changed to {@link State#SUSPICIOUS}, indicating that it may have left the cluster or died. Once enough other nodes
+   * in the cluster agree that the suspicious member appears to be dead, the state will be changed to {@link State#DEAD}
+   * and the member will ultimately be removed from the cluster configuration.
    */
   public static enum State {
 
@@ -86,10 +99,15 @@ public interface Member {
   State state();
 
   /**
-   * Sends a message to the member.
+   * Sends a message to the member.<p>
    *
-   * @param topic The message topic.
-   * @param message The message to send.
+   * Messages are sent using a topic based messaging system over the configured cluster protocol. If no handler is
+   * registered for the given topic on the given member, the returned {@link java.util.concurrent.CompletableFuture}
+   * will be failed. If the member successfully receives the message and responds, the returned
+   * {@link java.util.concurrent.CompletableFuture} will be completed with the member's response.
+   *
+   * @param topic The topic on which to send the message.
+   * @param message The message to send. Messages will be serialized using the configured resource serializer.
    * @param <T> The message type.
    * @param <U> The response type.
    * @return A completable future to be completed with the message response.
@@ -105,9 +123,9 @@ public interface Member {
   CompletableFuture<Void> execute(Task<Void> task);
 
   /**
-   * Submits a task to the member.
+   * Submits a task to the member, returning a future to be completed with the remote task result.
    *
-   * @param task The task to commit on the member.
+   * @param task The task to submit to the member.
    * @param <T> The task return type.
    * @return A completable future to be completed with the task result.
    */

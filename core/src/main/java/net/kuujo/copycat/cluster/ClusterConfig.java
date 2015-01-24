@@ -25,7 +25,26 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Cluster configuration.
+ * Copycat cluster configuration.<p>
+ *
+ * The cluster configuration defines how Copycat communicates with other nodes and defines the set of full voting
+ * members of the Raft cluster.<p>
+ *
+ * Most importantly, users should explicitly configure the {@link net.kuujo.copycat.protocol.Protocol} for the Copycat
+ * cluster in all scenarios except testing. By default, the configuration uses a
+ * {@link net.kuujo.copycat.protocol.LocalProtocol}, but users should use a network based protocol according to the
+ * environment in which Copycat is being run.<p>
+ *
+ * Members of the Copycat cluster are specified by providing member URIs. URIs must agree with the configured protocol
+ * when they are added to the configuration.<p>
+ *
+ * <pre>
+ *   {@code
+ *     ClusterConfig cluster = new ClusterConfig()
+ *       .withProtocol(new VertxEventBusProtocol(vertx))
+ *       .withMembers("eventbus://foo", "eventbus://bar", "eventbus://baz");
+ *   }
+ * </pre>
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

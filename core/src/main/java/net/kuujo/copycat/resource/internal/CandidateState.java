@@ -124,7 +124,7 @@ class CandidateState extends ActiveState {
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
-      pollHandler.handle(request).whenCompleteAsync((response, error) -> {
+      pollHandler.apply(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
