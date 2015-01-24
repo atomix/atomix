@@ -18,10 +18,14 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
+import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.event.EventLog;
+import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.internal.DefaultCopycat;
 import net.kuujo.copycat.state.StateLog;
+import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.state.StateMachineConfig;
 
 /**
  * Copycat.
@@ -71,18 +75,38 @@ public interface Copycat extends Managed<Copycat> {
    *
    * @param name The name of the event log to create.
    * @param <T> the event log entry type.
-   * @return A completable future to be completed once the event log has been created.
+   * @return The event log instance.
    */
   <T> EventLog<T> eventLog(String name);
+
+  /**
+   * Creates a new event log.
+   *
+   * @param name The name of the event log to create.
+   * @param config The event log configuration.
+   * @param <T> The event log entry type.
+   * @return The event log instance.
+   */
+  <T> EventLog<T> eventLog(String name, EventLogConfig config);
 
   /**
    * Creates a new state log.
    *
    * @param name The name of the state log to create.
    * @param <T> The state log entry type.
-   * @return A completable future to be completed once the state log has been created.
+   * @return The state log instance.
    */
   <T> StateLog<T> stateLog(String name);
+
+  /**
+   * Creates a new state log.
+   *
+   * @param name The name of the state log to create.
+   * @param config The state log configuration.
+   * @param <T> The state log entry type.
+   * @return The state log instance.
+   */
+  <T> StateLog<T> stateLog(String name, StateLogConfig config);
 
   /**
    * Creates a new replicated state machine.
@@ -91,17 +115,36 @@ public interface Copycat extends Managed<Copycat> {
    * @param stateType The state machine state type.
    * @param initialState The state machine's initial state.
    * @param <T> The state machine state type.
-   * @return A completable future to be completed once the state machine has been created.
+   * @return The state machine instance.
    */
-  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState);
+  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, Class<? extends T> initialState);
+
+  /**
+   * Creates a new replicated state machine.
+   *
+   * @param name The name of the state machine to create.
+   * @param config The state machine configuration.
+   * @param <T> The state machine state type.
+   * @return The state machine instance.
+   */
+  <T> StateMachine<T> stateMachine(String name, StateMachineConfig config);
 
   /**
    * Creates a new leader election.
    *
    * @param name The leader election name.
-   * @return A completable future to be completed once the leader election has been created.
+   * @return The leader election instance.
    */
   LeaderElection leaderElection(String name);
+
+  /**
+   * Creates a new leader election.
+   *
+   * @param name The leader election name.
+   * @param config The leader election configuration.
+   * @return The leader election instance.
+   */
+  LeaderElection leaderElection(String name, LeaderElectionConfig config);
 
   /**
    * Creates a named asynchronous map.
@@ -109,9 +152,20 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The map name.
    * @param <K> The map key type.
    * @param <V> The map value type.
-   * @return A completable future to be completed once the asynchronous map has been created.
+   * @return The asynchronous map instance.
    */
   <K, V> AsyncMap<K, V> map(String name);
+
+  /**
+   * Creates a named asynchronous map.
+   *
+   * @param name The map name.
+   * @param config The map configuration.
+   * @param <K> The map key type.
+   * @param <V> The map value type.
+   * @return The asynchronous map instance.
+   */
+  <K, V> AsyncMap<K, V> map(String name, AsyncMapConfig config);
 
   /**
    * Creates a named asynchronous multimap.
@@ -119,34 +173,74 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The multimap name.
    * @param <K> The map key type.
    * @param <V> The map entry type.
-   * @return A completable future to be completed once the asynchronous multimap has been created.
+   * @return The asynchronous multimap instance.
    */
   <K, V> AsyncMultiMap<K, V> multiMap(String name);
+
+  /**
+   * Creates a named asynchronous multimap.
+   *
+   * @param name The multimap name.
+   * @param config The multimap configuration.
+   * @param <K> The map key type.
+   * @param <V> The map entry type.
+   * @return The asynchronous multimap instance.
+   */
+  <K, V> AsyncMultiMap<K, V> multiMap(String name, AsyncMultiMapConfig config);
 
   /**
    * Creates a named asynchronous list.
    *
    * @param name The list name.
    * @param <T> The list entry type.
-   * @return A completable future to be completed once the asynchronous list has been created.
+   * @return The asynchronous list instance.
    */
   <T> AsyncList<T> list(String name);
+
+  /**
+   * Creates a named asynchronous list.
+   *
+   * @param name The list name.
+   * @param config The list configuration.
+   * @param <T> The list entry type.
+   * @return The asynchronous list instance.
+   */
+  <T> AsyncList<T> list(String name, AsyncListConfig config);
 
   /**
    * Creates a named asynchronous set.
    *
    * @param name The set name.
    * @param <T> The set entry type.
-   * @return A completable future to be completed once the asynchronous set has been created.
+   * @return The asynchronous set instance.
    */
   <T> AsyncSet<T> set(String name);
+
+  /**
+   * Creates a named asynchronous set.
+   *
+   * @param name The set name.
+   * @param config The set configuration.
+   * @param <T> The set entry type.
+   * @return The asynchronous set instance.
+   */
+  <T> AsyncSet<T> set(String name, AsyncSetConfig config);
 
   /**
    * Creates a named asynchronous lock.
    *
    * @param name The lock name.
-   * @return A completable future to be completed once the asynchronous lock has been created.
+   * @return The asynchronous lock instance.
    */
   AsyncLock lock(String name);
+
+  /**
+   * Creates a named asynchronous lock.
+   *
+   * @param name The lock name.
+   * @param config The lock configuration.
+   * @return The asynchronous lock instance.
+   */
+  AsyncLock lock(String name, AsyncLockConfig config);
 
 }

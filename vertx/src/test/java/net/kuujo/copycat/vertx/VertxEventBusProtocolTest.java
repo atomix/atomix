@@ -21,7 +21,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.event.SizeBasedRetentionPolicy;
-import net.kuujo.copycat.event.ZeroRetentionPolicy;
 import net.kuujo.copycat.log.BufferedLog;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
@@ -97,15 +96,15 @@ public class VertxEventBusProtocolTest extends TestVerticle {
           // Configure Copycat with the event bus cluster and Vert.x event loop executor.
           CopycatConfig config = new CopycatConfig()
             .withClusterConfig(cluster)
-            .withExecutor(new VertxEventLoopExecutor(vertx));
+            .withDefaultExecutor(new VertxEventLoopExecutor(vertx));
 
           // Add the event log resource configuration with a Vert.x event loop executor to the Copycat instance.
-          config.addEventLogConfig("log", new EventLogConfig()
+          EventLogConfig eventLogConfig = new EventLogConfig()
             .withLog(new BufferedLog()
               .withFlushInterval(1000 * 60)
               .withSegmentSize(1024 * 1024))
             .withExecutor(new VertxEventLoopExecutor(vertx))
-            .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 32)));
+            .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 32));
 
           // Create and open a new Copycat instance.
           copycat = Copycat.create(String.format("eventbus://%s", container.config().getString("address")), config);
@@ -115,7 +114,7 @@ public class VertxEventBusProtocolTest extends TestVerticle {
             } else {
 
               // Create and open a new event log instance and register an event consumer.
-              copycat.<String>eventLog("log").open().whenComplete((log, error) -> {
+              copycat.<String>eventLog("log", eventLogConfig).open().whenComplete((log, error) -> {
                 if (error != null) {
                   startResult.setFailure(error);
                 } else {

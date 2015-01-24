@@ -54,8 +54,8 @@ public interface EventLog<T> extends Resource<EventLog<T>> {
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, EventLogConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    return coordinator.<EventLog<T>>getResource(name)
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
+    return coordinator.<EventLog<T>>getResource(name, config.resolve(cluster))
       .withStartupTask(() -> coordinator.open().thenApply(v -> null))
       .withShutdownTask(coordinator::close);
   }

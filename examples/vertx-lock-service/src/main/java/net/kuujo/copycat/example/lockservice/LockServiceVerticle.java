@@ -74,16 +74,18 @@ public class LockServiceVerticle extends Verticle implements Handler<Message<Jso
         // Configure Copycat with the event bus cluster and Vert.x event loop executor.
         CopycatConfig config = new CopycatConfig()
           .withClusterConfig(cluster)
-          .withExecutor(new VertxEventLoopExecutor(vertx));
+          .withDefaultExecutor(new VertxEventLoopExecutor(vertx));
 
         // Add the state machine resource configuration with a Vert.x event loop executor to the Copycat configuration.
         // Configure the state machine with a persistent log that synchronously flushes to disk on every write.
-        config.addStateMachineConfig("lock", new StateMachineConfig()
+        StateMachineConfig stateMachineConfig = new StateMachineConfig()
+          .withStateType(LockState.class)
+          .withInitialState(UnlockedLockState.class)
           .withLog(new FileLog()
             .withDirectory(new File(System.getProperty("java.io.tmpdir"), "lock"))
             .withFlushOnWrite(true)
             .withSegmentSize(1024 * 1024 * 32))
-          .withExecutor(new VertxEventLoopExecutor(vertx)));
+          .withExecutor(new VertxEventLoopExecutor(vertx));
 
         // Create and open a new Copycat instance. The Copycat instance controls the cluster of verticles and manages
         // resources within the cluster - in this case just a single state machine.
@@ -102,7 +104,7 @@ public class LockServiceVerticle extends Verticle implements Handler<Message<Jso
             // Create and open a new state machine instance and create a lock proxy for submitting state machine
             // commands and queries to the cluster. When the state machine is opened, the state machine will communicate
             // with other nodes in the Copycat instance cluster to elect a leader and begin replicating the state log.
-            copycat.stateMachine("lock", LockState.class, new UnlockedLockState()).open().whenComplete((stateMachine, error) -> {
+            copycat.<LockState>stateMachine("lock", stateMachineConfig).open().whenComplete((stateMachine, error) -> {
               if (error != null) {
                 startResult.setFailure(error);
               } else {

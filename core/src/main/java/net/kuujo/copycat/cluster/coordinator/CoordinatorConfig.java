@@ -16,12 +16,10 @@
 package net.kuujo.copycat.cluster.coordinator;
 
 import net.kuujo.copycat.AbstractConfigurable;
-import net.kuujo.copycat.Configurable;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.internal.util.Assert;
 import net.kuujo.copycat.internal.util.concurrent.NamedThreadFactory;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -34,7 +32,6 @@ import java.util.concurrent.Executors;
 public class CoordinatorConfig extends AbstractConfigurable {
   public static final String COORDINATOR_NAME = "name";
   public static final String COORDINATOR_CLUSTER = "cluster";
-  public static final String COORDINATOR_RESOURCES = "resources";
   public static final String COORDINATOR_EXECUTOR = "executor";
 
   private static final String DEFAULT_COORDINATOR_NAME = "copycat";
@@ -116,96 +113,6 @@ public class CoordinatorConfig extends AbstractConfigurable {
    */
   public CoordinatorConfig withClusterConfig(ClusterConfig config) {
     setClusterConfig(config);
-    return this;
-  }
-
-  /**
-   * Sets the Copycat resource configurations.
-   *
-   * @param configs The Copycat resource configurations.
-   * @throws java.lang.NullPointerException If {@code configs} is {@code null}
-   */
-  public void setResourceConfigs(Map<String, CoordinatedResourceConfig> configs) {
-    Assert.isNotNull(configs, "configs");
-    Map<String, Map<String, Object>> resources = new HashMap<>(configs.size());
-    for (Map.Entry<String, CoordinatedResourceConfig> entry : configs.entrySet()) {
-      resources.put(entry.getKey(), entry.getValue().toMap());
-    }
-    put(COORDINATOR_RESOURCES, resources);
-  }
-
-  /**
-   * Returns the Copycat resource configurations.
-   *
-   * @return The Copycat resource configurations.
-   */
-  public Map<String, CoordinatedResourceConfig> getResourceConfigs() {
-    Map<String, Map<String, Object>> resources = get(COORDINATOR_RESOURCES, new HashMap<>());
-    Map<String, CoordinatedResourceConfig> configs = new HashMap<>(resources.size());
-    for (Map.Entry<String, Map<String, Object>> entry : resources.entrySet()) {
-      configs.put(entry.getKey(), Configurable.load(entry.getValue()));
-    }
-    return configs;
-  }
-
-  /**
-   * Sets the Copycat resource configurations, returning the Copycat configuration for method chaining.
-   *
-   * @param configs The Copycat resource configurations.
-   * @return The Copycat configuration.
-   * @throws java.lang.NullPointerException If {@code configs} is {@code null}
-   */
-  public CoordinatorConfig withResourceConfigs(Map<String, CoordinatedResourceConfig> configs) {
-    setResourceConfigs(configs);
-    return this;
-  }
-
-  /**
-   * Adds a resource configuration, returning the Copycat configuration for method chaining.
-   *
-   * @param name The resource name.
-   * @param config The resource configuration.
-   * @return The Copycat configuration.
-   * @throws java.lang.NullPointerException If {@code name} or {@code config} is {@code null}
-   */
-  public CoordinatorConfig addResourceConfig(String name, CoordinatedResourceConfig config) {
-    Assert.isNotNull(name, "name");
-    Assert.isNotNull(config, "config");
-    Map<String, Map<String, Object>> resources = get(COORDINATOR_RESOURCES);
-    if (resources == null) {
-      resources = new HashMap<>();
-      put(COORDINATOR_RESOURCES, resources);
-    }
-    resources.put(name, config.toMap());
-    return this;
-  }
-
-  /**
-   * Gets a resource configuration.
-   *
-   * @param name The resource name.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the resource {@code name} is {@code null}
-   */
-  public CoordinatedResourceConfig getResourceConfig(String name) {
-    return get(Assert.isNotNull(name, "name"), new CoordinatedResourceConfig());
-  }
-
-  /**
-   * Removes a resource configuration, returning the Copycat configuration for method chaining.
-   *
-   * @param name The resource name.
-   * @return The Copycat configuration.
-   * @throws java.lang.NullPointerException If {@code name} is {@code null}
-   */
-  public CoordinatorConfig removeResourceConfig(String name) {
-    Map<String, Map<String, Object>> resources = get(COORDINATOR_RESOURCES);
-    if (resources != null) {
-      resources.remove(Assert.isNotNull(name, "name"));
-      if (resources.isEmpty()) {
-        remove(COORDINATOR_RESOURCES);
-      }
-    }
     return this;
   }
 

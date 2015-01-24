@@ -27,19 +27,15 @@ Copycat also provides integration with asynchronous networking frameworks like [
 [Vert.x](http://vertx.io).
 
 **Copycat is still undergoing heavy development. The `master` branch is the current development branch and is
-largely untested and thus not recommended for production.** We need contributions! We accept failing tests and
-[Butterfinger&reg;](http://www.butterfinger.com/).
+largely untested and thus not recommended for production.** We need contributions!
 
-A beta release of Copycat *will* be published to Maven Central once it is feature complete and well tested. Follow
-the project for updates!
+**Copycat snapshots are now being published! An official beta release of Copycat *will* be published to Maven Central
+once it is feature complete and well tested.** Follow the project for updates!
 
 *Copycat requires Java 8*
 
 User Manual
 ===========
-
-**Note: Some of this documentation may be inaccurate due to the rapid development currently
-taking place on Copycat**
 
 1. [Introduction](#introduction)
 1. [Getting started](#getting-started)
@@ -292,31 +288,19 @@ can maintain consistency across multiple resources within the same cluster.
 
 ### Configuring resources
 
-It's important to note that *all cluster resources must be configured prior to opening the Copycat instance.* This is
-because Copycat needs a full view of the cluster's resources in order to properly configure and open various resources
-internally. For instance, if a state log is created on node *a* in a three node cluster, nodes *b* and *c* also need
-to create the same log in order to support replication.
-
 Each of Copycat's resource types - `EventLog`, `StateLog`, `StateMachine`, etc - has an associated `Config` class.
 This configuration class is used to configure various attributes of the resource, including Raft-specific configuration
 options such as election timeouts and heartbeat intervals as well as resource specific configuration options. Each of
-these configuration classes can then be added to the global `CopycatConfig` prior to startup.
+these configuration classes can be used to configure their respective resources when the resources are created
 
 ```java
-CopycatConfig config = new CopycatConfig()
-  .withClusterConfig(new ClusterConfig()
-    .withProtocol(new NettyTcpProtocol())
-    .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2"));
-
-config.addEventLogConfig("event-log", new EventLogConfig()
+EventLogConfig config = new EventLogConfig()
   .withSerializer(KryoSerializer.class)
   .withLog(new FileLog()
-    .withSegmentSize(1024 * 1024);
-```
+    .withSegmentSize(1024 * 1024));
 
-The first argument to any `addResourceConfig` type method is always the unique resource name. Resource names are unique
-across the entire cluster, not just for the specific resource type. So, if you attempt to overwrite an existing
-resource configuration with a resource configuration of a different type, a `ConfigurationException` will occur.
+EventLog<String> eventLog = copycat.eventLog("event-log", config);
+```
 
 Each resource can optionally define a set of replicas separate from the global cluster configuration. The set of
 replicas in the resource configuration *must be contained within the set of active members defined in the cluster
@@ -328,13 +312,23 @@ only three replicas, writes will only need to be persisted on two nodes in order
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(new ClusterConfig()
     .withProtocol(new NettyTcpProtocol())
-    .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2", "tcp://123.456.789.3", "tcp://123.456.789.4"));
+    .withMembers(
+      "tcp://123.456.789.0:1234",
+      "tcp://123.456.789.1:1234",
+      "tcp://123.456.789.2:1234",
+      "tcp://123.456.789.3:1234",
+      "tcp://123.456.789.4:1234"
+    ));
 
-config.addEventLogConfig("event-log", new EventLogConfig()
+Copycat copycat = Copycat.create("tcp://123.456.789.1:1234", config).open().get();
+
+EventLogConfig eventLogConfig = new EventLogConfig()
   .withSerializer(KryoSerializer.class)
-  .withReplicas("tcp://123.456.789.1", "tcp://123.456.789.2", "tcp://123.456.789.3")
+  .withReplicas("tcp://123.456.789.1:1234", "tcp://123.456.789.2:1234", "tcp://123.456.789.3:1234")
   .withLog(new FileLog()
-    .withSegmentSize(1024 * 1024);
+    .withSegmentSize(1024 * 1024));
+
+EventLog<String> eventLog = copycat.eventLog("event-log", eventLogConfig);
 ```
 
 
@@ -352,12 +346,13 @@ CopycatConfig config = new CopycatConfig()
       "tcp://123.456.789.1:5000",
       "tcp://123.456.789.2:5000",
       "tcp://123.456.789.3:5000",
-      "tcp://123.456.789.4:5000"))
-  .addResource("event-log", new EventLogConfig()
-    .withReplicas(
-      "tcp://123.456.789.1:5000",
-      "tcp://123.456.789.2:5000",
-      "tcp://123.456.789.3:5000"));
+      "tcp://123.456.789.4:5000"));
+
+EventLogConfig eventLogConfig = new EventLogConfig()
+  .withReplicas(
+    "tcp://123.456.789.1:5000",
+    "tcp://123.456.789.2:5000",
+    "tcp://123.456.789.3:5000"));
 ```
 
 #### Log configuration

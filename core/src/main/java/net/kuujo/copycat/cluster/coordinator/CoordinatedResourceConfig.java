@@ -46,7 +46,9 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   private static final long DEFAULT_RESOURCE_HEARTBEAT_INTERVAL = 150;
   private static final Set<String> DEFAULT_RESOURCE_REPLICAS = new HashSet<>();
   private static final Log DEFAULT_RESOURCE_LOG = new BufferedLog();
-  private final Serializer DEFAULT_RESOURCE_SERIALIZER = new KryoSerializer();
+
+  private Serializer defaultSerializer = new KryoSerializer();
+  private Executor defaultExecutor;
 
   public CoordinatedResourceConfig() {
     super();
@@ -397,6 +399,38 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   }
 
   /**
+   * Sets the default resource entry serializer.
+   *
+   * @param serializer The default resource entry serializer.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  public void setDefaultSerializer(Serializer serializer) {
+    this.defaultSerializer = serializer;
+  }
+
+  /**
+   * Returns the default resource entry serializer.
+   *
+   * @return The default resource entry serializer.
+   * @throws net.kuujo.copycat.ConfigurationException If the resource serializer configuration is malformed
+   */
+  public Serializer getDefaultSerializer() {
+    return defaultSerializer;
+  }
+
+  /**
+   * Sets the default resource entry serializer, returning the configuration for method chaining.
+   *
+   * @param serializer The default resource entry serializer.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the serializer is {@code null}
+   */
+  public CoordinatedResourceConfig withDefaultSerializer(Serializer serializer) {
+    setDefaultSerializer(serializer);
+    return this;
+  }
+
+  /**
    * Sets the resource entry serializer.
    *
    * @param serializer The resource entry serializer.
@@ -414,7 +448,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    */
   @SuppressWarnings("unchecked")
   public Serializer getSerializer() {
-    return get(RESOURCE_SERIALIZER, DEFAULT_RESOURCE_SERIALIZER);
+    return get(RESOURCE_SERIALIZER, defaultSerializer);
   }
 
   /**
@@ -426,6 +460,35 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    */
   public CoordinatedResourceConfig withSerializer(Serializer serializer) {
     setSerializer(serializer);
+    return this;
+  }
+
+  /**
+   * Sets the default resource executor.
+   *
+   * @param executor The default resource executor.
+   */
+  public void setDefaultExecutor(Executor executor) {
+    this.defaultExecutor = executor;
+  }
+
+  /**
+   * Returns the default resource executor.
+   *
+   * @return The default resource executor or {@code null} if no executor was specified.
+   */
+  public Executor getDefaultExecutor() {
+    return defaultExecutor;
+  }
+
+  /**
+   * Sets the resource executor, returning the configuration for method chaining.
+   *
+   * @param executor The resource executor.
+   * @return The resource configuration.
+   */
+  public CoordinatedResourceConfig withDefaultExecutor(Executor executor) {
+    setDefaultExecutor(executor);
     return this;
   }
 
@@ -444,7 +507,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource executor or {@code null} if no executor was specified.
    */
   public Executor getExecutor() {
-    return get(RESOURCE_EXECUTOR);
+    return get(RESOURCE_EXECUTOR, defaultExecutor);
   }
 
   /**

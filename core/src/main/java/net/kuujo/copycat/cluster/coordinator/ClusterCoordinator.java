@@ -74,4 +74,15 @@ public interface ClusterCoordinator extends Managed<ClusterCoordinator> {
    */
   <T extends Resource<T>> T getResource(String name);
 
+  /**
+   * Gets a cluster resource.
+   *
+   * @param name The resource name.
+   * @param config The resource configuration.
+   * @param <T> The resource type.
+   * @return The resource instance.
+   * @throws net.kuujo.copycat.ConfigurationException If the resource does not exist
+   */
+  <T extends Resource<T>> T getResource(String name, CoordinatedResourceConfig config);
+
 }

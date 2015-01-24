@@ -14,15 +14,20 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.*;
+import net.kuujo.copycat.Copycat;
+import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
+import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.event.EventLog;
+import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.internal.cluster.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.state.StateLog;
+import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.state.StateMachineConfig;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -52,47 +57,110 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> EventLog<T> eventLog(String name) {
-    return coordinator.getResource(name);
+    return eventLog(name, new EventLogConfig());
+  }
+
+  @Override
+  public <T> EventLog<T> eventLog(String name, EventLogConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
   public <T> StateLog<T> stateLog(String name) {
-    return null;
+    return stateLog(name, new StateLogConfig());
   }
 
   @Override
-  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, T initialState) {
-    return coordinator.getResource(name);
+  public <T> StateLog<T> stateLog(String name, StateLogConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
+  }
+
+  @Override
+  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, Class<? extends T> initialState) {
+    return stateMachine(name, new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
+  }
+
+  @Override
+  public <T> StateMachine<T> stateMachine(String name, StateMachineConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
   public LeaderElection leaderElection(String name) {
-    return coordinator.getResource(name);
+    return leaderElection(name, new LeaderElectionConfig());
+  }
+
+  @Override
+  public LeaderElection leaderElection(String name, LeaderElectionConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
   public <K, V> AsyncMap<K, V> map(String name) {
-    return coordinator.getResource(name);
+    return map(name, new AsyncMapConfig());
+  }
+
+  @Override
+  public <K, V> AsyncMap<K, V> map(String name, AsyncMapConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
   public <K, V> AsyncMultiMap<K, V> multiMap(String name) {
-    return coordinator.getResource(name);
+    return multiMap(name, new AsyncMultiMapConfig());
+  }
+
+  @Override
+  public <K, V> AsyncMultiMap<K, V> multiMap(String name, AsyncMultiMapConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
   public <T> AsyncList<T> list(String name) {
-    return coordinator.getResource(name);
+    return list(name, new AsyncListConfig());
+  }
+
+  @Override
+  public <T> AsyncList<T> list(String name, AsyncListConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
   public <T> AsyncSet<T> set(String name) {
-    return coordinator.getResource(name);
+    return set(name, new AsyncSetConfig());
+  }
+
+  @Override
+  public <T> AsyncSet<T> set(String name, AsyncSetConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
   public AsyncLock lock(String name) {
-    return coordinator.getResource(name);
+    return lock(name, new AsyncLockConfig());
+  }
+
+  @Override
+  public AsyncLock lock(String name, AsyncLockConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override

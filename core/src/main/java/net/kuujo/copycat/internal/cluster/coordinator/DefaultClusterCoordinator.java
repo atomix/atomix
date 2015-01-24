@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.internal.cluster.coordinator;
 
-import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Resource;
 import net.kuujo.copycat.ResourceContext;
 import net.kuujo.copycat.cluster.Cluster;
@@ -81,7 +80,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator"));
     this.context = new CopycatStateContext(config.getName(), uri, resourceConfig, executor);
     this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(executor), new KryoSerializer(), executor, config.getExecutor());
-    createResources();
   }
 
   @Override
@@ -123,11 +121,20 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized <T extends Resource<T>> T getResource(String name) {
-    ResourceHolder resource = resources.get(name);
-    if (resource == null) {
-      throw new ConfigurationException("Invalid resource " + name);
-    }
+  public <T extends Resource<T>> T getResource(String name) {
+    return getResource(name, new CoordinatedResourceConfig());
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public <T extends Resource<T>> T getResource(String name, CoordinatedResourceConfig config) {
+    ResourceHolder resource = resources.computeIfAbsent(name, n -> {
+      ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"));
+      CopycatStateContext state = new CopycatStateContext(name, uri, config, executor);
+      ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
+      ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
+      return new ResourceHolder(config.getResourceFactory().apply(context), config, cluster, state, context);
+    });
     return (T) resource.resource;
   }
 
@@ -141,7 +148,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
-      if (!resource.config.getReplicas().contains(uri) && resource.state.isClosed()) {
+      if (resource.cluster.isClosed()) {
         return resource.cluster.open().thenCompose(v -> resource.state.open());
       }
       return CompletableFuture.completedFuture(null);
@@ -159,40 +166,12 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
-      if (!resource.config.getReplicas().contains(uri) && resource.state.isOpen()) {
+      if (resource.cluster.isOpen()) {
         return resource.state.close().thenCompose(v -> resource.cluster.close());
       }
       return CompletableFuture.completedFuture(null);
     }
     return Futures.exceptionalFuture(new IllegalStateException("Invalid resource " + name));
-  }
-
-  /**
-   * Creates all Copycat resources.
-   */
-  private synchronized void createResources() {
-    for (Map.Entry<String, CoordinatedResourceConfig> entry : this.config.getResourceConfigs().entrySet()) {
-      String name = entry.getKey();
-      CoordinatedResourceConfig config = entry.getValue();
-      ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-context-" + name + "-%d"));
-      CopycatStateContext state = new CopycatStateContext(name, uri, config, executor);
-      ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
-      ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
-      resources.put(name, new ResourceHolder(config.getResourceFactory().apply(context), config, cluster, state, context));
-    }
-  }
-
-  /**
-   * Opens all cluster resources.
-   */
-  private synchronized CompletableFuture<Void> openResources() {
-    List<CompletableFuture<ResourceContext>> futures = new ArrayList<>(resources.size());
-    for (ResourceHolder resource : resources.values()) {
-      if (resource.config.getReplicas().contains(uri)) {
-        futures.add(resource.cluster.open().thenCompose(v -> resource.state.open()).thenApply(v -> null));
-      }
-    }
-    return CompletableFuture.allOf(futures.toArray(new CompletableFuture[futures.size()]));
   }
 
   /**
@@ -223,7 +202,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .thenComposeAsync(v -> cluster.open(), executor)
       .thenComposeAsync(v -> context.open(), executor)
       .thenRun(() -> open.set(true))
-      .thenCompose(v -> openResources())
       .thenApply(v -> this);
   }
 
@@ -296,9 +274,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       if (member != null) {
         return member.send(topic, PROTOCOL_ID, request, serializer, executor);
       }
-      CompletableFuture<U> future = new CompletableFuture<>();
-      future.completeExceptionally(new IllegalStateException(String.format("Invalid URI %s", request.uri())));
-      return future;
+      return Futures.exceptionalFuture(new IllegalStateException(String.format("Invalid member URI %s", request.uri())));
     }
 
     @Override

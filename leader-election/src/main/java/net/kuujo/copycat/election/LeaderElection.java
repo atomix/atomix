@@ -53,8 +53,8 @@ public interface LeaderElection extends Resource<LeaderElection> {
    */
   @SuppressWarnings("rawtypes")
   static LeaderElection create(String name, String uri, ClusterConfig cluster, LeaderElectionConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster).addResourceConfig(name, config.resolve(cluster)));
-    return coordinator.<LeaderElection>getResource(name)
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
+    return coordinator.<LeaderElection>getResource(name, config.resolve(cluster))
       .withStartupTask(() -> coordinator.open().thenApply(v -> null))
       .withShutdownTask(coordinator::close);
   }
