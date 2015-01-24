@@ -45,7 +45,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
     super(config);
   }
 
-  protected LogConfig(Log log) {
+  protected LogConfig(LogConfig log) {
     super(log);
   }
 

@@ -43,7 +43,7 @@ public class CoordinatorCluster extends AbstractCluster {
 
   @Override
   protected CoordinatedMember createMember(MemberInfo info) {
-    AbstractMemberCoordinator memberCoordinator = new DefaultRemoteMemberCoordinator(info, coordinator.config().getClusterConfig().getProtocol(), userExecutor);
+    AbstractMemberCoordinator memberCoordinator = new DefaultRemoteMemberCoordinator(info, coordinator.config().getClusterConfig().getProtocol(), executor);
     try {
       memberCoordinator.open().get();
     } catch (InterruptedException | ExecutionException e) {

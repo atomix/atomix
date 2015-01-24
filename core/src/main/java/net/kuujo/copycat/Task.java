@@ -17,7 +17,7 @@ package net.kuujo.copycat;
 import java.io.Serializable;
 
 /**
- * Remote task.
+ * Remote executable task.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

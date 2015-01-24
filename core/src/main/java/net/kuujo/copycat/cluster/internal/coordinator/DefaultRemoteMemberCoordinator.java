@@ -24,7 +24,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Default remote member coordinator implementation.
@@ -33,9 +34,9 @@ import java.util.concurrent.Executor;
  */
 public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   private final ProtocolClient client;
-  private final Executor executor;
+  private final ScheduledExecutorService executor;
 
-  public DefaultRemoteMemberCoordinator(MemberInfo info, Protocol protocol, Executor executor) {
+  public DefaultRemoteMemberCoordinator(MemberInfo info, Protocol protocol, ScheduledExecutorService executor) {
     super(info);
     try {
       URI realUri = new URI(info.uri());
@@ -65,7 +66,32 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
 
   @Override
   public CompletableFuture<MemberCoordinator> open() {
-    return super.open().thenComposeAsync(v -> client.connect(), executor).thenApply(v -> this);
+    return super.open().thenComposeAsync(v -> connect(), executor).thenApply(v -> this);
+  }
+
+  /**
+   * Recursively attempts to connect to the server.
+   */
+  private CompletableFuture<Void> connect() {
+    return connect(new CompletableFuture<>());
+  }
+
+  /**
+   * Recursively attempts to connect to the server.
+   */
+  private CompletableFuture<Void> connect(CompletableFuture<Void> future) {
+    if (isOpen()) {
+      client.connect().whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(null);
+        } else {
+          executor.schedule(() -> connect(future), 100, TimeUnit.MILLISECONDS);
+        }
+      });
+    } else {
+      future.completeExceptionally(new IllegalStateException("Member closed"));
+    }
+    return future;
   }
 
   @Override

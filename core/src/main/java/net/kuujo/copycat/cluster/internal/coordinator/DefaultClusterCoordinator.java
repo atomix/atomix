@@ -15,23 +15,23 @@
  */
 package net.kuujo.copycat.cluster.internal.coordinator;
 
-import net.kuujo.copycat.cluster.internal.*;
-import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MembershipEvent;
+import net.kuujo.copycat.cluster.internal.*;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.cluster.internal.manager.MemberManager;
-import net.kuujo.copycat.resource.internal.CopycatStateContext;
-import net.kuujo.copycat.resource.internal.DefaultResourceContext;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.concurrent.Futures;
-import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.rpc.Request;
 import net.kuujo.copycat.protocol.rpc.Response;
+import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.internal.CopycatStateContext;
+import net.kuujo.copycat.resource.internal.DefaultResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -66,7 +66,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     this.members.put(uri, localMember);
     for (String member : config.getClusterConfig().getMembers()) {
       if (!this.members.containsKey(member)) {
-        this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.ACTIVE, Member.State.ALIVE), config.getClusterConfig().getProtocol(), Executors.newSingleThreadExecutor(threadFactory)));
+        this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.ACTIVE, Member.State.ALIVE), config.getClusterConfig().getProtocol(), Executors.newSingleThreadScheduledExecutor(threadFactory)));
       }
     }
 
