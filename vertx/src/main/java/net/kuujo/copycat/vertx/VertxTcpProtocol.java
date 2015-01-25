@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.vertx;
 
-import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.AbstractProtocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.net.URI;
 
@@ -35,18 +35,22 @@ public class VertxTcpProtocol extends AbstractProtocol {
   public static final String VERTX_TCP_KEY_STORE_PASSWORD = "key-store-password";
   public static final String VERTX_TCP_TRUST_STORE_PATH = "trust-store-path";
   public static final String VERTX_TCP_TRUST_STORE_PASSWORD = "trust-store-password";
+  public static final String VERTX_TCP_CLIENT_TRUST_ALL = "trust-all";
+  public static final String VERTX_TCP_CLIENT_AUTH_REQUIRED = "auth-required";
   public static final String VERTX_TCP_ACCEPT_BACKLOG = "accept-backlog";
   public static final String VERTX_TCP_CONNECT_TIMEOUT = "connect-timeout";
 
-  private int DEFAULT_VERTX_TCP_SEND_BUFFER_SIZE = 8 * 1024;
-  private int DEFAULT_VERTX_TCP_RECEIVE_BUFFER_SIZE = 32 * 1024;
-  private boolean DEFAULT_VERTX_TCP_USE_SSL;
-  private String DEFAULT_VERTX_TCP_KEY_STORE_PATH;
-  private String DEFAULT_VERTX_TCP_KEY_STORE_PASSWORD;
-  private String DEFAULT_VERTX_TCP_TRUST_STORE_PATH;
-  private String DEFAULT_VERTX_TCP_TRUST_STORE_PASSWORD;
-  private int DEFAULT_VERTX_TCP_ACCEPT_BACKLOG = 1024;
-  private int DEFAULT_VERTX_TCP_CONNECT_TIMEOUT = 60000;
+  private static final int DEFAULT_VERTX_TCP_SEND_BUFFER_SIZE = 8 * 1024;
+  private static final int DEFAULT_VERTX_TCP_RECEIVE_BUFFER_SIZE = 32 * 1024;
+  private static final boolean DEFAULT_VERTX_TCP_USE_SSL = false;
+  private static final String DEFAULT_VERTX_TCP_KEY_STORE_PATH = null;
+  private static final String DEFAULT_VERTX_TCP_KEY_STORE_PASSWORD = null;
+  private static final String DEFAULT_VERTX_TCP_TRUST_STORE_PATH = null;
+  private static final String DEFAULT_VERTX_TCP_TRUST_STORE_PASSWORD = null;
+  private static final boolean DEFAULT_VERTX_TCP_CLIENT_TRUST_ALL = false;
+  private static final boolean DEFAULT_VERTX_TCP_CLIENT_AUTH_REQUIRED = false;
+  private static final int DEFAULT_VERTX_TCP_ACCEPT_BACKLOG = 1024;
+  private static final int DEFAULT_VERTX_TCP_CONNECT_TIMEOUT = 60000;
 
   public VertxTcpProtocol() {
   }
@@ -263,6 +267,64 @@ public class VertxTcpProtocol extends AbstractProtocol {
    */
   public VertxTcpProtocol withTrustStorePassword(String password) {
     setTrustStorePassword(password);
+    return this;
+  }
+
+  /**
+   * Sets whether to trust all server certs.
+   *
+   * @param trustAll Whether to trust all server certs.
+   */
+  public void setClientTrustAll(boolean trustAll) {
+    put(VERTX_TCP_CLIENT_TRUST_ALL, trustAll);
+  }
+
+  /**
+   * Returns whether to trust all server certs.
+   *
+   * @return Whether to trust all server certs.
+   */
+  public boolean isClientTrustAll() {
+    return get(VERTX_TCP_CLIENT_TRUST_ALL, DEFAULT_VERTX_TCP_CLIENT_TRUST_ALL);
+  }
+
+  /**
+   * Sets whether to trust all server certs, returning the protocol for method chaining.
+   *
+   * @param trustAll Whether to trust all server certs.
+   * @return The TCP protocol.
+   */
+  public VertxTcpProtocol withClientTrustAll(boolean trustAll) {
+    setClientTrustAll(trustAll);
+    return this;
+  }
+
+  /**
+   * Sets whether client authentication is required.
+   *
+   * @param required Whether client authentication is required.
+   */
+  public void setClientAuthRequired(boolean required) {
+    put(VERTX_TCP_CLIENT_AUTH_REQUIRED, required);
+  }
+
+  /**
+   * Returns whether client authentication is required.
+   *
+   * @return Whether client authentication is required.
+   */
+  public boolean isClientAuthRequired() {
+    return get(VERTX_TCP_CLIENT_AUTH_REQUIRED, DEFAULT_VERTX_TCP_CLIENT_AUTH_REQUIRED);
+  }
+
+  /**
+   * Sets whether client authentication is required.
+   *
+   * @param required Whether client authentication is required.
+   * @return The TCP protocol.
+   */
+  public VertxTcpProtocol withClientAuthRequired(boolean required) {
+    setClientAuthRequired(required);
     return this;
   }
 

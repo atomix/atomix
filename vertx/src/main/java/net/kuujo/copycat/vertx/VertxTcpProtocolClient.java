@@ -17,13 +17,10 @@ package net.kuujo.copycat.vertx;
 
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.protocol.rpc.Response;
-import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
 import org.vertx.java.core.impl.DefaultVertx;
-import org.vertx.java.core.json.JsonObject;
 import org.vertx.java.core.net.NetClient;
 import org.vertx.java.core.net.NetSocket;
 import org.vertx.java.core.parsetools.RecordParser;
@@ -39,15 +36,14 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxTcpProtocolClient implements ProtocolClient {
-  private static final String DELIMITER = "\\x00";
   private Vertx vertx;
   private final String host;
   private final int port;
-  private boolean trustAll;
   private final VertxTcpProtocol protocol;
   private NetClient client;
   private NetSocket socket;
   private final Map<Object, ResponseHolder> responses = new HashMap<>(1000);
+  private long requestId;
 
   /**
    * Holder for response handlers.
@@ -67,40 +63,15 @@ public class VertxTcpProtocolClient implements ProtocolClient {
     this.protocol = protocol;
   }
 
-  /**
-   * Sets whether to trust all server certs.
-   *
-   * @param trustAll Whether to trust all server certs.
-   */
-  public void setTrustAll(boolean trustAll) {
-    this.trustAll = trustAll;
-  }
-
-  /**
-   * Returns whether to trust all server certs.
-   *
-   * @return Whether to trust all server certs.
-   */
-  public boolean isTrustAll() {
-    return trustAll;
-  }
-
-  /**
-   * Sets whether to trust all server certs, returning the protocol for method chaining.
-   *
-   * @param trustAll Whether to trust all server certs.
-   * @return The TCP protocol.
-   */
-  public VertxTcpProtocolClient withTrustAll(boolean trustAll) {
-    this.trustAll = trustAll;
-    return this;
-  }
-
   @Override
   public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     if (socket != null) {
-      socket.write(new Buffer(request.array()).appendString(DELIMITER));
+      long requestId = this.requestId++;
+      byte[] bytes = new byte[request.remaining()];
+      request.get(bytes);
+      socket.write(new Buffer().appendInt(bytes.length).appendLong(requestId).appendBytes(bytes));
+      storeFuture(requestId, future);
     } else {
       future.completeExceptionally(new ProtocolException("Client not connected"));
     }
@@ -111,7 +82,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
    * Handles an identifiable response.
    */
   @SuppressWarnings("unchecked")
-  private void handleResponse(Object id, ByteBuffer response) {
+  private void handleResponse(long id, ByteBuffer response) {
     ResponseHolder holder = responses.remove(id);
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
@@ -122,7 +93,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   /**
    * Handles an identifiable error.
    */
-  private void handleError(Object id, Throwable error) {
+  private void handleError(long id, Throwable error) {
     ResponseHolder holder = responses.remove(id);
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
@@ -133,7 +104,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   /**
    * Stores a response callback by ID.
    */
-  private <T extends Response> void storeFuture(final Object id, CompletableFuture<ByteBuffer> future) {
+  private void storeFuture(final long id, CompletableFuture<ByteBuffer> future) {
     long timerId = vertx.setTimer(5000, timer -> {
       handleError(id, new ProtocolException("Request timed out"));
     });
@@ -160,29 +131,31 @@ public class VertxTcpProtocolClient implements ProtocolClient {
       client.setKeyStorePassword(protocol.getKeyStorePassword());
       client.setTrustStorePath(protocol.getTrustStorePath());
       client.setTrustStorePassword(protocol.getTrustStorePassword());
-      client.setTrustAll(trustAll);
+      client.setTrustAll(protocol.isClientTrustAll());
       client.setUsePooledBuffers(true);
-      client.connect(port, host, new Handler<AsyncResult<NetSocket>>() {
-        @Override
-        public void handle(AsyncResult<NetSocket> result) {
-          if (result.failed()) {
-            future.completeExceptionally(result.cause());
-          } else {
-            socket = result.result();
-            socket.dataHandler(RecordParser.newDelimited(DELIMITER, new Handler<Buffer>() {
-              @Override
-              public void handle(Buffer buffer) {
-                JsonObject response = new JsonObject(buffer.toString());
-                Object id = response.getValue("id");
-                if (response.getString("status").equals("ok")) {
-                  handleResponse(id, ByteBuffer.wrap(response.getBinary("response")));
-                } else {
-                  handleError(id, new ProtocolException(response.getString("message")));
-                }
+      client.connect(port, host, result -> {
+        if (result.failed()) {
+          future.completeExceptionally(result.cause());
+        } else {
+          socket = result.result();
+          RecordParser parser = RecordParser.newFixed(4, null);
+          Handler<Buffer> handler = new Handler<Buffer>() {
+            int length = -1;
+            @Override
+            public void handle(Buffer buffer) {
+              if (length == -1) {
+                length = buffer.getInt(0);
+                parser.fixedSizeMode(length + 8);
+              } else {
+                handleResponse(buffer.getLong(0), buffer.getBuffer(8, length + 8).getByteBuf().nioBuffer());
+                length = -1;
+                parser.fixedSizeMode(4);
               }
-            }));
-            future.complete(null);
-          }
+            }
+          };
+          parser.setOutput(handler);
+          socket.dataHandler(parser);
+          future.complete(null);
         }
       });
     } else {
@@ -195,14 +168,11 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   public CompletableFuture<Void> close() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (client != null && socket != null) {
-      socket.closeHandler(new Handler<Void>() {
-        @Override
-        public void handle(Void event) {
-          socket = null;
-          client.close();
-          client = null;
-          future.complete(null);
-        }
+      socket.closeHandler(v -> {
+        socket = null;
+        client.close();
+        client = null;
+        future.complete(null);
       }).close();
     } else if (client != null) {
       client.close();
@@ -212,6 +182,11 @@ public class VertxTcpProtocolClient implements ProtocolClient {
       future.complete(null);
     }
     return future;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[host=%s, port=%d]", getClass().getSimpleName(), host, port);
   }
 
 }
