@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.test;
 
-import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.resource.Resource;
 
 import java.util.Arrays;
 import java.util.List;

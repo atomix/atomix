@@ -18,8 +18,11 @@ package net.kuujo.copycat.netty;
 import net.kuujo.copycat.protocol.AbstractProtocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.util.Configurable;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.net.URI;
+import java.util.Map;
 
 /**
  * Netty TCP protocol.
@@ -27,22 +30,49 @@ import java.net.URI;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyTcpProtocol extends AbstractProtocol {
-  private int threads = 1;
-  private int sendBufferSize = 8 * 1024;
-  private int receiveBufferSize = 32 * 1024;
-  private boolean useSsl;
-  private int soLinger = -1;
-  private int trafficClass = -1;
-  private int acceptBacklog = 1024;
-  private int connectTimeout = 60000;
+  public static final String NETTY_THREADS = "threads";
+  public static final String NETTY_SEND_BUFFER_SIZE = "send.buffer.size";
+  public static final String NETTY_RECEIVE_BUFFER_SIZE = "receive.buffer.size";
+  public static final String NETTY_USE_SSL = "ssl";
+  public static final String NETTY_SO_LINGER = "solinger";
+  public static final String NETTY_TRAFFIC_CLASS = "traffic.class";
+  public static final String NETTY_ACCEPT_BACKLOG = "accept.backlog";
+  public static final String NETTY_CONNECT_TIMEOUT = "connect.timeout";
+
+  private static final int DEFAULT_NETTY_THREADS = 1;
+  private static final int DEFAULT_NETTY_SEND_BUFFER_SIZE = 8 * 1024;
+  private static final int DEFAULT_NETTY_RECEIVE_BUFFER_SIZE = 32 * 1024;
+  private static final boolean DEFAULT_NETTY_USE_SSL = false;
+  private static final int DEFAULT_NETTY_SO_LINGER = -1;
+  private static final int DEFAULT_NETTY_TRAFFIC_CLASS = -1;
+  private static final int DEFAULT_NETTY_ACCEPT_BACKLOG = 1024;
+  private static final int DEFAULT_NETTY_CONNECT_TIMEOUT = 60000;
+
+  public NettyTcpProtocol() {
+    super();
+  }
+
+  public NettyTcpProtocol(Map<String, Object> config) {
+    super(config);
+  }
+
+  public NettyTcpProtocol(NettyTcpProtocol protocol) {
+    super(protocol);
+  }
+
+  @Override
+  public Configurable copy() {
+    return new NettyTcpProtocol(this);
+  }
 
   /**
    * Sets the number of server threads to run.
    *
    * @param numThreads The number of server threads to run.
+   * @throws java.lang.IllegalArgumentException If the number of threads is not positive
    */
   public void setThreads(int numThreads) {
-    this.threads = numThreads;
+    put(NETTY_THREADS, Assert.arg(numThreads, numThreads > 0, "number of threads must be positive"));
   }
 
   /**
@@ -51,7 +81,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The number of server threads to run.
    */
   public int getThreads() {
-    return threads;
+    return get(NETTY_THREADS, DEFAULT_NETTY_THREADS);
   }
 
   /**
@@ -59,9 +89,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    *
    * @param numThreads The number of server threads to run.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the number of threads is not positive
    */
   public NettyTcpProtocol withThreads(int numThreads) {
-    this.threads = numThreads;
+    setThreads(numThreads);
     return this;
   }
 
@@ -69,9 +100,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * Sets the send buffer size.
    *
    * @param bufferSize The send buffer size.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public void setSendBufferSize(int bufferSize) {
-    this.sendBufferSize = bufferSize;
+    put(NETTY_SEND_BUFFER_SIZE, Assert.arg(bufferSize, bufferSize > 0, "buffer size must be positive"));
   }
 
   /**
@@ -80,7 +112,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The send buffer size.
    */
   public int getSendBufferSize() {
-    return sendBufferSize;
+    return get(NETTY_SEND_BUFFER_SIZE, DEFAULT_NETTY_SEND_BUFFER_SIZE);
   }
 
   /**
@@ -88,9 +120,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    *
    * @param bufferSize The send buffer size.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public NettyTcpProtocol withSendBufferSize(int bufferSize) {
-    this.sendBufferSize = bufferSize;
+    setSendBufferSize(bufferSize);
     return this;
   }
 
@@ -98,9 +131,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * Sets the receive buffer size.
    *
    * @param bufferSize The receive buffer size.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public void setReceiveBufferSize(int bufferSize) {
-    this.receiveBufferSize = bufferSize;
+    put(NETTY_RECEIVE_BUFFER_SIZE, Assert.arg(bufferSize, bufferSize > 0, "buffer size must be positive"));
   }
 
   /**
@@ -109,7 +143,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The receive buffer size.
    */
   public int getReceiveBufferSize() {
-    return receiveBufferSize;
+    return get(NETTY_RECEIVE_BUFFER_SIZE, DEFAULT_NETTY_RECEIVE_BUFFER_SIZE);
   }
 
   /**
@@ -117,9 +151,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    *
    * @param bufferSize The receive buffer size.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the buffer size is not positive
    */
   public NettyTcpProtocol withReceiveBufferSize(int bufferSize) {
-    this.receiveBufferSize = bufferSize;
+    setReceiveBufferSize(bufferSize);
     return this;
   }
 
@@ -129,7 +164,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @param useSsl Whether to use SSL encryption.
    */
   public void setSsl(boolean useSsl) {
-    this.useSsl = useSsl;
+    put(NETTY_USE_SSL, useSsl);
   }
 
   /**
@@ -138,7 +173,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return Indicates whether SSL encryption is enabled.
    */
   public boolean isSsl() {
-    return useSsl;
+    return get(NETTY_USE_SSL, DEFAULT_NETTY_USE_SSL);
   }
 
   /**
@@ -148,7 +183,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The TCP protocol.
    */
   public NettyTcpProtocol withSsl(boolean useSsl) {
-    this.useSsl = useSsl;
+    setSsl(useSsl);
     return this;
   }
 
@@ -158,7 +193,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @param soLinger TCP soLinger settings for connections.
    */
   public void setSoLinger(int soLinger) {
-    this.soLinger = soLinger;
+    put(NETTY_SO_LINGER, soLinger);
   }
 
   /**
@@ -167,7 +202,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return TCP soLinger settings for connections.
    */
   public int getSoLinger() {
-    return soLinger;
+    return get(NETTY_SO_LINGER, DEFAULT_NETTY_SO_LINGER);
   }
 
   /**
@@ -177,7 +212,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The TCP protocol.
    */
   public NettyTcpProtocol withSoLinger(int soLinger) {
-    this.soLinger = soLinger;
+    setSoLinger(soLinger);
     return this;
   }
 
@@ -187,7 +222,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @param trafficClass The traffic class.
    */
   public void setTrafficClass(int trafficClass) {
-    this.trafficClass = trafficClass;
+    put(NETTY_TRAFFIC_CLASS, trafficClass);
   }
 
   /**
@@ -196,7 +231,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The traffic class.
    */
   public int getTrafficClass() {
-    return trafficClass;
+    return get(NETTY_TRAFFIC_CLASS, DEFAULT_NETTY_TRAFFIC_CLASS);
   }
 
   /**
@@ -206,7 +241,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The TCP protocol.
    */
   public NettyTcpProtocol withTrafficClass(int trafficClass) {
-    this.trafficClass = trafficClass;
+    setTrafficClass(trafficClass);
     return this;
   }
 
@@ -214,9 +249,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * Sets the accept backlog.
    *
    * @param backlog The accept backlog.
+   * @throws java.lang.IllegalArgumentException If the accept backlog is not positive
    */
   public void setAcceptBacklog(int backlog) {
-    this.acceptBacklog = backlog;
+    put(NETTY_ACCEPT_BACKLOG, Assert.arg(backlog, backlog > 0, "accept backlog must be positive"));
   }
 
   /**
@@ -225,7 +261,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The accept backlog.
    */
   public int getAcceptBacklog() {
-    return acceptBacklog;
+    return get(NETTY_ACCEPT_BACKLOG, DEFAULT_NETTY_ACCEPT_BACKLOG);
   }
 
   /**
@@ -233,9 +269,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    *
    * @param backlog The accept backlog.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the accept backlog is not positive
    */
   public NettyTcpProtocol withAcceptBacklog(int backlog) {
-    this.acceptBacklog = backlog;
+    setAcceptBacklog(backlog);
     return this;
   }
 
@@ -243,9 +280,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * Sets the connection timeout.
    *
    * @param connectTimeout The connection timeout.
+   * @throws java.lang.IllegalArgumentException If the connect timeout is not positive
    */
   public void setConnectTimeout(int connectTimeout) {
-    this.connectTimeout = connectTimeout;
+    put(NETTY_CONNECT_TIMEOUT, Assert.arg(connectTimeout, connectTimeout > 0, "connect timeout must be positive"));
   }
 
   /**
@@ -254,7 +292,7 @@ public class NettyTcpProtocol extends AbstractProtocol {
    * @return The connection timeout.
    */
   public int getConnectTimeout() {
-    return connectTimeout;
+    return get(NETTY_CONNECT_TIMEOUT, DEFAULT_NETTY_CONNECT_TIMEOUT);
   }
 
   /**
@@ -262,9 +300,10 @@ public class NettyTcpProtocol extends AbstractProtocol {
    *
    * @param connectTimeout The connection timeout.
    * @return The TCP protocol.
+   * @throws java.lang.IllegalArgumentException If the connect timeout is not positive
    */
   public NettyTcpProtocol withConnectTimeout(int connectTimeout) {
-    this.connectTimeout = connectTimeout;
+    setConnectTimeout(connectTimeout);
     return this;
   }
 
