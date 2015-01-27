@@ -350,14 +350,7 @@ class LeaderState extends ActiveState {
       }
       return future;
     }
-
-    /**
-     * Commits the log to all nodes in the cluster.
-     */
-    public CompletableFuture<Long> commitAll() {
-      return commit(context.log().lastIndex());
-    }
-
+    
     /**
      * Commits the log up to the given index.
      */

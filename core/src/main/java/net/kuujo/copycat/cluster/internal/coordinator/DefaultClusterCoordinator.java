@@ -121,7 +121,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public <T extends Resource<T>> T getResource(String name) {
     return getResource(name, new CoordinatedResourceConfig());
   }
@@ -135,7 +134,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
       ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
       try {
-        return new ResourceHolder(config.getResourceType().getConstructor(ResourceContext.class).newInstance(context), config, cluster, state, context);
+        return new ResourceHolder(config.getResourceType().getConstructor(ResourceContext.class).newInstance(context), cluster, state);
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ConfigurationException("Failed to instantiate resource", e);
       }
@@ -305,17 +304,13 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   @SuppressWarnings("rawtypes")
   private static class ResourceHolder {
     private final Resource resource;
-    private final CoordinatedResourceConfig config;
     private final ClusterManager cluster;
     private final CopycatStateContext state;
-    private final ResourceContext context;
 
-    private ResourceHolder(Resource resource, CoordinatedResourceConfig config, ClusterManager cluster, CopycatStateContext state, ResourceContext context) {
+    private ResourceHolder(Resource resource, ClusterManager cluster, CopycatStateContext state) {
       this.resource = resource;
-      this.config = config;
       this.cluster = cluster;
       this.state = state;
-      this.context = context;
     }
   }
 

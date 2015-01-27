@@ -60,7 +60,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   @Override
   public <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(name.hashCode(), new OperationInfo<>(name, command, false));
+    operations.put(name.hashCode(), new OperationInfo<>(command, false));
     return this;
   }
 
@@ -76,7 +76,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     Assert.state(isClosed(), "Cannot register command on open state log");
     Assert.isNotNull(name, "name");
     Assert.isNotNull(query, "query");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, defaultConsistency));
+    operations.put(name.hashCode(), new OperationInfo<>(query, true, defaultConsistency));
     return this;
   }
 
@@ -85,7 +85,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     Assert.state(isClosed(), "Cannot register command on open state log");
     Assert.isNotNull(name, "name");
     Assert.isNotNull(query, "query");
-    operations.put(name.hashCode(), new OperationInfo<>(name, query, true, consistency == null || consistency == Consistency.DEFAULT ? defaultConsistency : consistency));
+    operations.put(name.hashCode(), new OperationInfo<>(query, true, consistency == null || consistency == Consistency.DEFAULT ? defaultConsistency : consistency));
     return this;
   }
 
@@ -162,7 +162,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
    * @param entry The log entry.
    * @return The entry output.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"unchecked"})
   private ByteBuffer consume(Long index, ByteBuffer entry) {
     int entryType = entry.getInt();
     switch (entryType) {
@@ -231,17 +231,15 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
    * State command info.
    */
   private class OperationInfo<TT, U> {
-    private final String name;
     private final Function<TT, U> function;
     private final boolean readOnly;
     private final Consistency consistency;
 
-    private OperationInfo(String name, Function<TT, U> function, boolean readOnly) {
-      this(name, function, readOnly, Consistency.DEFAULT);
+    private OperationInfo(Function<TT, U> function, boolean readOnly) {
+      this(function, readOnly, Consistency.DEFAULT);
     }
 
-    private OperationInfo(String name, Function<TT, U> function, boolean readOnly, Consistency consistency) {
-      this.name = name;
+    private OperationInfo(Function<TT, U> function, boolean readOnly, Consistency consistency) {
       this.function = function;
       this.readOnly = readOnly;
       this.consistency = consistency;

@@ -666,19 +666,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   /**
-   * Unregisters handlers on the given state.
-   */
-  private void unregisterHandlers(AbstractState state) {
-    state.syncHandler(null);
-    state.pingHandler(null);
-    state.appendHandler(null);
-    state.pollHandler(null);
-    state.queryHandler(null);
-    state.commitHandler(null);
-    state.transitionHandler(null);
-  }
-
-  /**
    * Triggers an observable changed event.
    */
   private void triggerChangeEvent() {

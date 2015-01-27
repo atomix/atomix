@@ -48,10 +48,10 @@ public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T
    * return the completed future result.
    *
    * @param supplier The supplier to call if the collection is open.
-   * @param <T> The future result type.
+   * @param <R> The future result type.
    * @return A completable future that if this collection is closed is immediately failed.
    */
-  protected <T> CompletableFuture<T> checkOpen(Supplier<CompletableFuture<T>> supplier) {
+  protected <R> CompletableFuture<R> checkOpen(Supplier<CompletableFuture<R>> supplier) {
     if (proxy == null) {
       return Futures.exceptionalFuture(new IllegalStateException("Collection closed"));
     }

@@ -46,7 +46,6 @@ public class NettyTcpProtocolClient implements ProtocolClient {
   private final Map<Object, CompletableFuture<ByteBuffer>> responseFutures = new HashMap<>(1000);
   private long requestId;
 
-  @SuppressWarnings("unchecked")
   private final ChannelInboundHandlerAdapter channelHandler = new ChannelInboundHandlerAdapter() {
     @Override
     public void channelActive(ChannelHandlerContext context) {

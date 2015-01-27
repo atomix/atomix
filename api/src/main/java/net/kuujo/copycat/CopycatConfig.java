@@ -172,7 +172,6 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The default resource entry serializer.
    * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
    */
-  @SuppressWarnings("unchecked")
   public Serializer getDefaultSerializer() {
     return Configurable.load(config.getObject(COPYCAT_DEFAULT_SERIALIZER).unwrapped());
   }
@@ -184,7 +183,6 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
-  @SuppressWarnings("unchecked")
   public CopycatConfig withSerializer(String serializer) {
     setDefaultSerializer(serializer);
     return this;
@@ -197,7 +195,6 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
-  @SuppressWarnings("unchecked")
   public CopycatConfig withDefaultSerializer(Class<? extends Serializer> serializer) {
     setDefaultSerializer(serializer);
     return this;
@@ -210,7 +207,6 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat configuration.
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
-  @SuppressWarnings("unchecked")
   public CopycatConfig withDefaultSerializer(Serializer serializer) {
     setDefaultSerializer(serializer);
     return this;
@@ -250,7 +246,6 @@ public class CopycatConfig extends AbstractConfigurable {
    *
    * @return A coordinator configuration for this Copycat configuration.
    */
-  @SuppressWarnings("rawtypes")
   public CoordinatorConfig resolve() {
     return new CoordinatorConfig()
       .withName(getName())

@@ -51,7 +51,6 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param config The leader election configuration.
    * @return The state machine.
    */
-  @SuppressWarnings("rawtypes")
   static LeaderElection create(String name, String uri, ClusterConfig cluster, LeaderElectionConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<LeaderElection>getResource(name, config.resolve(cluster))

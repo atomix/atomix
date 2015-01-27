@@ -57,7 +57,6 @@ public interface StateLog<T> extends Resource<StateLog<T>> {
    * @param <T> The state log entry type.
    * @return A new state log instance.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, StateLogConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<StateLog<T>>getResource(name, config.resolve(cluster))

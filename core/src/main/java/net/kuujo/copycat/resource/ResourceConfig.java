@@ -121,7 +121,6 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The resource entry serializer.
    * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   public Serializer getSerializer() {
     return config.hasPath(RESOURCE_SERIALIZER) ? Configurable.load(config.getObject(RESOURCE_SERIALIZER).unwrapped()) : DEFAULT_SERIALIZER;
   }

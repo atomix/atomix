@@ -28,7 +28,6 @@ import java.nio.file.StandardOpenOption;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileLogSegment extends AbstractLogSegment {
-  private static final int BUFFER_SIZE = 1024 * 2;
   private final FileLogManager log;
   private final File logFile;
   private final File indexFile;

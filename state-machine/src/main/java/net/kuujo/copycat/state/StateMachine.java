@@ -51,7 +51,6 @@ public interface StateMachine<T> extends Resource<StateMachine<T>> {
    * @param config The state machine configuration.
    * @return The state machine.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> StateMachine<T> create(String name, String uri, ClusterConfig cluster, StateMachineConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<StateMachine<T>>getResource(name, config.resolve(cluster))

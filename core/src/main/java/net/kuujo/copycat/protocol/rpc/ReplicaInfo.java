@@ -16,9 +16,7 @@
 package net.kuujo.copycat.protocol.rpc;
 
 import java.io.Serializable;
-import java.util.HashSet;
 import java.util.Objects;
-import java.util.Set;
 
 /**
  * Raft replica info.
@@ -29,7 +27,6 @@ public class ReplicaInfo implements Serializable {
   private String uri;
   private long version = 1;
   private Long index;
-  private final Set<String> failures = new HashSet<>();
 
   public ReplicaInfo() {
   }

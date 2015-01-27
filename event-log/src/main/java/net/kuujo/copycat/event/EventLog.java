@@ -52,7 +52,6 @@ public interface EventLog<T> extends Resource<EventLog<T>> {
    * @param config The event log configuration.
    * @return A new event log instance.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, EventLogConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<EventLog<T>>getResource(name, config.resolve(cluster))

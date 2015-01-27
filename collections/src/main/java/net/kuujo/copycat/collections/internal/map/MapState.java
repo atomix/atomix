@@ -15,18 +15,18 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.state.StateContext;
-import net.kuujo.copycat.protocol.Consistency;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+
+import net.kuujo.copycat.state.Command;
+import net.kuujo.copycat.state.Initializer;
+import net.kuujo.copycat.state.Query;
+import net.kuujo.copycat.state.StateContext;
+
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Asynchronous map state.

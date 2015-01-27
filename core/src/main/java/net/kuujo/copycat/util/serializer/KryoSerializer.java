@@ -68,7 +68,7 @@ public class KryoSerializer extends SerializerConfig {
   /**
    * Registers classes.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
+  @SuppressWarnings({"rawtypes"})
   private void register() {
     if (config.hasPath(KRYO_SERIALIZER_REGISTRATIONS)) {
       ConfigObject config = this.config.getObject(KRYO_SERIALIZER_REGISTRATIONS);

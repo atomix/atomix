@@ -50,7 +50,6 @@ public interface AsyncLock extends Resource<AsyncLock> {
    * @param config The lock configuration.
    * @return The asynchronous lock.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncLock>getResource(name, config.resolve(cluster))

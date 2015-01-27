@@ -109,7 +109,7 @@ public abstract class AbstractCollectionState<T extends CollectionState<T, V>, U
 
   @NotNull
   @Override
-  public <T> T[] toArray(T[] a) {
+  public <R> R[] toArray(R[] a) {
     return collection.toArray(a);
   }
 

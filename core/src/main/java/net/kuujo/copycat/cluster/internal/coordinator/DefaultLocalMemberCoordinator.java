@@ -55,7 +55,6 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public synchronized CompletableFuture<ByteBuffer> send(String topic, int address, int id, ByteBuffer message) {
     Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>> topicHandlers = handlers.get(topic.hashCode());
     if (topicHandlers != null) {
@@ -89,7 +88,6 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  @SuppressWarnings("rawtypes")
   public synchronized LocalMemberCoordinator unregister(String topic, int address, int id) {
     Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>> topicHandlers = handlers.get(topic.hashCode());
     if (topicHandlers != null) {
@@ -113,7 +111,6 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
    * @param request The request to handle.
    * @return A completable future to be completed once the response is ready.
    */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
   private CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
     Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>> topicHandlers = handlers.get(request.getInt());
     if (topicHandlers != null) {

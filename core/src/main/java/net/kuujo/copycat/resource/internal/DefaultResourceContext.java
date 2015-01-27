@@ -61,7 +61,6 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public CoordinatedResourceConfig config() {
     return config;
   }

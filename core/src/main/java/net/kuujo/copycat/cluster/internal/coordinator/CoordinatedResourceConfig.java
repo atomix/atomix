@@ -17,6 +17,7 @@ package net.kuujo.copycat.cluster.internal.coordinator;
 
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigValueFactory;
+
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceConfig;
@@ -273,6 +274,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    *
    * @return The set of replicas for the resource.
    */
+  @SuppressWarnings({ "rawtypes", "unchecked" })
   public Set<String> getReplicas() {
     return new HashSet<String>(config.hasPath(RESOURCE_REPLICAS) ? (List) config.getList(RESOURCE_REPLICAS).unwrapped() : new ArrayList<>(0));
   }
@@ -419,7 +421,6 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource entry serializer or the default serializer if no specific serializer was configured.
    * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
    */
-  @SuppressWarnings("unchecked")
   public Serializer getSerializer() {
     return config.hasPath(RESOURCE_SERIALIZER) ? Configurable.load(config.getObject(RESOURCE_SERIALIZER).unwrapped()) : defaultSerializer;
   }

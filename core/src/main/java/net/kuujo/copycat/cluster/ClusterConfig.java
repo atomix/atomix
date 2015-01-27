@@ -15,6 +15,7 @@
 package net.kuujo.copycat.cluster;
 
 import com.typesafe.config.ConfigValueFactory;
+
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
@@ -256,6 +257,7 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @return A set of all cluster member URIs.
    */
+  @SuppressWarnings({ "unchecked", "rawtypes" })
   public Set<String> getMembers() {
     return new HashSet<String>(config.hasPath(CLUSTER_MEMBERS) ? (List) config.getList(CLUSTER_MEMBERS).unwrapped() : new ArrayList<>(0));
   }

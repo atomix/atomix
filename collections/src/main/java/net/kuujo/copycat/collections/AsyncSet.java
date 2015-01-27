@@ -52,7 +52,6 @@ public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetPr
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, AsyncSetConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncSet<T>>getResource(name, config.resolve(cluster))
