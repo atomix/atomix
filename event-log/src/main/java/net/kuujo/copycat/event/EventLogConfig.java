@@ -15,14 +15,13 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.resource.ResourceConfig;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.event.internal.DefaultEventLog;
+import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.log.FileLog;
-import net.kuujo.copycat.log.Log;
 
 import java.util.Map;
 
@@ -32,22 +31,25 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class EventLogConfig extends ResourceConfig<EventLogConfig> {
-  public static final String EVENT_LOG_RETENTION_POLICY = "event-log.retention.policy";
-  public static final String EVENT_LOG_RETENTION_CHECK_INTERVAL = "event-log.retention.check";
+  private static final String EVENT_LOG_RETENTION_POLICY = "retention.policy";
+  private static final String EVENT_LOG_RETENTION_CHECK_INTERVAL = "retention.check.interval";
 
-  private static final Log DEFAULT_EVENT_LOG = new FileLog();
-  private static final long DEFAULT_EVENT_LOG_RETENTION_CHECK_INTERVAL = 1000 * 60;
-  private static final RetentionPolicy DEFAULT_EVENT_LOG_RETENTION_POLICY = new FullRetentionPolicy();
+  private static final String DEFAULT_CONFIGURATION = "event-log-defaults";
+  private static final String CONFIGURATION = "event-log";
 
   public EventLogConfig() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public EventLogConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public EventLogConfig(EventLogConfig config) {
+  public EventLogConfig(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  private EventLogConfig(EventLogConfig config) {
     super(config);
   }
 
@@ -63,7 +65,7 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
    * @throws java.lang.IllegalArgumentException If the retention check interval is not positive
    */
   public void setRetentionCheckInterval(long interval) {
-    put(EVENT_LOG_RETENTION_CHECK_INTERVAL, Assert.arg(interval, interval > 0, "Compact interval must be positive"));
+    this.config = config.withValue(EVENT_LOG_RETENTION_CHECK_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(interval, interval > 0, "Compact interval must be positive")));
   }
 
   /**
@@ -72,7 +74,7 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
    * @return The interval at which the log checks for retention of segments in milliseconds.
    */
   public long getRetentionCheckInterval() {
-    return get(EVENT_LOG_RETENTION_CHECK_INTERVAL, DEFAULT_EVENT_LOG_RETENTION_CHECK_INTERVAL);
+    return config.getLong(EVENT_LOG_RETENTION_CHECK_INTERVAL);
   }
 
   /**
@@ -94,7 +96,7 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
    * @throws java.lang.NullPointerException If the retention policy is {@code null}
    */
   public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
-    put(EVENT_LOG_RETENTION_POLICY, Assert.isNotNull(retentionPolicy, "retentionPolicy"));
+    this.config = config.withValue(EVENT_LOG_RETENTION_POLICY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(retentionPolicy, "retentionPolicy")));
   }
 
   /**
@@ -104,19 +106,7 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
    * @throws net.kuujo.copycat.util.ConfigurationException If the retention policy cannot be instantiated
    */
   public RetentionPolicy getRetentionPolicy() {
-    Object retentionPolicy = get(EVENT_LOG_RETENTION_POLICY);
-    if (retentionPolicy == null) {
-      return DEFAULT_EVENT_LOG_RETENTION_POLICY;
-    } else if (retentionPolicy instanceof RetentionPolicy) {
-      return (RetentionPolicy) retentionPolicy;
-    } else if (retentionPolicy instanceof String) {
-      try {
-        return (RetentionPolicy) Class.forName(retentionPolicy.toString()).newInstance();
-      } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate retention policy", e);
-      }
-    }
-    throw new ConfigurationException("Invalid retention policy value");
+    return Configurable.load(config.getObject(EVENT_LOG_RETENTION_POLICY).unwrapped());
   }
 
   /**
@@ -132,16 +122,11 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
   }
 
   @Override
-  public Log getLog() {
-    return get(RESOURCE_LOG, DEFAULT_EVENT_LOG);
-  }
-
-  @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
     return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
-      .withResourceFactory(DefaultEventLog::new)
+      .withResourceType(DefaultEventLog.class)
       .withLog(getLog())
       .withSerializer(getSerializer())
       .withExecutor(getExecutor())

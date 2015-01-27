@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.ConfigValueFactory;
+import net.kuujo.copycat.util.internal.Assert;
+
 import java.io.File;
 import java.util.Map;
 
@@ -24,9 +27,7 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileLog extends Log {
-  public static final String FILE_LOG_DIRECTORY = "directory";
-
-  private static final String DEFAULT_FILE_LOG_DIRECTORY = System.getProperty("user.dir");
+  private static final String FILE_LOG_DIRECTORY = "directory";
 
   public FileLog() {
     super();
@@ -34,6 +35,18 @@ public class FileLog extends Log {
 
   public FileLog(Map<String, Object> config) {
     super(config);
+  }
+
+  protected FileLog(Map<String, Object> config, String... resources) {
+    super(config, resources);
+  }
+
+  public FileLog(String resource) {
+    super(resource);
+  }
+
+  protected FileLog(String... resources) {
+    super(resources);
   }
 
   protected FileLog(FileLog log) {
@@ -52,7 +65,7 @@ public class FileLog extends Log {
    * @throws java.lang.NullPointerException If the directory is {@code null}
    */
   public void setDirectory(String directory) {
-    put(FILE_LOG_DIRECTORY, directory);
+    this.config = config.withValue(FILE_LOG_DIRECTORY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(directory, "directory")));
   }
 
   /**
@@ -71,7 +84,7 @@ public class FileLog extends Log {
    * @return The log directory.
    */
   public File getDirectory() {
-    return new File(get(FILE_LOG_DIRECTORY, DEFAULT_FILE_LOG_DIRECTORY));
+    return new File(config.hasPath(FILE_LOG_DIRECTORY) ? config.getString(FILE_LOG_DIRECTORY) : System.getProperty("user.dir"));
   }
 
   /**

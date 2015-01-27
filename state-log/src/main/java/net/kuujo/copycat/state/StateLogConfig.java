@@ -15,15 +15,14 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.resource.ResourceConfig;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.state.internal.DefaultStateLog;
 import net.kuujo.copycat.state.internal.SnapshottableLog;
 import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.log.FileLog;
-import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.protocol.Consistency;
 
 import java.util.Map;
 
@@ -33,31 +32,38 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateLogConfig extends ResourceConfig<StateLogConfig> {
-  private static final Log DEFAULT_STATE_LOG_LOG = new FileLog();
-  public static final String STATE_LOG_DEFAULT_CONSISTENCY = "consistency";
+  private static final String STATE_LOG_CONSISTENCY = "consistency";
 
-  private static final String DEFAULT_STATE_LOG_DEFAULT_CONSISTENCY = "default";
+  private static final String DEFAULT_CONFIGURATION = "event-log-defaults";
+  private static final String CONFIGURATION = "event-log";
 
   public StateLogConfig() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public StateLogConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public StateLogConfig(StateLogConfig config) {
+  public StateLogConfig(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  protected StateLogConfig(String... resources) {
+    super(addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
+  }
+
+  protected StateLogConfig(Map<String, Object> config, String... resources) {
+    super(config, addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
+  }
+
+  protected StateLogConfig(StateLogConfig config) {
     super(config);
   }
 
   @Override
   public StateLogConfig copy() {
     return new StateLogConfig(this);
-  }
-
-  @Override
-  public Log getLog() {
-    return get(RESOURCE_LOG, DEFAULT_STATE_LOG_LOG);
   }
 
   /**
@@ -67,7 +73,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setDefaultConsistency(String consistency) {
-    put(STATE_LOG_DEFAULT_CONSISTENCY, Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString());
+    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString()));
   }
 
   /**
@@ -77,7 +83,8 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setDefaultConsistency(Consistency consistency) {
-    put(STATE_LOG_DEFAULT_CONSISTENCY, Assert.isNotNull(consistency, "consistency").toString());
+    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(consistency, "consistency")
+      .toString()));
   }
 
   /**
@@ -86,7 +93,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @return The state log read consistency.
    */
   public Consistency getDefaultConsistency() {
-    return Consistency.parse(get(STATE_LOG_DEFAULT_CONSISTENCY, DEFAULT_STATE_LOG_DEFAULT_CONSISTENCY));
+    return Consistency.parse(config.getString(STATE_LOG_CONSISTENCY));
   }
 
   /**
@@ -118,7 +125,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
     return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
-      .withResourceFactory(DefaultStateLog::new)
+      .withResourceType(DefaultStateLog.class)
       .withLog(new SnapshottableLog(getLog()))
       .withSerializer(getSerializer())
       .withExecutor(getExecutor())

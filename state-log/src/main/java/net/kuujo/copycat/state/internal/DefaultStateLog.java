@@ -16,13 +16,13 @@
 package net.kuujo.copycat.state.internal;
 
 import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.resource.internal.ResourceContext;
-import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.ResourceContext;
 import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
+import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -220,6 +220,11 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
       Object value = serializer.readObject(snapshot);
       installer.accept(value);
     }
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[name=%s]", getClass().getSimpleName(), context.name());
   }
 
   /**

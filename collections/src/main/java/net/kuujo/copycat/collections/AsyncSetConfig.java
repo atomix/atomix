@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
+import net.kuujo.copycat.state.StateLogConfig;
 
 import java.util.Map;
 
@@ -28,12 +28,19 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncSetConfig extends AsyncCollectionConfig<AsyncSetConfig> {
+  private static final String DEFAULT_CONFIGURATION = "set-defaults";
+  private static final String CONFIGURATION = "set";
 
   public AsyncSetConfig() {
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public AsyncSetConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public AsyncSetConfig(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   protected AsyncSetConfig(AsyncSetConfig config) {
@@ -49,7 +56,7 @@ public class AsyncSetConfig extends AsyncCollectionConfig<AsyncSetConfig> {
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
     return new StateLogConfig(toMap())
       .resolve(cluster)
-      .withResourceFactory(DefaultAsyncSet::new);
+      .withResourceType(DefaultAsyncSet.class);
   }
 
 }

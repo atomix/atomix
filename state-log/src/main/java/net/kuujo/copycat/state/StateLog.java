@@ -59,7 +59,7 @@ public interface StateLog<T> extends Resource<StateLog<T>> {
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, StateLogConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<StateLog<T>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

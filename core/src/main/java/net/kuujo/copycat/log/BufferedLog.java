@@ -32,6 +32,10 @@ public class BufferedLog extends Log {
     super(config);
   }
 
+  public BufferedLog(String resource) {
+    super(resource);
+  }
+
   private BufferedLog(BufferedLog log) {
     super(log);
   }

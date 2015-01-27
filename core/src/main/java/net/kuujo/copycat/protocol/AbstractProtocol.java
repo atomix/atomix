@@ -26,12 +26,19 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractProtocol extends AbstractConfigurable implements Protocol {
+  private static final String CONFIGURATION = "protocol";
+  private static final String DEFAULT_CONFIGURATION = "protocol-defaults";
 
   protected AbstractProtocol() {
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  protected AbstractProtocol(Map<String, Object> config) {
-    super(config);
+  protected AbstractProtocol(Map<String, Object> config, String... resources) {
+    super(config, addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
+  }
+
+  protected AbstractProtocol(String... resources) {
+    super(addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
   protected AbstractProtocol(Configurable config) {

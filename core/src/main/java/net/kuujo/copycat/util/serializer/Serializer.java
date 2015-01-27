@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.util.serializer;
 
+import net.kuujo.copycat.util.Configurable;
+
 import java.nio.ByteBuffer;
 
 /**
@@ -21,7 +23,7 @@ import java.nio.ByteBuffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Serializer {
+public interface Serializer extends Configurable {
 
   /**
    * Reads an object.
@@ -39,5 +41,8 @@ public interface Serializer {
    * @return The object bytes.
    */
   ByteBuffer writeObject(Object object);
+
+  @Override
+  Serializer copy();
 
 }

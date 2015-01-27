@@ -15,12 +15,10 @@
  */
 package net.kuujo.copycat.election;
 
-import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.resource.ResourceConfig;
 
 import java.util.Map;
 
@@ -30,14 +28,19 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
-  private static final Log DEFAULT_LEADER_ELECTION_LOG = new BufferedLog();
+  private static final String CONFIGURATION = "election";
+  private static final String DEFAULT_CONFIGURATION = "election-defaults";
 
   public LeaderElectionConfig() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public LeaderElectionConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public LeaderElectionConfig(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   private LeaderElectionConfig(LeaderElectionConfig config) {
@@ -50,17 +53,12 @@ public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
   }
 
   @Override
-  public Log getLog() {
-    return get(RESOURCE_LOG, DEFAULT_LEADER_ELECTION_LOG);
-  }
-
-  @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
     return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())
       .withExecutor(getExecutor())
-      .withResourceFactory(DefaultLeaderElection::new)
+      .withResourceType(DefaultLeaderElection.class)
       .withLog(getLog())
       .withResourceConfig(this)
       .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());

@@ -9,6 +9,8 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.UUID;
 
+import static org.testng.Assert.assertEquals;
+
 /**
  * Chronicle log test.
  *
@@ -16,6 +18,29 @@ import java.util.UUID;
  */
 @Test
 public class ChronicleLogTest extends AbstractLogTest {
+
+  /**
+   * Tests configuring the buffered log.
+   */
+  public void testConfigurationDefaults() throws Throwable {
+    Log log = new FileLog();
+    assertEquals(log.getSegmentSize(), 1024 * 1024 * 1024);
+    log.setSegmentSize(1024 * 1024);
+    assertEquals(log.getSegmentSize(), 1024 * 1024);
+    assertEquals(log.getSegmentInterval(), Long.MAX_VALUE);
+    log.setSegmentInterval(60000);
+    assertEquals(log.getSegmentInterval(), 60000);
+  }
+
+  /**
+   * Tests configuring the buffered log via a configuration file.
+   */
+  public void testConfigurationFile() throws Throwable {
+    Log log = new FileLog("log-test");
+    assertEquals(log.getSegmentSize(), 1024 * 1024);
+    assertEquals(log.getSegmentInterval(), 60000);
+  }
+
   @AfterTest
   protected void cleanLogDir() throws IOException {
     Path directory = Paths.get("target/test-logs/");

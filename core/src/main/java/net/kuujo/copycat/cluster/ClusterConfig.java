@@ -14,10 +14,12 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.AbstractConfigurable;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.protocol.LocalProtocol;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.Configurable;
+import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -49,22 +51,24 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ClusterConfig extends AbstractConfigurable {
-  public static final String CLUSTER_PROTOCOL = "protocol";
-  public static final String CLUSTER_ELECTION_TIMEOUT = "election.timeout";
-  public static final String CLUSTER_HEARTBEAT_INTERVAL = "heartbeat.interval";
-  public static final String CLUSTER_MEMBERS = "members";
+  private static final String CLUSTER_PROTOCOL = "protocol";
+  private static final String CLUSTER_ELECTION_TIMEOUT = "election.timeout";
+  private static final String CLUSTER_HEARTBEAT_INTERVAL = "heartbeat.interval";
+  private static final String CLUSTER_MEMBERS = "members";
 
-  private static final Protocol DEFAULT_CLUSTER_PROTOCOL = new LocalProtocol();
-  private static final long DEFAULT_CLUSTER_ELECTION_TIMEOUT = 300;
-  private static final long DEFAULT_CLUSTER_HEARTBEAT_INTERVAL = 150;
-  private static final Set<String> DEFAULT_CLUSTER_MEMBERS = new HashSet<>(10);
+  private static final String CONFIGURATION = "cluster";
+  private static final String DEFAULT_CONFIGURATION = "cluster-defaults";
 
   public ClusterConfig() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public ClusterConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public ClusterConfig(String resource) {
+    super(addResources(new String[]{resource}, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
   private ClusterConfig(ClusterConfig config) {
@@ -83,7 +87,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public void setProtocol(Protocol protocol) {
-    put(CLUSTER_PROTOCOL, Assert.isNotNull(protocol, "protocol").toMap());
+    config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.isNotNull(protocol, "protocol").toMap()));
   }
 
   /**
@@ -92,7 +96,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster protocol.
    */
   public Protocol getProtocol() {
-    return get(CLUSTER_PROTOCOL, DEFAULT_CLUSTER_PROTOCOL);
+    return Configurable.load(config.getObject(CLUSTER_PROTOCOL).unwrapped());
   }
 
   /**
@@ -114,7 +118,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public void setElectionTimeout(long electionTimeout) {
-    put(CLUSTER_ELECTION_TIMEOUT, Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive"));
+    this.config = config.withValue(CLUSTER_ELECTION_TIMEOUT, ConfigValueFactory.fromAnyRef(Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive")));
   }
 
   /**
@@ -134,7 +138,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster election timeout in milliseconds.
    */
   public long getElectionTimeout() {
-    return get(CLUSTER_ELECTION_TIMEOUT, DEFAULT_CLUSTER_ELECTION_TIMEOUT);
+    return config.getLong(CLUSTER_ELECTION_TIMEOUT);
   }
 
   /**
@@ -169,7 +173,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public void setHeartbeatInterval(long heartbeatInterval) {
-    put(CLUSTER_HEARTBEAT_INTERVAL, Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive"));
+    this.config = config.withValue(CLUSTER_HEARTBEAT_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive")));
   }
 
   /**
@@ -189,7 +193,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The interval at which nodes send heartbeats to each other.
    */
   public long getHeartbeatInterval() {
-    return get(CLUSTER_HEARTBEAT_INTERVAL, DEFAULT_CLUSTER_HEARTBEAT_INTERVAL);
+    return config.getLong(CLUSTER_HEARTBEAT_INTERVAL);
   }
 
   /**
@@ -244,7 +248,7 @@ public class ClusterConfig extends AbstractConfigurable {
         throw new IllegalArgumentException(e);
       }
     }
-    put(CLUSTER_MEMBERS, members);
+    this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.isNotNull(members, "members"))));
   }
 
   /**
@@ -252,8 +256,8 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @return A set of all cluster member URIs.
    */
-  public Collection<String> getMembers() {
-    return get(CLUSTER_MEMBERS, DEFAULT_CLUSTER_MEMBERS);
+  public Set<String> getMembers() {
+    return new HashSet<String>(config.hasPath(CLUSTER_MEMBERS) ? (List) config.getList(CLUSTER_MEMBERS).unwrapped() : new ArrayList<>(0));
   }
 
   /**
@@ -265,16 +269,16 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.IllegalArgumentException If the given URI is invalid
    */
   public ClusterConfig addMember(String uri) {
-    Set<String> members = get(CLUSTER_MEMBERS);
-    if (members == null) {
-      members = new HashSet<>();
-      put(CLUSTER_MEMBERS, members);
+    if (!config.hasPath(CLUSTER_MEMBERS)) {
+      this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
     }
+    List<Object> members = config.getList(CLUSTER_MEMBERS).unwrapped();
     try {
-      members.add(Assert.isNotNull(Assert.arg(uri, getProtocol().isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
+      members.add(Assert.arg(Assert.isNotNull(uri, "uri"), getProtocol().isValidUri(new URI(uri)), "invalid protocol URI"));
     } catch (URISyntaxException e) {
-      throw new IllegalArgumentException(e);
+      throw new ConfigurationException("Invalid protocol URI", e);
     }
+    this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(members));
     return this;
   }
 
@@ -336,13 +340,9 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If {@code uri} is {@code null}
    */
   public ClusterConfig removeMember(String uri) {
-    Set<String> members = get(CLUSTER_MEMBERS, DEFAULT_CLUSTER_MEMBERS);
-    if (members != null) {
-      members.remove(Assert.isNotNull(uri, "uri"));
-      if (members.isEmpty()) {
-        remove(CLUSTER_MEMBERS);
-      }
-    }
+    List<Object> members = config.getList(CLUSTER_MEMBERS).unwrapped();
+    members.remove(Assert.isNotNull(uri, "uri"));
+    this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(members));
     return this;
   }
 
@@ -374,7 +374,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster configuration.
    */
   public ClusterConfig clearMembers() {
-    remove(CLUSTER_MEMBERS);
+    this.config = config.withoutPath(CLUSTER_MEMBERS);
     return this;
   }
 

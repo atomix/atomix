@@ -15,10 +15,11 @@
  */
 package net.kuujo.copycat.vertx;
 
-import net.kuujo.copycat.util.internal.Assert;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.protocol.AbstractProtocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.util.internal.Assert;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.VertxFactory;
 
@@ -31,15 +32,23 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventBusProtocol extends AbstractProtocol {
-  public static final String VERTX = "vertx";
-  public static final String VERTX_HOST = "host";
-  public static final String VERTX_PORT = "port";
+  private static final String VERTX = "vertx";
+  private static final String VERTX_HOST = "host";
+  private static final String VERTX_PORT = "port";
 
-  private static final String DEFAULT_VERTX_HOST = "localhost";
-  private static final int DEFAULT_VERTX_PORT = 0;
+  private static final String CONFIGURATION = "eventbus";
+  private static final String DEFAULT_CONFIGURATION = "eventbus-defaults";
 
   public VertxEventBusProtocol() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public VertxEventBusProtocol(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public VertxEventBusProtocol(Map<String, Object> config) {
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public VertxEventBusProtocol(String host, int port) {
@@ -52,8 +61,9 @@ public class VertxEventBusProtocol extends AbstractProtocol {
     setVertx(vertx);
   }
 
-  public VertxEventBusProtocol(Map<String, Object> config) {
-    super(config);
+  @Override
+  public VertxEventBusProtocol copy() {
+    return (VertxEventBusProtocol) super.copy();
   }
 
   /**
@@ -62,7 +72,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @param vertx The Vert.x instance.
    */
   public void setVertx(Vertx vertx) {
-    put(VERTX, Assert.isNotNull(vertx, "vertx"));
+    this.config = config.withValue(VERTX, ConfigValueFactory.fromAnyRef(Assert.isNotNull(vertx, "vertx")));
   }
 
   /**
@@ -71,7 +81,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @return The Vert.x instance.
    */
   public Vertx getVertx() {
-    return get(VERTX);
+    return config.hasPath(VERTX) ? (Vertx) config.getValue(VERTX) : null;
   }
 
   /**
@@ -92,7 +102,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @throws java.lang.NullPointerException If the host is {@code null}
    */
   public void setHost(String host) {
-    put(VERTX_HOST, Assert.isNotNull(host, "host"));
+    this.config = config.withValue(VERTX_HOST, ConfigValueFactory.fromAnyRef(Assert.isNotNull(host, "host")));
   }
 
   /**
@@ -101,7 +111,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @return The Vert.x host.
    */
   public String getHost() {
-    return get(VERTX_HOST, DEFAULT_VERTX_HOST);
+    return config.getString(VERTX_HOST);
   }
 
   /**
@@ -121,7 +131,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @param port The Vert.x port.
    */
   public void setPort(int port) {
-    put(VERTX_PORT, Assert.arg(port, port > -1, "port must be positive"));
+    this.config = config.withValue(VERTX_PORT, ConfigValueFactory.fromAnyRef(Assert.arg(port, port > -1, "port must be positive")));
   }
 
   /**
@@ -130,7 +140,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @return The Vert.x port.
    */
   public int getPort() {
-    return get(VERTX_PORT, DEFAULT_VERTX_PORT);
+    return config.getInt(VERTX_PORT);
   }
 
   /**

@@ -16,17 +16,19 @@
 package net.kuujo.copycat.cluster.internal.coordinator;
 
 import net.kuujo.copycat.cluster.ClusterException;
-import net.kuujo.copycat.resource.internal.CopycatStateContext;
 import net.kuujo.copycat.cluster.internal.AbstractCluster;
 import net.kuujo.copycat.cluster.internal.CoordinatedMember;
 import net.kuujo.copycat.cluster.internal.MemberInfo;
 import net.kuujo.copycat.cluster.internal.Router;
+import net.kuujo.copycat.resource.internal.CopycatStateContext;
+import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -43,7 +45,7 @@ public class CoordinatorCluster extends AbstractCluster {
 
   @Override
   protected CoordinatedMember createMember(MemberInfo info) {
-    AbstractMemberCoordinator memberCoordinator = new DefaultRemoteMemberCoordinator(info, coordinator.config().getClusterConfig().getProtocol(), executor);
+    AbstractMemberCoordinator memberCoordinator = new DefaultRemoteMemberCoordinator(info, coordinator.config().getClusterConfig().getProtocol(), Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(String.format("copycat-coordinator-%s", info.uri()))));
     try {
       memberCoordinator.open().get();
     } catch (InterruptedException | ExecutionException e) {

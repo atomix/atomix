@@ -15,9 +15,11 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.util.internal.Assert;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * Chronicle log implementation.
@@ -25,20 +27,25 @@ import java.io.File;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ChronicleLog extends FileLog {
-  public static final String CHRONICLE_LOG_INDEX_FILE_CAPACITY = "index.capacity";
-  public static final String CHRONICLE_LOG_INDEX_FILE_EXCERPTS = "index.excerpts";
-  public static final String CHRONICLE_LOG_DATA_BLOCK_SIZE = "block.size";
-  public static final String CHRONICLE_LOG_MESSAGE_CAPACITY = "message.capacity";
-  public static final String CHRONICLE_LOG_MINIMISE_FOOTPRINT = "minimise-footprint";
+  private static final String CHRONICLE_LOG_INDEX_FILE_CAPACITY = "index.capacity";
+  private static final String CHRONICLE_LOG_INDEX_FILE_EXCERPTS = "index.excerpts";
+  private static final String CHRONICLE_LOG_DATA_BLOCK_SIZE = "block.size";
+  private static final String CHRONICLE_LOG_MESSAGE_CAPACITY = "message.capacity";
+  private static final String CHRONICLE_LOG_MINIMISE_FOOTPRINT = "minimise-footprint";
 
-  private static final int DEFAULT_CHRONICLE_LOG_INDEX_FILE_CAPACITY = 1024 * 1024;
-  private static final int DEFAULT_CHRONICLE_LOG_INDEX_FILE_EXCERPTS = 8 * 1024;
-  private static final int DEFAULT_CHRONICLE_LOG_DATA_BLOCK_SIZE = 8 * 1024;
-  private static final int DEFAULT_CHRONICLE_LOG_MESSAGE_CAPACITY = 8129 / 2;
-  private static final boolean DEFAULT_CHRONICLE_LOG_MINIMISE_FOOTPRINT = false;
+  private static final String DEFAULT_CONFIGURATION = "chronicle-defaults";
+  private static final String CONFIGURATION = "chronicle";
 
   public ChronicleLog() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public ChronicleLog(Map<String, Object> config) {
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public ChronicleLog(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public ChronicleLog(FileLog log) {
@@ -57,7 +64,7 @@ public class ChronicleLog extends FileLog {
    * @throws java.lang.IllegalArgumentException If the capacity is not positive
    */
   public void setIndexFileCapacity(int capacity) {
-    put(CHRONICLE_LOG_INDEX_FILE_CAPACITY, Assert.arg(capacity, capacity > 0, "index file capacity must be positive"));
+    this.config = config.withValue(CHRONICLE_LOG_INDEX_FILE_CAPACITY, ConfigValueFactory.fromAnyRef(Assert.arg(capacity, capacity > 0, "index file capacity must be positive")));
   }
 
   /**
@@ -66,7 +73,7 @@ public class ChronicleLog extends FileLog {
    * @return The chronicle index file capacity.
    */
   public int getIndexFileCapacity() {
-    return get(CHRONICLE_LOG_INDEX_FILE_CAPACITY, DEFAULT_CHRONICLE_LOG_INDEX_FILE_CAPACITY);
+    return config.getInt(CHRONICLE_LOG_INDEX_FILE_CAPACITY);
   }
 
   /**
@@ -88,7 +95,7 @@ public class ChronicleLog extends FileLog {
    * @throws java.lang.IllegalArgumentException If excerpts is not positive
    */
   public void setIndexFileExcerpts(int excerpts) {
-    put(CHRONICLE_LOG_INDEX_FILE_EXCERPTS, Assert.arg(excerpts, excerpts > 0, "index file excerpts must be positive"));
+    this.config = config.withValue(CHRONICLE_LOG_INDEX_FILE_EXCERPTS, ConfigValueFactory.fromAnyRef(Assert.arg(excerpts, excerpts > 0, "index file excerpts must be positive")));
   }
 
   /**
@@ -97,7 +104,7 @@ public class ChronicleLog extends FileLog {
    * @return The number of chronicle index file excerpts.
    */
   public int getIndexFileExcerpts() {
-    return get(CHRONICLE_LOG_INDEX_FILE_EXCERPTS, DEFAULT_CHRONICLE_LOG_INDEX_FILE_EXCERPTS);
+    return config.getInt(CHRONICLE_LOG_INDEX_FILE_EXCERPTS);
   }
 
   /**
@@ -119,7 +126,7 @@ public class ChronicleLog extends FileLog {
    * @throws java.lang.IllegalArgumentException If data block size is not positive
    */
   public void setDataBlockSize(int blockSize) {
-    put(CHRONICLE_LOG_DATA_BLOCK_SIZE, Assert.arg(blockSize, blockSize > 0, "data block size must be positive"));
+    this.config = config.withValue(CHRONICLE_LOG_DATA_BLOCK_SIZE, ConfigValueFactory.fromAnyRef(Assert.arg(blockSize, blockSize > 0, "data block size must be positive")));
   }
 
   /**
@@ -128,7 +135,7 @@ public class ChronicleLog extends FileLog {
    * @return The chronicle data block size.
    */
   public int getDataBlockSize() {
-    return get(CHRONICLE_LOG_DATA_BLOCK_SIZE, DEFAULT_CHRONICLE_LOG_DATA_BLOCK_SIZE);
+    return config.getInt(CHRONICLE_LOG_DATA_BLOCK_SIZE);
   }
 
   /**
@@ -150,7 +157,7 @@ public class ChronicleLog extends FileLog {
    * @throws java.lang.IllegalArgumentException If message capacity is not positive
    */
   public void setMessageCapacity(int capacity) {
-    put(CHRONICLE_LOG_MESSAGE_CAPACITY, Assert.arg(capacity, capacity > 0, "message capacity must be positive"));
+    this.config = config.withValue(CHRONICLE_LOG_MESSAGE_CAPACITY, ConfigValueFactory.fromAnyRef(Assert.arg(capacity, capacity > 0, "message capacity must be positive")));
   }
 
   /**
@@ -159,7 +166,7 @@ public class ChronicleLog extends FileLog {
    * @return The chronicle message capacity.
    */
   public int getMessageCapacity() {
-    return get(CHRONICLE_LOG_MESSAGE_CAPACITY, DEFAULT_CHRONICLE_LOG_MESSAGE_CAPACITY);
+    return config.getInt(CHRONICLE_LOG_MESSAGE_CAPACITY);
   }
 
   /**
@@ -180,7 +187,7 @@ public class ChronicleLog extends FileLog {
    * @param minimise Whether to minimize the chronicle log footprint.
    */
   public void setMinimiseFootprint(boolean minimise) {
-    put(CHRONICLE_LOG_MINIMISE_FOOTPRINT, minimise);
+    this.config = config.withValue(CHRONICLE_LOG_MINIMISE_FOOTPRINT, ConfigValueFactory.fromAnyRef(minimise));
   }
 
   /**
@@ -189,7 +196,7 @@ public class ChronicleLog extends FileLog {
    * @return Indicates whether footprint minimization is enabled.
    */
   public boolean isMinimiseFootprint() {
-    return get(CHRONICLE_LOG_MINIMISE_FOOTPRINT, DEFAULT_CHRONICLE_LOG_MINIMISE_FOOTPRINT);
+    return config.getBoolean(CHRONICLE_LOG_MINIMISE_FOOTPRINT);
   }
 
   /**

@@ -15,13 +15,14 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.AbstractConfigurable;
-import net.kuujo.copycat.util.ConfigurationException;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.log.FileLog;
 import net.kuujo.copycat.log.Log;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.Configurable;
+import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
@@ -36,30 +37,32 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ResourceConfig<T extends ResourceConfig<T>> extends AbstractConfigurable {
-  public static final String RESOURCE_EXECUTOR = "executor";
-  public static final String RESOURCE_SERIALIZER = "serializer";
-  public static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
-  public static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
-  public static final String RESOURCE_REPLICAS = "replicas";
-  public static final String RESOURCE_LOG = "log";
+  private static final String RESOURCE_SERIALIZER = "serializer";
+  private static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
+  private static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
+  private static final String RESOURCE_REPLICAS = "replicas";
+  private static final String RESOURCE_LOG = "log";
 
-  private static final long DEFAULT_RESOURCE_ELECTION_TIMEOUT = 300;
-  private static final long DEFAULT_RESOURCE_HEARTBEAT_INTERVAL = 150;
-  private static final Set<String> DEFAULT_RESOURCE_REPLICAS = new HashSet<>(10);
-  private static final Log DEFAULT_RESOURCE_LOG = new FileLog();
+  private static final String CONFIGURATION = "resource";
+  private static final String DEFAULT_CONFIGURATION = "resource-defaults";
+  private static final Serializer DEFAULT_SERIALIZER = new KryoSerializer();
 
-  private Object defaultSerializer = KryoSerializer.class;
+  private Executor executor;
 
   protected ResourceConfig() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  protected ResourceConfig(Map<String, Object> config) {
-    super(config);
+  protected ResourceConfig(Map<String, Object> config, String... resources) {
+    super(config, addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
   protected ResourceConfig(T config) {
     super(config);
+  }
+
+  protected ResourceConfig(String... resources) {
+    super(addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
   @Override
@@ -73,113 +76,18 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   }
 
   /**
-   * Sets the default resource serializer.
-   *
-   * @param serializer The default resource serializer.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  void setDefaultSerializer(String serializer) {
-    try {
-      this.defaultSerializer = Class.forName(serializer);
-    } catch (ClassNotFoundException e) {
-      throw new ConfigurationException("Failed to locate default serializer class", e);
-    }
-  }
-
-  /**
-   * Sets the default resource serializer.
-   *
-   * @param serializer The default resource serializer.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  void setDefaultSerializer(Class<? extends Serializer> serializer) {
-    this.defaultSerializer = Assert.isNotNull(serializer, "serializer");
-  }
-
-  /**
-   * Sets the default resource serializer.
-   *
-   * @param serializer The default resource serializer.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  void setDefaultSerializer(Serializer serializer) {
-    this.defaultSerializer = Assert.isNotNull(serializer, "serializer");
-  }
-
-  /**
-   * Returns the default resource serializer.
-   *
-   * @return The default resource serializer.
-   */
-  @SuppressWarnings("unchecked")
-  Serializer getDefaultSerializer() {
-    if (defaultSerializer instanceof Serializer) {
-      return (Serializer) defaultSerializer;
-    } else if (defaultSerializer instanceof Class) {
-      try {
-        return ((Class<? extends Serializer>) defaultSerializer).newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate default serializer", e);
-      }
-    } else if (defaultSerializer instanceof String) {
-      try {
-        return ((Class<? extends Serializer>) Class.forName(defaultSerializer.toString())).newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate default serializer", e);
-      } catch (ClassNotFoundException e) {
-        throw new ConfigurationException("Failed to locate default serializer class", e);
-      }
-    }
-    throw new IllegalStateException("Invalid default serializer configuration");
-  }
-
-  /**
-   * Sets the default resource serializer, returning the configuration for method chaining.
-   *
-   * @param serializer The default resource serializer.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  T withDefaultSerializer(String serializer) {
-    setDefaultSerializer(serializer);
-    return (T) this;
-  }
-
-  /**
-   * Sets the default resource serializer, returning the configuration for method chaining.
-   *
-   * @param serializer The default resource serializer.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  T withDefaultSerializer(Class<? extends Serializer> serializer) {
-    setDefaultSerializer(serializer);
-    return (T) this;
-  }
-
-  /**
-   * Sets the default resource serializer, returning the configuration for method chaining.
-   *
-   * @param serializer The default resource serializer.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  T withDefaultSerializer(Serializer serializer) {
-    setDefaultSerializer(serializer);
-    return (T) this;
-  }
-
-  /**
    * Sets the resource entry serializer class name.
    *
    * @param serializer The resource entry serializer class name.
    * @throws java.lang.NullPointerException If the serializer is {@code null}
+   * @throws net.kuujo.copycat.util.ConfigurationException If the serializer could not be created
    */
   public void setSerializer(String serializer) {
-    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+    try {
+      setSerializer((Serializer) Class.forName(Assert.isNotNull(serializer, "serializer")).newInstance());
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to instantiate serializer", e);
+    }
   }
 
   /**
@@ -187,9 +95,14 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    *
    * @param serializer The resource entry serializer.
    * @throws java.lang.NullPointerException If the serializer is {@code null}
+   * @throws net.kuujo.copycat.util.ConfigurationException If the serializer could not be created
    */
   public void setSerializer(Class<? extends Serializer> serializer) {
-    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+    try {
+      setSerializer(Assert.isNotNull(serializer, "serializer").newInstance());
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to instantiate serializer", e);
+    }
   }
 
   /**
@@ -199,7 +112,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setSerializer(Serializer serializer) {
-    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+    this.config = config.withValue(RESOURCE_SERIALIZER, ConfigValueFactory.fromMap(Assert.isNotNull(serializer, "serializer").toMap()));
   }
 
   /**
@@ -208,27 +121,9 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The resource entry serializer.
    * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
    */
-  @SuppressWarnings("unchecked")
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public Serializer getSerializer() {
-    Object serializer = get(RESOURCE_SERIALIZER, defaultSerializer);
-    if (serializer instanceof Serializer) {
-      return (Serializer) serializer;
-    } else if (serializer instanceof Class) {
-      try {
-        return ((Class<? extends Serializer>) serializer).newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate serializer", e);
-      }
-    } else if (serializer instanceof String) {
-      try {
-        return ((Class<? extends Serializer>) Class.forName(serializer.toString())).newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate serializer", e);
-      } catch (ClassNotFoundException e) {
-        throw new ConfigurationException("Failed to locate serializer class", e);
-      }
-    }
-    throw new IllegalStateException("Invalid default serializer configuration");
+    return config.hasPath(RESOURCE_SERIALIZER) ? Configurable.load(config.getObject(RESOURCE_SERIALIZER).unwrapped()) : DEFAULT_SERIALIZER;
   }
 
   /**
@@ -271,12 +166,12 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   }
 
   /**
-   * Sets the resource executor.
+   * Sets the resource executor. This option can only be configured via the configuration API.
    *
    * @param executor The resource executor.
    */
   public void setExecutor(Executor executor) {
-    put(RESOURCE_EXECUTOR, executor);
+    this.executor = executor;
   }
 
   /**
@@ -285,7 +180,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The resource executor or {@code null} if no executor was specified.
    */
   public Executor getExecutor() {
-    return get(RESOURCE_EXECUTOR);
+    return executor;
   }
 
   /**
@@ -307,7 +202,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public void setElectionTimeout(long electionTimeout) {
-    put(RESOURCE_ELECTION_TIMEOUT, Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive"));
+    this.config = config.withValue(RESOURCE_ELECTION_TIMEOUT, ConfigValueFactory.fromAnyRef(Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive")));
   }
 
   /**
@@ -327,7 +222,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The resource election timeout in milliseconds.
    */
   public long getElectionTimeout() {
-    return get(RESOURCE_ELECTION_TIMEOUT, DEFAULT_RESOURCE_ELECTION_TIMEOUT);
+    return config.getLong(RESOURCE_ELECTION_TIMEOUT);
   }
 
   /**
@@ -364,7 +259,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public void setHeartbeatInterval(long heartbeatInterval) {
-    put(RESOURCE_HEARTBEAT_INTERVAL, Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive"));
+    this.config = config.withValue(RESOURCE_HEARTBEAT_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive")));
   }
 
   /**
@@ -384,7 +279,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The interval at which nodes send heartbeats to each other.
    */
   public long getHeartbeatInterval() {
-    return get(RESOURCE_HEARTBEAT_INTERVAL, DEFAULT_RESOURCE_HEARTBEAT_INTERVAL);
+    return config.getLong(RESOURCE_HEARTBEAT_INTERVAL);
   }
 
   /**
@@ -431,7 +326,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
   public void setReplicas(Collection<String> replicas) {
-    put(RESOURCE_REPLICAS, new HashSet<>(Assert.isNotNull(replicas, "replicas")));
+    this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.isNotNull(replicas, "replicas"))));
   }
 
   /**
@@ -439,8 +334,9 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    *
    * @return The set of replicas for the resource.
    */
+  @SuppressWarnings({"unchecked", "rawtypes"})
   public Set<String> getReplicas() {
-    return Collections.unmodifiableSet(get(RESOURCE_REPLICAS, DEFAULT_RESOURCE_REPLICAS));
+    return new HashSet<String>(config.hasPath(RESOURCE_REPLICAS) ? (List) config.getList(RESOURCE_REPLICAS).unwrapped() : new ArrayList<>(0));
   }
 
   /**
@@ -478,12 +374,12 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   @SuppressWarnings("unchecked")
   public T addReplica(String replica) {
-    Set<String> replicas = get(RESOURCE_REPLICAS);
-    if (replicas == null) {
-      replicas = new HashSet<>();
-      put(RESOURCE_REPLICAS, replicas);
+    if (!config.hasPath(RESOURCE_REPLICAS)) {
+      this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
     }
+    List<Object> replicas = config.getList(RESOURCE_REPLICAS).unwrapped();
     replicas.add(Assert.isNotNull(replica, "replica"));
+    this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(replicas));
     return (T) this;
   }
 
@@ -496,13 +392,9 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   @SuppressWarnings("unchecked")
   public T removeReplica(String replica) {
-    Set<String> replicas = get(RESOURCE_REPLICAS);
-    if (replicas != null) {
-      replicas.remove(Assert.isNotNull(replica, "replica"));
-      if (replicas.isEmpty()) {
-        remove(RESOURCE_REPLICAS);
-      }
-    }
+    List<Object> replicas = config.getList(RESOURCE_REPLICAS).unwrapped();
+    replicas.remove(Assert.isNotNull(replica, "replica"));
+    this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(replicas));
     return (T) this;
   }
 
@@ -513,7 +405,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   @SuppressWarnings("unchecked")
   public T clearReplicas() {
-    remove(RESOURCE_REPLICAS);
+    this.config = config.withoutPath(RESOURCE_REPLICAS);
     return (T) this;
   }
 
@@ -524,7 +416,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.NullPointerException If the {@code log} is {@code null}
    */
   public void setLog(Log log) {
-    put(RESOURCE_LOG, Assert.isNotNull(log, "log").toMap());
+    this.config = config.withValue(RESOURCE_LOG, ConfigValueFactory.fromMap(log.toMap()));
   }
 
   /**
@@ -533,7 +425,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The resource log.
    */
   public Log getLog() {
-    return get(RESOURCE_LOG, DEFAULT_RESOURCE_LOG);
+    return Configurable.load(config.getObject(RESOURCE_LOG).unwrapped());
   }
 
   /**

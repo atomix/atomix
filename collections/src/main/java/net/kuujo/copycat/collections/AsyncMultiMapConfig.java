@@ -15,13 +15,14 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.state.StateLogConfig;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
-import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.state.StateLogConfig;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Map;
 
@@ -33,13 +34,19 @@ import java.util.Map;
 public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
   public static final String ASYNC_MULTIMAP_CONSISTENCY = "consistency";
 
-  private static final String DEFAULT_ASYNC_MULTIMAP_CONSISTENCY = "default";
+  private static final String DEFAULT_CONFIGURATION = "multi-map-defaults";
+  private static final String CONFIGURATION = "multi-map";
 
   public AsyncMultiMapConfig() {
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public AsyncMultiMapConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public AsyncMultiMapConfig(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   protected AsyncMultiMapConfig(AsyncMultiMapConfig config) {
@@ -58,7 +65,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setConsistency(String consistency) {
-    put(ASYNC_MULTIMAP_CONSISTENCY, Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString());
+    this.config = config.withValue(ASYNC_MULTIMAP_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString()));
   }
 
   /**
@@ -68,7 +75,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setConsistency(Consistency consistency) {
-    put(ASYNC_MULTIMAP_CONSISTENCY, Assert.isNotNull(consistency, "consistency").toString());
+    this.config = config.withValue(ASYNC_MULTIMAP_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(consistency, "consistency").toString()));
   }
 
   /**
@@ -77,7 +84,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
    * @return The multimap read consistency.
    */
   public Consistency getConsistency() {
-    return Consistency.parse(get(ASYNC_MULTIMAP_CONSISTENCY, DEFAULT_ASYNC_MULTIMAP_CONSISTENCY));
+    return Consistency.parse(config.getString(ASYNC_MULTIMAP_CONSISTENCY));
   }
 
   /**
@@ -108,7 +115,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
     return new StateLogConfig(toMap())
       .resolve(cluster)
-      .withResourceFactory(DefaultAsyncMultiMap::new);
+      .withResourceType(DefaultAsyncMultiMap.class);
   }
 
 }

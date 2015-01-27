@@ -15,12 +15,13 @@
  */
 package net.kuujo.copycat.util;
 
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigParseOptions;
+import com.typesafe.config.ConfigResolveOptions;
 import net.kuujo.copycat.util.internal.Assert;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.*;
 
 /**
  * Base configuration for configurable types.
@@ -28,19 +29,48 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractConfigurable implements Configurable {
-  public static final String CONFIG_CLASS = "class";
-  protected Map<String, Object> config;
+  protected Config config;
 
   protected AbstractConfigurable() {
     this(new HashMap<>(128));
   }
 
-  protected AbstractConfigurable(Map<String, Object> config) {
-    this.config = config;
+  protected AbstractConfigurable(Map<String, Object> map, String... resources) {
+    Config config = ConfigFactory.parseMap(map);
+    if (resources != null) {
+      for (String resource : resources) {
+        config = config.withFallback(ConfigFactory.load(resource));
+      }
+    }
+    this.config = config.resolve();
+  }
+
+  protected AbstractConfigurable(String... resources) {
+    Assert.isNotNull(resources, "resources");
+    Config config = null;
+    for (String resource : resources) {
+      if (config == null) {
+        config = ConfigFactory.load(resource, ConfigParseOptions.defaults().setAllowMissing(true), ConfigResolveOptions.noSystem());
+      } else {
+        config = config.withFallback(ConfigFactory.load(resource, ConfigParseOptions.defaults().setAllowMissing(true), ConfigResolveOptions.noSystem()));
+      }
+    }
+    this.config = config.resolve(ConfigResolveOptions.noSystem());
   }
 
   protected AbstractConfigurable(Configurable config) {
     this(config.toMap());
+  }
+
+  /**
+   * Adds new resources to a resources array.
+   */
+  protected static String[] addResources(String[] resources, String... newResources) {
+    List<String> results = resources != null ? new ArrayList<>(Arrays.asList(resources)) : new ArrayList<>(1);
+    if (newResources != null) {
+      results.addAll(Arrays.asList(newResources));
+    }
+    return results.toArray(new String[results.size()]);
   }
 
   @Override
@@ -56,120 +86,12 @@ public abstract class AbstractConfigurable implements Configurable {
 
   @Override
   public void configure(Map<String, Object> config) {
-    this.config = config;
-  }
-
-  /**
-   * Puts a configuration value in the configuration.
-   *
-   * @param key The configuration key.
-   * @param value The configuration value.
-   */
-  @SuppressWarnings("unchecked")
-  protected void put(String key, Object value) {
-    config.put(Assert.isNotNull(key, "key"), value instanceof Configurable ? ((Configurable) value).toMap() : value);
-  }
-
-  /**
-   * Gets a configuration value from the configuration.
-   *
-   * @param key The configuration key.
-   * @param <U> The configuration value type.
-   * @return The configuration value.
-   */
-  @SuppressWarnings("unchecked")
-  protected <U> U get(String key) {
-    return get(key, k -> null);
-  }
-
-  /**
-   * Gets a configuration value from the configuration.
-   *
-   * @param key The configuration key.
-   * @param defaultValue The default value to return if the configuration does not exist.
-   * @param <U> The configuration type.
-   * @return The configuration value.
-   */
-  @SuppressWarnings("unchecked")
-  protected <U> U get(String key, U defaultValue) {
-    return get(key, k -> defaultValue);
-  }
-
-  /**
-   * Gets a configuration value from the configuration. If the value is not present then it is calculated with the
-   * given value calculator function.
-   *
-   * @param key The configuration key.
-   * @param computer The function with which to compute the value if not present.
-   * @param <U> The configuration type.
-   * @return The configuration value.
-   */
-  @SuppressWarnings("unchecked")
-  protected <U> U get(String key, Function<String, U> computer) {
-    Assert.isNotNull(key, "key");
-    Object value = config.get(key);
-    if (value == null) {
-      return computer.apply(key);
-    } else if (value instanceof Map) {
-      String className = (String) ((Map<?, ?>) value).get(CONFIG_CLASS);
-      if (className != null) {
-        return (U) Configurable.load((Map<String, Object>) value);
-      }
-    }
-    return (U) value;
-  }
-
-  /**
-   * Removes a configuration value from the configuration.
-   *
-   * @param key The configuration key.
-   * @param <U> The configuration value type.
-   * @return The configuration value that was removed.
-   */
-  @SuppressWarnings("unchecked")
-  protected <U> U remove(String key) {
-    return (U) config.remove(Assert.isNotNull(key, "key"));
-  }
-
-  /**
-   * Returns a boolean value indicating whether the configuration contains a key.
-   *
-   * @param key The key to check.
-   * @return Indicates whether the configuration contains the given key.
-   */
-  protected boolean containsKey(String key) {
-    return config.containsKey(Assert.isNotNull(key, "key"));
-  }
-
-  /**
-   * Returns the configuration key set.
-   *
-   * @return The configuration key set.
-   */
-  protected Set<String> keySet() {
-    return config.keySet();
-  }
-
-  /**
-   * Returns the configuration entry set.
-   *
-   * @return The configuration entry set.
-   */
-  protected Set<Map.Entry<String, Object>> entrySet() {
-    return config.entrySet();
-  }
-
-  /**
-   * Clears the configuration.
-   */
-  @SuppressWarnings("unchecked")
-  protected void clear() {
-    config.clear();
+    this.config = ConfigFactory.parseMap(config);
   }
 
   @Override
   public Map<String, Object> toMap() {
-    Map<String, Object> config = new HashMap<>(this.config);
+    Map<String, Object> config = new HashMap<>(this.config.root().unwrapped());
     config.put("class", getClass().getName());
     return config;
   }

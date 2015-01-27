@@ -63,7 +63,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public <T> EventLog<T> eventLog(String name, EventLogConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -75,7 +75,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public <T> StateLog<T> stateLog(String name, StateLogConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -87,7 +87,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public <T> StateMachine<T> stateMachine(String name, StateMachineConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -99,7 +99,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public LeaderElection leaderElection(String name, LeaderElectionConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -111,7 +111,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public <K, V> AsyncMap<K, V> map(String name, AsyncMapConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -123,7 +123,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public <K, V> AsyncMultiMap<K, V> multiMap(String name, AsyncMultiMapConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -135,7 +135,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public <T> AsyncList<T> list(String name, AsyncListConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -147,7 +147,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public <T> AsyncSet<T> set(String name, AsyncSetConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
@@ -159,7 +159,7 @@ public class DefaultCopycat implements Copycat {
   @Override
   public AsyncLock lock(String name, AsyncLockConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 

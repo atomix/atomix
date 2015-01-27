@@ -15,10 +15,12 @@
  */
 package net.kuujo.copycat.cluster.internal.coordinator;
 
-import net.kuujo.copycat.util.AbstractConfigurable;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.util.internal.Assert;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -34,7 +36,6 @@ public class CoordinatorConfig extends AbstractConfigurable {
   public static final String COORDINATOR_CLUSTER = "cluster";
   public static final String COORDINATOR_EXECUTOR = "executor";
 
-  private static final String DEFAULT_COORDINATOR_NAME = "copycat";
   private final Executor DEFAULT_COORDINATOR_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d"));
 
   public CoordinatorConfig() {
@@ -61,7 +62,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the name is {@code null}
    */
   public void setName(String name) {
-    put(COORDINATOR_NAME, Assert.isNotNull(name, "name"));
+    this.config = config.withValue(COORDINATOR_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
   }
 
   /**
@@ -70,7 +71,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @return The Copycat instance name.
    */
   public String getName() {
-    return get(COORDINATOR_NAME, DEFAULT_COORDINATOR_NAME);
+    return config.getString(COORDINATOR_NAME);
   }
 
   /**
@@ -88,11 +89,11 @@ public class CoordinatorConfig extends AbstractConfigurable {
   /**
    * Sets the Copycat cluster configuration.
    *
-   * @param config The Copycat cluster configuration.
+   * @param cluster The Copycat cluster configuration.
    * @throws java.lang.NullPointerException If the cluster configuration is {@code null}
    */
-  public void setClusterConfig(ClusterConfig config) {
-    put(COORDINATOR_CLUSTER, Assert.isNotNull(config, "config").toMap());
+  public void setClusterConfig(ClusterConfig cluster) {
+    this.config = config.withValue(COORDINATOR_CLUSTER, ConfigValueFactory.fromMap(Assert.isNotNull(cluster, "config").toMap()));
   }
 
   /**
@@ -101,7 +102,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @return The Copycat cluster configuration.
    */
   public ClusterConfig getClusterConfig() {
-    return get(COORDINATOR_CLUSTER, key -> new ClusterConfig());
+    return Configurable.load(config.getObject(COORDINATOR_CLUSTER).unwrapped());
   }
 
   /**
@@ -122,7 +123,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @param executor The coordinator executor.
    */
   public void setExecutor(Executor executor) {
-    put(COORDINATOR_EXECUTOR, executor);
+    this.config = config.withValue(COORDINATOR_EXECUTOR, ConfigValueFactory.fromAnyRef(executor));
   }
 
   /**
@@ -131,7 +132,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @return The coordinator executor or {@code null} if no executor was specified.
    */
   public Executor getExecutor() {
-    return get(COORDINATOR_EXECUTOR, DEFAULT_COORDINATOR_EXECUTOR);
+    return config.hasPath (COORDINATOR_EXECUTOR) ? (Executor) config.getValue(COORDINATOR_EXECUTOR).unwrapped() : DEFAULT_COORDINATOR_EXECUTOR;
   }
 
   /**

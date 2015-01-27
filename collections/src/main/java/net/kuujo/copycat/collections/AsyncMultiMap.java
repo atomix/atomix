@@ -58,7 +58,7 @@ public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, Resource<
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMultiMapConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncMultiMap<K, V>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

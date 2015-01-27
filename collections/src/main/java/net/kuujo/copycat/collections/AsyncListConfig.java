@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
+import net.kuujo.copycat.state.StateLogConfig;
 
 import java.util.Map;
 
@@ -28,12 +28,19 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
+  private static final String DEFAULT_CONFIGURATION = "list-defaults";
+  private static final String CONFIGURATION = "list";
 
   public AsyncListConfig() {
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public AsyncListConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public AsyncListConfig(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   protected AsyncListConfig(AsyncListConfig config) {
@@ -49,7 +56,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
     return new StateLogConfig(toMap())
       .resolve(cluster)
-      .withResourceFactory(DefaultAsyncList::new);
+      .withResourceType(DefaultAsyncList.class);
   }
 
 }

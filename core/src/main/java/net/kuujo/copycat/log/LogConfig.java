@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.log;
 
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.internal.Assert;
@@ -27,26 +28,28 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class LogConfig extends AbstractConfigurable implements Configurable {
-  public static final String LOG_SEGMENT_SIZE = "segment.size";
-  public static final String LOG_SEGMENT_INTERVAL = "segment.interval";
-  public static final String LOG_FLUSH_ON_WRITE = "flush.on-write";
-  public static final String LOG_FLUSH_INTERVAL = "flush.interval";
+  private static final String LOG_SEGMENT_SIZE = "segment.size";
+  private static final String LOG_SEGMENT_INTERVAL = "segment.interval";
+  private static final String LOG_FLUSH_ON_WRITE = "flush.on-write";
+  private static final String LOG_FLUSH_INTERVAL = "flush.interval";
 
-  private static final int DEFAULT_LOG_SEGMENT_SIZE = 1024 * 1024 * 1024;
-  private static final long DEFAULT_LOG_SEGMENT_INTERVAL = Long.MAX_VALUE;
-  private static final boolean DEFAULT_LOG_FLUSH_ON_WRITE = false;
-  private static final long DEFAULT_LOG_FLUSH_INTERVAL = Long.MAX_VALUE;
+  private static final String DEFAULT_CONFIGURATION = "log-defaults";
+  private static final String CONFIGURATION = "log";
 
   protected LogConfig() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  protected LogConfig(Map<String, Object> config) {
-    super(config);
+  protected LogConfig(Map<String, Object> config, String... resources) {
+    super(config, addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
   protected LogConfig(LogConfig log) {
     super(log);
+  }
+
+  protected LogConfig(String... resources) {
+    super(addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
   @Override
@@ -61,7 +64,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @throws java.lang.IllegalArgumentException If the segment size is not positive
    */
   public void setSegmentSize(int segmentSize) {
-    put(LOG_SEGMENT_SIZE, Assert.arg(segmentSize, segmentSize > 0, "segment size must be postive"));
+    this.config = config.withValue(LOG_SEGMENT_SIZE, ConfigValueFactory.fromAnyRef(Assert.arg(segmentSize, segmentSize > 0, "segment size must be positive")));
   }
 
   /**
@@ -70,7 +73,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return The log segment size in bytes.
    */
   public int getSegmentSize() {
-    return get(LOG_SEGMENT_SIZE, DEFAULT_LOG_SEGMENT_SIZE);
+    return config.getInt(LOG_SEGMENT_SIZE);
   }
 
   /**
@@ -92,7 +95,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @throws java.lang.IllegalArgumentException If the segment interval is not positive
    */
   public void setSegmentInterval(long segmentInterval) {
-    put(LOG_SEGMENT_INTERVAL, Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be positive"));
+    this.config = config.withValue(LOG_SEGMENT_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be positive")));
   }
 
   /**
@@ -101,7 +104,8 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return The log segment interval.
    */
   public long getSegmentInterval() {
-    return get(LOG_SEGMENT_INTERVAL, DEFAULT_LOG_SEGMENT_INTERVAL);
+    long interval = config.getLong(LOG_SEGMENT_INTERVAL);
+    return interval > -1 ? interval : Long.MAX_VALUE;
   }
 
   /**
@@ -122,7 +126,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @param flushOnWrite Whether to flush the log to disk on every write.
    */
   public void setFlushOnWrite(boolean flushOnWrite) {
-    put(LOG_FLUSH_ON_WRITE, flushOnWrite);
+    this.config = config.withValue(LOG_FLUSH_ON_WRITE, ConfigValueFactory.fromAnyRef(flushOnWrite));
   }
 
   /**
@@ -131,7 +135,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return Whether to flush the log to disk on every write.
    */
   public boolean isFlushOnWrite() {
-    return get(LOG_FLUSH_ON_WRITE, DEFAULT_LOG_FLUSH_ON_WRITE);
+    return config.getBoolean(LOG_FLUSH_ON_WRITE);
   }
 
   /**
@@ -152,7 +156,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @throws java.lang.IllegalArgumentException If the flush interval is not positive
    */
   public void setFlushInterval(long flushInterval) {
-    put(LOG_FLUSH_INTERVAL, Assert.arg(flushInterval, flushInterval > 0, "flush interval must be positive"));
+    this.config = config.withValue(LOG_FLUSH_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(flushInterval, flushInterval > 0, "flush interval must be positive")));
   }
 
   /**
@@ -161,7 +165,8 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return The log flush interval.
    */
   public long getFlushInterval() {
-    return get(LOG_FLUSH_INTERVAL, DEFAULT_LOG_FLUSH_INTERVAL);
+    long interval = config.getLong(LOG_FLUSH_INTERVAL);
+    return interval > -1 ? interval : Long.MAX_VALUE;
   }
 
   /**

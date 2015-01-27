@@ -55,7 +55,7 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     AsyncList<T> list = coordinator.getResource(name, config.resolve(cluster));
     ((AbstractResource) list).addStartupTask(() -> coordinator.open().thenApply(v -> null));
     ((AbstractResource) list).addShutdownTask(coordinator::close);

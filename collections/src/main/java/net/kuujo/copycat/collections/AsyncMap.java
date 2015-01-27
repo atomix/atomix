@@ -58,7 +58,7 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMapConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withClusterConfig(cluster));
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncMap<K, V>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

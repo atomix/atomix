@@ -15,21 +15,21 @@
  */
 package net.kuujo.copycat.cluster.internal.coordinator;
 
-import net.kuujo.copycat.resource.internal.ResourceContext;
-import net.kuujo.copycat.util.AbstractConfigurable;
-import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.log.BufferedLog;
+import com.typesafe.config.ConfigList;
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.Configurable;
+import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 /**
  * Resource configuration.
@@ -37,22 +37,17 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatedResourceConfig extends AbstractConfigurable {
-  public static final String RESOURCE_CONFIG = "config";
-  public static final String RESOURCE_FACTORY = "factory";
-  public static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
-  public static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
-  public static final String RESOURCE_REPLICAS = "replicas";
-  public static final String RESOURCE_LOG = "log";
-  public static final String RESOURCE_SERIALIZER = "serializer";
-  public static final String RESOURCE_EXECUTOR = "executor";
-
-  private static final long DEFAULT_RESOURCE_ELECTION_TIMEOUT = 300;
-  private static final long DEFAULT_RESOURCE_HEARTBEAT_INTERVAL = 150;
-  private static final Set<String> DEFAULT_RESOURCE_REPLICAS = new HashSet<>();
-  private static final Log DEFAULT_RESOURCE_LOG = new BufferedLog();
+  private static final String RESOURCE_CONFIG = "config";
+  private static final String RESOURCE_TYPE = "type";
+  private static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
+  private static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
+  private static final String RESOURCE_REPLICAS = "replicas";
+  private static final String RESOURCE_LOG = "log";
+  private static final String RESOURCE_SERIALIZER = "serializer";
 
   private Serializer defaultSerializer = new KryoSerializer();
   private Executor defaultExecutor;
+  private Executor executor;
 
   public CoordinatedResourceConfig() {
     super();
@@ -79,7 +74,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the given configuration is {@code null}
    */
   public <T extends ResourceConfig<T>> void setResourceConfig(T config) {
-    put(RESOURCE_CONFIG, Assert.isNotNull(config, "config"));
+    this.config = this.config.withValue(RESOURCE_CONFIG, ConfigValueFactory.fromMap(Assert.isNotNull(config, "config").toMap()));
   }
 
   /**
@@ -89,7 +84,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The user resource configuration.
    */
   public <T extends ResourceConfig<T>> T getResourceConfig() {
-    return get(RESOURCE_CONFIG);
+    return Configurable.load(config.getObject(RESOURCE_CONFIG).unwrapped());
   }
 
   /**
@@ -106,60 +101,40 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource factory.
+   * Sets the resource type.
    *
-   * @param factory The resource factory.
-   * @throws java.lang.NullPointerException If the resource factory is {@code null}
+   * @param type The resource type.
+   * @throws java.lang.NullPointerException If the resource type is {@code null}
    */
-  public void setResourceFactory(Function<ResourceContext, Resource> factory) {
-    put(RESOURCE_FACTORY, Assert.isNotNull(factory, "factory"));
+  @SuppressWarnings("rawtypes")
+  public void setResourceType(Class<? extends Resource> type) {
+    this.config = config.withValue(RESOURCE_TYPE, ConfigValueFactory.fromAnyRef(Assert.isNotNull(type, "type").getName()));
   }
 
   /**
-   * Set the resource factory.
+   * Returns the resource type.
    *
-   * @param factory The resource factory.
-   * @throws java.lang.NullPointerException If the resource type is {@code null}
+   * @return The resource type.
    */
-  public void setResourceFactory(Class<? extends Function<ResourceContext, Resource>> factory) {
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  public Class<? extends Resource> getResourceType() {
     try {
-      put(RESOURCE_FACTORY, Assert.isNotNull(factory, "factory").newInstance());
-    } catch (InstantiationException | IllegalAccessException e) {
-      throw new ConfigurationException("Failed to instantiate resource factory");
+      return (Class<? extends Resource>) Class.forName(config.getString(RESOURCE_TYPE));
+    } catch (ClassNotFoundException e) {
+      throw new ConfigurationException("Failed to load resource class", e);
     }
   }
 
   /**
-   * Returns the resource factory.
+   * Sets the resource type, returning the resource configuration for method chaining.
    *
-   * @return The resource factory.
-   */
-  @SuppressWarnings("rawtypes")
-  public Function<ResourceContext, Resource> getResourceFactory() {
-    return get(RESOURCE_FACTORY);
-  }
-
-  /**
-   * Sets the resource factory, returning the resource configuration for method chaining.
-   *
-   * @param factory The resource factory.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the resource factory is {@code null}
-   */
-  public CoordinatedResourceConfig withResourceFactory(Function<ResourceContext, Resource> factory) {
-    setResourceFactory(factory);
-    return this;
-  }
-
-  /**
-   * Sets the resource factory, returning the resource configuration for method chaining.
-   *
-   * @param factory The resource factory.
+   * @param type The resource type.
    * @return The resource configuration.
    * @throws java.lang.NullPointerException If the resource type is {@code null}
    */
-  public CoordinatedResourceConfig withResourceFactory(Class<? extends Function<ResourceContext, Resource>> factory) {
-    setResourceFactory(factory);
+  @SuppressWarnings("rawtypes")
+  public CoordinatedResourceConfig withResourceType(Class<? extends Resource> type) {
+    setResourceType(type);
     return this;
   }
 
@@ -170,7 +145,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public void setElectionTimeout(long electionTimeout) {
-    put(RESOURCE_ELECTION_TIMEOUT, Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive"));
+    this.config = config.withValue(RESOURCE_ELECTION_TIMEOUT, ConfigValueFactory.fromAnyRef(Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive")));
   }
 
   /**
@@ -190,7 +165,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource election timeout in milliseconds.
    */
   public long getElectionTimeout() {
-    return get(RESOURCE_ELECTION_TIMEOUT, DEFAULT_RESOURCE_ELECTION_TIMEOUT);
+    return config.getLong(RESOURCE_ELECTION_TIMEOUT);
   }
 
   /**
@@ -225,7 +200,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public void setHeartbeatInterval(long heartbeatInterval) {
-    put(RESOURCE_HEARTBEAT_INTERVAL, Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive"));
+    this.config = config.withValue(RESOURCE_HEARTBEAT_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive")));
   }
 
   /**
@@ -245,7 +220,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The interval at which nodes send heartbeats to each other.
    */
   public long getHeartbeatInterval() {
-    return get(RESOURCE_HEARTBEAT_INTERVAL, DEFAULT_RESOURCE_HEARTBEAT_INTERVAL);
+    return config.getLong(RESOURCE_HEARTBEAT_INTERVAL);
   }
 
   /**
@@ -290,7 +265,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
   public void setReplicas(Collection<String> replicas) {
-    put(RESOURCE_REPLICAS, new HashSet<>(Assert.isNotNull(replicas, "replicas")));
+    this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.isNotNull(replicas, "replicas"))));
   }
 
   /**
@@ -299,7 +274,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The set of replicas for the resource.
    */
   public Set<String> getReplicas() {
-    return get(RESOURCE_REPLICAS, DEFAULT_RESOURCE_REPLICAS);
+    return new HashSet<String>(config.hasPath(RESOURCE_REPLICAS) ? (List) config.getList(RESOURCE_REPLICAS).unwrapped() : new ArrayList<>(0));
   }
 
   /**
@@ -334,12 +309,11 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If {@code replica} is {@code null}
    */
   public CoordinatedResourceConfig addReplica(String replica) {
-    Set<String> replicas = get(RESOURCE_REPLICAS);
-    if (replicas == null) {
-      replicas = new HashSet<>();
-      put(RESOURCE_REPLICAS, replicas);
+    if (!config.hasPath(RESOURCE_REPLICAS)) {
+      this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
     }
-    replicas.add(Assert.isNotNull(replica, "replica"));
+    ConfigList replicas = config.getList(RESOURCE_REPLICAS);
+    replicas.add(ConfigValueFactory.fromAnyRef(Assert.isNotNull(replica, "replica")));
     return this;
   }
 
@@ -351,13 +325,8 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If {@code replica} is {@code null}
    */
   public CoordinatedResourceConfig removeReplica(String replica) {
-    Set<String> replicas = get(RESOURCE_REPLICAS);
-    if (replicas != null) {
-      replicas.remove(Assert.isNotNull(replica, "replica"));
-      if (replicas.isEmpty()) {
-        remove(RESOURCE_REPLICAS);
-      }
-    }
+    ConfigList replicas = config.getList(RESOURCE_REPLICAS);
+    replicas.remove(ConfigValueFactory.fromAnyRef(Assert.isNotNull(replica, "replica")));
     return this;
   }
 
@@ -367,7 +336,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    */
   public CoordinatedResourceConfig clearReplicas() {
-    remove(RESOURCE_REPLICAS);
+    config.withoutPath(RESOURCE_REPLICAS);
     return this;
   }
 
@@ -378,7 +347,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the {@code log} is {@code null}
    */
   public void setLog(Log log) {
-    put(RESOURCE_LOG, Assert.isNotNull(log, "log").toMap());
+    this.config = config.withValue(RESOURCE_LOG, ConfigValueFactory.fromMap(log.toMap()));
   }
 
   /**
@@ -387,7 +356,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource log.
    */
   public Log getLog() {
-    return get(RESOURCE_LOG, DEFAULT_RESOURCE_LOG);
+    return Configurable.load(config.getObject(RESOURCE_LOG).unwrapped());
   }
 
   /**
@@ -441,18 +410,18 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setSerializer(Serializer serializer) {
-    put(RESOURCE_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+    this.config = config.withValue(RESOURCE_SERIALIZER, ConfigValueFactory.fromMap(Assert.isNotNull(serializer, "serializer").toMap()));
   }
 
   /**
    * Returns the resource entry serializer.
    *
-   * @return The resource entry serializer.
+   * @return The resource entry serializer or the default serializer if no specific serializer was configured.
    * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
    */
   @SuppressWarnings("unchecked")
   public Serializer getSerializer() {
-    return get(RESOURCE_SERIALIZER, defaultSerializer);
+    return config.hasPath(RESOURCE_SERIALIZER) ? Configurable.load(config.getObject(RESOURCE_SERIALIZER).unwrapped()) : defaultSerializer;
   }
 
   /**
@@ -502,16 +471,16 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @param executor The resource executor.
    */
   public void setExecutor(Executor executor) {
-    put(RESOURCE_EXECUTOR, executor);
+    this.executor = executor;
   }
 
   /**
    * Returns the resource executor.
    *
-   * @return The resource executor or {@code null} if no executor was specified.
+   * @return The resource executor or the default executor if no specific executor was configured.
    */
   public Executor getExecutor() {
-    return get(RESOURCE_EXECUTOR, defaultExecutor);
+    return executor != null ? executor : defaultExecutor;
   }
 
   /**

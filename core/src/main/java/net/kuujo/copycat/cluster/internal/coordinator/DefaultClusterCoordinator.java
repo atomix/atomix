@@ -29,12 +29,14 @@ import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.internal.CopycatStateContext;
 import net.kuujo.copycat.resource.internal.DefaultResourceContext;
 import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -132,7 +134,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       CopycatStateContext state = new CopycatStateContext(name, uri, config, executor);
       ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
       ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
-      return new ResourceHolder(config.getResourceFactory().apply(context), config, cluster, state, context);
+      try {
+        return new ResourceHolder(config.getResourceType().getConstructor(ResourceContext.class).newInstance(context), config, cluster, state, context);
+      } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+        throw new ConfigurationException("Failed to instantiate resource", e);
+      }
     });
     return (T) resource.resource;
   }

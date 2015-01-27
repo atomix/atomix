@@ -24,20 +24,18 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocol extends AbstractProtocol {
+  private static final Map<String, LocalProtocolServer> REGISTRY = new ConcurrentHashMap<>(32);
 
   public LocalProtocol() {
     super();
-    config.computeIfAbsent("registry", key -> new ConcurrentHashMap<>());
   }
 
   public LocalProtocol(Map<String, Object> config) {
     super(config);
-    config.computeIfAbsent("registry", key -> new ConcurrentHashMap<>());
   }
 
   private LocalProtocol(LocalProtocol protocol) {
     super(protocol);
-    config.computeIfAbsent("registry", key -> new ConcurrentHashMap<>());
   }
 
   @Override
@@ -46,20 +44,18 @@ public class LocalProtocol extends AbstractProtocol {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public ProtocolClient createClient(URI uri) {
-    return new LocalProtocolClient(uri.getAuthority(), (Map<String, LocalProtocolServer>) config.get("registry"));
+    return new LocalProtocolClient(uri.getAuthority(), REGISTRY);
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public ProtocolServer createServer(URI uri) {
-    return new LocalProtocolServer(uri.getAuthority(), (Map<String, LocalProtocolServer>) config.get("registry"));
+    return new LocalProtocolServer(uri.getAuthority(), REGISTRY);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[registry=%s]", getClass().getSimpleName(), config.get("registry"));
+    return String.format("%s[registry=%s]", getClass().getSimpleName(), REGISTRY);
   }
 
 }

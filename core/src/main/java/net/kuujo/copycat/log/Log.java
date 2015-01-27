@@ -28,12 +28,20 @@ public abstract class Log extends LogConfig {
     super();
   }
 
-  protected Log(Map<String, Object> config) {
-    super(config);
+  protected Log(Map<String, Object> config, String... resources) {
+    super(config, resources);
   }
 
   protected Log(Log log) {
     super(log);
+  }
+
+  protected Log(String resource) {
+    super(resource);
+  }
+
+  protected Log(String... resources) {
+    super(resources);
   }
 
   @Override

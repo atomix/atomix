@@ -15,13 +15,14 @@
  */
 package net.kuujo.copycat;
 
+import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.util.AbstractConfigurable;
+import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.util.serializer.KryoSerializer;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.Map;
@@ -39,16 +40,21 @@ public class CopycatConfig extends AbstractConfigurable {
   public static final String COPYCAT_DEFAULT_EXECUTOR = "executor";
   public static final String COPYCAT_CLUSTER = "cluster";
 
-  private static final String DEFAULT_COPYCAT_NAME = "copycat";
-  private static final String DEFAULT_COPYCAT_SERIALIZER = KryoSerializer.class.getName();
+  private static final String DEFAULT_CONFIGURATION = "copycat-default";
+  private static final String CONFIGURATION = "copycat";
+
   private final Executor DEFAULT_COPYCAT_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-%d"));
 
   public CopycatConfig() {
-    super();
+    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public CopycatConfig(Map<String, Object> config) {
-    super(config);
+    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  }
+
+  public CopycatConfig(String resource) {
+    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   private CopycatConfig(CopycatConfig config) {
@@ -67,7 +73,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the name is {@code null}
    */
   public void setName(String name) {
-    put(COPYCAT_NAME, Assert.isNotNull(name, "name"));
+    this.config = config.withValue(COPYCAT_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
   }
 
   /**
@@ -76,7 +82,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat instance name.
    */
   public String getName() {
-    return get(COPYCAT_NAME, DEFAULT_COPYCAT_NAME);
+    return config.getString(COPYCAT_NAME);
   }
 
   /**
@@ -94,11 +100,11 @@ public class CopycatConfig extends AbstractConfigurable {
   /**
    * Sets the Copycat cluster configuration.
    *
-   * @param config The Copycat cluster configuration.
+   * @param cluster The Copycat cluster configuration.
    * @throws java.lang.NullPointerException If the cluster configuration is {@code null}
    */
-  public void setClusterConfig(ClusterConfig config) {
-    put(COPYCAT_CLUSTER, Assert.isNotNull(config, "config"));
+  public void setClusterConfig(ClusterConfig cluster) {
+    this.config = config.withValue(COPYCAT_CLUSTER, ConfigValueFactory.fromMap(Assert.isNotNull(cluster, "cluster").toMap()));
   }
 
   /**
@@ -107,7 +113,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat cluster configuration.
    */
   public ClusterConfig getClusterConfig() {
-    return get(COPYCAT_CLUSTER, key -> new ClusterConfig());
+    return Configurable.load(config.getObject(COPYCAT_CLUSTER).unwrapped());
   }
 
   /**
@@ -129,7 +135,11 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setDefaultSerializer(String serializer) {
-    put(COPYCAT_DEFAULT_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+    try {
+      setDefaultSerializer((Serializer) Class.forName(serializer).newInstance());
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to instantiate serializer", e);
+    }
   }
 
   /**
@@ -139,7 +149,11 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setDefaultSerializer(Class<? extends Serializer> serializer) {
-    put(COPYCAT_DEFAULT_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+    try {
+      setDefaultSerializer((Serializer) serializer.newInstance());
+    } catch (InstantiationException | IllegalAccessException e) {
+      throw new ConfigurationException("Failed to instantiate serializer", e);
+    }
   }
 
   /**
@@ -149,7 +163,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setDefaultSerializer(Serializer serializer) {
-    put(COPYCAT_DEFAULT_SERIALIZER, Assert.isNotNull(serializer, "serializer"));
+    this.config = config.withValue(COPYCAT_DEFAULT_SERIALIZER, ConfigValueFactory.fromMap(Assert.isNotNull(serializer, "serializer").toMap()));
   }
 
   /**
@@ -160,25 +174,7 @@ public class CopycatConfig extends AbstractConfigurable {
    */
   @SuppressWarnings("unchecked")
   public Serializer getDefaultSerializer() {
-    Object serializer = get(COPYCAT_DEFAULT_SERIALIZER, DEFAULT_COPYCAT_SERIALIZER);
-    if (serializer instanceof Serializer) {
-      return (Serializer) serializer;
-    } else if (serializer instanceof Class) {
-      try {
-        return ((Class<? extends Serializer>) serializer).newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate serializer", e);
-      }
-    } else if (serializer instanceof String) {
-      try {
-        return ((Class<? extends Serializer>) Class.forName(serializer.toString())).newInstance();
-      } catch (InstantiationException | IllegalAccessException e) {
-        throw new ConfigurationException("Failed to instantiate serializer", e);
-      } catch (ClassNotFoundException e) {
-        throw new ConfigurationException("Failed to locate serializer class", e);
-      }
-    }
-    throw new IllegalStateException("Invalid default serializer configuration");
+    return Configurable.load(config.getObject(COPYCAT_DEFAULT_SERIALIZER).unwrapped());
   }
 
   /**
@@ -226,7 +222,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @param executor The Copycat executor.
    */
   public void setDefaultExecutor(Executor executor) {
-    put(COPYCAT_DEFAULT_EXECUTOR, executor);
+    this.config = config.withValue(COPYCAT_DEFAULT_EXECUTOR, ConfigValueFactory.fromAnyRef(executor));
   }
 
   /**
@@ -235,7 +231,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat executor or {@code null} if no executor was specified.
    */
   public Executor getDefaultExecutor() {
-    return get(COPYCAT_DEFAULT_EXECUTOR, DEFAULT_COPYCAT_EXECUTOR);
+    return config.hasPath(COPYCAT_DEFAULT_EXECUTOR) ? (Executor) config.getValue(COPYCAT_DEFAULT_EXECUTOR).unwrapped() : DEFAULT_COPYCAT_EXECUTOR;
   }
 
   /**
@@ -257,6 +253,7 @@ public class CopycatConfig extends AbstractConfigurable {
   @SuppressWarnings("rawtypes")
   public CoordinatorConfig resolve() {
     return new CoordinatorConfig()
+      .withName(getName())
       .withExecutor(getDefaultExecutor())
       .withClusterConfig(getClusterConfig());
   }
