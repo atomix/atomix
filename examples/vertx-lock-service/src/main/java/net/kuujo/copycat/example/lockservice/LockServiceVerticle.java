@@ -69,7 +69,7 @@ public class LockServiceVerticle extends Verticle implements Handler<Message<Jso
         ClusterConfig cluster = new ClusterConfig()
           .withProtocol(new VertxEventBusProtocol(vertx))
           .withMembers(((List<String>) members.toList()).stream()
-            .collect(Collectors.mapping(member -> String.format("eventbus://%s", member), Collectors.toList())));
+            .map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()));
 
         // Configure Copycat with the event bus cluster and Vert.x event loop executor.
         CopycatConfig config = new CopycatConfig()

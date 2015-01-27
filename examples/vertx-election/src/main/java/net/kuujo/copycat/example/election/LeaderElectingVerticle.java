@@ -15,19 +15,20 @@
  */
 package net.kuujo.copycat.example.election;
 
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.vertx.VertxEventBusProtocol;
 import net.kuujo.copycat.vertx.VertxEventLoopExecutor;
+
 import org.vertx.java.core.Future;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.platform.Verticle;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Example verticle that performs an in-memory leader election.
@@ -49,7 +50,7 @@ public class LeaderElectingVerticle extends Verticle {
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new VertxEventBusProtocol(vertx))
       .withMembers(((List<String>) members.toList()).stream()
-        .collect(Collectors.mapping(member -> String.format("eventbus://%s", member), Collectors.toList())));
+        .map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()));
 
     // Create a leader election configuration with a Vert.x event loop executor.
     LeaderElectionConfig config = new LeaderElectionConfig()
