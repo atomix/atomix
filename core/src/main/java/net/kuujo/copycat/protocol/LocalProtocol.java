@@ -24,7 +24,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LocalProtocol extends AbstractProtocol {
-  private static final Map<String, LocalProtocolServer> REGISTRY = new ConcurrentHashMap<>(32);
+  private static Map<String, LocalProtocolServer> REGISTRY = new ConcurrentHashMap<>(32);
+
+  /**
+   * Resets the local protocol registry.
+   */
+  public static void reset() {
+    REGISTRY = new ConcurrentHashMap<>(32);
+  }
 
   public LocalProtocol() {
     super();

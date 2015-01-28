@@ -44,6 +44,7 @@ public class TestCluster<T extends Resource<T>> {
    */
   @SuppressWarnings("all")
   public static <T extends Resource<T>> TestCluster<T> of(BiFunction<String, ClusterConfig, T> factory) {
+    LocalProtocol.reset();
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol());
     for (int i = 1; i <= 3; i++) {
