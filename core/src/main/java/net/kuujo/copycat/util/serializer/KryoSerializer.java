@@ -25,6 +25,7 @@ import net.kuujo.copycat.util.internal.Assert;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Kryo serializer.
@@ -37,32 +38,37 @@ public class KryoSerializer extends SerializerConfig {
 
   private static final int DEFAULT_KRYO_SERIALIZER_BUFFER_SIZE = 1024 * 1024 * 16;
 
-  private final Kryo kryo = new Kryo();
-  private ByteBuffer buffer = ByteBuffer.allocateDirect(DEFAULT_KRYO_SERIALIZER_BUFFER_SIZE);
+  private Kryo kryo = new Kryo();
+  private ByteBuffer buffer;
   private ByteBufferOutput output;
-  private final ByteBufferInput input = new ByteBufferInput();
+  private ByteBufferInput input;
+  private AtomicBoolean init = new AtomicBoolean();
 
   public KryoSerializer() {
     super();
-    this.output = new ByteBufferOutput(buffer);
-    register();
   }
 
   public KryoSerializer(Map<String, Object> config) {
     super(config);
-    this.output = new ByteBufferOutput(buffer);
-    register();
   }
 
   public KryoSerializer(String resource) {
     super(resource);
-    register();
   }
 
   public KryoSerializer(KryoSerializer serializer) {
     super(serializer);
-    this.output = new ByteBufferOutput(buffer);
-    register();
+  }
+
+  /**
+   * Initializes the serializer.
+   */
+  private void init() {
+    if (init.compareAndSet(false, true)) {
+      input = new ByteBufferInput();
+      output = new ByteBufferOutput(ByteBuffer.allocateDirect(getBufferSize()));
+      register();
+    }
   }
 
   /**
@@ -118,8 +124,6 @@ public class KryoSerializer extends SerializerConfig {
    */
   public void setBufferSize(int bufferSize) {
     this.config = config.withValue(KRYO_SERIALIZER_BUFFER_SIZE, ConfigValueFactory.fromAnyRef(Assert.arg(bufferSize, bufferSize > 0, "buffer size must be positive")));
-    buffer = ByteBuffer.allocateDirect(bufferSize);
-    this.output = new ByteBufferOutput(buffer);
   }
 
   /**
@@ -146,12 +150,14 @@ public class KryoSerializer extends SerializerConfig {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized <T> T readObject(ByteBuffer buffer) {
+    init();
     input.setBuffer(buffer);
     return (T) kryo.readClassAndObject(input);
   }
 
   @Override
   public synchronized ByteBuffer writeObject(Object object) {
+    init();
     kryo.writeClassAndObject(output, object);
     byte[] bytes = output.toBytes();
     output.clear();
