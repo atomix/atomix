@@ -58,7 +58,9 @@ public class NettyTcpProtocolClient implements ProtocolClient {
       CompletableFuture<ByteBuffer> responseFuture = responseFutures.remove(responseId);
       if (responseFuture != null) {
         int length = response.readInt();
-        ByteBuffer buffer = response.nioBuffer(response.readerIndex(), length);
+        ByteBuffer buffer = ByteBuffer.allocateDirect(length);
+        response.readBytes(buffer);
+        buffer.flip();
         responseFuture.complete(buffer);
       }
       response.release();

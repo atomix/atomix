@@ -15,14 +15,9 @@
  */
 package net.kuujo.copycat.vertx;
 
-import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.protocol.ProtocolClient;
-import net.kuujo.copycat.protocol.ProtocolServer;
+import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.test.ProtocolTest;
 import org.testng.annotations.Test;
-
-import java.net.URI;
-import java.nio.ByteBuffer;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Netty TCP protocol test.
@@ -30,51 +25,16 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class VertxTcpProtocolTest extends ConcurrentTestCase {
+public class VertxTcpProtocolTest extends ProtocolTest {
 
-  /**
-   * Tests sending from a client to sever and back.
-   */
-  public void testSendReceive() throws Throwable {
-    VertxTcpProtocol protocol = new VertxTcpProtocol();
-    ProtocolServer server = protocol.createServer(new URI("tcp://localhost:5555"));
-    ProtocolClient client = protocol.createClient(new URI("tcp://localhost:5555"));
+  @Override
+  protected Protocol createProtocol() {
+    return new VertxTcpProtocol();
+  }
 
-    server.handler(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world!");
-      return CompletableFuture.completedFuture(ByteBuffer.wrap("Hello world back!".getBytes()));
-    });
-    server.listen().thenRun(this::resume);
-    await(5000);
-
-    client.connect().thenRun(this::resume);
-    await(5000);
-
-    client.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAccept(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world back!");
-      resume();
-    });
-    await(5000);
-
-    client.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAccept(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world back!");
-      resume();
-    });
-    await(5000);
-
-    client.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAccept(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world back!");
-      resume();
-    });
-    await(5000);
+  @Override
+  protected String createUri() {
+    return "tcp://localhost:5555";
   }
 
 }

@@ -39,6 +39,8 @@ public class VertxEventBusProtocol extends AbstractProtocol {
   private static final String CONFIGURATION = "eventbus";
   private static final String DEFAULT_CONFIGURATION = "eventbus-defaults";
 
+  private Vertx vertx;
+
   public VertxEventBusProtocol() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
@@ -72,7 +74,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @param vertx The Vert.x instance.
    */
   public void setVertx(Vertx vertx) {
-    this.config = config.withValue(VERTX, ConfigValueFactory.fromAnyRef(Assert.isNotNull(vertx, "vertx")));
+    this.vertx = vertx;
   }
 
   /**
@@ -81,7 +83,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @return The Vert.x instance.
    */
   public Vertx getVertx() {
-    return config.hasPath(VERTX) ? (Vertx) config.getValue(VERTX) : null;
+    return vertx;
   }
 
   /**
@@ -102,7 +104,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @throws java.lang.NullPointerException If the host is {@code null}
    */
   public void setHost(String host) {
-    this.config = config.withValue(VERTX_HOST, ConfigValueFactory.fromAnyRef(Assert.isNotNull(host, "host")));
+    this.config = host != null ? config.withoutPath(VERTX_HOST) : config.withValue(VERTX_HOST, ConfigValueFactory.fromAnyRef(host));
   }
 
   /**
@@ -160,7 +162,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
   private Vertx createVertx() {
     String host = getHost();
     int port = getPort();
-    return host != null ? VertxFactory.newVertx(port, host) : VertxFactory.newVertx();
+    return host != null && !host.isEmpty() ? VertxFactory.newVertx(port, host) : VertxFactory.newVertx();
   }
 
   @Override

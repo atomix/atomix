@@ -51,7 +51,7 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat</artifactId>
+      <artifactId>copycat-test-tools</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

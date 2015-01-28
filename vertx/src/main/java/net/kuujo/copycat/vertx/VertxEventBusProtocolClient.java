@@ -16,9 +16,9 @@
 package net.kuujo.copycat.vertx;
 
 import net.kuujo.copycat.CopycatException;
-import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolException;
+import net.kuujo.copycat.util.internal.Assert;
 import org.vertx.java.core.AsyncResult;
 import org.vertx.java.core.Context;
 import org.vertx.java.core.Handler;
@@ -51,7 +51,22 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
     final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     byte[] bytes = new byte[request.remaining()];
     request.get(bytes);
-    context.runOnContext(v -> {
+    if (context != null) {
+      context.runOnContext(v -> {
+        vertx.eventBus().sendWithTimeout(address, bytes, 5000, (Handler<AsyncResult<Message<byte[]>>>) result -> {
+          if (result.succeeded()) {
+            future.complete(ByteBuffer.wrap(result.result().body()));
+          } else {
+            ReplyException exception = (ReplyException) result.cause();
+            if (exception.failureType() == ReplyFailure.NO_HANDLERS || exception.failureType() == ReplyFailure.TIMEOUT) {
+              future.completeExceptionally(new ProtocolException(exception));
+            } else {
+              future.completeExceptionally(new CopycatException(exception.getMessage()));
+            }
+          }
+        });
+      });
+    } else {
       vertx.eventBus().sendWithTimeout(address, bytes, 5000, (Handler<AsyncResult<Message<byte[]>>>) result -> {
         if (result.succeeded()) {
           future.complete(ByteBuffer.wrap(result.result().body()));
@@ -64,7 +79,7 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
           }
         }
       });
-    });
+    }
     return future;
   }
 

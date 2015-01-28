@@ -161,8 +161,9 @@ public class NettyTcpProtocolServer implements ProtocolServer {
               response.writeLong(requestId);
               response.writeInt(result.remaining());
               response.writeBytes(result);
-              context.writeAndFlush(response);
-              request.release();
+              context.writeAndFlush(response).addListener(future -> {
+                request.release();
+              });
             });
           }
         });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.netty;
+package net.kuujo.copycat.vertx;
 
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.test.ProtocolTest;
 import org.testng.annotations.Test;
 
 /**
- * Netty TCP protocol test.
+ * Vert.x 3 event bus protocol test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class NettyTcpProtocolTest extends ProtocolTest {
+public class VertxEventBusProtocolTest extends ProtocolTest {
 
   @Override
   protected Protocol createProtocol() {
-    return new NettyTcpProtocol();
+    return new VertxEventBusProtocol();
   }
 
   @Override
   protected String createUri() {
-    return "tcp://localhost:5555";
+    return "eventbus://test";
   }
 
 }

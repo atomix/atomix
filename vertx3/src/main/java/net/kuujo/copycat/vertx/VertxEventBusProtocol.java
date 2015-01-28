@@ -39,6 +39,8 @@ public class VertxEventBusProtocol extends AbstractProtocol {
   private static final String CONFIGURATION = "eventbus";
   private static final String DEFAULT_CONFIGURATION = "eventbus-defaults";
 
+  private Vertx vertx;
+
   public VertxEventBusProtocol() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
@@ -72,7 +74,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @param vertx The Vert.x instance.
    */
   public void setVertx(Vertx vertx) {
-    this.config = config.withValue(VERTX, ConfigValueFactory.fromAnyRef(Assert.isNotNull(vertx, "vertx")));
+    this.vertx = vertx;
   }
 
   /**
@@ -81,7 +83,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @return The Vert.x instance.
    */
   public Vertx getVertx() {
-    return config.hasPath(VERTX) ? (Vertx) config.getValue(VERTX) : null;
+    return vertx;
   }
 
   /**
