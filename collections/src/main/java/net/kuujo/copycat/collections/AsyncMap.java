@@ -15,11 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.resource.Resource;
 
 /**
  * Asynchronous map.
@@ -32,7 +32,36 @@ import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K, V>> {
 
   /**
-   * Creates a new asynchronous map.
+   * Creates a new asynchronous map with the default cluster configuration.<p>
+   *
+   * The map will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the map will be constructed with an map configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code map}, {@code map-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the map resource. If the resource is namespaced - e.g. `maps.my-map.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
+   *
+   * @param name The asynchronous map name.
+   * @param uri The asynchronous map member URI.
+   * @param <K> The map key type.
+   * @param <V> The map value type.
+   * @return The asynchronous map.
+   */
+  static <K, V> AsyncMap<K, V> create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new AsyncMapConfig());
+  }
+
+  /**
+   * Creates a new asynchronous map.<p>
+   *
+   * The map will be constructed with an map configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code map}, {@code map-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the map resource. If the resource is namespaced - e.g. `maps.my-map.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
    *
    * @param name The asynchronous map name.
    * @param uri The asynchronous map member URI.

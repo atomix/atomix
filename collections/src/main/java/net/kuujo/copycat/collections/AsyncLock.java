@@ -14,11 +14,11 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.resource.Resource;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -30,7 +30,34 @@ import java.util.concurrent.CompletableFuture;
 public interface AsyncLock extends Resource<AsyncLock> {
 
   /**
-   * Creates a new asynchronous lock.
+   * Creates a new asynchronous lock with the default cluster configuration.<p>
+   *
+   * The lock will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the lock will be constructed with an lock configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code lock}, {@code lock-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the lock resource. If the resource is namespaced - e.g. `locks.my-lock.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `locks.conf`.
+   *
+   * @param name The asynchronous lock name.
+   * @param uri The asynchronous lock member URI.
+   * @return The asynchronous lock.
+   */
+  static AsyncLock create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new AsyncLockConfig());
+  }
+
+  /**
+   * Creates a new asynchronous lock.<p>
+   *
+   * The lock will be constructed with an lock configuration that searches the classpath for three configuration
+   * files - {@code {name}}, {@code lock}, {@code lock-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the lock resource. If the resource is namespaced - e.g. `locks.my-lock.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `locks.conf`.
    *
    * @param name The asynchronous lock name.
    * @param uri The asynchronous lock member URI.

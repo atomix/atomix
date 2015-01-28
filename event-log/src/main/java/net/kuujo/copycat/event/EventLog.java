@@ -15,11 +15,11 @@
 package net.kuujo.copycat.event;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.resource.Resource;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -31,9 +31,36 @@ import java.util.concurrent.CompletableFuture;
 public interface EventLog<T> extends Resource<EventLog<T>> {
 
   /**
-   * Creates a new event log.
+   * Creates a new event log with the default cluster and event log configurations.<p>
    *
-   * @param name The log name.
+   * The event log will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the event log will be constructed with an event log configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code event-log}, {@code event-log-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the event log resource. If the resource is namespaced - e.g. `event-logs.my-log.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
+   *
+   * @param name The log resource name.
+   * @param uri The local log member URI.
+   * @return A new event log instance.
+   */
+  static <T> EventLog<T> create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new EventLogConfig());
+  }
+
+  /**
+   * Creates a new event log.<p>
+   *
+   * The event log will be constructed with an event log configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code event-log}, {@code event-log-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the event log resource. If the resource is namespaced - e.g. `event-logs.my-log.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
+   *
+   * @param name The log resource name.
    * @param uri The local log member URI.
    * @param cluster The event log cluster.
    * @return A new event log instance.
@@ -42,9 +69,8 @@ public interface EventLog<T> extends Resource<EventLog<T>> {
     return create(name, uri, cluster, new EventLogConfig());
   }
 
-
   /**
-   * Creates a new event log.
+   * Creates a new event log with the given cluster and event log configurations.
    *
    * @param name The log name.
    * @param uri The local log member URI.

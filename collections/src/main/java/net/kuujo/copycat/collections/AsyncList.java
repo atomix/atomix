@@ -31,7 +31,17 @@ import net.kuujo.copycat.resource.internal.AbstractResource;
 public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncListProxy<T> {
 
   /**
-   * Creates a new asynchronous list with the default cluster configuration.
+   * Creates a new asynchronous list with the default cluster configuration.<p>
+   *
+   * The list will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the list will be constructed with an list configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code list}, {@code list-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the list resource. If the resource is namespaced - e.g. `lists.my-list.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `lists.conf`.
    *
    * @param name The asynchronous list name.
    * @param uri The asynchronous list member URI.
@@ -43,7 +53,13 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
   }
 
   /**
-   * Creates a new asynchronous list.
+   * Creates a new asynchronous list with the default list configuration.<p>
+   *
+   * The list will be constructed with an list configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code list}, {@code list-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the list resource. If the resource is namespaced - e.g. `lists.my-list.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `lists.conf`.
    *
    * @param name The asynchronous list name.
    * @param uri The asynchronous list member URI.

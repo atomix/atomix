@@ -15,12 +15,12 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.resource.Resource;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -35,9 +35,37 @@ import java.util.function.Supplier;
 public interface StateLog<T> extends Resource<StateLog<T>> {
 
   /**
-   * Creates a new state log.
+   * Creates a new state log with the default cluster and state log configurations.<p>
    *
-   * @param name The state log name.
+   * The state log will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the state log will be constructed with an state log configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code state-log}, {@code state-log-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the state log resource. If the resource is namespaced - e.g. `state-logs.my-log.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `state-logs.conf`.
+   *
+   * @param name The state log resource name.
+   * @param uri The local member URI.
+   * @param <T> The state log entry type.
+   * @return A new state log instance.
+   */
+  static <T> StateLog<T> create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new StateLogConfig());
+  }
+
+  /**
+   * Creates a new state log with the default state log configuration.<p>
+   *
+   * The state log will be constructed with an state log configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code state-log}, {@code state-log-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the state log resource. If the resource is namespaced - e.g. `state-logs.my-log.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `state-logs.conf`.
+   *
+   * @param name The state log resource name.
    * @param uri The local member URI.
    * @param cluster The state log cluster configuration.
    * @param <T> The state log entry type.
@@ -50,7 +78,7 @@ public interface StateLog<T> extends Resource<StateLog<T>> {
   /**
    * Creates a new state log.
    *
-   * @param name The state log name.
+   * @param name The state log resource name.
    * @param uri The local member URI.
    * @param cluster The state log cluster configuration.
    * @param config The state log configuration.

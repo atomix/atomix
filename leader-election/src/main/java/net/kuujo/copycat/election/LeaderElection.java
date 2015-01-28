@@ -31,25 +31,52 @@ import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 public interface LeaderElection extends Resource<LeaderElection> {
 
   /**
-   * Creates a new state machine for the given state model.
+   * Creates a new leader election with the default cluster configuration.<p>
+   *
+   * The election will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the election will be constructed with an election configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code election}, {@code election-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the election resource. If the resource is namespaced - e.g. `elections.my-election.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `elections.conf`.
+   *
+   * @param name The election name.
+   * @param uri The election member URI.
+   * @return The leader election.
+   */
+  static LeaderElection create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new LeaderElectionConfig(name));
+  }
+
+  /**
+   * Creates a new leader election with the given cluster configuration.<p>
+   *
+   * The election will be constructed with an election configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code election}, {@code election-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the election resource. If the resource is namespaced - e.g. `elections.my-election.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `elections.conf`.
    *
    * @param name The election name.
    * @param uri The election member URI.
    * @param cluster The Copycat cluster.
-   * @return The state machine.
+   * @return The leader election.
    */
   static LeaderElection create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LeaderElectionConfig());
+    return create(name, uri, cluster, new LeaderElectionConfig(name));
   }
 
   /**
-   * Creates a new state machine for the given state model.
+   * Creates a new leader election with the given cluster and election configurations.
    *
    * @param name The election name.
    * @param uri The election member URI.
    * @param cluster The Copycat cluster.
    * @param config The leader election configuration.
-   * @return The state machine.
+   * @return The leader election.
    */
   static LeaderElection create(String name, String uri, ClusterConfig cluster, LeaderElectionConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));

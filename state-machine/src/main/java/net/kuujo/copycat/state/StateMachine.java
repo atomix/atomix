@@ -29,7 +29,36 @@ import net.kuujo.copycat.resource.Resource;
 public interface StateMachine<T> extends Resource<StateMachine<T>> {
 
   /**
-   * Creates a new state machine.
+   * Creates a new state machine with the default cluster and state machine configurations.<p>
+   *
+   * The state machine will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the state machine will be constructed with an state machine configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code state-machine}, {@code state-machine-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the state machine resource. If the resource is namespaced - e.g. `state-machines.my-machine.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `state-machines.conf`.
+   *
+   * @param name The state machine resource name.
+   * @param uri The state machine member URI.
+   * @param stateType The state machine state type.
+   * @param initialState The state machine state.
+   * @return The state machine.
+   */
+  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, Class<? extends T> initialState) {
+    return create(name, uri, new ClusterConfig(), new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
+  }
+
+  /**
+   * Creates a new state machine with the default state machine configuration.<p>
+   *
+   * The state machine will be constructed with an state machine configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code state-machine}, {@code state-machine-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the state machine resource. If the resource is namespaced - e.g. `state-machines.my-machine.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `state-machines.conf`.
    *
    * @param name The state machine resource name.
    * @param uri The state machine member URI.

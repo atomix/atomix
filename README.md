@@ -321,6 +321,31 @@ In general, all configurations are resolved with the following precedence:
 * Type specific file configuration (e.g. `event-log.conf`, `resource.conf`)
 * Default type specific file configuration (e.g. `event-log-defaults.conf`, `resource-defaults.conf`)
 
+Additionally, Copycat's configuration resolution process supports namespaced configurations for all configurable types.
+So, users can define configuration namespaces by separating configuration sections in the resource name with a `.`. For
+example, `new StateMachineConfig("foo.bar.baz")` will search for and resolve configuration files in the following order:
+* `foo.bar.baz.conf`
+* `foo.bar.conf`
+* `foo.conf`
+* `state-machine.conf`
+* `state-machine-defaults.conf`
+* `state-log.conf`
+* `state-log-defaults.conf`
+* `resource.conf`
+* `resource-defaults.conf`
+
+Additionally, configurable resources referenced within the given configuration will be resolved in a similar order.
+For instance, the state machine's underlying `Log` will be resolved in the following order:
+* The `log` section of `foo.bar.baz.conf`
+* The `log` section of `foo.bar.conf`
+* The `log` section of `foo.conf`
+* The `log` section of `state-machine.conf`
+* The `log` section of `state-machine-defaults.conf`
+* The `log` section of `state-log.conf`
+* The `log` section of `state-log-defaults.conf`
+* `log.conf`
+* `log-defaults.conf`
+
 To learn more about Copycat's configuration format, users are encouraged to read the
 [Typesafe Config documentation](https://github.com/typesafehub/config) and particularly the
 [HOCON configuration format](https://github.com/typesafehub/config/blob/master/HOCON.md)

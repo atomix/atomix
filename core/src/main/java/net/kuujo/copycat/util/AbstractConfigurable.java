@@ -54,6 +54,12 @@ public abstract class AbstractConfigurable implements Configurable {
       } else {
         config = config.withFallback(ConfigFactory.load(resource, ConfigParseOptions.defaults().setAllowMissing(true), ConfigResolveOptions.noSystem()));
       }
+
+      // Support namespaced configuration resources, e.g. foo.bar.baz, foo.bar, foo
+      int index;
+      while ((index = resource.lastIndexOf('.', resource.length())) != -1) {
+        config = config.withFallback(ConfigFactory.load(resource.substring(0, index), ConfigParseOptions.defaults().setAllowMissing(true), ConfigResolveOptions.noSystem()));
+      }
     }
     this.config = config.resolve(ConfigResolveOptions.noSystem());
   }

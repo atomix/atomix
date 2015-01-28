@@ -30,7 +30,35 @@ import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetProxy<T> {
 
   /**
-   * Creates a new asynchronous set.
+   * Creates a new asynchronous set with the default cluster configuration.<p>
+   *
+   * The set will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the set will be constructed with an set configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code set}, {@code set-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the set resource. If the resource is namespaced - e.g. `sets.my-set.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `sets.conf`.
+   *
+   * @param name The asynchronous set name.
+   * @param uri The asynchronous set member URI.
+   * @param <T> The set data type.
+   * @return The asynchronous set.
+   */
+  static <T> AsyncSet<T> create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new AsyncSetConfig());
+  }
+
+  /**
+   * Creates a new asynchronous set.<p>
+   *
+   * The set will be constructed with an set configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code set}, {@code set-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the set resource. If the resource is namespaced - e.g. `sets.my-set.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `sets.conf`.
    *
    * @param name The asynchronous set name.
    * @param uri The asynchronous set member URI.
