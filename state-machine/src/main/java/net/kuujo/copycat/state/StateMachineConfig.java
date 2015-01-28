@@ -206,98 +206,84 @@ public class StateMachineConfig extends StateLogConfig {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withSerializer(String serializer) {
     setSerializer(serializer);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withSerializer(Class<? extends Serializer> serializer) {
     setSerializer(serializer);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withSerializer(Serializer serializer) {
     setSerializer(serializer);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withExecutor(Executor executor) {
     setExecutor(executor);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withElectionTimeout(long electionTimeout) {
     setElectionTimeout(electionTimeout);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withElectionTimeout(long electionTimeout, TimeUnit unit) {
     setElectionTimeout(electionTimeout, unit);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withHeartbeatInterval(long heartbeatInterval) {
     setHeartbeatInterval(heartbeatInterval);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
     setHeartbeatInterval(heartbeatInterval, unit);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withReplicas(String... replicas) {
     setReplicas(Arrays.asList(replicas));
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withReplicas(Collection<String> replicas) {
     setReplicas(replicas);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig addReplica(String replica) {
     super.addReplica(replica);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig removeReplica(String replica) {
     super.removeReplica(replica);
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig clearReplicas() {
     super.clearReplicas();
     return this;
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   public StateMachineConfig withLog(Log log) {
     setLog(log);
     return this;
