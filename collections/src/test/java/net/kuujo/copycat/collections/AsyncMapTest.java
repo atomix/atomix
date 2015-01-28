@@ -116,7 +116,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
    */
   private CompletableFuture<Void> putMany(AsyncMap<String, String> map) {
     CompletableFuture<Void> future = new CompletableFuture<>();
-    putMany(0, 100, map, future);
+    putMany(0, 10, map, future);
     return future;
   }
 
