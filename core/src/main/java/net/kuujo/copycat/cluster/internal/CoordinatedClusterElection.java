@@ -14,6 +14,11 @@
  */
 package net.kuujo.copycat.cluster.internal;
 
+import java.util.Map;
+import java.util.Observable;
+import java.util.Observer;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
@@ -21,11 +26,6 @@ import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.ElectionResult;
 import net.kuujo.copycat.resource.internal.CopycatStateContext;
-
-import java.util.HashSet;
-import java.util.Observable;
-import java.util.Observer;
-import java.util.Set;
 
 /**
  * Coordinated cluster election handler.
@@ -35,7 +35,7 @@ import java.util.Set;
 class CoordinatedClusterElection implements Election, Observer {
   private final Cluster cluster;
   private CopycatStateContext context;
-  private final Set<EventListener<ElectionEvent>> listeners = new HashSet<>();
+  private final Map<EventListener<ElectionEvent>, Boolean> listeners = new ConcurrentHashMap<>();
   private ElectionEvent result;
   private boolean handled;
 
@@ -45,7 +45,7 @@ class CoordinatedClusterElection implements Election, Observer {
   }
 
   @Override
-  public synchronized void update(Observable o, Object arg) {
+  public void update(Observable o, Object arg) {
     CopycatStateContext context = (CopycatStateContext) o;
     if (!handled) {
       String leader = context.getLeader();
@@ -56,7 +56,7 @@ class CoordinatedClusterElection implements Election, Observer {
           if (member != null) {
             result = new ElectionEvent(ElectionEvent.Type.COMPLETE, term, member);
             handled = true;
-            for (EventListener<ElectionEvent> listener : listeners) {
+            for (EventListener<ElectionEvent> listener : listeners.keySet()) {
               listener.accept(result);
             }
           } else if (result != null) {
@@ -72,24 +72,23 @@ class CoordinatedClusterElection implements Election, Observer {
   }
 
   @Override
-  public synchronized Status status() {
+  public Status status() {
     return context.getStatus();
   }
 
   @Override
-  public synchronized long term() {
+  public long term() {
     return context.getTerm();
   }
 
   @Override
-  public synchronized ElectionResult result() {
+  public ElectionResult result() {
     return result;
   }
 
   @Override
-  public synchronized Election addListener(EventListener<ElectionEvent> listener) {
-    if (!listeners.contains(listener)) {
-      listeners.add(listener);
+  public Election addListener(EventListener<ElectionEvent> listener) {
+    if (listeners.putIfAbsent(listener, Boolean.TRUE) == null) {
       if (result != null && handled) {
         listener.accept(result);
       }
@@ -98,7 +97,7 @@ class CoordinatedClusterElection implements Election, Observer {
   }
 
   @Override
-  public synchronized Election removeListener(EventListener<ElectionEvent> listener) {
+  public Election removeListener(EventListener<ElectionEvent> listener) {
     listeners.remove(listener);
     return this;
   }

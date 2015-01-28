@@ -173,7 +173,7 @@ public class DefaultAsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> impl
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AsyncMap<K, V>> open() {
+  public synchronized CompletableFuture<AsyncMap<K, V>> open() {
     return runStartupTasks()
       .thenCompose(v -> stateMachine.open())
       .thenRun(() -> {
@@ -183,7 +183,7 @@ public class DefaultAsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> impl
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     proxy = null;
     return stateMachine.close()
       .thenCompose(v -> runShutdownTasks());

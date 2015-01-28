@@ -68,7 +68,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private Long lastApplied;
   private long electionTimeout = 500;
   private long heartbeatInterval = 250;
-  private boolean open;
+  private volatile boolean open;
 
   public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
@@ -699,7 +699,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     if (openFuture != null) {
       openFuture.cancel(false);
       openFuture = null;

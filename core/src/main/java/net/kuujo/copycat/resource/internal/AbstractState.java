@@ -37,7 +37,7 @@ abstract class AbstractState implements RaftProtocol {
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
   protected MessageHandler<QueryRequest, QueryResponse> queryHandler;
   protected MessageHandler<CopycatState, CopycatState> transitionHandler;
-  private boolean open;
+  private volatile boolean open;
 
   protected AbstractState(CopycatStateContext context) {
     this.context = context;

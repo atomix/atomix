@@ -58,14 +58,14 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
   }
 
   @Override
-  public CompletableFuture<LeaderElection> open() {
+  public synchronized CompletableFuture<LeaderElection> open() {
     return runStartupTasks()
       .thenCompose(v -> context.open())
       .thenApply(v -> this);
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     return context.close()
       .thenCompose(v -> runShutdownTasks());
   }

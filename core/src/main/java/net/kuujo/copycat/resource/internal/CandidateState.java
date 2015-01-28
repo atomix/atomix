@@ -48,7 +48,7 @@ class CandidateState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public synchronized CompletableFuture<Void> open() {
     return super.open().thenRun(this::startElection);
   }
 
@@ -204,7 +204,7 @@ class CandidateState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     return super.close().thenRun(this::cancelElection);
   }
 

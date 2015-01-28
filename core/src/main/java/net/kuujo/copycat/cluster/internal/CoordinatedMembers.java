@@ -25,7 +25,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Coordinates members implementation.
+ * Coordinates members implementation. Immutable.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

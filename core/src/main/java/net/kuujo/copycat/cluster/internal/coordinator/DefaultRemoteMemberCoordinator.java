@@ -65,7 +65,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   }
 
   @Override
-  public CompletableFuture<MemberCoordinator> open() {
+  public synchronized CompletableFuture<MemberCoordinator> open() {
     return super.open().thenComposeAsync(v -> connect(), executor).thenApply(v -> this);
   }
 
@@ -95,7 +95,7 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     return super.close().thenComposeAsync(v -> client.close(), executor);
   }
 

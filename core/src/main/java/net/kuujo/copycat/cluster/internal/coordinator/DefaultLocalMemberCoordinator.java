@@ -55,7 +55,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  public synchronized CompletableFuture<ByteBuffer> send(String topic, int address, int id, ByteBuffer message) {
+  public CompletableFuture<ByteBuffer> send(String topic, int address, int id, ByteBuffer message) {
     Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>> topicHandlers = handlers.get(topic.hashCode());
     if (topicHandlers != null) {
       Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>> addressHandlers = topicHandlers.get(address);
@@ -72,23 +72,15 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  public synchronized LocalMemberCoordinator register(String topic, int address, int id, MessageHandler<ByteBuffer, ByteBuffer> handler) {
-    Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>> topicHandlers = handlers.get(topic.hashCode());
-    if (topicHandlers == null) {
-      topicHandlers = new ConcurrentHashMap<>();
-      handlers.put(topic.hashCode(), topicHandlers);
-    }
-    Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>> addressHandlers = topicHandlers.get(address);
-    if (addressHandlers == null) {
-      addressHandlers = new ConcurrentHashMap<>();
-      topicHandlers.put(address, addressHandlers);
-    }
+  public  LocalMemberCoordinator register(String topic, int address, int id, MessageHandler<ByteBuffer, ByteBuffer> handler) {
+    Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>> topicHandlers = handlers.computeIfAbsent(topic.hashCode(), t -> new ConcurrentHashMap<>());
+    Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>> addressHandlers = topicHandlers.computeIfAbsent(address, a -> new ConcurrentHashMap<>());
     addressHandlers.put(id, handler);
     return this;
   }
 
   @Override
-  public synchronized LocalMemberCoordinator unregister(String topic, int address, int id) {
+  public LocalMemberCoordinator unregister(String topic, int address, int id) {
     Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>> topicHandlers = handlers.get(topic.hashCode());
     if (topicHandlers != null) {
       Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>> addressHandlers = topicHandlers.get(address);
@@ -126,7 +118,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  public CompletableFuture<MemberCoordinator> open() {
+  public synchronized CompletableFuture<MemberCoordinator> open() {
     return super.open()
       .thenComposeAsync(v -> server.listen(), executor)
       .thenRun(() -> server.handler(this::handle))
@@ -134,7 +126,7 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     return super.close()
       .thenComposeAsync(v -> server.close(), executor)
       .thenRun(() -> server.handler(null));

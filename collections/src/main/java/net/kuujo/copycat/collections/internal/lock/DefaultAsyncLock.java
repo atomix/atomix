@@ -64,7 +64,7 @@ public class DefaultAsyncLock extends AbstractResource<AsyncLock> implements Asy
   }
 
   @Override
-  public CompletableFuture<AsyncLock> open() {
+  public synchronized CompletableFuture<AsyncLock> open() {
     return runStartupTasks()
       .thenCompose(v -> stateMachine.open())
       .thenRun(() -> {
@@ -73,7 +73,7 @@ public class DefaultAsyncLock extends AbstractResource<AsyncLock> implements Asy
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     proxy = null;
     return stateMachine.close()
       .thenCompose(v -> runShutdownTasks());

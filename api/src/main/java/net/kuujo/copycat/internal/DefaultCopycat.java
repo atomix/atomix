@@ -164,22 +164,22 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public synchronized CompletableFuture<Copycat> open() {
+  public CompletableFuture<Copycat> open() {
     return coordinator.open().thenApply(v -> this);
   }
 
   @Override
-  public synchronized boolean isOpen() {
+  public boolean isOpen() {
     return coordinator.isOpen();
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
+  public CompletableFuture<Void> close() {
     return coordinator.close();
   }
 
   @Override
-  public synchronized boolean isClosed() {
+  public boolean isClosed() {
     return coordinator.isClosed();
   }
 

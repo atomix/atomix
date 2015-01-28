@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  */
 abstract class AbstractMemberCoordinator implements MemberCoordinator {
   private final MemberInfo info;
-  private boolean open;
+  private volatile boolean open;
 
   protected AbstractMemberCoordinator(MemberInfo info) {
     this.info = Assert.isNotNull(info, "info");

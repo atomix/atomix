@@ -33,7 +33,6 @@ import java.util.concurrent.TimeUnit;
 public class PassiveState extends AbstractState {
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
-  private Set<String> synchronizing = new HashSet<>();
 
   public PassiveState(CopycatStateContext context) {
     super(context);
@@ -45,7 +44,7 @@ public class PassiveState extends AbstractState {
   }
 
   @Override
-  public CompletableFuture<Void> open() {
+  public synchronized CompletableFuture<Void> open() {
     return super.open().thenRun(this::startSyncTimer);
   }
 
@@ -87,6 +86,7 @@ public class PassiveState extends AbstractState {
     // Increment the local member version in the vector clock.
     context.setVersion(context.getVersion() + 1);
 
+    Set<String> synchronizing = new HashSet<>();
     // For each active member, send membership info to the member.
     for (ReplicaInfo member : randomMembers) {
       // If we're already synchronizing with the given node then skip the synchronization. This is possible in the event
@@ -303,7 +303,7 @@ public class PassiveState extends AbstractState {
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     return super.close().thenRun(this::cancelSyncTimer);
   }
 

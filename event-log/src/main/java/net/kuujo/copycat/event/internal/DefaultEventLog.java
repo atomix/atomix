@@ -119,7 +119,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   }
 
   @Override
-  public CompletableFuture<EventLog<T>> open() {
+  public synchronized CompletableFuture<EventLog<T>> open() {
     return runStartupTasks()
       .thenComposeAsync(v -> context.open(), executor)
       .thenRun(() -> {

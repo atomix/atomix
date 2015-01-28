@@ -152,7 +152,7 @@ public class DefaultAsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<AsyncMultiMap<K, V>> open() {
+  public synchronized CompletableFuture<AsyncMultiMap<K, V>> open() {
     return runStartupTasks()
       .thenCompose(v -> stateMachine.open())
       .thenRun(() -> {
@@ -161,7 +161,7 @@ public class DefaultAsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     proxy = null;
     return stateMachine.close()
       .thenCompose(v -> runShutdownTasks());

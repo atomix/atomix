@@ -110,7 +110,7 @@ public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T
 
   @Override
   @SuppressWarnings("unchecked")
-  public CompletableFuture<S> open() {
+  public synchronized CompletableFuture<S> open() {
     return runStartupTasks()
       .thenCompose(v -> stateMachine.open())
       .thenRun(() -> {
@@ -119,7 +119,7 @@ public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     proxy = null;
     return stateMachine.close()
       .thenCompose(v -> runShutdownTasks());

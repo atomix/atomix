@@ -15,10 +15,27 @@
  */
 package net.kuujo.copycat.cluster.internal.coordinator;
 
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MembershipEvent;
-import net.kuujo.copycat.cluster.internal.*;
+import net.kuujo.copycat.cluster.internal.CoordinatedCluster;
+import net.kuujo.copycat.cluster.internal.CoordinatedMember;
+import net.kuujo.copycat.cluster.internal.MemberInfo;
+import net.kuujo.copycat.cluster.internal.Router;
+import net.kuujo.copycat.cluster.internal.Topics;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.cluster.internal.manager.MemberManager;
 import net.kuujo.copycat.log.BufferedLog;
@@ -36,11 +53,6 @@ import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.*;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 /**
  * Default cluster coordinator implementation.
  *
@@ -56,7 +68,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final CopycatStateContext context;
   private final ClusterManager cluster;
   private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
-  private final AtomicBoolean open = new AtomicBoolean();
+  private volatile boolean open;
 
   public DefaultClusterCoordinator(String uri, CoordinatorConfig config) {
     this.uri = uri;
@@ -91,7 +103,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   /**
    * Handles a membership change event.
    */
-  private synchronized void handleMembershipEvent(MembershipEvent event) {
+  private void handleMembershipEvent(MembershipEvent event) {
     if (event.type() == MembershipEvent.Type.JOIN && !members.containsKey(event.member().uri())) {
       MemberCoordinator coordinator = ((CoordinatedMember) event.member()).coordinator();
       members.put(coordinator.uri(), (AbstractMemberCoordinator) coordinator);
@@ -148,7 +160,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    * @param name The resource name.
    * @return A completable future to be completed once the resource has been acquired.
    */
-  public synchronized CompletableFuture<Void> acquireResource(String name) {
+  public CompletableFuture<Void> acquireResource(String name) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
@@ -166,7 +178,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    * @param name The resource name.
    * @return A completable future to be completed once the resource has been released.
    */
-  public synchronized CompletableFuture<Void> releaseResource(String name) {
+  public CompletableFuture<Void> releaseResource(String name) {
     Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
@@ -181,7 +193,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   /**
    * Closes all cluster resources.
    */
-  private synchronized CompletableFuture<Void> closeResources() {
+  private CompletableFuture<Void> closeResources() {
     List<CompletableFuture<Void>> futures = new ArrayList<>(resources.size());
     for (ResourceHolder resource : resources.values()) {
       futures.add(resource.state.close().thenCompose(v -> resource.cluster.close()).thenRun(() -> resource.state.executor().shutdown()));
@@ -192,7 +204,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   @Override
   @SuppressWarnings("unchecked")
   public synchronized CompletableFuture<ClusterCoordinator> open() {
-    if (open.get()) {
+    if (open) {
       return CompletableFuture.completedFuture(null);
     }
 
@@ -205,36 +217,37 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .thenRun(() -> cluster.addMembershipListener(this::handleMembershipEvent))
       .thenComposeAsync(v -> cluster.open(), executor)
       .thenComposeAsync(v -> context.open(), executor)
-      .thenRun(() -> open.set(true))
+      .thenRun(() -> open = true)
       .thenApply(v -> this);
   }
 
   @Override
   public boolean isOpen() {
-    return open.get();
+    return open;
   }
 
   @Override
   @SuppressWarnings("unchecked")
   public synchronized CompletableFuture<Void> close() {
-    if (open.compareAndSet(true, false)) {
-      CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
-      int i = 0;
-      for (MemberCoordinator member : members.values()) {
-        futures[i++] = member.close();
-      }
-      cluster.removeMembershipListener(this::handleMembershipEvent);
-      return closeResources()
-        .thenComposeAsync(v -> context.close(), executor)
-        .thenComposeAsync(v -> cluster.close(), executor)
-        .thenComposeAsync(v -> CompletableFuture.allOf(futures));
+    if (!open) {
+      return CompletableFuture.completedFuture(null);
     }
-    return CompletableFuture.completedFuture(null);
+    
+    CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
+    int i = 0;
+    for (MemberCoordinator member : members.values()) {
+      futures[i++] = member.close();
+    }
+    cluster.removeMembershipListener(this::handleMembershipEvent);
+    return closeResources()
+      .thenComposeAsync(v -> context.close(), executor)
+      .thenComposeAsync(v -> cluster.close(), executor)
+      .thenComposeAsync(v -> CompletableFuture.allOf(futures));
   }
 
   @Override
   public boolean isClosed() {
-    return !open.get();
+    return !open;
   }
 
   @Override

@@ -290,8 +290,7 @@ public abstract class AbstractCluster implements ClusterManager {
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
   public synchronized <T> Cluster addBroadcastListener(String topic, EventListener<T> listener) {
-    Set<EventListener> listeners = broadcastListeners.computeIfAbsent(topic, t -> new CopyOnWriteArraySet<EventListener>());
-    listeners.add(listener);
+    broadcastListeners.computeIfAbsent(topic, t -> new CopyOnWriteArraySet<EventListener>()).add(listener);
     broadcastHandlers.computeIfAbsent(topic, t -> message -> {
       broadcastListeners.get(t).forEach(l -> l.accept(message));
       return CompletableFuture.completedFuture(null);
@@ -338,7 +337,7 @@ public abstract class AbstractCluster implements ClusterManager {
   }
 
   @Override
-  public CompletableFuture<ClusterManager> open() {
+  public synchronized CompletableFuture<ClusterManager> open() {
     return CompletableFuture.runAsync(() -> {
       router.createRoutes(this, context);
       election.open();

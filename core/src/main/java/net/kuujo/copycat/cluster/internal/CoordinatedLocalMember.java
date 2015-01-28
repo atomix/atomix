@@ -32,7 +32,7 @@ import java.util.concurrent.Executor;
  */
 public class CoordinatedLocalMember extends CoordinatedMember implements LocalMemberManager {
   private final LocalMemberCoordinator coordinator;
-  private boolean open;
+  private volatile boolean open;
 
   public CoordinatedLocalMember(int id, MemberInfo info, LocalMemberCoordinator coordinator, Serializer serializer, Executor executor) {
     super(id, info, coordinator, serializer, executor);

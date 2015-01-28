@@ -143,14 +143,14 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   }
 
   @Override
-  public CompletableFuture<StateLog<T>> open() {
+  public synchronized CompletableFuture<StateLog<T>> open() {
     return runStartupTasks()
       .thenComposeAsync(v -> context.open(), executor)
       .thenApply(v -> this);
   }
 
   @Override
-  public CompletableFuture<Void> close() {
+  public synchronized CompletableFuture<Void> close() {
     return context.close()
       .thenComposeAsync(v -> runShutdownTasks(), executor);
   }
