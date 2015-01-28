@@ -47,4 +47,13 @@ public class ClusterConfigTest {
     assertEquals("local://foo", copy.getMembers().iterator().next());
   }
 
+  /**
+   * Tests overriding cluster configuration information via namespaced resources.
+   */
+  public void testNamespaceOverride() throws Throwable {
+    ClusterConfig cluster = new ClusterConfig("foo.bar");
+    assertEquals(500, cluster.getElectionTimeout());
+    assertEquals(100, cluster.getHeartbeatInterval());
+  }
+
 }

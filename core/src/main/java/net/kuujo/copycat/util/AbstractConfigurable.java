@@ -56,8 +56,8 @@ public abstract class AbstractConfigurable implements Configurable {
       }
 
       // Support namespaced configuration resources, e.g. foo.bar.baz, foo.bar, foo
-      int index;
-      while ((index = resource.lastIndexOf('.', resource.length())) != -1) {
+      int index = resource.length();
+      while ((index = resource.lastIndexOf('.', index - 1)) != -1) {
         config = config.withFallback(ConfigFactory.load(resource.substring(0, index), ConfigParseOptions.defaults().setAllowMissing(true), ConfigResolveOptions.noSystem()));
       }
     }
