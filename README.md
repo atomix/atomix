@@ -44,6 +44,9 @@ User Manual
    * [Configuring the protocol](#configuring-the-protocol)
    * [Creating a Copycat instance](#creating-a-copycat-instance)
    * [Accessing the Copycat cluster](#accessing-the-copycat-cluster)
+1. [Configuration](#configuration)
+   * [Configuration files](#configuration-files)
+   * [Configuration objects](#configuration-objects)
 1. [Resources](#resources)
    * [Resource lifecycle](#resource-lifecycle)
    * [Configuring resources](#configuring-resources)
@@ -51,7 +54,7 @@ User Manual
       * [Log configuration](#log-configuration)
       * [Serialization](#serialization)
       * [Executors](#executors)
-      * [Configuration maps](#configuration-maps)
+      * [Resource configuration files](#resource-configuration-files)
    * [Creating resources](#creating-resources)
    * [Resource clusters](#resource-clusters)
 1. [State machines](#state-machines)
@@ -192,6 +195,18 @@ ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol());
 ```
 
+Alternatively, users can override the default protocol by overriding `cluster-defaults.conf` with `cluster.conf`.
+
+`cluster.conf`
+
+```
+protocol {
+  class: net.kuujo.copycat.netty.NettyTcpProtocol
+  send.buffer.size: 8192
+  receive.buffer.size: 8192
+}
+```
+
 Copycat core protocol implementations include [Netty](#netty-protocol), [Vert.x](#vertx), and [Vert.x 3](vertx-3).
 Each protocol implementation is separated into an independent module which can be added as a Maven dependency.
 
@@ -216,8 +231,26 @@ For more about active members see the section on [cluster members](#active-membe
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
-  .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withProtocol(new VertxTcpProtocol())
+  .withMembers("tcp://123.456.789.0:1234", "tcp://123.456.789.1:1234", "tcp://123.456.789.2:1234");
+```
+
+Alternatively, users can configure the cluster by overriding the default cluster configuration with a `cluster.conf`
+[Typesafe configuration](https://github.com/typesafehub/config) file:
+
+`cluster.conf`
+
+```
+protocol {
+  class: net.kuujo.copycat.vertx.VertxTcpProtocol
+  connect.timeout: 30000
+}
+
+members: [
+  "tcp://123.456.789.0:1234"
+  "tcp://123.456.789.1:1234"
+  "tcp://123.456.789.2:1234"
+]
 ```
 
 Note that member URIs must be unique and all members of the cluster must agree with the configured protocol. Member URIs
@@ -232,8 +265,9 @@ tolerate one failure, a cluster of five active members can tolerate two failures
 ### Creating a Copycat instance
 
 To create a `Copycat` instance, call one of the overloaded `Copycat.create()` methods:
-* `Copycat.create(String uri, ClusterConfig cluster)`
-* `Copycat.create(String uri, CopycatConfig config)`
+* `Copycat.create(String uri)` - creates a Copycat instance with the file-based cluster configuration
+* `Copycat.create(String uri, ClusterConfig cluster)` - creates a Copycat instance with a custom cluster configuration
+* `Copycat.create(String uri, CopycatConfig config)` - create a Copycat instance with a custom configuration
 
 Note that the first argument to any `Copycat.create()` method is a `uri`. This is the protocol specific URI of the
 *local* member, and it may or may not be a member defined in the provided `ClusterConfig`. This is because Copycat
@@ -270,6 +304,26 @@ Cluster cluster = copycat.cluster();
 
 For more information on using the `Cluster` object to communicate with other members of the cluster see the section
 on [the Copycat cluster](#the-copycat-cluster).
+
+## Configuration
+
+All Copycat configuration types - `CopycatConfig`, `ClusterConfig`, `ResourceConfig`, etc - are backed by the excellent
+[Typesafe Config](https://github.com/typesafehub/config) library.
+
+Configuration for all configurable objects - cluster, logs, resources, and serializers - are backed by default
+configuration files. Configurations use a hierarchical resolution process that allows users to override portions of
+configurations by defining specifically named configuration files. In the documentation that follows, each section
+regarding a configurable type will indicate how configurations can be overridden.
+
+In general, all configurations are resolved with the following precedence:
+* Code based configuration (e.g. `eventLogConfig.withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024));`)
+* User defined file-based configuration (e.g. `my-event-log.conf`)
+* Type specific file configuration (e.g. `event-log.conf`, `resource.conf`)
+* Default type specific file configuration (e.g. `event-log-defaults.conf`, `resource-defaults.conf`)
+
+To learn more about Copycat's configuration format, users are encouraged to read the
+[Typesafe Config documentation](https://github.com/typesafehub/config) and particularly the
+[HOCON configuration format](https://github.com/typesafehub/config/blob/master/HOCON.md)
 
 ## Resources
 
@@ -374,6 +428,42 @@ EventLogConfig config = new EventLogConfig()
     .withFlushInterval(60, TimeUnit.SECONDS));
 ```
 
+Additionally, configurations for all logs or for specific logs can be overridden via
+[Typesafe configuration](https://github.com/typesafehub/config) files. To override the default configuration for all
+logs, define a `log.conf` configuration resource on the classpath. Alternatively, to configure a named log define
+a configuration resource (i.e. `*.conf`, `*.json`, or `*.properties`) on the classpath and reference that resource
+when constructing the log. For example:
+
+`my-log.conf`
+
+```
+segment.interval: 60000
+flush.on-write: true
+```
+
+Given a custom configuration resource on the classpath, simply pass that resource name to the log constructor:
+
+```java
+EventLogConfig config = new EventLogConfig()
+  .withLog(new FileLog("my-log"));
+```
+
+Log configurations are resolved with the following order of precedence:
+* Code based configuration
+* Custom file based configuration
+* `log.conf`, `log.json`, or `log.properties`
+* `log-defaults.conf`
+
+Additionally, log configurations can be overridden within resource configuration files as well.
+
+```
+log {
+  class: net.kuujo.copycat.log.FileLog
+  segment.interval: 60000
+  flush.on-write: true
+}
+```
+
 #### Serialization
 
 By default, entries to Copycat's logs are serialized using the default [Kryo](https://github.com/EsotericSoftware/kryo)
@@ -392,11 +482,31 @@ public class MyEntry implements KryoSerializable {
 }
 ```
 
-Alternatively, users can provide a custom serializer for logs via the log configuration:
+To register custom classes for serialization by the Kryo serializer, create a `serializer.conf` on the classpath and
+define classes and their IDs in the `registrations` object:
 
-```java
-EventLogConfig config = new EventLogConfig()
-  .withSerializer(new MySerializer());
+`serializer.conf`
+
+```
+registrations.1 = com.mycompany.myproject.MySerializableClass
+registrations.2 = com.mycompant.myproject.OtherSerializableClass
+```
+
+In order to ensure portability between members, it's important that all nodes in the Copycat cluster contain the same
+registrations with the same identifiers.
+
+Serializer configurations can also be specified on a per-resource basis:
+
+`my-resource.conf`
+
+```
+serializer {
+  class: net.kuujo.copycat.util.serializer.KryoSerializer
+  registrations {
+    1: com.mycompany.myproject.MySerializableClass
+    2: com.mycompany.myproject.OtherSerializableClass
+  }
+}
 ```
 
 #### Executors
@@ -424,34 +534,21 @@ CopycatConfig config = new CopycatConfig()
   .withExecutor(new VertxEventLoopExecutor(vertx));
 ```
 
-#### Configuration maps
+Note that because of the semantics of threads, executors are the one resource that *can not be specified via
+configuration files*.
 
-The Copycat configuration API is designed to support arbitrary `Map` based configurations as well. Simply pass a map
-with the proper configuration options for the given configuration type to the configuration object constructor:
+#### Resource configuration files
 
-```java
-// Create an event log configuration map.
-Map<String, Object> configMap = new HashMap<>();
-configMap.put("serializer", "net.kuujo.copycat.util.serializer.KryoSerializer");
+All resource configurations inherit from the base `ResourceConfig` configuration class. The `ResourceConfig` receives
+defaults from the `resource-defaults.conf` [Typesafe configuration](https://github.com/typesafehub/config) file. To
+override default resource configuration options for all resource types, define a `resource.conf` on the classpath. Any
+configuration options specified in `resource.conf` will override equivalent values defined in `resource-defaults.conf`.
 
-// Create a file-based log configuration map.
-Map<String, Object> logConfigMap = new HashMap<>();
-logConfigMap.put("class", "net.kuujo.copycat.log.FileLog");
-logConfigMap.put("segment.size", 1024 * 1024);
+`resource.conf`
 
-// Add the log configuration map to the event log configuration.
-configMap.put("log", logConfigMap);
-
-// Create an event log retention policy configuration map.
-Map<String, Object> retentionConfigMap = new HashMap<>();
-retentionConfigMap.put("class", "net.kuujo.copycat.log.SizeBasedRetentionPolicy");
-retentionConfigMap.put("size", 1024 * 1024);
-
-// Add the log retention policy to the log configuration map.
-configMap.put("retention-policy", retentionConfigMap);
-
-// Construct the event log.
-EventLogConfig config = new EventLogConfig(configMap);
+```
+# Set the default resource log to BufferedLog
+log.class: net.kuujo.copycat.log.BufferedLog
 ```
 
 ### Creating resources
@@ -628,6 +725,21 @@ StateMachineConfig config = new StateMachineConfig()
   .withStateType(Map.class)
   .withInitialState(DefaultMapState.class);
 ```
+
+Alternatively, state machine configurations can be defined via
+[Typesafe configuration](https://github.com/typesafehub/config) files. Copycat resolves state machine configurations
+in the following order:
+* `StateMachineConfig` - the code based state machine configuration can override all other configuration options
+* User defined configuration file - the configuration resource specified when constructing a `StateMachineConfig`,
+  e.g. `new StateMachineConfig("my-state-machine")`
+* `state-machine` configuration resource - a `state-machine.conf`, `state-machine.json`, or `state-machine.properties`
+  file on the classpath
+* `state-machine-defaults.conf` - the state machine defaults configuration file
+* `resource` configuration resource - a `resource.conf`, `resource.json`, or `resource.properties` file on the classpath
+* `resource-defaults.conf` - the resource defaults configuration file
+
+Additionally, configurable resources within the state machine configuration - such as the log and serializer - resolve
+with a similar hierarchy of precedence.
 
 By default, all Copycat resources use the `KryoSerializer` for serialization. This should work fine for most use cases,
 but if you so desire you can configure the `Serializer` class on the `StateMachineConfig`.
@@ -933,6 +1045,25 @@ Log log = new FileLog()
   .withFlushInterval(60, TimeUnit.SECONDS);
 ```
 
+Alternatively, event log configurations can be defined by
+[Typesafe configuration](https://github.com/typesafehub/config) files. Copycat resolves event log configurations
+in the following order:
+* `EventLogConfig` - the code based event log configuration can override all other configuration options
+* User defined configuration file - the configuration resource specified when constructing a `EventLogConfig`,
+  e.g. `new EventLogConfig("my-event-log")`
+* `event-log` configuration resource - a `event-log.conf`, `event-log.json`, or `event-log.properties`
+  file on the classpath
+* `event-log-defaults.conf` - the event log defaults configuration file
+* `resource` configuration resource - a `resource.conf`, `resource.json`, or `resource.properties` file on the classpath
+* `resource-defaults.conf` - the resource defaults configuration file
+
+To construct an event log configuration from a custom configuration file, simply specify the configuration resource
+name in the `EventLogConfig` constructor:
+
+```java
+EventLogConfig config = new EventLogConfig("my-event-log");
+```
+
 Finally, event logs support configurable retention policies. Retention policies dictate the amount of
 time for which a *segment* of the log is held on disk. For instance, the `FullRetentionPolicy` keeps logs forever,
 while the `TimeBasedRetentionPolicy` allows segments of the log to be deleted after a certain amount of time has passed
@@ -1036,6 +1167,25 @@ StateLogConfig config = new StateLogConfig()
 The state log implementation uses the segment size to determine when to take snapshots. Once the log grows beyond a
 single segment, the state log will take a snapshot and remove all but the first segment in the log. In order to prevent
 performance issues from snapshotting too frequently, segments should not be made too small.
+
+Alternatively, state log configurations can be defined by
+[Typesafe configuration](https://github.com/typesafehub/config) files. Copycat resolves state log configurations
+in the following order:
+* `StateLogConfig` - the code based state log configuration can override all other configuration options
+* User defined configuration file - the configuration resource specified when constructing a `StateLogConfig`,
+  e.g. `new StateLogConfig("my-state-log")`
+* `state-log` configuration resource - a `state-log.conf`, `state-log.json`, or `state-log.properties`
+  file on the classpath
+* `state-log-defaults.conf` - the state log defaults configuration file
+* `resource` configuration resource - a `resource.conf`, `resource.json`, or `resource.properties` file on the classpath
+* `resource-defaults.conf` - the resource defaults configuration file
+
+To construct an event log configuration from a custom configuration file, simply specify the configuration resource
+name in the `EventLogConfig` constructor:
+
+```java
+EventLogConfig config = new EventLogConfig("my-event-log");
+```
 
 ### State commands
 

@@ -18,8 +18,8 @@ package net.kuujo.copycat.collections;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
-import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.resource.internal.AbstractResource;
 
 /**
  * Asynchronous list.
@@ -29,6 +29,18 @@ import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
  * @param <T> The list data type.
  */
 public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncListProxy<T> {
+
+  /**
+   * Creates a new asynchronous list with the default cluster configuration.
+   *
+   * @param name The asynchronous list name.
+   * @param uri The asynchronous list member URI.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  static <T> AsyncList<T> create(String name, String uri) {
+    return create(name, uri, new ClusterConfig(), new AsyncListConfig());
+  }
 
   /**
    * Creates a new asynchronous list.

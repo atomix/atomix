@@ -36,7 +36,17 @@ import net.kuujo.copycat.util.Managed;
 public interface Copycat extends Managed<Copycat> {
 
   /**
-   * Creates a new Copycat instance.
+   * Creates a new Copycat instance with the default Copycat and cluster configuration.
+   *
+   * @param uri The local member URI.
+   * @return The Copycat instance.
+   */
+  static Copycat create(String uri) {
+    return create(uri, new CopycatConfig().withClusterConfig(new ClusterConfig()));
+  }
+
+  /**
+   * Creates a new Copycat instance, overriding the default cluster configuration.
    *
    * @param uri The local member URI.
    * @param cluster The global cluster configuration.

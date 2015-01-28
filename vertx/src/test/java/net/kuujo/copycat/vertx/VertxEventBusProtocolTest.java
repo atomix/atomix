@@ -20,7 +20,7 @@ import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
-import net.kuujo.copycat.event.SizeBasedRetentionPolicy;
+import net.kuujo.copycat.event.retention.SizeBasedRetentionPolicy;
 import net.kuujo.copycat.log.BufferedLog;
 import org.junit.Test;
 import org.vertx.java.core.AsyncResult;
