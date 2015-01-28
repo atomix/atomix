@@ -19,6 +19,7 @@ import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.event.internal.DefaultEventLog;
+import net.kuujo.copycat.event.retention.RetentionPolicy;
 import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.internal.Assert;
