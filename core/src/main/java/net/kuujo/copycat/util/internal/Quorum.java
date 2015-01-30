@@ -18,27 +18,21 @@ package net.kuujo.copycat.util.internal;
 import java.util.function.Consumer;
 
 /**
- * Quorum helper.
+ * Quorum helper. Completes and invokes a callback when the number of {@link #succeed()} or
+ * {@link #fail()} calls equal the expected quorum size. Not threadsafe.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Quorum {
+  private final int quorum;
   private int succeeded;
   private int failed;
-  private int quorum;
   private Consumer<Boolean> callback;
   private boolean complete;
 
   public Quorum(int quorum, Consumer<Boolean> callback) {
     this.quorum = quorum;
     this.callback = callback;
-  }
-
-  /**
-   * Counts the current node in the quorum.
-   */
-  public Quorum countSelf() {
-    return succeed();
   }
 
   private void checkComplete() {
@@ -72,8 +66,8 @@ public class Quorum {
   }
 
   /**
-   * Cancels the quorum. Once this method has been called, the quorum
-   * will be marked complete and the handler will never be called.
+   * Cancels the quorum. Once this method has been called, the quorum will be marked complete and
+   * the handler will never be called.
    */
   public void cancel() {
     callback = null;
