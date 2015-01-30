@@ -53,9 +53,4 @@ public class BufferedLogTest extends AbstractLogTest {
     return (AbstractLogManager) new BufferedLog().withSegmentSize(segmentSize).getLogManager("test");
   }
 
-  @Override
-  protected int entrySize() {
-    return 4;
-  }
-
 }

@@ -83,9 +83,4 @@ public class FileLogTest extends AbstractLogTest {
       .getLogManager(id);
   }
 
-  @Override
-  protected int entrySize() {
-    return 4;
-  }
-
 }

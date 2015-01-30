@@ -206,7 +206,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   public Long lastIndex() {
     assertIsOpen();
     LogSegment lastSegment = lastSegment();
-    return lastSegment == null ? null : lastSegment().lastIndex();
+    return lastSegment == null ? null : lastSegment.lastIndex();
   }
 
   @Override
@@ -247,9 +247,9 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
       }
     }
 
-    Map.Entry<Long, LogSegment> lastSegment = segments.lastEntry();
+    LogSegment lastSegment = lastSegment();
     if (lastSegment != null) {
-      currentSegment = lastSegment.getValue();
+      currentSegment = lastSegment;
     } else {
       try {
         createInitialSegment();
@@ -285,18 +285,26 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
 
   @Override
   public void compact(long index) throws IOException {
+    Assert.index(index, index >= firstIndex() && index <= lastIndex(), "%s is invalid for the log", index);
+    Assert.arg(index, segments.containsKey(index), "%s must be the first index of a segment", index);
+    Assert.arg(index, index != lastSegment().firstIndex(), "%s the last segment cannot be compacted", index);
+    
     // Iterate through all segments in the log. If a segment's first index matches the given index or its last index
     // is less than the given index then remove/close/delete the segment.
     for (Iterator<Map.Entry<Long, LogSegment>> iterator = segments.entrySet().iterator(); iterator.hasNext();) {
       Map.Entry<Long, LogSegment> entry = iterator.next();
       LogSegment segment = entry.getValue();
-      if (index == segment.firstIndex() || (segment.lastIndex() != null && index > segment.lastIndex())) {
+      boolean matchesSegment = index == segment.firstIndex();
+      if (matchesSegment || (segment.lastIndex() != null && index > segment.lastIndex())) {
         iterator.remove();
         try {
           segment.close();
           segment.delete();
         } catch (IOException e) {
         }
+        
+        if (matchesSegment)
+          break;
       }
     }
   }

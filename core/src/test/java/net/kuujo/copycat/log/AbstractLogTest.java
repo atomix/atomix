@@ -51,8 +51,14 @@ public abstract class AbstractLogTest {
   protected void deleteLog() throws Throwable {
   }
 
-  /** Returns the size of a simple entry */
-  protected abstract int entrySize();
+  /** Returns the size of an entry's meta information */
+  protected int metaInfoSize() {
+    return 0;
+  }
+
+  protected int entrySize() {
+    return 4 + metaInfoSize();
+  }
 
   @BeforeMethod
   protected void beforeMethod() throws Throwable {
@@ -109,6 +115,105 @@ public abstract class AbstractLogTest {
     }
   }
 
+  /**
+   * Tests {@link AbstractLogManager#compact(long)} on the log first segment
+   */
+  public void testCompactOnFirstSegment() throws Throwable {
+    appendEntries(entriesPerSegment * 3);
+
+    log.compact(1);
+    assertBytesEqual(log.getEntry(log.firstIndex()), entriesPerSegment + 1);
+    for (int i = entriesPerSegment + 1; i <= entriesPerSegment * 3; i++)
+      assertBytesEqual(log.getEntry(i), i);
+    assertEquals(log.entryCount(), entriesPerSegment * 2);
+    assertEquals(log.segments().size(), 2);
+    assertEquals(log.size(), entrySize() * entriesPerSegment * 2);
+    assertEquals(log.firstIndex().longValue(), entriesPerSegment + 1);
+    assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
+
+    // Append 2 more segments
+    List<Long> indexes = appendEntries(entriesPerSegment * 2, log.lastIndex().intValue() + 1);
+    assertIndexes(indexes, entriesPerSegment * 3 + 1, entriesPerSegment * 5);
+    for (int i = entriesPerSegment + 1; i <= entriesPerSegment * 5; i++)
+      assertBytesEqual(log.getEntry(i), i);
+    assertEquals(log.entryCount(), entriesPerSegment * 4);
+    assertEquals(log.segments().size(), 4);
+    assertEquals(log.size(), entrySize() * entriesPerSegment * 4);
+    assertEquals(log.firstIndex().longValue(), entriesPerSegment + 1);
+    assertEquals(log.lastIndex().longValue(), entriesPerSegment * 5);
+
+    // Remove last 3 segments
+    log.removeAfter(entriesPerSegment * 2);
+    for (int i = entriesPerSegment + 1; i <= entriesPerSegment * 2; i++)
+      assertBytesEqual(log.getEntry(i), i);
+    assertEquals(log.entryCount(), entriesPerSegment);
+    assertEquals(log.segments().size(), 1);
+    assertEquals(log.size(), entrySize() * entriesPerSegment);
+    assertEquals(log.firstIndex().longValue(), entriesPerSegment + 1);
+    assertEquals(log.lastIndex().longValue(), entriesPerSegment * 2);
+  }
+
+  /**
+   * Tests {@link AbstractLogManager#compact(long)} on a middle segment.
+   */
+  public void testCompactOnMiddleSegment() throws Throwable {
+    appendEntries(entriesPerSegment * 3);
+    log.compact(1);
+
+    for (int i = entriesPerSegment + 1; i <= entriesPerSegment * 3; i++)
+      assertBytesEqual(log.getEntry(i), i);
+    assertEquals(log.entryCount(), entriesPerSegment * 2);
+    assertEquals(log.segments().size(), 2);
+    assertEquals(log.size(), entrySize() * entriesPerSegment * 2);
+    assertEquals(log.firstIndex().longValue(), entriesPerSegment + 1);
+    assertEquals(log.lastIndex().longValue(), entriesPerSegment * 3);
+
+    // Append 2 more segments
+    List<Long> indexes = appendEntries(entriesPerSegment * 2, 5000);
+    assertIndexes(indexes, entriesPerSegment * 3 + 1, entriesPerSegment * 5);
+    for (int i = 0; i < entriesPerSegment * 2; i++)
+      assertBytesEqual(log.getEntry(i + entriesPerSegment * 3 + 1), 5000 + i);
+    assertEquals(log.entryCount(), entriesPerSegment * 4);
+    assertEquals(log.segments().size(), 4);
+    assertEquals(log.size(), entrySize() * entriesPerSegment * 4);
+    assertEquals(log.firstIndex().longValue(), entriesPerSegment + 1);
+    assertEquals(log.lastIndex().longValue(), entriesPerSegment * 5);
+
+    // Remove last 3 segments
+    log.removeAfter(entriesPerSegment * 2);
+    for (int i = entriesPerSegment + 1; i <= entriesPerSegment * 2; i++)
+      assertBytesEqual(log.getEntry(i), i);
+    assertEquals(log.entryCount(), entriesPerSegment);
+    assertEquals(log.segments().size(), 1);
+    assertEquals(log.size(), entrySize() * entriesPerSegment);
+    assertEquals(log.firstIndex().longValue(), entriesPerSegment + 1);
+    assertEquals(log.lastIndex().longValue(), entriesPerSegment * 2);
+  }
+
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
+  public void testCompactNegativeIndex() throws Throwable {
+    appendEntries(3);
+    log.compact(-2);
+  }
+
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
+  public void testCompactHighIndex() throws Throwable {
+    appendEntries(entriesPerSegment * 3);
+    log.compact(entriesPerSegment * 5);
+  }
+  
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testCompactLastSegmentIndex() throws Throwable {
+    appendEntries(entriesPerSegment * 3);
+    log.compact(entriesPerSegment * 2 + 1);
+  }
+
+  @Test(expectedExceptions = IllegalArgumentException.class) 
+  public void testCompactWithIndexNotAtHeadOfSegment() throws Throwable {
+    appendEntries(entriesPerSegment * 3);
+    log.compact(entriesPerSegment * 2 + 2);
+  }
+  
   /**
    * Asserts that containsIndex works as expected across segments.
    */

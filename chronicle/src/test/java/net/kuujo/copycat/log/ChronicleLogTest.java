@@ -75,7 +75,7 @@ public class ChronicleLogTest extends AbstractLogTest {
   }
 
   @Override
-  protected int entrySize() {
-    return 17;
+  protected int metaInfoSize() {
+    return 13;
   }
 }

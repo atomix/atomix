@@ -69,9 +69,13 @@ public interface LogManager extends Loggable {
   void rollOver(long index) throws IOException;
 
   /**
-   * Compacts the log up to the given index.
+   * Compacts the log, removing all segments up to and including the given index.
    *
-   * @param index The index to which to compact the log. This must be the first index of a segment in the log.
+   * @param index The index to which to compact the log. This must be the first index of the last
+   *          segment in the log to remove via compaction
+   * @throws IllegalArgumentException if {@code index} is not the first index of a segment or if
+   *           {@code index} represents the last segment in the log
+   * @throws IndexOutOfBoundsException if {@code index} is out of bounds for the log
    * @throws IOException If the log failed to delete a segment.
    */
   void compact(long index) throws IOException;
