@@ -39,7 +39,6 @@ public class KryoSerializer extends SerializerConfig {
   private static final int DEFAULT_KRYO_SERIALIZER_BUFFER_SIZE = 1024 * 1024 * 16;
 
   private Kryo kryo = new Kryo();
-  private ByteBuffer buffer;
   private ByteBufferOutput output;
   private ByteBufferInput input;
   private AtomicBoolean init = new AtomicBoolean();
@@ -61,7 +60,7 @@ public class KryoSerializer extends SerializerConfig {
   }
 
   /**
-   * Initializes the serializer.
+   * Lazily initializes the serializer.
    */
   private void init() {
     if (init.compareAndSet(false, true)) {
@@ -99,7 +98,7 @@ public class KryoSerializer extends SerializerConfig {
    * @param type The class to register.
    * @return The Kryo serializer.
    */
-  public KryoSerializer register(Class<?> type) {
+  public synchronized KryoSerializer register(Class<?> type) {
     kryo.register(type);
     return this;
   }
@@ -111,7 +110,7 @@ public class KryoSerializer extends SerializerConfig {
    * @param id The registration ID.
    * @return The Kryo serializer.
    */
-  public KryoSerializer register(Class<?> type, int id) {
+  public synchronized KryoSerializer register(Class<?> type, int id) {
     kryo.register(type, id);
     return this;
   }

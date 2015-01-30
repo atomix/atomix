@@ -15,18 +15,22 @@
  */
 package net.kuujo.copycat.util.serializer;
 
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.internal.MemberInfo;
-import org.testng.annotations.Test;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import net.jodah.concurrentunit.Waiter;
+import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.cluster.internal.MemberInfo;
+
+import org.testng.annotations.Test;
 
 /**
  * Kryo serializer test.
@@ -58,4 +62,32 @@ public class KryoSerializerTest {
     assertTrue(result.get(2).state() == Member.State.SUSPICIOUS);
   }
 
+  /**
+   * Asserts that concurrent serialization works.
+   */
+  public void shouldSerializeConcurrently() throws Throwable {
+    Serializer serializer = new KryoSerializer();
+    Waiter waiter = new Waiter();
+    CountDownLatch latch = new CountDownLatch(10);
+
+    List<Thread> threads = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      threads.add(new Thread(() -> {
+        try {
+          latch.countDown();
+          latch.await();
+          String expected = UUID.randomUUID().toString();
+          ByteBuffer buffer = serializer.writeObject(expected);
+          Thread.sleep(100);
+          Object result = serializer.readObject(buffer);
+          waiter.assertEquals(result, expected);
+          waiter.resume();
+        } catch (Exception ignore) {
+        }
+      }));
+    }
+
+    threads.forEach(t -> t.start());
+    waiter.await(5000, 10);
+  }
 }
