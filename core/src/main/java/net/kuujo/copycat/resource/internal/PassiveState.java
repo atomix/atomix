@@ -127,9 +127,7 @@ public class PassiveState extends AbstractState {
 
     // If we have entries to send or if entries are not required for this request then send the sync request.
     if (!requireEntries || !entries.isEmpty()) {
-      LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember(), member.getUri());
-
-      syncHandler.apply(SyncRequest.builder()
+      SyncRequest request = SyncRequest.builder()
         .withUri(member.getUri())
         .withLeader(context.getLeader())
         .withTerm(context.getTerm())
@@ -137,7 +135,10 @@ public class PassiveState extends AbstractState {
         .withFirstIndex(firstIndex != null && firstIndex.equals(context.log().firstIndex()))
         .withMembers(context.getMemberInfo())
         .withEntries(entries)
-        .build()).whenComplete((response, error) -> {
+        .build();
+
+      LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember(), member.getUri());
+      syncHandler.apply(request).whenComplete((response, error) -> {
         context.checkThread();
         // Always check if the context is still open in order to prevent race conditions in asynchronous callbacks.
         if (isOpen()) {
