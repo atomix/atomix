@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat.protocol.rpc;
 
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
@@ -42,14 +43,14 @@ public class CommitResponse extends AbstractResponse {
     return new Builder(response);
   }
 
-  private byte[] result;
+  private ByteBuffer result;
 
   /**
    * Returns the commit result.
    *
    * @return The commit result.
    */
-  public byte[] result() {
+  public ByteBuffer result() {
     return result;
   }
 
@@ -93,7 +94,7 @@ public class CommitResponse extends AbstractResponse {
      * @param result The response result.
      * @return The response builder.
      */
-    public Builder withResult(byte[] result) {
+    public Builder withResult(ByteBuffer result) {
       response.result = result;
       return this;
     }

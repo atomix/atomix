@@ -16,18 +16,17 @@
 package net.kuujo.copycat.resource.internal;
 
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.log.LogManager;
-import net.kuujo.copycat.protocol.rpc.CommitRequest;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.rpc.CommitRequest;
 import net.kuujo.copycat.protocol.rpc.QueryRequest;
 import net.kuujo.copycat.protocol.rpc.Response;
+import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.nio.ByteBuffer;
-import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
@@ -156,7 +155,7 @@ public class DefaultResourceContext implements ResourceContext {
     context.commit(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(ByteBuffer.wrap(response.result()));
+          future.complete(response.result());
         } else {
           future.completeExceptionally(response.error());
         }

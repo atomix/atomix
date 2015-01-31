@@ -95,7 +95,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testCommitResponseBuilderFailsWithoutMember() {
-    CommitResponse.builder().withResult("Hello world!".getBytes()).build();
+    CommitResponse.builder().withResult(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
@@ -124,10 +124,10 @@ public class RequestResponseTest {
   public void testCommitResponseBuilderSucceedsWithValidConfiguration() {
     CommitResponse response = CommitResponse.builder()
       .withUri("foo")
-      .withResult("Hello world!".getBytes())
+      .withResult(ByteBuffer.wrap("Hello world!".getBytes()))
       .build();
     assertEquals(response.uri(), "foo");
-    assertEquals(new String(response.result()), "Hello world!");
+    assertEquals(new String(response.result().array()), "Hello world!");
   }
 
   /**
