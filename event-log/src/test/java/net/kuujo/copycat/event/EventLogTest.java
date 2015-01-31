@@ -33,9 +33,11 @@ public class EventLogTest extends ConcurrentTestCase {
    */
   public void testPassiveEvents() throws Throwable {
     TestCluster<EventLog<String>> cluster = TestCluster.of((uri, config) -> EventLog.create("test", uri, config, new EventLogConfig().withLog(new BufferedLog())));
+    expectResume();
     cluster.open().thenRun(this::resume);
     await(15000);
 
+    expectResume();
     EventLog<String> passive = cluster.passiveResources().iterator().next();
     passive.consumer(message -> {
       threadAssertEquals(message, "Hello world!");
