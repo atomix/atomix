@@ -133,7 +133,7 @@ public class SyncRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%s, firstIndex=%b, entries=[...]]", getClass().getSimpleName(), id, term, leader, logIndex, firstIndex);
+    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%s, firstIndex=%b, entries=[%d]]", getClass().getSimpleName(), id, term, leader, logIndex, firstIndex, entries.size());
   }
 
   /**

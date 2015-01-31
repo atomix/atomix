@@ -142,7 +142,7 @@ public class AppendRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[...], commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, commitIndex);
+    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, entries.size(), commitIndex);
   }
 
   /**
