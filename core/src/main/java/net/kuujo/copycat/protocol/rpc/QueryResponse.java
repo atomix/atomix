@@ -57,15 +57,14 @@ public class QueryResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, status, result);
+    return Objects.hash(member, status, result);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof QueryResponse) {
       QueryResponse response = (QueryResponse) object;
-      return response.id.equals(id)
-        && response.member.equals(member)
+      return response.member.equals(member)
         && response.status == status
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));
@@ -75,7 +74,7 @@ public class QueryResponse extends AbstractResponse {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, status=%s, result=%s]", getClass().getSimpleName(), id, status, result);
+    return String.format("%s[status=%s, result=%s]", getClass().getSimpleName(), status, result);
   }
 
   /**

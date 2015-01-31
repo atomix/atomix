@@ -59,15 +59,14 @@ public class SyncResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, members);
+    return Objects.hash(member, members);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof SyncResponse) {
       SyncResponse response = (SyncResponse) object;
-      return response.id.equals(id)
-        && response.status == status
+      return response.status == status
         && response.member.equals(member)
         && response.members.equals(members);
     }
@@ -76,7 +75,7 @@ public class SyncResponse extends AbstractResponse {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, status=%s]", getClass().getSimpleName(), id, status);
+    return String.format("%s[members=%s]", getClass().getSimpleName(), members);
   }
 
   /**

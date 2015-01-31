@@ -67,15 +67,14 @@ public class PollResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, status, term, voted);
+    return Objects.hash(member, status, term, voted);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof PollResponse) {
       PollResponse response = (PollResponse) object;
-      return response.id.equals(id)
-        && response.member.equals(member)
+      return response.member.equals(member)
         && response.status == status
         && response.term == term
         && response.voted == voted;
@@ -85,7 +84,7 @@ public class PollResponse extends AbstractResponse {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, voted=%b]", getClass().getSimpleName(), id, term, voted);
+    return String.format("%s[term=%d, voted=%b]", getClass().getSimpleName(), term, voted);
   }
 
   /**

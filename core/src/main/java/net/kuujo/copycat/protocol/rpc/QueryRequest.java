@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.protocol.rpc;
 
-import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.nio.ByteBuffer;
 import java.util.Objects;
@@ -70,15 +70,14 @@ public class QueryRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, entry, consistency);
+    return Objects.hash(member, entry, consistency);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof QueryRequest) {
       QueryRequest request = (QueryRequest) object;
-      return request.id.equals(id)
-        && request.member.equals(member)
+      return request.member.equals(member)
         && request.entry.equals(entry)
         && request.consistency == consistency;
     }
@@ -87,7 +86,7 @@ public class QueryRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
+    return String.format("%s[entry=%s, consistency=%s]", getClass().getSimpleName(), entry.toString(), consistency);
   }
 
   /**

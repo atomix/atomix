@@ -22,13 +22,6 @@ package net.kuujo.copycat.protocol.rpc;
 public interface Request {
 
   /**
-   * Returns the request ID.
-   *
-   * @return The unique request ID.
-   */
-  Object id();
-
-  /**
    * Returns the request member.
    *
    * @return The request member.
@@ -42,14 +35,6 @@ public interface Request {
    * @param <U> The request type.
    */
   static interface Builder<T extends Builder<T, U>, U extends Request> {
-
-    /**
-     * Sets the request ID.
-     *
-     * @param id The request ID.
-     * @return The request builder.
-     */
-    T withId(Object id);
 
     /**
      * Sets the request member.

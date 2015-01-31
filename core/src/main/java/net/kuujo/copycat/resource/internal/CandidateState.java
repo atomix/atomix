@@ -117,7 +117,6 @@ class CandidateState extends ActiveState {
     for (String member : context.getActiveMembers()) {
       LOGGER.debug("{} - Polling {} for term {}", context.getLocalMember(), member, context.getTerm());
       PollRequest request = PollRequest.builder()
-        .withId(UUID.randomUUID().toString())
         .withUri(member)
         .withTerm(context.getTerm())
         .withCandidate(context.getLocalMember())
@@ -173,14 +172,12 @@ class CandidateState extends ActiveState {
     // If the vote request is not for this candidate then reject the vote.
     if (request.candidate().equals(context.getLocalMember())) {
       return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
-        .withId(logRequest(request).id())
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(true)
         .build()));
     } else {
       return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
-        .withId(logRequest(request).id())
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)

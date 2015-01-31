@@ -87,15 +87,14 @@ public class PollRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, term, candidate, logIndex, logTerm);
+    return Objects.hash(member, term, candidate, logIndex, logTerm);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof PollRequest) {
       PollRequest request = (PollRequest) object;
-      return request.id.equals(id)
-        && request.member.equals(member)
+      return request.member.equals(member)
         && request.term == term
         && request.candidate.equals(candidate)
         && request.logIndex.equals(logIndex)
@@ -106,7 +105,7 @@ public class PollRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, candidate=%s, logIndex=%d, logTerm=%d]", getClass().getSimpleName(), id, term, candidate, logIndex, logTerm);
+    return String.format("%s[term=%d, candidate=%s, logIndex=%d, logTerm=%d]", getClass().getSimpleName(), term, candidate, logIndex, logTerm);
   }
 
   /**

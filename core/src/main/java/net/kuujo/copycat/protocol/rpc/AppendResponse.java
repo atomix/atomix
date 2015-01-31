@@ -77,15 +77,14 @@ public class AppendResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, term, succeeded, logIndex);
+    return Objects.hash(member, term, succeeded, logIndex);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof AppendResponse) {
       AppendResponse response = (AppendResponse) object;
-      return response.id.equals(id)
-        && response.status == status
+      return response.status == status
         && response.member.equals(member)
         && response.term == term
         && response.succeeded == succeeded
@@ -96,7 +95,7 @@ public class AppendResponse extends AbstractResponse {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, status=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), id, status, term, succeeded, logIndex);
+    return String.format("%s[status=%s, term=%d, succeeded=%b, logIndex=%d]", getClass().getSimpleName(), status, term, succeeded, logIndex);
   }
 
   /**

@@ -24,15 +24,9 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class AbstractResponse implements Response {
-  protected Object id;
   protected String member;
   protected Status status = Status.OK;
   protected Throwable error;
-
-  @Override
-  public Object id() {
-    return id;
-  }
 
   @Override
   public String uri() {
@@ -51,12 +45,12 @@ abstract class AbstractResponse implements Response {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, status);
+    return Objects.hash(member, status);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, uri=%s, status=%s]", getClass().getCanonicalName(), id, member, status);
+    return String.format("%s[uri=%s, status=%s]", getClass().getCanonicalName(), member, status);
   }
 
   /**
@@ -70,14 +64,6 @@ abstract class AbstractResponse implements Response {
 
     protected Builder(U response) {
       this.response = response;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T withId(Object id) {
-      Assert.isNotNull(id, "id");
-      response.id = id;
-      return (T) this;
     }
 
     @Override
@@ -106,7 +92,6 @@ abstract class AbstractResponse implements Response {
 
     @Override
     public U build() {
-      Assert.isNotNull(response.id, "id");
       Assert.isNotNull(response.member, "uri");
       Assert.isNotNull(response.status, "status");
       return response;

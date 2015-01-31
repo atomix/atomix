@@ -112,15 +112,14 @@ public class SyncRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, term, leader, entries);
+    return Objects.hash(member, term, leader, entries);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof SyncRequest) {
       SyncRequest request = (SyncRequest) object;
-      return request.id.equals(id)
-        && request.member.equals(member)
+      return request.member.equals(member)
         && request.term == term
         && request.leader.equals(leader)
         && request.logIndex.equals(logIndex)
@@ -133,7 +132,7 @@ public class SyncRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%s, firstIndex=%b, entries=[%d]]", getClass().getSimpleName(), id, term, leader, logIndex, firstIndex, entries.size());
+    return String.format("%s[term=%d, leader=%s, logIndex=%s, firstIndex=%b, entries=[%d]]", getClass().getSimpleName(), term, leader, logIndex, firstIndex, entries.size());
   }
 
   /**

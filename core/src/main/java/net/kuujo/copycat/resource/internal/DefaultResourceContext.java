@@ -124,7 +124,6 @@ public class DefaultResourceContext implements ResourceContext {
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     QueryRequest request = QueryRequest.builder()
-      .withId(UUID.randomUUID().toString())
       .withUri(context.getLocalMember())
       .withEntry(entry)
       .withConsistency(consistency)
@@ -151,7 +150,6 @@ public class DefaultResourceContext implements ResourceContext {
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     CommitRequest request = CommitRequest.builder()
-      .withId(UUID.randomUUID().toString())
       .withUri(context.getLocalMember())
       .withEntry(entry)
       .build();

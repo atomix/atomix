@@ -38,13 +38,6 @@ public interface Response {
   }
 
   /**
-   * Returns the response ID.
-   *
-   * @return The unique response ID.
-   */
-  Object id();
-
-  /**
    * Returns the response member.
    *
    * @return The member to which to send the response.
@@ -72,14 +65,6 @@ public interface Response {
    * @param <U> The response type.
    */
   static interface Builder<T extends Builder<T, U>, U extends Response> {
-
-    /**
-     * Sets the response ID.
-     *
-     * @param id The response ID.
-     * @return The response builder.
-     */
-    T withId(Object id);
 
     /**
      * Sets the response member.

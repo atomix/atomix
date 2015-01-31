@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.protocol.rpc.*;
 
 import java.io.IOException;
@@ -130,7 +130,6 @@ public class PassiveState extends AbstractState {
       LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember(), member.getUri());
 
       syncHandler.apply(SyncRequest.builder()
-        .withId(UUID.randomUUID().toString())
         .withUri(member.getUri())
         .withLeader(context.getLeader())
         .withTerm(context.getTerm())
@@ -182,7 +181,6 @@ public class PassiveState extends AbstractState {
     // requestor's log then reply immediately.
     if (!request.firstIndex() && request.logIndex() != null && !context.log().containsIndex(request.logIndex())) {
       return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-        .withId(logRequest(request).id())
         .withUri(context.getLocalMember())
         .withMembers(context.getMemberInfo())
         .build()));
@@ -198,7 +196,6 @@ public class PassiveState extends AbstractState {
       } catch (IOException e) {
         LOGGER.error("{} - Failed to roll over log", context.getLocalMember());
         return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-          .withId(logRequest(request).id())
           .withUri(context.getLocalMember())
           .withMembers(context.getMemberInfo())
           .build()));
@@ -247,7 +244,6 @@ public class PassiveState extends AbstractState {
 
     // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-      .withId(logRequest(request).id())
       .withUri(context.getLocalMember())
       .withMembers(context.getMemberInfo())
       .build()));
@@ -260,13 +256,11 @@ public class PassiveState extends AbstractState {
     // If the request allows inconsistency, immediately execute the query and return the result.
     if (request.consistency() == Consistency.WEAK) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withId(request.id())
         .withUri(context.getLocalMember())
         .withResult(context.consumer().apply(null, request.entry()))
         .build()));
     } else if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withId(request.id())
         .withUri(context.getLocalMember())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
@@ -282,7 +276,6 @@ public class PassiveState extends AbstractState {
     logRequest(request);
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CommitResponse.builder()
-        .withId(request.id())
         .withUri(context.getLocalMember())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))

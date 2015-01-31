@@ -39,7 +39,6 @@ public class EventLogTest extends ConcurrentTestCase {
     EventLog<String> passive = cluster.passiveResources().iterator().next();
     passive.consumer(message -> {
       threadAssertEquals(message, "Hello world!");
-      resume();
     });
 
     EventLog<String> active = cluster.activeResources().iterator().next();

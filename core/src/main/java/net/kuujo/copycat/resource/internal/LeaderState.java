@@ -104,7 +104,6 @@ class LeaderState extends ActiveState {
       return super.poll(request);
     } else {
       return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
-        .withId(request.id())
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
@@ -119,7 +118,6 @@ class LeaderState extends ActiveState {
       return super.append(request);
     } else if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
-        .withId(logRequest(request).id())
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
@@ -144,7 +142,6 @@ class LeaderState extends ActiveState {
       case WEAK:
       case DEFAULT:
         future.complete(logResponse(QueryResponse.builder()
-          .withId(request.id())
           .withUri(context.getLocalMember())
           .withResult(consumer.apply(null, request.entry()))
           .build()));
@@ -158,13 +155,11 @@ class LeaderState extends ActiveState {
             if (error == null) {
               try {
                 future.complete(logResponse(QueryResponse.builder()
-                  .withId(request.id())
                   .withUri(context.getLocalMember())
                   .withResult(consumer.apply(null, request.entry()))
                   .build()));
               } catch (Exception e) {
                 future.complete(logResponse(QueryResponse.builder()
-                  .withId(request.id())
                   .withUri(context.getLocalMember())
                   .withStatus(Response.Status.ERROR)
                   .withError(e)
@@ -172,7 +167,6 @@ class LeaderState extends ActiveState {
               }
             } else {
               future.complete(logResponse(QueryResponse.builder()
-                .withId(request.id())
                 .withUri(context.getLocalMember())
                 .withStatus(Response.Status.ERROR)
                 .withError(error)
@@ -223,13 +217,11 @@ class LeaderState extends ActiveState {
             byte[] bytes = new byte[result.remaining()];
             result.get(bytes);
             future.complete(logResponse(CommitResponse.builder()
-              .withId(request.id())
               .withUri(context.getLocalMember())
               .withResult(bytes)
               .build()));
           } catch (Exception e) {
             future.complete(logResponse(CommitResponse.builder()
-              .withId(request.id())
               .withUri(context.getLocalMember())
               .withStatus(Response.Status.ERROR)
               .withError(e)
@@ -239,7 +231,6 @@ class LeaderState extends ActiveState {
           }
         } else {
           future.complete(logResponse(CommitResponse.builder()
-            .withId(request.id())
             .withUri(context.getLocalMember())
             .withStatus(Response.Status.ERROR)
             .withError(error)
@@ -482,7 +473,6 @@ class LeaderState extends ActiveState {
      */
     private void doCommit(final Long prevIndex, final ByteBuffer prevEntry, final List<ByteBuffer> entries) {
       AppendRequest request = AppendRequest.builder()
-        .withId(UUID.randomUUID().toString())
         .withUri(member)
         .withTerm(context.getTerm())
         .withLeader(context.getLocalMember())

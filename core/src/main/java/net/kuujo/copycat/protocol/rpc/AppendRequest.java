@@ -120,15 +120,14 @@ public class AppendRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, term, leader, logIndex, logTerm, entries, firstIndex, commitIndex);
+    return Objects.hash(member, term, leader, logIndex, logTerm, entries, firstIndex, commitIndex);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof AppendRequest) {
       AppendRequest request = (AppendRequest) object;
-      return request.id.equals(id)
-        && request.member.equals(member)
+      return request.member.equals(member)
         && request.term == term
         && request.leader.equals(leader)
         && request.logIndex.equals(logIndex)
@@ -142,7 +141,7 @@ public class AppendRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s, term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], commitIndex=%d]", getClass().getSimpleName(), id, term, leader, logIndex, logTerm, entries.size(), commitIndex);
+    return String.format("%s[term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], commitIndex=%d]", getClass().getSimpleName(), term, leader, logIndex, logTerm, entries.size(), commitIndex);
   }
 
   /**

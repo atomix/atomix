@@ -58,15 +58,14 @@ public class CommitRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, member, entry);
+    return Objects.hash(member, entry);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof CommitRequest) {
       CommitRequest request = (CommitRequest) object;
-      return request.id.equals(id)
-        && request.member.equals(member)
+      return request.member.equals(member)
         && request.entry.equals(entry);
     }
     return false;
@@ -74,7 +73,7 @@ public class CommitRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[id=%s]", getClass().getSimpleName(), id);
+    return String.format("%s[entry=%s]", getClass().getSimpleName(), entry.toString());
   }
 
   /**
