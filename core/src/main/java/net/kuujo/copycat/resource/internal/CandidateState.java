@@ -14,11 +14,11 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.util.internal.Quorum;
-import net.kuujo.copycat.protocol.rpc.PingRequest;
-import net.kuujo.copycat.protocol.rpc.PingResponse;
+import net.kuujo.copycat.protocol.rpc.AppendRequest;
+import net.kuujo.copycat.protocol.rpc.AppendResponse;
 import net.kuujo.copycat.protocol.rpc.PollRequest;
 import net.kuujo.copycat.protocol.rpc.PollResponse;
+import net.kuujo.copycat.util.internal.Quorum;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
@@ -146,7 +146,7 @@ class CandidateState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<PingResponse> ping(PingRequest request) {
+  public CompletableFuture<AppendResponse> append(AppendRequest request) {
     context.checkThread();
 
     // If the request indicates a term that is greater than the current term then
@@ -155,7 +155,7 @@ class CandidateState extends ActiveState {
       context.setTerm(request.term());
       transition(CopycatState.FOLLOWER);
     }
-    return super.ping(request);
+    return super.append(request);
   }
 
   @Override

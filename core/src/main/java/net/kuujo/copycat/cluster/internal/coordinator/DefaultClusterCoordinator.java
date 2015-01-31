@@ -15,27 +15,10 @@
  */
 package net.kuujo.copycat.cluster.internal.coordinator;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
-
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MembershipEvent;
-import net.kuujo.copycat.cluster.internal.CoordinatedCluster;
-import net.kuujo.copycat.cluster.internal.CoordinatedMember;
-import net.kuujo.copycat.cluster.internal.MemberInfo;
-import net.kuujo.copycat.cluster.internal.Router;
-import net.kuujo.copycat.cluster.internal.Topics;
+import net.kuujo.copycat.cluster.internal.*;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.cluster.internal.manager.MemberManager;
 import net.kuujo.copycat.log.BufferedLog;
@@ -52,6 +35,10 @@ import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
+
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.util.concurrent.*;
 
 /**
  * Default cluster coordinator implementation.
@@ -270,13 +257,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     @Override
     public void createRoutes(ClusterManager cluster, RaftProtocol protocol) {
       cluster.member().registerHandler(Topics.SYNC, PROTOCOL_ID, protocol::sync, serializer, executor);
-      cluster.member().registerHandler(Topics.PING, PROTOCOL_ID, protocol::ping, serializer, executor);
       cluster.member().registerHandler(Topics.POLL, PROTOCOL_ID, protocol::poll, serializer, executor);
       cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append, serializer, executor);
       cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query, serializer, executor);
       cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit, serializer, executor);
       protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
-      protocol.pingHandler(request -> handleOutboundRequest(Topics.PING, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
       protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
       protocol.queryHandler(request -> handleOutboundRequest(Topics.QUERY, request, cluster));
@@ -297,13 +282,11 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     @Override
     public void destroyRoutes(ClusterManager cluster, RaftProtocol protocol) {
       cluster.member().unregisterHandler(Topics.SYNC, PROTOCOL_ID);
-      cluster.member().unregisterHandler(Topics.PING, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.POLL, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.APPEND, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.QUERY, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.COMMIT, PROTOCOL_ID);
       protocol.syncHandler(null);
-      protocol.pingHandler(null);
       protocol.pollHandler(null);
       protocol.appendHandler(null);
       protocol.queryHandler(null);

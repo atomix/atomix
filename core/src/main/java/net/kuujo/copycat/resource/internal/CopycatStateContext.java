@@ -19,11 +19,11 @@ import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.election.Election;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.log.LogManager;
-import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.internal.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private AbstractState state;
   private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
-  private MessageHandler<PingRequest, PingResponse> pingHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
   private MessageHandler<AppendRequest, AppendResponse> appendHandler;
   private MessageHandler<QueryRequest, QueryResponse> queryHandler;
@@ -497,17 +496,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
-  public CopycatStateContext pingHandler(MessageHandler<PingRequest, PingResponse> handler) {
-    this.pingHandler = handler;
-    return this;
-  }
-
-  @Override
-  public CompletableFuture<PingResponse> ping(PingRequest request) {
-    return wrapCall(request, state::ping);
-  }
-
-  @Override
   public CopycatStateContext pollHandler(MessageHandler<PollRequest, PollResponse> handler) {
     this.pollHandler = handler;
     return this;
@@ -657,7 +645,6 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    */
   private void registerHandlers(AbstractState state) {
     state.syncHandler(syncHandler);
-    state.pingHandler(pingHandler);
     state.appendHandler(appendHandler);
     state.pollHandler(pollHandler);
     state.queryHandler(queryHandler);

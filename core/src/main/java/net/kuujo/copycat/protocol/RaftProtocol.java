@@ -14,9 +14,9 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.util.Managed;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -42,22 +42,6 @@ public interface RaftProtocol extends Managed<Void> {
    * @return The Raft protocol.
    */
   RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler);
-
-  /**
-   * Sends a protocol ping request.
-   *
-   * @param request The protocol ping request.
-   * @return A completable future to be completed with the ping response.
-   */
-  CompletableFuture<PingResponse> ping(PingRequest request);
-
-  /**
-   * Registers a protocol ping request handler.
-   *
-   * @param handler A protocol ping request handler.
-   * @return The Raft protocol.
-   */
-  RaftProtocol pingHandler(MessageHandler<PingRequest, PingResponse> handler);
 
   /**
    * Sends a protocol poll request.

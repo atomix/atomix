@@ -15,7 +15,7 @@
 package net.kuujo.copycat.resource.internal;
 
 import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.rpc.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +31,6 @@ abstract class AbstractState implements RaftProtocol {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
   protected final CopycatStateContext context;
   protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
-  protected MessageHandler<PingRequest, PingResponse> pingHandler;
   protected MessageHandler<PollRequest, PollResponse> pollHandler;
   protected MessageHandler<AppendRequest, AppendResponse> appendHandler;
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
@@ -84,17 +83,6 @@ abstract class AbstractState implements RaftProtocol {
   public RaftProtocol syncHandler(MessageHandler<SyncRequest, SyncResponse> handler) {
     this.syncHandler = handler;
     return this;
-  }
-
-  @Override
-  public AbstractState pingHandler(MessageHandler<PingRequest, PingResponse> handler) {
-    this.pingHandler = handler;
-    return this;
-  }
-
-  @Override
-  public CompletableFuture<PingResponse> ping(PingRequest request) {
-    return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
   }
 
   @Override

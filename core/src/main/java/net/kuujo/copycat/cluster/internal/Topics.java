@@ -27,11 +27,6 @@ public class Topics {
   public static final String SYNC = "sync";
 
   /**
-   * Member ping topic.
-   */
-  public static final String PING = "ping";
-
-  /**
    * Member poll topic.
    */
   public static final String POLL = "poll";

@@ -14,7 +14,10 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.protocol.rpc.AppendRequest;
+import net.kuujo.copycat.protocol.rpc.AppendResponse;
+import net.kuujo.copycat.protocol.rpc.PollRequest;
+import net.kuujo.copycat.protocol.rpc.PollResponse;
 
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -41,21 +44,21 @@ class FollowerState extends ActiveState {
 
   @Override
   public synchronized CompletableFuture<Void> open() {
-    return super.open().thenRun(this::startTimer);
+    return super.open().thenRun(this::startHeartbeatTimeout);
   }
 
   /**
    * Starts the heartbeat timer.
    */
-  private void startTimer() {
+  private void startHeartbeatTimeout() {
     LOGGER.debug("{} - Starting heartbeat timer", context.getLocalMember());
-    resetHeartbeatTimer();
+    resetHeartbeatTimeout();
   }
 
   /**
    * Resets the heartbeat timer.
    */
-  private void resetHeartbeatTimer() {
+  private void resetHeartbeatTimeout() {
     context.checkThread();
     if (isClosed()) return;
 
@@ -77,37 +80,31 @@ class FollowerState extends ActiveState {
         transition(CopycatState.CANDIDATE);
       } else {
         // If the node voted for a candidate then reset the election timer.
-        resetHeartbeatTimer();
+        resetHeartbeatTimeout();
       }
     }, delay, TimeUnit.MILLISECONDS);
   }
 
   @Override
-  public CompletableFuture<PingResponse> ping(PingRequest request) {
-    resetHeartbeatTimer();
-    return super.ping(request);
-  }
-
-  @Override
   public CompletableFuture<AppendResponse> append(AppendRequest request) {
-    resetHeartbeatTimer();
+    resetHeartbeatTimeout();
     return super.append(request);
   }
 
   @Override
   protected PollResponse handlePoll(PollRequest request) {
-    // Reset the heartbeat timer if we voted for another candidate.
+    // Reset the heartbeat timeout if we voted for another candidate.
     PollResponse response = super.handlePoll(request);
     if (response.voted()) {
-      resetHeartbeatTimer();
+      resetHeartbeatTimeout();
     }
     return response;
   }
 
   /**
-   * Cancels the heartbeat timer.
+   * Cancels the heartbeat timeout.
    */
-  private void cancelTimer() {
+  private void cancelHeartbeatTimeout() {
     if (currentTimer != null) {
       LOGGER.debug("{} - Cancelling heartbeat timer", context.getLocalMember());
       currentTimer.cancel(false);
@@ -116,7 +113,7 @@ class FollowerState extends ActiveState {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    return super.close().thenRun(this::cancelTimer);
+    return super.close().thenRun(this::cancelHeartbeatTimeout);
   }
 
 }

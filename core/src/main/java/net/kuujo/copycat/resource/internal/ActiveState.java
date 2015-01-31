@@ -15,7 +15,10 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.protocol.rpc.AppendRequest;
+import net.kuujo.copycat.protocol.rpc.AppendResponse;
+import net.kuujo.copycat.protocol.rpc.PollRequest;
+import net.kuujo.copycat.protocol.rpc.PollResponse;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -41,109 +44,6 @@ abstract class ActiveState extends PassiveState {
       return transitionHandler.apply(state);
     }
     return exceptionalFuture(new IllegalStateException("No transition handler registered"));
-  }
-
-  @Override
-  public CompletableFuture<PingResponse> ping(final PingRequest request) {
-    context.checkThread();
-    CompletableFuture<PingResponse> future = CompletableFuture.completedFuture(logResponse(handlePing(logRequest(request))));
-    // If a transition is required then transition back to the follower state.
-    // If the node is already a follower then the transition will be ignored.
-    if (transition) {
-      transition(CopycatState.FOLLOWER);
-      transition = false;
-    }
-    return future;
-  }
-
-  /**
-   * Handles a ping request.
-   */
-  private PingResponse handlePing(PingRequest request) {
-    // If the request indicates a term that is greater than the current term then
-    // assign that term and leader to the current context and step down as leader.
-    if (request.term() > context.getTerm() || (request.term() == context.getTerm() && context.getLeader() == null)) {
-      context.setTerm(request.term());
-      context.setLeader(request.leader());
-      transition = true;
-    }
-
-    // If the request term is less than the current term then immediately
-    // reply false and return our current term. The leader will receive
-    // the updated term and step down.
-    if (request.term() < context.getTerm()) {
-      LOGGER.warn("{} - Rejected {}: request term is less than the current term ({})", context.getLocalMember(), request, context.getTerm());
-      return PingResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .build();
-    } else if (request.logIndex() != null && request.logTerm() != null) {
-      return doCheckPingEntry(request);
-    }
-    return PingResponse.builder()
-      .withId(request.id())
-      .withUri(context.getLocalMember())
-      .withTerm(context.getTerm())
-      .withSucceeded(true)
-      .build();
-  }
-
-  /**
-   * Checks the ping log entry for consistency.
-   */
-  private PingResponse doCheckPingEntry(PingRequest request) {
-    if (request.logIndex() != null && context.log().lastIndex() == null) {
-      LOGGER.warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
-      return PingResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .build();
-    } else if (request.logIndex() != null && context.log().lastIndex() != null && request.logIndex() > context.log().lastIndex()) {
-      LOGGER.warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
-      return PingResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .build();
-    }
-
-    // If the log entry exists then load the entry.
-    // If the last log entry's term is not the same as the given
-    // prevLogTerm then return false. This will cause the leader to
-    // decrement this node's nextIndex and ultimately retry with the
-    // leader's previous log entry so that the inconsistent entry
-    // can be overwritten.
-    ByteBuffer entry = context.log().getEntry(request.logIndex());
-    if (entry == null) {
-      LOGGER.warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember(), request);
-      return PingResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .build();
-    } else if (entry.getLong() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember(), request);
-      return PingResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withTerm(context.getTerm())
-        .withSucceeded(false)
-        .build();
-    } else {
-      doApplyCommits(request.commitIndex());
-      return PingResponse.builder()
-        .withId(request.id())
-        .withUri(context.getLocalMember())
-        .withTerm(context.getTerm())
-        .withSucceeded(true)
-        .build();
-    }
   }
 
   @Override
