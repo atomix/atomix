@@ -37,9 +37,12 @@ public class AsyncMapTest extends ConcurrentTestCase {
    */
   public void testAsyncMapPutGet() throws Throwable {
     TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
+    expectResume();
     cluster.open().thenRun(this::resume);
-    await(15000);
+    await(5000);
+    
     AsyncMap<String, String> map = cluster.activeResources().iterator().next();
+    expectResume();
     map.put("foo", "Hello world!").thenRun(() -> {
       map.get("foo").thenAccept(result -> {
         threadAssertEquals(result, "Hello world!");
@@ -54,9 +57,12 @@ public class AsyncMapTest extends ConcurrentTestCase {
    */
   public void testAsyncMapPutRemove() throws Throwable {
     TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
+    expectResume();
     cluster.open().thenRun(this::resume);
     await(5000);
+    
     AsyncMap<String, String> map = cluster.activeResources().iterator().next();
+    expectResume();
     map.put("foo", "Hello world!").thenRun(() -> {
       map.get("foo").thenAccept(r1 -> {
         threadAssertEquals(r1, "Hello world!");
@@ -78,10 +84,14 @@ public class AsyncMapTest extends ConcurrentTestCase {
     TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig()
       .withConsistency(Consistency.WEAK)
       .withLog(new BufferedLog())));
+    
+    expectResume();
     cluster.open().thenRun(this::resume);
     await(5000);
+    
     AsyncMap<String, String> activeMap = cluster.activeResources().iterator().next();
     AsyncMap<String, String> passiveMap = cluster.passiveResources().iterator().next();
+    expectResume();
     activeMap.put("foo", "Hello world!").thenRun(() -> {
       try {
         Thread.sleep(1000);
@@ -104,9 +114,13 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withLog(new BufferedLog()
         .withSegmentSize(1024)
         .withFlushOnWrite(true))));
+    
+    expectResume();
     cluster.open().thenRun(this::resume);
     await(5000);
+    
     AsyncMap<String, String> map = cluster.activeResources().iterator().next();
+    expectResume();
     putMany(map).thenRun(this::resume);
     await(5000);
   }
