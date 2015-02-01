@@ -1,0 +1,3 @@
+{
+  "main": "net.kuujo.copycat.example.eventlog.EventLogVerticle"
+}

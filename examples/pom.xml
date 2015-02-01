@@ -76,6 +76,7 @@
   <modules>
     <module>vertx-election</module>
     <module>vertx-lock-service</module>
+    <module>vertx-event-log</module>
   </modules>
 
   <dependencies>
