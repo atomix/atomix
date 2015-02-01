@@ -18,12 +18,12 @@ import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatConfig;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.collections.*;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
-import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.state.StateMachine;
@@ -57,7 +57,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> EventLog<T> eventLog(String name) {
-    return eventLog(name, new EventLogConfig());
+    return eventLog(name, new EventLogConfig(name));
   }
 
   @Override
@@ -69,7 +69,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> StateLog<T> stateLog(String name) {
-    return stateLog(name, new StateLogConfig());
+    return stateLog(name, new StateLogConfig(name));
   }
 
   @Override
@@ -93,7 +93,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public LeaderElection leaderElection(String name) {
-    return leaderElection(name, new LeaderElectionConfig());
+    return leaderElection(name, new LeaderElectionConfig(name));
   }
 
   @Override
@@ -105,7 +105,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <K, V> AsyncMap<K, V> map(String name) {
-    return map(name, new AsyncMapConfig());
+    return map(name, new AsyncMapConfig(name));
   }
 
   @Override
@@ -117,7 +117,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <K, V> AsyncMultiMap<K, V> multiMap(String name) {
-    return multiMap(name, new AsyncMultiMapConfig());
+    return multiMap(name, new AsyncMultiMapConfig(name));
   }
 
   @Override
@@ -129,7 +129,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> AsyncList<T> list(String name) {
-    return list(name, new AsyncListConfig());
+    return list(name, new AsyncListConfig(name));
   }
 
   @Override
@@ -141,7 +141,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public <T> AsyncSet<T> set(String name) {
-    return set(name, new AsyncSetConfig());
+    return set(name, new AsyncSetConfig(name));
   }
 
   @Override
@@ -153,7 +153,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public AsyncLock lock(String name) {
-    return lock(name, new AsyncLockConfig());
+    return lock(name, new AsyncLockConfig(name));
   }
 
   @Override
