@@ -43,7 +43,7 @@ public class CopycatConfig extends AbstractConfigurable {
   private static final String DEFAULT_CONFIGURATION = "copycat-default";
   private static final String CONFIGURATION = "copycat";
 
-  private final Executor DEFAULT_COPYCAT_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-%d"));
+  private Executor executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-%d"));
 
   public CopycatConfig() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
@@ -218,7 +218,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @param executor The Copycat executor.
    */
   public void setDefaultExecutor(Executor executor) {
-    this.config = config.withValue(COPYCAT_DEFAULT_EXECUTOR, ConfigValueFactory.fromAnyRef(executor));
+    this.executor = Assert.isNotNull(executor, "executor");
   }
 
   /**
@@ -227,7 +227,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @return The Copycat executor or {@code null} if no executor was specified.
    */
   public Executor getDefaultExecutor() {
-    return config.hasPath(COPYCAT_DEFAULT_EXECUTOR) ? (Executor) config.getValue(COPYCAT_DEFAULT_EXECUTOR).unwrapped() : DEFAULT_COPYCAT_EXECUTOR;
+    return executor;
   }
 
   /**
