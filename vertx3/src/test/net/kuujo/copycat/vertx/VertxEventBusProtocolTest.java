@@ -33,8 +33,8 @@ public class VertxEventBusProtocolTest extends ProtocolTest {
   }
 
   @Override
-  protected String createUri() {
-    return "eventbus://test";
+  protected String createUri(int id) {
+    return String.format("eventbus://test%d", id);
   }
 
 }
