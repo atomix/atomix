@@ -33,8 +33,8 @@ public class VertxTcpProtocolTest extends ProtocolTest {
   }
 
   @Override
-  protected String createUri() {
-    return "tcp://localhost:5555";
+  protected String createUri(int id) {
+    return String.format("tcp://localhost:555%d", id);
   }
 
 }

@@ -15,9 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
+import net.jodah.concurrentunit.ConcurrentTestCase;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.test.ResourceTest;
+import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
@@ -30,18 +32,19 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class AsyncMapTest extends ResourceTest<AsyncMap<String, String>> {
-
-  @Override
-  protected TestCluster<AsyncMap<String, String>> createCluster() {
-    return TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
-  }
+public class AsyncMapTest extends ConcurrentTestCase {
 
   /**
    * Tests putting a value in an asynchronous map and then reading the value.
    */
   public void testAsyncMapPutGet() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
+      .withActiveMembers(3)
+      .withPassiveMembers(2)
+      .withUriFactory(id -> String.format("local://test%d", id))
+      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
+      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())))
+      .build();
     expectResume();
     cluster.open().thenRun(this::resume);
     await(5000);
@@ -61,7 +64,13 @@ public class AsyncMapTest extends ResourceTest<AsyncMap<String, String>> {
    * Tests putting a value in an asynchronous map and then removing it.
    */
   public void testAsyncMapPutRemove() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
+      .withActiveMembers(3)
+      .withPassiveMembers(2)
+      .withUriFactory(id -> String.format("local://test%d", id))
+      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
+      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())))
+      .build();
     expectResume();
     cluster.open().thenRun(this::resume);
     await(5000);
@@ -86,9 +95,13 @@ public class AsyncMapTest extends ResourceTest<AsyncMap<String, String>> {
    * Tests getting a value from a passive member of the cluster.
    */
   public void testAsyncMapGetFromPassiveMember() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig()
-      .withConsistency(Consistency.WEAK)
-      .withLog(new BufferedLog())));
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
+      .withActiveMembers(3)
+      .withPassiveMembers(2)
+      .withUriFactory(id -> String.format("local://test%d", id))
+      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
+      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog())))
+      .build();
     
     expectResume();
     cluster.open().thenRun(this::resume);
@@ -114,12 +127,14 @@ public class AsyncMapTest extends ResourceTest<AsyncMap<String, String>> {
    * Tests putting enough entries in the map's log to roll over the log to a new segment.
    */
   public void testAsyncMapPutMany() throws Throwable {
-    TestCluster<AsyncMap<String, String>> cluster = TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig()
-      .withConsistency(Consistency.WEAK)
-      .withLog(new BufferedLog()
-        .withSegmentSize(1024)
-        .withFlushOnWrite(true))));
-    
+    TestCluster<AsyncMap<String, String>> cluster = TestCluster.<AsyncMap<String, String>>builder()
+      .withActiveMembers(3)
+      .withPassiveMembers(2)
+      .withUriFactory(id -> String.format("local://test%d", id))
+      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
+      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog().withSegmentInterval(1024).withFlushOnWrite(true))))
+      .build();
+
     expectResume();
     cluster.open().thenRun(this::resume);
     await(5000);

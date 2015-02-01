@@ -15,20 +15,13 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.test.ResourceTest;
-import net.kuujo.copycat.test.TestCluster;
+import org.testng.annotations.Test;
 
 /**
  * State log test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateLogTest extends ResourceTest<StateLog<String>> {
-
-  @Override
-  protected TestCluster<StateLog<String>> createCluster() {
-    return TestCluster.of((uri, config) -> StateLog.<String>create("test", uri, config, new StateLogConfig().withLog(new BufferedLog())));
-  }
-
+@Test
+public class StateLogTest {
 }

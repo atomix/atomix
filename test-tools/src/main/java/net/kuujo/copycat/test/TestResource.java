@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.netty;
+package net.kuujo.copycat.test;
 
-import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.test.ProtocolTest;
-import org.testng.annotations.Test;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.ResourceContext;
+
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Netty TCP protocol test.
+ * Test resource implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
-public class NettyTcpProtocolTest extends ProtocolTest {
-
-  @Override
-  protected Protocol createProtocol() {
-    return new NettyTcpProtocol();
+public class TestResource extends AbstractResource<TestResource> {
+  public TestResource(ResourceContext context) {
+    super(context);
   }
 
   @Override
-  protected String createUri(int id) {
-    return String.format("tcp://localhost:555%d", id);
+  public CompletableFuture<TestResource> open() {
+    return null;
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return null;
   }
 
 }

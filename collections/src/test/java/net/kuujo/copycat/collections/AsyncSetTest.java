@@ -15,8 +15,10 @@
  */
 package net.kuujo.copycat.collections;
 
+import net.jodah.concurrentunit.ConcurrentTestCase;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.test.ResourceTest;
+import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
@@ -26,18 +28,20 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class AsyncSetTest extends ResourceTest<AsyncSet<String>> {
-
-  @Override
-  protected TestCluster<AsyncSet<String>> createCluster() {
-    return TestCluster.of((uri, config) -> AsyncSet.<String>create("test", uri, config, new AsyncSetConfig().withLog(new BufferedLog())));
-  }
+public class AsyncSetTest extends ConcurrentTestCase {
 
   /**
    * Sets adding and removing an item in the set.
    */
   public void testSetAddRemove() throws Throwable {
-    TestCluster<AsyncSet<String>> cluster = TestCluster.of((uri, config) -> AsyncSet.<String>create("test", uri, config, new AsyncSetConfig().withLog(new BufferedLog())));
+    TestCluster<AsyncSet<String>> cluster = TestCluster.<AsyncSet<String>>builder()
+      .withActiveMembers(3)
+      .withPassiveMembers(2)
+      .withUriFactory(id -> String.format("local://test%d", id))
+      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
+      .withResourceFactory((uri, config) -> AsyncSet.create("test", uri, config, new AsyncSetConfig().withLog(new BufferedLog())))
+      .build();
+
     expectResume();
     cluster.open().thenRun(this::resume);
     await(5000);

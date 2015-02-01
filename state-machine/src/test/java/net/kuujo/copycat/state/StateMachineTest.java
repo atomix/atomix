@@ -15,46 +15,13 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.test.ResourceTest;
-import net.kuujo.copycat.test.TestCluster;
+import org.testng.annotations.Test;
 
 /**
  * State machine test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateMachineTest extends ResourceTest<StateMachine<StateMachineTest.TestState>> {
-
-  public static interface TestState {
-    void put(Object value);
-    Object get();
-    void except();
-  }
-
-  public static class TestStateImpl implements TestState {
-    private StateContext<TestState> context;
-    @Initializer
-    public void init(StateContext<TestState> context) {
-      this.context = context;
-    }
-    @Override
-    public void put(Object value) {
-      context.put("value", value);
-    }
-    @Override
-    public Object get() {
-      return context.get("value");
-    }
-    @Override
-    public void except() {
-      throw new RuntimeException();
-    }
-  }
-
-  @Override
-  protected TestCluster<StateMachine<TestState>> createCluster() {
-    return TestCluster.of((uri, config) -> StateMachine.create("test", uri, config, new StateMachineConfig().withStateType(TestState.class).withInitialState(TestStateImpl.class).withLog(new BufferedLog())));
-  }
-
+@Test
+public class StateMachineTest {
 }

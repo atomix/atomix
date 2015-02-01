@@ -16,6 +16,7 @@
 package net.kuujo.copycat.test;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.resource.Resource;
 
 import java.util.*;
@@ -98,6 +99,8 @@ public class TestCluster<T extends Resource<T>> {
      * Builds the test cluster.
      */
     public TestCluster<T> build() {
+      LocalProtocol.reset();
+
       List<T> activeResources = new ArrayList<>(activeMembers);
 
       int i = 0;
