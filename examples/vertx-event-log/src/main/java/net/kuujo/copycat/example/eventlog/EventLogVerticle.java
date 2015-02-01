@@ -113,7 +113,7 @@ public class EventLogVerticle extends BusModBase implements Handler<Message<Json
     JsonArray replicas = getOptionalArrayConfig("replicas", new JsonArray());
 
     // Configure the Copycat cluster with the Vert.x event bus protocol and event bus members. With the event
-    // bus protocol configured, Copycat will perform state machine replication over the event bus using the event
+    // bus protocol configured, Copycat will perform event log replication over the event bus using the event
     // bus addresses provided by the protocol URI - e.g. eventbus://foo
     // Because Copycat is a CP framework, we have to explicitly list all of the nodes in the cluster.
     ClusterConfig cluster = new ClusterConfig()
@@ -125,19 +125,18 @@ public class EventLogVerticle extends BusModBase implements Handler<Message<Json
       .withClusterConfig(cluster)
       .withDefaultExecutor(new VertxEventLoopExecutor(vertx));
 
-    // Add the state machine resource configuration with a Vert.x event loop executor to the Copycat configuration.
-    // Configure the state machine with a persistent log that synchronously flushes to disk on every write.
+    // Add the event log resource configuration with a Vert.x event loop executor to the Copycat configuration.
+    // Configure the event log with a persistent log.
     EventLogConfig eventLogConfig = new EventLogConfig()
-      .withReplicas(((List<String>) members.toList()).stream().map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()))
+      .withReplicas(((List<String>) replicas.toList()).stream().map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()))
       .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 32))
       .withLog(new FileLog()
         .withDirectory(new File(new File(System.getProperty("java.io.tmpdir"), id), name))
-        .withFlushOnWrite(true)
-        .withSegmentSize(1024 * 1024 * 32))
+        .withSegmentSize(1024 * 1024 * 16))
       .withExecutor(new VertxEventLoopExecutor(vertx));
 
     // Create and open a new Copycat instance. The Copycat instance controls the cluster of verticles and manages
-    // resources within the cluster - in this case just a single state machine.
+    // resources within the cluster - in this case just a single event log.
     copycat = Copycat.create(String.format("eventbus://%s", id), config);
 
     // Once we create the Copycat instance, it needs to be opened. When the instance is opened, Copycat will begin
@@ -150,8 +149,8 @@ public class EventLogVerticle extends BusModBase implements Handler<Message<Json
         new DefaultFutureResult<Void>(copycatError).setHandler(doneHandler);
       } else {
 
-        // Create and open a new state machine instance and create a lock proxy for submitting state machine
-        // commands and queries to the cluster. When the state machine is opened, the state machine will communicate
+        // Create and open a new event log instance and create a lock proxy for submitting event log
+        // commands and queries to the cluster. When the event log is opened, the event log will communicate
         // with other nodes in the Copycat instance cluster to elect a leader and begin replicating the state log.
         copycat.<String>eventLog(name, eventLogConfig).open().whenComplete((eventLog, error) -> {
           if (error != null) {
