@@ -121,28 +121,37 @@ public abstract class AbstractCluster implements ClusterManager {
    * Sends member join requests.
    */
   private void sendJoins() {
+    sendJoins(getGossipMembers());
+  }
+
+  /**
+   * Sends member join requests to the given set of members.
+   */
+  private void sendJoins(Collection<CoordinatedMember> gossipMembers) {
     checkThread();
 
     // Increment the local member version.
     localMember.info().version(localMember.info().version() + 1);
 
     // For a random set of three members, send all member info.
-    for (CoordinatedMember member : getGossipMembers()) {
-      Collection<MemberInfo> members = new ArrayList<>(membersInfo.values());
-      member.<Collection<MemberInfo>, Collection<MemberInfo>>send(GOSSIP_TOPIC, id, members, internalSerializer, executor).whenCompleteAsync((membersInfo, error) -> {
-        // If the response was successfully received then indicate that the member is alive and update all member info.
-        // Otherwise, indicate that communication with the member failed. This information will be used to determine
-        // whether the member should be considered dead by informing other members that it appears unreachable.
-        checkThread();
-        if (isOpen()) {
-          if (error == null) {
-            member.info().succeed();
-            updateMemberInfo(membersInfo);
-          } else {
-            member.info().fail(localMember.uri());
+    Collection<MemberInfo> members = new ArrayList<>(membersInfo.values());
+    for (CoordinatedMember member : gossipMembers) {
+      if (!member.uri().equals(member().uri())) {
+        member.<Collection<MemberInfo>, Collection<MemberInfo>>send(GOSSIP_TOPIC, id, members, internalSerializer, executor).whenCompleteAsync((membersInfo, error) -> {
+          // If the response was successfully received then indicate that the member is alive and update all member info.
+          // Otherwise, indicate that communication with the member failed. This information will be used to determine
+          // whether the member should be considered dead by informing other members that it appears unreachable.
+          checkThread();
+          if (isOpen()) {
+            if (error == null) {
+              member.info().succeed();
+              updateMemberInfo(membersInfo);
+            } else {
+              member.info().fail(localMember.uri());
+            }
           }
-        }
-      }, executor);
+        }, executor);
+      }
     }
   }
 
@@ -189,6 +198,7 @@ public abstract class AbstractCluster implements ClusterManager {
               context.addMember(member.uri());
               logger().info("{} - {} joined the cluster", context.getLocalMember(), member.uri());
               membershipListeners.forEach(listener -> listener.accept(new MembershipEvent(MembershipEvent.Type.JOIN, member)));
+              sendJoins(members.members.values());
             }
           }
         }
@@ -199,6 +209,7 @@ public abstract class AbstractCluster implements ClusterManager {
             context.removeMember(member.uri());
             logger().info("{} - {} left the cluster", context.getLocalMember(), member.uri());
             membershipListeners.forEach(listener -> listener.accept(new MembershipEvent(MembershipEvent.Type.LEAVE, member)));
+            sendJoins(members.members.values());
           }
         }
       }
