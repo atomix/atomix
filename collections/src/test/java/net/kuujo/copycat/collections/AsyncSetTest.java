@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.test.ResourceTest;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
@@ -26,7 +26,12 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class AsyncSetTest extends ConcurrentTestCase {
+public class AsyncSetTest extends ResourceTest<AsyncSet<String>> {
+
+  @Override
+  protected TestCluster<AsyncSet<String>> createCluster() {
+    return TestCluster.of((uri, config) -> AsyncSet.<String>create("test", uri, config, new AsyncSetConfig().withLog(new BufferedLog())));
+  }
 
   /**
    * Sets adding and removing an item in the set.

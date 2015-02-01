@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.test.ResourceTest;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
@@ -30,7 +30,12 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class AsyncMapTest extends ConcurrentTestCase {
+public class AsyncMapTest extends ResourceTest<AsyncMap<String, String>> {
+
+  @Override
+  protected TestCluster<AsyncMap<String, String>> createCluster() {
+    return TestCluster.of((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())));
+  }
 
   /**
    * Tests putting a value in an asynchronous map and then reading the value.

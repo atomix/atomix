@@ -233,7 +233,7 @@ public abstract class AbstractCluster implements ClusterManager {
     Iterator<Map.Entry<String, MemberInfo>> iterator = membersInfo.entrySet().iterator();
     while (iterator.hasNext()) {
       MemberInfo info = iterator.next().getValue();
-      if (info.state() == Member.State.DEAD && info.changed() < System.currentTimeMillis() - MEMBER_INFO_EXPIRE_TIME) {
+      if (info.state() == Member.State.DEAD && System.currentTimeMillis() > info.changed() + MEMBER_INFO_EXPIRE_TIME) {
         iterator.remove();
       }
     }
