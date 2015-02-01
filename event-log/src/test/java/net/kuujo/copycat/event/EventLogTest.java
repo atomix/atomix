@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.event;
 
-import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.test.ResourceTest;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
@@ -26,7 +26,12 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class EventLogTest extends ConcurrentTestCase {
+public class EventLogTest extends ResourceTest<EventLog<String>> {
+
+  @Override
+  protected TestCluster<EventLog<String>> createCluster() {
+    return TestCluster.of((uri, config) -> EventLog.create("test", uri, config, new EventLogConfig().withLog(new BufferedLog())));
+  }
 
   /**
    * Tests that a passive member receives events for the event log.
