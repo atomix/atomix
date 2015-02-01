@@ -17,7 +17,6 @@ package net.kuujo.copycat.collections.internal.map;
 
 import net.kuujo.copycat.state.Initializer;
 import net.kuujo.copycat.state.StateContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -114,19 +113,16 @@ public class DefaultMultiMapState<K, V> implements MultiMapState<K, V> {
     map.clear();
   }
 
-  @NotNull
   @Override
   public Set<K> keySet() {
     return map.keySet();
   }
 
-  @NotNull
   @Override
   public Collection<Collection<V>> values() {
     return map.values();
   }
 
-  @NotNull
   @Override
   public Set<Map.Entry<K, Collection<V>>> entrySet() {
     return map.entrySet();

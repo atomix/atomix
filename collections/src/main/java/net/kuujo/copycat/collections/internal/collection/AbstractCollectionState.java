@@ -17,7 +17,6 @@ package net.kuujo.copycat.collections.internal.collection;
 
 import net.kuujo.copycat.state.Initializer;
 import net.kuujo.copycat.state.StateContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -95,19 +94,16 @@ public abstract class AbstractCollectionState<T extends CollectionState<T, V>, U
     collection.clear();
   }
 
-  @NotNull
   @Override
   public Iterator<V> iterator() {
     throw new UnsupportedOperationException("Cannot iterate collection state");
   }
 
-  @NotNull
   @Override
   public Object[] toArray() {
     return collection.toArray();
   }
 
-  @NotNull
   @Override
   public <R> R[] toArray(R[] a) {
     return collection.toArray(a);

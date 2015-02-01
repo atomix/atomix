@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -69,19 +67,16 @@ public class DefaultListState<T> extends AbstractCollectionState<ListState<T>, L
     return collection.lastIndexOf(o);
   }
 
-  @NotNull
   @Override
   public ListIterator<T> listIterator() {
     throw new UnsupportedOperationException("listIterator");
   }
 
-  @NotNull
   @Override
   public ListIterator<T> listIterator(int index) {
     throw new UnsupportedOperationException("listIterator");
   }
 
-  @NotNull
   @Override
   public List<T> subList(int fromIndex, int toIndex) {
     return collection.subList(fromIndex, toIndex);

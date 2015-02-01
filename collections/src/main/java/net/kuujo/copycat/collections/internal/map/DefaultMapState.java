@@ -17,7 +17,6 @@ package net.kuujo.copycat.collections.internal.map;
 
 import net.kuujo.copycat.state.Initializer;
 import net.kuujo.copycat.state.StateContext;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -89,19 +88,16 @@ public class DefaultMapState<K, V> implements MapState<K, V> {
     map.clear();
   }
 
-  @NotNull
   @Override
   public Set<K> keySet() {
     return map.keySet();
   }
 
-  @NotNull
   @Override
   public Collection<V> values() {
     return map.values();
   }
 
-  @NotNull
   @Override
   public Set<Entry<K, V>> entrySet() {
     return map.entrySet();

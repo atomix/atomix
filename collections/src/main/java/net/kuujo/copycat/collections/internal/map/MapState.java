@@ -15,18 +15,16 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-
 import net.kuujo.copycat.state.Command;
 import net.kuujo.copycat.state.Initializer;
 import net.kuujo.copycat.state.Query;
 import net.kuujo.copycat.state.StateContext;
 
-import org.jetbrains.annotations.NotNull;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Asynchronous map state.
@@ -79,17 +77,14 @@ public interface MapState<K, V> extends Map<K, V> {
   @Command
   void clear();
 
-  @NotNull
   @Override
   @Query
   Set<K> keySet();
 
-  @NotNull
   @Override
   @Query
   Collection<V> values();
 
-  @NotNull
   @Override
   @Query
   Set<Entry<K, V>> entrySet();
