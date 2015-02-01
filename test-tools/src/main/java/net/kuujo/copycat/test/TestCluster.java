@@ -16,14 +16,12 @@
 package net.kuujo.copycat.test;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.resource.Resource;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 /**
  * Test cluster utility.
@@ -40,19 +38,88 @@ public class TestCluster<T extends Resource<T>> {
   }
 
   /**
-   * Creates a test cluster for the given resource factory.
+   * Creates a new test cluster builder.
    */
-  @SuppressWarnings("all")
-  public static <T extends Resource<T>> TestCluster<T> of(BiFunction<String, ClusterConfig, T> factory) {
-    LocalProtocol.reset();
-    ClusterConfig cluster = new ClusterConfig()
-      .withProtocol(new LocalProtocol());
-    for (int i = 1; i <= 3; i++) {
-      cluster.addMember(String.format("local://test%d", i));
+  public static <T extends Resource<T>> Builder<T> builder() {
+    return new Builder<>();
+  }
+
+  /**
+   * Test cluster builder.
+   */
+  public static class Builder<T extends Resource<T>> {
+    private int activeMembers = 3;
+    private int passiveMembers = 2;
+    private Function<Integer, String> uriFactory;
+    private Function<Collection<String>, ClusterConfig> clusterFactory;
+    private BiFunction<String, ClusterConfig, T> resourceFactory;
+
+    /**
+     * Sets the number of active members for the cluster.
+     */
+    public Builder<T> withActiveMembers(int activeMembers) {
+      this.activeMembers = activeMembers;
+      return this;
     }
-    List<T> activeResources = cluster.getMembers().stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors.toList()));
-    List<T> passiveResources = Arrays.asList("local://test4", "local://test5").stream().collect(Collectors.mapping(uri -> factory.apply(uri, cluster), Collectors.toList()));
-    return new TestCluster<T>(activeResources, passiveResources);
+
+    /**
+     * Sets the number of passive members for the cluster.
+     */
+    public Builder<T> withPassiveMembers(int passiveMembers) {
+      this.passiveMembers = passiveMembers;
+      return this;
+    }
+
+    /**
+     * Sets the member URI factory.
+     */
+    public Builder<T> withUriFactory(Function<Integer, String> uriFactory) {
+      this.uriFactory = uriFactory;
+      return this;
+    }
+
+    /**
+     * Sets the cluster configuration factory.
+     */
+    public Builder<T> withClusterFactory(Function<Collection<String>, ClusterConfig> clusterFactory) {
+      this.clusterFactory = clusterFactory;
+      return this;
+    }
+
+    /**
+     * Sets the resource factory.
+     */
+    public Builder<T> withResourceFactory(BiFunction<String, ClusterConfig, T> resourceFactory) {
+      this.resourceFactory = resourceFactory;
+      return this;
+    }
+
+    /**
+     * Builds the test cluster.
+     */
+    public TestCluster<T> build() {
+      List<T> activeResources = new ArrayList<>(activeMembers);
+
+      int i = 0;
+      Set<String> members = new HashSet<>(activeMembers);
+      while (i <= activeMembers) {
+        String uri = uriFactory.apply(++i);
+        members.add(uri);
+      }
+
+      for (String member : members) {
+        ClusterConfig cluster = clusterFactory.apply(members);
+        activeResources.add(resourceFactory.apply(member, cluster));
+      }
+
+      List<T> passiveResources = new ArrayList<>(passiveMembers);
+      while (i <= passiveMembers + activeMembers) {
+        String uri = uriFactory.apply(++i);
+        ClusterConfig cluster = clusterFactory.apply(members);
+        passiveResources.add(resourceFactory.apply(uri, cluster));
+      }
+      return new TestCluster<T>(activeResources, passiveResources);
+    }
   }
 
   /**
