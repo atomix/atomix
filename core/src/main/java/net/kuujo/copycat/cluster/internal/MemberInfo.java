@@ -28,6 +28,7 @@ import java.util.Set;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemberInfo implements Serializable {
+  private static final int FAILURE_LIMIT = 3;
   private Member.Type type;
   private Member.State state;
   private long changed;
@@ -106,15 +107,6 @@ public class MemberInfo implements Serializable {
   }
 
   /**
-   * Returns a set of all nodes that have recorded failures for this member.
-   *
-   * @return A set of all nodes that have recorded failures for this member.
-   */
-  public Set<String> failures() {
-    return failures;
-  }
-
-  /**
    * Marks a successful gossip with the member.
    *
    * @return The member info.
@@ -135,13 +127,16 @@ public class MemberInfo implements Serializable {
    * @return The member info.
    */
   public MemberInfo fail(String uri) {
+    // If the member is a passive member, add the failure to the failures set and change the state. If the current
+    // state is ACTIVE then change the state to SUSPICIOUS. If the current state is SUSPICIOUS and the number of
+    // failures from *unique* nodes is equal to or greater than the failure limit then change the state to DEAD.
     if (type == Member.Type.PASSIVE) {
       failures.add(uri);
       if (state == Member.State.ALIVE) {
         state = Member.State.SUSPICIOUS;
         changed = System.currentTimeMillis();
       } else if (state == Member.State.SUSPICIOUS) {
-        if (failures.size() >= 3) {
+        if (failures.size() >= FAILURE_LIMIT) {
           state = Member.State.DEAD;
           changed = System.currentTimeMillis();
         }
@@ -156,25 +151,34 @@ public class MemberInfo implements Serializable {
    * @param info The member info to update.
    */
   public void update(MemberInfo info) {
+    // If the given version is greater than the current version then update the member state.
     if (info.version > this.version) {
       this.version = info.version;
 
-      // Only passive member types can experience state changes.
+      // Any time the version is incremented, clear failures for the previous version.
+      this.failures.clear();
+
+      // Only passive member types can experience state changes. Active members are always alive.
       if (this.type == Member.Type.PASSIVE) {
-        // If the member is marked as alive then clear failures.
-        if (info.state == Member.State.ALIVE) {
-          this.failures.clear();
-        } else if (info.state == Member.State.SUSPICIOUS) {
-          this.failures.addAll(info.failures);
-        }
+        // If the state changed then update the state and set the last changed time. This can be used to clean
+        // up state related to old members after some period of time.
         if (this.state != info.state) {
           changed = System.currentTimeMillis();
         }
         this.state = info.state;
-        if (this.state == Member.State.SUSPICIOUS && this.failures.size() >= 3) {
+      }
+    } else if (info.version == this.version) {
+      if (info.state == Member.State.SUSPICIOUS) {
+        // If the given version is the same as the current version then update failures. If the member has experienced
+        // FAILURE_LIMIT failures then transition the member's state to DEAD.
+        this.failures.addAll(info.failures);
+        if (this.failures.size() >= FAILURE_LIMIT) {
           this.state = Member.State.DEAD;
           changed = System.currentTimeMillis();
         }
+      } else if (info.state == Member.State.DEAD) {
+        this.state = Member.State.DEAD;
+        changed = System.currentTimeMillis();
       }
     }
   }

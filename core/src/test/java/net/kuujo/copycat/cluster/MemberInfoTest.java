@@ -18,7 +18,7 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.cluster.internal.MemberInfo;
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Cluster member info test.
@@ -68,7 +68,6 @@ public class MemberInfoTest {
     MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.State.ALIVE, 5);
     member.fail("foo");
     member.fail("bar");
-    assertEquals(member.failures().size(), 2);
     assertEquals(member.state(), Member.State.SUSPICIOUS);
     member.update(new MemberInfo("test", Member.Type.PASSIVE, Member.State.ALIVE, 6));
     assertEquals(member.state(), Member.State.ALIVE);
