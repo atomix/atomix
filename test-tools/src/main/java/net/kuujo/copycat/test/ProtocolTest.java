@@ -20,7 +20,6 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MembershipEvent;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
-import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.log.BufferedLog;
@@ -58,10 +57,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
    */
   private TestResource createTestResource(String uri, ClusterConfig cluster) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName("test").withClusterConfig(cluster));
-    CoordinatedResourceConfig config = new CoordinatedResourceConfig()
-      .withResourceType(TestResource.class)
-      .withLog(new BufferedLog());
-    return coordinator.<TestResource>getResource("test", config)
+    return coordinator.<TestResource>getResource("test", new TestResource.Config().withLog(new BufferedLog()).resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);
   }
