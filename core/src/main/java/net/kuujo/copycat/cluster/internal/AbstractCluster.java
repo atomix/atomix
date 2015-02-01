@@ -129,7 +129,7 @@ public abstract class AbstractCluster implements ClusterManager {
     // For a random set of three members, send all member info.
     for (CoordinatedMember member : getGossipMembers()) {
       Collection<MemberInfo> members = new ArrayList<>(membersInfo.values());
-      member.<Collection<MemberInfo>, Collection<MemberInfo>>send(GOSSIP_TOPIC, id, members, internalSerializer, executor).whenComplete((membersInfo, error) -> {
+      member.<Collection<MemberInfo>, Collection<MemberInfo>>send(GOSSIP_TOPIC, id, members, internalSerializer, executor).whenCompleteAsync((membersInfo, error) -> {
         // If the response was successfully received then indicate that the member is alive and update all member info.
         // Otherwise, indicate that communication with the member failed. This information will be used to determine
         // whether the member should be considered dead by informing other members that it appears unreachable.
@@ -142,7 +142,7 @@ public abstract class AbstractCluster implements ClusterManager {
             member.info().fail(localMember.uri());
           }
         }
-      });
+      }, executor);
     }
   }
 

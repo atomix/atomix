@@ -138,7 +138,7 @@ public class PassiveState extends AbstractState {
         .build();
 
       LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember(), member.getUri());
-      syncHandler.apply(request).whenComplete((response, error) -> {
+      syncHandler.apply(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         // Always check if the context is still open in order to prevent race conditions in asynchronous callbacks.
         if (isOpen()) {
@@ -157,7 +157,7 @@ public class PassiveState extends AbstractState {
             future.completeExceptionally(error);
           }
         }
-      });
+      }, context.executor());
     } else {
       future.complete(null);
     }
