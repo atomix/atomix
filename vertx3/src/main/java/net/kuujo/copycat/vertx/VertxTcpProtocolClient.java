@@ -36,7 +36,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxTcpProtocolClient implements ProtocolClient {
-  private Vertx vertx = Vertx.vertx();
+  private Vertx vertx;
   private final String host;
   private final int port;
   private final VertxTcpProtocol protocol;
@@ -115,6 +115,11 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   @Override
   public CompletableFuture<Void> connect() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
+
+    if (vertx == null)
+      vertx = protocol.getVertx();
+    if (vertx == null)
+      vertx = Vertx.vertx();
 
     if (client == null) {
       NetClientOptions options = new NetClientOptions()
