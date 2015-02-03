@@ -38,6 +38,8 @@ public class CoordinatorConfig extends AbstractConfigurable {
 
   private final Executor DEFAULT_COORDINATOR_EXECUTOR = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-coordinator-%d"));
 
+  private Executor executor;
+
   public CoordinatorConfig() {
     super();
   }
@@ -123,7 +125,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @param executor The coordinator executor.
    */
   public void setExecutor(Executor executor) {
-    this.config = config.withValue(COORDINATOR_EXECUTOR, ConfigValueFactory.fromAnyRef(executor));
+    this.executor = executor;
   }
 
   /**
@@ -132,7 +134,7 @@ public class CoordinatorConfig extends AbstractConfigurable {
    * @return The coordinator executor or {@code null} if no executor was specified.
    */
   public Executor getExecutor() {
-    return config.hasPath (COORDINATOR_EXECUTOR) ? (Executor) config.getValue(COORDINATOR_EXECUTOR).unwrapped() : DEFAULT_COORDINATOR_EXECUTOR;
+    return executor != null ? executor : DEFAULT_COORDINATOR_EXECUTOR;
   }
 
   /**
