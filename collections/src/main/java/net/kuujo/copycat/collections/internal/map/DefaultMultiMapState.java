@@ -119,13 +119,19 @@ public class DefaultMultiMapState<K, V> implements MultiMapState<K, V> {
   }
 
   @Override
-  public Collection<Collection<V>> values() {
-    return map.values();
+  public Collection<V> values() {
+    Collection<V> values = new ArrayList<>();
+    map.values().forEach(values::addAll);
+    return values;
   }
 
   @Override
-  public Set<Map.Entry<K, Collection<V>>> entrySet() {
-    return map.entrySet();
+  public Set<Map.Entry<K, V>> entrySet() {
+    Set<Map.Entry<K, V>> entries = new HashSet<>();
+    for (Map.Entry<K, Collection<V>> entry : map.entrySet()) {
+      entry.getValue().forEach(value -> entries.add(new AbstractMap.SimpleEntry<>(entry.getKey(), value)));
+    }
+    return entries;
   }
 
   @Override

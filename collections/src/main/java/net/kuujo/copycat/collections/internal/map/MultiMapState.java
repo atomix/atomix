@@ -117,13 +117,13 @@ public interface MultiMapState<K, V> {
    * Returns a set of values in the map.
    */
   @Query(consistency=Consistency.DEFAULT)
-  Collection<Collection<V>> values();
+  Collection<V> values();
 
   /**
    * Returns a set of entries in the map.
    */
   @Query(consistency=Consistency.DEFAULT)
-  Set<Map.Entry<K, Collection<V>>> entrySet();
+  Set<Map.Entry<K, V>> entrySet();
 
   /**
    * Gets a key from the map or returns a default value.

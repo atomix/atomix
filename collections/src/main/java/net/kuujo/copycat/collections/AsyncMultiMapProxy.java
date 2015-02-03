@@ -128,14 +128,14 @@ public interface AsyncMultiMapProxy<K, V> {
    *
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<Collection<Collection<V>>> values();
+  CompletableFuture<Collection<V>> values();
 
   /**
    * Gets a set of entries in the map.
    *
    * @return A completable future to be completed with the result once complete.
    */
-  CompletableFuture<Set<Map.Entry<K, Collection<V>>>> entrySet();
+  CompletableFuture<Set<Map.Entry<K, V>>> entrySet();
 
   /**
    * Gets the value of a key or the given default value if the key does not exist.
