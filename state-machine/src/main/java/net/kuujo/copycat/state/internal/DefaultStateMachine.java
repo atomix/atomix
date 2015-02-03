@@ -106,14 +106,29 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
    * Takes a snapshot of the state machine state.
    */
   private Map<String, Object> snapshot() {
-    return data;
+    Map<String, Object> snapshot = new HashMap<>(2);
+    snapshot.put("state", state.getClass().getName());
+    snapshot.put("data", data);
+    return snapshot;
   }
 
   /**
    * Installs a snapshot of the state machine state.
    */
+  @SuppressWarnings("unchecked")
   private void install(Map<String, Object> snapshot) {
-    this.data = snapshot;
+    Object stateClassName = snapshot.get("state");
+    if (stateClassName == null) {
+      throw new IllegalStateException("Invalid snapshot");
+    }
+    try {
+      Class<?> stateClass = Class.forName(stateClassName.toString());
+      this.state = (T) stateClass.newInstance();
+      initialize();
+    } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+      throw new IllegalStateException("Invalid snapshot state");
+    }
+    this.data = (Map<String, Object>) snapshot.get("data");
   }
 
   @Override
