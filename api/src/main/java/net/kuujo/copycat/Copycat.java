@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat;
 
+import net.kuujo.copycat.atomic.*;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
@@ -253,5 +254,56 @@ public interface Copycat extends Managed<Copycat> {
    * @return The asynchronous lock instance.
    */
   AsyncLock lock(String name, AsyncLockConfig config);
+
+  /**
+   * Creates a named asynchronous atomic long value.
+   *
+   * @param name The atomic long name.
+   * @return The asynchronous atomic long instance.
+   */
+  AsyncAtomicLong atomicLong(String name);
+
+  /**
+   * Creates a named asynchronous atomic long value.
+   *
+   * @param name The atomic long name.
+   * @param config The long configuration.
+   * @return The asynchronous atomic long instance.
+   */
+  AsyncAtomicLong atomicLong(String name, AsyncAtomicLongConfig config);
+
+  /**
+   * Creates a named asynchronous atomic boolean value.
+   *
+   * @param name The atomic boolean name.
+   * @return The asynchronous atomic boolean instance.
+   */
+  AsyncAtomicBoolean atomicBoolean(String name);
+
+  /**
+   * Creates a named asynchronous atomic boolean value.
+   *
+   * @param name The atomic boolean name.
+   * @param config The boolean configuration.
+   * @return The asynchronous atomic boolean instance.
+   */
+  AsyncAtomicBoolean atomicBoolean(String name, AsyncAtomicBooleanConfig config);
+
+  /**
+   * Creates a named asynchronous atomic reference value.
+   *
+   * @param name The atomic reference name.
+   * @return The asynchronous atomic reference instance.
+   */
+  <T> AsyncAtomicReference<T> atomicReference(String name);
+
+  /**
+   * Creates a named asynchronous atomic reference value.
+   *
+   * @param name The atomic reference name.
+   * @param config The reference configuration.
+   * @return The asynchronous atomic reference instance.
+   */
+  <T> AsyncAtomicReference<T> atomicReference(String name, AsyncAtomicReferenceConfig config);
 
 }

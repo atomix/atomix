@@ -16,6 +16,7 @@ package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.Copycat;
 import net.kuujo.copycat.CopycatConfig;
+import net.kuujo.copycat.atomic.*;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
@@ -158,6 +159,42 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public AsyncLock lock(String name, AsyncLockConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
+  }
+
+  @Override
+  public AsyncAtomicLong atomicLong(String name) {
+    return atomicLong(name, new AsyncAtomicLongConfig());
+  }
+
+  @Override
+  public AsyncAtomicLong atomicLong(String name, AsyncAtomicLongConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
+  }
+
+  @Override
+  public AsyncAtomicBoolean atomicBoolean(String name) {
+    return atomicBoolean(name, new AsyncAtomicBooleanConfig());
+  }
+
+  @Override
+  public AsyncAtomicBoolean atomicBoolean(String name, AsyncAtomicBooleanConfig config) {
+    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
+      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
+      .withDefaultExecutor(this.config.getDefaultExecutor()));
+  }
+
+  @Override
+  public <T> AsyncAtomicReference<T> atomicReference(String name) {
+    return atomicReference(name, new AsyncAtomicReferenceConfig());
+  }
+
+  @Override
+  public <T> AsyncAtomicReference<T> atomicReference(String name, AsyncAtomicReferenceConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
