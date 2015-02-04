@@ -15,14 +15,15 @@
  */
 package net.kuujo.copycat.state.internal;
 
-import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.log.LogSegment;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -122,7 +123,7 @@ public class SnapshottableLogManager implements LogManager {
    * @return The index at which the snapshot was written.
    * @throws IOException If the log could not be rolled over.
    */
-  public long appendSnapshot(long index, ByteBuffer snapshot) throws IOException {
+  public long appendSnapshot(long index, List<ByteBuffer> snapshot) throws IOException {
     LogSegment segment = logManager.segment(index);
     if (segment == null) {
       throw new IndexOutOfBoundsException("Invalid snapshot index " + index);
@@ -134,10 +135,10 @@ public class SnapshottableLogManager implements LogManager {
 
     // When appending a snapshot, force the snapshot log manager to roll over to a new segment, append the snapshot
     // to the log, and then compact the log once the snapshot has been appended.
-    ByteBuffer entry = ByteBuffer.allocate(8 + snapshot.limit());
-    entry.put(snapshot);
-    snapshotManager.rollOver(index);
-    snapshotManager.appendEntry(entry);
+    snapshotManager.rollOver(index - snapshot.size() + 1);
+    for (ByteBuffer entry : snapshot) {
+      snapshotManager.appendEntry(entry);
+    }
     compact(snapshotManager);
     compact(logManager);
     return index;

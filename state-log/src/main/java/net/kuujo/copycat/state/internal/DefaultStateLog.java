@@ -26,7 +26,10 @@ import net.kuujo.copycat.util.internal.Assert;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -42,11 +45,16 @@ import java.util.function.Supplier;
 public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements StateLog<T> {
   private static final int SNAPSHOT_ENTRY = 0;
   private static final int COMMAND_ENTRY = 1;
+  private static final int SNAPSHOT_CHUNK_SIZE = 1024 * 1024;
+  private static final int SNAPSHOT_INFO = 0;
+  private static final int SNAPSHOT_CHUNK = 1;
   private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
   private final Consistency defaultConsistency;
   private final SnapshottableLogManager log;
   private Supplier snapshotter;
   private Consumer installer;
+  private SnapshotInfo snapshotInfo;
+  private List<ByteBuffer> snapshotChunks;
 
   public DefaultStateLog(ResourceContext context) {
     super(context);
@@ -200,12 +208,40 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     Object snapshot = snapshotter != null ? snapshotter.get() : null;
     ByteBuffer snapshotBuffer = serializer.writeObject(snapshot);
     snapshotBuffer.flip();
-    ByteBuffer snapshotEntry = ByteBuffer.allocate(snapshotBuffer.limit() + 4);
-    snapshotEntry.putInt(SNAPSHOT_ENTRY);
-    snapshotEntry.put(snapshotBuffer);
-    snapshotEntry.flip();
+
+    // Create a unique snapshot ID and calculate the number of chunks for the snapshot.
+    byte[] snapshotId = UUID.randomUUID().toString().getBytes();
+    int numChunks = (int) Math.ceil(snapshotBuffer.limit() / SNAPSHOT_CHUNK_SIZE);
+    List<ByteBuffer> chunks = new ArrayList<>(numChunks);
+
+    // The first entry in the snapshot is snapshot metadata.
+    ByteBuffer info = ByteBuffer.allocate(20 + snapshotId.length);
+    info.putInt(SNAPSHOT_ENTRY);
+    info.putInt(SNAPSHOT_INFO);
+    info.putInt(snapshotId.length);
+    info.put(snapshotId);
+    info.putInt(snapshotBuffer.limit());
+    info.putInt(numChunks);
+
+    // Now we append a list of snapshot chunks. This ensures that snapshots can be easily replicated in chunks.
+    int i = 0;
+    int position = 0;
+    while (position < snapshotBuffer.limit()) {
+      byte[] bytes = new byte[Math.min(snapshotBuffer.limit() - position, SNAPSHOT_CHUNK_SIZE)];
+      snapshotBuffer.get(bytes);
+      ByteBuffer chunk = ByteBuffer.allocate(16 + bytes.length);
+      chunk.putInt(SNAPSHOT_ENTRY); // Indicates the entry is a snapshot entry.
+      chunk.putInt(SNAPSHOT_CHUNK);
+      chunk.putInt(i++); // The position of the chunk in the snapshot.
+      chunk.putInt(bytes.length); // The snapshot chunk length.
+      chunk.put(bytes); // The snapshot chunk bytes.
+      chunk.flip();
+      chunks.add(chunk);
+      position += bytes.length;
+    }
+
     try {
-      log.appendSnapshot(index, snapshotEntry);
+      log.appendSnapshot(index, chunks);
     } catch (IOException e) {
       throw new CopycatException("Failed to compact state log", e);
     }
@@ -213,12 +249,92 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
 
   /**
    * Installs a snapshot.
+   *
+   * This method operates on the assumption that snapshots will always be replicated with an initial metadata entry.
+   * The metadata entry specifies a set of chunks that complete the entire snapshot.
    */
   @SuppressWarnings("unchecked")
-  private void installSnapshot(ByteBuffer snapshot) {
-    if (installer != null) {
-      Object value = serializer.readObject(snapshot);
-      installer.accept(value);
+  private void installSnapshot(ByteBuffer snapshotChunk) {
+    // Get the snapshot entry type.
+    int type = snapshotChunk.getInt();
+    if (type == SNAPSHOT_INFO) {
+      // The snapshot info defines the snapshot ID and number of chunks. When a snapshot info entry is processed,
+      // reset the current snapshot chunks and store the snapshot info. The next entries to be applied should be the
+      // snapshot chunks themselves.
+      int idLength = snapshotChunk.getInt();
+      byte[] idBytes = new byte[idLength];
+      snapshotChunk.get(idBytes);
+      String id = new String(idBytes);
+      int size = snapshotChunk.getInt();
+      int numChunks = snapshotChunk.getInt();
+      if (snapshotInfo == null || !snapshotInfo.id.equals(id)) {
+        snapshotInfo = new SnapshotInfo(id, size, numChunks);
+        snapshotChunks = new ArrayList<>(numChunks);
+      }
+    } else if (type == SNAPSHOT_CHUNK && snapshotInfo != null) {
+      // When a chunk is received, use the chunk's position in the snapshot to ensure consistency. Extract the chunk
+      // bytes and only append the the chunk if it matches the expected position in the local chunks list.
+      int index = snapshotChunk.getInt();
+      int chunkLength = snapshotChunk.getInt();
+      byte[] chunkBytes = new byte[chunkLength];
+      snapshotChunk.get(chunkBytes);
+      if (snapshotChunks.size() == index) {
+        snapshotChunks.add(ByteBuffer.wrap(chunkBytes));
+
+        // Once the number of chunks has grown to the complete expected chunk count, combine and install the snapshot.
+        if (snapshotChunks.size() == snapshotInfo.chunks) {
+          if (installer != null) {
+            // Calculate the total aggregated size of the snapshot.
+            int size = 0;
+            for (ByteBuffer chunk : snapshotChunks) {
+              size += chunk.limit();
+            }
+
+            // Make sure the combined snapshot size is equal to the expected snapshot size.
+            Assert.state(size == snapshotInfo.size, "Received inconsistent snapshot");
+
+            // Create a complete view of the snapshot by appending all chunks to each other.
+            ByteBuffer completeSnapshot = ByteBuffer.allocate(size);
+            for (ByteBuffer chunk : snapshotChunks) {
+              completeSnapshot.put(chunk);
+            }
+
+            // Once a view of the snapshot has been created, deserialize and install the snapshot.
+            Object value = serializer.readObject(completeSnapshot);
+            installer.accept(value);
+          }
+          snapshotInfo = null;
+          snapshotChunks = null;
+        }
+      }
+    }
+  }
+
+  /**
+   * Current snapshot info.
+   */
+  private static class SnapshotInfo {
+    private final String id;
+    private final int size;
+    private final int chunks;
+
+    private SnapshotInfo(String id, int size, int chunks) {
+      this.id = id;
+      this.size = size;
+      this.chunks = chunks;
+    }
+  }
+
+  /**
+   * Snapshot chunk.
+   */
+  private static class SnapshotChunk {
+    private final int index;
+    private final ByteBuffer chunk;
+
+    private SnapshotChunk(int index, ByteBuffer chunk) {
+      this.index = index;
+      this.chunk = chunk;
     }
   }
 
