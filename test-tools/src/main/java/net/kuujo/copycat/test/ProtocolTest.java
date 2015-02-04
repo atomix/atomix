@@ -94,6 +94,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
 
     test.open();
     await();
+    test.close().get();
   }
 
   /**
@@ -116,6 +117,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
 
     test.open();
     await();
+    test.close().get();
   }
 
   /**
@@ -140,6 +142,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
 
     test.open().thenRun(passive::close);
     await(10000);
+    test.close().get();
   }
 
   /**
@@ -165,6 +168,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
 
     test.open().thenRun(passive2::close);
     await(10000);
+    test.close().get();
   }
 
   /**

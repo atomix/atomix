@@ -164,7 +164,6 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
    * @return A completable future to be completed once the resource has been released.
    */
   public CompletableFuture<Void> releaseResource(String name) {
-    Assert.state(isOpen(), "coordinator not open");
     ResourceHolder resource = resources.get(name);
     if (resource != null) {
       if (resource.cluster.isOpen()) {
@@ -221,7 +220,8 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     if (!open) {
       return CompletableFuture.completedFuture(null);
     }
-    
+
+    open = false;
     CompletableFuture<Void>[] futures = new CompletableFuture[members.size()];
     int i = 0;
     for (MemberCoordinator member : members.values()) {
