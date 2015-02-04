@@ -15,7 +15,6 @@
 package net.kuujo.copycat.cluster;
 
 import com.typesafe.config.ConfigValueFactory;
-
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
@@ -45,6 +44,7 @@ import java.util.concurrent.TimeUnit;
  *   {@code
  *     ClusterConfig cluster = new ClusterConfig()
  *       .withProtocol(new VertxEventBusProtocol(vertx))
+ *       .withLocalMember("eventbus://foo")
  *       .withMembers("eventbus://foo", "eventbus://bar", "eventbus://baz");
  *   }
  * </pre>
@@ -55,6 +55,7 @@ public class ClusterConfig extends AbstractConfigurable {
   private static final String CLUSTER_PROTOCOL = "protocol";
   private static final String CLUSTER_ELECTION_TIMEOUT = "election.timeout";
   private static final String CLUSTER_HEARTBEAT_INTERVAL = "heartbeat.interval";
+  private static final String CLUSTER_LOCAL_MEMBER = "local-member";
   private static final String CLUSTER_MEMBERS = "members";
 
   private static final String CONFIGURATION = "cluster";
@@ -219,6 +220,39 @@ public class ClusterConfig extends AbstractConfigurable {
    */
   public ClusterConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
     setHeartbeatInterval(heartbeatInterval, unit);
+    return this;
+  }
+
+  /**
+   * Sets the local cluster member.
+   *
+   * @param uri The local cluster member.
+   */
+  public void setLocalMember(String uri) {
+    if (uri != null) {
+      this.config = config.withValue(CLUSTER_LOCAL_MEMBER, ConfigValueFactory.fromAnyRef(uri));
+    } else {
+      this.config = config.withoutPath(CLUSTER_LOCAL_MEMBER);
+    }
+  }
+
+  /**
+   * Returns the local cluster member.
+   *
+   * @return The local cluster member or {@code null} if no local member is specified.
+   */
+  public String getLocalMember() {
+    return config.hasPath(CLUSTER_LOCAL_MEMBER) ? config.getString(CLUSTER_LOCAL_MEMBER) : null;
+  }
+
+  /**
+   * Sets the local member, returning the configuration for method chaining.
+   *
+   * @param uri The local cluster member URI.
+   * @return The cluster configuration.
+   */
+  public ClusterConfig withLocalMember(String uri) {
+    setLocalMember(uri);
     return this;
   }
 

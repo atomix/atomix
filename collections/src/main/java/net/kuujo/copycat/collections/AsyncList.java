@@ -19,7 +19,6 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
-import net.kuujo.copycat.resource.internal.AbstractResource;
 
 /**
  * Asynchronous list.
@@ -44,12 +43,11 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
    * configurations will be loaded according to namespaces as well; for example, `lists.conf`.
    *
    * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  static <T> AsyncList<T> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncListConfig());
+  static <T> AsyncList<T> create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncListConfig(name));
   }
 
   /**
@@ -62,32 +60,29 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
    * configurations will be loaded according to namespaces as well; for example, `lists.conf`.
    *
    * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncListConfig());
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncListConfig(name));
   }
 
   /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
-   * @param uri The asynchronous list member URI.
    * @param cluster The cluster configuration.
    * @param config The list configuration.
    * @param <T> The list data type.
    * @return The asynchronous list.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <T> AsyncList<T> create(String name, String uri, ClusterConfig cluster, AsyncListConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
-    AsyncList<T> list = coordinator.getResource(name, config.resolve(cluster));
-    ((AbstractResource) list).addStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((AbstractResource) list).addShutdownTask(coordinator::close);
-    return list;
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+    return coordinator.<AsyncList<T>>getResource(name, config.resolve(cluster))
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
 }

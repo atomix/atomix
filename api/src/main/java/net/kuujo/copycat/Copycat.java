@@ -39,33 +39,30 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a new Copycat instance with the default Copycat and cluster configuration.
    *
-   * @param uri The local member URI.
    * @return The Copycat instance.
    */
-  static Copycat create(String uri) {
-    return create(uri, new CopycatConfig().withClusterConfig(new ClusterConfig()));
+  static Copycat create() {
+    return create(new CopycatConfig().withClusterConfig(new ClusterConfig()));
   }
 
   /**
    * Creates a new Copycat instance, overriding the default cluster configuration.
    *
-   * @param uri The local member URI.
    * @param cluster The global cluster configuration.
    * @return The Copycat instance.
    */
-  static Copycat create(String uri, ClusterConfig cluster) {
-    return create(uri, new CopycatConfig().withClusterConfig(cluster));
+  static Copycat create(ClusterConfig cluster) {
+    return create(new CopycatConfig().withClusterConfig(cluster));
   }
 
   /**
    * Creates a new Copycat instance.
    *
-   * @param uri The local member URI.
    * @param config The global Copycat configuration.
    * @return The Copycat instance.
    */
-  static Copycat create(String uri, CopycatConfig config) {
-    return new DefaultCopycat(uri, config);
+  static Copycat create(CopycatConfig config) {
+    return new DefaultCopycat(config);
   }
 
   /**

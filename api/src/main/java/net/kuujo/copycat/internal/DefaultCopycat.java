@@ -41,8 +41,8 @@ public class DefaultCopycat implements Copycat {
   private final ClusterCoordinator coordinator;
   private final CopycatConfig config;
 
-  public DefaultCopycat(String uri, CopycatConfig config) {
-    this.coordinator = new DefaultClusterCoordinator(uri, config.resolve());
+  public DefaultCopycat(CopycatConfig config) {
+    this.coordinator = new DefaultClusterCoordinator(config.resolve());
     this.config = config;
   }
 

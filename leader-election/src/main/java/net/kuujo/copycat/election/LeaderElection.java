@@ -16,12 +16,12 @@
 package net.kuujo.copycat.election;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
+import net.kuujo.copycat.resource.Resource;
 
 /**
  * Leader election.
@@ -44,11 +44,10 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * configurations will be loaded according to namespaces as well; for example, `elections.conf`.
    *
    * @param name The election name.
-   * @param uri The election member URI.
    * @return The leader election.
    */
-  static LeaderElection create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new LeaderElectionConfig(name));
+  static LeaderElection create(String name) {
+    return create(name, new ClusterConfig(), new LeaderElectionConfig(name));
   }
 
   /**
@@ -61,25 +60,23 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * configurations will be loaded according to namespaces as well; for example, `elections.conf`.
    *
    * @param name The election name.
-   * @param uri The election member URI.
    * @param cluster The Copycat cluster.
    * @return The leader election.
    */
-  static LeaderElection create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new LeaderElectionConfig(name));
+  static LeaderElection create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new LeaderElectionConfig(name));
   }
 
   /**
    * Creates a new leader election with the given cluster and election configurations.
    *
    * @param name The election name.
-   * @param uri The election member URI.
    * @param cluster The Copycat cluster.
    * @param config The leader election configuration.
    * @return The leader election.
    */
-  static LeaderElection create(String name, String uri, ClusterConfig cluster, LeaderElectionConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static LeaderElection create(String name, ClusterConfig cluster, LeaderElectionConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<LeaderElection>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

@@ -113,6 +113,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
+    Assert.config(getReplicas(), getReplicas().isEmpty() || cluster.getMembers().containsAll(getReplicas()), "Resource replica set must contain only active cluster members");
     return new StateLogConfig(toMap())
       .resolve(cluster)
       .withResourceType(DefaultAsyncMultiMap.class);

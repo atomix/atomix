@@ -42,11 +42,10 @@ public interface AsyncAtomicBoolean extends AsyncAtomicBooleanProxy, Resource<As
    * configurations will be loaded according to namespaces as well; for example, `booleans.conf`.
    *
    * @param name The asynchronous atomic boolean name.
-   * @param uri The asynchronous atomic boolean member URI.
    * @return The asynchronous atomic boolean.
    */
-  static AsyncAtomicBoolean create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncAtomicBooleanConfig());
+  static AsyncAtomicBoolean create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncAtomicBooleanConfig(name));
   }
 
   /**
@@ -59,30 +58,27 @@ public interface AsyncAtomicBoolean extends AsyncAtomicBooleanProxy, Resource<As
    * configurations will be loaded according to namespaces as well; for example, `booleans.conf`.
    *
    * @param name The asynchronous atomic boolean name.
-   * @param uri The asynchronous atomic boolean member URI.
    * @param cluster The cluster configuration.
    * @return The asynchronous atomic boolean.
    */
-  static AsyncAtomicBoolean create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncAtomicBooleanConfig());
+  static AsyncAtomicBoolean create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncAtomicBooleanConfig(name));
   }
 
   /**
    * Creates a new asynchronous atomic boolean.
    *
    * @param name The asynchronous atomic boolean name.
-   * @param uri The asynchronous atomic boolean member URI.
    * @param cluster The cluster configuration.
    * @param config The atomic boolean configuration.
    * @return The asynchronous atomic boolean.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncAtomicBoolean create(String name, String uri, ClusterConfig cluster, AsyncAtomicBooleanConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
-    AsyncAtomicBoolean reference = coordinator.getResource(name, config.resolve(cluster));
-    ((Resource) reference).addStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((Resource) reference).addShutdownTask(coordinator::close);
-    return reference;
+  static AsyncAtomicBoolean create(String name, ClusterConfig cluster, AsyncAtomicBooleanConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+    return coordinator.<AsyncAtomicBoolean>getResource(name, config.resolve(cluster))
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
 }

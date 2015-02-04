@@ -55,8 +55,8 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
   /**
    * Creates a new test resource.
    */
-  private TestResource createTestResource(String uri, ClusterConfig cluster) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName("test").withClusterConfig(cluster));
+  private TestResource createTestResource(ClusterConfig cluster) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName("test").withClusterConfig(cluster));
     return coordinator.<TestResource>getResource("test", new TestResource.Config().withLog(new BufferedLog()).resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

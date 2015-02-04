@@ -68,6 +68,7 @@ public class LockServiceVerticle extends Verticle implements Handler<Message<Jso
         // Because Copycat is a CP framework, we have to explicitly list all of the nodes in the cluster.
         ClusterConfig cluster = new ClusterConfig()
           .withProtocol(new VertxEventBusProtocol(vertx))
+          .withLocalMember(String.format("eventbus://%s", id))
           .withMembers(((List<String>) members.toList()).stream()
             .map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()));
 
@@ -89,7 +90,7 @@ public class LockServiceVerticle extends Verticle implements Handler<Message<Jso
 
         // Create and open a new Copycat instance. The Copycat instance controls the cluster of verticles and manages
         // resources within the cluster - in this case just a single state machine.
-        copycat = Copycat.create(String.format("eventbus://%s", id), config);
+        copycat = Copycat.create(config);
 
         // Once we create the Copycat instance, it needs to be opened. When the instance is opened, Copycat will begin
         // communicating with other nodes in the cluster and elect a leader that will control resources within the cluster.

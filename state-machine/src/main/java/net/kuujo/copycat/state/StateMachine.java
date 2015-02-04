@@ -42,13 +42,12 @@ public interface StateMachine<T> extends Resource<StateMachine<T>> {
    * configurations will be loaded according to namespaces as well; for example, `state-machines.conf`.
    *
    * @param name The state machine resource name.
-   * @param uri The state machine member URI.
    * @param stateType The state machine state type.
    * @param initialState The state machine state.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, Class<? extends T> initialState) {
-    return create(name, uri, new ClusterConfig(), new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
+  static <T> StateMachine<T> create(String name, Class<T> stateType, Class<? extends T> initialState) {
+    return create(name, new ClusterConfig(), new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
   }
 
   /**
@@ -61,27 +60,25 @@ public interface StateMachine<T> extends Resource<StateMachine<T>> {
    * configurations will be loaded according to namespaces as well; for example, `state-machines.conf`.
    *
    * @param name The state machine resource name.
-   * @param uri The state machine member URI.
    * @param stateType The state machine state type.
    * @param initialState The state machine state.
    * @param cluster The state machine cluster configuration.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, Class<T> stateType, Class<? extends T> initialState, ClusterConfig cluster) {
-    return create(name, uri, cluster, new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
+  static <T> StateMachine<T> create(String name, Class<T> stateType, Class<? extends T> initialState, ClusterConfig cluster) {
+    return create(name, cluster, new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
   }
 
   /**
    * Creates a new state machine.
    *
    * @param name The state machine resource name.
-   * @param uri The state machine member URI.
    * @param cluster The state machine cluster configuration.
    * @param config The state machine configuration.
    * @return The state machine.
    */
-  static <T> StateMachine<T> create(String name, String uri, ClusterConfig cluster, StateMachineConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static <T> StateMachine<T> create(String name, ClusterConfig cluster, StateMachineConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<StateMachine<T>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

@@ -37,7 +37,6 @@ import java.util.concurrent.Executors;
 public class CopycatConfig extends AbstractConfigurable {
   public static final String COPYCAT_NAME = "name";
   public static final String COPYCAT_DEFAULT_SERIALIZER = "serializer";
-  public static final String COPYCAT_DEFAULT_EXECUTOR = "executor";
   public static final String COPYCAT_CLUSTER = "cluster";
 
   private static final String DEFAULT_CONFIGURATION = "copycat-default";
@@ -251,6 +250,21 @@ public class CopycatConfig extends AbstractConfigurable {
       .withName(getName())
       .withExecutor(getDefaultExecutor())
       .withClusterConfig(getClusterConfig());
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[%s]", getClass().getSimpleName(), config.root().unwrapped());
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof CopycatConfig && ((CopycatConfig) object).config.equals(config);
+  }
+
+  @Override
+  public int hashCode() {
+    return 17 * config.root().unwrapped().hashCode();
   }
 
 }

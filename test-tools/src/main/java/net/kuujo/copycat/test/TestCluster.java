@@ -21,7 +21,6 @@ import net.kuujo.copycat.resource.Resource;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
@@ -53,7 +52,7 @@ public class TestCluster<T extends Resource<T>> {
     private int passiveMembers = 2;
     private Function<Integer, String> uriFactory;
     private Function<Collection<String>, ClusterConfig> clusterFactory;
-    private BiFunction<String, ClusterConfig, T> resourceFactory;
+    private Function<ClusterConfig, T> resourceFactory;
 
     /**
      * Sets the number of active members for the cluster.
@@ -90,7 +89,7 @@ public class TestCluster<T extends Resource<T>> {
     /**
      * Sets the resource factory.
      */
-    public Builder<T> withResourceFactory(BiFunction<String, ClusterConfig, T> resourceFactory) {
+    public Builder<T> withResourceFactory(Function<ClusterConfig, T> resourceFactory) {
       this.resourceFactory = resourceFactory;
       return this;
     }
@@ -111,15 +110,15 @@ public class TestCluster<T extends Resource<T>> {
       }
 
       for (String member : members) {
-        ClusterConfig cluster = clusterFactory.apply(members);
-        activeResources.add(resourceFactory.apply(member, cluster));
+        ClusterConfig cluster = clusterFactory.apply(members).withLocalMember(member);
+        activeResources.add(resourceFactory.apply(cluster));
       }
 
       List<T> passiveResources = new ArrayList<>(passiveMembers);
       while (i <= passiveMembers + activeMembers) {
-        String uri = uriFactory.apply(++i);
-        ClusterConfig cluster = clusterFactory.apply(members);
-        passiveResources.add(resourceFactory.apply(uri, cluster));
+        String member = uriFactory.apply(++i);
+        ClusterConfig cluster = clusterFactory.apply(members).withLocalMember(member);
+        passiveResources.add(resourceFactory.apply(cluster));
       }
       return new TestCluster<T>(activeResources, passiveResources);
     }

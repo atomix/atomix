@@ -122,6 +122,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
+    Assert.config(getReplicas(), getReplicas().isEmpty() || cluster.getMembers().containsAll(getReplicas()), "Resource replica set must contain only active cluster members");
     return new CoordinatedResourceConfig(super.toMap())
       .withElectionTimeout(getElectionTimeout())
       .withHeartbeatInterval(getHeartbeatInterval())

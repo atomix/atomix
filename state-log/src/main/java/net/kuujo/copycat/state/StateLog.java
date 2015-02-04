@@ -48,12 +48,11 @@ public interface StateLog<T> extends Resource<StateLog<T>> {
    * configurations will be loaded according to namespaces as well; for example, `state-logs.conf`.
    *
    * @param name The state log resource name.
-   * @param uri The local member URI.
    * @param <T> The state log entry type.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new StateLogConfig());
+  static <T> StateLog<T> create(String name) {
+    return create(name, new ClusterConfig(), new StateLogConfig());
   }
 
   /**
@@ -66,27 +65,25 @@ public interface StateLog<T> extends Resource<StateLog<T>> {
    * configurations will be loaded according to namespaces as well; for example, `state-logs.conf`.
    *
    * @param name The state log resource name.
-   * @param uri The local member URI.
    * @param cluster The state log cluster configuration.
    * @param <T> The state log entry type.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new StateLogConfig());
+  static <T> StateLog<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new StateLogConfig());
   }
 
   /**
    * Creates a new state log.
    *
    * @param name The state log resource name.
-   * @param uri The local member URI.
    * @param cluster The state log cluster configuration.
    * @param config The state log configuration.
    * @param <T> The state log entry type.
    * @return A new state log instance.
    */
-  static <T> StateLog<T> create(String name, String uri, ClusterConfig cluster, StateLogConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static <T> StateLog<T> create(String name, ClusterConfig cluster, StateLogConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<StateLog<T>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

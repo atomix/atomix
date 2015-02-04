@@ -43,7 +43,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())))
+      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withLog(new BufferedLog())))
       .build();
     expectResume();
     cluster.open().thenRun(this::resume);
@@ -69,7 +69,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withLog(new BufferedLog())))
+      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withLog(new BufferedLog())))
       .build();
     expectResume();
     cluster.open().thenRun(this::resume);
@@ -100,7 +100,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog())))
+      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog())))
       .build();
     
     expectResume();
@@ -132,7 +132,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory((uri, config) -> AsyncMap.create("test", uri, config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog().withSegmentInterval(1024).withFlushOnWrite(true))))
+      .withResourceFactory(config -> AsyncMap.create("test", config, new AsyncMapConfig().withConsistency(Consistency.WEAK).withLog(new BufferedLog().withSegmentInterval(1024).withFlushOnWrite(true))))
       .build();
 
     expectResume();

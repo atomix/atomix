@@ -43,12 +43,11 @@ public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetPr
    * configurations will be loaded according to namespaces as well; for example, `sets.conf`.
    *
    * @param name The asynchronous set name.
-   * @param uri The asynchronous set member URI.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  static <T> AsyncSet<T> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncSetConfig());
+  static <T> AsyncSet<T> create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncSetConfig(name));
   }
 
   /**
@@ -61,27 +60,25 @@ public interface AsyncSet<T> extends AsyncCollection<AsyncSet<T>, T>, AsyncSetPr
    * configurations will be loaded according to namespaces as well; for example, `sets.conf`.
    *
    * @param name The asynchronous set name.
-   * @param uri The asynchronous set member URI.
    * @param cluster The cluster configuration.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncSetConfig());
+  static <T> AsyncSet<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncSetConfig(name));
   }
 
   /**
    * Creates a new asynchronous set.
    *
    * @param name The asynchronous set name.
-   * @param uri The asynchronous set member URI.
    * @param cluster The cluster configuration.
    * @param config The set configuration.
    * @param <T> The set data type.
    * @return The asynchronous set.
    */
-  static <T> AsyncSet<T> create(String name, String uri, ClusterConfig cluster, AsyncSetConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static <T> AsyncSet<T> create(String name, ClusterConfig cluster, AsyncSetConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncSet<T>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

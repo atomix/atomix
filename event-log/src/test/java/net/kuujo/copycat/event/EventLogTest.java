@@ -39,7 +39,7 @@ public class EventLogTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory((uri, config) -> EventLog.create("test", uri, config, new EventLogConfig().withLog(new BufferedLog())))
+      .withResourceFactory(config -> EventLog.create("test", config, new EventLogConfig().withLog(new BufferedLog())))
       .build();
     expectResume();
     cluster.open().thenRun(this::resume);

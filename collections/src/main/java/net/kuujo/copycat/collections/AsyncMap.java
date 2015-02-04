@@ -45,13 +45,12 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
    *
    * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
    * @param <K> The map key type.
    * @param <V> The map value type.
    * @return The asynchronous map.
    */
-  static <K, V> AsyncMap<K, V> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncMapConfig());
+  static <K, V> AsyncMap<K, V> create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncMapConfig(name));
   }
 
   /**
@@ -64,29 +63,27 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
    *
    * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
    * @param cluster The cluster configuration.
    * @param <K> The map key type.
    * @param <V> The map value type.
    * @return The asynchronous map.
    */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncMapConfig());
+  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncMapConfig(name));
   }
 
   /**
    * Creates a new asynchronous map.
    *
    * @param name The asynchronous map name.
-   * @param uri The asynchronous map member URI.
    * @param cluster The cluster configuration.
    * @param config The map configuration.
    * @param <K> The map key type.
    * @param <V> The map value type.
    * @return The asynchronous map.
    */
-  static <K, V> AsyncMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMapConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, AsyncMapConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncMap<K, V>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

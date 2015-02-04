@@ -43,11 +43,10 @@ public interface AsyncLock extends Resource<AsyncLock> {
    * configurations will be loaded according to namespaces as well; for example, `locks.conf`.
    *
    * @param name The asynchronous lock name.
-   * @param uri The asynchronous lock member URI.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncLockConfig());
+  static AsyncLock create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncLockConfig(name));
   }
 
   /**
@@ -60,25 +59,23 @@ public interface AsyncLock extends Resource<AsyncLock> {
    * configurations will be loaded according to namespaces as well; for example, `locks.conf`.
    *
    * @param name The asynchronous lock name.
-   * @param uri The asynchronous lock member URI.
    * @param cluster The cluster configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncLockConfig());
+  static AsyncLock create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncLockConfig(name));
   }
 
   /**
    * Creates a new asynchronous lock.
    *
    * @param name The asynchronous lock name.
-   * @param uri The asynchronous lock member URI.
    * @param cluster The cluster configuration.
    * @param config The lock configuration.
    * @return The asynchronous lock.
    */
-  static AsyncLock create(String name, String uri, ClusterConfig cluster, AsyncLockConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static AsyncLock create(String name, ClusterConfig cluster, AsyncLockConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncLock>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

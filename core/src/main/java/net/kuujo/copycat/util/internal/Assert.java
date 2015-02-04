@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.util.internal;
 
+import net.kuujo.copycat.util.ConfigurationException;
+
 /**
  * Argument assertions.
  *
@@ -62,6 +64,22 @@ public final class Assert {
     if (!state) {
       throw new IllegalStateException(String.format(message, args));
     }
+  }
+
+  /**
+   * Validates that a configuration condition applies.
+   *
+   * @param value The resulting value to passthrough
+   * @param condition The condition to assert.
+   * @param message The failure exception message.
+   * @param args A list of message string formatting arguments.
+   * @throws IllegalArgumentException if {@code condition} is not true
+   */
+  public static <T> T config(T value, boolean condition, String message, Object... args) {
+    if (!condition) {
+      throw new ConfigurationException(String.format(message, args));
+    }
+    return value;
   }
 
   /**

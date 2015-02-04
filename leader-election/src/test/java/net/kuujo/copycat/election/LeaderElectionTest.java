@@ -38,9 +38,9 @@ public class LeaderElectionTest {
       .withProtocol(new LocalProtocol())
       .withMembers("local://foo", "local://bar", "local://baz");
 
-    LeaderElection election1 = LeaderElection.create("test", "local://foo", cluster);
-    LeaderElection election2 = LeaderElection.create("test", "local://bar", cluster);
-    LeaderElection election3 = LeaderElection.create("test", "local://baz", cluster);
+    LeaderElection election1 = LeaderElection.create("test", cluster.copy().withLocalMember("local://foo"));
+    LeaderElection election2 = LeaderElection.create("test", cluster.copy().withLocalMember("local://bar"));
+    LeaderElection election3 = LeaderElection.create("test", cluster.copy().withLocalMember("local://baz"));
 
     CountDownLatch latch = new CountDownLatch(3);
 

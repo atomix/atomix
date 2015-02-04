@@ -131,7 +131,7 @@ participate in replication of logs via Raft, passive members
 
 The following image demonstrates the relationship between active and passive members in the Copycat cluster:
 
-![Copycat cluster](http://s8.postimg.org/5dm2xzbz9/Copycat_Cluster_New_Page.png)
+![Copycat cluster](http://s23.postimg.org/i8xyzg2ez/Copycat_Cluster_New_Page_2.png)
 
 Active members participate in synchronous log replication via the Raft consensus protocol and ultimately gossip
 committed log entries to passive members, while passive members gossip among each other.
@@ -144,8 +144,6 @@ on a per-resource basis. This allows Copycat's resources to be optimized by part
 different partitions to different members in the cluster.
 
 The following image depicts the partitioning of resources across the Copycat cluster:
-
-![Copycat resources](http://s15.postimg.org/56oyaa7cr/Copycat_Resources_New_Page.png)
 
 Each [resource](#resources) in the cluster has its own related logical `Cluster` through which it communicates with
 other members of the [resource's cluster](#resource-clusters). Just as each resource performs replication for its
@@ -232,8 +230,13 @@ For more about active members see the section on [cluster members](#active-membe
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new VertxTcpProtocol())
+  .withLocalMember("tcp://123.456.789.0:1234")
   .withMembers("tcp://123.456.789.0:1234", "tcp://123.456.789.1:1234", "tcp://123.456.789.2:1234");
 ```
+
+Note that the cluster's `local-member` attribute *must be defined*, but it does not have to be represented in the list
+of configured active members. If the local member is not in the active members list, the node will join the cluster as
+a *passive* member.
 
 Alternatively, users can configure the cluster by overriding the default cluster configuration with a `cluster.conf`
 [Typesafe configuration](https://github.com/typesafehub/config) file:
@@ -265,9 +268,9 @@ tolerate one failure, a cluster of five active members can tolerate two failures
 ### Creating a Copycat instance
 
 To create a `Copycat` instance, call one of the overloaded `Copycat.create()` methods:
-* `Copycat.create(String uri)` - creates a Copycat instance with the file-based cluster configuration
-* `Copycat.create(String uri, ClusterConfig cluster)` - creates a Copycat instance with a custom cluster configuration
-* `Copycat.create(String uri, CopycatConfig config)` - create a Copycat instance with a custom configuration
+* `Copycat.create()` - creates a Copycat instance with the file-based cluster configuration
+* `Copycat.create(ClusterConfig cluster)` - creates a Copycat instance with a custom cluster configuration
+* `Copycat.create(CopycatConfig config)` - create a Copycat instance with a custom configuration
 
 Note that the first argument to any `Copycat.create()` method is a `uri`. This is the protocol specific URI of the
 *local* member, and it may or may not be a member defined in the provided `ClusterConfig`. This is because Copycat
@@ -275,7 +278,7 @@ actually supports eventually consistent replication for clusters much larger tha
 of *active* members defined in the cluster configuration.
 
 ```java
-Copycat copycat = Copycat.create("tcp://123.456.789.3", cluster);
+Copycat copycat = Copycat.create(cluster);
 ```
 
 When a `Copycat` instance is constructed, a central replicated state machine is created for the entire Copycat cluster.
@@ -391,6 +394,7 @@ only three replicas, writes will only need to be persisted on two nodes in order
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(new ClusterConfig()
     .withProtocol(new NettyTcpProtocol())
+    .withLocalMember("tcp://123.456.789.1:1234")
     .withMembers(
       "tcp://123.456.789.0:1234",
       "tcp://123.456.789.1:1234",
@@ -399,7 +403,7 @@ CopycatConfig config = new CopycatConfig()
       "tcp://123.456.789.4:1234"
     ));
 
-Copycat copycat = Copycat.create("tcp://123.456.789.1:1234", config).open().get();
+Copycat copycat = Copycat.create(config).open().get();
 
 EventLogConfig eventLogConfig = new EventLogConfig()
   .withSerializer(KryoSerializer.class)
@@ -410,6 +414,8 @@ EventLogConfig eventLogConfig = new EventLogConfig()
 EventLog<String> eventLog = copycat.eventLog("event-log", eventLogConfig);
 ```
 
+If replicas are defined for the resource and the local cluster member is not specified in the list of resource members,
+the local resource will join the clustered resource as a *passive* member of the resource.
 
 #### Resource replicas
 
@@ -591,7 +597,7 @@ of the resource-specific methods on the `Copycat` instance:
 * `AsyncLock lock(String name)`
 
 ```java
-Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+Copycat copycat = Copycat.create(config);
 
 copycat.open().thenRun(() -> {
   StateMachine<String> stateMachine = copycat.stateMachine("test");
@@ -610,7 +616,7 @@ Java 8's `CompletableFuture` framework is extremely powerful. For instance, the 
 as so:
 
 ```java
-Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+Copycat copycat = Copycat.create(config);
 
 copycat.open()
   .thenCompose(copycat.stateMachine("test").open())
@@ -698,7 +704,7 @@ CopycatConfig config = new CopycatConfig()
     .withStateType(Map.class)
     .withInitialState(DefaultMapState.class));
 
-Copycat copycat = Copycat.create("tcp://123.456.789.0", config).open().get();
+Copycat copycat = Copycat.create(config).open().get();
 
 StateMachine<Map<String, String>> stateMachine = copycat.stateMachine("map").open().get();
 ```
@@ -731,7 +737,7 @@ StateMachineConfig config = new StateMachineConfig()
   .withStateType(Map.class)
   .withInitialState(DefaultMapState.class)'
 
-StateMachine<Map<K, V>> stateMachine = StateMachine.create("tcp://123.456.789.0", cluster, config).open().get();
+StateMachine<Map<K, V>> stateMachine = StateMachine.create("my-state-machine", cluster, config).open().get();
 stateMachine.submit("get", "foo").get();
 ```
 
@@ -996,13 +1002,14 @@ To create an event log, call the `eventLog` method on the `Copycat` instance.
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
+  .withLocalMember("tcp://123.456.789.0:5000")
   .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addEventLogConfig("event-log", new EventLogConfig());
 
-Copycat copycat = Copycat.create("tcp://123.456.789.0:5000", config);
+Copycat copycat = Copycat.create(config);
 
 copycat.open().thenRun(() -> {
   copycat.<String>eventLog("event-log").open().thenAccept(eventLog -> {
@@ -1027,12 +1034,13 @@ The `EventLog` interface exposes a static method for creating a standalone event
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
+  .withLocalMember("tcp:/123.456.789.0:5000")
   .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 EventLogConfig config = new EventLogConfig()
   .withLog(new FileLog());
 
-EventLog<String> eventLog = EventLog.create("tcp:/123.456.789.0", cluster, config);
+EventLog<String> eventLog = EventLog.create("my-event-log", cluster, config);
 ```
 
 When a standalone event log is created via the `EventLog.create` static factory method, a `ClusterCoordinator` is
@@ -1141,14 +1149,15 @@ To create a state log, call the `stateLog` method on the `Copycat` instance.
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addStateLogConfig("state-log", new StateLogConfig()
     .withLog(new FileLog());
 
-Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+Copycat copycat = Copycat.create(config);
 
 copycat.open().thenRun(() -> {
   copycat.<String>stateLog("state-log").open().thenAccept(stateLog -> {
@@ -1162,13 +1171,14 @@ The `StateLog` interface exposes a static method for creating a standalone state
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
+  .withLocalMember("tcp:/123.456.789.0:5000")
   .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 StateLogConfig config = new StateLogConfig()
   .withLog(new FileLog()
     .withFlushOnWrite(true));
 
-StateLog<String> stateLog = StateLog.create("tcp:/123.456.789.0", cluster, config);
+StateLog<String> stateLog = StateLog.create("my-state-log", cluster, config);
 ```
 
 When a standalone state log is created via the `StateLog.create` static factory method, a `ClusterCoordinator` is
@@ -1314,7 +1324,7 @@ Once the leader election has been defined as a cluster resource, create a new `C
 election. To register a handler to be notified once a node has become leader, use the `addListener` method.
 
 ```java
-Copycat copycat = Copycat.create("tcp://123.456.789.0", config);
+Copycat copycat = Copycat.create(config);
 
 copycat.open()
   .thenCompose(c -> c.leaderElection("election").open())
@@ -1338,6 +1348,7 @@ The `LeaderElection` interface exposes a static factory method for creating stan
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
+  .withLocalMember("tcp://123.456.789.0:5000")
   .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 LeaderElection.create("election", cluster).open().thenAccept(election -> {
@@ -1398,14 +1409,15 @@ To create a map via the `Copycat` API, use the `map` method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addMapConfig("test-map", new AsyncMapConfig()
     .withConsistency(Consistency.STRONG));
 
-Copycat.copycat("tcp://123.456.789.0", config).open()
+Copycat.copycat(config).open()
   .thenApply(copycat -> copycat.<String, String>map("test-map"))
   .thenCompose(map -> map.open())
   .thenAccept(map -> {
@@ -1420,12 +1432,13 @@ To create a map directly, use the `AsyncMap.create` factory method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 AsyncMapConfig config = new AsyncMapConfig()
   .withConsistency(Consistency.STRONG);
 
-AsyncMap.<String, String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(map -> {
+AsyncMap.<String, String>create("my-map", cluster, config).open().thenAccept(map -> {
   map.put("foo", "Hello world!").thenRun(() -> {
     map.get("foo").thenAccept(result -> System.out.println(result));
   });
@@ -1442,14 +1455,15 @@ To create a list via the `Copycat` API, use the `list` method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addListConfig("test-list", new AsyncListConfig()
     .withConsistency(Consistency.STRONG));
 
-Copycat.copycat("tcp://123.456.789.0", config).open()
+Copycat.copycat(config).open()
   .thenApply(copycat -> copycat.<String>list("test-list"))
   .thenCompose(list -> list.open())
   .thenAccept(list -> {
@@ -1464,12 +1478,13 @@ To create a list directly, use the `AsyncList.create` factory method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 AsyncListConfig config = new AsyncListConfig()
   .withConsistency(Consistency.STRONG);
 
-AsyncList.<String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(list -> {
+AsyncList.<String>create("my-list", cluster, config).open().thenAccept(list -> {
   list.add("Hello world!").thenRun(() -> {
     list.get(0).thenAccept(result -> System.out.println(result));
   });
@@ -1486,14 +1501,15 @@ To create a set via the `Copycat` API, use the `set` method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addSetConfig("test-set", new AsyncSetConfig()
     .withConsistency(Consistency.STRONG));
 
-Copycat.copycat("tcp://123.456.789.0", config).open()
+Copycat.copycat(config).open()
   .thenApply(copycat -> copycat.<String>set("test-set"))
   .thenCompose(set -> set.open())
   .thenAccept(set -> {
@@ -1508,12 +1524,13 @@ To create a set directly, use the `AsyncSet.create` factory method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 AsyncSetConfig config = new AsyncSetConfig()
   .withConsistency(Consistency.STRONG);
 
-AsyncSet.<String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(set -> {
+AsyncSet.<String>create("my-set", cluster, config).open().thenAccept(set -> {
   set.add("Hello world!").thenRun(() -> {
     set.get(0).thenAccept(result -> System.out.println(result));
   });
@@ -1530,14 +1547,15 @@ To create a multimap via the `Copycat` API, use the `multiMap` method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addMultiMapConfig("test-multimap", new AsyncMultiMapConfig()
     .withConsistency(Consistency.STRONG));
 
-Copycat.copycat("tcp://123.456.789.0", config).open()
+Copycat.copycat(config).open()
   .thenApply(copycat -> copycat.<String, String>multiMap("test-multimap"))
   .thenCompose(multiMap -> multiMap.open())
   .thenAccept(multiMap -> {
@@ -1552,12 +1570,13 @@ To create a multimap directly, use the `AsyncMultiMap.create` factory method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 AsyncMultiMapConfig config = new AsyncMultiMapConfig()
   .withConsistency(Consistency.STRONG);
 
-AsyncMultiMap.<String, String>create("tcp://123.456.789.0", cluster, config).open().thenAccept(multiMap -> {
+AsyncMultiMap.<String, String>create("my-map", cluster, config).open().thenAccept(multiMap -> {
   multiMap.put("foo", "Hello world!").thenRun(() -> {
     multiMap.get("foo").thenAccept(result -> System.out.println(result));
   });
@@ -1574,14 +1593,15 @@ To create a lock via the `Copycat` API, use the `lock` method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addLockConfig("test-lock", new AsyncLockConfig()
     .withConsistency(Consistency.STRONG));
 
-Copycat.copycat("tcp://123.456.789.0", config).open()
+Copycat.copycat(config).open()
   .thenApply(copycat -> copycat.lock("test-lock"))
   .thenCompose(lock -> lock.open())
   .thenAccept(lock -> {
@@ -1597,12 +1617,13 @@ To create a lock directly, use the `AsyncLock.create` factory method:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
-  .withMembers("tcp://123.456.789.0", "tcp://123.456.789.1", "tcp://123.456.789.2");
+  .withLocalMember("tcp://123.456.789.0:5000")
+  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 AsyncLockConfig config = new AsyncLockConfig()
   .withConsistency(Consistency.STRONG);
 
-AsyncLock.create("tcp://123.456.789.0", cluster, config).open().thenAccept(lock -> {
+AsyncLock.create("my-lock", cluster, config).open().thenAccept(lock -> {
   lock.lock().thenRun(() -> {
     System.out.println("Lock locked");
     lock.unlock().thenRun(() -> System.out.println("Lock unlocked");
@@ -1635,16 +1656,17 @@ members of the Copycat cluster. Active members are defined for each Copycat inst
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
+  .withLocalMember("tcp://123.456.789.0:5000")
   .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addResourceConfig(...);
 
-Copycat copycat = Copycat.create("tcp://123.456.789.0:5000", config);
+Copycat copycat = Copycat.create(config);
 ```
 
-By creating a Copycat instance with a URI that is defined as an active member in the cluster configuration, Copycat
+By creating a Copycat instance with a local URI that is defined as an active member in the cluster configuration, Copycat
 knows that this is an active member of the cluster:
 
 ```java
@@ -1679,17 +1701,18 @@ that the member is passive and should thus receive replicated logs passively:
 ```java
 ClusterConfig cluster = new ClusterConfig()
   .withProtocol(new NettyTcpProtocol())
+  .withLocalMember("tcp://123.456.789.4:5000")
   .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
 
 CopycatConfig config = new CopycatConfig()
   .withClusterConfig(cluster)
   .addResourceConfig(...);
 
-Copycat copycat = Copycat.create("tcp://123.456.789.4:5000", config);
+Copycat copycat = Copycat.create(config);
 ```
 
-By simply passing a URI that is not defined as an active member of the Copycat cluster, the Copycat instance becomes
-a passive member of the cluster:
+By simply defining a local URI that is not defined as an active member of the Copycat cluster, the Copycat instance
+becomes a passive member of the cluster:
 
 ```java
 assert copycat.cluster().member().type() == Member.Type.PASSIVE;

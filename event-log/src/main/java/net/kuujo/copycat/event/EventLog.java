@@ -44,11 +44,10 @@ public interface EventLog<T> extends Resource<EventLog<T>> {
    * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
    *
    * @param name The log resource name.
-   * @param uri The local log member URI.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new EventLogConfig());
+  static <T> EventLog<T> create(String name) {
+    return create(name, new ClusterConfig(), new EventLogConfig());
   }
 
   /**
@@ -61,25 +60,23 @@ public interface EventLog<T> extends Resource<EventLog<T>> {
    * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
    *
    * @param name The log resource name.
-   * @param uri The local log member URI.
    * @param cluster The event log cluster.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new EventLogConfig());
+  static <T> EventLog<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new EventLogConfig());
   }
 
   /**
    * Creates a new event log with the given cluster and event log configurations.
    *
    * @param name The log name.
-   * @param uri The local log member URI.
    * @param cluster The event log cluster.
    * @param config The event log configuration.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, String uri, ClusterConfig cluster, EventLogConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static <T> EventLog<T> create(String name, ClusterConfig cluster, EventLogConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<EventLog<T>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);

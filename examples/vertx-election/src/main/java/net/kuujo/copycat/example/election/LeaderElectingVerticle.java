@@ -15,20 +15,19 @@
  */
 package net.kuujo.copycat.example.election;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.vertx.VertxEventBusProtocol;
 import net.kuujo.copycat.vertx.VertxEventLoopExecutor;
-
 import org.vertx.java.core.Future;
 import org.vertx.java.core.json.JsonArray;
 import org.vertx.java.platform.Verticle;
+
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 /**
  * Example verticle that performs an in-memory leader election.
@@ -49,6 +48,7 @@ public class LeaderElectingVerticle extends Verticle {
     // Because Copycat is a CP framework, we have to explicitly list all of the nodes in the cluster.
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new VertxEventBusProtocol(vertx))
+      .withLocalMember(String.format("eventbus://%s", address))
       .withMembers(((List<String>) members.toList()).stream()
         .map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()));
 
@@ -57,7 +57,7 @@ public class LeaderElectingVerticle extends Verticle {
       .withExecutor(new VertxEventLoopExecutor(vertx));
 
     // Create and open the leader election using the constructed cluster configuration.
-    LeaderElection.create("election", String.format("eventbus://%s", address), cluster, config).open().whenComplete((election, error) -> {
+    LeaderElection.create("election", cluster, config).open().whenComplete((election, error) -> {
       // Since we configured the election with a Vert.x event loop executor, CompletableFuture callbacks are executed
       // on the Vert.x event loop, so we don't have to use runOnContext.
       if (error != null) {

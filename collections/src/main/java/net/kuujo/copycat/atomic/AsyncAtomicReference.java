@@ -42,12 +42,11 @@ public interface AsyncAtomicReference<T> extends AsyncAtomicReferenceProxy<T>, R
    * configurations will be loaded according to namespaces as well; for example, `references.conf`.
    *
    * @param name The asynchronous atomic reference name.
-   * @param uri The asynchronous atomic reference member URI.
    * @param <T> The atomic reference data type.
    * @return The asynchronous atomic reference.
    */
-  static <T> AsyncAtomicReference<T> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncAtomicReferenceConfig());
+  static <T> AsyncAtomicReference<T> create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncAtomicReferenceConfig(name));
   }
 
   /**
@@ -60,32 +59,29 @@ public interface AsyncAtomicReference<T> extends AsyncAtomicReferenceProxy<T>, R
    * configurations will be loaded according to namespaces as well; for example, `references.conf`.
    *
    * @param name The asynchronous atomic reference name.
-   * @param uri The asynchronous atomic reference member URI.
    * @param cluster The cluster configuration.
    * @param <T> The atomic reference data type.
    * @return The asynchronous atomic reference.
    */
-  static <T> AsyncAtomicReference<T> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncAtomicReferenceConfig());
+  static <T> AsyncAtomicReference<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncAtomicReferenceConfig(name));
   }
 
   /**
    * Creates a new asynchronous atomic reference.
    *
    * @param name The asynchronous atomic reference name.
-   * @param uri The asynchronous atomic reference member URI.
    * @param cluster The cluster configuration.
    * @param config The atomic reference configuration.
    * @param <T> The atomic reference data type.
    * @return The asynchronous atomic reference.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <T> AsyncAtomicReference<T> create(String name, String uri, ClusterConfig cluster, AsyncAtomicReferenceConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
-    AsyncAtomicReference<T> reference = coordinator.getResource(name, config.resolve(cluster));
-    ((Resource) reference).addStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((Resource) reference).addShutdownTask(coordinator::close);
-    return reference;
+  static <T> AsyncAtomicReference<T> create(String name, ClusterConfig cluster, AsyncAtomicReferenceConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+    return coordinator.<AsyncAtomicReference<T>>getResource(name, config.resolve(cluster))
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
 }

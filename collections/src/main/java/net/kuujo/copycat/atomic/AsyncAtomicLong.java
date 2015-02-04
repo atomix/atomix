@@ -42,11 +42,10 @@ public interface AsyncAtomicLong extends AsyncAtomicLongProxy, Resource<AsyncAto
    * configurations will be loaded according to namespaces as well; for example, `longs.conf`.
    *
    * @param name The asynchronous atomic long name.
-   * @param uri The asynchronous atomic long member URI.
    * @return The asynchronous atomic long.
    */
-  static AsyncAtomicLong create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncAtomicLongConfig());
+  static AsyncAtomicLong create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncAtomicLongConfig(name));
   }
 
   /**
@@ -59,30 +58,27 @@ public interface AsyncAtomicLong extends AsyncAtomicLongProxy, Resource<AsyncAto
    * configurations will be loaded according to namespaces as well; for example, `longs.conf`.
    *
    * @param name The asynchronous atomic long name.
-   * @param uri The asynchronous atomic long member URI.
    * @param cluster The cluster configuration.
    * @return The asynchronous atomic long.
    */
-  static AsyncAtomicLong create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncAtomicLongConfig());
+  static AsyncAtomicLong create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncAtomicLongConfig(name));
   }
 
   /**
    * Creates a new asynchronous atomic long.
    *
    * @param name The asynchronous atomic long name.
-   * @param uri The asynchronous atomic long member URI.
    * @param cluster The cluster configuration.
    * @param config The atomic long configuration.
    * @return The asynchronous atomic long.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncAtomicLong create(String name, String uri, ClusterConfig cluster, AsyncAtomicLongConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
-    AsyncAtomicLong reference = coordinator.getResource(name, config.resolve(cluster));
-    ((Resource) reference).addStartupTask(() -> coordinator.open().thenApply(v -> null));
-    ((Resource) reference).addShutdownTask(coordinator::close);
-    return reference;
+  static AsyncAtomicLong create(String name, ClusterConfig cluster, AsyncAtomicLongConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+    return coordinator.<AsyncAtomicLong>getResource(name, config.resolve(cluster))
+      .addStartupTask(() -> coordinator.open().thenApply(v -> null))
+      .addShutdownTask(coordinator::close);
   }
 
 }

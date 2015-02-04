@@ -46,7 +46,6 @@ import java.util.concurrent.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultClusterCoordinator implements ClusterCoordinator {
-  private final String uri;
   private final ThreadFactory threadFactory = new NamedThreadFactory("copycat-coordinator-%d");
   private final ScheduledExecutorService executor;
   private final CoordinatorConfig config;
@@ -57,14 +56,13 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
   private volatile boolean open;
 
-  public DefaultClusterCoordinator(String uri, CoordinatorConfig config) {
-    this.uri = uri;
+  public DefaultClusterCoordinator(CoordinatorConfig config) {
     this.config = config.copy();
     this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
 
     // Set up permanent cluster members based on the given cluster configuration.
-    this.localMember = new DefaultLocalMemberCoordinator(new MemberInfo(uri, config.getClusterConfig().getMembers().contains(uri) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.State.ALIVE), config.getClusterConfig().getProtocol(), Executors.newSingleThreadExecutor(threadFactory));
-    this.members.put(uri, localMember);
+    this.localMember = new DefaultLocalMemberCoordinator(new MemberInfo(config.getClusterConfig().getLocalMember(), config.getClusterConfig().getMembers().contains(config.getClusterConfig().getLocalMember()) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.State.ALIVE), config.getClusterConfig().getProtocol(), Executors.newSingleThreadExecutor(threadFactory));
+    this.members.put(config.getClusterConfig().getLocalMember(), localMember);
     for (String member : config.getClusterConfig().getMembers()) {
       if (!this.members.containsKey(member)) {
         this.members.put(member, new DefaultRemoteMemberCoordinator(new MemberInfo(member, Member.Type.ACTIVE, Member.State.ALIVE), config.getClusterConfig().getProtocol(), Executors.newSingleThreadScheduledExecutor(threadFactory)));
@@ -78,7 +76,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withReplicas(config.getClusterConfig().getMembers())
       .withLog(new BufferedLog());
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator"));
-    this.context = new CopycatStateContext(config.getName(), uri, resourceConfig, executor);
+    this.context = new CopycatStateContext(config.getName(), config.getClusterConfig().getLocalMember(), resourceConfig, executor);
     this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(executor), new KryoSerializer(), executor, config.getExecutor());
   }
 
@@ -129,7 +127,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   public <T extends Resource<T>> T getResource(String name, CoordinatedResourceConfig config) {
     ResourceHolder resource = resources.computeIfAbsent(name, n -> {
       ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"));
-      CopycatStateContext state = new CopycatStateContext(name, uri, config, executor);
+      CopycatStateContext state = new CopycatStateContext(name, member().uri(), config, executor);
       ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
       ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
       try {
@@ -233,7 +231,8 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     return closeResources()
       .thenComposeAsync(v -> context.close(), executor)
       .thenComposeAsync(v -> cluster.close(), executor)
-      .thenComposeAsync(v -> CompletableFuture.allOf(futures));
+      .thenComposeAsync(v -> CompletableFuture.allOf(futures))
+      .thenRun(executor::shutdown);
   }
 
   @Override

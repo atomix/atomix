@@ -19,6 +19,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
 import net.kuujo.copycat.state.StateLogConfig;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Map;
 
@@ -54,6 +55,7 @@ public class AsyncSetConfig extends AsyncCollectionConfig<AsyncSetConfig> {
 
   @Override
   public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
+    Assert.config(getReplicas(), getReplicas().isEmpty() || cluster.getMembers().containsAll(getReplicas()), "Resource replica set must contain only active cluster members");
     return new StateLogConfig(toMap())
       .resolve(cluster)
       .withResourceType(DefaultAsyncSet.class);

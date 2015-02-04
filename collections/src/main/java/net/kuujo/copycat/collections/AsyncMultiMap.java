@@ -45,13 +45,12 @@ public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, Resource<
    * configurations will be loaded according to namespaces as well; for example, `multimaps.conf`.
    *
    * @param name The asynchronous multimap name.
-   * @param uri The asynchronous multimap member URI.
    * @param <K> The multimap key type.
    * @param <V> The multimap value type.
    * @return The asynchronous multimap.
    */
-  static <K, V> AsyncMultiMap<K, V> create(String name, String uri) {
-    return create(name, uri, new ClusterConfig(), new AsyncMultiMapConfig());
+  static <K, V> AsyncMultiMap<K, V> create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncMultiMapConfig(name));
   }
 
   /**
@@ -64,29 +63,27 @@ public interface AsyncMultiMap<K, V> extends AsyncMultiMapProxy<K, V>, Resource<
    * configurations will be loaded according to namespaces as well; for example, `multimaps.conf`.
    *
    * @param name The asynchronous multimap name.
-   * @param uri The asynchronous multimap member URI.
    * @param cluster The cluster configuration.
    * @param <K> The multimap key type.
    * @param <V> The multimap value type.
    * @return The asynchronous multimap.
    */
-  static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster) {
-    return create(name, uri, cluster, new AsyncMultiMapConfig());
+  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncMultiMapConfig(name));
   }
 
   /**
    * Creates a new asynchronous multimap.
    *
    * @param name The asynchronous multimap name.
-   * @param uri The asynchronous multimap member URI.
    * @param cluster The cluster configuration.
    * @param config The multimap configuration.
    * @param <K> The multimap key type.
    * @param <V> The multimap value type.
    * @return The asynchronous multimap.
    */
-  static <K, V> AsyncMultiMap<K, V> create(String name, String uri, ClusterConfig cluster, AsyncMultiMapConfig config) {
-    ClusterCoordinator coordinator = new DefaultClusterCoordinator(uri, new CoordinatorConfig().withName(name).withClusterConfig(cluster));
+  static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, AsyncMultiMapConfig config) {
+    ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
     return coordinator.<AsyncMultiMap<K, V>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);
