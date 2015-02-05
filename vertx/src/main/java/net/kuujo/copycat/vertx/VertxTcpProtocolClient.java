@@ -116,9 +116,10 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   public CompletableFuture<Void> connect() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
 
-    if (vertx == null) {
+    if (vertx == null)
+      vertx = protocol.getVertx();
+    if (vertx == null)
       vertx = new DefaultVertx();
-    }
 
     if (client == null) {
       client = vertx.createNetClient();

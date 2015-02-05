@@ -20,6 +20,7 @@ import net.kuujo.copycat.protocol.AbstractProtocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
 import net.kuujo.copycat.util.internal.Assert;
+import org.vertx.java.core.Vertx;
 
 import java.net.URI;
 import java.util.Map;
@@ -45,6 +46,8 @@ public class VertxTcpProtocol extends AbstractProtocol {
   private static final String CONFIGURATION = "tcp";
   private static final String DEFAULT_CONFIGURATION = "tcp-defaults";
 
+  private static Vertx vertx;
+
   public VertxTcpProtocol() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
@@ -57,9 +60,43 @@ public class VertxTcpProtocol extends AbstractProtocol {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
+  public VertxTcpProtocol(Vertx vertx) {
+    this();
+    setVertx(vertx);
+  }
+
   @Override
   public VertxTcpProtocol copy() {
     return (VertxTcpProtocol) super.copy();
+  }
+
+  /**
+   * Sets the Vert.x instance.
+   *
+   * @param vertx The Vert.x instance.
+   */
+  public void setVertx(Vertx vertx) {
+    VertxTcpProtocol.vertx = vertx;
+  }
+
+  /**
+   * Returns the Vert.x instance.
+   *
+   * @return The Vert.x instance.
+   */
+  public Vertx getVertx() {
+    return vertx;
+  }
+
+  /**
+   * Sets the Vert.x instance, returning the configuration for method chaining.
+   *
+   * @param vertx The Vert.x instance.
+   * @return The TCP protocol.
+   */
+  public VertxTcpProtocol withVertx(Vertx vertx) {
+    setVertx(vertx);
+    return this;
   }
 
   /**

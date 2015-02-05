@@ -42,14 +42,15 @@ public class VertxTcpProtocol extends AbstractProtocol {
   private static final String CONFIGURATION = "tcp";
   private static final String DEFAULT_CONFIGURATION = "tcp-defaults";
 
-  private Vertx vertx;
+  private static Vertx vertx;
 
   public VertxTcpProtocol() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public VertxTcpProtocol(Vertx vertx) {
-    this.vertx = vertx;
+    this();
+    setVertx(vertx);
   }
 
   public VertxTcpProtocol(Map<String, Object> config) {
@@ -71,7 +72,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @param vertx The Vert.x instance.
    */
   public void setVertx(Vertx vertx) {
-    this.vertx = vertx;
+    VertxTcpProtocol.vertx = vertx;
   }
 
   /**

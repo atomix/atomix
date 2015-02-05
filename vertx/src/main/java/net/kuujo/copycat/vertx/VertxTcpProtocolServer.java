@@ -56,9 +56,10 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   public CompletableFuture<Void> listen() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
 
-    if (vertx == null) {
+    if (vertx == null)
+      vertx = protocol.getVertx();
+    if (vertx == null)
       vertx = new DefaultVertx();
-    }
 
     if (server == null) {
       server = vertx.createNetServer();

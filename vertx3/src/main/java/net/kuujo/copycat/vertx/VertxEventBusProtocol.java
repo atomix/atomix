@@ -53,13 +53,13 @@ public class VertxEventBusProtocol extends AbstractProtocol {
   }
 
   public VertxEventBusProtocol(String host, int port) {
-    super();
+    this();
     setHost(host);
     setPort(port);
   }
 
   public VertxEventBusProtocol(Vertx vertx) {
-    super();
+    this();
     setVertx(vertx);
   }
 
@@ -74,7 +74,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @param vertx The Vert.x instance.
    */
   public void setVertx(Vertx vertx) {
-    this.vertx = vertx;
+    VertxEventBusProtocol.vertx = vertx;
   }
 
   /**
