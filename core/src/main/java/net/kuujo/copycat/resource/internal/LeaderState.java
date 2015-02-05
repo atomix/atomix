@@ -276,7 +276,7 @@ class LeaderState extends ActiveState {
       }
 
       // Quorum is floor(replicas.size / 2) since this node is implicitly counted in the quorum count.
-      this.quorum = (int) Math.ceil(context.getActiveMembers().size() / 2.0);
+      this.quorum = (int) Math.floor(context.getActiveMembers().size() / 2.0);
       this.quorumIndex = quorum - 1;
     }
 
