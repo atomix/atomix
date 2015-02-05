@@ -284,6 +284,10 @@ class LeaderState extends ActiveState {
      * Registers a future to be completed on the next heartbeat.
      */
     public CompletableFuture<Long> commit() {
+      context.checkThread();
+      if (replicas.isEmpty())
+        return CompletableFuture.completedFuture(context.getCommitIndex());
+
       CompletableFuture<Long> future = new CompletableFuture<>();
       Quorum quorum = new Quorum(this.quorum, succeeded -> {
         if (succeeded) {
@@ -311,6 +315,12 @@ class LeaderState extends ActiveState {
      */
     public CompletableFuture<Long> commit(Long index) {
       context.checkThread();
+      if (replicas.isEmpty()) {
+        if (index != null) {
+          context.setCommitIndex(index);
+        }
+        return CompletableFuture.completedFuture(index);
+      }
 
       CompletableFuture<Long> future = new CompletableFuture<>();
       commitFutures.put(index, future);
