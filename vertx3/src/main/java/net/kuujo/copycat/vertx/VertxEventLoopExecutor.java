@@ -17,6 +17,7 @@ package net.kuujo.copycat.vertx;
 
 import io.vertx.core.Context;
 import io.vertx.core.Vertx;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.concurrent.Executor;
 
@@ -29,12 +30,21 @@ public class VertxEventLoopExecutor implements Executor {
   private final Context context;
 
   public VertxEventLoopExecutor(Vertx vertx) {
-    this.context = vertx.getOrCreateContext();
+    this(vertx.getOrCreateContext());
+  }
+
+  public VertxEventLoopExecutor(Context context) {
+    this.context = Assert.isNotNull(context, "context");
   }
 
   @Override
   public void execute(Runnable command) {
     context.runOnContext(v -> command.run());
+  }
+
+  @Override
+  public String toString() {
+    return getClass().getName();
   }
 
 }
