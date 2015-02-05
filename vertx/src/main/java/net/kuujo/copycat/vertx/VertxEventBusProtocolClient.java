@@ -93,4 +93,9 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
     return CompletableFuture.completedFuture(null);
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[address=%s]", getClass().getSimpleName(), address);
+  }
+
 }

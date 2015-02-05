@@ -52,7 +52,9 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
     final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     context.runOnContext(v -> {
       DeliveryOptions options = new DeliveryOptions().setSendTimeout(5000);
-      vertx.eventBus().send(address, request.array(), options, (Handler<AsyncResult<Message<byte[]>>>) result -> {
+      byte[] bytes = new byte[request.remaining()];
+      request.get(bytes);
+      vertx.eventBus().send(address, bytes, options, (Handler<AsyncResult<Message<byte[]>>>) result -> {
         if (result.succeeded()) {
           future.complete(ByteBuffer.wrap(result.result().body()));
         } else {
@@ -76,6 +78,11 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   @Override
   public CompletableFuture<Void> close() {
     return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[address=%s]", getClass().getSimpleName(), address);
   }
 
 }

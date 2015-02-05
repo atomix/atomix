@@ -83,4 +83,9 @@ public class VertxEventBusProtocolServer implements ProtocolServer, Handler<Mess
     return CompletableFuture.completedFuture(null);
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[address=%s]", getClass().getSimpleName(), address);
+  }
+
 }
