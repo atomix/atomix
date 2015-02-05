@@ -508,9 +508,9 @@ class LeaderState extends ActiveState {
                     prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1)
                     : prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1;
                   nextIndex = matchIndex + 1;
-                  triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), matchIndex);
                   doCommit();
                 }
+                triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(), matchIndex);
               } else {
                 if (response.term() > context.getTerm()) {
                   triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
