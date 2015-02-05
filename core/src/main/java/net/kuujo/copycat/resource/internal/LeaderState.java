@@ -488,7 +488,6 @@ class LeaderState extends ActiveState {
           if (error != null) {
             triggerCommitFutures(prevIndex != null ? prevIndex + 1 : context.log().firstIndex(),
               prevIndex != null ? prevIndex + entries.size() : context.log().firstIndex() + entries.size() - 1, error);
-            doCommit();
           } else {
             LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
             if (response.status().equals(Response.Status.OK)) {
