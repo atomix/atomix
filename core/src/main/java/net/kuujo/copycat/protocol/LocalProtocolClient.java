@@ -32,7 +32,7 @@ public class LocalProtocolClient implements ProtocolClient {
   private final String address;
   private final Map<String, LocalProtocolServer> registry;
 
-  LocalProtocolClient(String address, Map<String, LocalProtocolServer> registry) {
+  public LocalProtocolClient(String address, Map<String, LocalProtocolServer> registry) {
     this.address = address;
     this.registry = registry;
   }

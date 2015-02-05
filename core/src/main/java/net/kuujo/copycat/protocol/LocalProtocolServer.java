@@ -34,7 +34,7 @@ public class LocalProtocolServer implements ProtocolServer {
   private final Map<String, LocalProtocolServer> registry;
   private ProtocolHandler handler;
 
-  LocalProtocolServer(String address, Map<String, LocalProtocolServer> registry) {
+  public LocalProtocolServer(String address, Map<String, LocalProtocolServer> registry) {
     this.address = address;
     this.registry = registry;
   }

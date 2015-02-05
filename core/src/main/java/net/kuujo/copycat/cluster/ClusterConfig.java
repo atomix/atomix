@@ -89,7 +89,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public void setProtocol(Protocol protocol) {
-    config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.isNotNull(protocol, "protocol").toMap()));
+    this.config = config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.isNotNull(protocol, "protocol").toMap()));
   }
 
   /**

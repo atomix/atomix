@@ -15,8 +15,13 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.protocol.LocalProtocol;
+import net.kuujo.copycat.protocol.*;
+import net.kuujo.copycat.util.Configurable;
 import org.testng.annotations.Test;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -54,6 +59,47 @@ public class ClusterConfigTest {
     ClusterConfig cluster = new ClusterConfig("foo.bar");
     assertEquals(500, cluster.getElectionTimeout());
     assertEquals(100, cluster.getHeartbeatInterval());
+  }
+
+  /**
+   * Tests overriding the protocol.
+   */
+  public void testProtocolOverride() throws Throwable {
+    ClusterConfig cluster = new ClusterConfig();
+    cluster.setProtocol(new TestProtocol());
+    assertTrue(cluster.getProtocol() instanceof TestProtocol);
+    ClusterConfig copy = cluster.copy();
+    assertTrue(copy.getProtocol() instanceof TestProtocol);
+  }
+
+  /**
+   * Test protocol
+   */
+  public static class TestProtocol extends AbstractProtocol {
+    public TestProtocol() {
+    }
+
+    public TestProtocol(Map<String, Object> config, String... resources) {
+      super(config, resources);
+    }
+
+    public TestProtocol(String... resources) {
+      super(resources);
+    }
+
+    public TestProtocol(Configurable config) {
+      super(config);
+    }
+
+    @Override
+    public ProtocolClient createClient(URI uri) {
+      return new LocalProtocolClient(uri.getAuthority(), new HashMap<>());
+    }
+
+    @Override
+    public ProtocolServer createServer(URI uri) {
+      return new LocalProtocolServer(uri.getAuthority(), new HashMap<>());
+    }
   }
 
 }
