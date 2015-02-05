@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.vertx;
 
+import io.vertx.core.Vertx;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.test.ProtocolTest;
 import org.testng.annotations.Test;
@@ -26,10 +27,11 @@ import org.testng.annotations.Test;
  */
 @Test
 public class VertxEventBusProtocolTest extends ProtocolTest {
+  private Vertx vertx = Vertx.vertx();
 
   @Override
   protected Protocol createProtocol() {
-    return new VertxEventBusProtocol();
+    return new VertxEventBusProtocol(vertx);
   }
 
   @Override

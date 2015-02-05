@@ -32,14 +32,13 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventBusProtocol extends AbstractProtocol {
-  private static final String VERTX = "vertx";
   private static final String VERTX_HOST = "host";
   private static final String VERTX_PORT = "port";
 
   private static final String CONFIGURATION = "eventbus";
   private static final String DEFAULT_CONFIGURATION = "eventbus-defaults";
 
-  private Vertx vertx;
+  private static Vertx vertx;
 
   public VertxEventBusProtocol() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
@@ -60,6 +59,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
   }
 
   public VertxEventBusProtocol(Vertx vertx) {
+    super();
     setVertx(vertx);
   }
 
