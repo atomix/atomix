@@ -146,7 +146,7 @@ abstract class ActiveState extends PassiveState {
     // If the log contains entries after the request's previous log index
     // then remove those entries to be replaced by the request entries.
     if (!request.entries().isEmpty()) {
-      long index = request.logIndex() != null ? request.logIndex() : 0;
+      long index = request.logIndex() != null ? request.logIndex() : 0L;
 
       // If the request contains the first entries in the log, check whether the local log needs to be rolled over.
       Long rollOverIndex = null;
@@ -266,7 +266,7 @@ abstract class ActiveState extends PassiveState {
           if (context.getLastApplied() == null || context.getCommitIndex() > context.getLastApplied()) {
             // Starting after the last applied entry, iterate through new entries
             // and apply them to the state machine up to the commit index.
-            for (long i = (context.getLastApplied() != null ? context.getLastApplied() + 1 : context.log().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
+            for (long i = (context.getLastApplied() != null ? Long.valueOf(context.getLastApplied() + 1) : context.log().firstIndex()); i <= Math.min(context.getCommitIndex(), lastIndex); i++) {
               // Apply the entry to the state machine.
               applyEntry(i);
             }
