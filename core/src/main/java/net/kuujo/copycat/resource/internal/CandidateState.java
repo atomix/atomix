@@ -98,7 +98,7 @@ class CandidateState extends ActiveState {
     // to this node will be automatically successful.
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
-    final Quorum quorum = new Quorum((int) Math.floor(context.getActiveMembers().size() / 2) + 1, (elected) -> {
+    final Quorum quorum = new Quorum((int) Math.ceil(context.getActiveMembers().size() / 2.0), (elected) -> {
       complete.set(true);
       if (elected) {
         transition(CopycatState.LEADER);

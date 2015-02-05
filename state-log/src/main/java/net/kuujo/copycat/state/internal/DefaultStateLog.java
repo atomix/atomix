@@ -211,7 +211,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
 
     // Create a unique snapshot ID and calculate the number of chunks for the snapshot.
     byte[] snapshotId = UUID.randomUUID().toString().getBytes();
-    int numChunks = (int) Math.ceil(snapshotBuffer.limit() / SNAPSHOT_CHUNK_SIZE);
+    int numChunks = (int) Math.ceil(snapshotBuffer.limit() / (double) SNAPSHOT_CHUNK_SIZE);
     List<ByteBuffer> chunks = new ArrayList<>(numChunks);
 
     // The first entry in the snapshot is snapshot metadata.
