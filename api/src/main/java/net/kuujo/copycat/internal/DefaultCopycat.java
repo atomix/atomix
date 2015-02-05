@@ -29,8 +29,11 @@ import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.StateMachineConfig;
+import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 /**
  * Internal Copycat implementation.
@@ -40,10 +43,12 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultCopycat implements Copycat {
   private final ClusterCoordinator coordinator;
   private final CopycatConfig config;
+  private final Executor executor;
 
   public DefaultCopycat(CopycatConfig config) {
     this.coordinator = new DefaultClusterCoordinator(config.resolve());
     this.config = config;
+    this.executor = config.getDefaultExecutor() != null ? config.getDefaultExecutor() : Executors.newSingleThreadExecutor(new NamedThreadFactory(config.getName() + "-%d"));
   }
 
   @Override
@@ -202,7 +207,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public CompletableFuture<Copycat> open() {
-    return coordinator.open().thenApply(v -> this);
+    return coordinator.open().thenApplyAsync(v -> this, executor);
   }
 
   @Override
@@ -212,7 +217,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public CompletableFuture<Void> close() {
-    return coordinator.close();
+    return coordinator.close().thenRunAsync(() -> {}, executor);
   }
 
   @Override
