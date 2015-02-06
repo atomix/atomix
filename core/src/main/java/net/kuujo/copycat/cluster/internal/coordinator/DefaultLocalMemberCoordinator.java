@@ -62,8 +62,19 @@ public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator imp
       if (addressHandlers != null) {
         MessageHandler<ByteBuffer, ByteBuffer> handler = addressHandlers.get(id);
         if (handler != null) {
-          return CompletableFuture.completedFuture(null)
-            .thenComposeAsync(v -> handler.apply(message), executor);
+          CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+          executor.execute(() -> {
+            handler.apply(message).whenComplete((result, error) -> {
+              executor.execute(() -> {
+                if (error == null) {
+                  future.complete(result);
+                } else {
+                  future.completeExceptionally(error);
+                }
+              });
+            });
+          });
+          return future;
         }
       }
     }

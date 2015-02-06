@@ -52,16 +52,21 @@ public class DefaultRemoteMemberCoordinator extends AbstractMemberCoordinator {
 
   @Override
   public CompletableFuture<ByteBuffer> send(String topic, int address, int id, ByteBuffer message) {
-    return CompletableFuture.supplyAsync(() -> {
-      ByteBuffer request = ByteBuffer.allocateDirect(message.capacity() + 12);
-      request.putInt(topic.hashCode());
-      request.putInt(address);
-      request.putInt(id);
-      request.put(message);
-      request.flip();
-      return request;
-    }, executor)
-      .thenCompose(client::write);
+    ByteBuffer request = ByteBuffer.allocateDirect(message.capacity() + 12);
+    request.putInt(topic.hashCode());
+    request.putInt(address);
+    request.putInt(id);
+    request.put(message);
+    request.flip();
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+    client.write(request).whenCompleteAsync((result, error) -> {
+      if (error == null) {
+        future.complete(result);
+      } else {
+        future.completeExceptionally(error);
+      }
+    }, executor);
+    return future;
   }
 
   @Override

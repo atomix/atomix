@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.protocol.rpc;
 
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
@@ -43,16 +44,15 @@ public class QueryResponse extends AbstractResponse {
     return new Builder(response);
   }
 
-  private Object result;
+  private ByteBuffer result;
 
   /**
    * Returns the query result.
    *
    * @return The query result.
    */
-  @SuppressWarnings("unchecked")
-  public <T> T result() {
-    return (T) result;
+  public ByteBuffer result() {
+    return result;
   }
 
   @Override
@@ -95,7 +95,7 @@ public class QueryResponse extends AbstractResponse {
      * @param result The response result.
      * @return The response builder.
      */
-    public Builder withResult(Object result) {
+    public Builder withResult(ByteBuffer result) {
       response.result = result;
       return this;
     }

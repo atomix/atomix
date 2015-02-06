@@ -181,8 +181,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
         int commandCode = entry.getInt();
         OperationInfo operationInfo = operations.get(commandCode);
         if (operationInfo != null) {
-          T value = serializer.readObject(entry.slice());
-          return serializer.writeObject(operationInfo.execute(index, value));
+          return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
         }
         throw new IllegalStateException("Invalid state log operation");
       default:
