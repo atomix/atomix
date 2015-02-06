@@ -821,7 +821,7 @@ public class RequestResponseTest {
       .withResult(ByteBuffer.wrap("Hello world!".getBytes()))
       .build();
     assertEquals(response.uri(), "foo");
-    assertEquals(response.result(), "Hello world!");
+    assertEquals(new String(response.result().array()), "Hello world!");
   }
 
 }
