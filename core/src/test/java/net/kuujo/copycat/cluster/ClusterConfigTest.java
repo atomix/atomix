@@ -79,8 +79,8 @@ public class ClusterConfigTest {
     public TestProtocol() {
     }
 
-    public TestProtocol(Map<String, Object> config, String... resources) {
-      super(config, resources);
+    public TestProtocol(Map<String, Object> config) {
+      super(config);
     }
 
     public TestProtocol(String... resources) {
