@@ -789,7 +789,7 @@ public class RequestResponseTest {
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testQueryResponseBuilderFailsWithoutMember() {
-    QueryResponse.builder().withResult("Hello world!").build();
+    QueryResponse.builder().withResult(ByteBuffer.wrap("Hello world!".getBytes())).build();
   }
 
   /**
@@ -818,7 +818,7 @@ public class RequestResponseTest {
   public void testQueryResponseBuilderSucceedsWithValidConfiguration() {
     QueryResponse response = QueryResponse.builder()
       .withUri("foo")
-      .withResult("Hello world!")
+      .withResult(ByteBuffer.wrap("Hello world!".getBytes()))
       .build();
     assertEquals(response.uri(), "foo");
     assertEquals(response.result(), "Hello world!");
