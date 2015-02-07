@@ -23,6 +23,8 @@ import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.internal.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -43,6 +45,7 @@ import java.util.function.Supplier;
  */
 @SuppressWarnings("rawtypes")
 public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements StateLog<T> {
+  private static final Logger LOGGER = LoggerFactory.getLogger(DefaultStateLog.class);
   private static final int SNAPSHOT_ENTRY = 0;
   private static final int COMMAND_ENTRY = 1;
   private static final int SNAPSHOT_CHUNK_SIZE = 1024 * 1024;
@@ -69,13 +72,17 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   public <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command) {
     Assert.state(isClosed(), "Cannot register command on open state log");
     operations.put(name.hashCode(), new OperationInfo<>(command, false));
+    LOGGER.debug("{} - Registered state log command {}", context.name(), name);
     return this;
   }
 
   @Override
   public StateLog<T> unregisterCommand(String name) {
     Assert.state(isClosed(), "Cannot unregister command on open state log");
-    operations.remove(name.hashCode());
+    OperationInfo info = operations.remove(name.hashCode());
+    if (info != null) {
+      LOGGER.debug("{} - Unregistered state log command {}", context.name(), name);
+    }
     return this;
   }
 
@@ -85,6 +92,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     Assert.isNotNull(name, "name");
     Assert.isNotNull(query, "query");
     operations.put(name.hashCode(), new OperationInfo<>(query, true, defaultConsistency));
+    LOGGER.debug("{} - Registered state log query {} with default consistency", context.name(), name);
     return this;
   }
 
@@ -94,20 +102,27 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     Assert.isNotNull(name, "name");
     Assert.isNotNull(query, "query");
     operations.put(name.hashCode(), new OperationInfo<>(query, true, consistency == null || consistency == Consistency.DEFAULT ? defaultConsistency : consistency));
+    LOGGER.debug("{} - Registered state log query {} with consistency {}", context.name(), name, consistency);
     return this;
   }
 
   @Override
   public StateLog<T> unregisterQuery(String name) {
     Assert.state(isClosed(), "Cannot unregister command on open state log");
-    operations.remove(name.hashCode());
+    OperationInfo info = operations.remove(name.hashCode());
+    if (info != null) {
+      LOGGER.debug("{} - Unregistered state log query {}", context.name(), name);
+    }
     return this;
   }
 
   @Override
   public StateLog<T> unregister(String name) {
     Assert.state(isClosed(), "Cannot unregister command on open state log");
-    operations.remove(name.hashCode());
+    OperationInfo info = operations.remove(name.hashCode());
+    if (info != null) {
+      LOGGER.debug("{} - Unregistered state log operation {}", context.name(), name);
+    }
     return this;
   }
 
@@ -115,6 +130,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   public <V> StateLog<T> snapshotWith(Supplier<V> snapshotter) {
     Assert.state(isClosed(), "Cannot modify state log once opened");
     this.snapshotter = snapshotter;
+    LOGGER.debug("{} - Registered state log snapshot handler", context.name());
     return this;
   }
 
@@ -122,6 +138,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   public <V> StateLog<T> installWith(Consumer<V> installer) {
     Assert.state(isClosed(), "Cannot modify state log once opened");
     this.installer = installer;
+    LOGGER.debug("{} - Registered state log install handler", context.name());
     return this;
   }
 
@@ -144,8 +161,10 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     commandEntry.put(buffer);
     commandEntry.rewind();
     if (operationInfo.readOnly) {
+      LOGGER.debug("{} - Submitting state log query {} with entry {}", context.name(), command, entry);
       return context.query(commandEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
     } else {
+      LOGGER.debug("{} - Submitting state log command {} with entry {}", context.name(), command, entry);
       return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
     }
   }
@@ -204,13 +223,19 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
    * Takes a snapshot and compacts the log.
    */
   private void takeSnapshot(long index) {
+    String id = UUID.randomUUID().toString();
+    LOGGER.info("{} - Taking snapshot {}", context.name(), id);
+
     Object snapshot = snapshotter != null ? snapshotter.get() : null;
     ByteBuffer snapshotBuffer = serializer.writeObject(snapshot);
     snapshotBuffer.flip();
 
     // Create a unique snapshot ID and calculate the number of chunks for the snapshot.
-    byte[] snapshotId = UUID.randomUUID().toString().getBytes();
+    LOGGER.debug("{} - Calculating snapshot chunk size for snapshot {}", context.name(), id);
+    byte[] snapshotId = id.getBytes();
     int numChunks = (int) Math.ceil(snapshotBuffer.limit() / (double) SNAPSHOT_CHUNK_SIZE);
+
+    LOGGER.debug("{} - Creating {} chunks for snapshot {}", context.name(), numChunks, id);
     List<ByteBuffer> chunks = new ArrayList<>(numChunks);
 
     // The first entry in the snapshot is snapshot metadata.
@@ -240,6 +265,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     }
 
     try {
+      LOGGER.debug("{} - Appending {} chunks for snapshot {} at index {}", context.name(), chunks.size(), id, index);
       log.appendSnapshot(index, chunks);
     } catch (IOException e) {
       throw new CopycatException("Failed to compact state log", e);
@@ -267,6 +293,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
       int size = snapshotChunk.getInt();
       int numChunks = snapshotChunk.getInt();
       if (snapshotInfo == null || !snapshotInfo.id.equals(id)) {
+        LOGGER.debug("{} - Processing snapshot metadata for snapshot {}", context.name(), id);
         snapshotInfo = new SnapshotInfo(id, size, numChunks);
         snapshotChunks = new ArrayList<>(numChunks);
       }
@@ -278,11 +305,15 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
       byte[] chunkBytes = new byte[chunkLength];
       snapshotChunk.get(chunkBytes);
       if (snapshotChunks.size() == index) {
+        LOGGER.debug("{} - Processing snapshot chunk {} for snapshot {}", context.name(), index, snapshotInfo.id);
         snapshotChunks.add(ByteBuffer.wrap(chunkBytes));
 
         // Once the number of chunks has grown to the complete expected chunk count, combine and install the snapshot.
         if (snapshotChunks.size() == snapshotInfo.chunks) {
+          LOGGER.debug("{} - Completed assembly of snapshot {} from log", context.name(), snapshotInfo.id);
           if (installer != null) {
+            LOGGER.info("{} - Installing snapshot {}", context.name(), snapshotInfo.id);
+
             // Calculate the total aggregated size of the snapshot.
             int size = 0;
             for (ByteBuffer chunk : snapshotChunks) {
@@ -292,11 +323,11 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
             // Make sure the combined snapshot size is equal to the expected snapshot size.
             Assert.state(size == snapshotInfo.size, "Received inconsistent snapshot");
 
+            LOGGER.debug("{} - Assembled snapshot size: {} bytes", context.name(), size);
+
             // Create a complete view of the snapshot by appending all chunks to each other.
             ByteBuffer completeSnapshot = ByteBuffer.allocate(size);
-            for (ByteBuffer chunk : snapshotChunks) {
-              completeSnapshot.put(chunk);
-            }
+            snapshotChunks.forEach(completeSnapshot::put);
 
             // Once a view of the snapshot has been created, deserialize and install the snapshot.
             Object value = serializer.readObject(completeSnapshot);
