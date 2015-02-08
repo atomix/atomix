@@ -15,18 +15,18 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.util.Managed;
+import net.kuujo.copycat.util.function.TriFunction;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * Copycat resource context.
@@ -76,7 +76,7 @@ public interface ResourceContext extends Managed<ResourceContext> {
    * @param consumer The entry consumer.
    * @return The Copycat context.
    */
-  ResourceContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer);
+  ResourceContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer);
 
   /**
    * Executes a command on the context.

@@ -190,7 +190,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
    * @return The entry output.
    */
   @SuppressWarnings({"unchecked"})
-  private ByteBuffer consume(Long index, ByteBuffer entry) {
+  private ByteBuffer consume(long term, Long index, ByteBuffer entry) {
     int entryType = entry.getInt();
     switch (entryType) {
       case SNAPSHOT_ENTRY: // Snapshot entry
@@ -200,7 +200,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
         int commandCode = entry.getInt();
         OperationInfo operationInfo = operations.get(commandCode);
         if (operationInfo != null) {
-          return serializer.writeObject(operationInfo.execute(index, serializer.readObject(entry.slice())));
+          return serializer.writeObject(operationInfo.execute(term, index, serializer.readObject(entry.slice())));
         }
         throw new IllegalStateException("Invalid state log operation");
       default:
@@ -211,24 +211,23 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   /**
    * Checks whether to take a snapshot.
    */
-  private void checkSnapshot(long index) {
+  private void checkSnapshot(long term, long index) {
     // If the given index is the last index of a lot segment and the segment is not the last segment in the log
     // then the index is considered snapshottable.
     if (log.isSnapshottable(index)) {
-      takeSnapshot(index);
+      takeSnapshot(term, index);
     }
   }
 
   /**
    * Takes a snapshot and compacts the log.
    */
-  private void takeSnapshot(long index) {
+  private void takeSnapshot(long term, long index) {
     String id = UUID.randomUUID().toString();
     LOGGER.info("{} - Taking snapshot {}", context.name(), id);
 
     Object snapshot = snapshotter != null ? snapshotter.get() : null;
-    ByteBuffer snapshotBuffer = serializer.writeObject(snapshot);
-    snapshotBuffer.flip();
+    ByteBuffer snapshotBuffer = snapshot != null ? serializer.writeObject(snapshot) : ByteBuffer.allocate(0);
 
     // Create a unique snapshot ID and calculate the number of chunks for the snapshot.
     LOGGER.debug("{} - Calculating snapshot chunk size for snapshot {}", context.name(), id);
@@ -236,16 +235,18 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     int numChunks = (int) Math.ceil(snapshotBuffer.limit() / (double) SNAPSHOT_CHUNK_SIZE);
 
     LOGGER.debug("{} - Creating {} chunks for snapshot {}", context.name(), numChunks, id);
-    List<ByteBuffer> chunks = new ArrayList<>(numChunks);
+    List<ByteBuffer> chunks = new ArrayList<>(numChunks + 1);
 
     // The first entry in the snapshot is snapshot metadata.
-    ByteBuffer info = ByteBuffer.allocate(20 + snapshotId.length);
+    ByteBuffer info = ByteBuffer.allocate(28 + snapshotId.length);
+    info.putLong(term);
     info.putInt(SNAPSHOT_ENTRY);
     info.putInt(SNAPSHOT_INFO);
     info.putInt(snapshotId.length);
     info.put(snapshotId);
     info.putInt(snapshotBuffer.limit());
     info.putInt(numChunks);
+    chunks.add(info);
 
     // Now we append a list of snapshot chunks. This ensures that snapshots can be easily replicated in chunks.
     int i = 0;
@@ -253,7 +254,8 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     while (position < snapshotBuffer.limit()) {
       byte[] bytes = new byte[Math.min(snapshotBuffer.limit() - position, SNAPSHOT_CHUNK_SIZE)];
       snapshotBuffer.get(bytes);
-      ByteBuffer chunk = ByteBuffer.allocate(16 + bytes.length);
+      ByteBuffer chunk = ByteBuffer.allocate(24 + bytes.length);
+      chunk.putLong(term);
       chunk.putInt(SNAPSHOT_ENTRY); // Indicates the entry is a snapshot entry.
       chunk.putInt(SNAPSHOT_CHUNK);
       chunk.putInt(i++); // The position of the chunk in the snapshot.
@@ -312,8 +314,6 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
         if (snapshotChunks.size() == snapshotInfo.chunks) {
           LOGGER.debug("{} - Completed assembly of snapshot {} from log", context.name(), snapshotInfo.id);
           if (installer != null) {
-            LOGGER.info("{} - Installing snapshot {}", context.name(), snapshotInfo.id);
-
             // Calculate the total aggregated size of the snapshot.
             int size = 0;
             for (ByteBuffer chunk : snapshotChunks) {
@@ -325,13 +325,21 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
 
             LOGGER.debug("{} - Assembled snapshot size: {} bytes", context.name(), size);
 
-            // Create a complete view of the snapshot by appending all chunks to each other.
-            ByteBuffer completeSnapshot = ByteBuffer.allocate(size);
-            snapshotChunks.forEach(completeSnapshot::put);
+            if (size > 0) {
+              // Create a complete view of the snapshot by appending all chunks to each other.
+              ByteBuffer completeSnapshot = ByteBuffer.allocate(size);
+              snapshotChunks.forEach(completeSnapshot::put);
+              completeSnapshot.flip();
 
-            // Once a view of the snapshot has been created, deserialize and install the snapshot.
-            Object value = serializer.readObject(completeSnapshot);
-            installer.accept(value);
+              // Once a view of the snapshot has been created, deserialize and install the snapshot.
+              LOGGER.info("{} - Installing snapshot {}", context.name(), snapshotInfo.id);
+
+              try {
+                installer.accept(serializer.readObject(completeSnapshot));
+              } catch (Exception e) {
+                LOGGER.warn("{} - Failed to install snapshot: {}", context.name(), e.getMessage());
+              }
+            }
           }
           snapshotInfo = null;
           snapshotChunks = null;
@@ -391,9 +399,9 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
       this.consistency = consistency;
     }
 
-    private U execute(Long index, TT entry) {
+    private U execute(long term, Long index, TT entry) {
       if (index != null)
-        checkSnapshot(index);
+        checkSnapshot(term, index);
       return function.apply(entry);
     }
   }

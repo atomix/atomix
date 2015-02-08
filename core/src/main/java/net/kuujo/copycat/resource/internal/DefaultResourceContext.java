@@ -24,6 +24,7 @@ import net.kuujo.copycat.protocol.rpc.CommitRequest;
 import net.kuujo.copycat.protocol.rpc.QueryRequest;
 import net.kuujo.copycat.protocol.rpc.Response;
 import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.function.TriFunction;
 import net.kuujo.copycat.util.internal.Assert;
 
 import java.nio.ByteBuffer;
@@ -31,7 +32,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * Default resource context.
@@ -105,7 +105,7 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public synchronized ResourceContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
+  public synchronized ResourceContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer) {
     context.consumer(consumer);
     return this;
   }

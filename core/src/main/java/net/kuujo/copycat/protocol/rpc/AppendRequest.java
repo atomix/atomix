@@ -141,7 +141,7 @@ public class AppendRequest extends AbstractRequest {
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], commitIndex=%d]", getClass().getSimpleName(), term, leader, logIndex, logTerm, entries.size(), commitIndex);
+    return String.format("%s[term=%d, leader=%s, logIndex=%d, logTerm=%d, entries=[%d], firstIndex=%b, commitIndex=%d]", getClass().getSimpleName(), term, leader, logIndex, logTerm, entries.size(), firstIndex, commitIndex);
   }
 
   /**
@@ -250,7 +250,6 @@ public class AppendRequest extends AbstractRequest {
       Assert.arg(request.term, request.term > 0, "term must be greater than zero");
       Assert.index(request.logIndex, request.logIndex == null || request.logIndex > 0, "index must be greater than zero");
       Assert.arg(request.logTerm, request.logTerm == null || request.logTerm > 0, "term must be greater than zero");
-      Assert.arg(null, (request.logIndex == null && request.logTerm == null) || (request.logIndex != null && request.logTerm != null), "log index and term must both be null or neither be null");
       Assert.isNotNull(request.entries, "entries");
       Assert.index(request.commitIndex, request.commitIndex == null || request.commitIndex > 0, "commit index must be greater than zero");
       return request;

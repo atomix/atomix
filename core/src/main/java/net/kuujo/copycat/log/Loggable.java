@@ -73,6 +73,14 @@ public interface Loggable extends Closeable {
   long appendEntry(ByteBuffer entry) throws IOException;
 
   /**
+   * Returns the immutable first index in the log.
+   *
+   * @return The first index in the log.
+   * @throws java.lang.IllegalStateException If the log is not open.
+   */
+  long index();
+
+  /**
    * Returns the index of the first entry in the log.
    *
    * @return The index of the first entry in the log or {@code null} if the log is empty.

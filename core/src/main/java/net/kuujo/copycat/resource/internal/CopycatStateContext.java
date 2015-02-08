@@ -23,6 +23,7 @@ import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.rpc.*;
 import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.function.TriFunction;
 import net.kuujo.copycat.util.internal.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -46,7 +46,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private Thread thread;
   private final LogManager log;
   private AbstractState state;
-  private BiFunction<Long, ByteBuffer, ByteBuffer> consumer;
+  private TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
   private MessageHandler<AppendRequest, AppendResponse> appendHandler;
@@ -461,7 +461,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param consumer The entry consumer.
    * @return The Copycat context.
    */
-  public CopycatStateContext consumer(BiFunction<Long, ByteBuffer, ByteBuffer> consumer) {
+  public CopycatStateContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer) {
     this.consumer = consumer;
     return this;
   }
@@ -471,7 +471,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return The log consumer.
    */
-  public BiFunction<Long, ByteBuffer, ByteBuffer> consumer() {
+  public TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer() {
     return consumer;
   }
 

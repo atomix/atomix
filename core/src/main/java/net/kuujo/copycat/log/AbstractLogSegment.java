@@ -27,6 +27,11 @@ public abstract class AbstractLogSegment extends AbstractLoggable implements Log
   }
 
   @Override
+  public long index() {
+    return firstIndex;
+  }
+
+  @Override
   public String toString() {
     return String.format("%s..%s", firstIndex(), lastIndex());
   }

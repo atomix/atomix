@@ -78,7 +78,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   /**
    * Handles a log write.
    */
-  private ByteBuffer consume(Long index, ByteBuffer entry) {
+  private ByteBuffer consume(long term, Long index, ByteBuffer entry) {
     ByteBuffer result = ByteBuffer.allocateDirect(8);
     result.putLong(index);
     if (consumer != null) {

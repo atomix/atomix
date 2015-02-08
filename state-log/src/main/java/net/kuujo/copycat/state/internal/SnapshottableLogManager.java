@@ -104,6 +104,9 @@ public class SnapshottableLogManager implements LogManager {
    * @return Indicates whether a snapshot can be taken at the given index.
    */
   public boolean isSnapshottable(long index) {
+    if (!logManager.containsIndex(index)) {
+      return false;
+    }
     LogSegment segment = logManager.segment(index);
     if (segment == null) {
       return false;
@@ -139,31 +142,21 @@ public class SnapshottableLogManager implements LogManager {
     for (ByteBuffer entry : snapshot) {
       snapshotManager.appendEntry(entry);
     }
-    compact(snapshotManager);
-    compact(logManager);
-    return index;
-  }
 
-  /**
-   * Compacts the given log, removing all segments except for the last segment.
-   */
-  private void compact(LogManager log) {
-    for (Iterator<Map.Entry<Long, LogSegment>> iterator = log.segments().entrySet().iterator(); iterator.hasNext(); ) {
-      LogSegment segment = iterator.next().getValue();
-      if (log.lastSegment() != segment) {
-        iterator.remove();
-        try {
-          segment.close();
-          segment.delete();
-        } catch (IOException e) {
-        }
-      }
-    }
+    // Compact the snapshot and user logs in order to ensure old entries do not remain in the logs.
+    snapshotManager.compact(index - snapshot.size() + 1);
+    logManager.compact(index + 1);
+    return index;
   }
 
   @Override
   public long appendEntry(ByteBuffer entry) throws IOException {
     return logManager.appendEntry(entry);
+  }
+
+  @Override
+  public long index() {
+    return snapshotManager.index();
   }
 
   @Override
@@ -203,6 +196,7 @@ public class SnapshottableLogManager implements LogManager {
   @Override
   public void rollOver(long index) throws IOException {
     logManager.rollOver(index);
+    snapshotManager.rollOver(index);
   }
 
   @Override

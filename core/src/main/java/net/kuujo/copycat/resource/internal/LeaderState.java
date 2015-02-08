@@ -16,7 +16,7 @@ package net.kuujo.copycat.resource.internal;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.protocol.rpc.*;
-import net.kuujo.copycat.util.internal.Quorum;
+import net.kuujo.copycat.util.function.TriFunction;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -24,7 +24,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 
 /**
  * Leader state.
@@ -48,9 +47,9 @@ class LeaderState extends ActiveState {
   @Override
   public synchronized CompletableFuture<Void> open() {
     return super.open()
+      .thenRun(this::applyEntries)
       .thenRun(replicator::commit)
       .thenRun(this::takeLeadership)
-      .thenRun(this::applyEntries)
       .thenRun(this::startHeartbeatTimer);
   }
 
@@ -68,8 +67,9 @@ class LeaderState extends ActiveState {
     Long lastIndex = context.log().lastIndex();
     if (lastIndex != null) {
       int count = 0;
-      for (long i = context.getLastApplied() + 1; i <= lastIndex; i++) {
-        applyEntry(i);
+      for (long commitIndex = context.getCommitIndex() != null ? Long.valueOf(context.getCommitIndex() + 1) : context.log().firstIndex(); commitIndex <= lastIndex; commitIndex++) {
+        context.setCommitIndex(commitIndex);
+        applyEntry(commitIndex);
         count++;
       }
       LOGGER.debug("{} - Applied {} entries to log", context.getLocalMember(), count);
@@ -100,6 +100,7 @@ class LeaderState extends ActiveState {
   @Override
   public CompletableFuture<PollResponse> poll(final PollRequest request) {
     if (request.term() > context.getTerm()) {
+      LOGGER.debug("{} - Received greater term", context.getLocalMember());
       transition(CopycatState.FOLLOWER);
       return super.poll(request);
     } else {
@@ -135,7 +136,7 @@ class LeaderState extends ActiveState {
     logRequest(request);
 
     CompletableFuture<QueryResponse> future = new CompletableFuture<>();
-    BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
+    TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
 
     switch (request.consistency()) {
       // Consistency mode WEAK or DEFAULT is immediately evaluated and returned.
@@ -143,12 +144,13 @@ class LeaderState extends ActiveState {
       case DEFAULT:
         future.complete(logResponse(QueryResponse.builder()
           .withUri(context.getLocalMember())
-          .withResult(consumer.apply(null, request.entry()))
+          .withResult(consumer.apply(context.getTerm(), null, request.entry()))
           .build()));
         break;
       // Consistency mode STRONG requires synchronous consistency check prior to applying the query.
       case STRONG:
         LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), context.log().lastIndex());
+        long term = context.getTerm();
         replicator.commit().whenComplete((index, error) -> {
           context.checkThread();
           if (isOpen()) {
@@ -156,7 +158,7 @@ class LeaderState extends ActiveState {
               try {
                 future.complete(logResponse(QueryResponse.builder()
                   .withUri(context.getLocalMember())
-                  .withResult(consumer.apply(null, request.entry()))
+                  .withResult(consumer.apply(term, null, request.entry()))
                   .build()));
               } catch (Exception e) {
                 future.complete(logResponse(QueryResponse.builder()
@@ -186,11 +188,12 @@ class LeaderState extends ActiveState {
 
     CompletableFuture<CommitResponse> future = new CompletableFuture<>();
     ByteBuffer entry = request.entry();
-    BiFunction<Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
+    TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
 
     // Create a log entry containing the current term and entry.
     ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 8);
-    logEntry.putLong(context.getTerm());
+    long term = context.getTerm();
+    logEntry.putLong(term);
     logEntry.put(entry);
     entry.flip();
 
@@ -215,7 +218,7 @@ class LeaderState extends ActiveState {
           try {
             future.complete(logResponse(CommitResponse.builder()
               .withUri(context.getLocalMember())
-              .withResult(consumer.apply(index, entry))
+              .withResult(consumer.apply(term, index, entry))
               .build()));
           } catch (Exception e) {
             future.complete(logResponse(CommitResponse.builder()
@@ -258,20 +261,24 @@ class LeaderState extends ActiveState {
    * Log replicator.
    */
   private class Replicator {
-    private final Map<String, Replica> replicaMap;
     private final List<Replica> replicas;
-    private int quorum;
-    private int quorumIndex;
+    private final int quorum;
+    private final int quorumIndex;
+    private final List<Long> commitTimes;
+    private long commitTime;
+    private CompletableFuture<Void> commitFuture;
+    private CompletableFuture<Void> nextCommitFuture;
     private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
 
+    @SuppressWarnings("all")
     private Replicator() {
-      this.replicaMap = new HashMap<>(context.getActiveMembers().size());
-      this.replicas = new ArrayList<>(context.getActiveMembers().size());
-      for (String uri : context.getActiveMembers()) {
-        if (!uri.equals(context.getLocalMember())) {
-          Replica replica = new Replica(uri, context);
-          replicaMap.put(uri, replica);
-          replicas.add(replica);
+      replicas = new ArrayList<>(context.getActiveMembers().size() - 1);
+      commitTimes = new ArrayList<>(context.getActiveMembers().size() - 1);
+      int i = 0;
+      for (String member : context.getActiveMembers()) {
+        if (!member.equals(context.getLocalMember())) {
+          replicas.add(new Replica(i++, member));
+          commitTimes.add(System.currentTimeMillis());
         }
       }
 
@@ -281,299 +288,310 @@ class LeaderState extends ActiveState {
     }
 
     /**
-     * Registers a future to be completed on the next heartbeat.
+     * Triggers a commit.
+     *
+     * @return A completable future to be completed the next time entries are committed to a majority of the cluster.
      */
-    public CompletableFuture<Long> commit() {
-      context.checkThread();
-      if (replicas.isEmpty())
-        return CompletableFuture.completedFuture(context.getCommitIndex());
-
-      CompletableFuture<Long> future = new CompletableFuture<>();
-      Quorum quorum = new Quorum(this.quorum, succeeded -> {
-        if (succeeded) {
-          future.complete(context.getCommitIndex());
-        } else {
-          future.completeExceptionally(new IllegalStateException("Failed to heartbeat cluster"));
-        }
-      });
-
-      for (Replica replica : replicas) {
-        replica.commit().whenComplete((result, error) -> {
-          context.checkThread();
-          if (error == null) {
-            quorum.succeed();
-          } else {
-            quorum.fail();
-          }
-        });
-      }
-      return future;
-    }
-    
-    /**
-     * Commits the log up to the given index.
-     */
-    public CompletableFuture<Long> commit(Long index) {
-      context.checkThread();
-      if (replicas.isEmpty()) {
-        if (index != null) {
-          context.setCommitIndex(index);
-        }
-        return CompletableFuture.completedFuture(index);
-      }
-
-      CompletableFuture<Long> future = new CompletableFuture<>();
-      commitFutures.put(index, future);
-
-      // Iterate through replicas and commit all entries up to the given index.
-      for (Replica replica : replicaMap.values()) {
-        replica.commit(index).whenComplete((resultIndex, error) -> {
-          context.checkThread();
-          // Once the commit succeeds, check the commit index of all replicas.
-          if (error == null) {
-            checkCommits();
-          }
-        });
-      }
-      return future;
-    }
-
-    /**
-     * Determines which message have been committed.
-     */
-    private void checkCommits() {
-      context.checkThread();
-      if (!replicas.isEmpty() && quorumIndex >= 0) {
-        // Sort the list of replicas, order by the last index that was replicated
-        // to the replica. This will allow us to determine the median index
-        // for all known replicated entries across all cluster members.
-        Collections.sort(replicas, (o1, o2) -> Long.compare(o2.matchIndex != null ? o2.matchIndex : 0L, o1.matchIndex != null ? o1.matchIndex : 0L));
-
-        // Set the current commit index as the median replicated index.
-        // Since replicas is a list with zero based indexes, use the negation of
-        // the required quorum size to get the index of the replica with the least
-        // possible quorum replication. That replica's match index is the commit index.
-        // Set the commit index. Once the commit index has been set we can run
-        // all tasks up to the given commit.
-        Long commitIndex = replicas.get(quorumIndex).matchIndex;
-        if (commitIndex != null) {
-          context.setCommitIndex(commitIndex);
-          triggerFutures(commitIndex);
-        }
-      }
-    }
-
-    /**
-     * Triggers commit futures up to the given index.
-     */
-    private void triggerFutures(long index) {
-      Iterator<Map.Entry<Long, CompletableFuture<Long>>> iterator = commitFutures.entrySet().iterator();
-      while (iterator.hasNext()) {
-        Map.Entry<Long, CompletableFuture<Long>> entry = iterator.next();
-        if (entry.getKey() <= index) {
-          iterator.remove();
-          entry.getValue().complete(entry.getKey());
-        } else {
-          break;
-        }
-      }
-    }
-  }
-
-  /**
-   * Remote replica.
-   */
-  private class Replica {
-    private final String member;
-    private final CopycatStateContext context;
-    private Long nextIndex;
-    private Long matchIndex;
-    private CompletableFuture<Long> commitFuture;
-    private CompletableFuture<Long> nextCommitFuture;
-    private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
-    private boolean committing;
-
-    private Replica(String member, CopycatStateContext context) {
-      this.member = member;
-      this.context = context;
-      this.nextIndex = !context.log().isEmpty() ? context.log().lastIndex() + 1 : null;
-    }
-
-    /**
-     * Adds a commit handler for the next request.
-     */
-    public CompletableFuture<Long> commit() {
-      // If a commit is already in progress, queue the next commit future and return it.
-      if (committing) {
-        if (nextCommitFuture == null) {
-          nextCommitFuture = new CompletableFuture<>();
-        }
+    private CompletableFuture<Void> commit() {
+      if (commitFuture == null) {
+        commitFuture = new CompletableFuture<>();
+        commitTime = System.currentTimeMillis();
+        replicas.forEach(Replica::commit);
+        return commitFuture;
+      } else if (nextCommitFuture == null) {
+        nextCommitFuture = new CompletableFuture<>();
         return nextCommitFuture;
       } else {
-        // If no commit is currently in progress, set the current commit future and force the commit.
-        if (commitFuture == null) {
-          commitFuture = new CompletableFuture<>();
-        }
-        doCommit();
-        return commitFuture;
+        return nextCommitFuture;
       }
     }
 
     /**
-     * Commits the given index to the replica.
+     * Registers a commit handler for the given commit index.
+     *
+     * @param index The index for which to register the handler.
+     * @return A completable future to be completed once the given log index has been committed.
      */
-    public CompletableFuture<Long> commit(long index) {
-      if (matchIndex != null && index <= matchIndex) {
-        return CompletableFuture.completedFuture(index);
-      }
-
-      // If a future exists for an entry with a greater index then return that future.
-      Map.Entry<Long, CompletableFuture<Long>> entry = commitFutures.ceilingEntry(index);
-      if (entry != null) {
-        return entry.getValue();
-      }
-
-      CompletableFuture<Long> future = new CompletableFuture<>();
-      commitFutures.put(index, future);
-
-      doCommit();
-      return future;
+    private CompletableFuture<Long> commit(long index) {
+      return commitFutures.computeIfAbsent(index, i -> {
+        replicas.forEach(Replica::commit);
+        return new CompletableFuture<>();
+      });
     }
 
     /**
-     * Performs a commit operation.
+     * Sets a commit time.
      */
-    private void doCommit() {
-      if (!committing && (commitFuture != null || !context.log().isEmpty())) {
-        if (nextIndex == null) {
-          nextIndex = context.log().lastIndex();
+    private void commitTime(int id) {
+      commitTimes.set(id, System.currentTimeMillis());
+
+      // Sort the list of commit times. Use the quorum index to get the last time the majority of the cluster
+      // was contacted. If the current commitFuture's time is less than the commit time then trigger the
+      // commit future and reset it to the next commit future.
+      Collections.sort(commitTimes);
+      long commitTime = commitTimes.get(quorumIndex);
+      if (commitFuture != null && this.commitTime >= commitTime) {
+        commitFuture.complete(null);
+        commitFuture = nextCommitFuture;
+        nextCommitFuture = null;
+        if (this.commitFuture != null) {
+          this.commitTime = System.currentTimeMillis();
+          replicas.forEach(Replica::commit);
         }
+      }
+    }
 
-        Long prevIndex;
-        ByteBuffer prevEntry;
-        List<ByteBuffer> entries;
-        if (nextIndex == null) {
-          prevIndex = null;
-          prevEntry = null;
-          entries = new ArrayList<>(0);
-        } else {
-          prevIndex = nextIndex - 1 == 0 ? null : nextIndex - 1;
-          prevEntry = prevIndex != null ? context.log().getEntry(prevIndex) : null;
-          entries = new ArrayList<>((int) Math.min((context.log().lastIndex() - nextIndex + 1) * 128, MAX_BATCH_SIZE));
+    /**
+     * Checks whether any futures can be completed.
+     */
+    private void commitEntries() {
+      context.checkThread();
 
-          long index = nextIndex;
-          int size = 0;
-          while (size < MAX_BATCH_SIZE && index <= context.log().lastIndex()) {
-            ByteBuffer entry = context.log().getEntry(index);
-            size += entry.limit();
-            entries.add(entry);
-            index++;
+      // Sort the list of replicas, order by the last index that was replicated
+      // to the replica. This will allow us to determine the median index
+      // for all known replicated entries across all cluster members.
+      Collections.sort(replicas, (o1, o2) -> Long.compare(o2.matchIndex != null ? o2.matchIndex : 0L, o1.matchIndex != null ? o1.matchIndex : 0L));
+
+      // Set the current commit index as the median replicated index.
+      // Since replicas is a list with zero based indexes, use the negation of
+      // the required quorum size to get the index of the replica with the least
+      // possible quorum replication. That replica's match index is the commit index.
+      // Set the commit index. Once the commit index has been set we can run
+      // all tasks up to the given commit.
+      Long commitIndex = replicas.get(quorumIndex).matchIndex;
+      if (commitIndex != null) {
+        context.setCommitIndex(commitIndex);
+        SortedMap<Long, CompletableFuture<Long>> futures = commitFutures.headMap(commitIndex, true);
+        for (Map.Entry<Long, CompletableFuture<Long>> entry : futures.entrySet()) {
+          entry.getValue().complete(entry.getKey());
+        }
+        futures.clear();
+      }
+    }
+
+    /**
+     * Remote replica.
+     */
+    private class Replica {
+      private final List<ByteBuffer> EMPTY_LIST = new ArrayList<>(0);
+      private final int id;
+      private final String member;
+      private Long nextIndex;
+      private Long matchIndex;
+      private boolean committing;
+
+      private Replica(int id, String member) {
+        this.id = id;
+        this.member = member;
+      }
+
+      /**
+       * Triggers a commit for the replica.
+       */
+      private void commit() {
+        if (!committing && isOpen()) {
+          // If the log is empty then send an empty commit.
+          // If the next index hasn't yet been set then we send an empty commit first.
+          // If the next index is greater than the last index then send an empty commit.
+          if (context.log().isEmpty() || nextIndex == null || nextIndex > context.log().lastIndex()) {
+            emptyCommit();
+          } else {
+            entriesCommit();
           }
         }
-        committing = true;
-        doCommit(prevIndex, prevEntry, entries);
       }
-    }
 
-    /**
-     * Sends a append request.
-     */
-    private void doCommit(final Long prevIndex, final ByteBuffer prevEntry, final List<ByteBuffer> entries) {
-      AppendRequest request = AppendRequest.builder()
-        .withUri(member)
-        .withTerm(context.getTerm())
-        .withLeader(context.getLocalMember())
-        .withLogIndex(prevIndex)
-        .withLogTerm(prevEntry != null ? prevEntry.getLong() : null)
-        .withEntries(entries)
-        .withFirstIndex(prevIndex == null || context.log().firstIndex() == prevIndex + 1)
-        .withCommitIndex(context.getCommitIndex())
-        .build();
+      /**
+       * Gets the previous index.
+       */
+      private Long getPrevIndex() {
+        if (nextIndex == null) {
+          return context.log().isEmpty() ? null : context.log().lastIndex();
+        }
+        return nextIndex - 1 > 0 ? nextIndex - 1 : null;
+      }
 
-      LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
-      appendHandler.apply(request).whenCompleteAsync((response, error) -> {
-        context.checkThread();
-        committing = false;
-        if (isOpen()) {
-          if (error != null) {
-            triggerCommitFutures(prevIndex != null ? Long.valueOf(prevIndex + 1) : context.log().firstIndex(),
-              prevIndex != null ? Long.valueOf(prevIndex + entries.size()) : Long.valueOf(context.log().firstIndex() + entries.size() - 1), error);
-          } else {
-            LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
-            if (response.status().equals(Response.Status.OK)) {
-              if (response.succeeded()) {
-                // Update the next index to send and the last index known to be replicated.
-                if (!entries.isEmpty()) {
-                  matchIndex = matchIndex != null ? Long.valueOf(Math.max(matchIndex, prevIndex != null
-                    ? Long.valueOf(prevIndex + entries.size()) : Long.valueOf(context.log().firstIndex() + entries.size() - 1)))
-                    : prevIndex != null ? Long.valueOf(prevIndex + entries.size()) : Long.valueOf(context.log().firstIndex() + entries.size() - 1);
-                  nextIndex = matchIndex + 1;
-                  doCommit();
-                }
-                triggerCommitFutures(prevIndex != null ? Long.valueOf(prevIndex + 1) : context.log().firstIndex(), matchIndex);
-              } else {
-                if (response.term() > context.getTerm()) {
-                  triggerCommitFutures(prevIndex != null ? Long.valueOf(prevIndex + 1) : context.log().firstIndex(),
-                    prevIndex != null ? Long.valueOf(prevIndex + entries.size()) : Long.valueOf(context.log().firstIndex() + entries.size() - 1),
-                    new CopycatException("Not the leader"));
+      /**
+       * Gets the previous entry.
+       */
+      private ByteBuffer getPrevEntry(Long prevIndex) {
+        if (prevIndex != null && context.log().containsIndex(prevIndex)) {
+          return context.log().getEntry(prevIndex);
+        }
+        return null;
+      }
+
+      /**
+       * Gets a list of entries to send.
+       */
+      private List<ByteBuffer> getEntries(Long prevIndex) {
+        long index;
+        if (context.log().isEmpty()) {
+          return EMPTY_LIST;
+        } else if (prevIndex != null) {
+          index = prevIndex + 1;
+        } else {
+          index = context.log().firstIndex();
+        }
+
+        List<ByteBuffer> entries = new ArrayList<>(1024);
+        int size = 0;
+        while (size < MAX_BATCH_SIZE && index <= context.log().lastIndex()) {
+          ByteBuffer entry = context.log().getEntry(index);
+          size += entry.limit();
+          entries.add(entry);
+          index++;
+        }
+        return entries;
+      }
+
+      /**
+       * Performs an empty commit.
+       */
+      private void emptyCommit() {
+        Long prevIndex = getPrevIndex();
+        ByteBuffer prevEntry = getPrevEntry(prevIndex);
+        commit(prevIndex, prevEntry, EMPTY_LIST);
+      }
+
+      /**
+       * Performs a commit with entries.
+       */
+      private void entriesCommit() {
+        Long prevIndex = getPrevIndex();
+        ByteBuffer prevEntry = getPrevEntry(prevIndex);
+        List<ByteBuffer> entries = getEntries(prevIndex);
+        commit(prevIndex, prevEntry, entries);
+      }
+
+      /**
+       * Sends a commit message.
+       */
+      private void commit(Long prevIndex, ByteBuffer prevEntry, List<ByteBuffer> entries) {
+        AppendRequest request = AppendRequest.builder()
+          .withUri(member)
+          .withTerm(context.getTerm())
+          .withLeader(context.getLocalMember())
+          .withLogIndex(prevIndex)
+          .withLogTerm(prevEntry != null ? prevEntry.getLong() : null)
+          .withEntries(entries)
+          .withFirstIndex(prevIndex == null || context.log().firstIndex() == prevIndex + 1)
+          .withCommitIndex(context.getCommitIndex())
+          .build();
+
+        committing = true;
+        LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
+        appendHandler.apply(request).whenCompleteAsync((response, error) -> {
+          committing = false;
+          context.checkThread();
+
+          if (isOpen()) {
+            if (error == null) {
+              LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
+              if (response.status() == Response.Status.OK) {
+                // Update the commit time for the replica. This will cause heartbeat futures to be triggered.
+                commitTime(id);
+
+                // If replication succeeded then trigger commit futures.
+                if (response.succeeded()) {
+                  updateMatchIndex(response);
+                  updateNextIndex();
+
+                  // If entries were committed to the replica then check commit indexes.
+                  if (!entries.isEmpty()) {
+                    commitEntries();
+                  }
+
+                  // If there are more entries to send then attempt to send another commit.
+                  if (hasMoreEntries()) {
+                    commit();
+                  }
+                } else if (response.term() > context.getTerm()) {
                   transition(CopycatState.FOLLOWER);
                 } else {
-                  // If replication failed then use the last log index indicated by
-                  // the replica in the response to generate a new nextIndex. This allows
-                  // us to skip repeatedly replicating one entry at a time if it's not
-                  // necessary.
-                  nextIndex = response.logIndex() != null ? Long.valueOf(response.logIndex() + 1)
-                    : prevIndex != null ? prevIndex : context.log().firstIndex();
-                  doCommit();
+                  resetMatchIndex(response);
+                  resetNextIndex();
+
+                  // If there are more entries to send then attempt to send another commit.
+                  if (hasMoreEntries()) {
+                    commit();
+                  }
                 }
+              } else if (response.term() > context.getTerm()) {
+                LOGGER.debug("{} - Received higher term from {}", context.getLocalMember(), member);
+                transition(CopycatState.FOLLOWER);
+              } else {
+                LOGGER.warn("{} - {}", context.getLocalMember(), response.error() != null ? response.error().getMessage() : "");
               }
             } else {
-              triggerCommitFutures(prevIndex != null ? Long.valueOf(prevIndex + 1) : context.log().firstIndex(),
-                prevIndex != null ? Long.valueOf(prevIndex + entries.size()) : Long.valueOf(context.log().firstIndex() + entries.size() - 1),
-                response.error());
-              doCommit();
+              LOGGER.warn("{} - {}", context.getLocalMember(), error.getMessage());
             }
           }
-        }
-      }, context.executor());
-    }
-
-    /**
-     * Triggers replicate futures with an error result.
-     */
-    private void triggerCommitFutures(Long startIndex, Long endIndex, Throwable t) {
-      if (commitFuture != null) {
-        commitFuture.completeExceptionally(t);
+        }, context.executor());
       }
-      commitFuture = nextCommitFuture != null ? nextCommitFuture : commitFuture;
-      nextCommitFuture = null;
-      if (startIndex != null && endIndex != null && endIndex >= startIndex) {
-        for (long i = startIndex; i <= endIndex; i++) {
-          CompletableFuture<Long> future = commitFutures.remove(i);
-          if (future != null) {
-            future.completeExceptionally(t);
+
+      /**
+       * Returns a boolean value indicating whether there are more entries to send.
+       */
+      private boolean hasMoreEntries() {
+        return nextIndex != null && !context.log().isEmpty() && nextIndex < context.log().lastIndex();
+      }
+
+      /**
+       * Updates the match index when a response is received.
+       */
+      private void updateMatchIndex(AppendResponse response) {
+        // If the replica returned a valid match index then update the existing match index. Because the
+        // replicator pipelines replication, we perform a MAX(matchIndex, logIndex) to get the true match index.
+        if (response.logIndex() != null) {
+          if (matchIndex != null) {
+            matchIndex = Math.max(matchIndex, response.logIndex());
+          } else {
+            matchIndex = response.logIndex();
           }
         }
       }
-    }
 
-    /**
-     * Triggers replicate futures with a completion result
-     */
-    private void triggerCommitFutures(Long startIndex, Long endIndex) {
-      if (commitFuture != null) {
-        commitFuture.complete(endIndex);
-      }
-      commitFuture = nextCommitFuture != null ? nextCommitFuture : commitFuture;
-      nextCommitFuture = null;
-      if (startIndex != null && endIndex != null && endIndex >= startIndex) {
-        for (long i = startIndex; i <= endIndex; i++) {
-          CompletableFuture<Long> future = commitFutures.remove(i);
-          if (future != null) {
-            future.complete(i);
+      /**
+       * Updates the next index when the match index is updated.
+       */
+      private void updateNextIndex() {
+        // If the match index was set, update the next index to be greater than the match index if necessary.
+        // Note that because of pipelining append requests, the next index can potentially be much larger than
+        // the match index. We rely on the algorithm to reject invalid append requests.
+        if (matchIndex != null) {
+          if (nextIndex != null) {
+            nextIndex = Math.max(nextIndex, matchIndex + 1);
+          } else {
+            nextIndex = matchIndex + 1;
           }
         }
       }
+
+      /**
+       * Resets the match index when a response fails.
+       */
+      private void resetMatchIndex(AppendResponse response) {
+        if (matchIndex == null) {
+          matchIndex = response.logIndex();
+        } else if (response.logIndex() != null) {
+          matchIndex = Math.max(matchIndex, response.logIndex());
+        }
+        LOGGER.debug("{} - Reset match index for {} to {}", context.getLocalMember(), member, matchIndex);
+      }
+
+      /**
+       * Resets the next index when a response fails.
+       */
+      private void resetNextIndex() {
+        if (matchIndex != null) {
+          nextIndex = matchIndex + 1;
+        } else {
+          nextIndex = context.log().firstIndex();
+        }
+        LOGGER.debug("{} - Reset next index for {} to {}", context.getLocalMember(), member, nextIndex);
+      }
+
     }
   }
 

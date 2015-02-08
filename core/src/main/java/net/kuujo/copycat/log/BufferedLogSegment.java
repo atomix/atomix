@@ -154,4 +154,10 @@ public class BufferedLogSegment extends AbstractLogSegment {
       log = null;
     }
   }
+
+  @Override
+  public String toString() {
+    return String.format("%s[firstIndex=%s, lastIndex=%s]", getClass().getSimpleName(), log != null && !log.isEmpty() ? log.firstKey() : null, log != null && !log.isEmpty() ? log.lastKey() : null);
+  }
+
 }

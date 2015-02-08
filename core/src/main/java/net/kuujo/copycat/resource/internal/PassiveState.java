@@ -214,11 +214,11 @@ public class PassiveState extends AbstractState {
           context.setCommitIndex(index);
 
           // Extract a view of the entry after the entry term.
-          entry.position(8);
+          long term = entry.getLong();
           ByteBuffer userEntry = entry.slice();
 
           try {
-            context.consumer().apply(index, userEntry);
+            context.consumer().apply(term, index, userEntry);
           } catch (Exception e) {
           }
 
@@ -258,7 +258,7 @@ public class PassiveState extends AbstractState {
     if (request.consistency() == Consistency.WEAK) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
         .withUri(context.getLocalMember())
-        .withResult(context.consumer().apply(null, request.entry()))
+        .withResult(context.consumer().apply(context.getTerm(), null, request.entry()))
         .build()));
     } else if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()

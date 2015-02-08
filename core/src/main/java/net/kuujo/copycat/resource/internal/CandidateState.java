@@ -107,7 +107,7 @@ class CandidateState extends ActiveState {
 
     // First, load the last log entry to get its term. We load the entry
     // by its index since the index is required by the protocol.
-    final Long lastIndex = context.log().lastIndex();
+    Long lastIndex = context.log().lastIndex();
     ByteBuffer lastEntry = lastIndex != null ? context.log().getEntry(lastIndex) : null;
 
     // Once we got the last log term, iterate through each current member

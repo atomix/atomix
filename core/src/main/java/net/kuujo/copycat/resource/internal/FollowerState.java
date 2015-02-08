@@ -88,7 +88,9 @@ class FollowerState extends ActiveState {
   @Override
   public CompletableFuture<AppendResponse> append(AppendRequest request) {
     resetHeartbeatTimeout();
-    return super.append(request);
+    CompletableFuture<AppendResponse> response = super.append(request);
+    resetHeartbeatTimeout();
+    return response;
   }
 
   @Override

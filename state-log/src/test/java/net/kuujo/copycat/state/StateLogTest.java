@@ -23,6 +23,7 @@ import net.kuujo.copycat.protocol.LocalProtocol;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * State log test.
@@ -33,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 public class StateLogTest extends ConcurrentTestCase {
 
   /**
-   * Test test.
+   * Tests querying with strong consistency.
    */
   @SuppressWarnings("unchecked")
   public void testQueryWithStrongConsistency() throws Throwable {
@@ -58,6 +59,68 @@ public class StateLogTest extends ConcurrentTestCase {
       threadAssertEquals(result, "Hello world!");
       resume();
     });
+    await(5000);
+  }
+
+  /**
+   * Tests snapshot replication.
+   */
+  @SuppressWarnings("unchecked")
+  public void testSnapshotReplication() throws Throwable {
+    ClusterConfig cluster = new ClusterConfig()
+      .withProtocol(new LocalProtocol())
+      .withMembers("local://foo", "local://bar", "local://baz");
+    StateLog<String> log1 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://foo"), new StateLogConfig()
+      .withLog(new BufferedLog().withSegmentSize(1024))
+      .withDefaultConsistency(Consistency.STRONG))
+      .registerCommand("command", v -> v)
+      .registerQuery("query", v -> v)
+      .snapshotWith(() -> "Snapshot data")
+      .installWith(s -> {
+        threadAssertEquals(s, "Snapshot data");
+        resume();
+      });
+    StateLog<String> log2 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://bar"), new StateLogConfig()
+      .withLog(new BufferedLog().withSegmentSize(1024))
+      .withDefaultConsistency(Consistency.STRONG))
+      .registerCommand("command", v -> v)
+      .registerQuery("query", v -> v)
+      .snapshotWith(() -> "Snapshot data")
+      .installWith(s -> {
+        threadAssertEquals(s, "Snapshot data");
+        resume();
+      });
+    StateLog<String> log3 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://baz"), new StateLogConfig()
+      .withLog(new BufferedLog().withSegmentSize(1024))
+      .withDefaultConsistency(Consistency.STRONG))
+      .registerCommand("command", v -> v)
+      .registerQuery("query", v -> v)
+      .snapshotWith(() -> "Snapshot data")
+      .installWith(s -> {
+        threadAssertEquals(s, "Snapshot data");
+        resume();
+      });
+
+    CompletableFuture<StateLog<String>>[] futures = new CompletableFuture[2];
+    futures[0] = log1.open();
+    futures[1] = log2.open();
+
+    expectResume();
+    CompletableFuture.allOf(futures).thenRun(this::resume);
+    await(5000);
+
+    // Append enough entries to force the log to roll over to a new segment.
+    String entry = "Hello world!";
+    expectResumes((int) Math.ceil(1025 / (double) entry.getBytes().length));
+    for (int i = 0; i < 1025; i += entry.getBytes().length) {
+      log1.submit("command", entry).thenRun(this::resume);
+    }
+    await(5000);
+
+    // Once the log has been rolled over, start a new log and await the snapshot replication.
+    // This should cause two resumes. One when the log is opened and one when the snapshot is installed.
+    expectResumes(2);
+    log3.open().thenRun(this::resume);
     await(5000);
   }
 

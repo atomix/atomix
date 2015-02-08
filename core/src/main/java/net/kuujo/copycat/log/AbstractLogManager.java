@@ -65,15 +65,6 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   protected abstract LogSegment createSegment(long segmentId, long firstIndex);
 
   /**
-   * Deletes a log segment.
-   *
-   * @param firstIndex The first index of the segment to delete
-   */
-  protected void deleteSegment(long firstIndex) {
-    segments.remove(firstIndex);
-  }
-
-  /**
    * Returns a collection of log segments.
    */
   @Override
@@ -129,7 +120,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
     // Load existing log segments from disk.
     for (LogSegment segment : loadSegments()) {
       segment.open();
-      segments.put(segment.firstIndex(), segment);
+      segments.put(segment.index(), segment);
     }
 
     // If a segment doesn't already exist, create an initial segment starting at index 1.
@@ -153,8 +144,8 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
     Long lastIndex = null;
     Long compactIndex = null;
     for (LogSegment segment : segments.values()) {
-      if (lastIndex == null || segment.firstIndex() > lastIndex + 1) {
-        compactIndex = segment.firstIndex();
+      if (segment.index() != segments.lastKey() && (lastIndex == null || segment.index() > lastIndex + 1)) {
+        compactIndex = segment.index();
       }
       lastIndex = segment.lastIndex();
     }
@@ -193,6 +184,13 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
     assertIsOpen();
     checkRollOver();
     return currentSegment.appendEntry(entry);
+  }
+
+  @Override
+  public long index() {
+    assertIsOpen();
+    LogSegment firstSegment = firstSegment();
+    return firstSegment == null ? 1 : firstSegment.index();
   }
 
   @Override
@@ -238,7 +236,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
     Collection<LogSegment> removalSegments = segments.tailMap(segmentIndex).values();
     for (Iterator<LogSegment> i = removalSegments.iterator(); i.hasNext();) {
       LogSegment segment = i.next();
-      if (index < segment.firstIndex()) {
+      if (index < segment.index()) {
         segment.delete();
         i.remove();
         nextSegmentId--;
@@ -263,7 +261,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   public void rollOver(long index) throws IOException {
     // If the current segment is empty then just remove it.
     if (currentSegment.isEmpty()) {
-      segments.remove(currentSegment.firstIndex());
+      segments.remove(currentSegment.index());
       currentSegment.close();
       currentSegment.delete();
       currentSegment = null;
@@ -285,26 +283,19 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
 
   @Override
   public void compact(long index) throws IOException {
-    Assert.index(index, index >= firstIndex() && index <= lastIndex(), "%s is invalid for the log", index);
+    Assert.index(index, index >= index() && (lastIndex() == null || index <= lastIndex()), "%s is invalid for the log", index);
     Assert.arg(index, segments.containsKey(index), "%s must be the first index of a segment", index);
-    Assert.arg(index, index != lastSegment().firstIndex(), "%s the last segment cannot be compacted", index);
     
     // Iterate through all segments in the log. If a segment's first index matches the given index or its last index
     // is less than the given index then remove/close/delete the segment.
+    LOGGER.debug("Compacting log at index {}", index);
     for (Iterator<Map.Entry<Long, LogSegment>> iterator = segments.entrySet().iterator(); iterator.hasNext();) {
       Map.Entry<Long, LogSegment> entry = iterator.next();
       LogSegment segment = entry.getValue();
-      boolean matchesSegment = index == segment.firstIndex();
-      if (matchesSegment || (segment.lastIndex() != null && index > segment.lastIndex())) {
+      if (index > segment.index()) {
         iterator.remove();
-        try {
-          segment.close();
-          segment.delete();
-        } catch (IOException e) {
-        }
-        
-        if (matchesSegment)
-          break;
+        segment.close();
+        segment.delete();
       }
     }
   }

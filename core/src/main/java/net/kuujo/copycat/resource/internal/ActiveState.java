@@ -94,7 +94,7 @@ abstract class ActiveState extends PassiveState {
    */
   private AppendResponse doCheckPreviousEntry(AppendRequest request) {
     if (request.logIndex() != null && context.log().lastIndex() == null) {
-      LOGGER.warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
+      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return AppendResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
@@ -102,7 +102,7 @@ abstract class ActiveState extends PassiveState {
         .withLogIndex(context.log().lastIndex())
         .build();
     } else if (request.logIndex() != null && context.log().lastIndex() != null && request.logIndex() > context.log().lastIndex()) {
-      LOGGER.warn("{} - Rejected {}: previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
+      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getLocalMember(), request, request.logIndex(), context.log().lastIndex());
       return AppendResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
@@ -111,23 +111,21 @@ abstract class ActiveState extends PassiveState {
         .build();
     }
 
-    // If the log entry exists then load the entry.
-    // If the last log entry's term is not the same as the given
-    // prevLogTerm then return false. This will cause the leader to
-    // decrement this node's nextIndex and ultimately retry with the
-    // leader's previous log entry so that the inconsistent entry
-    // can be overwritten.
-    ByteBuffer entry = context.log().getEntry(request.logIndex());
-    if (entry == null) {
-      LOGGER.warn("{} - Rejected {}: request entry not found in local log", context.getLocalMember(), request);
+    // If the previous log entry is not in the log then reject the request.
+    if (!context.log().containsIndex(request.logIndex())) {
+      LOGGER.warn("{} - Rejected {}: Request entry not found in local log", context.getLocalMember(), request);
       return AppendResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
         .build();
-    } else if (entry.getLong() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: request entry term does not match local log", context.getLocalMember(), request);
+    }
+
+    // If the previous entry term doesn't match the local previous term then reject the request.
+    ByteBuffer entry = context.log().getEntry(request.logIndex());
+    if (entry.getLong() != request.logTerm()) {
+      LOGGER.warn("{} - Rejected {}: Request entry term does not match local log", context.getLocalMember(), request);
       return AppendResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
@@ -150,7 +148,7 @@ abstract class ActiveState extends PassiveState {
 
       // If the request contains the first entries in the log, check whether the local log needs to be rolled over.
       Long rollOverIndex = null;
-      if (request.firstIndex() && context.log().segment().firstIndex() != null && context.log().segment().firstIndex() != index + 1) {
+      if (request.firstIndex() && (context.log().segment().firstIndex() == null || context.log().segment().firstIndex() != index + 1)) {
         rollOverIndex = index + 1;
         try {
           context.log().rollOver(rollOverIndex);
@@ -254,7 +252,8 @@ abstract class ActiveState extends PassiveState {
     // due to asynchronous communication errors, so alternatively check if the
     // local commit index is greater than last applied. If all the state machine
     // commands have not yet been applied then we want to re-attempt to apply them.
-    if (commitIndex != null) {
+    if (commitIndex != null && !context.log().isEmpty()) {
+      LOGGER.debug("{} - Applying {} commits", context.getLocalMember(), context.getLastApplied() != null ? commitIndex - Math.max(context.getLastApplied(), context.log().firstIndex()) : commitIndex);
       if (context.getCommitIndex() == null || commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
         // Update the local commit index with min(request commit, last log // index)
         Long lastIndex = context.log().lastIndex();
@@ -283,17 +282,12 @@ abstract class ActiveState extends PassiveState {
     if ((context.getLastApplied() == null && index == context.log().firstIndex()) || (context.getLastApplied() != null && context.getLastApplied() == index - 1)) {
       ByteBuffer entry = context.log().getEntry(index);
 
-      // Ensure that the entry exists.
-      if (entry == null) {
-        throw new IllegalStateException("null entry cannot be applied to state machine");
-      }
-
       // Extract a view of the entry after the entry term.
-      entry.position(8);
+      long term = entry.getLong();
       ByteBuffer userEntry = entry.slice();
 
       try {
-        context.consumer().apply(index, userEntry);
+        context.consumer().apply(term, index, userEntry);
       } catch (Exception e) {
       } finally {
         context.setLastApplied(index);
