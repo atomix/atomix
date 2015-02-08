@@ -312,8 +312,7 @@ public class RequestResponseTest {
   /**
    * Tests that the append request builder fails with a valid log index and null log term.
    */
-  @Test(expectedExceptions = IllegalArgumentException.class)
-  public void testAppendRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
+  public void testAppendRequestBuilderSucceedsWithValidLogIndexAndNullLogTerm() {
     AppendRequest.builder()
       .withUri("foo")
       .withLeader("bar")
@@ -321,22 +320,6 @@ public class RequestResponseTest {
       .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
       .withLogIndex(5L)
       .withLogTerm(null)
-      .withCommitIndex(4L)
-      .build();
-  }
-
-  /**
-   * Tests that the append request builder fails with a null log index and valid log term.
-   */
-  @Test(expectedExceptions = IllegalArgumentException.class)
-  public void testAppendRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
-    AppendRequest.builder()
-      .withUri("foo")
-      .withLeader("bar")
-      .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
-      .withLogIndex(null)
-      .withLogTerm(1L)
       .withCommitIndex(4L)
       .build();
   }
