@@ -39,8 +39,8 @@ public class ClusterConfigTest {
    */
   public void testClusterDefaults() throws Throwable {
     ClusterConfig cluster = new ClusterConfig();
-    assertEquals(300, cluster.getElectionTimeout());
-    assertEquals(150, cluster.getHeartbeatInterval());
+    assertEquals(cluster.getElectionTimeout(), 500);
+    assertEquals(cluster.getHeartbeatInterval(), 150);
     assertTrue(cluster.getMembers().isEmpty());
     assertTrue(cluster.getProtocol() instanceof LocalProtocol);
     cluster.addMember("local://foo");
