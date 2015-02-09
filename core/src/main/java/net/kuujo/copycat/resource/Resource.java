@@ -36,6 +36,17 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
   String name();
 
   /**
+   * Returns the current resource state.<p>
+   *
+   * All resources begin in the {@link ResourceState#RECOVER} state. Once the Raft algorithm has caught up to the
+   * leader's commit index at the time the resource was opened the resource will transition to the
+   * {@link ResourceState#HEALTHY} state.
+   *
+   * @return The current resource state.
+   */
+  ResourceState state();
+
+  /**
    * Returns the resource cluster.
    *
    * @return The resource cluster.

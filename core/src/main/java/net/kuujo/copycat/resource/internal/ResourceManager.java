@@ -24,6 +24,7 @@ import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.protocol.CommitRequest;
 import net.kuujo.copycat.raft.protocol.QueryRequest;
 import net.kuujo.copycat.raft.protocol.Response;
+import net.kuujo.copycat.resource.ResourceState;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.function.TriFunction;
@@ -72,6 +73,15 @@ public class ResourceManager implements Managed<ResourceManager> {
    */
   public CoordinatedResourceConfig config() {
     return config;
+  }
+
+  /**
+   * Returns the resource state.
+   *
+   * @return The resource state.
+   */
+  public ResourceState state() {
+    return context.isRecovering() ? ResourceState.RECOVER : ResourceState.HEALTHY;
   }
 
   /**

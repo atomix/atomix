@@ -18,6 +18,7 @@ package net.kuujo.copycat.test;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.resource.ResourceState;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.resource.internal.ResourceManager;
 
@@ -33,6 +34,11 @@ public class TestResource extends AbstractResource<TestResource> {
 
   public TestResource(ResourceManager context) {
     super(context);
+  }
+
+  @Override
+  public ResourceState state() {
+    return ResourceState.HEALTHY;
   }
 
   @Override

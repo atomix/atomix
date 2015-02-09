@@ -18,6 +18,7 @@ package net.kuujo.copycat.resource.internal;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.resource.ResourceState;
 import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -50,6 +51,11 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   @Override
   public String name() {
     return context.name();
+  }
+
+  @Override
+  public ResourceState state() {
+    return context.state();
   }
 
   @Override
