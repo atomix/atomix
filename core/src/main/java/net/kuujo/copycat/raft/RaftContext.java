@@ -17,7 +17,6 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.raft.election.Election;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -59,7 +58,6 @@ public class RaftContext extends Observable implements RaftProtocol {
   private Set<String> members;
   private final ReplicaInfo localMemberInfo;
   private final Map<String, ReplicaInfo> memberInfo = new HashMap<>();
-  private Election.Status status;
   private String leader;
   private long term;
   private long version;
@@ -233,15 +231,6 @@ public class RaftContext extends Observable implements RaftProtocol {
   }
 
   /**
-   * Returns the current Copycat election status.
-   *
-   * @return The current Copycat election status.
-   */
-  public Election.Status getElectionStatus() {
-    return status;
-  }
-
-  /**
    * Sets the state leader.
    *
    * @param leader The state leader.
@@ -252,7 +241,6 @@ public class RaftContext extends Observable implements RaftProtocol {
       if (leader != null) {
         this.leader = leader;
         this.lastVotedFor = null;
-        this.status = Election.Status.COMPLETE;
         LOGGER.debug("{} - Found leader {}", localMember, leader);
         if (openFuture != null) {
           openFuture.complete(null);
@@ -264,13 +252,11 @@ public class RaftContext extends Observable implements RaftProtocol {
       if (!this.leader.equals(leader)) {
         this.leader = leader;
         this.lastVotedFor = null;
-        this.status = Election.Status.COMPLETE;
         LOGGER.debug("{} - Found leader {}", localMember, leader);
         triggerChangeEvent();
       }
     } else {
       this.leader = null;
-      this.status = Election.Status.IN_PROGRESS;
       triggerChangeEvent();
     }
     return this;
@@ -295,7 +281,6 @@ public class RaftContext extends Observable implements RaftProtocol {
     if (term > this.term) {
       this.term = term;
       this.leader = null;
-      this.status = Election.Status.IN_PROGRESS;
       this.lastVotedFor = null;
       LOGGER.debug("{} - Incremented term {}", localMember, term);
       triggerChangeEvent();
@@ -348,7 +333,6 @@ public class RaftContext extends Observable implements RaftProtocol {
       throw new IllegalStateException("Cannot cast vote - leader already exists");
     }
     this.lastVotedFor = candidate;
-    this.status = Election.Status.IN_PROGRESS;
     if (candidate != null) {
       LOGGER.debug("{} - Voted for {}", localMember, candidate);
     } else {

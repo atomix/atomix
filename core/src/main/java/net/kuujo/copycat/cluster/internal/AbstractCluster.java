@@ -22,8 +22,6 @@ import net.kuujo.copycat.cluster.internal.coordinator.MemberCoordinator;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.cluster.internal.manager.LocalMemberManager;
 import net.kuujo.copycat.cluster.internal.manager.MemberManager;
-import net.kuujo.copycat.raft.election.Election;
-import net.kuujo.copycat.raft.election.ElectionEvent;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
@@ -39,7 +37,7 @@ import java.util.stream.Stream;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractCluster implements ClusterManager {
+public abstract class AbstractCluster implements ClusterManager, Observer {
   private static final String GOSSIP_TOPIC = "*";
   private static final long MEMBER_INFO_EXPIRE_TIME = 1000 * 60;
 
@@ -53,7 +51,6 @@ public abstract class AbstractCluster implements ClusterManager {
   private CoordinatedLocalMember localMember;
   private final CoordinatedMembers members;
   private final Map<String, MemberInfo> membersInfo = new HashMap<>();
-  private final CoordinatedClusterElection election;
   private final Router router;
   private final RaftContext context;
   private final Set<EventListener<MembershipEvent>> membershipListeners = new CopyOnWriteArraySet<>();
@@ -61,6 +58,8 @@ public abstract class AbstractCluster implements ClusterManager {
   private final Map<String, MessageHandler> broadcastHandlers = new ConcurrentHashMap<>();
   @SuppressWarnings("rawtypes")
   private final Map<String, Set<EventListener>> broadcastListeners = new ConcurrentHashMap<>();
+  private final Set<EventListener<ElectionEvent>> electionListeners = new CopyOnWriteArraySet<>();
+  private String electedLeader;
   private ScheduledFuture<?> gossipTimer;
   private final Random random = new Random();
 
@@ -91,13 +90,27 @@ public abstract class AbstractCluster implements ClusterManager {
       }
     }
     this.members = new CoordinatedMembers(members, this);
-    this.election = new CoordinatedClusterElection(this, context);
     this.router = router;
     this.context = context;
     try {
       executor.submit(() -> this.thread = Thread.currentThread()).get();
     } catch (InterruptedException | ExecutionException e) {
       throw new ClusterException(e);
+    }
+  }
+
+  @Override
+  public synchronized void update(Observable o, Object arg) {
+    RaftContext context = (RaftContext) o;
+    if (context.getLeader() != null && (electedLeader == null || !electedLeader.equals(context.getLeader()))) {
+      electedLeader = context.getLeader();
+      Member member = member(context.getLeader());
+      if (member != null) {
+        ElectionEvent event = new ElectionEvent(ElectionEvent.Type.COMPLETE, context.getTerm(), member);
+        for (EventListener<ElectionEvent> listener : electionListeners) {
+          listener.accept(event);
+        }
+      }
     }
   }
 
@@ -271,11 +284,6 @@ public abstract class AbstractCluster implements ClusterManager {
   }
 
   @Override
-  public Election election() {
-    return election;
-  }
-
-  @Override
   public MemberManager member(String uri) {
     return members.members.get(uri);
   }
@@ -337,13 +345,13 @@ public abstract class AbstractCluster implements ClusterManager {
 
   @Override
   public Cluster addElectionListener(EventListener<ElectionEvent> listener) {
-    election.addListener(listener);
+    electionListeners.add(listener);
     return this;
   }
 
   @Override
   public Cluster removeElectionListener(EventListener<ElectionEvent> listener) {
-    election.removeListener(listener);
+    electionListeners.remove(listener);
     return this;
   }
 
@@ -351,7 +359,7 @@ public abstract class AbstractCluster implements ClusterManager {
   public synchronized CompletableFuture<ClusterManager> open() {
     return CompletableFuture.runAsync(() -> {
       router.createRoutes(this, context);
-      election.open();
+      context.addObserver(this);
     }, executor)
       .thenCompose(v -> localMember.open())
       .thenRun(() -> localMember.registerHandler(GOSSIP_TOPIC, id, this::handleJoin, internalSerializer, executor))
@@ -369,7 +377,7 @@ public abstract class AbstractCluster implements ClusterManager {
   public synchronized CompletableFuture<Void> close() {
     localMember.close();
     router.destroyRoutes(this, context);
-    election.close();
+    context.deleteObserver(this);
     localMember.unregisterHandler(GOSSIP_TOPIC, id);
     if (gossipTimer != null) {
       gossipTimer.cancel(false);

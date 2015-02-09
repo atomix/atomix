@@ -15,8 +15,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.raft.election.Election;
-import net.kuujo.copycat.raft.election.ElectionEvent;
 
 /**
  * Resource cluster.<p>
@@ -88,13 +86,6 @@ public interface Cluster {
    * @return The cluster term.
    */
   long term();
-
-  /**
-   * Returns the cluster election.
-   *
-   * @return The cluster election.
-   */
-  Election election();
 
   /**
    * Returns the local cluster member.<p>
@@ -192,7 +183,7 @@ public interface Cluster {
   /**
    * Adds an election listener to the cluster.<p>
    *
-   * The election listener will receive an {@link net.kuujo.copycat.raft.election.ElectionEvent} the first time any member
+   * The election listener will receive an {@link ElectionEvent} the first time any member
    * becomes the cluster leader for a given term. Copycat guarantees that for each election term only one member will
    * ever be elected. If a new member is elected, the term will have increased.
    *

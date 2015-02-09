@@ -16,11 +16,11 @@
 package net.kuujo.copycat.election.internal;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.resource.internal.ResourceManager;
+import net.kuujo.copycat.cluster.ElectionEvent;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.raft.election.ElectionEvent;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -43,7 +43,7 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
     if (!listeners.containsKey(listener)) {
       EventListener<ElectionEvent> wrapper = event -> listener.accept(event.winner());
       listeners.put(listener, wrapper);
-      context.cluster().election().addListener(wrapper);
+      context.cluster().addElectionListener(wrapper);
     }
     return this;
   }
@@ -52,7 +52,7 @@ public class DefaultLeaderElection extends AbstractResource<LeaderElection> impl
   public synchronized LeaderElection removeListener(EventListener<Member> listener) {
     EventListener<ElectionEvent> wrapper = listeners.remove(listener);
     if (wrapper != null) {
-      context.cluster().election().removeListener(wrapper);
+      context.cluster().removeElectionListener(wrapper);
     }
     return this;
   }

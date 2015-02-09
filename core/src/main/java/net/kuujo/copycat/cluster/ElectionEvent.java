@@ -13,9 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.raft.election;
+package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.Event;
 
 import java.util.Objects;
@@ -26,7 +25,7 @@ import java.util.UUID;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ElectionEvent implements ElectionResult, Event<ElectionEvent.Type> {
+public class ElectionEvent implements Event<ElectionEvent.Type> {
 
   /**
    * Election event type.
@@ -56,12 +55,20 @@ public class ElectionEvent implements ElectionResult, Event<ElectionEvent.Type> 
     return type;
   }
 
-  @Override
+  /**
+   * Returns the election term.
+   *
+   * @return The election term.
+   */
   public long term() {
     return term;
   }
 
-  @Override
+  /**
+   * Returns the winner of the election.
+   *
+   * @return The election winner.
+   */
   public Member winner() {
     return winner;
   }
