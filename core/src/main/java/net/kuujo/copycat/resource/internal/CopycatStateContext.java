@@ -49,6 +49,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
+  private MessageHandler<VoteRequest, VoteResponse> voteHandler;
   private MessageHandler<AppendRequest, AppendResponse> appendHandler;
   private MessageHandler<QueryRequest, QueryResponse> queryHandler;
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
@@ -496,14 +497,25 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
-  public CopycatStateContext pollHandler(MessageHandler<PollRequest, PollResponse> handler) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
+    return wrapCall(request, state::poll);
+  }
+
+  @Override
+  public RaftProtocol pollHandler(MessageHandler<PollRequest, PollResponse> handler) {
     this.pollHandler = handler;
     return this;
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(PollRequest request) {
-    return wrapCall(request, state::poll);
+  public CopycatStateContext voteHandler(MessageHandler<VoteRequest, VoteResponse> handler) {
+    this.voteHandler = handler;
+    return this;
+  }
+
+  @Override
+  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
+    return wrapCall(request, state::vote);
   }
 
   @Override
@@ -647,6 +659,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
     state.syncHandler(syncHandler);
     state.appendHandler(appendHandler);
     state.pollHandler(pollHandler);
+    state.voteHandler(voteHandler);
     state.queryHandler(queryHandler);
     state.commitHandler(commitHandler);
     state.transitionHandler(this::transition);

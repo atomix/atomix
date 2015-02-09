@@ -60,6 +60,22 @@ public interface RaftProtocol extends Managed<Void> {
   RaftProtocol pollHandler(MessageHandler<PollRequest, PollResponse> handler);
 
   /**
+   * Sends a protocol vote request.
+   *
+   * @param request The protocol vote request.
+   * @return A completable future to be completed with the vote response.
+   */
+  CompletableFuture<VoteResponse> vote(VoteRequest request);
+
+  /**
+   * Registers a protocol vote request handler.
+   *
+   * @param handler A protocol vote request handler.
+   * @return The Raft protocol.
+   */
+  RaftProtocol voteHandler(MessageHandler<VoteRequest, VoteResponse> handler);
+
+  /**
    * Sends a protocol append request.
    *
    * @param request The protocol append request.

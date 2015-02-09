@@ -15,10 +15,7 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.protocol.rpc.AppendRequest;
-import net.kuujo.copycat.protocol.rpc.AppendResponse;
-import net.kuujo.copycat.protocol.rpc.PollRequest;
-import net.kuujo.copycat.protocol.rpc.PollResponse;
+import net.kuujo.copycat.protocol.rpc.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -302,9 +299,34 @@ abstract class ActiveState extends PassiveState {
   }
 
   /**
-   * Handles a vote request.
+   * Handles a poll request.
    */
   protected PollResponse handlePoll(PollRequest request) {
+    if (logUpToDate(request.logIndex(), request.logTerm(), request)) {
+      return PollResponse.builder()
+        .withUri(context.getLocalMember())
+        .withTerm(context.getTerm())
+        .withAccepted(true)
+        .build();
+    } else {
+      return PollResponse.builder()
+        .withUri(context.getLocalMember())
+        .withTerm(context.getTerm())
+        .withAccepted(false)
+        .build();
+    }
+  }
+
+  @Override
+  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
+    context.checkThread();
+    return CompletableFuture.completedFuture(logResponse(handleVote(logRequest(request))));
+  }
+
+  /**
+   * Handles a vote request.
+   */
+  protected VoteResponse handleVote(VoteRequest request) {
     // If the request indicates a term that is greater than the current term then
     // assign that term and leader to the current context and step down as leader.
     if (request.term() > context.getTerm()) {
@@ -316,7 +338,7 @@ abstract class ActiveState extends PassiveState {
     // as up to date as us.
     if (request.term() < context.getTerm()) {
       LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getLocalMember(), request);
-      return PollResponse.builder()
+      return VoteResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
@@ -328,7 +350,7 @@ abstract class ActiveState extends PassiveState {
     else if (request.candidate().equals(context.getLocalMember())) {
       context.setLastVotedFor(context.getLocalMember());
       LOGGER.debug("{} - Accepted {}: candidate is the local member", context.getLocalMember(), request);
-      return PollResponse.builder()
+      return VoteResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(true)
@@ -337,8 +359,8 @@ abstract class ActiveState extends PassiveState {
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
     else if (!context.getMembers().contains(request.candidate())) {
-      LOGGER.debug("{} - Rejected {}: candidate is not known do the local member", context.getLocalMember(), request);
-      return PollResponse.builder()
+      LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.getLocalMember(), request);
+      return VoteResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
@@ -346,76 +368,68 @@ abstract class ActiveState extends PassiveState {
     }
     // If we've already voted for someone else then don't vote again.
     else if (context.getLastVotedFor() == null || context.getLastVotedFor().equals(request.candidate())) {
-      // If the log is empty then vote for the candidate.
-      if (context.log().isEmpty()) {
+      if (logUpToDate(request.logIndex(), request.logTerm(), request)) {
         context.setLastVotedFor(request.candidate());
-        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
-        return PollResponse.builder()
+        return VoteResponse.builder()
           .withUri(context.getLocalMember())
           .withTerm(context.getTerm())
           .withVoted(true)
           .build();
       } else {
-        // Otherwise, load the last entry in the log. The last entry should be
-        // at least as up to date as the candidates entry and term.
-        Long lastIndex = context.log().lastIndex();
-        if (lastIndex != null) {
-          ByteBuffer entry = context.log().getEntry(lastIndex);
-          if (entry == null) {
-            context.setLastVotedFor(request.candidate());
-            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
-            return PollResponse.builder()
-              .withUri(context.getLocalMember())
-              .withTerm(context.getTerm())
-              .withVoted(true)
-              .build();
-          }
-
-          long lastTerm = entry.getLong();
-          if (request.logIndex() != null && request.logIndex() >= lastIndex) {
-            if (request.logTerm() >= lastTerm) {
-              context.setLastVotedFor(request.candidate());
-              LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
-              return PollResponse.builder()
-                .withUri(context.getLocalMember())
-                .withTerm(context.getTerm())
-                .withVoted(true)
-                .build();
-            } else {
-              LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getLocalMember(), request, request.logTerm(), lastTerm);
-              return PollResponse.builder()
-                .withUri(context.getLocalMember())
-                .withTerm(context.getTerm())
-                .withVoted(false)
-                .build();
-            }
-          } else {
-            LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getLocalMember(), request, request.logIndex(), lastIndex);
-            return PollResponse.builder()
-              .withUri(context.getLocalMember())
-              .withTerm(context.getTerm())
-              .withVoted(false)
-              .build();
-          }
-        } else {
-          context.setLastVotedFor(request.candidate());
-          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
-          return PollResponse.builder()
-            .withUri(context.getLocalMember())
-            .withTerm(context.getTerm())
-            .withVoted(true)
-            .build();
-        }
+        return VoteResponse.builder()
+          .withUri(context.getLocalMember())
+          .withTerm(context.getTerm())
+          .withVoted(false)
+          .build();
       }
     }
     // In this case, we've already voted for someone else.
     else {
       LOGGER.debug("{} - Rejected {}: already voted for {}", context.getLocalMember(), request, context.getLastVotedFor());
-      return PollResponse.builder()
+      return VoteResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build();
+    }
+  }
+
+  /**
+   * Returns a boolean value indicating whether the given candidate's log is up-to-date.
+   */
+  private boolean logUpToDate(Long index, Long term, Request request) {
+    // If the log is empty then vote for the candidate.
+    if (context.log().isEmpty()) {
+      LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
+      return true;
+    } else {
+      // Otherwise, load the last entry in the log. The last entry should be
+      // at least as up to date as the candidates entry and term.
+      Long lastIndex = context.log().lastIndex();
+      if (lastIndex != null) {
+        ByteBuffer entry = context.log().getEntry(lastIndex);
+        if (entry == null) {
+          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
+          return true;
+        }
+
+        long lastTerm = entry.getLong();
+        if (index != null && index >= lastIndex) {
+          if (term >= lastTerm) {
+            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
+            return true;
+          } else {
+            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getLocalMember(), request, term, lastTerm);
+            return false;
+          }
+        } else {
+          LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getLocalMember(), request, index, lastIndex);
+          return false;
+        }
+      } else {
+        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getLocalMember(), request);
+        return true;
+      }
     }
   }
 

@@ -261,11 +261,13 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     public void createRoutes(ClusterManager cluster, RaftProtocol protocol) {
       cluster.member().registerHandler(Topics.SYNC, PROTOCOL_ID, protocol::sync, serializer, executor);
       cluster.member().registerHandler(Topics.POLL, PROTOCOL_ID, protocol::poll, serializer, executor);
+      cluster.member().registerHandler(Topics.VOTE, PROTOCOL_ID, protocol::vote, serializer, executor);
       cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append, serializer, executor);
       cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query, serializer, executor);
       cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit, serializer, executor);
       protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
+      protocol.voteHandler(request -> handleOutboundRequest(Topics.VOTE, request, cluster));
       protocol.appendHandler(request -> handleOutboundRequest(Topics.APPEND, request, cluster));
       protocol.queryHandler(request -> handleOutboundRequest(Topics.QUERY, request, cluster));
       protocol.commitHandler(request -> handleOutboundRequest(Topics.COMMIT, request, cluster));
@@ -286,11 +288,13 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
     public void destroyRoutes(ClusterManager cluster, RaftProtocol protocol) {
       cluster.member().unregisterHandler(Topics.SYNC, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.POLL, PROTOCOL_ID);
+      cluster.member().unregisterHandler(Topics.VOTE, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.APPEND, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.QUERY, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.COMMIT, PROTOCOL_ID);
       protocol.syncHandler(null);
       protocol.pollHandler(null);
+      protocol.voteHandler(null);
       protocol.appendHandler(null);
       protocol.queryHandler(null);
       protocol.commitHandler(null);

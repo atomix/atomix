@@ -465,7 +465,7 @@ public class RequestResponseTest {
   }
 
   /**
-   * Tests that the poll request builder when not configured.
+   * Tests that the vote request builder when not configured.
    */
   @Test(expectedExceptions = NullPointerException.class)
   public void testPollRequestBuilderFailsWithoutConfiguration() {
@@ -655,7 +655,7 @@ public class RequestResponseTest {
   public void testPollResponseBuilderFailsWithoutMember() {
     PollResponse.builder()
       .withTerm(1L)
-      .withVoted(true)
+      .withAccepted(true)
       .build();
   }
 
@@ -667,7 +667,7 @@ public class RequestResponseTest {
     PollResponse.builder()
       .withUri(null)
       .withTerm(1L)
-      .withVoted(true)
+      .withAccepted(true)
       .build();
   }
 
@@ -679,7 +679,7 @@ public class RequestResponseTest {
     PollResponse.builder()
       .withUri(null)
       .withTerm(-1L)
-      .withVoted(true)
+      .withAccepted(true)
       .build();
   }
 
@@ -688,6 +688,239 @@ public class RequestResponseTest {
    */
   public void testPollResponseBuilderSucceedsWithValidConfiguration() {
     PollResponse response = PollResponse.builder()
+      .withUri("foo")
+      .withTerm(1L)
+      .withAccepted(true)
+      .build();
+    assertEquals(response.uri(), "foo");
+    assertEquals(response.term(), 1);
+    assertTrue(response.accepted());
+  }
+
+  /**
+   * Tests that the vote request builder when not configured.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteRequestBuilderFailsWithoutConfiguration() {
+    VoteRequest.builder().build();
+  }
+
+  /**
+   * Tests that the vote request builder fails without a configured member.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteRequestBuilderFailsWithoutMember() {
+    VoteRequest.builder()
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails with a null member.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteRequestBuilderFailsWithNullMember() {
+    VoteRequest.builder()
+      .withUri(null)
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails without a candidate.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteRequestBuilderFailsWithoutCandidate() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails with a null candidate.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteRequestBuilderFailsWithNullCandidate() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate(null)
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails without a term.
+   */
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testVoteRequestBuilderFailsWithoutTerm() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails without an invalid term.
+   */
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testVoteRequestBuilderFailsWithInvalidTerm() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withTerm(-1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails with an invalid log index.
+   */
+  @Test(expectedExceptions = IndexOutOfBoundsException.class)
+  public void testVoteRequestBuilderFailsWithInvalidLogIndex() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(-1L)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails with an invalid log term.
+   */
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testVoteRequestBuilderFailsWithInvalidLogTerm() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(-1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder succeeds with a null log index and term.
+   */
+  public void testVoteRequestBuilderSucceedsWithNullLogIndexAndNullLogTerm() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(null)
+      .withLogTerm(null)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails with a valid log index and null log term.
+   */
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testVoteRequestBuilderFailsWithValidLogIndexAndNullLogTerm() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(null)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder fails with a null log index and valid log term.
+   */
+  @Test(expectedExceptions = IllegalArgumentException.class)
+  public void testVoteRequestBuilderFailsWithNullLogIndexAndValidLogTerm() {
+    VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(null)
+      .withLogTerm(1L)
+      .build();
+  }
+
+  /**
+   * Tests that the vote request builder succeeds when properly configured.
+   */
+  public void testVoteRequestBuilderSucceedsWithValidConfiguration() {
+    VoteRequest request = VoteRequest.builder()
+      .withUri("foo")
+      .withCandidate("bar")
+      .withTerm(1)
+      .withLogIndex(5L)
+      .withLogTerm(1L)
+      .build();
+    assertEquals(request.uri(), "foo");
+    assertEquals(request.candidate(), "bar");
+    assertEquals(request.term(), 1);
+    assertEquals(request.logIndex().longValue(), 5);
+    assertEquals(request.logTerm().longValue(), 1);
+  }
+
+  /**
+   * Tests that the vote response builder fails without being properly configured.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteResponseBuilderFailsWithoutConfiguration() {
+    VoteResponse.builder().build();
+  }
+
+  /**
+   * Tests that the vote response builder fails without a member.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteResponseBuilderFailsWithoutMember() {
+    VoteResponse.builder()
+      .withTerm(1L)
+      .withVoted(true)
+      .build();
+  }
+
+  /**
+   * Tests that the vote response builder fails with a null member.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteResponseBuilderFailsWithNullMember() {
+    VoteResponse.builder()
+      .withUri(null)
+      .withTerm(1L)
+      .withVoted(true)
+      .build();
+  }
+
+  /**
+   * Tests that the vote response builder fails with an invalid term.
+   */
+  @Test(expectedExceptions = NullPointerException.class)
+  public void testVoteResponseBuilderFailsWithInvalidTerm() {
+    VoteResponse.builder()
+      .withUri(null)
+      .withTerm(-1L)
+      .withVoted(true)
+      .build();
+  }
+
+  /**
+   * Tests that the vote response builder succeeds with a valid configuration.
+   */
+  public void testVoteResponseBuilderSucceedsWithValidConfiguration() {
+    VoteResponse response = VoteResponse.builder()
       .withUri("foo")
       .withTerm(1L)
       .withVoted(true)

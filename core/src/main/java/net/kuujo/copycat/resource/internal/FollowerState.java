@@ -14,15 +14,15 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.protocol.rpc.AppendRequest;
-import net.kuujo.copycat.protocol.rpc.AppendResponse;
-import net.kuujo.copycat.protocol.rpc.PollRequest;
-import net.kuujo.copycat.protocol.rpc.PollResponse;
+import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.util.internal.Quorum;
 
+import java.nio.ByteBuffer;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Follower state.
@@ -72,17 +72,83 @@ class FollowerState extends ActiveState {
     // being election timeout and 2 * election timeout.
     long delay = context.getElectionTimeout() + (random.nextInt((int) context.getElectionTimeout()) % context.getElectionTimeout());
     currentTimer = context.executor().schedule(() -> {
-      // If the node has not yet voted for anyone then transition to
-      // candidate and start a new election.
       currentTimer = null;
-      if (context.getLastVotedFor() == null) {
-        LOGGER.info("{} - Heartbeat timed out in {} milliseconds", context.getLocalMember(), delay);
-        transition(CopycatState.CANDIDATE);
-      } else {
-        // If the node voted for a candidate then reset the election timer.
-        resetHeartbeatTimeout();
+      if (isOpen()) {
+        if (context.getLastVotedFor() == null) {
+          LOGGER.info("{} - Heartbeat timed out in {} milliseconds", context.getLocalMember(), delay);
+          sendPollRequests();
+        } else {
+          // If the node voted for a candidate then reset the election timer.
+          resetHeartbeatTimeout();
+        }
       }
     }, delay, TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Polls all members of the cluster to determine whether this member should transition to the CANDIDATE state.
+   */
+  private void sendPollRequests() {
+    // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
+    currentTimer = context.executor().schedule(() -> {
+      LOGGER.debug("{} - Failed to poll a majority of the cluster in {} milliseconds", context.getLocalMember(), context.getElectionTimeout());
+      resetHeartbeatTimeout();
+    }, context.getElectionTimeout(), TimeUnit.MILLISECONDS);
+
+    // Create a quorum that will track the number of nodes that have responded to the poll request.
+    final AtomicBoolean complete = new AtomicBoolean();
+    final Quorum quorum = new Quorum((int) Math.ceil(context.getActiveMembers().size() / 2.0), (elected) -> {
+      // If a majority of the cluster indicated they would vote for us then transition to candidate.
+      complete.set(true);
+      if (elected) {
+        transition(CopycatState.CANDIDATE);
+      } else {
+        resetHeartbeatTimeout();
+      }
+    });
+
+    // First, load the last log entry to get its term. We load the entry
+    // by its index since the index is required by the protocol.
+    Long lastIndex = context.log().lastIndex();
+    ByteBuffer lastEntry = lastIndex != null ? context.log().getEntry(lastIndex) : null;
+
+    // Once we got the last log term, iterate through each current member
+    // of the cluster and vote each member for a vote.
+    LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getActiveMembers());
+    final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
+    for (String member : context.getActiveMembers()) {
+      LOGGER.debug("{} - Polling {} for next term {}", context.getLocalMember(), member, context.getTerm() + 1);
+      PollRequest request = PollRequest.builder()
+        .withUri(member)
+        .withTerm(context.getTerm())
+        .withCandidate(context.getLocalMember())
+        .withLogIndex(lastIndex)
+        .withLogTerm(lastTerm)
+        .build();
+      pollHandler.apply(request).whenCompleteAsync((response, error) -> {
+        context.checkThread();
+        if (isOpen() && !complete.get()) {
+          if (error != null) {
+            LOGGER.warn(context.getLocalMember(), error);
+            quorum.fail();
+          } else {
+            if (response.term() > context.getTerm()) {
+              context.setTerm(response.term());
+            }
+            if (!response.accepted()) {
+              LOGGER.info("{} - Received rejected poll from {}", context.getLocalMember(), member);
+              quorum.fail();
+            } else if (response.term() != context.getTerm()) {
+              LOGGER.info("{} - Received accepted poll for a different term from {}", context.getLocalMember(), member);
+              quorum.fail();
+            } else {
+              LOGGER.info("{} - Received accepted poll from {}", context.getLocalMember(), member);
+              quorum.succeed();
+            }
+          }
+        }
+      }, context.executor());
+    }
   }
 
   @Override
@@ -94,9 +160,9 @@ class FollowerState extends ActiveState {
   }
 
   @Override
-  protected PollResponse handlePoll(PollRequest request) {
+  protected VoteResponse handleVote(VoteRequest request) {
     // Reset the heartbeat timeout if we voted for another candidate.
-    PollResponse response = super.handlePoll(request);
+    VoteResponse response = super.handleVote(request);
     if (response.voted()) {
       resetHeartbeatTimeout();
     }

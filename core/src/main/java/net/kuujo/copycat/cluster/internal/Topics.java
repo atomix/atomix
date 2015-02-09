@@ -32,6 +32,11 @@ public class Topics {
   public static final String POLL = "poll";
 
   /**
+   * Member vote topic.
+   */
+  public static final String VOTE = "vote";
+
+  /**
    * Member append topic.
    */
   public static final String APPEND = "append";

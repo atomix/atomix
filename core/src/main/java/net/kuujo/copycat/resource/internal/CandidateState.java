@@ -16,13 +16,12 @@ package net.kuujo.copycat.resource.internal;
 
 import net.kuujo.copycat.protocol.rpc.AppendRequest;
 import net.kuujo.copycat.protocol.rpc.AppendResponse;
-import net.kuujo.copycat.protocol.rpc.PollRequest;
-import net.kuujo.copycat.protocol.rpc.PollResponse;
+import net.kuujo.copycat.protocol.rpc.VoteRequest;
+import net.kuujo.copycat.protocol.rpc.VoteResponse;
 import net.kuujo.copycat.util.internal.Quorum;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -57,13 +56,13 @@ class CandidateState extends ActiveState {
    */
   private void startElection() {
     LOGGER.info("{} - Starting election", context.getLocalMember());
-    resetTimer();
+    sendVoteRequests();
   }
 
   /**
    * Resets the election timer.
    */
-  private void resetTimer() {
+  private void sendVoteRequests() {
     context.checkThread();
 
     // Because of asynchronous execution, the candidate state could have already been closed. In that case,
@@ -88,7 +87,7 @@ class CandidateState extends ActiveState {
         quorum.cancel();
         quorum = null;
       }
-      resetTimer();
+      sendVoteRequests();
       LOGGER.info("{} - Restarted election", context.getLocalMember());
     }, delay, TimeUnit.MILLISECONDS);
 
@@ -111,24 +110,29 @@ class CandidateState extends ActiveState {
     ByteBuffer lastEntry = lastIndex != null ? context.log().getEntry(lastIndex) : null;
 
     // Once we got the last log term, iterate through each current member
-    // of the cluster and poll each member for a vote.
-    LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getActiveMembers());
+    // of the cluster and vote each member for a vote.
+    LOGGER.info("{} - Requesting votes from {}", context.getLocalMember(), context.getActiveMembers());
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
     for (String member : context.getActiveMembers()) {
-      LOGGER.debug("{} - Polling {} for term {}", context.getLocalMember(), member, context.getTerm());
-      PollRequest request = PollRequest.builder()
+      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getLocalMember(), member, context.getTerm());
+      VoteRequest request = VoteRequest.builder()
         .withUri(member)
         .withTerm(context.getTerm())
         .withCandidate(context.getLocalMember())
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
-      pollHandler.apply(request).whenCompleteAsync((response, error) -> {
+      voteHandler.apply(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
             LOGGER.warn(context.getLocalMember(), error);
             quorum.fail();
+          } else if (response.term() > context.getTerm()) {
+            LOGGER.debug("{} - Received greater term from {}", context.getLocalMember(), member);
+            context.setTerm(response.term());
+            complete.set(true);
+            transition(CopycatState.FOLLOWER);
           } else if (!response.voted()) {
             LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
             quorum.fail();
@@ -158,7 +162,7 @@ class CandidateState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(PollRequest request) {
+  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
     context.checkThread();
 
     // If the request indicates a term that is greater than the current term then
@@ -166,18 +170,18 @@ class CandidateState extends ActiveState {
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
       transition(CopycatState.FOLLOWER);
-      return super.poll(request);
+      return super.vote(request);
     }
 
     // If the vote request is not for this candidate then reject the vote.
     if (request.candidate().equals(context.getLocalMember())) {
-      return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(true)
         .build()));
     } else {
-      return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
         .withUri(context.getLocalMember())
         .withTerm(context.getTerm())
         .withVoted(false)

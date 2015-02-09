@@ -32,6 +32,7 @@ abstract class AbstractState implements RaftProtocol {
   protected final CopycatStateContext context;
   protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
   protected MessageHandler<PollRequest, PollResponse> pollHandler;
+  protected MessageHandler<VoteRequest, VoteResponse> voteHandler;
   protected MessageHandler<AppendRequest, AppendResponse> appendHandler;
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
   protected MessageHandler<QueryRequest, QueryResponse> queryHandler;
@@ -86,13 +87,24 @@ abstract class AbstractState implements RaftProtocol {
   }
 
   @Override
-  public AbstractState pollHandler(MessageHandler<PollRequest, PollResponse> handler) {
+  public CompletableFuture<PollResponse> poll(PollRequest request) {
+    return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
+  }
+
+  @Override
+  public RaftProtocol pollHandler(MessageHandler<PollRequest, PollResponse> handler) {
     this.pollHandler = handler;
     return this;
   }
 
   @Override
-  public CompletableFuture<PollResponse> poll(PollRequest request) {
+  public AbstractState voteHandler(MessageHandler<VoteRequest, VoteResponse> handler) {
+    this.voteHandler = handler;
+    return this;
+  }
+
+  @Override
+  public CompletableFuture<VoteResponse> vote(VoteRequest request) {
     return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
   }
 

@@ -1,12 +1,11 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,28 +19,28 @@ import net.kuujo.copycat.util.internal.Assert;
 import java.util.Objects;
 
 /**
- * Protocol poll request.
+ * Protocol vote request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PollRequest extends AbstractRequest {
+public class VoteRequest extends AbstractRequest {
 
   /**
-   * Returns a new poll request builder.
+   * Returns a new vote request builder.
    *
-   * @return A new poll request builder.
+   * @return A new vote request builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
   /**
-   * Returns a poll request builder for an existing request.
+   * Returns a vote request builder for an existing request.
    *
    * @param request The request to build.
-   * @return The poll request builder.
+   * @return The vote request builder.
    */
-  public static Builder builder(PollRequest request) {
+  public static Builder builder(VoteRequest request) {
     return new Builder(request);
   }
 
@@ -93,8 +92,8 @@ public class PollRequest extends AbstractRequest {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof PollRequest) {
-      PollRequest request = (PollRequest) object;
+    if (object instanceof VoteRequest) {
+      VoteRequest request = (VoteRequest) object;
       return request.member.equals(member)
         && request.term == term
         && request.candidate.equals(candidate)
@@ -110,14 +109,14 @@ public class PollRequest extends AbstractRequest {
   }
 
   /**
-   * Poll request builder.
+   * Vote request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, PollRequest> {
+  public static class Builder extends AbstractRequest.Builder<Builder, VoteRequest> {
     protected Builder() {
-      this(new PollRequest());
+      this(new VoteRequest());
     }
 
-    protected Builder(PollRequest request) {
+    protected Builder(VoteRequest request) {
       super(request);
     }
 
@@ -125,10 +124,10 @@ public class PollRequest extends AbstractRequest {
      * Sets the request term.
      *
      * @param term The request term.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withTerm(long term) {
-      request.term = Assert.arg(term, term >= 0, "term must be greater than or equal to zero");
+      request.term = Assert.arg(term, term > 0, "term must be greater than zero");
       return this;
     }
 
@@ -136,7 +135,7 @@ public class PollRequest extends AbstractRequest {
      * Sets the request leader.
      *
      * @param candidate The request candidate.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withCandidate(String candidate) {
       request.candidate = Assert.isNotNull(candidate, "candidate");
@@ -147,7 +146,7 @@ public class PollRequest extends AbstractRequest {
      * Sets the request last log index.
      *
      * @param index The request last log index.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withLogIndex(Long index) {
       request.logIndex = Assert.index(index, index == null || index > 0, "index must be greater than zero");
@@ -158,7 +157,7 @@ public class PollRequest extends AbstractRequest {
      * Sets the request last log term.
      *
      * @param term The request last log term.
-     * @return The poll request builder.
+     * @return The vote request builder.
      */
     public Builder withLogTerm(Long term) {
       request.logTerm = Assert.arg(term, term == null || term > 0, "term must be greater than zero");
@@ -166,12 +165,12 @@ public class PollRequest extends AbstractRequest {
     }
 
     @Override
-    public PollRequest build() {
+    public VoteRequest build() {
       super.build();
       Assert.isNotNull(request.candidate, "candidate");
-      Assert.arg(request.term, request.term >= 0, "term must be greater than or equal to zero");
+      Assert.arg(request.term, request.term > 0, "term must be greater than zero");
       Assert.index(request.logIndex, request.logIndex == null || request.logIndex > 0, "index must be greater than zero");
-      Assert.arg(request.logTerm, request.logTerm == null || request.logTerm >= 0, "term must be greater than or equal to zero");
+      Assert.arg(request.logTerm, request.logTerm == null || request.logTerm > 0, "term must be greater than zero");
       Assert.arg(null, (request.logIndex == null && request.logTerm == null) || (request.logIndex != null && request.logTerm != null), "log index and term must both be null or neither be null");
       return request;
     }
