@@ -298,17 +298,21 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
     for (Member member : members) {
       member.send(topic, message);
     }
-    return null;
+    return this;
   }
 
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
   public synchronized <T> Cluster addBroadcastListener(String topic, EventListener<T> listener) {
-    broadcastListeners.computeIfAbsent(topic, t -> new CopyOnWriteArraySet<EventListener>()).add(listener);
-    broadcastHandlers.computeIfAbsent(topic, t -> message -> {
-      broadcastListeners.get(t).forEach(l -> l.accept(message));
-      return CompletableFuture.completedFuture(null);
-    });
+    broadcastListeners.computeIfAbsent(topic, t -> new CopyOnWriteArraySet<>()).add(listener);
+    if (!broadcastHandlers.containsKey(topic)) {
+      MessageHandler<T, Void> handler = message -> {
+        broadcastListeners.get(topic).forEach(l -> l.accept(message));
+        return CompletableFuture.completedFuture(null);
+      };
+      broadcastHandlers.put(topic, handler);
+      member().registerHandler(topic, handler);
+    }
     return this;
   }
 
@@ -321,6 +325,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
       if (listeners.isEmpty()) {
         broadcastListeners.remove(topic);
         broadcastHandlers.remove(topic);
+        member().unregisterHandler(topic);
       }
     }
     return this;
