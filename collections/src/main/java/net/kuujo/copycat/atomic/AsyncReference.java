@@ -26,7 +26,7 @@ import net.kuujo.copycat.resource.Resource;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncAtomicReference<T> extends AsyncAtomicReferenceProxy<T>, Resource<AsyncAtomicReference<T>> {
+public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<AsyncReference<T>> {
 
   /**
    * Creates a new asynchronous atomic reference with the default cluster configuration.<p>
@@ -45,8 +45,8 @@ public interface AsyncAtomicReference<T> extends AsyncAtomicReferenceProxy<T>, R
    * @param <T> The atomic reference data type.
    * @return The asynchronous atomic reference.
    */
-  static <T> AsyncAtomicReference<T> create(String name) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncAtomicReferenceConfig(name));
+  static <T> AsyncReference<T> create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncReferenceConfig(name));
   }
 
   /**
@@ -63,8 +63,8 @@ public interface AsyncAtomicReference<T> extends AsyncAtomicReferenceProxy<T>, R
    * @param <T> The atomic reference data type.
    * @return The asynchronous atomic reference.
    */
-  static <T> AsyncAtomicReference<T> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncAtomicReferenceConfig(name));
+  static <T> AsyncReference<T> create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncReferenceConfig(name));
   }
 
   /**
@@ -77,9 +77,9 @@ public interface AsyncAtomicReference<T> extends AsyncAtomicReferenceProxy<T>, R
    * @return The asynchronous atomic reference.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static <T> AsyncAtomicReference<T> create(String name, ClusterConfig cluster, AsyncAtomicReferenceConfig config) {
+  static <T> AsyncReference<T> create(String name, ClusterConfig cluster, AsyncReferenceConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
-    return coordinator.<AsyncAtomicReference<T>>getResource(name, config.resolve(cluster))
+    return coordinator.<AsyncReference<T>>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);
   }

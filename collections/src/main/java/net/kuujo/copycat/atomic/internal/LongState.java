@@ -22,11 +22,11 @@ import net.kuujo.copycat.state.Query;
 import net.kuujo.copycat.state.StateContext;
 
 /**
- * Atomic boolean state.
+ * Atomic long state.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AtomicBooleanState {
+public interface LongState {
 
   /**
    * Initializes the state.
@@ -34,18 +34,36 @@ public interface AtomicBooleanState {
    * @param context The state context.
    */
   @Initializer
-  void init(StateContext<AtomicBooleanState> context);
+  void init(StateContext<LongState> context);
 
   @Query(consistency=Consistency.STRONG)
-  boolean get();
+  long get();
 
   @Command
-  void set(boolean value);
+  void set(long value);
 
   @Command
-  boolean getAndSet(boolean value);
+  long addAndGet(long value);
 
   @Command
-  boolean compareAndSet(boolean expect, boolean update);
+  long getAndAdd(long value);
+
+  @Command
+  long getAndSet(long value);
+
+  @Command
+  long getAndIncrement();
+
+  @Command
+  long getAndDecrement();
+
+  @Command
+  long incrementAndGet();
+
+  @Command
+  long decrementAndGet();
+
+  @Command
+  boolean compareAndSet(long expect, long update);
 
 }

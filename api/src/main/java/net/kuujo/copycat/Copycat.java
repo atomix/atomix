@@ -241,7 +241,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The atomic long name.
    * @return The asynchronous atomic long instance.
    */
-  AsyncAtomicLong createLong(String name);
+  AsyncLong createLong(String name);
 
   /**
    * Creates a named asynchronous atomic long value.
@@ -250,7 +250,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The long configuration.
    * @return The asynchronous atomic long instance.
    */
-  AsyncAtomicLong createLong(String name, AsyncAtomicLongConfig config);
+  AsyncLong createLong(String name, AsyncLongConfig config);
 
   /**
    * Creates a named asynchronous atomic boolean value.
@@ -258,7 +258,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The atomic boolean name.
    * @return The asynchronous atomic boolean instance.
    */
-  AsyncAtomicBoolean createBoolean(String name);
+  AsyncBoolean createBoolean(String name);
 
   /**
    * Creates a named asynchronous atomic boolean value.
@@ -267,7 +267,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The boolean configuration.
    * @return The asynchronous atomic boolean instance.
    */
-  AsyncAtomicBoolean createBoolean(String name, AsyncAtomicBooleanConfig config);
+  AsyncBoolean createBoolean(String name, AsyncBooleanConfig config);
 
   /**
    * Creates a named asynchronous atomic reference value.
@@ -275,7 +275,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The atomic reference name.
    * @return The asynchronous atomic reference instance.
    */
-  <T> AsyncAtomicReference<T> createReference(String name);
+  <T> AsyncReference<T> createReference(String name);
 
   /**
    * Creates a named asynchronous atomic reference value.
@@ -284,6 +284,6 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The reference configuration.
    * @return The asynchronous atomic reference instance.
    */
-  <T> AsyncAtomicReference<T> createReference(String name, AsyncAtomicReferenceConfig config);
+  <T> AsyncReference<T> createReference(String name, AsyncReferenceConfig config);
 
 }

@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncAtomicLongProxy {
+public interface AsyncLongProxy {
 
   /**
    * Gets the current value.

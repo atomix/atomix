@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.DefaultAsyncAtomicReference;
+import net.kuujo.copycat.atomic.internal.DefaultAsyncBoolean;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.AsyncCollectionConfig;
@@ -25,33 +25,33 @@ import net.kuujo.copycat.util.internal.Assert;
 import java.util.Map;
 
 /**
- * Asynchronous atomic reference configuration.
+ * Asynchronous atomic boolean configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncAtomicReferenceConfig extends AsyncCollectionConfig<AsyncAtomicReferenceConfig> {
+public class AsyncBooleanConfig extends AsyncCollectionConfig<AsyncBooleanConfig> {
   private static final String DEFAULT_CONFIGURATION = "atomic-defaults";
   private static final String CONFIGURATION = "atomic";
 
-  public AsyncAtomicReferenceConfig() {
+  public AsyncBooleanConfig() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public AsyncAtomicReferenceConfig(Map<String, Object> config) {
+  public AsyncBooleanConfig(Map<String, Object> config) {
     super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public AsyncAtomicReferenceConfig(String resource) {
+  public AsyncBooleanConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  protected AsyncAtomicReferenceConfig(AsyncAtomicReferenceConfig config) {
+  protected AsyncBooleanConfig(AsyncBooleanConfig config) {
     super(config);
   }
 
   @Override
-  public AsyncAtomicReferenceConfig copy() {
-    return new AsyncAtomicReferenceConfig(this);
+  public AsyncBooleanConfig copy() {
+    return new AsyncBooleanConfig(this);
   }
 
   @Override
@@ -59,7 +59,7 @@ public class AsyncAtomicReferenceConfig extends AsyncCollectionConfig<AsyncAtomi
     Assert.config(getReplicas(), getReplicas().isEmpty() || cluster.getMembers().containsAll(getReplicas()), "Resource replica set must contain only active cluster members");
     return new StateLogConfig(toMap())
       .resolve(cluster)
-      .withResourceType(DefaultAsyncAtomicReference.class);
+      .withResourceType(DefaultAsyncBoolean.class);
   }
 
 }

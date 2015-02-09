@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.atomic.internal;
 
-import net.kuujo.copycat.atomic.AsyncAtomicLong;
-import net.kuujo.copycat.atomic.AsyncAtomicLongProxy;
+import net.kuujo.copycat.atomic.AsyncBoolean;
+import net.kuujo.copycat.atomic.AsyncBooleanProxy;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
@@ -29,72 +29,42 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncAtomicLong extends AbstractResource<AsyncAtomicLong> implements AsyncAtomicLong {
-  private StateMachine<AtomicLongState> stateMachine;
-  private AsyncAtomicLongProxy proxy;
+public class DefaultAsyncBoolean extends AbstractResource<AsyncBoolean> implements AsyncBoolean {
+  private StateMachine<BooleanState> stateMachine;
+  private AsyncBooleanProxy proxy;
 
-  public DefaultAsyncAtomicLong(ResourceManager context) {
+  public DefaultAsyncBoolean(ResourceManager context) {
     super(context);
-    this.stateMachine = new DefaultStateMachine<>(context, AtomicLongState.class, DefaultAtomicLongState.class);
+    this.stateMachine = new DefaultStateMachine<>(context, BooleanState.class, DefaultBooleanState.class);
   }
 
   @Override
-  public CompletableFuture<Long> get() {
+  public CompletableFuture<Boolean> get() {
     return proxy.get();
   }
 
   @Override
-  public CompletableFuture<Void> set(long value) {
+  public CompletableFuture<Void> set(boolean value) {
     return proxy.set(value);
   }
 
   @Override
-  public CompletableFuture<Long> addAndGet(long value) {
-    return proxy.addAndGet(value);
-  }
-
-  @Override
-  public CompletableFuture<Long> getAndAdd(long value) {
-    return proxy.getAndAdd(value);
-  }
-
-  @Override
-  public CompletableFuture<Long> getAndSet(long value) {
+  public CompletableFuture<Boolean> getAndSet(boolean value) {
     return proxy.getAndSet(value);
   }
 
   @Override
-  public CompletableFuture<Long> getAndIncrement() {
-    return proxy.getAndIncrement();
-  }
-
-  @Override
-  public CompletableFuture<Long> getAndDecrement() {
-    return proxy.getAndDecrement();
-  }
-
-  @Override
-  public CompletableFuture<Long> incrementAndGet() {
-    return proxy.incrementAndGet();
-  }
-
-  @Override
-  public CompletableFuture<Long> decrementAndGet() {
-    return proxy.decrementAndGet();
-  }
-
-  @Override
-  public CompletableFuture<Boolean> compareAndSet(long expect, long update) {
+  public CompletableFuture<Boolean> compareAndSet(boolean expect, boolean update) {
     return proxy.compareAndSet(expect, update);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<AsyncAtomicLong> open() {
+  public synchronized CompletableFuture<AsyncBoolean> open() {
     return runStartupTasks()
       .thenCompose(v -> stateMachine.open())
       .thenRun(() -> {
-        this.proxy = stateMachine.createProxy(AsyncAtomicLongProxy.class);
+        this.proxy = stateMachine.createProxy(AsyncBooleanProxy.class);
       }).thenApply(v -> this);
   }
 

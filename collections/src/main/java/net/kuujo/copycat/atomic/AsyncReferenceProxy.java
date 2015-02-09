@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncAtomicReferenceProxy<T> {
+public interface AsyncReferenceProxy<T> {
 
   /**
    * Gets the value.

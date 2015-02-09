@@ -158,36 +158,36 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public AsyncAtomicLong createLong(String name) {
-    return createLong(name, new AsyncAtomicLongConfig());
+  public AsyncLong createLong(String name) {
+    return createLong(name, new AsyncLongConfig());
   }
 
   @Override
-  public AsyncAtomicLong createLong(String name, AsyncAtomicLongConfig config) {
+  public AsyncLong createLong(String name, AsyncLongConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public AsyncAtomicBoolean createBoolean(String name) {
-    return createBoolean(name, new AsyncAtomicBooleanConfig());
+  public AsyncBoolean createBoolean(String name) {
+    return createBoolean(name, new AsyncBooleanConfig());
   }
 
   @Override
-  public AsyncAtomicBoolean createBoolean(String name, AsyncAtomicBooleanConfig config) {
+  public AsyncBoolean createBoolean(String name, AsyncBooleanConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <T> AsyncAtomicReference<T> createReference(String name) {
-    return createReference(name, new AsyncAtomicReferenceConfig());
+  public <T> AsyncReference<T> createReference(String name) {
+    return createReference(name, new AsyncReferenceConfig());
   }
 
   @Override
-  public <T> AsyncAtomicReference<T> createReference(String name, AsyncAtomicReferenceConfig config) {
+  public <T> AsyncReference<T> createReference(String name, AsyncReferenceConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));

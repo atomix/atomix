@@ -15,8 +15,8 @@
  */
 package net.kuujo.copycat.atomic.internal;
 
-import net.kuujo.copycat.atomic.AsyncAtomicBoolean;
-import net.kuujo.copycat.atomic.AsyncAtomicBooleanProxy;
+import net.kuujo.copycat.atomic.AsyncReference;
+import net.kuujo.copycat.atomic.AsyncReferenceProxy;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
@@ -25,46 +25,47 @@ import net.kuujo.copycat.state.internal.DefaultStateMachine;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Default asynchronous atomic long implementation.
+ * Default asynchronous atomic reference implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAsyncAtomicBoolean extends AbstractResource<AsyncAtomicBoolean> implements AsyncAtomicBoolean {
-  private StateMachine<AtomicBooleanState> stateMachine;
-  private AsyncAtomicBooleanProxy proxy;
+public class DefaultAsyncReference<T> extends AbstractResource<AsyncReference<T>> implements AsyncReference<T> {
+  private StateMachine<ReferenceState<T>> stateMachine;
+  private AsyncReferenceProxy<T> proxy;
 
-  public DefaultAsyncAtomicBoolean(ResourceManager context) {
+  @SuppressWarnings("unchecked")
+  public DefaultAsyncReference(ResourceManager context) {
     super(context);
-    this.stateMachine = new DefaultStateMachine<>(context, AtomicBooleanState.class, DefaultAtomicBooleanState.class);
+    this.stateMachine = new DefaultStateMachine(context, ReferenceState.class, DefaultReferenceState.class);
   }
 
   @Override
-  public CompletableFuture<Boolean> get() {
+  public CompletableFuture<T> get() {
     return proxy.get();
   }
 
   @Override
-  public CompletableFuture<Void> set(boolean value) {
+  public CompletableFuture<Void> set(T value) {
     return proxy.set(value);
   }
 
   @Override
-  public CompletableFuture<Boolean> getAndSet(boolean value) {
+  public CompletableFuture<T> getAndSet(T value) {
     return proxy.getAndSet(value);
   }
 
   @Override
-  public CompletableFuture<Boolean> compareAndSet(boolean expect, boolean update) {
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update) {
     return proxy.compareAndSet(expect, update);
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<AsyncAtomicBoolean> open() {
+  public synchronized CompletableFuture<AsyncReference<T>> open() {
     return runStartupTasks()
       .thenCompose(v -> stateMachine.open())
       .thenRun(() -> {
-        this.proxy = stateMachine.createProxy(AsyncAtomicBooleanProxy.class);
+        this.proxy = stateMachine.createProxy(AsyncReferenceProxy.class);
       }).thenApply(v -> this);
   }
 

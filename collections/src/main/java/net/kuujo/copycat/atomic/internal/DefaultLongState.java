@@ -17,42 +17,72 @@ package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.state.StateContext;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Default atomic reference state implementation.
+ * Default atomic long state implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAtomicReferenceState<T> implements AtomicReferenceState<T> {
-  private AtomicReference<T> value;
+public class DefaultLongState implements LongState {
+  private AtomicLong value;
 
   @Override
-  public void init(StateContext<AtomicReferenceState<T>> context) {
+  public void init(StateContext<LongState> context) {
     value = context.get("value");
     if (value == null) {
-      value = new AtomicReference<>();
+      value = new AtomicLong();
       context.put("value", value);
     }
   }
 
   @Override
-  public T get() {
+  public long get() {
     return this.value.get();
   }
 
   @Override
-  public void set(T value) {
+  public void set(long value) {
     this.value.set(value);
   }
 
   @Override
-  public T getAndSet(T value) {
+  public long addAndGet(long value) {
+    return this.value.addAndGet(value);
+  }
+
+  @Override
+  public long getAndAdd(long value) {
+    return this.value.getAndAdd(value);
+  }
+
+  @Override
+  public long getAndSet(long value) {
     return this.value.getAndSet(value);
   }
 
   @Override
-  public boolean compareAndSet(T expect, T update) {
+  public long getAndIncrement() {
+    return this.value.getAndIncrement();
+  }
+
+  @Override
+  public long getAndDecrement() {
+    return this.value.getAndDecrement();
+  }
+
+  @Override
+  public long incrementAndGet() {
+    return this.value.incrementAndGet();
+  }
+
+  @Override
+  public long decrementAndGet() {
+    return this.value.decrementAndGet();
+  }
+
+  @Override
+  public boolean compareAndSet(long expect, long update) {
     return this.value.compareAndSet(expect, update);
   }
 

@@ -26,7 +26,7 @@ import net.kuujo.copycat.state.StateContext;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AtomicReferenceState<T> {
+public interface ReferenceState<T> {
 
   /**
    * Initializes the state.
@@ -34,7 +34,7 @@ public interface AtomicReferenceState<T> {
    * @param context The state context.
    */
   @Initializer
-  void init(StateContext<AtomicReferenceState<T>> context);
+  void init(StateContext<ReferenceState<T>> context);
 
   @Query(consistency=Consistency.STRONG)
   T get();

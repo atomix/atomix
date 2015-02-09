@@ -17,42 +17,42 @@ package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.state.StateContext;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Default atomic boolean state implementation.
+ * Default atomic reference state implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAtomicBooleanState implements AtomicBooleanState {
-  private AtomicBoolean value;
+public class DefaultReferenceState<T> implements ReferenceState<T> {
+  private AtomicReference<T> value;
 
   @Override
-  public void init(StateContext<AtomicBooleanState> context) {
+  public void init(StateContext<ReferenceState<T>> context) {
     value = context.get("value");
     if (value == null) {
-      value = new AtomicBoolean();
+      value = new AtomicReference<>();
       context.put("value", value);
     }
   }
 
   @Override
-  public boolean get() {
+  public T get() {
     return this.value.get();
   }
 
   @Override
-  public void set(boolean value) {
+  public void set(T value) {
     this.value.set(value);
   }
 
   @Override
-  public boolean getAndSet(boolean value) {
+  public T getAndSet(T value) {
     return this.value.getAndSet(value);
   }
 
   @Override
-  public boolean compareAndSet(boolean expect, boolean update) {
+  public boolean compareAndSet(T expect, T update) {
     return this.value.compareAndSet(expect, update);
   }
 

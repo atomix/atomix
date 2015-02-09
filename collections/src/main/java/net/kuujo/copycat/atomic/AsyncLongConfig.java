@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.DefaultAsyncAtomicBoolean;
+import net.kuujo.copycat.atomic.internal.DefaultAsyncLong;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.AsyncCollectionConfig;
@@ -25,33 +25,33 @@ import net.kuujo.copycat.util.internal.Assert;
 import java.util.Map;
 
 /**
- * Asynchronous atomic boolean configuration.
+ * Asynchronous atomic long configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncAtomicBooleanConfig extends AsyncCollectionConfig<AsyncAtomicBooleanConfig> {
+public class AsyncLongConfig extends AsyncCollectionConfig<AsyncLongConfig> {
   private static final String DEFAULT_CONFIGURATION = "atomic-defaults";
   private static final String CONFIGURATION = "atomic";
 
-  public AsyncAtomicBooleanConfig() {
+  public AsyncLongConfig() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public AsyncAtomicBooleanConfig(Map<String, Object> config) {
+  public AsyncLongConfig(Map<String, Object> config) {
     super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public AsyncAtomicBooleanConfig(String resource) {
+  public AsyncLongConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  protected AsyncAtomicBooleanConfig(AsyncAtomicBooleanConfig config) {
+  protected AsyncLongConfig(AsyncLongConfig config) {
     super(config);
   }
 
   @Override
-  public AsyncAtomicBooleanConfig copy() {
-    return new AsyncAtomicBooleanConfig(this);
+  public AsyncLongConfig copy() {
+    return new AsyncLongConfig(this);
   }
 
   @Override
@@ -59,7 +59,7 @@ public class AsyncAtomicBooleanConfig extends AsyncCollectionConfig<AsyncAtomicB
     Assert.config(getReplicas(), getReplicas().isEmpty() || cluster.getMembers().containsAll(getReplicas()), "Resource replica set must contain only active cluster members");
     return new StateLogConfig(toMap())
       .resolve(cluster)
-      .withResourceType(DefaultAsyncAtomicBoolean.class);
+      .withResourceType(DefaultAsyncLong.class);
   }
 
 }

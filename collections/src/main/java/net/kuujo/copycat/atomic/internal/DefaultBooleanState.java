@@ -17,72 +17,42 @@ package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.state.StateContext;
 
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * Default atomic long state implementation.
+ * Default atomic boolean state implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DefaultAtomicLongState implements AtomicLongState {
-  private AtomicLong value;
+public class DefaultBooleanState implements BooleanState {
+  private AtomicBoolean value;
 
   @Override
-  public void init(StateContext<AtomicLongState> context) {
+  public void init(StateContext<BooleanState> context) {
     value = context.get("value");
     if (value == null) {
-      value = new AtomicLong();
+      value = new AtomicBoolean();
       context.put("value", value);
     }
   }
 
   @Override
-  public long get() {
+  public boolean get() {
     return this.value.get();
   }
 
   @Override
-  public void set(long value) {
+  public void set(boolean value) {
     this.value.set(value);
   }
 
   @Override
-  public long addAndGet(long value) {
-    return this.value.addAndGet(value);
-  }
-
-  @Override
-  public long getAndAdd(long value) {
-    return this.value.getAndAdd(value);
-  }
-
-  @Override
-  public long getAndSet(long value) {
+  public boolean getAndSet(boolean value) {
     return this.value.getAndSet(value);
   }
 
   @Override
-  public long getAndIncrement() {
-    return this.value.getAndIncrement();
-  }
-
-  @Override
-  public long getAndDecrement() {
-    return this.value.getAndDecrement();
-  }
-
-  @Override
-  public long incrementAndGet() {
-    return this.value.incrementAndGet();
-  }
-
-  @Override
-  public long decrementAndGet() {
-    return this.value.decrementAndGet();
-  }
-
-  @Override
-  public boolean compareAndSet(long expect, long update) {
+  public boolean compareAndSet(boolean expect, boolean update) {
     return this.value.compareAndSet(expect, update);
   }
 

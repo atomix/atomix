@@ -26,7 +26,7 @@ import net.kuujo.copycat.resource.Resource;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncAtomicLong extends AsyncAtomicLongProxy, Resource<AsyncAtomicLong> {
+public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
 
   /**
    * Creates a new asynchronous atomic long with the default cluster configuration.<p>
@@ -44,8 +44,8 @@ public interface AsyncAtomicLong extends AsyncAtomicLongProxy, Resource<AsyncAto
    * @param name The asynchronous atomic long name.
    * @return The asynchronous atomic long.
    */
-  static AsyncAtomicLong create(String name) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncAtomicLongConfig(name));
+  static AsyncLong create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncLongConfig(name));
   }
 
   /**
@@ -61,8 +61,8 @@ public interface AsyncAtomicLong extends AsyncAtomicLongProxy, Resource<AsyncAto
    * @param cluster The cluster configuration.
    * @return The asynchronous atomic long.
    */
-  static AsyncAtomicLong create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncAtomicLongConfig(name));
+  static AsyncLong create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncLongConfig(name));
   }
 
   /**
@@ -74,9 +74,9 @@ public interface AsyncAtomicLong extends AsyncAtomicLongProxy, Resource<AsyncAto
    * @return The asynchronous atomic long.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncAtomicLong create(String name, ClusterConfig cluster, AsyncAtomicLongConfig config) {
+  static AsyncLong create(String name, ClusterConfig cluster, AsyncLongConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
-    return coordinator.<AsyncAtomicLong>getResource(name, config.resolve(cluster))
+    return coordinator.<AsyncLong>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);
   }

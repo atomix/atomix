@@ -26,7 +26,7 @@ import net.kuujo.copycat.resource.Resource;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncAtomicBoolean extends AsyncAtomicBooleanProxy, Resource<AsyncAtomicBoolean> {
+public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> {
 
   /**
    * Creates a new asynchronous atomic boolean with the default cluster configuration.<p>
@@ -44,8 +44,8 @@ public interface AsyncAtomicBoolean extends AsyncAtomicBooleanProxy, Resource<As
    * @param name The asynchronous atomic boolean name.
    * @return The asynchronous atomic boolean.
    */
-  static AsyncAtomicBoolean create(String name) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncAtomicBooleanConfig(name));
+  static AsyncBoolean create(String name) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncBooleanConfig(name));
   }
 
   /**
@@ -61,8 +61,8 @@ public interface AsyncAtomicBoolean extends AsyncAtomicBooleanProxy, Resource<As
    * @param cluster The cluster configuration.
    * @return The asynchronous atomic boolean.
    */
-  static AsyncAtomicBoolean create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncAtomicBooleanConfig(name));
+  static AsyncBoolean create(String name, ClusterConfig cluster) {
+    return create(name, cluster, new AsyncBooleanConfig(name));
   }
 
   /**
@@ -74,9 +74,9 @@ public interface AsyncAtomicBoolean extends AsyncAtomicBooleanProxy, Resource<As
    * @return The asynchronous atomic boolean.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncAtomicBoolean create(String name, ClusterConfig cluster, AsyncAtomicBooleanConfig config) {
+  static AsyncBoolean create(String name, ClusterConfig cluster, AsyncBooleanConfig config) {
     ClusterCoordinator coordinator = new DefaultClusterCoordinator(new CoordinatorConfig().withName(name).withClusterConfig(cluster));
-    return coordinator.<AsyncAtomicBoolean>getResource(name, config.resolve(cluster))
+    return coordinator.<AsyncBoolean>getResource(name, config.resolve(cluster))
       .addStartupTask(() -> coordinator.open().thenApply(v -> null))
       .addShutdownTask(coordinator::close);
   }

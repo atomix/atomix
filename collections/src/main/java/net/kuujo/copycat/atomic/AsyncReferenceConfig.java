@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.DefaultAsyncAtomicLong;
+import net.kuujo.copycat.atomic.internal.DefaultAsyncReference;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.collections.AsyncCollectionConfig;
@@ -25,33 +25,33 @@ import net.kuujo.copycat.util.internal.Assert;
 import java.util.Map;
 
 /**
- * Asynchronous atomic long configuration.
+ * Asynchronous atomic reference configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncAtomicLongConfig extends AsyncCollectionConfig<AsyncAtomicLongConfig> {
+public class AsyncReferenceConfig extends AsyncCollectionConfig<AsyncReferenceConfig> {
   private static final String DEFAULT_CONFIGURATION = "atomic-defaults";
   private static final String CONFIGURATION = "atomic";
 
-  public AsyncAtomicLongConfig() {
+  public AsyncReferenceConfig() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public AsyncAtomicLongConfig(Map<String, Object> config) {
+  public AsyncReferenceConfig(Map<String, Object> config) {
     super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public AsyncAtomicLongConfig(String resource) {
+  public AsyncReferenceConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  protected AsyncAtomicLongConfig(AsyncAtomicLongConfig config) {
+  protected AsyncReferenceConfig(AsyncReferenceConfig config) {
     super(config);
   }
 
   @Override
-  public AsyncAtomicLongConfig copy() {
-    return new AsyncAtomicLongConfig(this);
+  public AsyncReferenceConfig copy() {
+    return new AsyncReferenceConfig(this);
   }
 
   @Override
@@ -59,7 +59,7 @@ public class AsyncAtomicLongConfig extends AsyncCollectionConfig<AsyncAtomicLong
     Assert.config(getReplicas(), getReplicas().isEmpty() || cluster.getMembers().containsAll(getReplicas()), "Resource replica set must contain only active cluster members");
     return new StateLogConfig(toMap())
       .resolve(cluster)
-      .withResourceType(DefaultAsyncAtomicLong.class);
+      .withResourceType(DefaultAsyncReference.class);
   }
 
 }
