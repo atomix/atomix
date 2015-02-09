@@ -49,7 +49,7 @@ abstract class AbstractMemberCoordinator implements MemberCoordinator {
   }
 
   @Override
-  public Member.State state() {
+  public Member.Status state() {
     return info.state();
   }
 

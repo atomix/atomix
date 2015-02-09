@@ -70,7 +70,7 @@ public class CoordinatedMember implements MemberManager {
   }
 
   @Override
-  public State state() {
+  public Status state() {
     return info.state();
   }
 

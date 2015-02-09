@@ -61,10 +61,6 @@ import net.kuujo.copycat.EventListener;
  *   }
  * </pre>
  *
- * Each cluster contains a reference to the respective resource's {@link net.kuujo.copycat.raft.election.Election} instance.
- * Users can use the {@code Election} to identify the current cluster leader and receive event notifications when the
- * leadership for the resource's cluster changes.
- *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface Cluster {

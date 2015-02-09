@@ -46,20 +46,20 @@ public class KryoSerializerTest {
   public void testSerializeMemberInfo() {
     Serializer serializer = new KryoSerializer();
     Map<String, MemberInfo> info = new HashMap<>();
-    info.put("local://test1", new MemberInfo("local://test1", Member.Type.ACTIVE, Member.State.ALIVE));
-    info.put("local://test2", new MemberInfo("local://test2", Member.Type.ACTIVE, Member.State.ALIVE));
-    info.put("local://test3", new MemberInfo("local://test3", Member.Type.PASSIVE, Member.State.SUSPICIOUS));
+    info.put("local://test1", new MemberInfo("local://test1", Member.Type.ACTIVE, Member.Status.ALIVE));
+    info.put("local://test2", new MemberInfo("local://test2", Member.Type.ACTIVE, Member.Status.ALIVE));
+    info.put("local://test3", new MemberInfo("local://test3", Member.Type.PASSIVE, Member.Status.SUSPICIOUS));
     ByteBuffer buffer = serializer.writeObject(new ArrayList<>(info.values()));
     List<MemberInfo> result = serializer.readObject(buffer);
     assertEquals(result.get(0).uri(), "local://test1");
     assertTrue(result.get(0).type() == Member.Type.ACTIVE);
-    assertTrue(result.get(0).state() == Member.State.ALIVE);
+    assertTrue(result.get(0).state() == Member.Status.ALIVE);
     assertEquals(result.get(1).uri(), "local://test2");
     assertTrue(result.get(1).type() == Member.Type.ACTIVE);
-    assertTrue(result.get(1).state() == Member.State.ALIVE);
+    assertTrue(result.get(1).state() == Member.Status.ALIVE);
     assertEquals(result.get(2).uri(), "local://test3");
     assertTrue(result.get(2).type() == Member.Type.PASSIVE);
-    assertTrue(result.get(2).state() == Member.State.SUSPICIOUS);
+    assertTrue(result.get(2).state() == Member.Status.SUSPICIOUS);
   }
 
   /**

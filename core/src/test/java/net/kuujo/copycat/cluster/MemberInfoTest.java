@@ -32,45 +32,45 @@ public class MemberInfoTest {
    * Tests updating a member state.
    */
   public void testUpdateState() {
-    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.State.ALIVE, 5);
-    member.update(new MemberInfo("test", Member.Type.PASSIVE, Member.State.SUSPICIOUS, 6));
-    assertEquals(member.state(), Member.State.SUSPICIOUS);
+    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.Status.ALIVE, 5);
+    member.update(new MemberInfo("test", Member.Type.PASSIVE, Member.Status.SUSPICIOUS, 6));
+    assertEquals(member.state(), Member.Status.SUSPICIOUS);
   }
 
   /**
    * Tests rejecting an old state.
    */
   public void testRejectOldState() {
-    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.State.ALIVE, 5);
-    member.update(new MemberInfo("test", Member.Type.PASSIVE, Member.State.SUSPICIOUS, 4));
-    assertEquals(member.state(), Member.State.ALIVE);
+    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.Status.ALIVE, 5);
+    member.update(new MemberInfo("test", Member.Type.PASSIVE, Member.Status.SUSPICIOUS, 4));
+    assertEquals(member.state(), Member.Status.ALIVE);
   }
 
   /**
    * Tests failing a member.
    */
   public void testFailures() {
-    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.State.ALIVE, 5);
+    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.Status.ALIVE, 5);
     member.fail("foo");
-    assertEquals(member.state(), Member.State.SUSPICIOUS);
+    assertEquals(member.state(), Member.Status.SUSPICIOUS);
     member.fail("bar");
-    assertEquals(member.state(), Member.State.SUSPICIOUS);
+    assertEquals(member.state(), Member.Status.SUSPICIOUS);
     member.fail("bar");
-    assertEquals(member.state(), Member.State.SUSPICIOUS);
+    assertEquals(member.state(), Member.Status.SUSPICIOUS);
     member.fail("baz");
-    assertEquals(member.state(), Member.State.DEAD);
+    assertEquals(member.state(), Member.Status.DEAD);
   }
 
   /**
    * Tests that failures are reset when the state is updated.
    */
   public void testResetFailuresOnStateUpdate() {
-    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.State.ALIVE, 5);
+    MemberInfo member = new MemberInfo("test", Member.Type.PASSIVE, Member.Status.ALIVE, 5);
     member.fail("foo");
     member.fail("bar");
-    assertEquals(member.state(), Member.State.SUSPICIOUS);
-    member.update(new MemberInfo("test", Member.Type.PASSIVE, Member.State.ALIVE, 6));
-    assertEquals(member.state(), Member.State.ALIVE);
+    assertEquals(member.state(), Member.Status.SUSPICIOUS);
+    member.update(new MemberInfo("test", Member.Type.PASSIVE, Member.Status.ALIVE, 6));
+    assertEquals(member.state(), Member.Status.ALIVE);
   }
 
 }

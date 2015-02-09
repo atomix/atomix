@@ -30,7 +30,7 @@ import java.util.Set;
 public class MemberInfo implements Serializable {
   private static final int FAILURE_LIMIT = 3;
   private Member.Type type;
-  private Member.State state;
+  private Member.Status status;
   private long changed;
   private String uri;
   private long version = 1;
@@ -39,14 +39,14 @@ public class MemberInfo implements Serializable {
   public MemberInfo() {
   }
 
-  public MemberInfo(String uri, Member.Type type, Member.State state) {
-    this(uri, type, state, 1);
+  public MemberInfo(String uri, Member.Type type, Member.Status status) {
+    this(uri, type, status, 1);
   }
 
-  public MemberInfo(String uri, Member.Type type, Member.State state, long version) {
+  public MemberInfo(String uri, Member.Type type, Member.Status status, long version) {
     this.uri = uri;
     this.type = type;
-    this.state = state;
+    this.status = status;
     this.version = version;
   }
 
@@ -64,8 +64,8 @@ public class MemberInfo implements Serializable {
    *
    * @return The member state.
    */
-  public Member.State state() {
-    return state;
+  public Member.Status state() {
+    return status;
   }
 
   /**
@@ -112,9 +112,9 @@ public class MemberInfo implements Serializable {
    * @return The member info.
    */
   public MemberInfo succeed() {
-    if (type == Member.Type.PASSIVE && state != Member.State.ALIVE) {
+    if (type == Member.Type.PASSIVE && status != Member.Status.ALIVE) {
       failures.clear();
-      state = Member.State.ALIVE;
+      status = Member.Status.ALIVE;
       changed = System.currentTimeMillis();
     }
     return this;
@@ -132,12 +132,12 @@ public class MemberInfo implements Serializable {
     // failures from *unique* nodes is equal to or greater than the failure limit then change the state to DEAD.
     if (type == Member.Type.PASSIVE) {
       failures.add(uri);
-      if (state == Member.State.ALIVE) {
-        state = Member.State.SUSPICIOUS;
+      if (status == Member.Status.ALIVE) {
+        status = Member.Status.SUSPICIOUS;
         changed = System.currentTimeMillis();
-      } else if (state == Member.State.SUSPICIOUS) {
+      } else if (status == Member.Status.SUSPICIOUS) {
         if (failures.size() >= FAILURE_LIMIT) {
-          state = Member.State.DEAD;
+          status = Member.Status.DEAD;
           changed = System.currentTimeMillis();
         }
       }
@@ -162,22 +162,22 @@ public class MemberInfo implements Serializable {
       if (this.type == Member.Type.PASSIVE) {
         // If the state changed then update the state and set the last changed time. This can be used to clean
         // up state related to old members after some period of time.
-        if (this.state != info.state) {
+        if (this.status != info.status) {
           changed = System.currentTimeMillis();
         }
-        this.state = info.state;
+        this.status = info.status;
       }
     } else if (info.version == this.version) {
-      if (info.state == Member.State.SUSPICIOUS) {
+      if (info.status == Member.Status.SUSPICIOUS) {
         // If the given version is the same as the current version then update failures. If the member has experienced
         // FAILURE_LIMIT failures then transition the member's state to DEAD.
         this.failures.addAll(info.failures);
         if (this.failures.size() >= FAILURE_LIMIT) {
-          this.state = Member.State.DEAD;
+          this.status = Member.Status.DEAD;
           changed = System.currentTimeMillis();
         }
-      } else if (info.state == Member.State.DEAD) {
-        this.state = Member.State.DEAD;
+      } else if (info.status == Member.Status.DEAD) {
+        this.status = Member.Status.DEAD;
         changed = System.currentTimeMillis();
       }
     }
@@ -189,7 +189,7 @@ public class MemberInfo implements Serializable {
       MemberInfo member = (MemberInfo) object;
       return member.uri.equals(uri)
         && member.type == type
-        && member.state == state
+        && member.status == status
         && member.version == version;
     }
     return false;
@@ -197,12 +197,12 @@ public class MemberInfo implements Serializable {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, type, state, version);
+    return Objects.hash(uri, type, status, version);
   }
 
   @Override
   public String toString() {
-    return String.format("MemberInfo[uri=%s, type=%s, state=%s, version=%d]", uri, type, state, version);
+    return String.format("MemberInfo[uri=%s, type=%s, state=%s, version=%d]", uri, type, status, version);
   }
 
 }

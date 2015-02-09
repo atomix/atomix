@@ -71,7 +71,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
     this.userExecutor = userExecutor;
 
     // Always create a local member based on the local member URI.
-    MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getActiveMembers().contains(coordinator.member().uri()) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.State.ALIVE);
+    MemberInfo localMemberInfo = new MemberInfo(coordinator.member().uri(), context.getActiveMembers().contains(coordinator.member().uri()) ? Member.Type.ACTIVE : Member.Type.PASSIVE, Member.Status.ALIVE);
     this.localMember = new CoordinatedLocalMember(id, localMemberInfo, coordinator.member(), serializer, executor);
     membersInfo.put(localMemberInfo.uri(), localMemberInfo);
 
@@ -83,7 +83,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
       if (!replica.equals(localMember.uri())) {
         MemberCoordinator memberCoordinator = coordinator.member(replica);
         if (memberCoordinator != null) {
-          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.ACTIVE, Member.State.ALIVE), memberCoordinator, serializer, executor));
+          members.put(replica, new CoordinatedMember(id, new MemberInfo(replica, Member.Type.ACTIVE, Member.Status.ALIVE), memberCoordinator, serializer, executor));
         } else {
           throw new ClusterException("Invalid replica " + replica);
         }
@@ -202,7 +202,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
       // cluster. If the updated member state is ALIVE or SUSPICIOUS, make sure the member client is open in the cluster.
       // Otherwise, if the updated member state is DEAD then make sure it has been removed from the cluster.
       final MemberInfo updatedInfo = info;
-      if (updatedInfo.state() == Member.State.ALIVE || updatedInfo.state() == Member.State.SUSPICIOUS) {
+      if (updatedInfo.state() == Member.Status.ALIVE || updatedInfo.state() == Member.Status.SUSPICIOUS) {
         synchronized (members.members) {
           if (!members.members.containsKey(updatedInfo.uri())) {
             CoordinatedMember member = createMember(updatedInfo);
@@ -246,7 +246,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
     Iterator<Map.Entry<String, MemberInfo>> iterator = membersInfo.entrySet().iterator();
     while (iterator.hasNext()) {
       MemberInfo info = iterator.next().getValue();
-      if (info.state() == Member.State.DEAD && System.currentTimeMillis() > info.changed() + MEMBER_INFO_EXPIRE_TIME) {
+      if (info.state() == Member.Status.DEAD && System.currentTimeMillis() > info.changed() + MEMBER_INFO_EXPIRE_TIME) {
         iterator.remove();
       }
     }
@@ -260,7 +260,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
          Stream<CoordinatedMember> activeStream = membersStream.filter(member -> !member.uri().equals(localMember.uri())
            && (localMember.type() == Member.Type.ACTIVE && member.type() == Member.Type.PASSIVE)
            || (localMember.type() == Member.Type.PASSIVE && member.type() == Member.Type.ACTIVE)
-           && (member.state() == Member.State.SUSPICIOUS || member.state() == Member.State.ALIVE))) {
+           && (member.state() == Member.Status.SUSPICIOUS || member.state() == Member.Status.ALIVE))) {
 
       List<CoordinatedMember> activeMembers = activeStream.collect(Collectors.toList());
 

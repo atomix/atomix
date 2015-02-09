@@ -47,7 +47,7 @@ public interface MemberCoordinator extends Managed<MemberCoordinator> {
    *
    * @return The member state.
    */
-  Member.State state();
+  Member.Status state();
 
   /**
    * Sends an internal message.

@@ -48,17 +48,17 @@ public interface Member {
   }
 
   /**
-   * Cluster member state.<p>
+   * Cluster member status.<p>
    *
    * The member state indicates how a given member is perceived by the local node. Members can be in one of three states
-   * at any given time, {@link State#ALIVE}, {@link State#SUSPICIOUS}, and {@link State#DEAD}. Member states are changed
+   * at any given time, {@link net.kuujo.copycat.cluster.Member.Status#ALIVE}, {@link net.kuujo.copycat.cluster.Member.Status#SUSPICIOUS}, and {@link net.kuujo.copycat.cluster.Member.Status#DEAD}. Member states are changed
    * according to the local node's ability to communicate with a given member. All members begin with an
-   * {@link State#ALIVE} state upon joining the cluster. If the member appears to be unreachable, its state will be
-   * changed to {@link State#SUSPICIOUS}, indicating that it may have left the cluster or died. Once enough other nodes
-   * in the cluster agree that the suspicious member appears to be dead, the state will be changed to {@link State#DEAD}
+   * {@link net.kuujo.copycat.cluster.Member.Status#ALIVE} state upon joining the cluster. If the member appears to be unreachable, its state will be
+   * changed to {@link net.kuujo.copycat.cluster.Member.Status#SUSPICIOUS}, indicating that it may have left the cluster or died. Once enough other nodes
+   * in the cluster agree that the suspicious member appears to be dead, the state will be changed to {@link net.kuujo.copycat.cluster.Member.Status#DEAD}
    * and the member will ultimately be removed from the cluster configuration.
    */
-  public static enum State {
+  public static enum Status {
 
     /**
      * Indicates that the member is considered to be dead.
@@ -96,7 +96,7 @@ public interface Member {
    *
    * @return The member state.
    */
-  State state();
+  Status state();
 
   /**
    * Sends a message to the member.<p>
