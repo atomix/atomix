@@ -25,7 +25,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.ElectionResult;
-import net.kuujo.copycat.resource.internal.RaftContext;
+import net.kuujo.copycat.raft.RaftContext;
 
 /**
  * Coordinated cluster election handler.

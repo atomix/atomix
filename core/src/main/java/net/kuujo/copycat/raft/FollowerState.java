@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.internal;
+package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.util.internal.Quorum;
 
 import java.nio.ByteBuffer;
@@ -33,13 +33,13 @@ class FollowerState extends ActiveState {
   private final Random random = new Random();
   private ScheduledFuture<?> currentTimer;
 
-  FollowerState(RaftContext context) {
+  public FollowerState(RaftContext context) {
     super(context);
   }
 
   @Override
-  public RaftState state() {
-    return RaftState.FOLLOWER;
+  public Type type() {
+    return Type.FOLLOWER;
   }
 
   @Override
@@ -101,7 +101,7 @@ class FollowerState extends ActiveState {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);
       if (elected) {
-        transition(RaftState.CANDIDATE);
+        transition(Type.CANDIDATE);
       } else {
         resetHeartbeatTimeout();
       }

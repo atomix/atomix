@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.internal;
+package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.raft.protocol.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -36,7 +36,7 @@ abstract class ActiveState extends PassiveState {
   /**
    * Transitions to a new state.
    */
-  protected CompletableFuture<RaftState> transition(RaftState state) {
+  protected CompletableFuture<Type> transition(Type state) {
     if (transitionHandler != null) {
       return transitionHandler.apply(state);
     }
@@ -50,7 +50,7 @@ abstract class ActiveState extends PassiveState {
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
     if (transition) {
-      transition(RaftState.FOLLOWER);
+      transition(Type.FOLLOWER);
       transition = false;
     }
     return future;

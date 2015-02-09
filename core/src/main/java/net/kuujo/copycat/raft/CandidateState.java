@@ -12,12 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.internal;
+package net.kuujo.copycat.raft;
 
-import net.kuujo.copycat.protocol.rpc.AppendRequest;
-import net.kuujo.copycat.protocol.rpc.AppendResponse;
-import net.kuujo.copycat.protocol.rpc.VoteRequest;
-import net.kuujo.copycat.protocol.rpc.VoteResponse;
+import net.kuujo.copycat.raft.protocol.AppendRequest;
+import net.kuujo.copycat.raft.protocol.AppendResponse;
+import net.kuujo.copycat.raft.protocol.VoteRequest;
+import net.kuujo.copycat.raft.protocol.VoteResponse;
 import net.kuujo.copycat.util.internal.Quorum;
 
 import java.nio.ByteBuffer;
@@ -37,13 +37,13 @@ class CandidateState extends ActiveState {
   private Quorum quorum;
   private ScheduledFuture<?> currentTimer;
 
-  CandidateState(RaftContext context) {
+  public CandidateState(RaftContext context) {
     super(context);
   }
 
   @Override
-  public RaftState state() {
-    return RaftState.CANDIDATE;
+  public Type type() {
+    return Type.CANDIDATE;
   }
 
   @Override
@@ -100,7 +100,7 @@ class CandidateState extends ActiveState {
     final Quorum quorum = new Quorum((int) Math.ceil(context.getActiveMembers().size() / 2.0), (elected) -> {
       complete.set(true);
       if (elected) {
-        transition(RaftState.LEADER);
+        transition(RaftState.Type.LEADER);
       }
     });
 
@@ -132,7 +132,7 @@ class CandidateState extends ActiveState {
             LOGGER.debug("{} - Received greater term from {}", context.getLocalMember(), member);
             context.setTerm(response.term());
             complete.set(true);
-            transition(RaftState.FOLLOWER);
+            transition(RaftState.Type.FOLLOWER);
           } else if (!response.voted()) {
             LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
             quorum.fail();
@@ -156,7 +156,7 @@ class CandidateState extends ActiveState {
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() >= context.getTerm()) {
       context.setTerm(request.term());
-      transition(RaftState.FOLLOWER);
+      transition(RaftState.Type.FOLLOWER);
     }
     return super.append(request);
   }
@@ -169,7 +169,7 @@ class CandidateState extends ActiveState {
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
-      transition(RaftState.FOLLOWER);
+      transition(RaftState.Type.FOLLOWER);
       return super.vote(request);
     }
 

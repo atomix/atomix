@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.internal;
+package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.raft.protocol.*;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -30,7 +30,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PassiveState extends AbstractState {
+public class PassiveState extends RaftState {
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
 
@@ -39,8 +39,8 @@ public class PassiveState extends AbstractState {
   }
 
   @Override
-  public RaftState state() {
-    return RaftState.PASSIVE;
+  public Type type() {
+    return Type.PASSIVE;
   }
 
   @Override
@@ -299,6 +299,11 @@ public class PassiveState extends AbstractState {
   @Override
   public synchronized CompletableFuture<Void> close() {
     return super.close().thenRun(this::cancelSyncTimer);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[context=%s]", getClass().getSimpleName(), context);
   }
 
 }

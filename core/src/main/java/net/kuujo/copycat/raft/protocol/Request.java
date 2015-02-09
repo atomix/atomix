@@ -12,22 +12,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.internal;
+package net.kuujo.copycat.raft.protocol;
 
 /**
- * Start state.
+ * Protocol request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class StartState extends AbstractState {
+public interface Request {
 
-  StartState(RaftContext context) {
-    super(context);
-  }
+  /**
+   * Returns the request member.
+   *
+   * @return The request member.
+   */
+  String uri();
 
-  @Override
-  public RaftState state() {
-    return RaftState.START;
+  /**
+   * Request builder.
+   *
+   * @param <T> The builder type.
+   * @param <U> The request type.
+   */
+  static interface Builder<T extends Builder<T, U>, U extends Request> {
+
+    /**
+     * Sets the request member.
+     *
+     * @param uri The member to which to send the request.
+     * @return The request builder.
+     */
+    T withUri(String uri);
+
+    /**
+     * Builds the request.
+     *
+     * @return The built request.
+     */
+    U build();
+
   }
 
 }

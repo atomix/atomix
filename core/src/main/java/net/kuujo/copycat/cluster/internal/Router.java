@@ -15,7 +15,7 @@
 package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
-import net.kuujo.copycat.protocol.RaftProtocol;
+import net.kuujo.copycat.raft.protocol.RaftProtocol;
 
 /**
  * Cluster context router.

@@ -20,9 +20,10 @@ import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.rpc.CommitRequest;
-import net.kuujo.copycat.protocol.rpc.QueryRequest;
-import net.kuujo.copycat.protocol.rpc.Response;
+import net.kuujo.copycat.raft.RaftContext;
+import net.kuujo.copycat.raft.protocol.CommitRequest;
+import net.kuujo.copycat.raft.protocol.QueryRequest;
+import net.kuujo.copycat.raft.protocol.Response;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.function.TriFunction;
@@ -71,15 +72,6 @@ public class ResourceManager implements Managed<ResourceManager> {
    */
   public CoordinatedResourceConfig config() {
     return config;
-  }
-
-  /**
-   * Returns the current Copycat state.
-   *
-   * @return The current Copycat state.
-   */
-  public RaftState state() {
-    return context.state();
   }
 
   /**

@@ -12,11 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.internal;
+package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.protocol.RaftProtocol;
-import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.raft.protocol.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractState implements RaftProtocol {
+abstract class RaftState implements RaftProtocol {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
   protected final RaftContext context;
   protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
@@ -36,11 +35,57 @@ abstract class AbstractState implements RaftProtocol {
   protected MessageHandler<AppendRequest, AppendResponse> appendHandler;
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
   protected MessageHandler<QueryRequest, QueryResponse> queryHandler;
-  protected MessageHandler<RaftState, RaftState> transitionHandler;
+  protected MessageHandler<Type, Type> transitionHandler;
   private volatile boolean open;
 
-  protected AbstractState(RaftContext context) {
+  protected RaftState(RaftContext context) {
     this.context = context;
+  }
+
+  /**
+   * Raft state types.
+   */
+  public static enum Type {
+
+    /**
+     * Start state.
+     */
+    START(StartState.class),
+
+    /**
+     * Passive state.
+     */
+    PASSIVE(PassiveState.class),
+
+    /**
+     * Follower state.
+     */
+    FOLLOWER(FollowerState.class),
+
+    /**
+     * Candidate state.
+     */
+    CANDIDATE(CandidateState.class),
+
+    /**
+     * Leader state.
+     */
+    LEADER(LeaderState.class);
+
+    private final Class<? extends RaftState> type;
+
+    private Type(Class<? extends RaftState> type) {
+      this.type = type;
+    }
+
+    /**
+     * Returns the state type class.
+     *
+     * @return The state type clas.
+     */
+    public Class<? extends RaftState> type() {
+      return type;
+    }
   }
 
   /**
@@ -57,7 +102,7 @@ abstract class AbstractState implements RaftProtocol {
    *
    * @return The Copycat state represented by this state.
    */
-  public abstract RaftState state();
+  public abstract Type type();
 
   /**
    * Logs a request.
@@ -98,7 +143,7 @@ abstract class AbstractState implements RaftProtocol {
   }
 
   @Override
-  public AbstractState voteHandler(MessageHandler<VoteRequest, VoteResponse> handler) {
+  public RaftState voteHandler(MessageHandler<VoteRequest, VoteResponse> handler) {
     this.voteHandler = handler;
     return this;
   }
@@ -109,7 +154,7 @@ abstract class AbstractState implements RaftProtocol {
   }
 
   @Override
-  public AbstractState appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
+  public RaftState appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
     this.appendHandler = handler;
     return this;
   }
@@ -131,7 +176,7 @@ abstract class AbstractState implements RaftProtocol {
   }
 
   @Override
-  public AbstractState commitHandler(MessageHandler<CommitRequest, CommitResponse> handler) {
+  public RaftState commitHandler(MessageHandler<CommitRequest, CommitResponse> handler) {
     this.commitHandler = handler;
     return this;
   }
@@ -144,7 +189,7 @@ abstract class AbstractState implements RaftProtocol {
   /**
    * Sets a transition registerHandler on the state.
    */
-  public AbstractState transitionHandler(MessageHandler<RaftState, RaftState> handler) {
+  public RaftState transitionHandler(MessageHandler<Type, Type> handler) {
     this.transitionHandler = handler;
     return this;
   }
@@ -171,6 +216,11 @@ abstract class AbstractState implements RaftProtocol {
   @Override
   public boolean isClosed() {
     return !open;
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[context=%s]", getClass().getSimpleName(), context);
   }
 
 }

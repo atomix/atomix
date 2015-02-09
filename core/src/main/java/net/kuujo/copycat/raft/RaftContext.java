@@ -13,21 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource.internal;
+package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.log.LogManager;
-import net.kuujo.copycat.protocol.RaftProtocol;
-import net.kuujo.copycat.protocol.rpc.*;
+import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.function.TriFunction;
 import net.kuujo.copycat.util.internal.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -45,7 +45,7 @@ public class RaftContext extends Observable implements RaftProtocol {
   private final ScheduledExecutorService executor;
   private Thread thread;
   private final LogManager log;
-  private AbstractState state;
+  private RaftState state;
   private TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
@@ -439,15 +439,6 @@ public class RaftContext extends Observable implements RaftProtocol {
   }
 
   /**
-   * Returns the Copycat state.
-   *
-   * @return The current Copycat state.
-   */
-  public RaftState state() {
-    return state.state();
-  }
-
-  /**
    * Returns the context executor.
    *
    * @return The context executor.
@@ -580,11 +571,11 @@ public class RaftContext extends Observable implements RaftProtocol {
   /**
    * Transition registerHandler.
    */
-  CompletableFuture<RaftState> transition(RaftState state) {
+  CompletableFuture<RaftState.Type> transition(RaftState.Type state) {
     checkThread();
 
-    if (this.state != null && state == this.state.state()) {
-      return CompletableFuture.completedFuture(this.state.state());
+    if (this.state != null && state == this.state.type()) {
+      return CompletableFuture.completedFuture(this.state.type());
     }
 
     LOGGER.info("{} - Transitioning to {}", localMember, state);
@@ -593,59 +584,21 @@ public class RaftContext extends Observable implements RaftProtocol {
     if (this.state != null) {
       try {
         this.state.close().get();
-        switch (state) {
-          case START:
-            this.state = new StartState(this);
-            break;
-          case PASSIVE:
-            this.state = new PassiveState(this);
-            break;
-          case FOLLOWER:
-            this.state = new FollowerState(this);
-            break;
-          case CANDIDATE:
-            this.state = new CandidateState(this);
-            break;
-          case LEADER:
-            this.state = new LeaderState(this);
-            break;
-          default:
-            this.state = new StartState(this);
-            break;
-        }
-
+        this.state = state.type().getConstructor(RaftContext.class).newInstance(this);
         registerHandlers(this.state);
         this.state.open().get();
-      } catch (InterruptedException | ExecutionException e) {
+      } catch (InterruptedException | ExecutionException | NoSuchMethodException
+        | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new CopycatException(e);
       }
     } else {
-      switch (state) {
-        case START:
-          this.state = new StartState(this);
-          break;
-        case PASSIVE:
-          this.state = new PassiveState(this);
-          break;
-        case FOLLOWER:
-          this.state = new FollowerState(this);
-          break;
-        case CANDIDATE:
-          this.state = new CandidateState(this);
-          break;
-        case LEADER:
-          this.state = new LeaderState(this);
-          break;
-        default:
-          this.state = new StartState(this);
-          break;
-      }
-
       // Force state transitions to occur synchronously in order to prevent race conditions.
-      registerHandlers(this.state);
       try {
+        this.state = state.type().getConstructor(RaftContext.class).newInstance(this);
+        registerHandlers(this.state);
         this.state.open().get();
-      } catch (InterruptedException | ExecutionException e) {
+      } catch (InterruptedException | ExecutionException | NoSuchMethodException
+        | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new CopycatException(e);
       }
     }
@@ -655,7 +608,7 @@ public class RaftContext extends Observable implements RaftProtocol {
   /**
    * Registers handlers on the given state.
    */
-  private void registerHandlers(AbstractState state) {
+  private void registerHandlers(RaftState state) {
     state.syncHandler(syncHandler);
     state.appendHandler(appendHandler);
     state.pollHandler(pollHandler);
@@ -684,7 +637,7 @@ public class RaftContext extends Observable implements RaftProtocol {
       try {
         open = true;
         log.open();
-        transition(activeMembers.contains(localMember) ? RaftState.FOLLOWER : RaftState.PASSIVE);
+        transition(activeMembers.contains(localMember) ? RaftState.Type.FOLLOWER : RaftState.Type.PASSIVE);
       } catch (Exception e) {
         openFuture.completeExceptionally(e);
         openFuture = null;
@@ -709,7 +662,7 @@ public class RaftContext extends Observable implements RaftProtocol {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     executor.execute(() -> {
-      transition(RaftState.START).whenComplete((result, error) -> {
+      transition(RaftState.Type.START).whenComplete((result, error) -> {
         if (error == null) {
           try {
             log.close();

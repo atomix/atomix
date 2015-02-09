@@ -17,7 +17,7 @@ package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.MemberCoordinator;
-import net.kuujo.copycat.resource.internal.RaftContext;
+import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,52 +1,51 @@
 /*
- * Copyright 2015 the original author or authors.
+ * Copyright 2014 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
- *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol.rpc;
+package net.kuujo.copycat.raft.protocol;
 
 import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Objects;
 
 /**
- * Protocol poll response.
+ * Protocol vote response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class PollResponse extends AbstractResponse {
+public class VoteResponse extends AbstractResponse {
 
   /**
-   * Returns a new poll response builder.
+   * Returns a new vote response builder.
    *
-   * @return A new poll response builder.
+   * @return A new vote response builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
   /**
-   * Returns a poll response builder for an existing response.
+   * Returns a vote response builder for an existing response.
    *
    * @param response The response to build.
-   * @return The poll response builder.
+   * @return The vote response builder.
    */
-  public static Builder builder(PollResponse response) {
+  public static Builder builder(VoteResponse response) {
     return new Builder(response);
   }
 
   private long term;
-  private boolean accepted;
+  private boolean voted;
 
   /**
    * Returns the responding node's current term.
@@ -58,45 +57,45 @@ public class PollResponse extends AbstractResponse {
   }
 
   /**
-   * Returns a boolean indicating whether the poll was accepted.
+   * Returns a boolean indicating whether the vote was granted.
    *
-   * @return Indicates whether the poll was accepted.
+   * @return Indicates whether the vote was granted.
    */
-  public boolean accepted() {
-    return accepted;
+  public boolean voted() {
+    return voted;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(member, status, term, accepted);
+    return Objects.hash(member, status, term, voted);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof PollResponse) {
-      PollResponse response = (PollResponse) object;
+    if (object instanceof VoteResponse) {
+      VoteResponse response = (VoteResponse) object;
       return response.member.equals(member)
         && response.status == status
         && response.term == term
-        && response.accepted == accepted;
+        && response.voted == voted;
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[term=%d, accepted=%b]", getClass().getSimpleName(), term, accepted);
+    return String.format("%s[term=%d, voted=%b]", getClass().getSimpleName(), term, voted);
   }
 
   /**
    * Poll response builder.
    */
-  public static class Builder extends AbstractResponse.Builder<Builder, PollResponse> {
+  public static class Builder extends AbstractResponse.Builder<Builder, VoteResponse> {
     protected Builder() {
-      this(new PollResponse());
+      this(new VoteResponse());
     }
 
-    protected Builder(PollResponse response) {
+    protected Builder(VoteResponse response) {
       super(response);
     }
 
@@ -104,28 +103,28 @@ public class PollResponse extends AbstractResponse {
      * Sets the response term.
      *
      * @param term The response term.
-     * @return The poll response builder.
+     * @return The vote response builder.
      */
     public Builder withTerm(long term) {
-      response.term = Assert.arg(term, term >= 0, "term must be greater than or equal to zero");
+      response.term = Assert.arg(term, term > 0, "term must be greater than zero");
       return this;
     }
 
     /**
-     * Sets whether the poll was granted.
+     * Sets whether the vote was granted.
      *
-     * @param accepted Whether the poll was granted.
-     * @return The poll response builder.
+     * @param voted Whether the vote was granted.
+     * @return The vote response builder.
      */
-    public Builder withAccepted(boolean accepted) {
-      response.accepted = accepted;
+    public Builder withVoted(boolean voted) {
+      response.voted = voted;
       return this;
     }
 
     @Override
-    public PollResponse build() {
+    public VoteResponse build() {
       super.build();
-      Assert.arg(response.term, response.term >= 0, "term must be greater than or equal to zero");
+      Assert.arg(response.term, response.term > 0, "term must be greater than zero");
       return response;
     }
 

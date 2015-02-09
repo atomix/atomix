@@ -24,7 +24,7 @@ import net.kuujo.copycat.cluster.internal.manager.LocalMemberManager;
 import net.kuujo.copycat.cluster.internal.manager.MemberManager;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
-import net.kuujo.copycat.resource.internal.RaftContext;
+import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 import org.slf4j.Logger;
