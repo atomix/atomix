@@ -38,6 +38,7 @@ public class StateLogTest extends ConcurrentTestCase {
    */
   @SuppressWarnings("unchecked")
   public void testQueryWithStrongConsistency() throws Throwable {
+    LocalProtocol.reset();
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol())
       .withMembers("local://foo", "local://bar", "local://baz");
@@ -67,6 +68,7 @@ public class StateLogTest extends ConcurrentTestCase {
    */
   @SuppressWarnings("unchecked")
   public void testSnapshotReplication() throws Throwable {
+    LocalProtocol.reset();
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol())
       .withMembers("local://foo", "local://bar", "local://baz");
