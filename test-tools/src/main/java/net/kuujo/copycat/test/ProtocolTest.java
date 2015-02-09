@@ -167,7 +167,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
     });
 
     test.open().thenRun(passive2::close);
-    await(10000);
+    await(15000);
     test.close().get();
   }
 
@@ -215,6 +215,14 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
       resume();
     });
     await(5000);
+
+    expectResume();
+    client.close().thenRunAsync(this::resume);
+    await(1000);
+
+    expectResume();
+    server.close().thenRunAsync(this::resume);
+    await(1000);
   }
 
 }

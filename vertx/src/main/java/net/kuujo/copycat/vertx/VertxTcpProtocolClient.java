@@ -168,14 +168,7 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   @Override
   public CompletableFuture<Void> close() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
-    if (client != null && socket != null) {
-      socket.closeHandler(v -> {
-        socket = null;
-        client.close();
-        client = null;
-        future.complete(null);
-      }).close();
-    } else if (client != null) {
+    if (client != null) {
       client.close();
       client = null;
       future.complete(null);
