@@ -105,7 +105,7 @@ public class LockServiceVerticle extends Verticle implements Handler<Message<Jso
             // Create and open a new state machine instance and create a lock proxy for submitting state machine
             // commands and queries to the cluster. When the state machine is opened, the state machine will communicate
             // with other nodes in the Copycat instance cluster to elect a leader and begin replicating the state log.
-            copycat.<LockState>stateMachine("lock", stateMachineConfig).open().whenComplete((stateMachine, error) -> {
+            copycat.<LockState>createStateMachine("lock", stateMachineConfig).open().whenComplete((stateMachine, error) -> {
               if (error != null) {
                 startResult.setFailure(error);
               } else {

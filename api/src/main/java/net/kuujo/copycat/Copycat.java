@@ -86,7 +86,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> the event log entry type.
    * @return The event log instance.
    */
-  <T> EventLog<T> eventLog(String name);
+  <T> EventLog<T> createEventLog(String name);
 
   /**
    * Creates a new event log.
@@ -96,7 +96,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The event log entry type.
    * @return The event log instance.
    */
-  <T> EventLog<T> eventLog(String name, EventLogConfig config);
+  <T> EventLog<T> createEventLog(String name, EventLogConfig config);
 
   /**
    * Creates a new state log.
@@ -105,7 +105,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The state log entry type.
    * @return The state log instance.
    */
-  <T> StateLog<T> stateLog(String name);
+  <T> StateLog<T> createStateLog(String name);
 
   /**
    * Creates a new state log.
@@ -115,7 +115,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The state log entry type.
    * @return The state log instance.
    */
-  <T> StateLog<T> stateLog(String name, StateLogConfig config);
+  <T> StateLog<T> createStateLog(String name, StateLogConfig config);
 
   /**
    * Creates a new replicated state machine.
@@ -126,7 +126,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The state machine state type.
    * @return The state machine instance.
    */
-  <T> StateMachine<T> stateMachine(String name, Class<T> stateType, Class<? extends T> initialState);
+  <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState);
 
   /**
    * Creates a new replicated state machine.
@@ -136,7 +136,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The state machine state type.
    * @return The state machine instance.
    */
-  <T> StateMachine<T> stateMachine(String name, StateMachineConfig config);
+  <T> StateMachine<T> createStateMachine(String name, StateMachineConfig config);
 
   /**
    * Creates a new leader election.
@@ -144,7 +144,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The leader election name.
    * @return The leader election instance.
    */
-  LeaderElection leaderElection(String name);
+  LeaderElection createLeaderElection(String name);
 
   /**
    * Creates a new leader election.
@@ -153,7 +153,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The leader election configuration.
    * @return The leader election instance.
    */
-  LeaderElection leaderElection(String name, LeaderElectionConfig config);
+  LeaderElection createLeaderElection(String name, LeaderElectionConfig config);
 
   /**
    * Creates a named asynchronous map.
@@ -163,7 +163,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <V> The map value type.
    * @return The asynchronous map instance.
    */
-  <K, V> AsyncMap<K, V> map(String name);
+  <K, V> AsyncMap<K, V> createMap(String name);
 
   /**
    * Creates a named asynchronous map.
@@ -174,7 +174,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <V> The map value type.
    * @return The asynchronous map instance.
    */
-  <K, V> AsyncMap<K, V> map(String name, AsyncMapConfig config);
+  <K, V> AsyncMap<K, V> createMap(String name, AsyncMapConfig config);
 
   /**
    * Creates a named asynchronous multimap.
@@ -184,7 +184,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <V> The map entry type.
    * @return The asynchronous multimap instance.
    */
-  <K, V> AsyncMultiMap<K, V> multiMap(String name);
+  <K, V> AsyncMultiMap<K, V> createMultiMap(String name);
 
   /**
    * Creates a named asynchronous multimap.
@@ -195,7 +195,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <V> The map entry type.
    * @return The asynchronous multimap instance.
    */
-  <K, V> AsyncMultiMap<K, V> multiMap(String name, AsyncMultiMapConfig config);
+  <K, V> AsyncMultiMap<K, V> createMultiMap(String name, AsyncMultiMapConfig config);
 
   /**
    * Creates a named asynchronous list.
@@ -204,7 +204,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The list entry type.
    * @return The asynchronous list instance.
    */
-  <T> AsyncList<T> list(String name);
+  <T> AsyncList<T> createList(String name);
 
   /**
    * Creates a named asynchronous list.
@@ -214,7 +214,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The list entry type.
    * @return The asynchronous list instance.
    */
-  <T> AsyncList<T> list(String name, AsyncListConfig config);
+  <T> AsyncList<T> createList(String name, AsyncListConfig config);
 
   /**
    * Creates a named asynchronous set.
@@ -223,7 +223,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
    */
-  <T> AsyncSet<T> set(String name);
+  <T> AsyncSet<T> createSet(String name);
 
   /**
    * Creates a named asynchronous set.
@@ -233,7 +233,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
    */
-  <T> AsyncSet<T> set(String name, AsyncSetConfig config);
+  <T> AsyncSet<T> createSet(String name, AsyncSetConfig config);
 
   /**
    * Creates a named asynchronous lock.
@@ -241,7 +241,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The lock name.
    * @return The asynchronous lock instance.
    */
-  AsyncLock lock(String name);
+  AsyncLock createLock(String name);
 
   /**
    * Creates a named asynchronous lock.
@@ -250,7 +250,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The lock configuration.
    * @return The asynchronous lock instance.
    */
-  AsyncLock lock(String name, AsyncLockConfig config);
+  AsyncLock createLock(String name, AsyncLockConfig config);
 
   /**
    * Creates a named asynchronous atomic long value.
@@ -258,7 +258,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The atomic long name.
    * @return The asynchronous atomic long instance.
    */
-  AsyncAtomicLong atomicLong(String name);
+  AsyncAtomicLong createLong(String name);
 
   /**
    * Creates a named asynchronous atomic long value.
@@ -267,7 +267,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The long configuration.
    * @return The asynchronous atomic long instance.
    */
-  AsyncAtomicLong atomicLong(String name, AsyncAtomicLongConfig config);
+  AsyncAtomicLong createLong(String name, AsyncAtomicLongConfig config);
 
   /**
    * Creates a named asynchronous atomic boolean value.
@@ -275,7 +275,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The atomic boolean name.
    * @return The asynchronous atomic boolean instance.
    */
-  AsyncAtomicBoolean atomicBoolean(String name);
+  AsyncAtomicBoolean createBoolean(String name);
 
   /**
    * Creates a named asynchronous atomic boolean value.
@@ -284,7 +284,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The boolean configuration.
    * @return The asynchronous atomic boolean instance.
    */
-  AsyncAtomicBoolean atomicBoolean(String name, AsyncAtomicBooleanConfig config);
+  AsyncAtomicBoolean createBoolean(String name, AsyncAtomicBooleanConfig config);
 
   /**
    * Creates a named asynchronous atomic reference value.
@@ -292,7 +292,7 @@ public interface Copycat extends Managed<Copycat> {
    * @param name The atomic reference name.
    * @return The asynchronous atomic reference instance.
    */
-  <T> AsyncAtomicReference<T> atomicReference(String name);
+  <T> AsyncAtomicReference<T> createReference(String name);
 
   /**
    * Creates a named asynchronous atomic reference value.
@@ -301,6 +301,6 @@ public interface Copycat extends Managed<Copycat> {
    * @param config The reference configuration.
    * @return The asynchronous atomic reference instance.
    */
-  <T> AsyncAtomicReference<T> atomicReference(String name, AsyncAtomicReferenceConfig config);
+  <T> AsyncAtomicReference<T> createReference(String name, AsyncAtomicReferenceConfig config);
 
 }

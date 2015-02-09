@@ -381,7 +381,7 @@ EventLogConfig config = new EventLogConfig()
   .withLog(new FileLog()
     .withSegmentSize(1024 * 1024));
 
-EventLog<String> eventLog = copycat.eventLog("event-log", config);
+EventLog<String> eventLog = copycat.createEventLog("event-log", config);
 ```
 
 Each resource can optionally define a set of replicas separate from the global cluster configuration. The set of
@@ -411,7 +411,7 @@ EventLogConfig eventLogConfig = new EventLogConfig()
   .withLog(new FileLog()
     .withSegmentSize(1024 * 1024));
 
-EventLog<String> eventLog = copycat.eventLog("event-log", eventLogConfig);
+EventLog<String> eventLog = copycat.createEventLog("event-log", eventLogConfig);
 ```
 
 If replicas are defined for the resource and the local cluster member is not specified in the list of resource members,
@@ -586,21 +586,25 @@ log.class: net.kuujo.copycat.log.BufferedLog
 
 With resources configured and the `Copycat` instance created, resources can be easily retrieved by calling any
 of the resource-specific methods on the `Copycat` instance:
-* `<T> EventLog<T> eventLog(String name)`
-* `<T> StateLog<T> stateLog(String name)`
-* `<T> StateMachine<T> stateMachine(String name)`
-* `LeaderElection leaderElection(String name)`
-* `<K, V> AsyncMap<K, V> map(String name)`
-* `<K, V> AsyncMultiMap<K, V> multiMap(String name)`
-* `<T> AsyncList<T> list(String name)`
-* `<T> AsyncSet<T> set(String name)`
-* `AsyncLock lock(String name)`
+* `<T> EventLog<T> createEventLog(String name)`
+* `<T> StateLog<T> createStateLog(String name)`
+* `<T> StateMachine<T> createStateMachine(String name)`
+* `LeaderElection createLeaderElection(String name)`
+* `<K, V> AsyncMap<K, V> createMap(String name)`
+* `<K, V> AsyncMultiMap<K, V> createMultiMap(String name)`
+* `<T> AsyncList<T> createList(String name)`
+* `<T> AsyncSet<T> createSet(String name)`
+* `AsyncLock createLock(String name)`
+* `AsyncSemaphore createSemaphore(String name)`
+* `AsyncLong createLong(String name)`
+* `AsyncBoolean createBoolean(String name)`
+* `AsyncReference createReference(String name)`
 
 ```java
 Copycat copycat = Copycat.create(config);
 
 copycat.open().thenRun(() -> {
-  StateMachine<String> stateMachine = copycat.stateMachine("test");
+  StateMachine<String> stateMachine = copycat.createStateMachine("test");
   stateMachine.open().thenRun(() -> {
     Map<String, String> map = stateMachine.createProxy(Map.class);
     map.put("foo", "Hello world!").thenRun(() -> {
@@ -619,7 +623,7 @@ as so:
 Copycat copycat = Copycat.create(config);
 
 copycat.open()
-  .thenCompose(copycat.stateMachine("test").open())
+  .thenCompose(copycat.createStateMachine("test").open())
   .thenApply(stateMachine -> stateMachine.createProxy(Map.class))
   .thenAccept(map -> {
     map.put("foo", "Hello world!")
@@ -706,7 +710,7 @@ CopycatConfig config = new CopycatConfig()
 
 Copycat copycat = Copycat.create(config).open().get();
 
-StateMachine<Map<String, String>> stateMachine = copycat.stateMachine("map").open().get();
+StateMachine<Map<String, String>> stateMachine = copycat.createStateMachine("map").open().get();
 ```
 
 When a Copycat resource - such as a state machine, log, or election - is created, the resource must be opened before
@@ -997,7 +1001,7 @@ Event logs are eventually consistent Raft replicated logs that are designed to b
 
 ### Creating an event log
 
-To create an event log, call the `eventLog` method on the `Copycat` instance.
+To create an event log, call the `createEventLog` method on the `Copycat` instance.
 
 ```java
 ClusterConfig cluster = new ClusterConfig()
@@ -1012,7 +1016,7 @@ CopycatConfig config = new CopycatConfig()
 Copycat copycat = Copycat.create(config);
 
 copycat.open().thenRun(() -> {
-  copycat.<String>eventLog("event-log").open().thenAccept(eventLog -> {
+  copycat.<String>createEventLog("event-log").open().thenAccept(eventLog -> {
     eventLog.commit("Hello world!");
   });
 });
@@ -1160,7 +1164,7 @@ CopycatConfig config = new CopycatConfig()
 Copycat copycat = Copycat.create(config);
 
 copycat.open().thenRun(() -> {
-  copycat.<String>stateLog("state-log").open().thenAccept(stateLog -> {
+  copycat.<String>createStateLog("state-log").open().thenAccept(stateLog -> {
     stateLog.commit("Hello world!");
   });
 });
@@ -1327,7 +1331,7 @@ election. To register a handler to be notified once a node has become leader, us
 Copycat copycat = Copycat.create(config);
 
 copycat.open()
-  .thenCompose(c -> c.leaderElection("election").open())
+  .thenCompose(c -> c.createLeaderElection("election").open())
   .thenAccept(election -> {
     election.addListener(member -> System.out.println(member.uri() + " was elected leader!");
   });
@@ -1418,7 +1422,7 @@ CopycatConfig config = new CopycatConfig()
     .withConsistency(Consistency.STRONG));
 
 Copycat.copycat(config).open()
-  .thenApply(copycat -> copycat.<String, String>map("test-map"))
+  .thenApply(copycat -> copycat.<String, String>createMap("test-map"))
   .thenCompose(map -> map.open())
   .thenAccept(map -> {
     map.put("foo", "Hello world!").thenRun(() -> {
@@ -1464,7 +1468,7 @@ CopycatConfig config = new CopycatConfig()
     .withConsistency(Consistency.STRONG));
 
 Copycat.copycat(config).open()
-  .thenApply(copycat -> copycat.<String>list("test-list"))
+  .thenApply(copycat -> copycat.<String>createList("test-list"))
   .thenCompose(list -> list.open())
   .thenAccept(list -> {
     list.add("Hello world!").thenRun(() -> {
@@ -1510,7 +1514,7 @@ CopycatConfig config = new CopycatConfig()
     .withConsistency(Consistency.STRONG));
 
 Copycat.copycat(config).open()
-  .thenApply(copycat -> copycat.<String>set("test-set"))
+  .thenApply(copycat -> copycat.<String>createSet("test-set"))
   .thenCompose(set -> set.open())
   .thenAccept(set -> {
     set.add("Hello world!").thenRun(() -> {
@@ -1556,7 +1560,7 @@ CopycatConfig config = new CopycatConfig()
     .withConsistency(Consistency.STRONG));
 
 Copycat.copycat(config).open()
-  .thenApply(copycat -> copycat.<String, String>multiMap("test-multimap"))
+  .thenApply(copycat -> copycat.<String, String>createMultiMap("test-multimap"))
   .thenCompose(multiMap -> multiMap.open())
   .thenAccept(multiMap -> {
     multiMap.put("foo", "Hello world!").thenRun(() -> {
@@ -1602,7 +1606,7 @@ CopycatConfig config = new CopycatConfig()
     .withConsistency(Consistency.STRONG));
 
 Copycat.copycat(config).open()
-  .thenApply(copycat -> copycat.lock("test-lock"))
+  .thenApply(copycat -> copycat.createLock("test-lock"))
   .thenCompose(lock -> lock.open())
   .thenAccept(lock -> {
     lock.lock().thenRun(() -> {

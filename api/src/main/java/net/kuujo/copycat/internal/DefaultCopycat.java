@@ -62,144 +62,144 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public <T> EventLog<T> eventLog(String name) {
-    return eventLog(name, new EventLogConfig(name));
+  public <T> EventLog<T> createEventLog(String name) {
+    return createEventLog(name, new EventLogConfig(name));
   }
 
   @Override
-  public <T> EventLog<T> eventLog(String name, EventLogConfig config) {
+  public <T> EventLog<T> createEventLog(String name, EventLogConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <T> StateLog<T> stateLog(String name) {
-    return stateLog(name, new StateLogConfig(name));
+  public <T> StateLog<T> createStateLog(String name) {
+    return createStateLog(name, new StateLogConfig(name));
   }
 
   @Override
-  public <T> StateLog<T> stateLog(String name, StateLogConfig config) {
+  public <T> StateLog<T> createStateLog(String name, StateLogConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <T> StateMachine<T> stateMachine(String name, Class<T> stateType, Class<? extends T> initialState) {
-    return stateMachine(name, new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
+  public <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState) {
+    return createStateMachine(name, new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
   }
 
   @Override
-  public <T> StateMachine<T> stateMachine(String name, StateMachineConfig config) {
+  public <T> StateMachine<T> createStateMachine(String name, StateMachineConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public LeaderElection leaderElection(String name) {
-    return leaderElection(name, new LeaderElectionConfig(name));
+  public LeaderElection createLeaderElection(String name) {
+    return createLeaderElection(name, new LeaderElectionConfig(name));
   }
 
   @Override
-  public LeaderElection leaderElection(String name, LeaderElectionConfig config) {
+  public LeaderElection createLeaderElection(String name, LeaderElectionConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <K, V> AsyncMap<K, V> map(String name) {
-    return map(name, new AsyncMapConfig(name));
+  public <K, V> AsyncMap<K, V> createMap(String name) {
+    return createMap(name, new AsyncMapConfig(name));
   }
 
   @Override
-  public <K, V> AsyncMap<K, V> map(String name, AsyncMapConfig config) {
+  public <K, V> AsyncMap<K, V> createMap(String name, AsyncMapConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <K, V> AsyncMultiMap<K, V> multiMap(String name) {
-    return multiMap(name, new AsyncMultiMapConfig(name));
+  public <K, V> AsyncMultiMap<K, V> createMultiMap(String name) {
+    return createMultiMap(name, new AsyncMultiMapConfig(name));
   }
 
   @Override
-  public <K, V> AsyncMultiMap<K, V> multiMap(String name, AsyncMultiMapConfig config) {
+  public <K, V> AsyncMultiMap<K, V> createMultiMap(String name, AsyncMultiMapConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <T> AsyncList<T> list(String name) {
-    return list(name, new AsyncListConfig(name));
+  public <T> AsyncList<T> createList(String name) {
+    return createList(name, new AsyncListConfig(name));
   }
 
   @Override
-  public <T> AsyncList<T> list(String name, AsyncListConfig config) {
+  public <T> AsyncList<T> createList(String name, AsyncListConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <T> AsyncSet<T> set(String name) {
-    return set(name, new AsyncSetConfig(name));
+  public <T> AsyncSet<T> createSet(String name) {
+    return createSet(name, new AsyncSetConfig(name));
   }
 
   @Override
-  public <T> AsyncSet<T> set(String name, AsyncSetConfig config) {
+  public <T> AsyncSet<T> createSet(String name, AsyncSetConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public AsyncLock lock(String name) {
-    return lock(name, new AsyncLockConfig(name));
+  public AsyncLock createLock(String name) {
+    return createLock(name, new AsyncLockConfig(name));
   }
 
   @Override
-  public AsyncLock lock(String name, AsyncLockConfig config) {
+  public AsyncLock createLock(String name, AsyncLockConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public AsyncAtomicLong atomicLong(String name) {
-    return atomicLong(name, new AsyncAtomicLongConfig());
+  public AsyncAtomicLong createLong(String name) {
+    return createLong(name, new AsyncAtomicLongConfig());
   }
 
   @Override
-  public AsyncAtomicLong atomicLong(String name, AsyncAtomicLongConfig config) {
+  public AsyncAtomicLong createLong(String name, AsyncAtomicLongConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public AsyncAtomicBoolean atomicBoolean(String name) {
-    return atomicBoolean(name, new AsyncAtomicBooleanConfig());
+  public AsyncAtomicBoolean createBoolean(String name) {
+    return createBoolean(name, new AsyncAtomicBooleanConfig());
   }
 
   @Override
-  public AsyncAtomicBoolean atomicBoolean(String name, AsyncAtomicBooleanConfig config) {
+  public AsyncAtomicBoolean createBoolean(String name, AsyncAtomicBooleanConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
   }
 
   @Override
-  public <T> AsyncAtomicReference<T> atomicReference(String name) {
-    return atomicReference(name, new AsyncAtomicReferenceConfig());
+  public <T> AsyncAtomicReference<T> createReference(String name) {
+    return createReference(name, new AsyncAtomicReferenceConfig());
   }
 
   @Override
-  public <T> AsyncAtomicReference<T> atomicReference(String name, AsyncAtomicReferenceConfig config) {
+  public <T> AsyncAtomicReference<T> createReference(String name, AsyncAtomicReferenceConfig config) {
     return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
       .withDefaultSerializer(this.config.getDefaultSerializer().copy())
       .withDefaultExecutor(this.config.getDefaultExecutor()));
