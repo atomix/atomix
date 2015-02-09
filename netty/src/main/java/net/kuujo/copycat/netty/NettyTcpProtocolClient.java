@@ -16,11 +16,14 @@
 package net.kuujo.copycat.netty;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import net.kuujo.copycat.protocol.ProtocolClient;
@@ -41,29 +44,26 @@ public class NettyTcpProtocolClient implements ProtocolClient {
   private final String host;
   private final int port;
   private final NettyTcpProtocol protocol;
+  private EventLoopGroup group;
   private Channel channel;
   private ChannelHandlerContext context;
   private final Map<Object, CompletableFuture<ByteBuffer>> responseFutures = new HashMap<>(1000);
   private long requestId;
 
-  private final ChannelInboundHandlerAdapter channelHandler = new ChannelInboundHandlerAdapter() {
+  private final ChannelInboundHandlerAdapter channelHandler = new SimpleChannelInboundHandler<byte[]>() {
     @Override
     public void channelActive(ChannelHandlerContext context) {
       NettyTcpProtocolClient.this.context = context;
     }
+
     @Override
-    public void channelRead(ChannelHandlerContext context, Object message) {
-      ByteBuf response = (ByteBuf) message;
-      long responseId = response.readLong();
+    protected void channelRead0(ChannelHandlerContext context, byte[] message) throws Exception {
+      ByteBuffer buffer = ByteBuffer.wrap(message);
+      long responseId = buffer.getLong();
       CompletableFuture<ByteBuffer> responseFuture = responseFutures.remove(responseId);
       if (responseFuture != null) {
-        int length = response.readInt();
-        ByteBuffer buffer = ByteBuffer.allocateDirect(length);
-        response.readBytes(buffer);
-        buffer.flip();
-        responseFuture.complete(buffer);
+        responseFuture.complete(buffer.slice());
       }
-      response.release();
     }
   };
 
@@ -79,11 +79,10 @@ public class NettyTcpProtocolClient implements ProtocolClient {
     final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     if (channel != null) {
       long requestId = ++this.requestId;
-      ByteBuf buffer = context.alloc().buffer(request.remaining() + 12); // Request ID and length
-      buffer.writeLong(requestId);
-      buffer.writeInt(request.remaining());
-      buffer.writeBytes(request);
-      channel.writeAndFlush(buffer).addListener((channelFuture) -> {
+      ByteBuffer buffer = ByteBuffer.allocate(request.limit() + 8);
+      buffer.putLong(requestId);
+      buffer.put(request);
+      channel.writeAndFlush(buffer.array()).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
           responseFutures.put(requestId, future);
         } else {
@@ -116,7 +115,7 @@ public class NettyTcpProtocolClient implements ProtocolClient {
       sslContext = null;
     }
 
-    final EventLoopGroup group = new NioEventLoopGroup(protocol.getThreads());
+    group = new NioEventLoopGroup(protocol.getThreads());
     Bootstrap bootstrap = new Bootstrap();
     bootstrap.group(group)
       .channel(NioSocketChannel.class)
@@ -127,7 +126,11 @@ public class NettyTcpProtocolClient implements ProtocolClient {
           if (sslContext != null) {
             pipeline.addLast(sslContext.newHandler(channel.alloc(), host, port));
           }
-          pipeline.addLast(channelHandler);
+          pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4));
+          pipeline.addLast("bytesDecoder", new ByteArrayDecoder());
+          pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
+          pipeline.addLast("bytesEncoder", new ByteArrayEncoder());
+          pipeline.addLast("handler", channelHandler);
         }
       });
 
@@ -148,15 +151,12 @@ public class NettyTcpProtocolClient implements ProtocolClient {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, protocol.getConnectTimeout());
 
-    bootstrap.connect(host, port).addListener(new ChannelFutureListener() {
-      @Override
-      public void operationComplete(ChannelFuture channelFuture) throws Exception {
-        if (channelFuture.isSuccess()) {
-          channel = channelFuture.channel();
-          future.complete(null);
-        } else  {
-          future.completeExceptionally(channelFuture.cause());
-        }
+    bootstrap.connect(host, port).addListener((ChannelFutureListener) channelFuture -> {
+      if (channelFuture.isSuccess()) {
+        channel = channelFuture.channel();
+        future.complete(null);
+      } else  {
+        future.completeExceptionally(channelFuture.cause());
       }
     });
     return future;
@@ -166,15 +166,12 @@ public class NettyTcpProtocolClient implements ProtocolClient {
   public CompletableFuture<Void> close() {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (channel != null) {
-      channel.close().addListener(new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture channelFuture) throws Exception {
-          channel = null;
-          if (channelFuture.isSuccess()) {
-            future.complete(null);
-          } else {
-            future.completeExceptionally(channelFuture.cause());
-          }
+      channel.close().addListener(channelFuture -> {
+        group.shutdownGracefully();
+        if (channelFuture.isSuccess()) {
+          future.complete(null);
+        } else {
+          future.completeExceptionally(channelFuture.cause());
         }
       });
     } else {

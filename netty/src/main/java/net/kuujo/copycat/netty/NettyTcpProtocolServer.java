@@ -16,11 +16,14 @@
 package net.kuujo.copycat.netty;
 
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import io.netty.handler.codec.LengthFieldPrepender;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.util.SelfSignedCertificate;
 import net.kuujo.copycat.protocol.ProtocolHandler;
@@ -41,6 +44,8 @@ public class NettyTcpProtocolServer implements ProtocolServer {
   private final int port;
   private final NettyTcpProtocol protocol;
   private ProtocolHandler handler;
+  private EventLoopGroup serverGroup;
+  private EventLoopGroup workerGroup;
   private Channel channel;
 
   public NettyTcpProtocolServer(String host, int port, NettyTcpProtocol protocol) {
@@ -71,8 +76,8 @@ public class NettyTcpProtocolServer implements ProtocolServer {
       sslContext = null;
     }
 
-    final EventLoopGroup serverGroup = new NioEventLoopGroup();
-    final EventLoopGroup workerGroup = new NioEventLoopGroup(protocol.getThreads());
+    serverGroup = new NioEventLoopGroup();
+    workerGroup = new NioEventLoopGroup(protocol.getThreads());
 
     final ServerBootstrap bootstrap = new ServerBootstrap();
     bootstrap.group(serverGroup, workerGroup)
@@ -84,7 +89,11 @@ public class NettyTcpProtocolServer implements ProtocolServer {
           if (sslContext != null) {
             pipeline.addLast(sslContext.newHandler(channel.alloc()));
           }
-          pipeline.addLast(new ServerHandlerAdapter());
+          pipeline.addLast("frameDecoder", new LengthFieldBasedFrameDecoder(1048576, 0, 4, 0, 4));
+          pipeline.addLast("bytesDecoder", new ByteArrayDecoder());
+          pipeline.addLast("frameEncoder", new LengthFieldPrepender(4));
+          pipeline.addLast("bytesEncoder", new ByteArrayEncoder());
+          pipeline.addLast("handler", new ServerHandler());
         }
       })
       .option(ChannelOption.SO_BACKLOG, 128);
@@ -129,6 +138,8 @@ public class NettyTcpProtocolServer implements ProtocolServer {
     final CompletableFuture<Void> future = new CompletableFuture<>();
     if (channel != null) {
       channel.close().addListener(channelFuture -> {
+        workerGroup.shutdownGracefully();
+        serverGroup.shutdownGracefully();
         if (channelFuture.isSuccess()) {
           future.complete(null);
         } else {
@@ -146,24 +157,19 @@ public class NettyTcpProtocolServer implements ProtocolServer {
     return getClass().getSimpleName();
   }
 
-  private class ServerHandlerAdapter extends ChannelInboundHandlerAdapter {
+  private class ServerHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
-    public void channelRead(final ChannelHandlerContext context, Object message) {
-      ByteBuf request = (ByteBuf) message;
+    protected void channelRead0(ChannelHandlerContext context, byte[] message) throws Exception {
       if (handler != null) {
-        long requestId = request.readLong();
-        int length = request.readInt();
-        ByteBuffer buffer = request.nioBuffer(request.readerIndex(), length);
-        handler.apply(buffer).whenComplete((result, error) -> {
+        ByteBuffer buffer = ByteBuffer.wrap(message);
+        long requestId = buffer.getLong();
+        handler.apply(buffer.slice()).whenComplete((result, error) -> {
           if (error == null) {
             context.channel().eventLoop().execute(() -> {
-              ByteBuf response = context.alloc().buffer(result.remaining() + 12); // Response ID and length
-              response.writeLong(requestId);
-              response.writeInt(result.remaining());
-              response.writeBytes(result);
-              context.writeAndFlush(response).addListener(future -> {
-                request.release();
-              });
+              ByteBuffer response = ByteBuffer.allocate(result.limit() + 8);
+              response.putLong(requestId);
+              response.put(result);
+              context.writeAndFlush(response.array());
             });
           }
         });

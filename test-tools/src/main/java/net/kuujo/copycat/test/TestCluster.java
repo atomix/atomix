@@ -29,6 +29,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestCluster<T extends Resource<T>> {
+  private static int id;
   private final List<T> activeResources;
   private final List<T> passiveResources;
 
@@ -102,10 +103,10 @@ public class TestCluster<T extends Resource<T>> {
 
       List<T> activeResources = new ArrayList<>(activeMembers);
 
-      int i = 1;
       Set<String> members = new HashSet<>(activeMembers);
-      while (i <= activeMembers) {
-        String uri = uriFactory.apply(i++);
+      int activeCount = activeMembers + id;
+      while (id <= activeCount) {
+        String uri = uriFactory.apply(id++);
         members.add(uri);
       }
 
@@ -115,8 +116,9 @@ public class TestCluster<T extends Resource<T>> {
       }
 
       List<T> passiveResources = new ArrayList<>(passiveMembers);
-      while (i <= passiveMembers + activeMembers) {
-        String member = uriFactory.apply(i++);
+      int passiveCount = passiveMembers + id;
+      while (id <= passiveCount) {
+        String member = uriFactory.apply(id++);
         ClusterConfig cluster = clusterFactory.apply(members).withLocalMember(member);
         passiveResources.add(resourceFactory.apply(cluster));
       }
