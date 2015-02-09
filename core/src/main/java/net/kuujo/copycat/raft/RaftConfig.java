@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,130 +13,44 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster.internal.coordinator;
+package net.kuujo.copycat.raft;
 
 import com.typesafe.config.ConfigList;
 import com.typesafe.config.ConfigValueFactory;
-
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
-import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.serializer.KryoSerializer;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Resource configuration.
+ * Raft state configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedResourceConfig extends AbstractConfigurable {
-  private static final String RESOURCE_CONFIG = "config";
-  private static final String RESOURCE_TYPE = "type";
+public class RaftConfig extends AbstractConfigurable {
   private static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
   private static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
   private static final String RESOURCE_REPLICAS = "replicas";
   private static final String RESOURCE_LOG = "log";
-  private static final String RESOURCE_SERIALIZER = "serializer";
 
-  private Serializer defaultSerializer = new KryoSerializer();
-  private Executor defaultExecutor;
-  private Executor executor;
-
-  public CoordinatedResourceConfig() {
+  public RaftConfig() {
     super();
   }
 
-  public CoordinatedResourceConfig(Map<String, Object> config) {
+  public RaftConfig(Map<String, Object> config) {
     super(config);
   }
 
-  protected CoordinatedResourceConfig(CoordinatedResourceConfig config) {
+  protected RaftConfig(RaftConfig config) {
     super(config);
   }
 
   @Override
-  public CoordinatedResourceConfig copy() {
-    return new CoordinatedResourceConfig(this);
-  }
-
-  /**
-   * Sets the user resource configuration.
-   *
-   * @param config The user resource configuration.
-   * @param <T> The resource configuration type.
-   * @throws java.lang.NullPointerException If the given configuration is {@code null}
-   */
-  public <T extends ResourceConfig<T>> void setResourceConfig(T config) {
-    this.config = this.config.withValue(RESOURCE_CONFIG, ConfigValueFactory.fromMap(Assert.isNotNull(config, "config").toMap()));
-  }
-
-  /**
-   * Returns the user resource configuration.
-   *
-   * @param <T> The resource configuration type.
-   * @return The user resource configuration.
-   */
-  public <T extends ResourceConfig<T>> T getResourceConfig() {
-    return Configurable.load(config.getObject(RESOURCE_CONFIG).unwrapped());
-  }
-
-  /**
-   * Sets the user resource configuration, returning the coordinated resource configuration for method chaining.
-   *
-   * @param config The user resource configuration.
-   * @param <T> The resource configuration type.
-   * @return The coordinated resource configuration.
-   * @throws java.lang.NullPointerException If the given configuration is {@code null}
-   */
-  public <T extends ResourceConfig<T>> CoordinatedResourceConfig withResourceConfig(T config) {
-    setResourceConfig(config);
-    return this;
-  }
-
-  /**
-   * Sets the resource type.
-   *
-   * @param type The resource type.
-   * @throws java.lang.NullPointerException If the resource type is {@code null}
-   */
-  @SuppressWarnings("rawtypes")
-  public void setResourceType(Class<? extends Resource> type) {
-    this.config = config.withValue(RESOURCE_TYPE, ConfigValueFactory.fromAnyRef(Assert.isNotNull(type, "type").getName()));
-  }
-
-  /**
-   * Returns the resource type.
-   *
-   * @return The resource type.
-   */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  public Class<? extends Resource> getResourceType() {
-    try {
-      return (Class<? extends Resource>) Class.forName(config.getString(RESOURCE_TYPE));
-    } catch (ClassNotFoundException e) {
-      throw new ConfigurationException("Failed to load resource class", e);
-    }
-  }
-
-  /**
-   * Sets the resource type, returning the resource configuration for method chaining.
-   *
-   * @param type The resource type.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the resource type is {@code null}
-   */
-  @SuppressWarnings("rawtypes")
-  public CoordinatedResourceConfig withResourceType(Class<? extends Resource> type) {
-    setResourceType(type);
-    return this;
+  public RaftConfig copy() {
+    return new RaftConfig(this);
   }
 
   /**
@@ -176,7 +90,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
-  public CoordinatedResourceConfig withElectionTimeout(long electionTimeout) {
+  public RaftConfig withElectionTimeout(long electionTimeout) {
     setElectionTimeout(electionTimeout);
     return this;
   }
@@ -189,7 +103,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
-  public CoordinatedResourceConfig withElectionTimeout(long electionTimeout, TimeUnit unit) {
+  public RaftConfig withElectionTimeout(long electionTimeout, TimeUnit unit) {
     setElectionTimeout(electionTimeout, unit);
     return this;
   }
@@ -231,7 +145,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
-  public CoordinatedResourceConfig withHeartbeatInterval(long heartbeatInterval) {
+  public RaftConfig withHeartbeatInterval(long heartbeatInterval) {
     setHeartbeatInterval(heartbeatInterval);
     return this;
   }
@@ -244,7 +158,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
-  public CoordinatedResourceConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
+  public RaftConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
     setHeartbeatInterval(heartbeatInterval, unit);
     return this;
   }
@@ -286,7 +200,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
-  public CoordinatedResourceConfig withReplicas(String... replicas) {
+  public RaftConfig withReplicas(String... replicas) {
     setReplicas(Arrays.asList(replicas));
     return this;
   }
@@ -298,7 +212,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
    */
-  public CoordinatedResourceConfig withReplicas(Collection<String> replicas) {
+  public RaftConfig withReplicas(Collection<String> replicas) {
     setReplicas(replicas);
     return this;
   }
@@ -310,7 +224,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.NullPointerException If {@code replica} is {@code null}
    */
-  public CoordinatedResourceConfig addReplica(String replica) {
+  public RaftConfig addReplica(String replica) {
     if (!config.hasPath(RESOURCE_REPLICAS)) {
       this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
     }
@@ -326,7 +240,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.NullPointerException If {@code replica} is {@code null}
    */
-  public CoordinatedResourceConfig removeReplica(String replica) {
+  public RaftConfig removeReplica(String replica) {
     ConfigList replicas = config.getList(RESOURCE_REPLICAS);
     replicas.remove(ConfigValueFactory.fromAnyRef(Assert.isNotNull(replica, "replica")));
     return this;
@@ -337,7 +251,7 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    *
    * @return The resource configuration.
    */
-  public CoordinatedResourceConfig clearReplicas() {
+  public RaftConfig clearReplicas() {
     config.withoutPath(RESOURCE_REPLICAS);
     return this;
   }
@@ -368,130 +282,8 @@ public class CoordinatedResourceConfig extends AbstractConfigurable {
    * @return The resource configuration.
    * @throws java.lang.NullPointerException If the {@code log} is {@code null}
    */
-  public CoordinatedResourceConfig withLog(Log log) {
+  public RaftConfig withLog(Log log) {
     setLog(log);
-    return this;
-  }
-
-  /**
-   * Sets the default resource entry serializer.
-   *
-   * @param serializer The default resource entry serializer.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  public void setDefaultSerializer(Serializer serializer) {
-    this.defaultSerializer = serializer;
-  }
-
-  /**
-   * Returns the default resource entry serializer.
-   *
-   * @return The default resource entry serializer.
-   * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
-   */
-  public Serializer getDefaultSerializer() {
-    return defaultSerializer;
-  }
-
-  /**
-   * Sets the default resource entry serializer, returning the configuration for method chaining.
-   *
-   * @param serializer The default resource entry serializer.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  public CoordinatedResourceConfig withDefaultSerializer(Serializer serializer) {
-    setDefaultSerializer(serializer);
-    return this;
-  }
-
-  /**
-   * Sets the resource entry serializer.
-   *
-   * @param serializer The resource entry serializer.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  public void setSerializer(Serializer serializer) {
-    this.config = config.withValue(RESOURCE_SERIALIZER, ConfigValueFactory.fromMap(Assert.isNotNull(serializer, "serializer").toMap()));
-  }
-
-  /**
-   * Returns the resource entry serializer.
-   *
-   * @return The resource entry serializer or the default serializer if no specific serializer was configured.
-   * @throws net.kuujo.copycat.util.ConfigurationException If the resource serializer configuration is malformed
-   */
-  public Serializer getSerializer() {
-    return config.hasPath(RESOURCE_SERIALIZER) ? Configurable.load(config.getObject(RESOURCE_SERIALIZER).unwrapped()) : defaultSerializer;
-  }
-
-  /**
-   * Sets the resource entry serializer, returning the configuration for method chaining.
-   *
-   * @param serializer The resource entry serializer.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the serializer is {@code null}
-   */
-  public CoordinatedResourceConfig withSerializer(Serializer serializer) {
-    setSerializer(serializer);
-    return this;
-  }
-
-  /**
-   * Sets the default resource executor.
-   *
-   * @param executor The default resource executor.
-   */
-  public void setDefaultExecutor(Executor executor) {
-    this.defaultExecutor = executor;
-  }
-
-  /**
-   * Returns the default resource executor.
-   *
-   * @return The default resource executor or {@code null} if no executor was specified.
-   */
-  public Executor getDefaultExecutor() {
-    return defaultExecutor;
-  }
-
-  /**
-   * Sets the resource executor, returning the configuration for method chaining.
-   *
-   * @param executor The resource executor.
-   * @return The resource configuration.
-   */
-  public CoordinatedResourceConfig withDefaultExecutor(Executor executor) {
-    setDefaultExecutor(executor);
-    return this;
-  }
-
-  /**
-   * Sets the resource executor.
-   *
-   * @param executor The resource executor.
-   */
-  public void setExecutor(Executor executor) {
-    this.executor = executor;
-  }
-
-  /**
-   * Returns the resource executor.
-   *
-   * @return The resource executor or the default executor if no specific executor was configured.
-   */
-  public Executor getExecutor() {
-    return executor != null ? executor : defaultExecutor;
-  }
-
-  /**
-   * Sets the resource executor, returning the configuration for method chaining.
-   *
-   * @param executor The resource executor.
-   * @return The resource configuration.
-   */
-  public CoordinatedResourceConfig withExecutor(Executor executor) {
-    setExecutor(executor);
     return this;
   }
 

@@ -22,11 +22,12 @@ import net.kuujo.copycat.cluster.internal.*;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.cluster.internal.manager.MemberManager;
 import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.raft.RaftConfig;
+import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.protocol.RaftProtocol;
 import net.kuujo.copycat.raft.protocol.Request;
 import net.kuujo.copycat.raft.protocol.Response;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -75,7 +76,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withReplicas(config.getClusterConfig().getMembers())
       .withLog(new BufferedLog());
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator"));
-    this.context = new RaftContext(config.getName(), config.getClusterConfig().getLocalMember(), resourceConfig, executor);
+    this.context = new RaftContext(config.getName(), config.getClusterConfig().getLocalMember(), new RaftConfig(resourceConfig.toMap()), executor);
     this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(executor), new KryoSerializer(), executor, config.getExecutor());
   }
 
@@ -126,7 +127,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   public <T extends Resource<T>> T getResource(String name, CoordinatedResourceConfig config) {
     ResourceHolder resource = resources.computeIfAbsent(name, n -> {
       ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"));
-      RaftContext state = new RaftContext(name, member().uri(), config, executor);
+      RaftContext state = new RaftContext(name, member().uri(), new RaftConfig(config.toMap()), executor);
       ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
       ResourceManager context = new ResourceManager(name, config, cluster, state, this);
       try {

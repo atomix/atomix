@@ -17,8 +17,7 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.MessageHandler;
-import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
-import net.kuujo.copycat.election.Election;
+import net.kuujo.copycat.raft.election.Election;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -44,6 +43,7 @@ public class RaftContext extends Observable implements RaftProtocol {
   private final Logger LOGGER = LoggerFactory.getLogger(RaftContext.class);
   private final ScheduledExecutorService executor;
   private Thread thread;
+  private final RaftConfig config;
   private final LogManager log;
   private RaftState state;
   private TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer;
@@ -70,8 +70,9 @@ public class RaftContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private volatile boolean open;
 
-  public RaftContext(String name, String uri, CoordinatedResourceConfig config, ScheduledExecutorService executor) {
+  public RaftContext(String name, String uri, RaftConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
+    this.config = config;
     this.localMember = Assert.isNotNull(uri, "uri");
     this.activeMembers = new HashSet<>(config.getReplicas());
     this.members = new HashSet<>(config.getReplicas());
@@ -86,6 +87,15 @@ public class RaftContext extends Observable implements RaftProtocol {
     } catch (InterruptedException | ExecutionException e) {
       throw new CopycatException(e);
     }
+  }
+
+  /**
+   * Returns the Raft configuration.
+   *
+   * @return The Raft configuration.
+   */
+  public RaftConfig getConfig() {
+    return config;
   }
 
   /**

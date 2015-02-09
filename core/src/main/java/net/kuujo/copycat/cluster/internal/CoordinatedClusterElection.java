@@ -22,9 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.election.Election;
-import net.kuujo.copycat.election.ElectionEvent;
-import net.kuujo.copycat.election.ElectionResult;
+import net.kuujo.copycat.raft.election.Election;
+import net.kuujo.copycat.raft.election.ElectionEvent;
+import net.kuujo.copycat.raft.election.ElectionResult;
 import net.kuujo.copycat.raft.RaftContext;
 
 /**

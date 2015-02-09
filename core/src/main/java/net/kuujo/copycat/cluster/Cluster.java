@@ -15,8 +15,8 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.election.Election;
-import net.kuujo.copycat.election.ElectionEvent;
+import net.kuujo.copycat.raft.election.Election;
+import net.kuujo.copycat.raft.election.ElectionEvent;
 
 /**
  * Resource cluster.<p>
@@ -63,7 +63,7 @@ import net.kuujo.copycat.election.ElectionEvent;
  *   }
  * </pre>
  *
- * Each cluster contains a reference to the respective resource's {@link net.kuujo.copycat.election.Election} instance.
+ * Each cluster contains a reference to the respective resource's {@link net.kuujo.copycat.raft.election.Election} instance.
  * Users can use the {@code Election} to identify the current cluster leader and receive event notifications when the
  * leadership for the resource's cluster changes.
  *
@@ -192,7 +192,7 @@ public interface Cluster {
   /**
    * Adds an election listener to the cluster.<p>
    *
-   * The election listener will receive an {@link net.kuujo.copycat.election.ElectionEvent} the first time any member
+   * The election listener will receive an {@link net.kuujo.copycat.raft.election.ElectionEvent} the first time any member
    * becomes the cluster leader for a given term. Copycat guarantees that for each election term only one member will
    * ever be elected. If a new member is elected, the term will have increased.
    *
