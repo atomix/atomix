@@ -35,7 +35,7 @@ class LeaderState extends ActiveState {
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
 
-  LeaderState(CopycatStateContext context) {
+  LeaderState(RaftContext context) {
     super(context);
   }
 

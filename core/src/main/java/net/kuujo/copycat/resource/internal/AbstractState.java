@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
  */
 abstract class AbstractState implements RaftProtocol {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  protected final CopycatStateContext context;
+  protected final RaftContext context;
   protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
   protected MessageHandler<PollRequest, PollResponse> pollHandler;
   protected MessageHandler<VoteRequest, VoteResponse> voteHandler;
@@ -39,7 +39,7 @@ abstract class AbstractState implements RaftProtocol {
   protected MessageHandler<RaftState, RaftState> transitionHandler;
   private volatile boolean open;
 
-  protected AbstractState(CopycatStateContext context) {
+  protected AbstractState(RaftContext context) {
     this.context = context;
   }
 

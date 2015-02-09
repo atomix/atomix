@@ -40,8 +40,8 @@ import java.util.stream.Collectors;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatStateContext extends Observable implements RaftProtocol {
-  private final Logger LOGGER = LoggerFactory.getLogger(CopycatStateContext.class);
+public class RaftContext extends Observable implements RaftProtocol {
+  private final Logger LOGGER = LoggerFactory.getLogger(RaftContext.class);
   private final ScheduledExecutorService executor;
   private Thread thread;
   private final LogManager log;
@@ -70,7 +70,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private volatile boolean open;
 
-  public CopycatStateContext(String name, String uri, CoordinatedResourceConfig config, ScheduledExecutorService executor) {
+  public RaftContext(String name, String uri, CoordinatedResourceConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
     this.localMember = Assert.isNotNull(uri, "uri");
     this.activeMembers = new HashSet<>(config.getReplicas());
@@ -121,7 +121,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param members The full set of Raft members.
    * @return The Copycat state context.
    */
-  public CopycatStateContext setMembers(Collection<String> members) {
+  public RaftContext setMembers(Collection<String> members) {
     this.members = new HashSet<>(members);
     return this;
   }
@@ -132,7 +132,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param member The member URI to add.
    * @return The Copycat state context.
    */
-  public CopycatStateContext addMember(String member) {
+  public RaftContext addMember(String member) {
     this.members.add(member);
     return this;
   }
@@ -143,7 +143,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param member The member URI to remove.
    * @return The Copycat state context.
    */
-  public CopycatStateContext removeMember(String member) {
+  public RaftContext removeMember(String member) {
     this.members.remove(member);
     return this;
   }
@@ -172,7 +172,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param members A collection of all members in the state cluster.
    * @return The Copycat state context.
    */
-  CopycatStateContext setMemberInfo(Collection<ReplicaInfo> members) {
+  RaftContext setMemberInfo(Collection<ReplicaInfo> members) {
     Assert.isNotNull(members, "members");
     for (ReplicaInfo member : members) {
       ReplicaInfo record = this.memberInfo.get(member.getUri());
@@ -201,7 +201,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param member The member to set.
    * @return The Copycat state context.
    */
-  CopycatStateContext addMemberInfo(ReplicaInfo member) {
+  RaftContext addMemberInfo(ReplicaInfo member) {
     ReplicaInfo record = memberInfo.get(member.getUri());
     if (record != null) {
       record.update(member);
@@ -217,7 +217,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param member The member to remove.
    * @return The Copycat state context.
    */
-  CopycatStateContext removeMemberInfo(ReplicaInfo member) {
+  RaftContext removeMemberInfo(ReplicaInfo member) {
     this.members.remove(member.getUri());
     return this;
   }
@@ -237,7 +237,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param leader The state leader.
    * @return The Copycat state context.
    */
-  CopycatStateContext setLeader(String leader) {
+  RaftContext setLeader(String leader) {
     if (this.leader == null) {
       if (leader != null) {
         this.leader = leader;
@@ -281,7 +281,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param term The state term.
    * @return The Copycat state context.
    */
-  CopycatStateContext setTerm(long term) {
+  RaftContext setTerm(long term) {
     if (term > this.term) {
       this.term = term;
       this.leader = null;
@@ -308,7 +308,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param version The state version.
    * @return The Copycat state context.
    */
-  CopycatStateContext setVersion(long version) {
+  RaftContext setVersion(long version) {
     this.version = Math.max(this.version, version);
     localMemberInfo.setVersion(this.version);
     return this;
@@ -329,7 +329,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param candidate The candidate that was voted for.
    * @return The Copycat state context.
    */
-  CopycatStateContext setLastVotedFor(String candidate) {
+  RaftContext setLastVotedFor(String candidate) {
     // If we've already voted for another candidate in this term then the last voted for candidate cannot be overridden.
     if (lastVotedFor != null && candidate != null) {
       throw new IllegalStateException("Already voted for another candidate");
@@ -363,7 +363,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param commitIndex The state commit index.
    * @return The Copycat state context.
    */
-  CopycatStateContext setCommitIndex(Long commitIndex) {
+  RaftContext setCommitIndex(Long commitIndex) {
     this.commitIndex = this.commitIndex != null ? Assert.arg(Assert.isNotNull(commitIndex, "commitIndex"), commitIndex >= this.commitIndex, "cannot decrease commit index") : commitIndex;
     localMemberInfo.setIndex(this.commitIndex);
     return this;
@@ -384,7 +384,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param lastApplied The state last applied index.
    * @return The Copycat state context.
    */
-  CopycatStateContext setLastApplied(Long lastApplied) {
+  RaftContext setLastApplied(Long lastApplied) {
     this.lastApplied = this.lastApplied != null ? Assert.arg(Assert.isNotNull(lastApplied, "lastApplied"), lastApplied >= this.lastApplied, "cannot decrease last applied index") : lastApplied;
     return this;
   }
@@ -404,7 +404,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param electionTimeout The state election timeout.
    * @return The Copycat state context.
    */
-  CopycatStateContext setElectionTimeout(long electionTimeout) {
+  RaftContext setElectionTimeout(long electionTimeout) {
     this.electionTimeout = electionTimeout;
     return this;
   }
@@ -424,7 +424,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param heartbeatInterval The state heartbeat interval.
    * @return The Copycat state context.
    */
-  CopycatStateContext setHeartbeatInterval(long heartbeatInterval) {
+  RaftContext setHeartbeatInterval(long heartbeatInterval) {
     this.heartbeatInterval = heartbeatInterval;
     return this;
   }
@@ -462,7 +462,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    * @param consumer The entry consumer.
    * @return The Copycat context.
    */
-  public CopycatStateContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer) {
+  public RaftContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer) {
     this.consumer = consumer;
     return this;
   }
@@ -508,7 +508,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
-  public CopycatStateContext voteHandler(MessageHandler<VoteRequest, VoteResponse> handler) {
+  public RaftContext voteHandler(MessageHandler<VoteRequest, VoteResponse> handler) {
     this.voteHandler = handler;
     return this;
   }
@@ -519,7 +519,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
-  public CopycatStateContext appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
+  public RaftContext appendHandler(MessageHandler<AppendRequest, AppendResponse> handler) {
     this.appendHandler = handler;
     return this;
   }
@@ -530,7 +530,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
-  public CopycatStateContext queryHandler(MessageHandler<QueryRequest, QueryResponse> handler) {
+  public RaftContext queryHandler(MessageHandler<QueryRequest, QueryResponse> handler) {
     this.queryHandler = handler;
     return this;
   }
@@ -541,7 +541,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   }
 
   @Override
-  public CopycatStateContext commitHandler(MessageHandler<CommitRequest, CommitResponse> handler) {
+  public RaftContext commitHandler(MessageHandler<CommitRequest, CommitResponse> handler) {
     this.commitHandler = handler;
     return this;
   }

@@ -21,7 +21,7 @@ package net.kuujo.copycat.resource.internal;
  */
 class StartState extends AbstractState {
 
-  StartState(CopycatStateContext context) {
+  StartState(RaftContext context) {
     super(context);
   }
 

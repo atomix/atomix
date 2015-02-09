@@ -42,11 +42,11 @@ public class DefaultResourceContext implements ResourceContext {
   private final String name;
   private final CoordinatedResourceConfig config;
   private final ClusterManager cluster;
-  private final CopycatStateContext context;
+  private final RaftContext context;
   private final DefaultClusterCoordinator coordinator;
   private volatile boolean open;
 
-  public DefaultResourceContext(String name, CoordinatedResourceConfig config, ClusterManager cluster, CopycatStateContext context, DefaultClusterCoordinator coordinator) {
+  public DefaultResourceContext(String name, CoordinatedResourceConfig config, ClusterManager cluster, RaftContext context, DefaultClusterCoordinator coordinator) {
     this.name = Assert.isNotNull(name, "name");
     this.config = Assert.isNotNull(config, "config");
     this.cluster = Assert.isNotNull(cluster, "cluster");

@@ -29,7 +29,7 @@ import java.util.concurrent.CompletableFuture;
 abstract class ActiveState extends PassiveState {
   protected boolean transition;
 
-  protected ActiveState(CopycatStateContext context) {
+  protected ActiveState(RaftContext context) {
     super(context);
   }
 

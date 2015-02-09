@@ -26,7 +26,7 @@ import net.kuujo.copycat.protocol.RaftProtocol;
 import net.kuujo.copycat.protocol.rpc.Request;
 import net.kuujo.copycat.protocol.rpc.Response;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.internal.CopycatStateContext;
+import net.kuujo.copycat.resource.internal.RaftContext;
 import net.kuujo.copycat.resource.internal.DefaultResourceContext;
 import net.kuujo.copycat.resource.internal.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
@@ -51,7 +51,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final CoordinatorConfig config;
   private final DefaultLocalMemberCoordinator localMember;
   final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
-  private final CopycatStateContext context;
+  private final RaftContext context;
   private final ClusterManager cluster;
   private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
   private volatile boolean open;
@@ -76,7 +76,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       .withReplicas(config.getClusterConfig().getMembers())
       .withLog(new BufferedLog());
     ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-coordinator"));
-    this.context = new CopycatStateContext(config.getName(), config.getClusterConfig().getLocalMember(), resourceConfig, executor);
+    this.context = new RaftContext(config.getName(), config.getClusterConfig().getLocalMember(), resourceConfig, executor);
     this.cluster = new CoordinatorCluster(0, this, context, new ResourceRouter(executor), new KryoSerializer(), executor, config.getExecutor());
   }
 
@@ -127,7 +127,7 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   public <T extends Resource<T>> T getResource(String name, CoordinatedResourceConfig config) {
     ResourceHolder resource = resources.computeIfAbsent(name, n -> {
       ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"));
-      CopycatStateContext state = new CopycatStateContext(name, member().uri(), config, executor);
+      RaftContext state = new RaftContext(name, member().uri(), config, executor);
       ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
       ResourceContext context = new DefaultResourceContext(name, config, cluster, state, this);
       try {
@@ -308,9 +308,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private static class ResourceHolder {
     private final Resource resource;
     private final ClusterManager cluster;
-    private final CopycatStateContext state;
+    private final RaftContext state;
 
-    private ResourceHolder(Resource resource, ClusterManager cluster, CopycatStateContext state) {
+    private ResourceHolder(Resource resource, ClusterManager cluster, RaftContext state) {
       this.resource = resource;
       this.cluster = cluster;
       this.state = state;

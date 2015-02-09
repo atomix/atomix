@@ -25,7 +25,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.ElectionResult;
-import net.kuujo.copycat.resource.internal.CopycatStateContext;
+import net.kuujo.copycat.resource.internal.RaftContext;
 
 /**
  * Coordinated cluster election handler.
@@ -34,19 +34,19 @@ import net.kuujo.copycat.resource.internal.CopycatStateContext;
  */
 class CoordinatedClusterElection implements Election, Observer {
   private final Cluster cluster;
-  private CopycatStateContext context;
+  private RaftContext context;
   private final Map<EventListener<ElectionEvent>, Boolean> listeners = new ConcurrentHashMap<>();
   private ElectionEvent result;
   private boolean handled;
 
-  CoordinatedClusterElection(Cluster cluster, CopycatStateContext context) {
+  CoordinatedClusterElection(Cluster cluster, RaftContext context) {
     this.cluster = cluster;
     this.context = context;
   }
 
   @Override
   public void update(Observable o, Object arg) {
-    CopycatStateContext context = (CopycatStateContext) o;
+    RaftContext context = (RaftContext) o;
     if (!handled) {
       String leader = context.getLeader();
       if (leader != null) {

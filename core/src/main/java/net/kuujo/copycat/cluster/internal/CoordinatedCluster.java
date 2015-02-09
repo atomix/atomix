@@ -17,7 +17,7 @@ package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.cluster.internal.coordinator.ClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.coordinator.MemberCoordinator;
-import net.kuujo.copycat.resource.internal.CopycatStateContext;
+import net.kuujo.copycat.resource.internal.RaftContext;
 import net.kuujo.copycat.util.serializer.Serializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class CoordinatedCluster extends AbstractCluster {
   private static final Logger LOGGER = LoggerFactory.getLogger(CoordinatedCluster.class);
 
-  public CoordinatedCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Serializer serializer, ScheduledExecutorService executor, Executor userExecutor) {
+  public CoordinatedCluster(int id, ClusterCoordinator coordinator, RaftContext context, Router router, Serializer serializer, ScheduledExecutorService executor, Executor userExecutor) {
     super(id, coordinator, context, router, serializer, executor, userExecutor);
   }
 

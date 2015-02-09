@@ -24,7 +24,7 @@ import net.kuujo.copycat.cluster.internal.manager.LocalMemberManager;
 import net.kuujo.copycat.cluster.internal.manager.MemberManager;
 import net.kuujo.copycat.election.Election;
 import net.kuujo.copycat.election.ElectionEvent;
-import net.kuujo.copycat.resource.internal.CopycatStateContext;
+import net.kuujo.copycat.resource.internal.RaftContext;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 import org.slf4j.Logger;
@@ -55,7 +55,7 @@ public abstract class AbstractCluster implements ClusterManager {
   private final Map<String, MemberInfo> membersInfo = new HashMap<>();
   private final CoordinatedClusterElection election;
   private final Router router;
-  private final CopycatStateContext context;
+  private final RaftContext context;
   private final Set<EventListener<MembershipEvent>> membershipListeners = new CopyOnWriteArraySet<>();
   @SuppressWarnings("rawtypes")
   private final Map<String, MessageHandler> broadcastHandlers = new ConcurrentHashMap<>();
@@ -64,7 +64,7 @@ public abstract class AbstractCluster implements ClusterManager {
   private ScheduledFuture<?> gossipTimer;
   private final Random random = new Random();
 
-  protected AbstractCluster(int id, ClusterCoordinator coordinator, CopycatStateContext context, Router router, Serializer serializer, ScheduledExecutorService executor, Executor userExecutor) {
+  protected AbstractCluster(int id, ClusterCoordinator coordinator, RaftContext context, Router router, Serializer serializer, ScheduledExecutorService executor, Executor userExecutor) {
     this.id = id;
     this.coordinator = coordinator;
     this.serializer = serializer;

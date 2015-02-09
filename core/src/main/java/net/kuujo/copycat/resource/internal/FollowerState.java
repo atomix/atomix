@@ -33,7 +33,7 @@ class FollowerState extends ActiveState {
   private final Random random = new Random();
   private ScheduledFuture<?> currentTimer;
 
-  FollowerState(CopycatStateContext context) {
+  FollowerState(RaftContext context) {
     super(context);
   }
 

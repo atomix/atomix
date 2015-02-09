@@ -34,7 +34,7 @@ public class PassiveState extends AbstractState {
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
 
-  public PassiveState(CopycatStateContext context) {
+  public PassiveState(RaftContext context) {
     super(context);
   }
 
