@@ -50,10 +50,10 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
   private final ScheduledExecutorService executor;
   private final CoordinatorConfig config;
   private final DefaultLocalMemberCoordinator localMember;
-  final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>();
+  final Map<String, AbstractMemberCoordinator> members = new ConcurrentHashMap<>(128);
   private final RaftContext context;
   private final ClusterManager cluster;
-  private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>();
+  private final Map<String, ResourceHolder> resources = new ConcurrentHashMap<>(1024);
   private volatile boolean open;
 
   public DefaultClusterCoordinator(CoordinatorConfig config) {

@@ -38,7 +38,7 @@ import java.util.concurrent.Executor;
 public class DefaultLocalMemberCoordinator extends AbstractMemberCoordinator implements LocalMemberCoordinator {
   private final ProtocolServer server;
   private final Executor executor;
-  private final Map<Integer, Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>>> handlers = new ConcurrentHashMap<>();
+  private final Map<Integer, Map<Integer, Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>>>> handlers = new ConcurrentHashMap<>(1024);
 
   public DefaultLocalMemberCoordinator(MemberInfo info, Protocol protocol, Executor executor) {
     super(info);

@@ -26,6 +26,7 @@ import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import net.kuujo.copycat.util.serializer.Serializer;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -38,9 +39,10 @@ import java.util.stream.Stream;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractCluster implements ClusterManager, Observer {
-  private static final String GOSSIP_TOPIC = "*";
+  private static final String JOIN_TOPIC = "*";
   private static final long MEMBER_INFO_EXPIRE_TIME = 1000 * 60;
 
+  private final Logger LOGGER = LoggerFactory.getLogger(getClass());
   protected final int id;
   protected final ClusterCoordinator coordinator;
   protected final Serializer serializer;
@@ -55,9 +57,9 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
   private final RaftContext context;
   private final Set<EventListener<MembershipEvent>> membershipListeners = new CopyOnWriteArraySet<>();
   @SuppressWarnings("rawtypes")
-  private final Map<String, MessageHandler> broadcastHandlers = new ConcurrentHashMap<>();
+  private final Map<String, MessageHandler> broadcastHandlers = new ConcurrentHashMap<>(1024);
   @SuppressWarnings("rawtypes")
-  private final Map<String, Set<EventListener>> broadcastListeners = new ConcurrentHashMap<>();
+  private final Map<String, Set<EventListener>> broadcastListeners = new ConcurrentHashMap<>(1024);
   private final Set<EventListener<ElectionEvent>> electionListeners = new CopyOnWriteArraySet<>();
   private String electedLeader;
   private ScheduledFuture<?> gossipTimer;
@@ -115,13 +117,6 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
   }
 
   /**
-   * Returns the cluster logger.
-   *
-   * @return The cluster logger.
-   */
-  protected abstract Logger logger();
-
-  /**
    * Checks that cluster logic runs on the correct thread.
    */
   private void checkThread() {
@@ -150,7 +145,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
     Collection<MemberInfo> members = new ArrayList<>(membersInfo.values());
     for (CoordinatedMember member : gossipMembers) {
       if (!member.uri().equals(member().uri())) {
-        member.<Collection<MemberInfo>, Collection<MemberInfo>>send(GOSSIP_TOPIC, id, members, internalSerializer, executor).whenCompleteAsync((membersInfo, error) -> {
+        member.<Collection<MemberInfo>, Collection<MemberInfo>>send(JOIN_TOPIC, id, members, internalSerializer, executor).whenCompleteAsync((membersInfo, error) -> {
           // If the response was successfully received then indicate that the member is alive and update all member info.
           // Otherwise, indicate that communication with the member failed. This information will be used to determine
           // whether the member should be considered dead by informing other members that it appears unreachable.
@@ -209,7 +204,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
             if (member != null) {
               members.members.put(member.uri(), member);
               context.addMember(member.uri());
-              logger().info("{} - {} joined the cluster", context.getLocalMember(), member.uri());
+              LOGGER.info("{} - {} joined the cluster", context.getLocalMember(), member.uri());
               membershipListeners.forEach(listener -> listener.accept(new MembershipEvent(MembershipEvent.Type.JOIN, member)));
               sendJoins(members.members.values());
             }
@@ -220,7 +215,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
           CoordinatedMember member = members.members.remove(updatedInfo.uri());
           if (member != null) {
             context.removeMember(member.uri());
-            logger().info("{} - {} left the cluster", context.getLocalMember(), member.uri());
+            LOGGER.info("{} - {} left the cluster", context.getLocalMember(), member.uri());
             membershipListeners.forEach(listener -> listener.accept(new MembershipEvent(MembershipEvent.Type.LEAVE, member)));
             sendJoins(members.members.values());
           }
@@ -362,7 +357,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
       context.addObserver(this);
     }, executor)
       .thenCompose(v -> localMember.open())
-      .thenRun(() -> localMember.registerHandler(GOSSIP_TOPIC, id, this::handleJoin, internalSerializer, executor))
+      .thenRun(() -> localMember.registerHandler(JOIN_TOPIC, id, this::handleJoin, internalSerializer, executor))
       .thenRun(() -> {
         gossipTimer = executor.scheduleAtFixedRate(this::sendJoins, 0, 1, TimeUnit.SECONDS);
       }).thenApply(m -> this);
@@ -378,7 +373,7 @@ public abstract class AbstractCluster implements ClusterManager, Observer {
     localMember.close();
     router.destroyRoutes(this, context);
     context.deleteObserver(this);
-    localMember.unregisterHandler(GOSSIP_TOPIC, id);
+    localMember.unregisterHandler(JOIN_TOPIC, id);
     if (gossipTimer != null) {
       gossipTimer.cancel(false);
       gossipTimer = null;

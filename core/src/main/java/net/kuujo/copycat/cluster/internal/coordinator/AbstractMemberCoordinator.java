@@ -34,10 +34,6 @@ abstract class AbstractMemberCoordinator implements MemberCoordinator {
     this.info = Assert.isNotNull(info, "info");
   }
 
-  MemberInfo info() {
-    return info;
-  }
-
   @Override
   public String uri() {
     return info.uri();
