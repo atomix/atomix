@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.collections.AsyncList;
 import net.kuujo.copycat.collections.AsyncListProxy;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultAsyncList<T> extends AbstractAsyncCollection<AsyncList<T>, ListState<T>, AsyncListProxy<T>, T> implements AsyncList<T> {
 
   @SuppressWarnings("unchecked")
-  public DefaultAsyncList(ResourceContext context) {
+  public DefaultAsyncList(ResourceManager context) {
     super(context, new DefaultStateMachine(context, ListState.class, DefaultListState.class), AsyncListProxy.class);
   }
 

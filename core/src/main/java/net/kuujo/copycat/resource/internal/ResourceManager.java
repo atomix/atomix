@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceContext implements Managed<ResourceContext> {
+public class ResourceManager implements Managed<ResourceManager> {
   private final String name;
   private final CoordinatedResourceConfig config;
   private final ClusterManager cluster;
@@ -47,7 +47,7 @@ public class ResourceContext implements Managed<ResourceContext> {
   private final DefaultClusterCoordinator coordinator;
   private volatile boolean open;
 
-  public ResourceContext(String name, CoordinatedResourceConfig config, ClusterManager cluster, RaftContext context, DefaultClusterCoordinator coordinator) {
+  public ResourceManager(String name, CoordinatedResourceConfig config, ClusterManager cluster, RaftContext context, DefaultClusterCoordinator coordinator) {
     this.name = Assert.isNotNull(name, "name");
     this.config = Assert.isNotNull(config, "config");
     this.cluster = Assert.isNotNull(cluster, "cluster");
@@ -165,7 +165,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    * @param consumer The entry consumer.
    * @return The Copycat context.
    */
-  public synchronized ResourceContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer) {
+  public synchronized ResourceManager consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer) {
     context.consumer(consumer);
     return this;
   }
@@ -242,7 +242,7 @@ public class ResourceContext implements Managed<ResourceContext> {
   }
 
   @Override
-  public synchronized CompletableFuture<ResourceContext> open() {
+  public synchronized CompletableFuture<ResourceManager> open() {
     return coordinator.acquireResource(name)
       .thenRun(() -> {
         open = true;

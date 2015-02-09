@@ -27,7 +27,7 @@ import net.kuujo.copycat.protocol.rpc.Request;
 import net.kuujo.copycat.protocol.rpc.Response;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.internal.RaftContext;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
@@ -128,9 +128,9 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
       ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"));
       RaftContext state = new RaftContext(name, member().uri(), config, executor);
       ClusterManager cluster = new CoordinatedCluster(name.hashCode(), this, state, new ResourceRouter(executor), config.getSerializer(), executor, config.getExecutor());
-      ResourceContext context = new ResourceContext(name, config, cluster, state, this);
+      ResourceManager context = new ResourceManager(name, config, cluster, state, this);
       try {
-        return new ResourceHolder(config.getResourceType().getConstructor(ResourceContext.class).newInstance(context), cluster, state);
+        return new ResourceHolder(config.getResourceType().getConstructor(ResourceManager.class).newInstance(context), cluster, state);
       } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
         throw new ConfigurationException("Failed to instantiate resource", e);
       }

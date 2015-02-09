@@ -18,7 +18,7 @@ package net.kuujo.copycat.atomic.internal;
 import net.kuujo.copycat.atomic.AsyncAtomicReference;
 import net.kuujo.copycat.atomic.AsyncAtomicReferenceProxy;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 
@@ -34,7 +34,7 @@ public class DefaultAsyncAtomicReference<T> extends AbstractResource<AsyncAtomic
   private AsyncAtomicReferenceProxy<T> proxy;
 
   @SuppressWarnings("unchecked")
-  public DefaultAsyncAtomicReference(ResourceContext context) {
+  public DefaultAsyncAtomicReference(ResourceManager context) {
     super(context);
     this.stateMachine = new DefaultStateMachine(context, AtomicReferenceState.class, DefaultAtomicReferenceState.class);
   }

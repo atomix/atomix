@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.collections.AsyncCollection;
 import net.kuujo.copycat.collections.AsyncCollectionProxy;
@@ -37,7 +37,7 @@ public abstract class AbstractAsyncCollection<S extends AsyncCollection<S, V>, T
   protected U proxy;
 
   @SuppressWarnings({"unchecked", "rawtypes"})
-  protected AbstractAsyncCollection(ResourceContext context, StateMachine<T> stateMachine, Class proxyClass) {
+  protected AbstractAsyncCollection(ResourceManager context, StateMachine<T> stateMachine, Class proxyClass) {
     super(context);
     this.stateMachine = stateMachine;
     this.proxyClass = proxyClass;

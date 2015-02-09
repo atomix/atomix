@@ -18,7 +18,7 @@ package net.kuujo.copycat.atomic.internal;
 import net.kuujo.copycat.atomic.AsyncAtomicLong;
 import net.kuujo.copycat.atomic.AsyncAtomicLongProxy;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 
@@ -33,7 +33,7 @@ public class DefaultAsyncAtomicLong extends AbstractResource<AsyncAtomicLong> im
   private StateMachine<AtomicLongState> stateMachine;
   private AsyncAtomicLongProxy proxy;
 
-  public DefaultAsyncAtomicLong(ResourceContext context) {
+  public DefaultAsyncAtomicLong(ResourceManager context) {
     super(context);
     this.stateMachine = new DefaultStateMachine<>(context, AtomicLongState.class, DefaultAtomicLongState.class);
   }

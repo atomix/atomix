@@ -16,7 +16,7 @@
 package net.kuujo.copycat.election.internal;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.ElectionEvent;
 import net.kuujo.copycat.election.LeaderElection;
@@ -34,7 +34,7 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultLeaderElection extends AbstractResource<LeaderElection> implements LeaderElection {
   private final Map<EventListener<Member>, EventListener<ElectionEvent>> listeners = new HashMap<>();
 
-  public DefaultLeaderElection(ResourceContext context) {
+  public DefaultLeaderElection(ResourceManager context) {
     super(context);
   }
 

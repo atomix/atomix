@@ -17,7 +17,7 @@ package net.kuujo.copycat.state.internal;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.*;
 import net.kuujo.copycat.util.internal.Assert;
 
@@ -84,7 +84,7 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     }
   };
 
-  public DefaultStateMachine(ResourceContext context, Class<T> stateType, Class<? extends T> initialState) {
+  public DefaultStateMachine(ResourceManager context, Class<T> stateType, Class<? extends T> initialState) {
     super(context);
     this.stateType = Assert.isNotNull(stateType, "stateType");
     try {

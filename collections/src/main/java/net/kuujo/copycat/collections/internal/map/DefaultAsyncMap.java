@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.collections.AsyncMap;
 import net.kuujo.copycat.collections.AsyncMapProxy;
@@ -41,7 +41,7 @@ public class DefaultAsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> impl
   private AsyncMapProxy<K, V> proxy;
 
   @SuppressWarnings("unchecked")
-  public DefaultAsyncMap(ResourceContext context) {
+  public DefaultAsyncMap(ResourceManager context) {
     super(context);
     this.stateMachine = new DefaultStateMachine(context, MapState.class, DefaultMapState.class);
   }

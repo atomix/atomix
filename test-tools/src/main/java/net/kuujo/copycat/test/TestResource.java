@@ -19,7 +19,7 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class TestResource extends AbstractResource<TestResource> {
 
-  public TestResource(ResourceContext context) {
+  public TestResource(ResourceManager context) {
     super(context);
   }
 

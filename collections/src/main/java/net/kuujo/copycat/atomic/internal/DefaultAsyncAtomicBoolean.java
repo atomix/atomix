@@ -18,7 +18,7 @@ package net.kuujo.copycat.atomic.internal;
 import net.kuujo.copycat.atomic.AsyncAtomicBoolean;
 import net.kuujo.copycat.atomic.AsyncAtomicBooleanProxy;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 
@@ -33,7 +33,7 @@ public class DefaultAsyncAtomicBoolean extends AbstractResource<AsyncAtomicBoole
   private StateMachine<AtomicBooleanState> stateMachine;
   private AsyncAtomicBooleanProxy proxy;
 
-  public DefaultAsyncAtomicBoolean(ResourceContext context) {
+  public DefaultAsyncAtomicBoolean(ResourceManager context) {
     super(context);
     this.stateMachine = new DefaultStateMachine<>(context, AtomicBooleanState.class, DefaultAtomicBooleanState.class);
   }

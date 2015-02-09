@@ -18,7 +18,7 @@ package net.kuujo.copycat.state.internal;
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -59,7 +59,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   private SnapshotInfo snapshotInfo;
   private List<ByteBuffer> snapshotChunks;
 
-  public DefaultStateLog(ResourceContext context) {
+  public DefaultStateLog(ResourceManager context) {
     super(context);
     this.log = (SnapshottableLogManager) context.log();
     defaultConsistency = context.config()

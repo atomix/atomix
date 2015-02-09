@@ -37,11 +37,11 @@ import java.util.concurrent.Executors;
 public abstract class AbstractResource<T extends Resource<T>> implements Resource<T> {
   private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
   private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
-  protected final ResourceContext context;
+  protected final ResourceManager context;
   protected final Serializer serializer;
   protected final Executor executor;
 
-  protected AbstractResource(ResourceContext context) {
+  protected AbstractResource(ResourceManager context) {
     this.context = Assert.isNotNull(context, "context");
     this.serializer = context.config().getSerializer();
     this.executor = context.config().getExecutor() != null ? context.config().getExecutor() : Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-" + context.name() + "-%d"));

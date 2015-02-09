@@ -18,7 +18,7 @@ package net.kuujo.copycat.collections.internal.map;
 import net.kuujo.copycat.collections.AsyncMultiMap;
 import net.kuujo.copycat.collections.AsyncMultiMapProxy;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -40,7 +40,7 @@ public class DefaultAsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K
   private AsyncMultiMapProxy<K, V> proxy;
 
   @SuppressWarnings("unchecked")
-  public DefaultAsyncMultiMap(ResourceContext context) {
+  public DefaultAsyncMultiMap(ResourceManager context) {
     super(context);
     this.stateMachine = new DefaultStateMachine(context, MultiMapState.class, DefaultMultiMapState.class);
   }

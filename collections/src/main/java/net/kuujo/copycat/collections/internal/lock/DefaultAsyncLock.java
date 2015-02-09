@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.collections.internal.lock;
 
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.collections.AsyncLock;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -33,7 +33,7 @@ public class DefaultAsyncLock extends AbstractResource<AsyncLock> implements Asy
   private final StateMachine<LockState> stateMachine;
   private AsyncLockProxy proxy;
 
-  public DefaultAsyncLock(ResourceContext context) {
+  public DefaultAsyncLock(ResourceManager context) {
     super(context);
     this.stateMachine = new DefaultStateMachine<>(context, LockState.class, UnlockedLockState.class);
   }

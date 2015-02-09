@@ -20,7 +20,7 @@ import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.log.LogSegment;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceContext;
+import net.kuujo.copycat.resource.internal.ResourceManager;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -40,7 +40,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   private ScheduledFuture<?> retentionFuture;
   private Long commitIndex;
 
-  public DefaultEventLog(ResourceContext context) {
+  public DefaultEventLog(ResourceManager context) {
     super(context);
     context.consumer(this::consume);
   }
