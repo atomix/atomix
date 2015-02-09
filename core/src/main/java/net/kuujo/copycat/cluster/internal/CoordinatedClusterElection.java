@@ -73,7 +73,7 @@ class CoordinatedClusterElection implements Election, Observer {
 
   @Override
   public Status status() {
-    return context.getStatus();
+    return context.getElectionStatus();
   }
 
   @Override

@@ -237,7 +237,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    *
    * @return The current Copycat election status.
    */
-  public Election.Status getStatus() {
+  public Election.Status getElectionStatus() {
     return status;
   }
 
