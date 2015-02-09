@@ -98,6 +98,15 @@ class LeaderState extends ActiveState {
   }
 
   @Override
+  public CompletableFuture<PollResponse> poll(final PollRequest request) {
+    return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+      .withUri(context.getLocalMember())
+      .withTerm(context.getTerm())
+      .withAccepted(false)
+      .build()));
+  }
+
+  @Override
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     if (request.term() > context.getTerm()) {
       LOGGER.debug("{} - Received greater term", context.getLocalMember());
