@@ -36,7 +36,7 @@ abstract class AbstractState implements RaftProtocol {
   protected MessageHandler<AppendRequest, AppendResponse> appendHandler;
   protected MessageHandler<CommitRequest, CommitResponse> commitHandler;
   protected MessageHandler<QueryRequest, QueryResponse> queryHandler;
-  protected MessageHandler<CopycatState, CopycatState> transitionHandler;
+  protected MessageHandler<RaftState, RaftState> transitionHandler;
   private volatile boolean open;
 
   protected AbstractState(CopycatStateContext context) {
@@ -57,7 +57,7 @@ abstract class AbstractState implements RaftProtocol {
    *
    * @return The Copycat state represented by this state.
    */
-  public abstract CopycatState state();
+  public abstract RaftState state();
 
   /**
    * Logs a request.
@@ -144,7 +144,7 @@ abstract class AbstractState implements RaftProtocol {
   /**
    * Sets a transition registerHandler on the state.
    */
-  public AbstractState transitionHandler(MessageHandler<CopycatState, CopycatState> handler) {
+  public AbstractState transitionHandler(MessageHandler<RaftState, RaftState> handler) {
     this.transitionHandler = handler;
     return this;
   }

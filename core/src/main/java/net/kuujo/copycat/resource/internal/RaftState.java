@@ -19,7 +19,7 @@ package net.kuujo.copycat.resource.internal;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum CopycatState {
+public enum RaftState {
 
   /**
    * Start state.

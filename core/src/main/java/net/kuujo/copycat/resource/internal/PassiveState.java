@@ -39,8 +39,8 @@ public class PassiveState extends AbstractState {
   }
 
   @Override
-  public CopycatState state() {
-    return CopycatState.PASSIVE;
+  public RaftState state() {
+    return RaftState.PASSIVE;
   }
 
   @Override

@@ -36,7 +36,7 @@ abstract class ActiveState extends PassiveState {
   /**
    * Transitions to a new state.
    */
-  protected CompletableFuture<CopycatState> transition(CopycatState state) {
+  protected CompletableFuture<RaftState> transition(RaftState state) {
     if (transitionHandler != null) {
       return transitionHandler.apply(state);
     }
@@ -50,7 +50,7 @@ abstract class ActiveState extends PassiveState {
     // If a transition is required then transition back to the follower state.
     // If the node is already a follower then the transition will be ignored.
     if (transition) {
-      transition(CopycatState.FOLLOWER);
+      transition(RaftState.FOLLOWER);
       transition = false;
     }
     return future;

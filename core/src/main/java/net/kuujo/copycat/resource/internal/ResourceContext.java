@@ -54,7 +54,7 @@ public interface ResourceContext extends Managed<ResourceContext> {
    *
    * @return The current Copycat state.
    */
-  CopycatState state();
+  RaftState state();
 
   /**
    * Returns the Copycat cluster.

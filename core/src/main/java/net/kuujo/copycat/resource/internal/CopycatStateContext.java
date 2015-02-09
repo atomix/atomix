@@ -443,7 +443,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
    *
    * @return The current Copycat state.
    */
-  public CopycatState state() {
+  public RaftState state() {
     return state.state();
   }
 
@@ -580,7 +580,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
   /**
    * Transition registerHandler.
    */
-  CompletableFuture<CopycatState> transition(CopycatState state) {
+  CompletableFuture<RaftState> transition(RaftState state) {
     checkThread();
 
     if (this.state != null && state == this.state.state()) {
@@ -684,7 +684,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
       try {
         open = true;
         log.open();
-        transition(activeMembers.contains(localMember) ? CopycatState.FOLLOWER : CopycatState.PASSIVE);
+        transition(activeMembers.contains(localMember) ? RaftState.FOLLOWER : RaftState.PASSIVE);
       } catch (Exception e) {
         openFuture.completeExceptionally(e);
         openFuture = null;
@@ -709,7 +709,7 @@ public class CopycatStateContext extends Observable implements RaftProtocol {
 
     CompletableFuture<Void> future = new CompletableFuture<>();
     executor.execute(() -> {
-      transition(CopycatState.START).whenComplete((result, error) -> {
+      transition(RaftState.START).whenComplete((result, error) -> {
         if (error == null) {
           try {
             log.close();

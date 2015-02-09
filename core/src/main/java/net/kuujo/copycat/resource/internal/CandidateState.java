@@ -42,8 +42,8 @@ class CandidateState extends ActiveState {
   }
 
   @Override
-  public CopycatState state() {
-    return CopycatState.CANDIDATE;
+  public RaftState state() {
+    return RaftState.CANDIDATE;
   }
 
   @Override
@@ -100,7 +100,7 @@ class CandidateState extends ActiveState {
     final Quorum quorum = new Quorum((int) Math.ceil(context.getActiveMembers().size() / 2.0), (elected) -> {
       complete.set(true);
       if (elected) {
-        transition(CopycatState.LEADER);
+        transition(RaftState.LEADER);
       }
     });
 
@@ -132,7 +132,7 @@ class CandidateState extends ActiveState {
             LOGGER.debug("{} - Received greater term from {}", context.getLocalMember(), member);
             context.setTerm(response.term());
             complete.set(true);
-            transition(CopycatState.FOLLOWER);
+            transition(RaftState.FOLLOWER);
           } else if (!response.voted()) {
             LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
             quorum.fail();
@@ -156,7 +156,7 @@ class CandidateState extends ActiveState {
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() >= context.getTerm()) {
       context.setTerm(request.term());
-      transition(CopycatState.FOLLOWER);
+      transition(RaftState.FOLLOWER);
     }
     return super.append(request);
   }
@@ -169,7 +169,7 @@ class CandidateState extends ActiveState {
     // assign that term and leader to the current context and step down as a candidate.
     if (request.term() > context.getTerm()) {
       context.setTerm(request.term());
-      transition(CopycatState.FOLLOWER);
+      transition(RaftState.FOLLOWER);
       return super.vote(request);
     }
 

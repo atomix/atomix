@@ -38,8 +38,8 @@ class FollowerState extends ActiveState {
   }
 
   @Override
-  public CopycatState state() {
-    return CopycatState.FOLLOWER;
+  public RaftState state() {
+    return RaftState.FOLLOWER;
   }
 
   @Override
@@ -101,7 +101,7 @@ class FollowerState extends ActiveState {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);
       if (elected) {
-        transition(CopycatState.CANDIDATE);
+        transition(RaftState.CANDIDATE);
       } else {
         resetHeartbeatTimeout();
       }

@@ -40,8 +40,8 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  public CopycatState state() {
-    return CopycatState.LEADER;
+  public RaftState state() {
+    return RaftState.LEADER;
   }
 
   @Override
@@ -101,7 +101,7 @@ class LeaderState extends ActiveState {
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     if (request.term() > context.getTerm()) {
       LOGGER.debug("{} - Received greater term", context.getLocalMember());
-      transition(CopycatState.FOLLOWER);
+      transition(RaftState.FOLLOWER);
       return super.vote(request);
     } else {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
@@ -125,7 +125,7 @@ class LeaderState extends ActiveState {
         .withLogIndex(context.log().lastIndex())
         .build()));
     } else {
-      transition(CopycatState.FOLLOWER);
+      transition(RaftState.FOLLOWER);
       return super.append(request);
     }
   }
@@ -507,7 +507,7 @@ class LeaderState extends ActiveState {
                     commit();
                   }
                 } else if (response.term() > context.getTerm()) {
-                  transition(CopycatState.FOLLOWER);
+                  transition(RaftState.FOLLOWER);
                 } else {
                   resetMatchIndex(response);
                   resetNextIndex();
@@ -519,7 +519,7 @@ class LeaderState extends ActiveState {
                 }
               } else if (response.term() > context.getTerm()) {
                 LOGGER.debug("{} - Received higher term from {}", context.getLocalMember(), member);
-                transition(CopycatState.FOLLOWER);
+                transition(RaftState.FOLLOWER);
               } else {
                 LOGGER.warn("{} - {}", context.getLocalMember(), response.error() != null ? response.error().getMessage() : "");
               }

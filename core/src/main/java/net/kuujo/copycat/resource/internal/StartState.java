@@ -26,8 +26,8 @@ class StartState extends AbstractState {
   }
 
   @Override
-  public CopycatState state() {
-    return CopycatState.START;
+  public RaftState state() {
+    return RaftState.START;
   }
 
 }

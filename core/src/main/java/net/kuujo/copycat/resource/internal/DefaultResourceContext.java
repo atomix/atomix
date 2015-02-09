@@ -65,7 +65,7 @@ public class DefaultResourceContext implements ResourceContext {
   }
 
   @Override
-  public CopycatState state() {
+  public RaftState state() {
     return context.state();
   }
 
