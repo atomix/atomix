@@ -236,23 +236,6 @@ public interface Copycat extends Managed<Copycat> {
   <T> AsyncSet<T> createSet(String name, AsyncSetConfig config);
 
   /**
-   * Creates a named asynchronous lock.
-   *
-   * @param name The lock name.
-   * @return The asynchronous lock instance.
-   */
-  AsyncLock createLock(String name);
-
-  /**
-   * Creates a named asynchronous lock.
-   *
-   * @param name The lock name.
-   * @param config The lock configuration.
-   * @return The asynchronous lock instance.
-   */
-  AsyncLock createLock(String name, AsyncLockConfig config);
-
-  /**
    * Creates a named asynchronous atomic long value.
    *
    * @param name The atomic long name.

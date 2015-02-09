@@ -595,7 +595,6 @@ of the resource-specific methods on the `Copycat` instance:
 * `<T> AsyncList<T> createList(String name)`
 * `<T> AsyncSet<T> createSet(String name)`
 * `AsyncLock createLock(String name)`
-* `AsyncSemaphore createSemaphore(String name)`
 * `AsyncLong createLong(String name)`
 * `AsyncBoolean createBoolean(String name)`
 * `AsyncReference createReference(String name)`
@@ -1370,7 +1369,6 @@ top of its [state machine](#state-machines) framework.
 * [AsyncList](#asynclist)
 * [AsyncSet](#asyncset)
 * [AsyncMultiMap](#asyncmultimap)
-* [AsyncLock](#asynclock)
 
 Each collection provides options for configuring the consistency of read operations. To configure the consistency,
 use the `setConsistency` method or `withConsistency` fluent method on the respective data structure configuration:
@@ -1583,54 +1581,6 @@ AsyncMultiMapConfig config = new AsyncMultiMapConfig()
 AsyncMultiMap.<String, String>create("my-map", cluster, config).open().thenAccept(multiMap -> {
   multiMap.put("foo", "Hello world!").thenRun(() -> {
     multiMap.get("foo").thenAccept(result -> System.out.println(result));
-  });
-});
-```
-
-### AsyncLock
-
-Copycat's lock implementation uses a simple [state machine](#state-machines) to provide access to a consistent
-distributed lock via state machine [proxies](#synchronous-proxies).
-
-To create a lock via the `Copycat` API, use the `lock` method:
-
-```java
-ClusterConfig cluster = new ClusterConfig()
-  .withProtocol(new NettyTcpProtocol())
-  .withLocalMember("tcp://123.456.789.0:5000")
-  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
-
-CopycatConfig config = new CopycatConfig()
-  .withClusterConfig(cluster)
-  .addLockConfig("test-lock", new AsyncLockConfig()
-    .withConsistency(Consistency.STRONG));
-
-Copycat.copycat(config).open()
-  .thenApply(copycat -> copycat.createLock("test-lock"))
-  .thenCompose(lock -> lock.open())
-  .thenAccept(lock -> {
-    lock.lock().thenRun(() -> {
-      System.out.println("Lock locked");
-      lock.unlock().thenRun(() -> System.out.println("Lock unlocked");
-    });
-  });
-```
-
-To create a lock directly, use the `AsyncLock.create` factory method:
-
-```java
-ClusterConfig cluster = new ClusterConfig()
-  .withProtocol(new NettyTcpProtocol())
-  .withLocalMember("tcp://123.456.789.0:5000")
-  .withMembers("tcp://123.456.789.0:5000", "tcp://123.456.789.1:5000", "tcp://123.456.789.2:5000");
-
-AsyncLockConfig config = new AsyncLockConfig()
-  .withConsistency(Consistency.STRONG);
-
-AsyncLock.create("my-lock", cluster, config).open().thenAccept(lock -> {
-  lock.lock().thenRun(() -> {
-    System.out.println("Lock locked");
-    lock.unlock().thenRun(() -> System.out.println("Lock unlocked");
   });
 });
 ```

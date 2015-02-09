@@ -158,18 +158,6 @@ public class DefaultCopycat implements Copycat {
   }
 
   @Override
-  public AsyncLock createLock(String name) {
-    return createLock(name, new AsyncLockConfig(name));
-  }
-
-  @Override
-  public AsyncLock createLock(String name, AsyncLockConfig config) {
-    return coordinator.getResource(name, config.resolve(this.config.getClusterConfig())
-      .withDefaultSerializer(this.config.getDefaultSerializer().copy())
-      .withDefaultExecutor(this.config.getDefaultExecutor()));
-  }
-
-  @Override
   public AsyncAtomicLong createLong(String name) {
     return createLong(name, new AsyncAtomicLongConfig());
   }
