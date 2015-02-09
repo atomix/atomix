@@ -16,11 +16,17 @@
 package net.kuujo.copycat.resource.internal;
 
 import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
+import net.kuujo.copycat.cluster.internal.coordinator.DefaultClusterCoordinator;
 import net.kuujo.copycat.cluster.internal.manager.ClusterManager;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.rpc.CommitRequest;
+import net.kuujo.copycat.protocol.rpc.QueryRequest;
+import net.kuujo.copycat.protocol.rpc.Response;
 import net.kuujo.copycat.util.Managed;
+import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.function.TriFunction;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.Callable;
@@ -29,61 +35,79 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Copycat resource context.
+ * Default resource context.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ResourceContext extends Managed<ResourceContext> {
+public class ResourceContext implements Managed<ResourceContext> {
+  private final String name;
+  private final CoordinatedResourceConfig config;
+  private final ClusterManager cluster;
+  private final RaftContext context;
+  private final DefaultClusterCoordinator coordinator;
+  private volatile boolean open;
+
+  public ResourceContext(String name, CoordinatedResourceConfig config, ClusterManager cluster, RaftContext context, DefaultClusterCoordinator coordinator) {
+    this.name = Assert.isNotNull(name, "name");
+    this.config = Assert.isNotNull(config, "config");
+    this.cluster = Assert.isNotNull(cluster, "cluster");
+    this.context = Assert.isNotNull(context, "context");
+    this.coordinator = Assert.isNotNull(coordinator, "coordinator");
+  }
 
   /**
    * Returns the resource name.
    *
    * @return The resource name.
    */
-  String name();
+  public String name() {
+    return name;
+  }
 
   /**
    * Returns the resource configuration.
    *
    * @return The resource configuration.
    */
-  CoordinatedResourceConfig config();
+  public CoordinatedResourceConfig config() {
+    return config;
+  }
 
   /**
    * Returns the current Copycat state.
    *
    * @return The current Copycat state.
    */
-  RaftState state();
+  public RaftState state() {
+    return context.state();
+  }
 
   /**
    * Returns the Copycat cluster.
    *
    * @return The Copycat cluster.
    */
-  ClusterManager cluster();
+  public ClusterManager cluster() {
+    return cluster;
+  }
 
   /**
    * Returns the Copycat log.
    *
    * @return The Copycat log.
    */
-  LogManager log();
-
-  /**
-   * Registers an entry consumer on the context.
-   *
-   * @param consumer The entry consumer.
-   * @return The Copycat context.
-   */
-  ResourceContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer);
+  public LogManager log() {
+    return context.log();
+  }
 
   /**
    * Executes a command on the context.
    *
    * @param command The command to execute.
    */
-  void execute(Runnable command);
+  public void execute(Runnable command) {
+    context.executor().execute(command);
+  }
 
   /**
    * Schedules a command on the context.
@@ -93,7 +117,9 @@ public interface ResourceContext extends Managed<ResourceContext> {
    * @param unit The delay time unit.
    * @return The scheduled future.
    */
-  ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit);
+  public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
+    return context.executor().schedule(command, delay, unit);
+  }
 
   /**
    * Schedules a callable on the context.
@@ -103,7 +129,9 @@ public interface ResourceContext extends Managed<ResourceContext> {
    * @param unit The delay time unit.
    * @return The scheduled future.
    */
-  <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit);
+  public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
+    return context.executor().schedule(callable, delay, unit);
+  }
 
   /**
    * Schedules a command to run at a fixed rate on the context.
@@ -114,7 +142,9 @@ public interface ResourceContext extends Managed<ResourceContext> {
    * @param unit The period time unit.
    * @return The scheduled future.
    */
-  ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit);
+  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
+    return context.executor().scheduleAtFixedRate(command, initialDelay, period, unit);
+  }
 
   /**
    * Schedules a command to run at a fixed delay on the context.
@@ -125,7 +155,61 @@ public interface ResourceContext extends Managed<ResourceContext> {
    * @param unit The delay time unit.
    * @return The scheduled future.
    */
-  ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit);
+  public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+    return context.executor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+  }
+
+  /**
+   * Registers an entry consumer on the context.
+   *
+   * @param consumer The entry consumer.
+   * @return The Copycat context.
+   */
+  public synchronized ResourceContext consumer(TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer) {
+    context.consumer(consumer);
+    return this;
+  }
+
+  /**
+   * Submits a synchronous entry to the context.
+   *
+   * @param entry The entry to query.
+   * @return A completable future to be completed once the cluster has been synchronized.
+   */
+  public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry) {
+    return query(entry, Consistency.DEFAULT);
+  }
+
+  /**
+   * Submits a synchronous entry to the context.
+   *
+   * @param entry The entry to query.
+   * @return A completable future to be completed once the cluster has been synchronized.
+   */
+  public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency) {
+    if (!open) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+    }
+
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+    QueryRequest request = QueryRequest.builder()
+      .withUri(context.getLocalMember())
+      .withEntry(entry)
+      .withConsistency(consistency)
+      .build();
+    context.query(request).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete(response.result());
+        } else {
+          future.completeExceptionally(response.error());
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
+  }
 
   /**
    * Submits a persistent entry to the context.
@@ -133,22 +217,54 @@ public interface ResourceContext extends Managed<ResourceContext> {
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
-  CompletableFuture<ByteBuffer> commit(ByteBuffer entry);
+  public synchronized CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
+    if (!open) {
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+    }
 
-  /**
-   * Submits a synchronous entry to the context.
-   *
-   * @param entry The entry to query.
-   * @return A completable future to be completed once the cluster has been synchronized.
-   */
-  CompletableFuture<ByteBuffer> query(ByteBuffer entry);
+    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+    CommitRequest request = CommitRequest.builder()
+      .withUri(context.getLocalMember())
+      .withEntry(entry)
+      .build();
+    context.commit(request).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete(response.result());
+        } else {
+          future.completeExceptionally(response.error());
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
+  }
 
-  /**
-   * Submits a synchronous entry to the context.
-   *
-   * @param entry The entry to query.
-   * @return A completable future to be completed once the cluster has been synchronized.
-   */
-  CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency);
+  @Override
+  public synchronized CompletableFuture<ResourceContext> open() {
+    return coordinator.acquireResource(name)
+      .thenRun(() -> {
+        open = true;
+      }).thenApply(v -> this);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return open;
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    return coordinator.releaseResource(name)
+      .thenRun(() -> {
+        open = false;
+      });
+  }
+
+  @Override
+  public boolean isClosed() {
+    return !open;
+  }
 
 }
