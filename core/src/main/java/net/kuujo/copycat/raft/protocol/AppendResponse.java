@@ -77,7 +77,7 @@ public class AppendResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(member, term, succeeded, logIndex);
+    return Objects.hash(uri, term, succeeded, logIndex);
   }
 
   @Override
@@ -85,7 +85,7 @@ public class AppendResponse extends AbstractResponse {
     if (object instanceof AppendResponse) {
       AppendResponse response = (AppendResponse) object;
       return response.status == status
-        && response.member.equals(member)
+        && response.uri.equals(uri)
         && response.term == term
         && response.succeeded == succeeded
         && response.logIndex.equals(logIndex);

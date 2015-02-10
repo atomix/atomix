@@ -27,6 +27,38 @@ import java.util.concurrent.CompletableFuture;
 public interface RaftProtocol extends Managed<Void> {
 
   /**
+   * Sends a protocol join request.
+   *
+   * @param request The protocol join request.
+   * @return A completable future to be completed with the join response.
+   */
+  CompletableFuture<JoinResponse> join(JoinRequest request);
+
+  /**
+   * Registers a protocol join request handler.
+   *
+   * @param handler A protocol join request handler.
+   * @return The Raft protocol.
+   */
+  RaftProtocol joinHandler(MessageHandler<JoinRequest, JoinResponse> handler);
+
+  /**
+   * Sends a protocol leave request.
+   *
+   * @param request The protocol leave request.
+   * @return A completable future to be completed with the leave response.
+   */
+  CompletableFuture<LeaveResponse> leave(LeaveRequest request);
+
+  /**
+   * Registers a protocol leave request handler.
+   *
+   * @param handler A protocol leave request handler.
+   * @return The Raft protocol.
+   */
+  RaftProtocol leaveHandler(MessageHandler<LeaveRequest, LeaveResponse> handler);
+
+  /**
    * Sends a protocol sync request.
    *
    * @param request The protocol sync request.

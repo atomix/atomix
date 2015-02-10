@@ -112,14 +112,14 @@ public class SyncRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(member, term, leader, entries);
+    return Objects.hash(uri, term, leader, entries);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof SyncRequest) {
       SyncRequest request = (SyncRequest) object;
-      return request.member.equals(member)
+      return request.uri.equals(uri)
         && request.term == term
         && request.leader.equals(leader)
         && request.logIndex.equals(logIndex)

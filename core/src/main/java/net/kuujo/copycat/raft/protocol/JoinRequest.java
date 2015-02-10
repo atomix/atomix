@@ -1,11 +1,12 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,93 +17,92 @@ package net.kuujo.copycat.raft.protocol;
 
 import net.kuujo.copycat.util.internal.Assert;
 
-import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * Protocol commit request.
+ * Protocol join request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CommitRequest extends AbstractRequest {
+public class JoinRequest extends AbstractRequest {
 
   /**
-   * Returns a new commit request builder.
+   * Returns a new join request builder.
    *
-   * @return A new commit request builder.
+   * @return A new join request builder.
    */
   public static Builder builder() {
     return new Builder();
   }
 
   /**
-   * Returns a commit request builder for an existing request.
+   * Returns a join request builder for an existing request.
    *
    * @param request The request to build.
-   * @return The commit request builder.
+   * @return The join request builder.
    */
-  public static Builder builder(CommitRequest request) {
+  public static Builder builder(JoinRequest request) {
     return new Builder(request);
   }
 
-  private ByteBuffer entry;
+  private String member;
 
   /**
-   * Returns the commit entry.
+   * Returns the member's address.
    *
-   * @return The commit entry.
+   * @return The member's address.
    */
-  public ByteBuffer entry() {
-    return entry;
+  public String member() {
+    return member;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, entry);
+    return Objects.hash(uri, member);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof CommitRequest) {
-      CommitRequest request = (CommitRequest) object;
+    if (object instanceof JoinRequest) {
+      JoinRequest request = (JoinRequest) object;
       return request.uri.equals(uri)
-        && request.entry.equals(entry);
+        && request.member.equals(member);
     }
     return false;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[entry=%s]", getClass().getSimpleName(), entry.toString());
+    return String.format("%s[member=%s]", getClass().getSimpleName(), member);
   }
 
   /**
-   * Commit request builder.
+   * Join request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, CommitRequest> {
-    private Builder() {
-      this(new CommitRequest());
+  public static class Builder extends AbstractRequest.Builder<Builder, JoinRequest> {
+    protected Builder() {
+      this(new JoinRequest());
     }
 
-    private Builder(CommitRequest request) {
+    protected Builder(JoinRequest request) {
       super(request);
     }
 
     /**
-     * Sets the request entry.
+     * Sets the request member.
      *
-     * @param entry The request entry.
-     * @return The request builder.
+     * @param member The request member.
+     * @return The join request builder.
      */
-    public Builder withEntry(ByteBuffer entry) {
-      request.entry = Assert.isNotNull(entry, "entry");
+    public Builder withMember(String member) {
+      request.member = Assert.isNotNull(member, "member");
       return this;
     }
 
     @Override
-    public CommitRequest build() {
+    public JoinRequest build() {
       super.build();
-      Assert.isNotNull(request.entry, "entry");
+      Assert.isNotNull(request.member, "member");
       return request;
     }
 
