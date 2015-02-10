@@ -46,6 +46,8 @@ public class RaftContext extends Observable implements RaftProtocol {
   private final LogManager log;
   private RaftState state;
   private TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer;
+  private MessageHandler<JoinRequest, JoinResponse> joinHandler;
+  private MessageHandler<LeaveRequest, LeaveResponse> leaveHandler;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
   private MessageHandler<VoteRequest, VoteResponse> voteHandler;
@@ -488,6 +490,28 @@ public class RaftContext extends Observable implements RaftProtocol {
   }
 
   @Override
+  public CompletableFuture<JoinResponse> join(JoinRequest request) {
+    return wrapCall(request, state::join);
+  }
+
+  @Override
+  public RaftProtocol joinHandler(MessageHandler<JoinRequest, JoinResponse> handler) {
+    this.joinHandler = handler;
+    return this;
+  }
+
+  @Override
+  public CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+    return wrapCall(request, state::leave);
+  }
+
+  @Override
+  public RaftProtocol leaveHandler(MessageHandler<LeaveRequest, LeaveResponse> handler) {
+    this.leaveHandler = handler;
+    return this;
+  }
+
+  @Override
   public CompletableFuture<SyncResponse> sync(SyncRequest request) {
     return wrapCall(request, state::sync);
   }
@@ -620,6 +644,8 @@ public class RaftContext extends Observable implements RaftProtocol {
    * Registers handlers on the given state.
    */
   private void registerHandlers(RaftState state) {
+    state.joinHandler(joinHandler);
+    state.leaveHandler(leaveHandler);
     state.syncHandler(syncHandler);
     state.appendHandler(appendHandler);
     state.pollHandler(pollHandler);

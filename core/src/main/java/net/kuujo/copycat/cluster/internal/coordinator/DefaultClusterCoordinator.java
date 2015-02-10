@@ -259,12 +259,16 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public void createRoutes(ClusterManager cluster, RaftProtocol protocol) {
+      cluster.member().registerHandler(Topics.JOIN, PROTOCOL_ID, protocol::join, serializer, executor);
+      cluster.member().registerHandler(Topics.LEAVE, PROTOCOL_ID, protocol::leave, serializer, executor);
       cluster.member().registerHandler(Topics.SYNC, PROTOCOL_ID, protocol::sync, serializer, executor);
       cluster.member().registerHandler(Topics.POLL, PROTOCOL_ID, protocol::poll, serializer, executor);
       cluster.member().registerHandler(Topics.VOTE, PROTOCOL_ID, protocol::vote, serializer, executor);
       cluster.member().registerHandler(Topics.APPEND, PROTOCOL_ID, protocol::append, serializer, executor);
       cluster.member().registerHandler(Topics.QUERY, PROTOCOL_ID, protocol::query, serializer, executor);
       cluster.member().registerHandler(Topics.COMMIT, PROTOCOL_ID, protocol::commit, serializer, executor);
+      protocol.joinHandler(request -> handleOutboundRequest(Topics.JOIN, request, cluster));
+      protocol.leaveHandler(request -> handleOutboundRequest(Topics.LEAVE, request, cluster));
       protocol.syncHandler(request -> handleOutboundRequest(Topics.SYNC, request, cluster));
       protocol.pollHandler(request -> handleOutboundRequest(Topics.POLL, request, cluster));
       protocol.voteHandler(request -> handleOutboundRequest(Topics.VOTE, request, cluster));
@@ -286,12 +290,16 @@ public class DefaultClusterCoordinator implements ClusterCoordinator {
 
     @Override
     public void destroyRoutes(ClusterManager cluster, RaftProtocol protocol) {
+      cluster.member().unregisterHandler(Topics.JOIN, PROTOCOL_ID);
+      cluster.member().unregisterHandler(Topics.LEAVE, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.SYNC, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.POLL, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.VOTE, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.APPEND, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.QUERY, PROTOCOL_ID);
       cluster.member().unregisterHandler(Topics.COMMIT, PROTOCOL_ID);
+      protocol.joinHandler(null);
+      protocol.leaveHandler(null);
       protocol.syncHandler(null);
       protocol.pollHandler(null);
       protocol.voteHandler(null);

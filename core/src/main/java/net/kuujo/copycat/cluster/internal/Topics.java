@@ -22,6 +22,16 @@ package net.kuujo.copycat.cluster.internal;
 public class Topics {
 
   /**
+   * Member join topic.
+   */
+  public static final String JOIN = "join";
+
+  /**
+   * Member leave topic.
+   */
+  public static final String LEAVE = "leave";
+
+  /**
    * Member sync topic.
    */
   public static final String SYNC = "sync";

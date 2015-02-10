@@ -29,6 +29,8 @@ import java.util.concurrent.CompletableFuture;
 abstract class RaftState implements RaftProtocol {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
   protected final RaftContext context;
+  protected MessageHandler<JoinRequest, JoinResponse> joinHandler;
+  protected MessageHandler<LeaveRequest, LeaveResponse> leaveHandler;
   protected MessageHandler<SyncRequest, SyncResponse> syncHandler;
   protected MessageHandler<PollRequest, PollResponse> pollHandler;
   protected MessageHandler<VoteRequest, VoteResponse> voteHandler;
@@ -118,6 +120,28 @@ abstract class RaftState implements RaftProtocol {
   protected final <R extends Response> R logResponse(R response) {
     LOGGER.debug("{} - Sent {}", context.getLocalMember(), response);
     return response;
+  }
+
+  @Override
+  public CompletableFuture<JoinResponse> join(JoinRequest request) {
+    return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
+  }
+
+  @Override
+  public RaftProtocol joinHandler(MessageHandler<JoinRequest, JoinResponse> handler) {
+    this.joinHandler = handler;
+    return this;
+  }
+
+  @Override
+  public CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
+    return exceptionalFuture(new IllegalStateException("Invalid Copycat state"));
+  }
+
+  @Override
+  public RaftProtocol leaveHandler(MessageHandler<LeaveRequest, LeaveResponse> handler) {
+    this.leaveHandler = handler;
+    return this;
   }
 
   @Override
