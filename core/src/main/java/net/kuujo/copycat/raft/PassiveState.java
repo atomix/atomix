@@ -266,6 +266,21 @@ public class PassiveState extends RaftState {
   }
 
   @Override
+  public CompletableFuture<PromoteResponse> promote(PromoteRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == null) {
+      return CompletableFuture.completedFuture(logResponse(PromoteResponse.builder()
+        .withUri(context.getLocalMember())
+        .withStatus(Response.Status.ERROR)
+        .withError(new IllegalStateException("Not the leader"))
+        .build()));
+    } else {
+      return promoteHandler.apply(PromoteRequest.builder(request).withUri(context.getLeader()).build());
+    }
+  }
+
+  @Override
   public CompletableFuture<LeaveResponse> leave(LeaveRequest request) {
     context.checkThread();
     logRequest(request);

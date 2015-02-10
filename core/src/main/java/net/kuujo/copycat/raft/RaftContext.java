@@ -47,6 +47,7 @@ public class RaftContext extends Observable implements RaftProtocol {
   private RaftState state;
   private TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer;
   private MessageHandler<JoinRequest, JoinResponse> joinHandler;
+  private MessageHandler<PromoteRequest, PromoteResponse> promoteHandler;
   private MessageHandler<LeaveRequest, LeaveResponse> leaveHandler;
   private MessageHandler<SyncRequest, SyncResponse> syncHandler;
   private MessageHandler<PollRequest, PollResponse> pollHandler;
@@ -56,7 +57,7 @@ public class RaftContext extends Observable implements RaftProtocol {
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
   private CompletableFuture<Void> openFuture;
   private final String localMember;
-  private final Set<String> activeMembers;
+  private Set<String> activeMembers;
   private Set<String> members;
   private final ReplicaInfo localMemberInfo;
   private final Map<String, ReplicaInfo> memberInfo = new HashMap<>();
@@ -107,6 +108,17 @@ public class RaftContext extends Observable implements RaftProtocol {
    */
   public Set<String> getActiveMembers() {
     return activeMembers;
+  }
+
+  /**
+   * Sets the set of active members.
+   */
+  RaftContext setActiveMembers(Collection<String> members) {
+    if (!activeMembers.equals(members)) {
+      this.activeMembers = new HashSet<>(members);
+      triggerChangeEvent();
+    }
+    return this;
   }
 
   /**
@@ -497,6 +509,17 @@ public class RaftContext extends Observable implements RaftProtocol {
   @Override
   public RaftProtocol joinHandler(MessageHandler<JoinRequest, JoinResponse> handler) {
     this.joinHandler = handler;
+    return this;
+  }
+
+  @Override
+  public CompletableFuture<PromoteResponse> promote(PromoteRequest request) {
+    return wrapCall(request, state::promote);
+  }
+
+  @Override
+  public RaftProtocol promoteHandler(MessageHandler<PromoteRequest, PromoteResponse> handler) {
+    this.promoteHandler = handler;
     return this;
   }
 

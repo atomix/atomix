@@ -43,6 +43,22 @@ public interface RaftProtocol extends Managed<Void> {
   RaftProtocol joinHandler(MessageHandler<JoinRequest, JoinResponse> handler);
 
   /**
+   * Sends a protocol promote request.
+   *
+   * @param request The protocol promote request.
+   * @return A completable future to be completed with the promote response.
+   */
+  CompletableFuture<PromoteResponse> promote(PromoteRequest request);
+
+  /**
+   * Registers a protocol promote request handler.
+   *
+   * @param handler A protocol promote request handler.
+   * @return The Raft protocol.
+   */
+  RaftProtocol promoteHandler(MessageHandler<PromoteRequest, PromoteResponse> handler);
+
+  /**
    * Sends a protocol leave request.
    *
    * @param request The protocol leave request.
