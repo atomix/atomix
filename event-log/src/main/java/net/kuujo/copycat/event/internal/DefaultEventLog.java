@@ -81,7 +81,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   private ByteBuffer consume(long term, Long index, ByteBuffer entry) {
     ByteBuffer result = ByteBuffer.allocateDirect(8);
     result.putLong(index);
-    if (consumer != null) {
+    if (consumer != null && entry != null) {
       T value = serializer.readObject(entry);
       executor.execute(() -> consumer.accept(value));
     }

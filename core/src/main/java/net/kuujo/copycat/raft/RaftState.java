@@ -113,7 +113,7 @@ abstract class RaftState implements RaftProtocol {
    * Logs a request.
    */
   protected final <R extends Request> R logRequest(R request) {
-    LOGGER.debug("{} - Received {}", context.getLocalMember(), request);
+    LOGGER.debug("{} - Received {}", context.getLocalMember().uri(), request);
     return request;
   }
 
@@ -121,7 +121,7 @@ abstract class RaftState implements RaftProtocol {
    * Logs a response.
    */
   protected final <R extends Response> R logResponse(R response) {
-    LOGGER.debug("{} - Sent {}", context.getLocalMember(), response);
+    LOGGER.debug("{} - Sent {}", context.getLocalMember().uri(), response);
     return response;
   }
 

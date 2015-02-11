@@ -14,6 +14,7 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.protocol.AppendRequest;
 import net.kuujo.copycat.raft.protocol.AppendResponse;
 import net.kuujo.copycat.raft.protocol.VoteRequest;
@@ -22,10 +23,12 @@ import net.kuujo.copycat.util.internal.Quorum;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Candidate state.
@@ -55,7 +58,7 @@ class CandidateState extends ActiveState {
    * Starts the election.
    */
   private void startElection() {
-    LOGGER.info("{} - Starting election", context.getLocalMember());
+    LOGGER.info("{} - Starting election", context.getLocalMember().uri());
     sendVoteRequests();
   }
 
@@ -82,22 +85,25 @@ class CandidateState extends ActiveState {
     currentTimer = context.executor().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      LOGGER.info("{} - Election timed out", context.getLocalMember());
+      LOGGER.info("{} - Election timed out", context.getLocalMember().uri());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       sendVoteRequests();
-      LOGGER.info("{} - Restarted election", context.getLocalMember());
+      LOGGER.info("{} - Restarted election", context.getLocalMember().uri());
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
+    final Set<RaftMember> votingMembers = context.getMembers().stream()
+      .filter(m -> m.type() == Member.Type.ACTIVE)
+      .collect(Collectors.toSet());
 
     // Send vote requests to all nodes. The vote request that is sent
     // to this node will be automatically successful.
     // First check if the quorum is null. If the quorum isn't null then that
     // indicates that another vote is already going on.
-    final Quorum quorum = new Quorum((int) Math.ceil(context.getActiveMembers().size() / 2.0), (elected) -> {
+    final Quorum quorum = new Quorum((int) Math.ceil(votingMembers.size() / 2.0), (elected) -> {
       complete.set(true);
       if (elected) {
         transition(RaftState.Type.LEADER);
@@ -111,14 +117,14 @@ class CandidateState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.info("{} - Requesting votes from {}", context.getLocalMember(), context.getActiveMembers());
+    LOGGER.info("{} - Requesting votes from {}", context.getLocalMember().uri(), votingMembers);
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
-    for (String member : context.getActiveMembers()) {
-      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getLocalMember(), member, context.getTerm());
+    for (RaftMember member : votingMembers) {
+      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getLocalMember().uri(), member, context.getTerm());
       VoteRequest request = VoteRequest.builder()
-        .withUri(member)
+        .withUri(member.uri())
         .withTerm(context.getTerm())
-        .withCandidate(context.getLocalMember())
+        .withCandidate(context.getLocalMember().uri())
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
@@ -126,21 +132,21 @@ class CandidateState extends ActiveState {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
-            LOGGER.warn(context.getLocalMember(), error);
+            LOGGER.warn(context.getLocalMember().uri(), error);
             quorum.fail();
           } else if (response.term() > context.getTerm()) {
-            LOGGER.debug("{} - Received greater term from {}", context.getLocalMember(), member);
+            LOGGER.debug("{} - Received greater term from {}", context.getLocalMember().uri(), member);
             context.setTerm(response.term());
             complete.set(true);
             transition(RaftState.Type.FOLLOWER);
           } else if (!response.voted()) {
-            LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember(), member);
+            LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember().uri(), member);
             quorum.fail();
           } else if (response.term() != context.getTerm()) {
-            LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember(), member);
+            LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember().uri(), member);
             quorum.fail();
           } else {
-            LOGGER.info("{} - Received successful vote from {}", context.getLocalMember(), member);
+            LOGGER.info("{} - Received successful vote from {}", context.getLocalMember().uri(), member);
             quorum.succeed();
           }
         }
@@ -174,15 +180,15 @@ class CandidateState extends ActiveState {
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (request.candidate().equals(context.getLocalMember())) {
+    if (request.candidate().equals(context.getLocalMember().uri())) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
-        .withUri(context.getLocalMember())
+        .withUri(context.getLocalMember().uri())
         .withTerm(context.getTerm())
         .withVoted(true)
         .build()));
     } else {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
-        .withUri(context.getLocalMember())
+        .withUri(context.getLocalMember().uri())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build()));
@@ -195,7 +201,7 @@ class CandidateState extends ActiveState {
   private void cancelElection() {
     context.checkThread();
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling election", context.getLocalMember());
+      LOGGER.debug("{} - Cancelling election", context.getLocalMember().uri());
       currentTimer.cancel(false);
     }
     if (quorum != null) {

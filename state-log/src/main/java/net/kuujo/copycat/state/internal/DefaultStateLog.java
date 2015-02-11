@@ -402,7 +402,9 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     private U execute(long term, Long index, TT entry) {
       if (index != null)
         checkSnapshot(term, index);
-      return function.apply(entry);
+      if (entry != null)
+        return function.apply(entry);
+      return null;
     }
   }
 

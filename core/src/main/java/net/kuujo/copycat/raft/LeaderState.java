@@ -15,6 +15,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.util.function.TriFunction;
 
@@ -24,6 +25,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Leader state.
@@ -34,6 +36,7 @@ class LeaderState extends ActiveState {
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
+  private boolean configuring;
 
   public LeaderState(RaftContext context) {
     super(context);
@@ -48,16 +51,28 @@ class LeaderState extends ActiveState {
   public synchronized CompletableFuture<Void> open() {
     return super.open()
       .thenRun(this::applyEntries)
+      .thenRun(this::commitConfiguration)
       .thenRun(replicator::commit)
       .thenRun(this::takeLeadership)
       .thenRun(this::startHeartbeatTimer);
   }
 
   /**
+   * Commits the current cluster configuration to the log.
+   */
+  private void commitConfiguration() {
+    Set<RaftMember> members = new HashSet<>(context.getMembers().size());
+    context.getMembers().stream()
+      .filter(m -> m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE)
+      .forEach(members::add);
+    commitConfig(members);
+  }
+
+  /**
    * Sets the current node as the cluster leader.
    */
   private void takeLeadership() {
-    context.setLeader(context.getLocalMember());
+    context.setLeader(context.getLocalMember().uri());
   }
 
   /**
@@ -72,7 +87,7 @@ class LeaderState extends ActiveState {
         applyEntry(commitIndex);
         count++;
       }
-      LOGGER.debug("{} - Applied {} entries to log", context.getLocalMember(), count);
+      LOGGER.debug("{} - Applied {} entries to log", context.getLocalMember().uri(), count);
     }
   }
 
@@ -83,7 +98,7 @@ class LeaderState extends ActiveState {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
-    LOGGER.debug("{} - Setting heartbeat timer", context.getLocalMember());
+    LOGGER.debug("{} - Setting heartbeat timer", context.getLocalMember().uri());
     currentTimer = context.executor().scheduleAtFixedRate(this::heartbeatMembers, 0, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
@@ -98,9 +113,201 @@ class LeaderState extends ActiveState {
   }
 
   @Override
+  public CompletableFuture<JoinResponse> join(final JoinRequest request) {
+    logRequest(request);
+
+    if (configuring) {
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+        .withUri(context.getLocalMember().uri())
+        .withTerm(context.getTerm())
+        .build()));
+    }
+
+    if (!context.getMembers().stream()
+      .filter(m -> m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE)
+      .collect(Collectors.toSet()).contains(request.member())) {
+
+      final Set<RaftMember> members = new HashSet<>(context.getMembers().size());
+      context.getMembers().stream()
+        .filter(m -> m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE)
+        .forEach(members::add);
+      final RaftMember member = new RaftMember(request.member(), Member.Type.PROMOTABLE, Member.Status.ALIVE);
+      members.add(member);
+
+      CompletableFuture<JoinResponse> future = new CompletableFuture<>();
+      commitConfig(members).whenComplete((result, error) -> {
+        context.checkThread();
+        if (isOpen()) {
+          if (error == null) {
+            context.addMember(member);
+            replicator.update();
+            future.complete(logResponse(JoinResponse.builder()
+              .withUri(context.getLocalMember().uri())
+              .withTerm(context.getTerm())
+              .build()));
+          } else {
+            future.complete(logResponse(JoinResponse.builder()
+              .withUri(context.getLocalMember().uri())
+              .withStatus(Response.Status.ERROR)
+              .withError(error)
+              .withTerm(context.getTerm())
+              .build()));
+          }
+        }
+      });
+      return future;
+    } else {
+      return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
+        .withUri(context.getLocalMember().uri())
+        .withTerm(context.getTerm())
+        .build()));
+    }
+  }
+
+  @Override
+  public CompletableFuture<PromoteResponse> promote(final PromoteRequest request) {
+    logRequest(request);
+
+    if (configuring) {
+      return CompletableFuture.completedFuture(logResponse(PromoteResponse.builder()
+        .withUri(context.getLocalMember().uri())
+        .withTerm(context.getTerm())
+        .build()));
+    }
+
+    RaftMember member = context.getMember(request.member());
+    if (member != null) {
+      final Set<RaftMember> members = new HashSet<>(context.getMembers().size());
+      context.getMembers().stream()
+        .filter(m -> m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE)
+        .forEach(members::add);
+      members.remove(member);
+      members.add(new RaftMember(member.uri(), Member.Type.ACTIVE, Member.Status.ALIVE));
+
+      CompletableFuture<PromoteResponse> future = new CompletableFuture<>();
+      commitConfig(members).whenComplete((result, error) -> {
+        if (isOpen()) {
+          if (error == null) {
+            context.addMember(member);
+            replicator.update();
+            future.complete(logResponse(PromoteResponse.builder()
+              .withUri(context.getLocalMember().uri())
+              .withTerm(context.getTerm())
+              .withSucceeded(true)
+              .build()));
+          } else {
+            future.complete(logResponse(PromoteResponse.builder()
+              .withUri(context.getLocalMember().uri())
+              .withStatus(Response.Status.ERROR)
+              .withError(error)
+              .withTerm(context.getTerm())
+              .build()));
+          }
+        }
+      });
+      return future;
+    } else {
+      return CompletableFuture.completedFuture(logResponse(PromoteResponse.builder()
+        .withUri(context.getLocalMember().uri())
+        .withTerm(context.getTerm())
+        .withSucceeded(false)
+        .build()));
+    }
+  }
+
+  @Override
+  public CompletableFuture<LeaveResponse> leave(final LeaveRequest request) {
+    logRequest(request);
+
+    if (configuring) {
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+        .withUri(context.getLocalMember().uri())
+        .withTerm(context.getTerm())
+        .build()));
+    }
+
+    if (context.getMembers().stream()
+      .filter(m -> m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE)
+      .collect(Collectors.toSet()).contains(request.member())) {
+
+      final Set<RaftMember> members = new HashSet<>(context.getMembers().size());
+      context.getMembers().stream()
+        .filter(m -> !m.uri().equals(request.member()) && (m.type() == Member.Type.ACTIVE || m.type() == Member.Type.PROMOTABLE))
+        .forEach(members::add);
+
+      CompletableFuture<LeaveResponse> future = new CompletableFuture<>();
+      commitConfig(members).whenComplete((result, error) -> {
+        if (isOpen()) {
+          if (error == null) {
+            RaftMember member = context.getMember(request.member());
+            if (member != null) {
+              context.removeMember(member);
+            }
+            replicator.update();
+
+            future.complete(logResponse(LeaveResponse.builder()
+              .withUri(context.getLocalMember().uri())
+              .withTerm(context.getTerm())
+              .build()));
+          } else {
+            future.complete(logResponse(LeaveResponse.builder()
+              .withUri(context.getLocalMember().uri())
+              .withStatus(Response.Status.ERROR)
+              .withError(error)
+              .withTerm(context.getTerm())
+              .build()));
+          }
+        }
+      });
+      return future;
+    } else {
+      return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
+        .withUri(context.getLocalMember().uri())
+        .withTerm(context.getTerm())
+        .build()));
+    }
+  }
+
+  /**
+   * Commits a configuration change to the replicated log.
+   */
+  private CompletableFuture<Long> commitConfig(Set<RaftMember> members) {
+    final long term = context.getTerm();
+    ByteBuffer config = serializer.writeObject(members);
+    ByteBuffer entry = ByteBuffer.allocate(config.limit() + 9);
+    entry.put(ENTRY_TYPE_CONFIG);
+    entry.putLong(term);
+    entry.put(config);
+
+    final long index;
+    try {
+      index = context.log().appendEntry(entry);
+      context.log().flush();
+    } catch (IOException e) {
+      return exceptionalFuture(e);
+    }
+
+    LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember().uri(), index);
+    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember().uri(), index);
+
+    configuring = true;
+    return replicator.commit(index).whenComplete((result, error) -> {
+      configuring = false;
+      context.checkThread();
+      if (isOpen() && error == null) {
+        try {
+          context.consumer().apply(term, index, null);
+        } finally {
+          context.setLastApplied(index);
+        }
+      }
+    });
+  }
+
+  @Override
   public CompletableFuture<PollResponse> poll(final PollRequest request) {
     return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
-      .withUri(context.getLocalMember())
+      .withUri(context.getLocalMember().uri())
       .withTerm(context.getTerm())
       .withAccepted(false)
       .build()));
@@ -109,12 +316,12 @@ class LeaderState extends ActiveState {
   @Override
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     if (request.term() > context.getTerm()) {
-      LOGGER.debug("{} - Received greater term", context.getLocalMember());
+      LOGGER.debug("{} - Received greater term", context.getLocalMember().uri());
       transition(Type.FOLLOWER);
       return super.vote(request);
     } else {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
-        .withUri(context.getLocalMember())
+        .withUri(context.getLocalMember().uri())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build()));
@@ -128,7 +335,7 @@ class LeaderState extends ActiveState {
       return super.append(request);
     } else if (request.term() < context.getTerm()) {
       return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
-        .withUri(context.getLocalMember())
+        .withUri(context.getLocalMember().uri())
         .withTerm(context.getTerm())
         .withSucceeded(false)
         .withLogIndex(context.log().lastIndex())
@@ -152,13 +359,13 @@ class LeaderState extends ActiveState {
       case WEAK:
       case DEFAULT:
         future.complete(logResponse(QueryResponse.builder()
-          .withUri(context.getLocalMember())
+          .withUri(context.getLocalMember().uri())
           .withResult(consumer.apply(context.getTerm(), null, request.entry()))
           .build()));
         break;
       // Consistency mode STRONG requires synchronous consistency check prior to applying the query.
       case STRONG:
-        LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember(), context.log().lastIndex());
+        LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getLocalMember().uri(), context.log().lastIndex());
         long term = context.getTerm();
         replicator.commit().whenComplete((index, error) -> {
           context.checkThread();
@@ -166,19 +373,19 @@ class LeaderState extends ActiveState {
             if (error == null) {
               try {
                 future.complete(logResponse(QueryResponse.builder()
-                  .withUri(context.getLocalMember())
+                  .withUri(context.getLocalMember().uri())
                   .withResult(consumer.apply(term, null, request.entry()))
                   .build()));
               } catch (Exception e) {
                 future.complete(logResponse(QueryResponse.builder()
-                  .withUri(context.getLocalMember())
+                  .withUri(context.getLocalMember().uri())
                   .withStatus(Response.Status.ERROR)
                   .withError(e)
                   .build()));
               }
             } else {
               future.complete(logResponse(QueryResponse.builder()
-                .withUri(context.getLocalMember())
+                .withUri(context.getLocalMember().uri())
                 .withStatus(Response.Status.ERROR)
                 .withError(error)
                 .build()));
@@ -200,8 +407,9 @@ class LeaderState extends ActiveState {
     TriFunction<Long, Long, ByteBuffer, ByteBuffer> consumer = context.consumer();
 
     // Create a log entry containing the current term and entry.
-    ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 8);
+    ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 9);
     long term = context.getTerm();
+    logEntry.put(ENTRY_TYPE_USER);
     logEntry.putLong(term);
     logEntry.put(entry);
     entry.flip();
@@ -216,8 +424,8 @@ class LeaderState extends ActiveState {
       return future;
     }
 
-    LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember(), index);
-    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember(), index);
+    LOGGER.debug("{} - Appended entry to log at index {}", context.getLocalMember().uri(), index);
+    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getLocalMember().uri(), index);
 
     // Attempt to replicate the entry to a quorum of the cluster.
     replicator.commit(index).whenComplete((resultIndex, error) -> {
@@ -226,12 +434,12 @@ class LeaderState extends ActiveState {
         if (error == null) {
           try {
             future.complete(logResponse(CommitResponse.builder()
-              .withUri(context.getLocalMember())
+              .withUri(context.getLocalMember().uri())
               .withResult(consumer.apply(term, index, entry))
               .build()));
           } catch (Exception e) {
             future.complete(logResponse(CommitResponse.builder()
-              .withUri(context.getLocalMember())
+              .withUri(context.getLocalMember().uri())
               .withStatus(Response.Status.ERROR)
               .withError(e)
               .build()));
@@ -240,7 +448,7 @@ class LeaderState extends ActiveState {
           }
         } else {
           future.complete(logResponse(CommitResponse.builder()
-            .withUri(context.getLocalMember())
+            .withUri(context.getLocalMember().uri())
             .withStatus(Response.Status.ERROR)
             .withError(error)
             .build()));
@@ -256,7 +464,7 @@ class LeaderState extends ActiveState {
    */
   private void cancelPingTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling ping timer", context.getLocalMember());
+      LOGGER.debug("{} - Cancelling ping timer", context.getLocalMember().uri());
       currentTimer.cancel(false);
     }
   }
@@ -270,29 +478,45 @@ class LeaderState extends ActiveState {
    * Log replicator.
    */
   private class Replicator {
-    private final List<Replica> replicas;
-    private final int quorum;
-    private final int quorumIndex;
-    private final List<Long> commitTimes;
+    private final List<Replica> replicas = new ArrayList<>();
+    private final List<Long> commitTimes = new ArrayList<>();
     private long commitTime;
     private CompletableFuture<Void> commitFuture;
     private CompletableFuture<Void> nextCommitFuture;
     private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
+    private int quorum;
+    private int quorumIndex;
 
-    @SuppressWarnings("all")
     private Replicator() {
-      replicas = new ArrayList<>(context.getActiveMembers().size() - 1);
-      commitTimes = new ArrayList<>(context.getActiveMembers().size() - 1);
-      int i = 0;
-      for (String member : context.getActiveMembers()) {
-        if (!member.equals(context.getLocalMember())) {
-          replicas.add(new Replica(i++, member));
-          commitTimes.add(System.currentTimeMillis());
+      update();
+    }
+
+    /**
+     * Updates the replicator's cluster configuration.
+     */
+    private void update() {
+      Set<RaftMember> members = context.getMembers().stream()
+        .filter(m -> !m.uri().equals(context.getLocalMember().uri()) && m.type() == Member.Type.ACTIVE)
+        .collect(Collectors.toSet());
+      Set<String> uris = members.stream().map(RaftMember::uri).collect(Collectors.toSet());
+
+      Iterator<Replica> iterator = replicas.iterator();
+      while (iterator.hasNext()) {
+        Replica replica = iterator.next();
+        if (!uris.contains(replica.member.uri())) {
+          iterator.remove();
+          commitTimes.remove(replica.id);
         }
       }
 
-      // Quorum is floor(replicas.size / 2) since this node is implicitly counted in the quorum count.
-      this.quorum = (int) Math.floor(context.getActiveMembers().size() / 2.0);
+      Set<String> replicas = this.replicas.stream().map(r -> r.member.uri()).collect(Collectors.toSet());
+      for (RaftMember member : members) {
+        if (!replicas.contains(member.uri())) {
+          this.replicas.add(new Replica(this.replicas.size(), member));
+        }
+      }
+
+      this.quorum = (int) Math.floor((this.replicas.size() + 1) / 2.0);
       this.quorumIndex = quorum - 1;
     }
 
@@ -384,12 +608,12 @@ class LeaderState extends ActiveState {
     private class Replica {
       private final List<ByteBuffer> EMPTY_LIST = new ArrayList<>(0);
       private final int id;
-      private final String member;
+      private final RaftMember member;
       private Long nextIndex;
       private Long matchIndex;
       private boolean committing;
 
-      private Replica(int id, String member) {
+      private Replica(int id, RaftMember member) {
         this.id = id;
         this.member = member;
       }
@@ -478,9 +702,9 @@ class LeaderState extends ActiveState {
        */
       private void commit(Long prevIndex, ByteBuffer prevEntry, List<ByteBuffer> entries) {
         AppendRequest request = AppendRequest.builder()
-          .withUri(member)
+          .withUri(member.uri())
           .withTerm(context.getTerm())
-          .withLeader(context.getLocalMember())
+          .withLeader(context.getLocalMember().uri())
           .withLogIndex(prevIndex)
           .withLogTerm(prevEntry != null ? prevEntry.getLong() : null)
           .withEntries(entries)
@@ -489,14 +713,14 @@ class LeaderState extends ActiveState {
           .build();
 
         committing = true;
-        LOGGER.debug("{} - Sent {} to {}", context.getLocalMember(), request, member);
+        LOGGER.debug("{} - Sent {} to {}", context.getLocalMember().uri(), request, member);
         appendHandler.apply(request).whenCompleteAsync((response, error) -> {
           committing = false;
           context.checkThread();
 
           if (isOpen()) {
             if (error == null) {
-              LOGGER.debug("{} - Received {} from {}", context.getLocalMember(), response, member);
+              LOGGER.debug("{} - Received {} from {}", context.getLocalMember().uri(), response, member);
               if (response.status() == Response.Status.OK) {
                 // Update the commit time for the replica. This will cause heartbeat futures to be triggered.
                 commitTime(id);
@@ -527,13 +751,13 @@ class LeaderState extends ActiveState {
                   }
                 }
               } else if (response.term() > context.getTerm()) {
-                LOGGER.debug("{} - Received higher term from {}", context.getLocalMember(), member);
+                LOGGER.debug("{} - Received higher term from {}", context.getLocalMember().uri(), member);
                 transition(Type.FOLLOWER);
               } else {
-                LOGGER.warn("{} - {}", context.getLocalMember(), response.error() != null ? response.error().getMessage() : "");
+                LOGGER.warn("{} - {}", context.getLocalMember().uri(), response.error() != null ? response.error().getMessage() : "");
               }
             } else {
-              LOGGER.warn("{} - {}", context.getLocalMember(), error.getMessage());
+              LOGGER.warn("{} - {}", context.getLocalMember().uri(), error.getMessage());
             }
           }
         }, context.executor());
@@ -586,7 +810,7 @@ class LeaderState extends ActiveState {
         } else if (response.logIndex() != null) {
           matchIndex = Math.max(matchIndex, response.logIndex());
         }
-        LOGGER.debug("{} - Reset match index for {} to {}", context.getLocalMember(), member, matchIndex);
+        LOGGER.debug("{} - Reset match index for {} to {}", context.getLocalMember().uri(), member, matchIndex);
       }
 
       /**
@@ -598,7 +822,7 @@ class LeaderState extends ActiveState {
         } else {
           nextIndex = context.log().firstIndex();
         }
-        LOGGER.debug("{} - Reset next index for {} to {}", context.getLocalMember(), member, nextIndex);
+        LOGGER.debug("{} - Reset next index for {} to {}", context.getLocalMember().uri(), member, nextIndex);
       }
 
     }

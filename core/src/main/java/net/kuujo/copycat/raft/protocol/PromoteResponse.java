@@ -46,6 +46,7 @@ public class PromoteResponse extends AbstractResponse {
   }
 
   private long term;
+  private boolean succeeded;
 
   /**
    * Returns the responding node's current term.
@@ -54,6 +55,15 @@ public class PromoteResponse extends AbstractResponse {
    */
   public long term() {
     return term;
+  }
+
+  /**
+   * Returns whether the promotion succeeded.
+   *
+   * @return Indicates whether the promotion succeeded.
+   */
+  public boolean succeeded() {
+    return succeeded;
   }
 
   @Override
@@ -97,6 +107,17 @@ public class PromoteResponse extends AbstractResponse {
      */
     public Builder withTerm(long term) {
       response.term = Assert.arg(term, term > 0, "term must be greater than zero");
+      return this;
+    }
+
+    /**
+     * Sets whether the request succeeded.
+     *
+     * @param succeeded Indicates whether the promotion succeeded.
+     * @return The promote response builder.
+     */
+    public Builder withSucceeded(boolean succeeded) {
+      response.succeeded = succeeded;
       return this;
     }
 

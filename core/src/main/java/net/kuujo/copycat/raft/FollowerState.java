@@ -14,15 +14,18 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.raft.protocol.*;
 import net.kuujo.copycat.util.internal.Quorum;
 
 import java.nio.ByteBuffer;
 import java.util.Random;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Follower state.
@@ -51,7 +54,7 @@ class FollowerState extends ActiveState {
    * Starts the heartbeat timer.
    */
   private void startHeartbeatTimeout() {
-    LOGGER.debug("{} - Starting heartbeat timer", context.getLocalMember());
+    LOGGER.debug("{} - Starting heartbeat timer", context.getLocalMember().uri());
     resetHeartbeatTimeout();
   }
 
@@ -64,7 +67,7 @@ class FollowerState extends ActiveState {
 
     // If a timer is already set, cancel the timer.
     if (currentTimer != null) {
-      LOGGER.debug("{} - Reset heartbeat timeout", context.getLocalMember());
+      LOGGER.debug("{} - Reset heartbeat timeout", context.getLocalMember().uri());
       currentTimer.cancel(false);
     }
 
@@ -75,7 +78,7 @@ class FollowerState extends ActiveState {
       currentTimer = null;
       if (isOpen()) {
         if (context.getLastVotedFor() == null) {
-          LOGGER.info("{} - Heartbeat timed out in {} milliseconds", context.getLocalMember(), delay);
+          LOGGER.info("{} - Heartbeat timed out in {} milliseconds", context.getLocalMember().uri(), delay);
           sendPollRequests();
         } else {
           // If the node voted for a candidate then reset the election timer.
@@ -91,13 +94,17 @@ class FollowerState extends ActiveState {
   private void sendPollRequests() {
     // Set a new timer within which other nodes must respond in order for this node to transition to candidate.
     currentTimer = context.executor().schedule(() -> {
-      LOGGER.debug("{} - Failed to poll a majority of the cluster in {} milliseconds", context.getLocalMember(), context.getElectionTimeout());
+      LOGGER.debug("{} - Failed to poll a majority of the cluster in {} milliseconds", context.getLocalMember().uri(), context.getElectionTimeout());
       resetHeartbeatTimeout();
     }, context.getElectionTimeout(), TimeUnit.MILLISECONDS);
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
     final AtomicBoolean complete = new AtomicBoolean();
-    final Quorum quorum = new Quorum((int) Math.ceil(context.getActiveMembers().size() / 2.0), (elected) -> {
+    final Set<RaftMember> votingMembers = context.getMembers().stream()
+      .filter(m -> m.type() == Member.Type.ACTIVE)
+      .collect(Collectors.toSet());
+
+    final Quorum quorum = new Quorum((int) Math.ceil(votingMembers.size() / 2.0), (elected) -> {
       // If a majority of the cluster indicated they would vote for us then transition to candidate.
       complete.set(true);
       if (elected) {
@@ -114,14 +121,14 @@ class FollowerState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.info("{} - Polling members {}", context.getLocalMember(), context.getActiveMembers());
+    LOGGER.info("{} - Polling members {}", context.getLocalMember().uri(), votingMembers);
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
-    for (String member : context.getActiveMembers()) {
-      LOGGER.debug("{} - Polling {} for next term {}", context.getLocalMember(), member, context.getTerm() + 1);
+    for (RaftMember member : votingMembers) {
+      LOGGER.debug("{} - Polling {} for next term {}", context.getLocalMember().uri(), member, context.getTerm() + 1);
       PollRequest request = PollRequest.builder()
-        .withUri(member)
+        .withUri(member.uri())
         .withTerm(context.getTerm())
-        .withCandidate(context.getLocalMember())
+        .withCandidate(context.getLocalMember().uri())
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
@@ -129,20 +136,20 @@ class FollowerState extends ActiveState {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
-            LOGGER.warn(context.getLocalMember(), error);
+            LOGGER.warn(context.getLocalMember().uri(), error);
             quorum.fail();
           } else {
             if (response.term() > context.getTerm()) {
               context.setTerm(response.term());
             }
             if (!response.accepted()) {
-              LOGGER.info("{} - Received rejected poll from {}", context.getLocalMember(), member);
+              LOGGER.info("{} - Received rejected poll from {}", context.getLocalMember().uri(), member);
               quorum.fail();
             } else if (response.term() != context.getTerm()) {
-              LOGGER.info("{} - Received accepted poll for a different term from {}", context.getLocalMember(), member);
+              LOGGER.info("{} - Received accepted poll for a different term from {}", context.getLocalMember().uri(), member);
               quorum.fail();
             } else {
-              LOGGER.info("{} - Received accepted poll from {}", context.getLocalMember(), member);
+              LOGGER.info("{} - Received accepted poll from {}", context.getLocalMember().uri(), member);
               quorum.succeed();
             }
           }
@@ -174,7 +181,7 @@ class FollowerState extends ActiveState {
    */
   private void cancelHeartbeatTimeout() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling heartbeat timer", context.getLocalMember());
+      LOGGER.debug("{} - Cancelling heartbeat timer", context.getLocalMember().uri());
       currentTimer.cancel(false);
     }
   }

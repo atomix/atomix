@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.util.internal.Assert;
 
 import java.nio.ByteBuffer;
@@ -54,7 +55,7 @@ public class SyncRequest extends AbstractRequest {
   private Long logIndex;
   private boolean firstIndex;
   private List<ByteBuffer> entries;
-  private Collection<ReplicaInfo> members;
+  private Collection<RaftMember> members;
 
   /**
    * Returns the requesting node's current term.
@@ -106,7 +107,7 @@ public class SyncRequest extends AbstractRequest {
    *
    * @return The currently known membership.
    */
-  public Collection<ReplicaInfo> members() {
+  public Collection<RaftMember> members() {
     return members;
   }
 
@@ -218,7 +219,7 @@ public class SyncRequest extends AbstractRequest {
      * @param members The request membership.
      * @return The sync request builder.
      */
-    public Builder withMembers(Collection<ReplicaInfo> members) {
+    public Builder withMembers(Collection<RaftMember> members) {
       request.members = Assert.isNotNull(members, "members");
       return this;
     }

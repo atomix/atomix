@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Collection;
@@ -46,14 +47,14 @@ public class SyncResponse extends AbstractResponse {
     return new Builder(response);
   }
 
-  private Collection<ReplicaInfo> members;
+  private Collection<RaftMember> members;
 
   /**
    * Returns the responding node's membership.
    *
    * @return The responding node's membership.
    */
-  public Collection<ReplicaInfo> members() {
+  public Collection<RaftMember> members() {
     return members;
   }
 
@@ -96,7 +97,7 @@ public class SyncResponse extends AbstractResponse {
      * @param members The request membership.
      * @return The sync response builder.
      */
-    public Builder withMembers(Collection<ReplicaInfo> members) {
+    public Builder withMembers(Collection<RaftMember> members) {
       response.members = Assert.isNotNull(members, "members");
       return this;
     }

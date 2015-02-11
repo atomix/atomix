@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.raft.protocol.*;
@@ -31,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 
 /**
  * Raft state context.
@@ -56,11 +56,8 @@ public class RaftContext extends Observable implements RaftProtocol {
   private MessageHandler<QueryRequest, QueryResponse> queryHandler;
   private MessageHandler<CommitRequest, CommitResponse> commitHandler;
   private CompletableFuture<Void> openFuture;
-  private final String localMember;
-  private Set<String> activeMembers;
-  private Set<String> members;
-  private final ReplicaInfo localMemberInfo;
-  private final Map<String, ReplicaInfo> memberInfo = new HashMap<>();
+  private final RaftMember localMember;
+  private final Map<String, RaftMember> members = new HashMap<>();
   private boolean recovering = true;
   private String leader;
   private long term;
@@ -76,12 +73,11 @@ public class RaftContext extends Observable implements RaftProtocol {
   public RaftContext(String name, String uri, RaftConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
     this.config = config;
-    this.localMember = Assert.isNotNull(uri, "uri");
-    this.activeMembers = new HashSet<>(config.getReplicas());
-    this.members = new HashSet<>(config.getReplicas());
-    this.members.add(uri);
-    this.localMemberInfo = new ReplicaInfo(uri);
-    this.memberInfo.put(uri, localMemberInfo);
+    this.localMember = new RaftMember(Assert.isNotNull(uri, "uri"), config.getReplicas().contains(uri) ? Member.Type.PROMOTABLE : Member.Type.PASSIVE, Member.Status.ALIVE);
+    members.put(localMember.uri(), localMember);
+    config.getReplicas().forEach(r -> {
+      members.put(r, new RaftMember(r, Member.Type.ACTIVE, Member.Status.ALIVE));
+    });
     this.log = config.getLog().getLogManager(name);
     this.electionTimeout = config.getElectionTimeout();
     this.heartbeatInterval = config.getHeartbeatInterval();
@@ -102,147 +98,86 @@ public class RaftContext extends Observable implements RaftProtocol {
   }
 
   /**
-   * Returns the full set of active members.
+   * Returns the local member.
    *
-   * @return The full set of active members.
+   * @return The local member.
    */
-  public Set<String> getActiveMembers() {
-    return activeMembers;
-  }
-
-  /**
-   * Sets the set of active members.
-   */
-  RaftContext setActiveMembers(Collection<String> members) {
-    if (!activeMembers.equals(members)) {
-      this.activeMembers = new HashSet<>(members);
-      triggerChangeEvent();
-    }
-    return this;
-  }
-
-  /**
-   * Returns the local member URI.
-   *
-   * @return The local member URI.
-   */
-  public String getLocalMember() {
+  public RaftMember getLocalMember() {
     return localMember;
   }
 
   /**
-   * Returns the full set of Raft members.
+   * Returns a collection of all members in the cluster.
    *
-   * @return The full set of Raft members.
+   * @return A collection of all members in the cluster.
    */
-  public Set<String> getMembers() {
-    return members;
+  public Collection<RaftMember> getMembers() {
+    return members.values();
   }
 
   /**
-   * Sets the full set of Raft members.
+   * Returns member info for a specific member.
    *
-   * @param members The full set of Raft members.
+   * @param uri The URI of the member for which to return member info.
+   * @return The Raft member.
+   */
+  public RaftMember getMember(String uri) {
+    return members.get(uri);
+  }
+
+  /**
+   * Sets the set of active and promotable members.
+   *
+   * @param members A collection of active and promotable members.
    * @return The Raft context.
    */
-  public RaftContext setMembers(Collection<String> members) {
-    this.members = new HashSet<>(members);
-    return this;
-  }
-
-  /**
-   * Adds a member to the state context.
-   *
-   * @param member The member URI to add.
-   * @return The Raft context.
-   */
-  public RaftContext addMember(String member) {
-    this.members.add(member);
-    return this;
-  }
-
-  /**
-   * Removes a member from the state context.
-   *
-   * @param member The member URI to remove.
-   * @return The Raft context.
-   */
-  public RaftContext removeMember(String member) {
-    this.members.remove(member);
-    return this;
-  }
-
-  /**
-   * Returns the local cluster member.
-   *
-   * @return The local cluster member.
-   */
-  ReplicaInfo getLocalMemberInfo() {
-    return localMemberInfo;
-  }
-
-  /**
-   * Returns a set of all members in the state cluster.
-   *
-   * @return A set of all members in the state cluster.
-   */
-  Collection<ReplicaInfo> getMemberInfo() {
-    return memberInfo.values().stream().filter(info -> members.contains(info.getUri())).collect(Collectors.toList());
-  }
-
-  /**
-   * Sets all members info in the state cluster.
-   *
-   * @param members A collection of all members in the state cluster.
-   * @return The Raft context.
-   */
-  RaftContext setMemberInfo(Collection<ReplicaInfo> members) {
-    Assert.isNotNull(members, "members");
-    for (ReplicaInfo member : members) {
-      ReplicaInfo record = this.memberInfo.get(member.getUri());
-      if (record != null) {
-        record.update(member);
-      } else {
-        this.memberInfo.put(member.getUri(), member);
+  RaftContext setMembers(Collection<RaftMember> members) {
+    Iterator<Map.Entry<String, RaftMember>> iterator = this.members.entrySet().iterator();
+    while (iterator.hasNext()) {
+      RaftMember member = iterator.next().getValue();
+      if ((member.type() == Member.Type.ACTIVE || member.type() == Member.Type.PROMOTABLE) && !members.contains(member)) {
+        iterator.remove();
       }
     }
+    members.forEach(this::addMember);
     return this;
   }
 
   /**
-   * Returns a member info in the state cluster.
+   * Sets the set of members.
    *
-   * @param uri The member URI.
-   * @return The member info.
+   * @param members A collection of members to set.
+   * @return The Raft context.
    */
-  ReplicaInfo getMemberInfo(String uri) {
-    return memberInfo.get(Assert.isNotNull(uri, "uri"));
+  RaftContext updateMembers(Collection<RaftMember> members) {
+    members.forEach(this::addMember);
+    return this;
   }
 
   /**
-   * Sets a single member info in the state cluster.
+   * Adds a member to the cluster.
    *
-   * @param member The member to set.
+   * @param member The member to add.
    * @return The Raft context.
    */
-  RaftContext addMemberInfo(ReplicaInfo member) {
-    ReplicaInfo record = memberInfo.get(member.getUri());
-    if (record != null) {
-      record.update(member);
+  RaftContext addMember(RaftMember member) {
+    RaftMember m = members.get(member.uri());
+    if (m != null) {
+      m.update(member);
     } else {
-      this.memberInfo.put(member.getUri(), member);
+      members.put(member.uri(), member);
     }
     return this;
   }
 
   /**
-   * Removes a member info in the state cluster.
+   * Removes a member from the cluster.
    *
    * @param member The member to remove.
    * @return The Raft context.
    */
-  RaftContext removeMemberInfo(ReplicaInfo member) {
-    this.members.remove(member.getUri());
+  RaftContext removeMember(RaftMember member) {
+    members.remove(member.uri());
     return this;
   }
 
@@ -321,7 +256,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    */
   RaftContext setVersion(long version) {
     this.version = Math.max(this.version, version);
-    localMemberInfo.setVersion(this.version);
+    localMember.version(this.version);
     return this;
   }
 
@@ -387,7 +322,7 @@ public class RaftContext extends Observable implements RaftProtocol {
       firstCommitIndex = commitIndex;
     }
     this.commitIndex = this.commitIndex != null ? Assert.arg(Assert.isNotNull(commitIndex, "commitIndex"), commitIndex >= this.commitIndex, "cannot decrease commit index") : commitIndex;
-    localMemberInfo.setIndex(this.commitIndex);
+    localMember.index(this.commitIndex);
     return this;
   }
 
@@ -697,7 +632,7 @@ public class RaftContext extends Observable implements RaftProtocol {
       try {
         open = true;
         log.open();
-        transition(activeMembers.contains(localMember) ? RaftState.Type.FOLLOWER : RaftState.Type.PASSIVE);
+        transition(localMember.type() == Member.Type.PASSIVE ? RaftState.Type.PASSIVE : RaftState.Type.FOLLOWER);
       } catch (Exception e) {
         openFuture.completeExceptionally(e);
         openFuture = null;
