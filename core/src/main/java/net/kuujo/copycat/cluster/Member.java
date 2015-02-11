@@ -41,6 +41,11 @@ public interface Member {
     PASSIVE,
 
     /**
+     * Indicates that the member is attempting to join the cluster.
+     */
+    PROMOTABLE,
+
+    /**
      * Indicates that the member is an active voting member of the cluster.
      */
     ACTIVE
