@@ -197,11 +197,17 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
    */
   public CompletableFuture<ByteBuffer> sendInternal(String topic, ByteBuffer message) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
+    context.scheduler().execute(() -> {
       MessageHandler<ByteBuffer, ByteBuffer> handler = handlers.get(topic.hashCode());
       if (handler != null) {
         handler.apply(message).whenComplete((result, error) -> {
-
+          context.scheduler().execute(() -> {
+            if (error == null) {
+              future.complete(result);
+            } else {
+              future.completeExceptionally(error);
+            }
+          });
         });
       } else {
         future.completeExceptionally(new ClusterException("No handler registered"));
