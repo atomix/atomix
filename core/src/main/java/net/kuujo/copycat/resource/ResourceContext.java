@@ -241,7 +241,18 @@ public class ResourceContext implements Managed<ResourceContext> {
 
   @Override
   public synchronized CompletableFuture<ResourceContext> open() {
-    return cluster.open().thenComposeAsync(v -> context.open(), scheduler).thenRun(() -> open = true).thenApply(v -> this);
+    CompletableFuture<ResourceContext> future = new CompletableFuture<>();
+    scheduler.execute(() -> {
+      cluster.open().thenCompose(v -> context.open()).whenComplete((result, error) -> {
+        if (error == null) {
+          open = true;
+          future.complete(this);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
   }
 
   @Override
@@ -251,8 +262,18 @@ public class ResourceContext implements Managed<ResourceContext> {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    open = false;
-    return context.close().thenCompose(v -> cluster.close());
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    scheduler.execute(() -> {
+      open = false;
+      context.close().thenCompose(v -> cluster.close()).whenComplete((result, error) -> {
+        if (error == null) {
+          future.complete(null);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
   }
 
   @Override
