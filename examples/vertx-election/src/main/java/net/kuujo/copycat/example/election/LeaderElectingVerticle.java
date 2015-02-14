@@ -52,12 +52,8 @@ public class LeaderElectingVerticle extends Verticle {
       .withMembers(((List<String>) members.toList()).stream()
         .map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()));
 
-    // Create a leader election configuration with a Vert.x event loop executor.
-    LeaderElectionConfig config = new LeaderElectionConfig()
-      .withExecutor(new VertxEventLoopExecutor(vertx));
-
     // Create and open the leader election using the constructed cluster configuration.
-    LeaderElection.create("election", cluster, config).open().whenComplete((election, error) -> {
+    LeaderElection.create("election", cluster, new VertxEventLoopExecutor(vertx)).open().whenComplete((election, error) -> {
       // Since we configured the election with a Vert.x event loop executor, CompletableFuture callbacks are executed
       // on the Vert.x event loop, so we don't have to use runOnContext.
       if (error != null) {

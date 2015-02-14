@@ -18,9 +18,8 @@ package net.kuujo.copycat.collections;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
 import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 /**
  * Asynchronous list.
@@ -53,6 +52,28 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
   }
 
   /**
+   * Creates a new asynchronous list with the default cluster configuration.<p>
+   *
+   * The list will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the list will be constructed with an list configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code list}, {@code list-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the list resource. If the resource is namespaced - e.g. `lists.my-list.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `lists.conf`.
+   *
+   * @param name The asynchronous list name.
+   * @param executor An executor on which to execute list callbacks.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  static <T> AsyncList<T> create(String name, Executor executor) {
+    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncListConfig(name), executor);
+  }
+
+  /**
    * Creates a new asynchronous list with the default list configuration.<p>
    *
    * The list will be constructed with an list configuration that searches the classpath for three
@@ -71,6 +92,25 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
   }
 
   /**
+   * Creates a new asynchronous list with the default list configuration.<p>
+   *
+   * The list will be constructed with an list configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code list}, {@code list-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the list resource. If the resource is namespaced - e.g. `lists.my-list.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `lists.conf`.
+   *
+   * @param name The asynchronous list name.
+   * @param cluster The cluster configuration.
+   * @param executor An executor on which to execute list callbacks.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, Executor executor) {
+    return create(name, cluster, new AsyncListConfig(name), executor);
+  }
+
+  /**
    * Creates a new asynchronous list.
    *
    * @param name The asynchronous list name.
@@ -81,7 +121,22 @@ public interface AsyncList<T> extends AsyncCollection<AsyncList<T>, T>, AsyncLis
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config) {
-    return new DefaultAsyncList<>(new ResourceContext(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"))));
+    return new DefaultAsyncList<>(new ResourceContext(name, config, cluster));
+  }
+
+  /**
+   * Creates a new asynchronous list.
+   *
+   * @param name The asynchronous list name.
+   * @param cluster The cluster configuration.
+   * @param config The list configuration.
+   * @param executor An executor on which to execute list callbacks.
+   * @param <T> The list data type.
+   * @return The asynchronous list.
+   */
+  @SuppressWarnings({"unchecked", "rawtypes"})
+  static <T> AsyncList<T> create(String name, ClusterConfig cluster, AsyncListConfig config, Executor executor) {
+    return new DefaultAsyncList<>(new ResourceContext(name, config, cluster, executor));
   }
 
 }

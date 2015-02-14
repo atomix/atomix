@@ -18,9 +18,6 @@ package net.kuujo.copycat;
 import net.kuujo.copycat.util.serializer.KryoSerializer;
 import org.testng.annotations.Test;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
@@ -42,9 +39,6 @@ public class CopycatConfigTest {
     assertEquals(config.getName(), "foo");
     config.setDefaultSerializer(KryoSerializer.class);
     assertTrue(config.getDefaultSerializer() instanceof KryoSerializer);
-    Executor executor = Executors.newSingleThreadExecutor();
-    config.setDefaultExecutor(executor);
-    assertEquals(config.getDefaultExecutor(), executor);
   }
 
 }

@@ -23,11 +23,10 @@ import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.Futures;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -37,7 +36,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executor;
 
 /**
  * Default local member implementation.
@@ -55,8 +53,8 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   private final Set<ProtocolConnection> connections = new HashSet<>();
   private boolean open;
 
-  public ManagedLocalMember(RaftMemberInfo member, Protocol protocol, RaftContext context, Serializer serializer, Executor executor) {
-    super(member, context, serializer, executor);
+  public ManagedLocalMember(RaftMemberInfo member, Protocol protocol, ResourceContext context) {
+    super(member, context);
     try {
       this.server = protocol.createServer(new URI(member.uri()));
     } catch (URISyntaxException e) {
@@ -111,25 +109,19 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   @SuppressWarnings({"unchecked", "rawtypes"})
   private CompletableFuture<ByteBuffer> handleUserMessage(ByteBuffer request) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    executor.execute(() -> {
+    context.executor().execute(() -> {
       int id = request.getInt();
       MessageHandler<Object, Object> handler = handlers.get(id);
       if (handler != null) {
-        handler.apply(serializer.readObject(request)).whenComplete((result, error) -> {
+        handler.apply(context.serializer().readObject(request)).whenComplete((result, error) -> {
           if (error == null) {
-            future.complete(serializer.writeObject(result));
+            future.complete(context.serializer().writeObject(result));
           } else {
             future.completeExceptionally(error);
           }
         });
       } else {
         future.completeExceptionally(new ClusterException("No handler registered"));
-      }
-      try {
-
-        future.complete(serializer.writeObject(handler.apply(serializer.readObject(request))));
-      } catch (Exception e) {
-        future.completeExceptionally(e);
       }
     });
     return future;
@@ -140,10 +132,10 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
    */
   private CompletableFuture<ByteBuffer> handleSubmit(ByteBuffer request) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    executor.execute(() -> {
-      Task<?> task = serializer.readObject(request.slice());
+    context.executor().execute(() -> {
+      Task<?> task = context.serializer().readObject(request.slice());
       try {
-        future.complete(serializer.writeObject(task.execute()));
+        future.complete(context.serializer().writeObject(task.execute()));
       } catch (Exception e) {
         future.completeExceptionally(e);
       }
@@ -183,13 +175,13 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   @SuppressWarnings("unchecked")
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
-    executor.execute(() -> {
+    context.executor().execute(() -> {
       MessageHandler<T, U> handler = handlers.get(topic.hashCode());
       if (handler != null) {
-        handler.apply(serializer.readObject(serializer.writeObject(message))).whenComplete((result, error) -> {
-          executor.execute(() -> {
+        handler.apply(context.serializer().readObject(context.serializer().writeObject(message))).whenComplete((result, error) -> {
+          context.executor().execute(() -> {
             if (error == null) {
-              future.complete(serializer.readObject(serializer.writeObject(result)));
+              future.complete(context.serializer().readObject(context.serializer().writeObject(result)));
             } else {
               future.completeExceptionally(error);
             }
@@ -226,7 +218,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    executor.execute(() -> {
+    context.executor().execute(() -> {
       try {
         future.complete(task.execute());
       } catch (Exception e) {

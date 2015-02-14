@@ -30,9 +30,13 @@ import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.internal.Assert;
+import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 /**
  * Default resource context.
@@ -44,21 +48,31 @@ public class ResourceContext implements Managed<ResourceContext> {
   private final ResourceConfig<?> config;
   private final RaftContext context;
   private final ManagedCluster cluster;
+  private final Serializer serializer;
+  private final ScheduledExecutorService scheduler;
+  private final Executor executor;
   private volatile boolean open;
 
   public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster) {
-    this(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d")));
+    this(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d")), Executors.newSingleThreadExecutor(new NamedThreadFactory(name)));
   }
 
-  public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster, ScheduledExecutorService executor) {
+  public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster, Executor executor) {
+    this(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d")), executor);
+  }
+
+  public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster, ScheduledExecutorService scheduler, Executor executor) {
     this.name = Assert.isNotNull(name, "name");
     this.config = Assert.isNotNull(config, "config").resolve();
     RaftConfig raftConfig = new RaftConfig(this.config.toMap());
     if (raftConfig.getReplicas().isEmpty()) {
       raftConfig.setReplicas(cluster.getMembers());
     }
-    this.context = new RaftContext(name, cluster.getLocalMember(), raftConfig, executor);
-    this.cluster = new ManagedCluster(cluster.getProtocol(), context, this.config.getSerializer(), this.config.getExecutor());
+    this.serializer = this.config.getSerializer();
+    this.scheduler = Assert.isNotNull(scheduler, "scheduler");
+    this.executor = Assert.isNotNull(executor, "executor");
+    this.context = new RaftContext(name, cluster.getLocalMember(), raftConfig, scheduler);
+    this.cluster = new ManagedCluster(cluster.getProtocol(), this);
   }
 
   /**
@@ -90,6 +104,15 @@ public class ResourceContext implements Managed<ResourceContext> {
   }
 
   /**
+   * Returns the Raft context.
+   *
+   * @return The Raft context.
+   */
+  public RaftContext raft() {
+    return context;
+  }
+
+  /**
    * Returns the Copycat cluster.
    *
    * @return The Copycat cluster.
@@ -108,62 +131,30 @@ public class ResourceContext implements Managed<ResourceContext> {
   }
 
   /**
-   * Executes a command on the context.
+   * Returns the internal scheduler.
    *
-   * @param command The command to execute.
+   * @return The internal scheduler.
    */
-  public void execute(Runnable command) {
-    context.executor().execute(command);
+  public ScheduledExecutorService scheduler() {
+    return scheduler;
   }
 
   /**
-   * Schedules a command on the context.
+   * Returns the context serializer.
    *
-   * @param command The command to schedule.
-   * @param delay The delay after which to run the command.
-   * @param unit The delay time unit.
-   * @return The scheduled future.
+   * @return The context serializer.
    */
-  public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
-    return context.executor().schedule(command, delay, unit);
+  public Serializer serializer() {
+    return serializer;
   }
 
   /**
-   * Schedules a callable on the context.
+   * Returns the context executor.
    *
-   * @param callable The callable to schedule.
-   * @param delay The delay after which to run the callable.
-   * @param unit The delay time unit.
-   * @return The scheduled future.
+   * @return The context executor.
    */
-  public <V> ScheduledFuture<V> schedule(Callable<V> callable, long delay, TimeUnit unit) {
-    return context.executor().schedule(callable, delay, unit);
-  }
-
-  /**
-   * Schedules a command to run at a fixed rate on the context.
-   *
-   * @param command The command to schedule.
-   * @param initialDelay The initial delay after which to execute the command for the first time.
-   * @param period The period at which to run the command.
-   * @param unit The period time unit.
-   * @return The scheduled future.
-   */
-  public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-    return context.executor().scheduleAtFixedRate(command, initialDelay, period, unit);
-  }
-
-  /**
-   * Schedules a command to run at a fixed delay on the context.
-   *
-   * @param command The command to schedule.
-   * @param initialDelay The initial delay after which to execute the command for the first time.
-   * @param delay The delay at which to run the command.
-   * @param unit The delay time unit.
-   * @return The scheduled future.
-   */
-  public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-    return context.executor().scheduleWithFixedDelay(command, initialDelay, delay, unit);
+  public Executor executor() {
+    return executor;
   }
 
   /**

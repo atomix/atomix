@@ -148,7 +148,7 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     Assert.state(isOpen(), "State log not open");
     OperationInfo<T, U> operationInfo = operations.get(Hash.hash32(command.getBytes()));
     if (operationInfo == null) {
-      return Futures.exceptionalFutureAsync(new CopycatException(String.format("Invalid state log command %s", command)), executor);
+      return Futures.exceptionalFutureAsync(new CopycatException(String.format("Invalid state log command %s", command)), context.executor());
     }
 
     // If this is a read-only command, check if the command is consistent. For consistent operations,
@@ -162,10 +162,10 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
     commandEntry.rewind();
     if (operationInfo.readOnly) {
       LOGGER.debug("{} - Submitting state log query {} with entry {}", context.name(), command, entry);
-      return context.query(commandEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, executor);
+      return context.query(commandEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, context.executor());
     } else {
       LOGGER.debug("{} - Submitting state log command {} with entry {}", context.name(), command, entry);
-      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, executor);
+      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, context.executor());
     }
   }
 

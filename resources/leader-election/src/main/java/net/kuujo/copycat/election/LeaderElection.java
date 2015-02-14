@@ -21,9 +21,8 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 /**
  * Leader election.
@@ -53,6 +52,27 @@ public interface LeaderElection extends Resource<LeaderElection> {
   }
 
   /**
+   * Creates a new leader election with the default cluster configuration.<p>
+   *
+   * The election will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the election will be constructed with an election configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code election}, {@code election-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the election resource. If the resource is namespaced - e.g. `elections.my-election.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `elections.conf`.
+   *
+   * @param name The election name.
+   * @param executor An executor on which to execute election callbacks.
+   * @return The leader election.
+   */
+  static LeaderElection create(String name, Executor executor) {
+    return create(name, new ClusterConfig(), new LeaderElectionConfig(name), executor);
+  }
+
+  /**
    * Creates a new leader election with the given cluster configuration.<p>
    *
    * The election will be constructed with an election configuration that searches the classpath for three
@@ -70,6 +90,24 @@ public interface LeaderElection extends Resource<LeaderElection> {
   }
 
   /**
+   * Creates a new leader election with the given cluster configuration.<p>
+   *
+   * The election will be constructed with an election configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code election}, {@code election-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the election resource. If the resource is namespaced - e.g. `elections.my-election.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `elections.conf`.
+   *
+   * @param name The election name.
+   * @param cluster The Copycat cluster.
+   * @param executor An executor on which to execute election callbacks.
+   * @return The leader election.
+   */
+  static LeaderElection create(String name, ClusterConfig cluster, Executor executor) {
+    return create(name, cluster, new LeaderElectionConfig(name), executor);
+  }
+
+  /**
    * Creates a new leader election with the given cluster and election configurations.
    *
    * @param name The election name.
@@ -78,7 +116,20 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @return The leader election.
    */
   static LeaderElection create(String name, ClusterConfig cluster, LeaderElectionConfig config) {
-    return new DefaultLeaderElection(new ResourceContext(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"))));
+    return new DefaultLeaderElection(new ResourceContext(name, config, cluster));
+  }
+
+  /**
+   * Creates a new leader election with the given cluster and election configurations.
+   *
+   * @param name The election name.
+   * @param cluster The Copycat cluster.
+   * @param config The leader election configuration.
+   * @param executor An executor on which to execute election callbacks.
+   * @return The leader election.
+   */
+  static LeaderElection create(String name, ClusterConfig cluster, LeaderElectionConfig config, Executor executor) {
+    return new DefaultLeaderElection(new ResourceContext(name, config, cluster, executor));
   }
 
   /**

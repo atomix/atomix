@@ -20,16 +20,14 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolConnection;
-import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 /**
  * Default remote member implementation.
@@ -44,8 +42,8 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   private final ProtocolClient client;
   private ProtocolConnection connection;
 
-  public ManagedRemoteMember(RaftMemberInfo member, Protocol protocol, RaftContext context, Serializer serializer, Executor executor) {
-    super(member, context, serializer, executor);
+  public ManagedRemoteMember(RaftMemberInfo member, Protocol protocol, ResourceContext context) {
+    super(member, context);
     try {
       this.client = protocol.createClient(new URI(member.uri()));
     } catch (URISyntaxException e) {
@@ -55,13 +53,13 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    ByteBuffer serialized = serializer.writeObject(message);
+    ByteBuffer serialized = context.serializer().writeObject(message);
     ByteBuffer request = ByteBuffer.allocate(serialized.limit() + 6);
     request.put(MESSAGE);
     request.put(USER);
     request.putInt(topic.hashCode());
     request.put(serialized);
-    return connection.write(request).thenApplyAsync(serializer::readObject, executor);
+    return connection.write(request).thenApplyAsync(b -> context.serializer().readObject(b), context.executor());
   }
 
   /**
@@ -84,12 +82,12 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    ByteBuffer serialized = serializer.writeObject(task);
+    ByteBuffer serialized = context.serializer().writeObject(task);
     ByteBuffer request = ByteBuffer.allocate(serialized.limit() + 1);
     request.put(TASK);
     request.put(serialized);
     request.flip();
-    return connection.write(request).thenApplyAsync(serializer::readObject, executor);
+    return connection.write(request).thenApplyAsync(b -> context.serializer().readObject(b), context.executor());
   }
 
   @Override

@@ -54,16 +54,16 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   @Override
   public CompletableFuture<T> get(long index) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    context.execute(() -> {
+    context.scheduler().execute(() -> {
       if (!context.log().containsIndex(index)) {
-        executor.execute(() -> future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index))));
+        context.executor().execute(() -> future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index))));
       } else {
         ByteBuffer buffer = context.log().getEntry(index);
         if (buffer != null) {
           T entry = serializer.readObject(buffer);
-          executor.execute(() -> future.complete(entry));
+          context.executor().execute(() -> future.complete(entry));
         } else {
-          executor.execute(() -> future.complete(null));
+          context.executor().execute(() -> future.complete(null));
         }
       }
     });
@@ -72,7 +72,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
 
   @Override
   public CompletableFuture<Long> commit(T entry) {
-    return context.commit(serializer.writeObject(entry)).thenApplyAsync(ByteBuffer::getLong, executor);
+    return context.commit(serializer.writeObject(entry)).thenApplyAsync(ByteBuffer::getLong, context.executor());
   }
 
   /**
@@ -83,7 +83,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
     result.putLong(index);
     if (consumer != null && entry != null) {
       T value = serializer.readObject(entry);
-      executor.execute(() -> consumer.accept(value));
+      context.executor().execute(() -> consumer.accept(value));
     }
     commitIndex = index;
     result.flip();
@@ -122,7 +122,7 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   public synchronized CompletableFuture<EventLog<T>> open() {
     return super.open()
       .thenRun(() -> {
-        retentionFuture = context.scheduleWithFixedDelay(this::compact, 0, context.<EventLogConfig>config()
+        retentionFuture = context.scheduler().scheduleWithFixedDelay(this::compact, 0, context.<EventLogConfig>config()
           .getRetentionCheckInterval(), TimeUnit.MILLISECONDS);
       })
       .thenApply(v -> this);

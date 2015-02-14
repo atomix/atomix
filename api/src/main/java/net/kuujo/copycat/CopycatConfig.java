@@ -20,13 +20,10 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 
 /**
  * Copycat configuration.
@@ -40,8 +37,6 @@ public class CopycatConfig extends AbstractConfigurable {
 
   private static final String DEFAULT_CONFIGURATION = "copycat-default";
   private static final String CONFIGURATION = "copycat";
-
-  private Executor executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-%d"));
 
   public CopycatConfig() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
@@ -207,35 +202,6 @@ public class CopycatConfig extends AbstractConfigurable {
    */
   public CopycatConfig withDefaultSerializer(Serializer serializer) {
     setDefaultSerializer(serializer);
-    return this;
-  }
-
-  /**
-   * Sets the Copycat executor.
-   *
-   * @param executor The Copycat executor.
-   */
-  public void setDefaultExecutor(Executor executor) {
-    this.executor = Assert.isNotNull(executor, "executor");
-  }
-
-  /**
-   * Returns the Copycat executor.
-   *
-   * @return The Copycat executor or {@code null} if no executor was specified.
-   */
-  public Executor getDefaultExecutor() {
-    return executor;
-  }
-
-  /**
-   * Sets the Copycat executor, returning the configuration for method chaining.
-   *
-   * @param executor The Copycat executor.
-   * @return The Copycat configuration.
-   */
-  public CopycatConfig withDefaultExecutor(Executor executor) {
-    setDefaultExecutor(executor);
     return this;
   }
 

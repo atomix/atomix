@@ -26,7 +26,6 @@ import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -44,8 +43,6 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   private static final String CONFIGURATION = "resource";
   private static final String DEFAULT_CONFIGURATION = "resource-defaults";
   private static final Serializer DEFAULT_SERIALIZER = new KryoSerializer();
-
-  private Executor executor;
 
   protected ResourceConfig() {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
@@ -159,36 +156,6 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   @SuppressWarnings("unchecked")
   public T withSerializer(Serializer serializer) {
     setSerializer(serializer);
-    return (T) this;
-  }
-
-  /**
-   * Sets the resource executor. This option can only be configured via the configuration API.
-   *
-   * @param executor The resource executor.
-   */
-  public void setExecutor(Executor executor) {
-    this.executor = executor;
-  }
-
-  /**
-   * Returns the resource executor.
-   *
-   * @return The resource executor or {@code null} if no executor was specified.
-   */
-  public Executor getExecutor() {
-    return executor;
-  }
-
-  /**
-   * Sets the resource executor, returning the configuration for method chaining.
-   *
-   * @param executor The resource executor.
-   * @return The resource configuration.
-   */
-  @SuppressWarnings("unchecked")
-  public T withExecutor(Executor executor) {
-    setExecutor(executor);
     return (T) this;
   }
 

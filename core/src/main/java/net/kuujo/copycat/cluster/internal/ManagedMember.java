@@ -16,14 +16,12 @@
 package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 /**
  * Abstract cluster member.
@@ -32,15 +30,11 @@ import java.util.concurrent.Executor;
  */
 abstract class ManagedMember<T extends Member> implements Member, Managed<T> {
   protected final RaftMemberInfo member;
-  protected final RaftContext context;
-  protected final Serializer serializer;
-  protected final Executor executor;
+  protected final ResourceContext context;
 
-  public ManagedMember(RaftMemberInfo member, RaftContext context, Serializer serializer, Executor executor) {
+  public ManagedMember(RaftMemberInfo member, ResourceContext context) {
     this.member = member;
     this.context = context;
-    this.serializer = serializer;
-    this.executor = executor;
   }
 
   @Override

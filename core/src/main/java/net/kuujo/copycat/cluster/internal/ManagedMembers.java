@@ -22,15 +22,14 @@ import net.kuujo.copycat.cluster.MembershipEvent;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
-import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 /**
@@ -40,26 +39,24 @@ import java.util.stream.Collectors;
  */
 public class ManagedMembers implements Members, Managed<Void>, Observer {
   private final Protocol protocol;
-  private final RaftContext context;
-  private final Serializer serializer;
-  private final Executor executor;
+  private final ResourceContext context;
+  private final RaftContext raft;
   @SuppressWarnings("rawtypes")
   final Map<String, ManagedMember> members = new ConcurrentHashMap<>(128);
   private final Set<EventListener<MembershipEvent>> listeners = new CopyOnWriteArraySet<>();
   private boolean open;
 
-  ManagedMembers(Protocol protocol, RaftContext context, Serializer serializer, Executor executor) {
+  ManagedMembers(Protocol protocol, ResourceContext context) {
     this.protocol = Assert.isNotNull(protocol, "protocol");
     this.context = Assert.isNotNull(context, "context");
-    this.serializer = Assert.isNotNull(serializer, "serializer");
-    this.executor = Assert.isNotNull(executor, "executor");
+    this.raft = context.raft();
   }
 
   @Override
   @SuppressWarnings("rawtypes")
   public void update(Observable o, Object arg) {
-    RaftContext context = (RaftContext) o;
-    Set<String> uris = context.getMembers().stream().map(RaftMemberInfo::uri).collect(Collectors.toSet());
+    RaftContext raft = (RaftContext) o;
+    Set<String> uris = raft.getMembers().stream().map(RaftMemberInfo::uri).collect(Collectors.toSet());
     Iterator<Map.Entry<String, ManagedMember>> iterator = members.entrySet().iterator();
     while (iterator.hasNext()) {
       Map.Entry<String, ManagedMember> entry = iterator.next();
@@ -70,9 +67,9 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
       }
     }
 
-    for (RaftMemberInfo member : context.getMembers()) {
+    for (RaftMemberInfo member : raft.getMembers()) {
       if (!members.containsKey(member.uri())) {
-        members.put(member.uri(), new ManagedRemoteMember(member, protocol, context, serializer, executor));
+        members.put(member.uri(), new ManagedRemoteMember(member, protocol, context));
         listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(member.uri()))));
       }
     }
@@ -164,10 +161,10 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     }
 
     open = true;
-    context.addObserver(this);
+    raft.addObserver(this);
     members.clear();
-    for (RaftMemberInfo member : context.getMembers()) {
-      members.put(member.uri(), member.uri().equals(context.getLocalMember().uri()) ? new ManagedLocalMember(member, protocol, context, serializer, executor) : new ManagedRemoteMember(member, protocol, context, serializer, executor));
+    for (RaftMemberInfo member : raft.getMembers()) {
+      members.put(member.uri(), member.uri().equals(raft.getLocalMember().uri()) ? new ManagedLocalMember(member, protocol, context) : new ManagedRemoteMember(member, protocol, context));
     }
 
     CompletableFuture<? extends Member>[] futures = new CompletableFuture[members.size()];
@@ -186,7 +183,7 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   @Override
   @SuppressWarnings({"unchecked", "rawtypes"})
   public CompletableFuture<Void> close() {
-    context.deleteObserver(this);
+    raft.deleteObserver(this);
 
     if (!open) {
       return CompletableFuture.completedFuture(null);

@@ -19,9 +19,8 @@ import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
-import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 
 /**
  * State machine.
@@ -49,7 +48,30 @@ public interface StateMachine<T> extends Resource<StateMachine<T>> {
    * @return The status machine.
    */
   static <T> StateMachine<T> create(String name, Class<T> stateType, Class<? extends T> initialState) {
-    return create(name, new ClusterConfig(), new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
+    return create(name, new ClusterConfig(), new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState));
+  }
+
+  /**
+   * Creates a new status machine with the default cluster and status machine configurations.<p>
+   *
+   * The status machine will be constructed with the default cluster configuration. The default cluster configuration
+   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
+   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   *
+   * Additionally, the status machine will be constructed with an status machine configuration that searches the classpath for
+   * three configuration files - {@code {name}}, {@code status-machine}, {@code status-machine-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the status machine resource. If the resource is namespaced - e.g. `status-machines.my-machine.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `status-machines.conf`.
+   *
+   * @param name The status machine resource name.
+   * @param stateType The status machine status type.
+   * @param initialState The status machine status.
+   * @param executor An executor on which to execute state machine callbacks.
+   * @return The status machine.
+   */
+  static <T> StateMachine<T> create(String name, Class<T> stateType, Class<? extends T> initialState, Executor executor) {
+    return create(name, new ClusterConfig(), new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState), executor);
   }
 
   /**
@@ -68,7 +90,27 @@ public interface StateMachine<T> extends Resource<StateMachine<T>> {
    * @return The status machine.
    */
   static <T> StateMachine<T> create(String name, Class<T> stateType, Class<? extends T> initialState, ClusterConfig cluster) {
-    return create(name, cluster, new StateMachineConfig().withStateType(stateType).withInitialState(initialState));
+    return create(name, cluster, new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState));
+  }
+
+  /**
+   * Creates a new status machine with the default status machine configuration.<p>
+   *
+   * The status machine will be constructed with an status machine configuration that searches the classpath for three
+   * configuration files - {@code {name}}, {@code status-machine}, {@code status-machine-defaults}, {@code resource}, and
+   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
+   * as the status machine resource. If the resource is namespaced - e.g. `status-machines.my-machine.conf` - then resource
+   * configurations will be loaded according to namespaces as well; for example, `status-machines.conf`.
+   *
+   * @param name The status machine resource name.
+   * @param stateType The status machine status type.
+   * @param initialState The status machine status.
+   * @param cluster The status machine cluster configuration.
+   * @param executor An executor on which to execute state machine callbacks.
+   * @return The status machine.
+   */
+  static <T> StateMachine<T> create(String name, Class<T> stateType, Class<? extends T> initialState, ClusterConfig cluster, Executor executor) {
+    return create(name, cluster, new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState), executor);
   }
 
   /**
@@ -80,7 +122,20 @@ public interface StateMachine<T> extends Resource<StateMachine<T>> {
    * @return The status machine.
    */
   static <T> StateMachine<T> create(String name, ClusterConfig cluster, StateMachineConfig config) {
-    return new DefaultStateMachine<>(new ResourceContext(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d"))));
+    return new DefaultStateMachine<>(new ResourceContext(name, config, cluster));
+  }
+
+  /**
+   * Creates a new status machine.
+   *
+   * @param name The status machine resource name.
+   * @param cluster The status machine cluster configuration.
+   * @param config The status machine configuration.
+   * @param executor An executor on which to execute state machine callbacks.
+   * @return The status machine.
+   */
+  static <T> StateMachine<T> create(String name, ClusterConfig cluster, StateMachineConfig config, Executor executor) {
+    return new DefaultStateMachine<>(new ResourceContext(name, config, cluster, executor));
   }
 
   /**

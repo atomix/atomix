@@ -26,7 +26,6 @@ import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -217,12 +216,6 @@ public class StateMachineConfig extends StateLogConfig {
   @Override
   public StateMachineConfig withSerializer(Serializer serializer) {
     setSerializer(serializer);
-    return this;
-  }
-
-  @Override
-  public StateMachineConfig withExecutor(Executor executor) {
-    setExecutor(executor);
     return this;
   }
 

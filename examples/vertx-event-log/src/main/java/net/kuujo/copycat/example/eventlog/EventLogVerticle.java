@@ -121,10 +121,9 @@ public class EventLogVerticle extends BusModBase implements Handler<Message<Json
       .withLocalMember(String.format("eventbus://%s", id))
       .withMembers(((List<String>) members.toList()).stream().map(member -> String.format("eventbus://%s", member)).collect(Collectors.toList()));
 
-    // Configure Copycat with the event bus cluster and Vert.x event loop executor.
+    // Configure Copycat with the event bus cluster configuration.
     CopycatConfig config = new CopycatConfig()
-      .withClusterConfig(cluster)
-      .withDefaultExecutor(new VertxEventLoopExecutor(vertx));
+      .withClusterConfig(cluster);
 
     // Add the event log resource configuration with a Vert.x event loop executor to the Copycat configuration.
     // Configure the event log with a persistent log.
@@ -133,12 +132,11 @@ public class EventLogVerticle extends BusModBase implements Handler<Message<Json
       .withRetentionPolicy(new SizeBasedRetentionPolicy(1024 * 1024 * 32))
       .withLog(new FileLog()
         .withDirectory(new File(new File(System.getProperty("java.io.tmpdir"), id), name))
-        .withSegmentSize(1024 * 1024 * 16))
-      .withExecutor(new VertxEventLoopExecutor(vertx));
+        .withSegmentSize(1024 * 1024 * 16));
 
     // Create and open a new Copycat instance. The Copycat instance controls the cluster of verticles and manages
     // resources within the cluster - in this case just a single event log.
-    copycat = Copycat.create(config);
+    copycat = Copycat.create(config, new VertxEventLoopExecutor(vertx));
 
     // Once we create the Copycat instance, it needs to be opened. When the instance is opened, Copycat will begin
     // communicating with other nodes in the cluster and elect a leader that will control resources within the cluster.
@@ -150,10 +148,10 @@ public class EventLogVerticle extends BusModBase implements Handler<Message<Json
         new DefaultFutureResult<Void>(copycatError).setHandler(doneHandler);
       } else {
 
-        // Create and open a new event log instance and create a lock proxy for submitting event log
+        // Create and open a new event log instance and create an event log proxy for submitting event log
         // commands and queries to the cluster. When the event log is opened, the event log will communicate
         // with other nodes in the Copycat instance cluster to elect a leader and begin replicating the status log.
-        copycat.<String>createEventLog(name, eventLogConfig).open().whenComplete((eventLog, error) -> {
+        copycat.<String>createEventLog(name, eventLogConfig, new VertxEventLoopExecutor(vertx)).open().whenComplete((eventLog, error) -> {
           if (error != null) {
             new DefaultFutureResult<Void>(error).setHandler(doneHandler);
           } else {
