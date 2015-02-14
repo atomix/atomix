@@ -105,7 +105,7 @@ public class TestCluster<T extends Resource<T>> {
 
       Set<String> members = new HashSet<>(activeMembers);
       int activeCount = activeMembers + id;
-      while (id <= activeCount) {
+      while (id < activeCount) {
         String uri = uriFactory.apply(id++);
         members.add(uri);
       }
@@ -117,7 +117,7 @@ public class TestCluster<T extends Resource<T>> {
 
       List<T> passiveResources = new ArrayList<>(passiveMembers);
       int passiveCount = passiveMembers + id;
-      while (id <= passiveCount) {
+      while (id < passiveCount) {
         String member = uriFactory.apply(id++);
         ClusterConfig cluster = clusterFactory.apply(members).withLocalMember(member);
         passiveResources.add(resourceFactory.apply(cluster));

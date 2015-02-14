@@ -100,7 +100,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
     int id = request.getInt();
     MessageHandler<ByteBuffer, ByteBuffer> handler = internalHandlers.get(id);
     if (handler != null) {
-      return handler.apply(request);
+      return handler.apply(request.slice());
     } else {
       return Futures.exceptionalFuture(new ClusterException("No handler registered"));
     }
@@ -155,7 +155,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   /**
    * Registers an internal handler.
    */
-  <T, U> ManagedLocalMember registerInternalHandler(String topic, MessageHandler<ByteBuffer, ByteBuffer> handler) {
+  ManagedLocalMember registerInternalHandler(String topic, MessageHandler<ByteBuffer, ByteBuffer> handler) {
     internalHandlers.put(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())), handler);
     return this;
   }

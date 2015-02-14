@@ -45,6 +45,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   private final ProtocolClient client;
   private ProtocolConnection connection;
   private final Map<String, Integer> hashMap = new HashMap<>();
+  private boolean open;
 
   public ManagedRemoteMember(RaftMember member, Protocol protocol, ResourceContext context) {
     super(member, context);
@@ -57,6 +58,19 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
+    if (connection == null) {
+      return client.connect()
+        .thenAcceptAsync(c -> this.connection = c, context.scheduler())
+        .thenCompose(v -> doSend(topic, message));
+    } else {
+      return doSend(topic, message);
+    }
+  }
+
+  /**
+   * Sends a message to the remote member.
+   */
+  private <T, U> CompletableFuture<U> doSend(String topic, T message) {
     ByteBuffer serialized = context.serializer().writeObject(message);
     ByteBuffer request = ByteBuffer.allocate(serialized.limit() + 6);
     request.put(MESSAGE);
@@ -67,16 +81,29 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   }
 
   /**
-   * Sends a message.
+   * Sends an internal message.
    */
   public CompletableFuture<ByteBuffer> sendInternal(String topic, ByteBuffer message) {
+    if (connection == null) {
+      return client.connect()
+        .thenAcceptAsync(c -> this.connection = c, context.scheduler())
+        .thenCompose(v -> doSendInternal(topic, message));
+    } else {
+      return doSendInternal(topic, message);
+    }
+  }
+
+  /**
+   * Sends an internal message.
+   */
+  private CompletableFuture<ByteBuffer> doSendInternal(String topic, ByteBuffer message) {
     ByteBuffer request = ByteBuffer.allocate(message.limit() + 6);
     request.put(MESSAGE);
     request.put(INTERNAL);
     request.putInt(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
     request.put(message);
     request.flip();
-    return connection.write(request);
+    return connection.write(request).thenApplyAsync(v -> v, context.scheduler());
   }
 
   @Override
@@ -96,12 +123,13 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
 
   @Override
   public CompletableFuture<Member> open() {
-    return client.connect().thenAccept(c -> this.connection = c).thenApply(v -> this);
+    open = true;
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
   public boolean isOpen() {
-    return connection != null;
+    return open;
   }
 
   @Override
@@ -111,7 +139,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
 
   @Override
   public boolean isClosed() {
-    return connection == null;
+    return !open;
   }
 
 }
