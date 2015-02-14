@@ -267,6 +267,7 @@ public class ResourceContext implements Managed<ResourceContext> {
       open = false;
       context.close().thenCompose(v -> cluster.close()).whenComplete((result, error) -> {
         if (error == null) {
+          scheduler.shutdown();
           future.complete(null);
         } else {
           future.completeExceptionally(error);
