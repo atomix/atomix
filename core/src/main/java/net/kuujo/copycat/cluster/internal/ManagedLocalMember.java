@@ -201,7 +201,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   public CompletableFuture<ByteBuffer> sendInternal(String topic, ByteBuffer message) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     context.scheduler().execute(() -> {
-      MessageHandler<ByteBuffer, ByteBuffer> handler = handlers.get(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
+      MessageHandler<ByteBuffer, ByteBuffer> handler = internalHandlers.get(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
       if (handler != null) {
         handler.apply(message).whenComplete((result, error) -> {
           context.scheduler().execute(() -> {
