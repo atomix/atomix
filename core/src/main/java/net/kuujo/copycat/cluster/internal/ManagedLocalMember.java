@@ -23,7 +23,7 @@ import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -53,7 +53,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   private final Set<ProtocolConnection> connections = new HashSet<>();
   private boolean open;
 
-  public ManagedLocalMember(RaftMemberInfo member, Protocol protocol, ResourceContext context) {
+  public ManagedLocalMember(RaftMember member, Protocol protocol, ResourceContext context) {
     super(member, context);
     try {
       this.server = protocol.createServer(new URI(member.uri()));
@@ -178,15 +178,16 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
     context.executor().execute(() -> {
       MessageHandler<T, U> handler = handlers.get(topic.hashCode());
       if (handler != null) {
-        handler.apply(context.serializer().readObject(context.serializer().writeObject(message))).whenComplete((result, error) -> {
-          context.executor().execute(() -> {
-            if (error == null) {
-              future.complete(context.serializer().readObject(context.serializer().writeObject(result)));
-            } else {
-              future.completeExceptionally(error);
-            }
+        handler.apply(context.serializer().readObject(context.serializer().writeObject(message)))
+          .whenComplete((result, error) -> {
+            context.executor().execute(() -> {
+              if (error == null) {
+                future.complete(context.serializer().readObject(context.serializer().writeObject(result)));
+              } else {
+                future.completeExceptionally(error);
+              }
+            });
           });
-        });
       }
     });
     return future;

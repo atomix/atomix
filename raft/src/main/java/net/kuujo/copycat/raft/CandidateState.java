@@ -94,8 +94,8 @@ class CandidateState extends ActiveState {
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
-    final Set<RaftMemberInfo> votingMembers = context.getMembers().stream()
-      .filter(m -> m.type() == RaftMemberInfo.Type.ACTIVE)
+    final Set<RaftMember> votingMembers = context.getMembers().stream()
+      .filter(m -> m.type() == RaftMember.Type.ACTIVE)
       .collect(Collectors.toSet());
 
     // Send vote requests to all nodes. The vote request that is sent
@@ -118,7 +118,7 @@ class CandidateState extends ActiveState {
     // of the cluster and vote each member for a vote.
     LOGGER.info("{} - Requesting votes from {}", context.getLocalMember().uri(), votingMembers);
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
-    for (RaftMemberInfo member : votingMembers) {
+    for (RaftMember member : votingMembers) {
       LOGGER.debug("{} - Requesting vote from {} for term {}", context.getLocalMember().uri(), member, context.getTerm());
       VoteRequest request = VoteRequest.builder()
         .withUri(member.uri())

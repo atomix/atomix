@@ -16,7 +16,7 @@
 package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
 
@@ -29,10 +29,10 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class ManagedMember<T extends Member> implements Member, Managed<T> {
-  protected final RaftMemberInfo member;
+  protected final RaftMember member;
   protected final ResourceContext context;
 
-  public ManagedMember(RaftMemberInfo member, ResourceContext context) {
+  public ManagedMember(RaftMember member, ResourceContext context) {
     this.member = member;
     this.context = context;
   }

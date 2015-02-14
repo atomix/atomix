@@ -16,7 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.raft.RaftMember;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -58,7 +58,7 @@ public interface Member {
      * @param type The Raft member type.
      * @return The member type.
      */
-    public static Type lookup(RaftMemberInfo.Type type) {
+    public static Type lookup(RaftMember.Type type) {
       switch (type) {
         case PASSIVE:
           return PASSIVE;
@@ -105,7 +105,7 @@ public interface Member {
      * @param status The Raft member status.
      * @return The member status.
      */
-    public static Status lookup(RaftMemberInfo.Status status) {
+    public static Status lookup(RaftMember.Status status) {
       switch (status) {
         case DEAD:
           return DEAD;

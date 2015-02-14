@@ -23,7 +23,7 @@ import java.util.Set;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftMemberInfo {
+public class RaftMember {
   private static final int FAILURE_LIMIT = 3;
   private Type type;
   private Status status;
@@ -64,13 +64,13 @@ public class RaftMemberInfo {
    * Raft member status.<p>
    *
    * The member status indicates how a given member is perceived by the local node. Members can be in one of three states
-   * at any given time, {@link net.kuujo.copycat.raft.RaftMemberInfo.Status#ALIVE}, {@link net.kuujo.copycat.raft.RaftMemberInfo.Status#SUSPICIOUS},
-   * and {@link net.kuujo.copycat.raft.RaftMemberInfo.Status#DEAD}. Member states are changed according to the local
-   * node's ability to communicate with a given member. All members begin with an {@link net.kuujo.copycat.raft.RaftMemberInfo.Status#ALIVE}
+   * at any given time, {@link RaftMember.Status#ALIVE}, {@link RaftMember.Status#SUSPICIOUS},
+   * and {@link RaftMember.Status#DEAD}. Member states are changed according to the local
+   * node's ability to communicate with a given member. All members begin with an {@link RaftMember.Status#ALIVE}
    * status upon joining the cluster. If the member appears to be unreachable, its status will be changed to
-   * {@link net.kuujo.copycat.raft.RaftMemberInfo.Status#SUSPICIOUS}, indicating that it may have left the cluster or died.
+   * {@link RaftMember.Status#SUSPICIOUS}, indicating that it may have left the cluster or died.
    * Once enough other nodes in the cluster agree that the suspicious member appears to be dead, the status will be changed
-   * to {@link net.kuujo.copycat.raft.RaftMemberInfo.Status#DEAD} and the member will ultimately be removed from the cluster configuration.
+   * to {@link RaftMember.Status#DEAD} and the member will ultimately be removed from the cluster configuration.
    */
   public static enum Status {
 
@@ -91,14 +91,14 @@ public class RaftMemberInfo {
 
   }
 
-  public RaftMemberInfo() {
+  public RaftMember() {
   }
 
-  public RaftMemberInfo(String uri, Type type, Status status) {
+  public RaftMember(String uri, Type type, Status status) {
     this(uri, type, status, 1);
   }
 
-  public RaftMemberInfo(String uri, Type type, Status status, long version) {
+  public RaftMember(String uri, Type type, Status status, long version) {
     this.uri = uri;
     this.type = type;
     this.status = status;
@@ -156,7 +156,7 @@ public class RaftMemberInfo {
    * @param version The member version.
    * @return The member info.
    */
-  RaftMemberInfo version(long version) {
+  RaftMember version(long version) {
     this.version = version;
     return this;
   }
@@ -176,7 +176,7 @@ public class RaftMemberInfo {
    * @param index The member's last log index.
    * @return The member info.
    */
-  RaftMemberInfo index(Long index) {
+  RaftMember index(Long index) {
     this.index = index;
     return this;
   }
@@ -186,7 +186,7 @@ public class RaftMemberInfo {
    *
    * @return The member info.
    */
-  public RaftMemberInfo succeed() {
+  public RaftMember succeed() {
     if (type == Type.PASSIVE && status != Status.ALIVE) {
       failures.clear();
       status = Status.ALIVE;
@@ -201,7 +201,7 @@ public class RaftMemberInfo {
    * @param uri The URI recording the failure.
    * @return The member info.
    */
-  public RaftMemberInfo fail(String uri) {
+  public RaftMember fail(String uri) {
     // If the member is a passive member, add the failure to the failures set and change the status. If the current
     // status is ACTIVE then change the status to SUSPICIOUS. If the current status is SUSPICIOUS and the number of
     // failures from *unique* nodes is equal to or greater than the failure limit then change the status to DEAD.
@@ -225,7 +225,7 @@ public class RaftMemberInfo {
    *
    * @param info The member info to update.
    */
-  public void update(RaftMemberInfo info) {
+  public void update(RaftMember info) {
     // If the given version is greater than the current version then update the member status.
     if (info.version > this.version) {
       this.type = info.type;
@@ -263,8 +263,8 @@ public class RaftMemberInfo {
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof RaftMemberInfo) {
-      RaftMemberInfo member = (RaftMemberInfo) object;
+    if (object instanceof RaftMember) {
+      RaftMember member = (RaftMember) object;
       return member.uri.equals(uri)
         && member.type == type
         && member.status == status

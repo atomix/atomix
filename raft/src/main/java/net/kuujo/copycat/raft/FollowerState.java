@@ -99,8 +99,8 @@ class FollowerState extends ActiveState {
 
     // Create a quorum that will track the number of nodes that have responded to the poll request.
     final AtomicBoolean complete = new AtomicBoolean();
-    final Set<RaftMemberInfo> votingMembers = context.getMembers().stream()
-      .filter(m -> m.type() == RaftMemberInfo.Type.ACTIVE)
+    final Set<RaftMember> votingMembers = context.getMembers().stream()
+      .filter(m -> m.type() == RaftMember.Type.ACTIVE)
       .collect(Collectors.toSet());
 
     final Quorum quorum = new Quorum((int) Math.ceil(votingMembers.size() / 2.0), (elected) -> {
@@ -122,7 +122,7 @@ class FollowerState extends ActiveState {
     // of the cluster and vote each member for a vote.
     LOGGER.info("{} - Polling members {}", context.getLocalMember().uri(), votingMembers);
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
-    for (RaftMemberInfo member : votingMembers) {
+    for (RaftMember member : votingMembers) {
       LOGGER.debug("{} - Polling {} for next term {}", context.getLocalMember().uri(), member, context.getTerm() + 1);
       PollRequest request = PollRequest.builder()
         .withUri(member.uri())

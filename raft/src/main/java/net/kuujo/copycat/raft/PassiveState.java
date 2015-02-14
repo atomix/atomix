@@ -64,14 +64,14 @@ public class PassiveState extends RaftState {
 
     // Create a list of passive members. Construct a new array list since the Java 8 collectors API makes no guarantees
     // about the serializability of the returned list.
-    List<RaftMemberInfo> passiveMembers = new ArrayList<>(context.getMembers().size());
+    List<RaftMember> passiveMembers = new ArrayList<>(context.getMembers().size());
     context.getMembers().stream()
-      .filter(m -> m.type() == RaftMemberInfo.Type.PASSIVE && !m.uri().equals(context.getLocalMember().uri()))
+      .filter(m -> m.type() == RaftMember.Type.PASSIVE && !m.uri().equals(context.getLocalMember().uri()))
       .forEach(passiveMembers::add);
 
     // Create a random list of three active members.
     Random random = new Random();
-    List<RaftMemberInfo> randomMembers = new ArrayList<>(3);
+    List<RaftMember> randomMembers = new ArrayList<>(3);
     for (int i = 0; i < Math.min(passiveMembers.size(), 3); i++) {
       randomMembers.add(passiveMembers.get(random.nextInt(Math.min(passiveMembers.size(), 3))));
     }
@@ -81,7 +81,7 @@ public class PassiveState extends RaftState {
 
     Set<String> synchronizing = new HashSet<>();
     // For each active member, send membership info to the member.
-    for (RaftMemberInfo member : randomMembers) {
+    for (RaftMember member : randomMembers) {
       // If we're already synchronizing with the given node then skip the synchronization. This is possible in the event
       // that we began sending sync requests during another gossip pass and continue to send entries recursively.
       if (synchronizing.add(member.uri())) {
@@ -93,7 +93,7 @@ public class PassiveState extends RaftState {
   /**
    * Recursively sends sync request to the given member.
    */
-  private CompletableFuture<Void> recursiveSync(RaftMemberInfo member) {
+  private CompletableFuture<Void> recursiveSync(RaftMember member) {
     CompletableFuture<Void> future = new CompletableFuture<>();
     recursiveSync(member, false, future);
     return future;
@@ -102,7 +102,7 @@ public class PassiveState extends RaftState {
   /**
    * Recursively sends sync requests to the given member.
    */
-  private void recursiveSync(RaftMemberInfo member, boolean requireEntries, CompletableFuture<Void> future) {
+  private void recursiveSync(RaftMember member, boolean requireEntries, CompletableFuture<Void> future) {
     // Get a list of entries up to 1MB in size.
     List<ByteBuffer> entries = new ArrayList<>(1024);
     Long firstIndex = null;

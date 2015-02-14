@@ -21,7 +21,7 @@ import net.kuujo.copycat.cluster.Members;
 import net.kuujo.copycat.cluster.MembershipEvent;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.raft.RaftContext;
-import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.internal.Assert;
@@ -56,7 +56,7 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   @SuppressWarnings("rawtypes")
   public void update(Observable o, Object arg) {
     RaftContext raft = (RaftContext) o;
-    Set<String> uris = raft.getMembers().stream().map(RaftMemberInfo::uri).collect(Collectors.toSet());
+    Set<String> uris = raft.getMembers().stream().map(RaftMember::uri).collect(Collectors.toSet());
     Iterator<Map.Entry<String, ManagedMember>> iterator = members.entrySet().iterator();
     while (iterator.hasNext()) {
       Map.Entry<String, ManagedMember> entry = iterator.next();
@@ -67,7 +67,7 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
       }
     }
 
-    for (RaftMemberInfo member : raft.getMembers()) {
+    for (RaftMember member : raft.getMembers()) {
       if (!members.containsKey(member.uri())) {
         members.put(member.uri(), new ManagedRemoteMember(member, protocol, context));
         listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(member.uri()))));
@@ -163,7 +163,7 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     open = true;
     raft.addObserver(this);
     members.clear();
-    for (RaftMemberInfo member : raft.getMembers()) {
+    for (RaftMember member : raft.getMembers()) {
       members.put(member.uri(), member.uri().equals(raft.getLocalMember().uri()) ? new ManagedLocalMember(member, protocol, context) : new ManagedRemoteMember(member, protocol, context));
     }
 

@@ -20,7 +20,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolConnection;
-import net.kuujo.copycat.raft.RaftMemberInfo;
+import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
 
@@ -42,7 +42,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   private final ProtocolClient client;
   private ProtocolConnection connection;
 
-  public ManagedRemoteMember(RaftMemberInfo member, Protocol protocol, ResourceContext context) {
+  public ManagedRemoteMember(RaftMember member, Protocol protocol, ResourceContext context) {
     super(member, context);
     try {
       this.client = protocol.createClient(new URI(member.uri()));

@@ -50,8 +50,8 @@ public class RaftContext extends Observable implements RaftProtocol {
   private ProtocolHandler<QueryRequest, QueryResponse> queryHandler;
   private ProtocolHandler<CommandRequest, CommandResponse> commandHandler;
   private CompletableFuture<Void> openFuture;
-  private final RaftMemberInfo localMember;
-  private final Map<String, RaftMemberInfo> members = new HashMap<>();
+  private final RaftMember localMember;
+  private final Map<String, RaftMember> members = new HashMap<>();
   private boolean recovering = true;
   private String leader;
   private long term;
@@ -67,10 +67,10 @@ public class RaftContext extends Observable implements RaftProtocol {
   public RaftContext(String name, String uri, RaftConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
     this.config = config;
-    this.localMember = new RaftMemberInfo(Assert.isNotNull(uri, "uri"), config.getReplicas().contains(uri) ? RaftMemberInfo.Type.PROMOTABLE : RaftMemberInfo.Type.PASSIVE, RaftMemberInfo.Status.ALIVE);
+    this.localMember = new RaftMember(Assert.isNotNull(uri, "uri"), config.getReplicas().contains(uri) ? RaftMember.Type.PROMOTABLE : RaftMember.Type.PASSIVE, RaftMember.Status.ALIVE);
     members.put(localMember.uri(), localMember);
     config.getReplicas().forEach(r -> {
-      members.put(r, new RaftMemberInfo(r, RaftMemberInfo.Type.ACTIVE, RaftMemberInfo.Status.ALIVE));
+      members.put(r, new RaftMember(r, RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
     });
     this.log = config.getLog().getLogManager(name);
     this.electionTimeout = config.getElectionTimeout();
@@ -96,7 +96,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    *
    * @return The local member.
    */
-  public RaftMemberInfo getLocalMember() {
+  public RaftMember getLocalMember() {
     return localMember;
   }
 
@@ -105,7 +105,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    *
    * @return A collection of all members in the cluster.
    */
-  public Collection<RaftMemberInfo> getMembers() {
+  public Collection<RaftMember> getMembers() {
     return members.values();
   }
 
@@ -115,7 +115,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @param uri The URI of the member for which to return member info.
    * @return The Raft member.
    */
-  public RaftMemberInfo getMember(String uri) {
+  public RaftMember getMember(String uri) {
     return members.get(uri);
   }
 
@@ -125,11 +125,11 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @param members A collection of active and promotable members.
    * @return The Raft context.
    */
-  RaftContext setMembers(Collection<RaftMemberInfo> members) {
-    Iterator<Map.Entry<String, RaftMemberInfo>> iterator = this.members.entrySet().iterator();
+  RaftContext setMembers(Collection<RaftMember> members) {
+    Iterator<Map.Entry<String, RaftMember>> iterator = this.members.entrySet().iterator();
     while (iterator.hasNext()) {
-      RaftMemberInfo member = iterator.next().getValue();
-      if ((member.type() == RaftMemberInfo.Type.ACTIVE || member.type() == RaftMemberInfo.Type.PROMOTABLE) && !members.contains(member)) {
+      RaftMember member = iterator.next().getValue();
+      if ((member.type() == RaftMember.Type.ACTIVE || member.type() == RaftMember.Type.PROMOTABLE) && !members.contains(member)) {
         iterator.remove();
       }
     }
@@ -143,7 +143,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @param members A collection of members to set.
    * @return The Raft context.
    */
-  RaftContext updateMembers(Collection<RaftMemberInfo> members) {
+  RaftContext updateMembers(Collection<RaftMember> members) {
     members.forEach(this::addMember);
     return this;
   }
@@ -154,8 +154,8 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @param member The member to add.
    * @return The Raft context.
    */
-  RaftContext addMember(RaftMemberInfo member) {
-    RaftMemberInfo m = members.get(member.uri());
+  RaftContext addMember(RaftMember member) {
+    RaftMember m = members.get(member.uri());
     if (m != null) {
       m.update(member);
     } else {
@@ -170,7 +170,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @param member The member to remove.
    * @return The Raft context.
    */
-  RaftContext removeMember(RaftMemberInfo member) {
+  RaftContext removeMember(RaftMember member) {
     members.remove(member.uri());
     return this;
   }
@@ -627,7 +627,7 @@ public class RaftContext extends Observable implements RaftProtocol {
       try {
         open = true;
         log.open();
-        transition(localMember.type() == RaftMemberInfo.Type.PASSIVE ? RaftState.Type.PASSIVE : RaftState.Type.FOLLOWER);
+        transition(localMember.type() == RaftMember.Type.PASSIVE ? RaftState.Type.PASSIVE : RaftState.Type.FOLLOWER);
       } catch (Exception e) {
         openFuture.completeExceptionally(e);
         openFuture = null;

@@ -59,9 +59,9 @@ class LeaderState extends ActiveState {
    * Commits the current cluster configuration to the log.
    */
   private void commitConfiguration() {
-    Set<RaftMemberInfo> members = new HashSet<>(context.getMembers().size());
+    Set<RaftMember> members = new HashSet<>(context.getMembers().size());
     context.getMembers().stream()
-      .filter(m -> m.type() == RaftMemberInfo.Type.ACTIVE || m.type() == RaftMemberInfo.Type.PROMOTABLE)
+      .filter(m -> m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE)
       .forEach(members::add);
     commitConfig(members);
   }
@@ -122,14 +122,14 @@ class LeaderState extends ActiveState {
     }
 
     if (!context.getMembers().stream()
-      .filter(m -> m.type() == RaftMemberInfo.Type.ACTIVE || m.type() == RaftMemberInfo.Type.PROMOTABLE)
+      .filter(m -> m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE)
       .collect(Collectors.toSet()).contains(request.member())) {
 
-      final Set<RaftMemberInfo> members = new HashSet<>(context.getMembers().size());
+      final Set<RaftMember> members = new HashSet<>(context.getMembers().size());
       context.getMembers().stream()
-        .filter(m -> m.type() == RaftMemberInfo.Type.ACTIVE || m.type() == RaftMemberInfo.Type.PROMOTABLE)
+        .filter(m -> m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE)
         .forEach(members::add);
-      final RaftMemberInfo member = new RaftMemberInfo(request.member(), RaftMemberInfo.Type.PROMOTABLE, RaftMemberInfo.Status.ALIVE);
+      final RaftMember member = new RaftMember(request.member(), RaftMember.Type.PROMOTABLE, RaftMember.Status.ALIVE);
       members.add(member);
 
       CompletableFuture<JoinResponse> future = new CompletableFuture<>();
@@ -173,14 +173,14 @@ class LeaderState extends ActiveState {
         .build()));
     }
 
-    RaftMemberInfo member = context.getMember(request.member());
+    RaftMember member = context.getMember(request.member());
     if (member != null) {
-      final Set<RaftMemberInfo> members = new HashSet<>(context.getMembers().size());
+      final Set<RaftMember> members = new HashSet<>(context.getMembers().size());
       context.getMembers().stream()
-        .filter(m -> m.type() == RaftMemberInfo.Type.ACTIVE || m.type() == RaftMemberInfo.Type.PROMOTABLE)
+        .filter(m -> m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE)
         .forEach(members::add);
       members.remove(member);
-      members.add(new RaftMemberInfo(member.uri(), RaftMemberInfo.Type.ACTIVE, RaftMemberInfo.Status.ALIVE));
+      members.add(new RaftMember(member.uri(), RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
 
       CompletableFuture<PromoteResponse> future = new CompletableFuture<>();
       commitConfig(members).whenComplete((result, error) -> {
@@ -225,19 +225,19 @@ class LeaderState extends ActiveState {
     }
 
     if (context.getMembers().stream()
-      .filter(m -> m.type() == RaftMemberInfo.Type.ACTIVE || m.type() == RaftMemberInfo.Type.PROMOTABLE)
+      .filter(m -> m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE)
       .collect(Collectors.toSet()).contains(request.member())) {
 
-      final Set<RaftMemberInfo> members = new HashSet<>(context.getMembers().size());
+      final Set<RaftMember> members = new HashSet<>(context.getMembers().size());
       context.getMembers().stream()
-        .filter(m -> !m.uri().equals(request.member()) && (m.type() == RaftMemberInfo.Type.ACTIVE || m.type() == RaftMemberInfo.Type.PROMOTABLE))
+        .filter(m -> !m.uri().equals(request.member()) && (m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE))
         .forEach(members::add);
 
       CompletableFuture<LeaveResponse> future = new CompletableFuture<>();
       commitConfig(members).whenComplete((result, error) -> {
         if (isOpen()) {
           if (error == null) {
-            RaftMemberInfo member = context.getMember(request.member());
+            RaftMember member = context.getMember(request.member());
             if (member != null) {
               context.removeMember(member);
             }
@@ -269,7 +269,7 @@ class LeaderState extends ActiveState {
   /**
    * Commits a configuration change to the replicated log.
    */
-  private CompletableFuture<Long> commitConfig(Set<RaftMemberInfo> members) {
+  private CompletableFuture<Long> commitConfig(Set<RaftMember> members) {
     final long term = context.getTerm();
     ByteBuffer config = serializer.writeObject(members);
     ByteBuffer entry = ByteBuffer.allocate(config.limit() + 9);
@@ -493,10 +493,10 @@ class LeaderState extends ActiveState {
      * Updates the replicator's cluster configuration.
      */
     private void update() {
-      Set<RaftMemberInfo> members = context.getMembers().stream()
-        .filter(m -> !m.uri().equals(context.getLocalMember().uri()) && m.type() == RaftMemberInfo.Type.ACTIVE)
+      Set<RaftMember> members = context.getMembers().stream()
+        .filter(m -> !m.uri().equals(context.getLocalMember().uri()) && m.type() == RaftMember.Type.ACTIVE)
         .collect(Collectors.toSet());
-      Set<String> uris = members.stream().map(RaftMemberInfo::uri).collect(Collectors.toSet());
+      Set<String> uris = members.stream().map(RaftMember::uri).collect(Collectors.toSet());
 
       Iterator<Replica> iterator = replicas.iterator();
       while (iterator.hasNext()) {
@@ -508,7 +508,7 @@ class LeaderState extends ActiveState {
       }
 
       Set<String> replicas = this.replicas.stream().map(r -> r.member.uri()).collect(Collectors.toSet());
-      for (RaftMemberInfo member : members) {
+      for (RaftMember member : members) {
         if (!replicas.contains(member.uri())) {
           this.replicas.add(new Replica(this.replicas.size(), member));
         }
@@ -606,12 +606,12 @@ class LeaderState extends ActiveState {
     private class Replica {
       private final List<ByteBuffer> EMPTY_LIST = new ArrayList<>(0);
       private final int id;
-      private final RaftMemberInfo member;
+      private final RaftMember member;
       private Long nextIndex;
       private Long matchIndex;
       private boolean committing;
 
-      private Replica(int id, RaftMemberInfo member) {
+      private Replica(int id, RaftMember member) {
         this.id = id;
         this.member = member;
       }
