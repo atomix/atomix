@@ -193,8 +193,9 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
   @Override
   public CompletableFuture<Cluster> open() {
     raft.addObserver(this);
-    registerHandlers();
-    return members.open().thenApply(v -> this);
+    return members.open()
+      .thenRun(this::registerHandlers)
+      .thenApply(v -> this);
   }
 
   @Override
