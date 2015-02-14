@@ -23,10 +23,13 @@ import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.internal.Hash;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -41,6 +44,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   private static final byte TASK = 2;
   private final ProtocolClient client;
   private ProtocolConnection connection;
+  private final Map<String, Integer> hashMap = new HashMap<>();
 
   public ManagedRemoteMember(RaftMember member, Protocol protocol, ResourceContext context) {
     super(member, context);
@@ -57,7 +61,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
     ByteBuffer request = ByteBuffer.allocate(serialized.limit() + 6);
     request.put(MESSAGE);
     request.put(USER);
-    request.putInt(topic.hashCode());
+    request.putInt(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
     request.put(serialized);
     return connection.write(request).thenApplyAsync(b -> context.serializer().readObject(b), context.executor());
   }
@@ -69,7 +73,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
     ByteBuffer request = ByteBuffer.allocate(message.limit() + 6);
     request.put(MESSAGE);
     request.put(INTERNAL);
-    request.putInt(topic.hashCode());
+    request.putInt(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
     request.put(message);
     request.flip();
     return connection.write(request);

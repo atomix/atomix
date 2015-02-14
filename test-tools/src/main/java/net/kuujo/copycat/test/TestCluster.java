@@ -29,7 +29,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestCluster<T extends Resource<T>> {
-  private static int id;
+  private static int id = 1;
   private final List<T> activeResources;
   private final List<T> passiveResources;
 

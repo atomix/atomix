@@ -27,10 +27,12 @@ import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.Futures;
+import net.kuujo.copycat.util.internal.Hash;
 
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -51,6 +53,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   private final Map<Integer, MessageHandler> handlers = new ConcurrentHashMap<>();
   private final Map<Integer, MessageHandler<ByteBuffer, ByteBuffer>> internalHandlers = new ConcurrentHashMap<>();
   private final Set<ProtocolConnection> connections = new HashSet<>();
+  private final Map<String, Integer> hashMap = new HashMap<>();
   private boolean open;
 
   public ManagedLocalMember(RaftMember member, Protocol protocol, ResourceContext context) {
@@ -145,7 +148,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
 
   @Override
   public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
-    handlers.put(topic.hashCode(), handler);
+    handlers.put(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())), handler);
     return this;
   }
 
@@ -153,13 +156,13 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
    * Registers an internal handler.
    */
   <T, U> ManagedLocalMember registerInternalHandler(String topic, MessageHandler<ByteBuffer, ByteBuffer> handler) {
-    internalHandlers.put(topic.hashCode(), handler);
+    internalHandlers.put(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())), handler);
     return this;
   }
 
   @Override
   public LocalMember unregisterHandler(String topic) {
-    handlers.remove(topic.hashCode());
+    handlers.remove(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
     return this;
   }
 
@@ -167,7 +170,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
    * Unregisters an internal handler.
    */
   ManagedLocalMember unregisterInternalHandler(String topic) {
-    internalHandlers.remove(topic.hashCode());
+    internalHandlers.remove(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
     return this;
   }
 
@@ -176,18 +179,17 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     CompletableFuture<U> future = new CompletableFuture<>();
     context.executor().execute(() -> {
-      MessageHandler<T, U> handler = handlers.get(topic.hashCode());
+      MessageHandler<T, U> handler = handlers.get(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
       if (handler != null) {
-        handler.apply(context.serializer().readObject(context.serializer().writeObject(message)))
-          .whenComplete((result, error) -> {
-            context.executor().execute(() -> {
-              if (error == null) {
-                future.complete(context.serializer().readObject(context.serializer().writeObject(result)));
-              } else {
-                future.completeExceptionally(error);
-              }
-            });
+        handler.apply(context.serializer().readObject(context.serializer().writeObject(message))).whenComplete((result, error) -> {
+          context.executor().execute(() -> {
+            if (error == null) {
+              future.complete(context.serializer().readObject(context.serializer().writeObject(result)));
+            } else {
+              future.completeExceptionally(error);
+            }
           });
+        });
       }
     });
     return future;
@@ -199,7 +201,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   public CompletableFuture<ByteBuffer> sendInternal(String topic, ByteBuffer message) {
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     context.scheduler().execute(() -> {
-      MessageHandler<ByteBuffer, ByteBuffer> handler = handlers.get(topic.hashCode());
+      MessageHandler<ByteBuffer, ByteBuffer> handler = handlers.get(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
       if (handler != null) {
         handler.apply(message).whenComplete((result, error) -> {
           context.scheduler().execute(() -> {
