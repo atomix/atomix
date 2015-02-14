@@ -43,7 +43,7 @@ public class LeaderElectingVerticle extends Verticle {
     JsonArray members = container.config().getArray("cluster");
 
     // Configure the Copycat cluster with the Vert.x event bus protocol and event bus members. With the event
-    // bus protocol configured, Copycat will perform state machine replication over the event bus using the event
+    // bus protocol configured, Copycat will perform status machine replication over the event bus using the event
     // bus addresses provided by the protocol URI - e.g. eventbus://foo
     // Because Copycat is a CP framework, we have to explicitly list all of the nodes in the cluster.
     ClusterConfig cluster = new ClusterConfig()

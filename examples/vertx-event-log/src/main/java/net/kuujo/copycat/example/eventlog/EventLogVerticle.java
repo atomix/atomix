@@ -152,7 +152,7 @@ public class EventLogVerticle extends BusModBase implements Handler<Message<Json
 
         // Create and open a new event log instance and create a lock proxy for submitting event log
         // commands and queries to the cluster. When the event log is opened, the event log will communicate
-        // with other nodes in the Copycat instance cluster to elect a leader and begin replicating the state log.
+        // with other nodes in the Copycat instance cluster to elect a leader and begin replicating the status log.
         copycat.<String>createEventLog(name, eventLogConfig).open().whenComplete((eventLog, error) -> {
           if (error != null) {
             new DefaultFutureResult<Void>(error).setHandler(doneHandler);
