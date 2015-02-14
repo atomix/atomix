@@ -15,15 +15,12 @@
  */
 package net.kuujo.copycat.test;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.ResourceState;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.resource.internal.ResourceManager;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Test resource implementation.
@@ -32,23 +29,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public class TestResource extends AbstractResource<TestResource> {
 
-  public TestResource(ResourceManager context) {
+  public TestResource(ResourceContext context) {
     super(context);
   }
 
   @Override
   public ResourceState state() {
     return ResourceState.HEALTHY;
-  }
-
-  @Override
-  public CompletableFuture<TestResource> open() {
-    return runStartupTasks().thenCompose(v -> context.open()).thenApply(v -> this);
-  }
-
-  @Override
-  public CompletableFuture<Void> close() {
-    return context.close().thenCompose(v -> runShutdownTasks());
   }
 
   /**
@@ -68,19 +55,6 @@ public class TestResource extends AbstractResource<TestResource> {
 
     public Config(String... resources) {
       super(resources);
-    }
-
-    @Override
-    public CoordinatedResourceConfig resolve(ClusterConfig cluster) {
-      return new CoordinatedResourceConfig(super.toMap())
-        .withElectionTimeout(getElectionTimeout())
-        .withHeartbeatInterval(getHeartbeatInterval())
-        .withResourceType(TestResource.class)
-        .withLog(getLog())
-        .withSerializer(getSerializer())
-        .withExecutor(getExecutor())
-        .withResourceConfig(this)
-        .withReplicas(getReplicas().isEmpty() ? cluster.getMembers() : getReplicas());
     }
 
   }
