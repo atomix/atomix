@@ -535,7 +535,6 @@ public class RequestResponseTest {
       .withUri("foo")
       .withCandidate("bar")
       .withLogIndex(5L)
-      .withLogTerm(1L)
       .build();
   }
 
