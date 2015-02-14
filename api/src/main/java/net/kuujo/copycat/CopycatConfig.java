@@ -17,7 +17,6 @@ package net.kuujo.copycat;
 
 import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.internal.coordinator.CoordinatorConfig;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.ConfigurationException;
@@ -238,18 +237,6 @@ public class CopycatConfig extends AbstractConfigurable {
   public CopycatConfig withDefaultExecutor(Executor executor) {
     setDefaultExecutor(executor);
     return this;
-  }
-
-  /**
-   * Resolves the Copycat configuration to a coordinator configuration.
-   *
-   * @return A coordinator configuration for this Copycat configuration.
-   */
-  public CoordinatorConfig resolve() {
-    return new CoordinatorConfig()
-      .withName(getName())
-      .withExecutor(getDefaultExecutor())
-      .withClusterConfig(getClusterConfig());
   }
 
   @Override

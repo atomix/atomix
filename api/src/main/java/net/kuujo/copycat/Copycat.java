@@ -99,42 +99,42 @@ public interface Copycat extends Managed<Copycat> {
   <T> EventLog<T> createEventLog(String name, EventLogConfig config);
 
   /**
-   * Creates a new state log.
+   * Creates a new status log.
    *
-   * @param name The name of the state log to create.
-   * @param <T> The state log entry type.
-   * @return The state log instance.
+   * @param name The name of the status log to create.
+   * @param <T> The status log entry type.
+   * @return The status log instance.
    */
   <T> StateLog<T> createStateLog(String name);
 
   /**
-   * Creates a new state log.
+   * Creates a new status log.
    *
-   * @param name The name of the state log to create.
-   * @param config The state log configuration.
-   * @param <T> The state log entry type.
-   * @return The state log instance.
+   * @param name The name of the status log to create.
+   * @param config The status log configuration.
+   * @param <T> The status log entry type.
+   * @return The status log instance.
    */
   <T> StateLog<T> createStateLog(String name, StateLogConfig config);
 
   /**
-   * Creates a new replicated state machine.
+   * Creates a new replicated status machine.
    *
-   * @param name The name of the state machine to create.
-   * @param stateType The state machine state type.
-   * @param initialState The state machine's initial state.
-   * @param <T> The state machine state type.
-   * @return The state machine instance.
+   * @param name The name of the status machine to create.
+   * @param stateType The status machine status type.
+   * @param initialState The status machine's initial status.
+   * @param <T> The status machine status type.
+   * @return The status machine instance.
    */
   <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState);
 
   /**
-   * Creates a new replicated state machine.
+   * Creates a new replicated status machine.
    *
-   * @param name The name of the state machine to create.
-   * @param config The state machine configuration.
-   * @param <T> The state machine state type.
-   * @return The state machine instance.
+   * @param name The name of the status machine to create.
+   * @param config The status machine configuration.
+   * @param <T> The status machine status type.
+   * @return The status machine instance.
    */
   <T> StateMachine<T> createStateMachine(String name, StateMachineConfig config);
 
