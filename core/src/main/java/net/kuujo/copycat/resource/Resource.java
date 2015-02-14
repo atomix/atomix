@@ -15,11 +15,8 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.Managed;
-import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Cluster;
-
-import java.util.concurrent.CompletableFuture;
+import net.kuujo.copycat.util.Managed;
 
 /**
  * Partitioned Copycat resource.
@@ -36,13 +33,13 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
   String name();
 
   /**
-   * Returns the current resource state.<p>
+   * Returns the current resource status.<p>
    *
-   * All resources begin in the {@link ResourceState#RECOVER} state. Once the Raft algorithm has caught up to the
+   * All resources begin in the {@link ResourceState#RECOVER} status. Once the Raft algorithm has caught up to the
    * leader's commit index at the time the resource was opened the resource will transition to the
-   * {@link ResourceState#HEALTHY} state.
+   * {@link ResourceState#HEALTHY} status.
    *
-   * @return The current resource state.
+   * @return The current resource status.
    */
   ResourceState state();
 
@@ -52,21 +49,5 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
    * @return The resource cluster.
    */
   Cluster cluster();
-
-  /**
-   * Adds a startup task to the event log.
-   *
-   * @param task The startup task to add.
-   * @return The Copycat context.
-   */
-  T addStartupTask(Task<CompletableFuture<Void>> task);
-
-  /**
-   * Adds a shutdown task to the event log.
-   *
-   * @param task The shutdown task to remove.
-   * @return The Copycat context.
-   */
-  T addShutdownTask(Task<CompletableFuture<Void>> task);
 
 }

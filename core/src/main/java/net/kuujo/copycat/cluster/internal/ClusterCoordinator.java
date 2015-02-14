@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.cluster.internal;
+
+import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.protocol.ProtocolConnection;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
- * Cluster message handler.<p>
- *
- * Message handlers a simple extension of {@link java.util.function.Function} which perform asynchronous functions in
- * response to received messages. Messages handlers should always return a {@link java.util.concurrent.CompletableFuture}
- * instance even if the future is immediately completed.
+ * Cluster coordinator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface MessageHandler<T, U> extends Function<T, CompletableFuture<U>> {
+public interface ClusterCoordinator {
+
+  CompletableFuture<Void> listen(int id, EventListener<ProtocolConnection> listener);
+
+  CompletableFuture<ProtocolConnection> connect(int id);
+
 }

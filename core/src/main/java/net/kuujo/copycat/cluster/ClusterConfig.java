@@ -1,11 +1,12 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +25,6 @@ import net.kuujo.copycat.util.internal.Assert;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat cluster configuration.<p>
@@ -53,8 +53,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClusterConfig extends AbstractConfigurable {
   private static final String CLUSTER_PROTOCOL = "protocol";
-  private static final String CLUSTER_ELECTION_TIMEOUT = "election.timeout";
-  private static final String CLUSTER_HEARTBEAT_INTERVAL = "heartbeat.interval";
   private static final String CLUSTER_LOCAL_MEMBER = "local-member";
   private static final String CLUSTER_MEMBERS = "members";
 
@@ -86,7 +84,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * Sets the cluster protocol.
    *
    * @param protocol The cluster protocol.
-   * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
+   * @throws NullPointerException If @{code protocol} is {@code null}
    */
   public void setProtocol(Protocol protocol) {
     this.config = config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.isNotNull(protocol, "protocol").toMap()));
@@ -106,120 +104,10 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param protocol The cluster protocol.
    * @return The cluster configuration.
-   * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
+   * @throws NullPointerException If @{code protocol} is {@code null}
    */
   public ClusterConfig withProtocol(Protocol protocol) {
     setProtocol(protocol);
-    return this;
-  }
-
-  /**
-   * Sets the cluster election timeout.
-   *
-   * @param electionTimeout The cluster election timeout in milliseconds.
-   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
-   */
-  public void setElectionTimeout(long electionTimeout) {
-    this.config = config.withValue(CLUSTER_ELECTION_TIMEOUT, ConfigValueFactory.fromAnyRef(Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive")));
-  }
-
-  /**
-   * Sets the cluster election timeout.
-   *
-   * @param electionTimeout The cluster election timeout.
-   * @param unit The timeout unit.
-   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
-   */
-  public void setElectionTimeout(long electionTimeout, TimeUnit unit) {
-    setElectionTimeout(unit.toMillis(electionTimeout));
-  }
-
-  /**
-   * Returns the cluster election timeout in milliseconds.
-   *
-   * @return The cluster election timeout in milliseconds.
-   */
-  public long getElectionTimeout() {
-    return config.getLong(CLUSTER_ELECTION_TIMEOUT);
-  }
-
-  /**
-   * Sets the cluster election timeout, returning the cluster configuration for method chaining.
-   *
-   * @param electionTimeout The cluster election timeout in milliseconds.
-   * @return The cluster configuration.
-   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
-   */
-  public ClusterConfig withElectionTimeout(long electionTimeout) {
-    setElectionTimeout(electionTimeout);
-    return this;
-  }
-
-  /**
-   * Sets the cluster election timeout, returning the cluster configuration for method chaining.
-   *
-   * @param electionTimeout The cluster election timeout.
-   * @param unit The timeout unit.
-   * @return The cluster configuration.
-   * @throws java.lang.IllegalArgumentException If the election timeout is not positive
-   */
-  public ClusterConfig withElectionTimeout(long electionTimeout, TimeUnit unit) {
-    setElectionTimeout(electionTimeout, unit);
-    return this;
-  }
-
-  /**
-   * Sets the cluster heartbeat interval.
-   *
-   * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
-   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
-   */
-  public void setHeartbeatInterval(long heartbeatInterval) {
-    this.config = config.withValue(CLUSTER_HEARTBEAT_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive")));
-  }
-
-  /**
-   * Sets the cluster heartbeat interval.
-   *
-   * @param heartbeatInterval The cluster heartbeat interval.
-   * @param unit The heartbeat interval unit.
-   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
-   */
-  public void setHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-    setHeartbeatInterval(unit.toMillis(heartbeatInterval));
-  }
-
-  /**
-   * Returns the cluster heartbeat interval.
-   *
-   * @return The interval at which nodes send heartbeats to each other.
-   */
-  public long getHeartbeatInterval() {
-    return config.getLong(CLUSTER_HEARTBEAT_INTERVAL);
-  }
-
-  /**
-   * Sets the cluster heartbeat interval, returning the cluster configuration for method chaining.
-   *
-   * @param heartbeatInterval The cluster heartbeat interval in milliseconds.
-   * @return The cluster configuration.
-   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
-   */
-  public ClusterConfig withHeartbeatInterval(long heartbeatInterval) {
-    setHeartbeatInterval(heartbeatInterval);
-    return this;
-  }
-
-  /**
-   * Sets the cluster heartbeat interval, returning the cluster configuration for method chaining.
-   *
-   * @param heartbeatInterval The cluster heartbeat interval.
-   * @param unit The heartbeat interval unit.
-   * @return The cluster configuration.
-   * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
-   */
-  public ClusterConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
-    setHeartbeatInterval(heartbeatInterval, unit);
     return this;
   }
 
@@ -260,7 +148,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * Sets all cluster member URIs.
    *
    * @param uris A collection of cluster member URIs.
-   * @throws java.lang.IllegalArgumentException If a given URI is invalid
+   * @throws IllegalArgumentException If a given URI is invalid
    */
   public void setMembers(String... uris) {
     setMembers(new ArrayList<>(Arrays.asList(uris)));
@@ -270,8 +158,8 @@ public class ClusterConfig extends AbstractConfigurable {
    * Sets all cluster member URIs.
    *
    * @param uris A collection of cluster member URIs.
-   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
-   * @throws java.lang.IllegalArgumentException If a given URI is invalid
+   * @throws NullPointerException If {@code uris} is {@code null}
+   * @throws IllegalArgumentException If a given URI is invalid
    */
   public void setMembers(Collection<String> uris) {
     Assert.isNotNull(uris, "uris");
@@ -301,8 +189,8 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param uri The member URI to add.
    * @return The cluster configuration.
-   * @throws java.lang.NullPointerException If {@code uri} is {@code null}
-   * @throws java.lang.IllegalArgumentException If the given URI is invalid
+   * @throws NullPointerException If {@code uri} is {@code null}
+   * @throws IllegalArgumentException If the given URI is invalid
    */
   public ClusterConfig addMember(String uri) {
     if (!config.hasPath(CLUSTER_MEMBERS)) {
@@ -323,7 +211,7 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param uris A collection of cluster member URIs.
    * @return The cluster configuration.
-   * @throws java.lang.IllegalArgumentException If a given URI is invalid
+   * @throws IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig withMembers(String... uris) {
     setMembers(uris);
@@ -335,8 +223,8 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param uris A collection of cluster member URIs.
    * @return The cluster configuration.
-   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
-   * @throws java.lang.IllegalArgumentException If a given URI is invalid
+   * @throws NullPointerException If {@code uris} is {@code null}
+   * @throws IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig withMembers(Collection<String> uris) {
     setMembers(uris);
@@ -348,7 +236,7 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param uris A collection of cluster member URIs to add.
    * @return The cluster configuration.
-   * @throws java.lang.IllegalArgumentException If a given URI is invalid
+   * @throws IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig addMembers(String... uris) {
     return addMembers(Arrays.asList(uris));
@@ -359,8 +247,8 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param uris A collection of cluster member URIs to add.
    * @return The cluster configuration.
-   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
-   * @throws java.lang.IllegalArgumentException If a given URI is invalid
+   * @throws NullPointerException If {@code uris} is {@code null}
+   * @throws IllegalArgumentException If a given URI is invalid
    */
   public ClusterConfig addMembers(Collection<String> uris) {
     Assert.isNotNull(uris, "uris");
@@ -373,7 +261,7 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param uri The member URI to remove.
    * @return The cluster configuration.
-   * @throws java.lang.NullPointerException If {@code uri} is {@code null}
+   * @throws NullPointerException If {@code uri} is {@code null}
    */
   public ClusterConfig removeMember(String uri) {
     List<Object> members = config.getList(CLUSTER_MEMBERS).unwrapped();
@@ -397,7 +285,7 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param uris A collection of cluster member URIs to remove.
    * @return The cluster configuration.
-   * @throws java.lang.NullPointerException If {@code uris} is {@code null}
+   * @throws NullPointerException If {@code uris} is {@code null}
    */
   public ClusterConfig removeMembers(Collection<String> uris) {
     uris.forEach(this::removeMember);

@@ -39,8 +39,6 @@ public class ClusterConfigTest {
    */
   public void testClusterDefaults() throws Throwable {
     ClusterConfig cluster = new ClusterConfig();
-    assertEquals(cluster.getElectionTimeout(), 500);
-    assertEquals(cluster.getHeartbeatInterval(), 150);
     assertTrue(cluster.getMembers().isEmpty());
     assertTrue(cluster.getProtocol() instanceof LocalProtocol);
     cluster.addMember("local://foo");
@@ -50,15 +48,6 @@ public class ClusterConfigTest {
     ClusterConfig copy = cluster.copy();
     assertEquals(1, copy.getMembers().size());
     assertEquals("local://foo", copy.getMembers().iterator().next());
-  }
-
-  /**
-   * Tests overriding cluster configuration information via namespaced resources.
-   */
-  public void testNamespaceOverride() throws Throwable {
-    ClusterConfig cluster = new ClusterConfig("foo.bar");
-    assertEquals(500, cluster.getElectionTimeout());
-    assertEquals(100, cluster.getHeartbeatInterval());
   }
 
   /**

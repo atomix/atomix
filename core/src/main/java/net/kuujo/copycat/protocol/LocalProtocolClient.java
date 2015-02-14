@@ -16,7 +16,6 @@ package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -38,16 +37,16 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
-  public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
+  public CompletableFuture<ProtocolConnection> connect() {
+    CompletableFuture<ProtocolConnection> future = new CompletableFuture<>();
     executor.execute(() -> {
       LocalProtocolServer server = registry.get(address);
       if (server != null) {
-        server.handle(request).whenComplete((response, error) -> {
-          if (error != null) {
-            executor.execute(() -> future.completeExceptionally(error));
+        server.connect().whenComplete((connection, error) -> {
+          if (error == null) {
+            future.complete(connection);
           } else {
-            executor.execute(() -> future.complete(response));
+            future.completeExceptionally(error);
           }
         });
       } else {
@@ -55,11 +54,6 @@ public class LocalProtocolClient implements ProtocolClient {
       }
     });
     return future;
-  }
-
-  @Override
-  public CompletableFuture<Void> connect() {
-    return CompletableFuture.completedFuture(null);
   }
 
   @Override

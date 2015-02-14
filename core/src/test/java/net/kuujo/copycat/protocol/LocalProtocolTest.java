@@ -38,39 +38,39 @@ public class LocalProtocolTest extends ConcurrentTestCase {
     ProtocolServer server = protocol.createServer(new URI("local://test"));
     ProtocolClient client = protocol.createClient(new URI("local://test"));
 
-    server.handler(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world!");
-      return CompletableFuture.completedFuture(ByteBuffer.wrap("Hello world back!".getBytes()));
+    server.connectListener(connection -> {
+      connection.handler(buffer -> {
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        threadAssertEquals(new String(bytes), "Hello world!");
+        return CompletableFuture.completedFuture(ByteBuffer.wrap("Hello world back!".getBytes()));
+      });
     });
     server.listen().thenRunAsync(this::resume);
     await(5000);
 
-    client.connect().thenRunAsync(this::resume);
-    await(5000);
+    expectResumes(3);
+    client.connect().thenAccept(connection -> {
+      connection.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        threadAssertEquals(new String(bytes), "Hello world back!");
+        resume();
+      });
 
-    client.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world back!");
-      resume();
-    });
-    await(5000);
+      connection.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        threadAssertEquals(new String(bytes), "Hello world back!");
+        resume();
+      });
 
-    client.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world back!");
-      resume();
-    });
-    await(5000);
-
-    client.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
-      byte[] bytes = new byte[buffer.remaining()];
-      buffer.get(bytes);
-      threadAssertEquals(new String(bytes), "Hello world back!");
-      resume();
+      connection.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        threadAssertEquals(new String(bytes), "Hello world back!");
+        resume();
+      });
     });
     await(5000);
   }

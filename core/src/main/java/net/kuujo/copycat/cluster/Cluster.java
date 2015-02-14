@@ -1,11 +1,12 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -97,7 +98,7 @@ public interface Cluster {
    *
    * @param uri The unique member URI.
    * @return The member or {@code null} if the member does not exist.
-   * @throws java.lang.NullPointerException If the given {@code uri} is {@code null}
+   * @throws NullPointerException If the given {@code uri} is {@code null}
    */
   Member member(String uri);
 
@@ -126,40 +127,16 @@ public interface Cluster {
   <T> Cluster broadcast(String topic, T message);
 
   /**
-   * Adds a broadcast listener to the cluster.<p>
-   *
-   * Broadcast listeners are a special type of handler which receives messages broadcast to a topic by other nodes.
-   *
-   * @param topic The topic to which to listen. Messages broadcast to this topic will be received by the given event
-   *              listener, including messages broadcast from the local node. Listeners cannot reply to broadcast
-   *              messages.
-   * @param listener The broadcast listener to add.
-   * @param <T> The broadcast message type.
-   * @return The cluster.
-   */
-  <T> Cluster addBroadcastListener(String topic, EventListener<T> listener);
-
-  /**
-   * Removes a broadcast listener from the cluster.
-   *
-   * @param topic The topic for which to remove the listener.
-   * @param listener The broadcast listener to remove.
-   * @param <T> The broadcast message type.
-   * @return The cluster.
-   */
-  <T> Cluster removeBroadcastListener(String topic, EventListener<T> listener);
-
-  /**
    * Adds a membership listener to the cluster.<p>
    *
-   * Membership listeners are triggered when {@link Member.Type#PASSIVE} members join or leave the cluster. Copycat uses
+   * Membership listeners are triggered when {@link net.kuujo.copycat.cluster.Member.Type#PASSIVE} members join or leave the cluster. Copycat uses
    * a gossip based failure detection algorithm to detect failures, using vector clocks to version cluster
    * configurations. In order to prevent false positives due to network partitions, Copycat's failure detection
    * algorithm will attempt to contact a member from up to three different nodes before considering that node failed.
    * If the membership listener is called with a {@link MembershipEvent.Type#LEAVE} event, that indicates that Copycat
    * has attempted to contact the missing member multiple times.<p>
    *
-   * {@link Member.Type#ACTIVE} members never join or leave the cluster since they are explicitly configured, active,
+   * {@link net.kuujo.copycat.cluster.Member.Type#ACTIVE} members never join or leave the cluster since they are explicitly configured, active,
    * voting members of the cluster. However, this may change at some point in the future to allow failure detection for
    * active members as well.
    *

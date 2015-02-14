@@ -14,10 +14,10 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -32,24 +32,27 @@ public class LocalProtocolServer implements ProtocolServer {
   private final Executor executor = Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-protocol-thread-%d"));
   private final String address;
   private final Map<String, LocalProtocolServer> registry;
-  private ProtocolHandler handler;
+  private EventListener<ProtocolConnection> listener;
 
   public LocalProtocolServer(String address, Map<String, LocalProtocolServer> registry) {
     this.address = address;
     this.registry = registry;
   }
 
-  @Override
-  public void handler(ProtocolHandler handler) {
-    this.handler = handler;
+  CompletableFuture<ProtocolConnection> connect() {
+    if (listener != null) {
+      LocalProtocolConnection connection = new LocalProtocolConnection();
+      listener.accept(connection);
+      return CompletableFuture.completedFuture(connection);
+    } else {
+      return Futures.exceptionalFuture(new ProtocolException("No server found"));
+    }
   }
 
-  CompletableFuture<ByteBuffer> handle(ByteBuffer request) {
-    if (handler == null) {
-      return Futures.exceptionalFuture(new ProtocolException("No protocol handler registered"));
-    }
-    return CompletableFuture.supplyAsync(() -> handler, executor)
-      .thenComposeAsync(handler -> handler.apply(request));
+  @Override
+  public ProtocolServer connectListener(EventListener<ProtocolConnection> listener) {
+    this.listener = listener;
+    return this;
   }
 
   @Override

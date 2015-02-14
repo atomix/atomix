@@ -16,8 +16,6 @@
 package net.kuujo.copycat.resource;
 
 import com.typesafe.config.ConfigValueFactory;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.internal.coordinator.CoordinatedResourceConfig;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
@@ -441,11 +439,12 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   }
 
   /**
-   * Returns a coordinated resource configuration for this resource.
+   * Resolves the configuration.
    *
-   * @param cluster The global cluster configuration.
-   * @return The coordinates resource configuration.
+   * @return The resolved resource configuration.
    */
-  public abstract CoordinatedResourceConfig resolve(ClusterConfig cluster);
+  public ResourceConfig<?> resolve() {
+    return this;
+  }
 
 }

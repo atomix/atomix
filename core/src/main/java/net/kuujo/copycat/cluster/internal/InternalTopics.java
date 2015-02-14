@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
-
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+package net.kuujo.copycat.cluster.internal;
 
 /**
- * Cluster message handler.<p>
- *
- * Message handlers a simple extension of {@link java.util.function.Function} which perform asynchronous functions in
- * response to received messages. Messages handlers should always return a {@link java.util.concurrent.CompletableFuture}
- * instance even if the future is immediately completed.
+ * Internal topic constants.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface MessageHandler<T, U> extends Function<T, CompletableFuture<U>> {
+final class InternalTopics {
+  public static final String JOIN = "join";
+  public static final String PROMOTE = "promote";
+  public static final String LEAVE = "leave";
+  public static final String SYNC = "sync";
+  public static final String POLL = "poll";
+  public static final String VOTE = "vote";
+  public static final String APPEND = "append";
+  public static final String QUERY = "query";
+  public static final String COMMAND = "command";
 }

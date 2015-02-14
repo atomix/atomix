@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,8 +27,8 @@ import java.util.UUID;
  * When a {@link Member.Type#PASSIVE} member joins or leaves the cluster, a {@code MembershipEvent} will be triggered,
  * allowing the user to react to the membership change. Membership change events can be observed by adding a
  * an {@link net.kuujo.copycat.EventListener} to a member set via
- * {@link Cluster#addMembershipListener(net.kuujo.copycat.EventListener)} or
- * {@link Members#addListener(net.kuujo.copycat.EventListener)}.<p>
+ * {@link net.kuujo.copycat.cluster.Cluster#addMembershipListener(net.kuujo.copycat.EventListener)} or
+ * {@link net.kuujo.copycat.cluster.Members#addListener(net.kuujo.copycat.EventListener)}.<p>
  *
  * <pre>
  *   {@code

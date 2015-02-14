@@ -15,17 +15,14 @@
  */
 package net.kuujo.copycat.resource.internal;
 
-import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.ResourceState;
-import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -36,13 +33,11 @@ import java.util.concurrent.Executors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractResource<T extends Resource<T>> implements Resource<T> {
-  private final List<Task<CompletableFuture<Void>>> startupTasks = Collections.synchronizedList(new ArrayList<>());
-  private final List<Task<CompletableFuture<Void>>> shutdownTasks = Collections.synchronizedList(new ArrayList<>());
-  protected final ResourceManager context;
+  protected final ResourceContext context;
   protected final Serializer serializer;
   protected final Executor executor;
 
-  protected AbstractResource(ResourceManager context) {
+  protected AbstractResource(ResourceContext context) {
     this.context = Assert.isNotNull(context, "context");
     this.serializer = context.config().getSerializer();
     this.executor = context.config().getExecutor() != null ? context.config().getExecutor() : Executors.newSingleThreadExecutor(new NamedThreadFactory("copycat-" + context.name() + "-%d"));
@@ -65,32 +60,8 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
 
   @Override
   @SuppressWarnings("unchecked")
-  public T addStartupTask(Task<CompletableFuture<Void>> task) {
-    startupTasks.add(task);
-    return (T) this;
-  }
-
-  /**
-   * Runs the resource's startup tasks.
-   */
-  @SuppressWarnings("unchecked")
-  protected final CompletableFuture<Void> runStartupTasks() {
-    return CompletableFuture.allOf(startupTasks.stream().map(t -> t.execute()).<CompletableFuture<Void>>toArray(size -> new CompletableFuture[size]));
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T addShutdownTask(Task<CompletableFuture<Void>> task) {
-    shutdownTasks.add(task);
-    return (T) this;
-  }
-
-  /**
-   * Runs the resource's startup tasks.
-   */
-  @SuppressWarnings("unchecked")
-  protected final CompletableFuture<Void> runShutdownTasks() {
-    return CompletableFuture.allOf(shutdownTasks.stream().map(t -> t.execute()).<CompletableFuture<Void>>toArray(size -> new CompletableFuture[size]));
+  public CompletableFuture<T> open() {
+    return context.open().thenApply(v -> (T) this);
   }
 
   @Override
@@ -99,8 +70,18 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   }
 
   @Override
+  public CompletableFuture<Void> close() {
+    return context.close();
+  }
+
+  @Override
   public boolean isClosed() {
     return context.isClosed();
+  }
+
+  @Override
+  public String toString() {
+    return String.format("%s[context=%s]", getClass().getSimpleName(), context);
   }
 
 }

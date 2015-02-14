@@ -14,6 +14,8 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.EventListener;
+
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -21,7 +23,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ProtocolServer extends ProtocolReader {
+public interface ProtocolServer {
 
   /**
    * Starts the server.
@@ -29,6 +31,14 @@ public interface ProtocolServer extends ProtocolReader {
    * @return A completable future to be completed once the server is started.
    */
   CompletableFuture<Void> listen();
+
+  /**
+   * Registers a server connection listener.
+   *
+   * @param listener A server connection listener.
+   * @return The protocol server.
+   */
+  ProtocolServer connectListener(EventListener<ProtocolConnection> listener);
 
   /**
    * Closes the server.

@@ -16,7 +16,7 @@
 package net.kuujo.copycat.resource;
 
 /**
- * Resource state.
+ * Resource status.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
