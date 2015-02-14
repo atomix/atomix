@@ -68,17 +68,13 @@
   </distributionManagement>
 
   <modules>
+    <module>util</module>
+    <module>log</module>
+    <module>raft</module>
     <module>core</module>
     <module>api</module>
-    <module>event-log</module>
-    <module>state-log</module>
-    <module>state-machine</module>
-    <module>leader-election</module>
-    <module>collections</module>
-    <module>netty</module>
-    <module>vertx</module>
-    <module>vertx3</module>
-    <module>chronicle</module>
+    <module>protocols</module>
+    <module>resources</module>
     <module>test-tools</module>
   </modules>
 
