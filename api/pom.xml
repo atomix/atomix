@@ -28,11 +28,6 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-event-log</artifactId>
       <version>${project.version}</version>
     </dependency>
