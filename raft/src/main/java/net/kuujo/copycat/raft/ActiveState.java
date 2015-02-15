@@ -255,8 +255,9 @@ abstract class ActiveState extends PassiveState {
     // local commit index is greater than last applied. If all the status machine
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (commitIndex != null && !context.log().isEmpty()) {
-      LOGGER.debug("{} - Applying {} commits", context.getLocalMember().uri(), context.getLastApplied() != null ? commitIndex - Math.max(context.getLastApplied(), context.log().firstIndex()) : commitIndex);
       if (context.getCommitIndex() == null || commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
+        LOGGER.debug("{} - Applying {} commits", context.getLocalMember().uri(), context.getLastApplied() != null ? commitIndex - Math.max(context.getLastApplied(), context.log().firstIndex()) : commitIndex);
+
         // Update the local commit index with min(request commit, last log // index)
         Long lastIndex = context.log().lastIndex();
         if (lastIndex != null) {
