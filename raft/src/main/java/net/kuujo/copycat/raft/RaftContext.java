@@ -39,7 +39,8 @@ public class RaftContext extends Observable implements RaftProtocol {
   private final RaftConfig config;
   private final LogManager log;
   private RaftState state;
-  private CommitHandler committer;
+  private final CommitHandler defaultCommitHandler = (term, index, entry) -> null;
+  private CommitHandler commitHandler = defaultCommitHandler;
   private ProtocolHandler<JoinRequest, JoinResponse> joinHandler;
   private ProtocolHandler<PromoteRequest, PromoteResponse> promoteHandler;
   private ProtocolHandler<LeaveRequest, LeaveResponse> leaveHandler;
@@ -404,11 +405,11 @@ public class RaftContext extends Observable implements RaftProtocol {
   /**
    * Registers an entry consumer on the context.
    *
-   * @param committer The entry commit handler.
+   * @param commitHandler The entry commit handler.
    * @return The Copycat context.
    */
-  public RaftContext commitHandler(CommitHandler committer) {
-    this.committer = committer;
+  public RaftContext commitHandler(CommitHandler commitHandler) {
+    this.commitHandler = commitHandler != null ? commitHandler : defaultCommitHandler;
     return this;
   }
 
@@ -418,7 +419,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @return The log consumer.
    */
   public CommitHandler commitHandler() {
-    return committer;
+    return commitHandler;
   }
 
   /**

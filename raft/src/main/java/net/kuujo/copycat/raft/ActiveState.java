@@ -125,8 +125,9 @@ abstract class ActiveState extends PassiveState {
 
     // If the previous entry term doesn't match the local previous term then reject the request.
     ByteBuffer entry = context.log().getEntry(request.logIndex());
-    if (entry.getLong() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: Request entry term does not match local log", context.getLocalMember().uri(), request);
+    long localTerm = entry.getLong();
+    if (localTerm != request.logTerm()) {
+      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getLocalMember().uri(), request, localTerm);
       return AppendResponse.builder()
         .withUri(context.getLocalMember().uri())
         .withTerm(context.getTerm())
@@ -182,7 +183,7 @@ abstract class ActiveState extends PassiveState {
           if (entry.getLong() != match.getLong()) {
             // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
             // If appending to the log fails, apply commits and reply false to the append request.
-            LOGGER.warn("{} - Synced entry does not match local log, removing incorrect entries", context.getLocalMember().uri());
+            LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getLocalMember().uri());
             try {
               context.log().removeAfter(index - 1);
               context.log().appendEntry(entry);
