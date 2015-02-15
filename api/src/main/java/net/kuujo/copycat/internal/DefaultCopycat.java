@@ -343,7 +343,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public CompletableFuture<Copycat> open() {
-    return context.open().thenCompose(v -> context.open()).thenApply(v -> this);
+    return context.open().thenApply(v -> this);
   }
 
   @Override
@@ -353,7 +353,7 @@ public class DefaultCopycat implements Copycat {
 
   @Override
   public CompletableFuture<Void> close() {
-    return context.close().thenCompose(v -> context.close());
+    return context.close();
   }
 
   @Override
