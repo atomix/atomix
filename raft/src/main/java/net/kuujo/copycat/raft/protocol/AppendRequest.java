@@ -120,14 +120,14 @@ public class AppendRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, term, leader, logIndex, logTerm, entries, firstIndex, commitIndex);
+    return Objects.hash(id, term, leader, logIndex, logTerm, entries, firstIndex, commitIndex);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof AppendRequest) {
       AppendRequest request = (AppendRequest) object;
-      return request.uri.equals(uri)
+      return request.id.equals(id)
         && request.term == term
         && request.leader.equals(leader)
         && request.logIndex.equals(logIndex)

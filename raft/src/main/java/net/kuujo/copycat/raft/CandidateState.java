@@ -57,7 +57,7 @@ class CandidateState extends ActiveState {
    * Starts the election.
    */
   private void startElection() {
-    LOGGER.info("{} - Starting election", context.getLocalMember().uri());
+    LOGGER.info("{} - Starting election", context.getLocalMember().id());
     sendVoteRequests();
   }
 
@@ -84,13 +84,13 @@ class CandidateState extends ActiveState {
     currentTimer = context.executor().schedule(() -> {
       // When the election times out, clear the previous majority vote
       // check and restart the election.
-      LOGGER.info("{} - Election timed out", context.getLocalMember().uri());
+      LOGGER.info("{} - Election timed out", context.getLocalMember().id());
       if (quorum != null) {
         quorum.cancel();
         quorum = null;
       }
       sendVoteRequests();
-      LOGGER.info("{} - Restarted election", context.getLocalMember().uri());
+      LOGGER.info("{} - Restarted election", context.getLocalMember().id());
     }, delay, TimeUnit.MILLISECONDS);
 
     final AtomicBoolean complete = new AtomicBoolean();
@@ -116,14 +116,14 @@ class CandidateState extends ActiveState {
 
     // Once we got the last log term, iterate through each current member
     // of the cluster and vote each member for a vote.
-    LOGGER.info("{} - Requesting votes from {}", context.getLocalMember().uri(), votingMembers);
+    LOGGER.info("{} - Requesting votes from {}", context.getLocalMember().id(), votingMembers);
     final Long lastTerm = lastEntry != null ? lastEntry.getLong() : null;
     for (RaftMember member : votingMembers) {
-      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getLocalMember().uri(), member, context.getTerm());
+      LOGGER.debug("{} - Requesting vote from {} for term {}", context.getLocalMember().id(), member, context.getTerm());
       VoteRequest request = VoteRequest.builder()
-        .withUri(member.uri())
+        .withId(member.id())
         .withTerm(context.getTerm())
-        .withCandidate(context.getLocalMember().uri())
+        .withCandidate(context.getLocalMember().id())
         .withLogIndex(lastIndex)
         .withLogTerm(lastTerm)
         .build();
@@ -131,21 +131,21 @@ class CandidateState extends ActiveState {
         context.checkThread();
         if (isOpen() && !complete.get()) {
           if (error != null) {
-            LOGGER.warn(context.getLocalMember().uri(), error);
+            LOGGER.warn(context.getLocalMember().id(), error);
             quorum.fail();
           } else if (response.term() > context.getTerm()) {
-            LOGGER.debug("{} - Received greater term from {}", context.getLocalMember().uri(), member);
+            LOGGER.debug("{} - Received greater term from {}", context.getLocalMember().id(), member);
             context.setTerm(response.term());
             complete.set(true);
             transition(RaftState.Type.FOLLOWER);
           } else if (!response.voted()) {
-            LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember().uri(), member);
+            LOGGER.info("{} - Received rejected vote from {}", context.getLocalMember().id(), member);
             quorum.fail();
           } else if (response.term() != context.getTerm()) {
-            LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember().uri(), member);
+            LOGGER.info("{} - Received successful vote for a different term from {}", context.getLocalMember().id(), member);
             quorum.fail();
           } else {
-            LOGGER.info("{} - Received successful vote from {}", context.getLocalMember().uri(), member);
+            LOGGER.info("{} - Received successful vote from {}", context.getLocalMember().id(), member);
             quorum.succeed();
           }
         }
@@ -179,15 +179,15 @@ class CandidateState extends ActiveState {
     }
 
     // If the vote request is not for this candidate then reject the vote.
-    if (request.candidate().equals(context.getLocalMember().uri())) {
+    if (request.candidate().equals(context.getLocalMember().id())) {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withTerm(context.getTerm())
         .withVoted(true)
         .build()));
     } else {
       return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withTerm(context.getTerm())
         .withVoted(false)
         .build()));
@@ -200,7 +200,7 @@ class CandidateState extends ActiveState {
   private void cancelElection() {
     context.checkThread();
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling election", context.getLocalMember().uri());
+      LOGGER.debug("{} - Cancelling election", context.getLocalMember().id());
       currentTimer.cancel(false);
     }
     if (quorum != null) {

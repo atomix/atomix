@@ -24,13 +24,13 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class AbstractResponse implements Response {
-  protected String uri;
+  protected String id;
   protected Status status = Status.OK;
   protected Throwable error;
 
   @Override
-  public String uri() {
-    return uri;
+  public String id() {
+    return id;
   }
 
   @Override
@@ -45,12 +45,12 @@ abstract class AbstractResponse implements Response {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, status);
+    return Objects.hash(id, status);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[uri=%s, status=%s]", getClass().getCanonicalName(), uri, status);
+    return String.format("%s[id=%s, status=%s]", getClass().getCanonicalName(), id, status);
   }
 
   /**
@@ -68,9 +68,9 @@ abstract class AbstractResponse implements Response {
 
     @Override
     @SuppressWarnings("unchecked")
-    public T withUri(String member) {
-      Assert.isNotNull(member, "uri");
-      response.uri = member;
+    public T withId(String member) {
+      Assert.isNotNull(member, "id");
+      response.id = member;
       return (T) this;
     }
 
@@ -92,7 +92,7 @@ abstract class AbstractResponse implements Response {
 
     @Override
     public U build() {
-      Assert.isNotNull(response.uri, "uri");
+      Assert.isNotNull(response.id, "id");
       Assert.isNotNull(response.status, "status");
       return response;
     }

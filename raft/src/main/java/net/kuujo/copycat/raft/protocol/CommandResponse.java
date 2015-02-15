@@ -56,14 +56,14 @@ public class CommandResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, status, result);
+    return Objects.hash(id, status, result);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof CommandResponse) {
       CommandResponse response = (CommandResponse) object;
-      return response.uri.equals(uri)
+      return response.id.equals(id)
         && response.status == status
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));

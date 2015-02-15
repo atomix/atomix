@@ -70,14 +70,14 @@ public class QueryRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, entry, consistency);
+    return Objects.hash(id, entry, consistency);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof QueryRequest) {
       QueryRequest request = (QueryRequest) object;
-      return request.uri.equals(uri)
+      return request.id.equals(id)
         && request.entry.equals(entry)
         && request.consistency == consistency;
     }

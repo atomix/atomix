@@ -60,7 +60,7 @@ public class SyncResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, members);
+    return Objects.hash(id, members);
   }
 
   @Override
@@ -68,7 +68,7 @@ public class SyncResponse extends AbstractResponse {
     if (object instanceof SyncResponse) {
       SyncResponse response = (SyncResponse) object;
       return response.status == status
-        && response.uri.equals(uri)
+        && response.id.equals(id)
         && response.members.equals(members);
     }
     return false;

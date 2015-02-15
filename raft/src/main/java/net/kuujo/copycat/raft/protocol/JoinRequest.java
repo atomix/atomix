@@ -58,14 +58,14 @@ public class JoinRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, member);
+    return Objects.hash(id, member);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof JoinRequest) {
       JoinRequest request = (JoinRequest) object;
-      return request.uri.equals(uri)
+      return request.id.equals(id)
         && request.member.equals(member);
     }
     return false;

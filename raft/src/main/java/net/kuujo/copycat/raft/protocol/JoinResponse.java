@@ -58,14 +58,14 @@ public class JoinResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, status, term);
+    return Objects.hash(id, status, term);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof JoinResponse) {
       JoinResponse response = (JoinResponse) object;
-      return response.uri.equals(uri)
+      return response.id.equals(id)
         && response.status == status
         && response.term == term;
     }

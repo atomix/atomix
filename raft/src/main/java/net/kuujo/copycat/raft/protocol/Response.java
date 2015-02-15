@@ -38,11 +38,11 @@ public interface Response {
   }
 
   /**
-   * Returns the response member.
+   * Returns the response member ID.
    *
    * @return The member to which to send the response.
    */
-  String uri();
+  String id();
 
   /**
    * Returns the response status.
@@ -72,7 +72,7 @@ public interface Response {
      * @param member The member to which to send the response.
      * @return The response builder.
      */
-    T withUri(String member);
+    T withId(String member);
 
     /**
      * Sets the response status.

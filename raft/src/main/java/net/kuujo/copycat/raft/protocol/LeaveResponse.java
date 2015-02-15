@@ -58,14 +58,14 @@ public class LeaveResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, status, term);
+    return Objects.hash(id, status, term);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof LeaveResponse) {
       LeaveResponse response = (LeaveResponse) object;
-      return response.uri.equals(uri)
+      return response.id.equals(id)
         && response.status == status
         && response.term == term;
     }

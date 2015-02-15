@@ -87,14 +87,14 @@ public class VoteRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, term, candidate, logIndex, logTerm);
+    return Objects.hash(id, term, candidate, logIndex, logTerm);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof VoteRequest) {
       VoteRequest request = (VoteRequest) object;
-      return request.uri.equals(uri)
+      return request.id.equals(id)
         && request.term == term
         && request.candidate.equals(candidate)
         && request.logIndex.equals(logIndex)

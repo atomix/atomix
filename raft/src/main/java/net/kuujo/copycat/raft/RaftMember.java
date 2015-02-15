@@ -28,7 +28,7 @@ public class RaftMember {
   private Type type;
   private Status status;
   private long changed;
-  private String uri;
+  private String id;
   private long version = 1;
   private Long index;
   private Set<String> failures = new HashSet<>();
@@ -94,15 +94,24 @@ public class RaftMember {
   public RaftMember() {
   }
 
-  public RaftMember(String uri, Type type, Status status) {
-    this(uri, type, status, 1);
+  public RaftMember(String id, Type type, Status status) {
+    this(id, type, status, 1);
   }
 
-  public RaftMember(String uri, Type type, Status status, long version) {
-    this.uri = uri;
+  public RaftMember(String id, Type type, Status status, long version) {
+    this.id = id;
     this.type = type;
     this.status = status;
     this.version = version;
+  }
+
+  /**
+   * Returns the member ID.
+   *
+   * @return The member ID.
+   */
+  public String id() {
+    return id;
   }
 
   /**
@@ -130,15 +139,6 @@ public class RaftMember {
    */
   public long changed() {
     return changed;
-  }
-
-  /**
-   * Returns the member URI.
-   *
-   * @return The member URI.
-   */
-  public String uri() {
-    return uri;
   }
 
   /**
@@ -265,7 +265,7 @@ public class RaftMember {
   public boolean equals(Object object) {
     if (object instanceof RaftMember) {
       RaftMember member = (RaftMember) object;
-      return member.uri.equals(uri)
+      return member.id.equals(id)
         && member.type == type
         && member.status == status
         && member.version == version
@@ -277,7 +277,7 @@ public class RaftMember {
   @Override
   public int hashCode() {
     int hashCode = 17;
-    hashCode = 37 * hashCode + uri.hashCode();
+    hashCode = 37 * hashCode + id.hashCode();
     hashCode = 37 * hashCode + type.hashCode();
     hashCode = 37 * hashCode + status.hashCode();
     if (index != null) hashCode = 37 * hashCode + (int)(index ^ (index >>> 32));
@@ -287,7 +287,7 @@ public class RaftMember {
 
   @Override
   public String toString() {
-    return String.format("RaftMember[uri=%s, type=%s, state=%s, version=%d, index=%s]", uri, type, status, version, index);
+    return String.format("RaftMember[id=%s, type=%s, state=%s, version=%d, index=%s]", id, type, status, version, index);
   }
 
 }

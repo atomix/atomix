@@ -58,14 +58,14 @@ public class CommandRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, entry);
+    return Objects.hash(id, entry);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof CommandRequest) {
       CommandRequest request = (CommandRequest) object;
-      return request.uri.equals(uri)
+      return request.id.equals(id)
         && request.entry.equals(entry);
     }
     return false;

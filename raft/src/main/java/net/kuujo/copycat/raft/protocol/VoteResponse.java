@@ -67,14 +67,14 @@ public class VoteResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, status, term, voted);
+    return Objects.hash(id, status, term, voted);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof VoteResponse) {
       VoteResponse response = (VoteResponse) object;
-      return response.uri.equals(uri)
+      return response.id.equals(id)
         && response.status == status
         && response.term == term
         && response.voted == voted;

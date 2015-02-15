@@ -79,7 +79,7 @@ public class RaftContext extends Observable implements RaftProtocol {
     this.executor = executor;
     this.config = config;
     this.localMember = new RaftMember(config.getId(), config.getReplicas().contains(config.getId()) ? RaftMember.Type.PROMOTABLE : RaftMember.Type.PASSIVE, RaftMember.Status.ALIVE);
-    members.put(localMember.uri(), localMember);
+    members.put(localMember.id(), localMember);
     config.getReplicas().forEach(r -> {
       members.put(r, new RaftMember(r, RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
     });
@@ -166,11 +166,11 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @return The Raft context.
    */
   RaftContext addMember(RaftMember member) {
-    RaftMember m = members.get(member.uri());
+    RaftMember m = members.get(member.id());
     if (m != null) {
       m.update(member);
     } else {
-      members.put(member.uri(), member);
+      members.put(member.id(), member);
     }
     return this;
   }
@@ -182,7 +182,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @return The Raft context.
    */
   RaftContext removeMember(RaftMember member) {
-    members.remove(member.uri());
+    members.remove(member.id());
     return this;
   }
 

@@ -68,14 +68,14 @@ public class PollResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, status, term, accepted);
+    return Objects.hash(id, status, term, accepted);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof PollResponse) {
       PollResponse response = (PollResponse) object;
-      return response.uri.equals(uri)
+      return response.id.equals(id)
         && response.status == status
         && response.term == term
         && response.accepted == accepted;

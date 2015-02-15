@@ -24,21 +24,21 @@ import java.util.Objects;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class AbstractRequest implements Request {
-  protected String uri;
+  protected String id;
 
   @Override
-  public String uri() {
-    return uri;
+  public String id() {
+    return id;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri);
+    return Objects.hash(id);
   }
 
   @Override
   public String toString() {
-    return String.format("%s[uri=%s]", getClass().getCanonicalName(), uri);
+    return String.format("%s[id=%s]", getClass().getCanonicalName(), id);
   }
 
   /**
@@ -56,15 +56,15 @@ abstract class AbstractRequest implements Request {
 
     @Override
     @SuppressWarnings("unchecked")
-    public T withUri(String uri) {
-      Assert.isNotNull(uri, "uri");
-      request.uri = uri;
+    public T withId(String id) {
+      Assert.isNotNull(id, "id");
+      request.id = id;
       return (T) this;
     }
 
     @Override
     public U build() {
-      Assert.isNotNull(request.uri, "uri");
+      Assert.isNotNull(request.id, "id");
       return request;
     }
   }

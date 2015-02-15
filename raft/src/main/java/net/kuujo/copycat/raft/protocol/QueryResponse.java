@@ -57,14 +57,14 @@ public class QueryResponse extends AbstractResponse {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, status, result);
+    return Objects.hash(id, status, result);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof QueryResponse) {
       QueryResponse response = (QueryResponse) object;
-      return response.uri.equals(uri)
+      return response.id.equals(id)
         && response.status == status
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));

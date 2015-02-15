@@ -22,11 +22,11 @@ package net.kuujo.copycat.raft.protocol;
 public interface Request {
 
   /**
-   * Returns the request member.
+   * Returns the request member ID.
    *
-   * @return The request member.
+   * @return The request member ID.
    */
-  String uri();
+  String id();
 
   /**
    * Request builder.
@@ -39,10 +39,10 @@ public interface Request {
     /**
      * Sets the request member.
      *
-     * @param uri The member to which to send the request.
+     * @param id The member to which to send the request.
      * @return The request builder.
      */
-    T withUri(String uri);
+    T withId(String id);
 
     /**
      * Builds the request.

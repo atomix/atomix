@@ -58,14 +58,14 @@ public class PromoteRequest extends AbstractRequest {
 
   @Override
   public int hashCode() {
-    return Objects.hash(uri, member);
+    return Objects.hash(id, member);
   }
 
   @Override
   public boolean equals(Object object) {
     if (object instanceof PromoteRequest) {
       PromoteRequest request = (PromoteRequest) object;
-      return request.uri.equals(uri)
+      return request.id.equals(id)
         && request.member.equals(member);
     }
     return false;

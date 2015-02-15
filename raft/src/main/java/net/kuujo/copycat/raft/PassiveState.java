@@ -51,7 +51,7 @@ public class PassiveState extends RaftState {
    * Starts the sync timer.
    */
   private void startSyncTimer() {
-    LOGGER.debug("{} - Setting sync timer", context.getLocalMember().uri());
+    LOGGER.debug("{} - Setting sync timer", context.getLocalMember().id());
     currentTimer = context.executor().scheduleAtFixedRate(this::sync, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
@@ -66,7 +66,7 @@ public class PassiveState extends RaftState {
     // about the serializability of the returned list.
     List<RaftMember> passiveMembers = new ArrayList<>(context.getMembers().size());
     context.getMembers().stream()
-      .filter(m -> m.type() == RaftMember.Type.PASSIVE && !m.uri().equals(context.getLocalMember().uri()))
+      .filter(m -> m.type() == RaftMember.Type.PASSIVE && !m.id().equals(context.getLocalMember().id()))
       .forEach(passiveMembers::add);
 
     // Create a random list of three active members.
@@ -84,8 +84,8 @@ public class PassiveState extends RaftState {
     for (RaftMember member : randomMembers) {
       // If we're already synchronizing with the given node then skip the synchronization. This is possible in the event
       // that we began sending sync requests during another gossip pass and continue to send entries recursively.
-      if (synchronizing.add(member.uri())) {
-        recursiveSync(member).whenComplete((result, error) -> synchronizing.remove(member.uri()));
+      if (synchronizing.add(member.id())) {
+        recursiveSync(member).whenComplete((result, error) -> synchronizing.remove(member.id()));
       }
     }
   }
@@ -121,7 +121,7 @@ public class PassiveState extends RaftState {
     // If we have entries to send or if entries are not required for this request then send the sync request.
     if (!requireEntries || !entries.isEmpty()) {
       SyncRequest request = SyncRequest.builder()
-        .withUri(member.uri())
+        .withId(member.id())
         .withLeader(context.getLeader())
         .withTerm(context.getTerm())
         .withLogIndex(member.index())
@@ -130,7 +130,7 @@ public class PassiveState extends RaftState {
         .withEntries(entries)
         .build();
 
-      LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember().uri(), member.uri());
+      LOGGER.debug("{} - Sending sync request to {}", context.getLocalMember().id(), member.id());
       syncHandler.apply(request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         // Always check if the context is still open in order to prevent race conditions in asynchronous callbacks.
@@ -141,12 +141,12 @@ public class PassiveState extends RaftState {
               context.updateMembers(response.members());
               recursiveSync(member, true, future);
             } else {
-              LOGGER.warn("{} - Received error response from {}", context.getLocalMember().uri(), member.uri());
+              LOGGER.warn("{} - Received error response from {}", context.getLocalMember().id(), member.id());
               future.completeExceptionally(response.error());
             }
           } else {
             // If the request failed then record the member as INACTIVE.
-            LOGGER.warn("{} - Sync to {} failed: {}", context.getLocalMember().uri(), member, error.getMessage());
+            LOGGER.warn("{} - Sync to {} failed: {}", context.getLocalMember().id(), member, error.getMessage());
             future.completeExceptionally(error);
           }
         }
@@ -175,7 +175,7 @@ public class PassiveState extends RaftState {
     // requestor's log then reply immediately.
     if (!request.firstIndex() && request.logIndex() != null && !context.log().containsIndex(request.logIndex())) {
       return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withMembers(context.getMembers())
         .build()));
     }
@@ -188,9 +188,9 @@ public class PassiveState extends RaftState {
       try {
         context.log().rollOver(rollOverIndex);
       } catch (IOException e) {
-        LOGGER.error("{} - Failed to roll over log", context.getLocalMember().uri());
+        LOGGER.error("{} - Failed to roll over log", context.getLocalMember().id());
         return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-          .withUri(context.getLocalMember().uri())
+          .withId(context.getLocalMember().id())
           .withMembers(context.getMembers())
           .build()));
       }
@@ -216,7 +216,7 @@ public class PassiveState extends RaftState {
           }
 
           context.setLastApplied(index);
-          LOGGER.debug("{} - Appended {} to log at index {}", context.getLocalMember().uri(), entry, index);
+          LOGGER.debug("{} - Appended {} to log at index {}", context.getLocalMember().id(), entry, index);
         } catch (IOException e) {
           break;
         }
@@ -230,7 +230,7 @@ public class PassiveState extends RaftState {
         context.log().compact(rollOverIndex);
       }
     } catch (IOException e) {
-      LOGGER.error("{} - Failed to compact log", context.getLocalMember().uri());
+      LOGGER.error("{} - Failed to compact log", context.getLocalMember().id());
     } finally {
       // Flush the log to disk.
       context.log().flush();
@@ -238,7 +238,7 @@ public class PassiveState extends RaftState {
 
     // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
-      .withUri(context.getLocalMember().uri())
+      .withId(context.getLocalMember().id())
       .withMembers(context.getMembers())
       .build()));
   }
@@ -249,12 +249,12 @@ public class PassiveState extends RaftState {
     logRequest(request);
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(JoinResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
         .build()));
     } else {
-      return joinHandler.apply(JoinRequest.builder(request).withUri(context.getLeader()).build());
+      return joinHandler.apply(JoinRequest.builder(request).withId(context.getLeader()).build());
     }
   }
 
@@ -264,12 +264,12 @@ public class PassiveState extends RaftState {
     logRequest(request);
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(PromoteResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
         .build()));
     } else {
-      return promoteHandler.apply(PromoteRequest.builder(request).withUri(context.getLeader()).build());
+      return promoteHandler.apply(PromoteRequest.builder(request).withId(context.getLeader()).build());
     }
   }
 
@@ -279,12 +279,12 @@ public class PassiveState extends RaftState {
     logRequest(request);
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(LeaveResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
         .build()));
     } else {
-      return leaveHandler.apply(LeaveRequest.builder(request).withUri(context.getLeader()).build());
+      return leaveHandler.apply(LeaveRequest.builder(request).withId(context.getLeader()).build());
     }
   }
 
@@ -295,17 +295,17 @@ public class PassiveState extends RaftState {
     // If the request allows inconsistency, immediately execute the query and return the result.
     if (request.consistency() == Consistency.WEAK) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withResult(context.commitHandler().commit(context.getTerm(), null, request.entry()))
         .build()));
     } else if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(QueryResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
         .build()));
     } else {
-      return queryHandler.apply(QueryRequest.builder(request).withUri(context.getLeader()).build());
+      return queryHandler.apply(QueryRequest.builder(request).withId(context.getLeader()).build());
     }
   }
 
@@ -315,12 +315,12 @@ public class PassiveState extends RaftState {
     logRequest(request);
     if (context.getLeader() == null) {
       return CompletableFuture.completedFuture(logResponse(CommandResponse.builder()
-        .withUri(context.getLocalMember().uri())
+        .withId(context.getLocalMember().id())
         .withStatus(Response.Status.ERROR)
         .withError(new IllegalStateException("Not the leader"))
         .build()));
     } else {
-      return commitHandler.apply(CommandRequest.builder(request).withUri(context.getLeader()).build());
+      return commitHandler.apply(CommandRequest.builder(request).withId(context.getLeader()).build());
     }
   }
 
@@ -329,7 +329,7 @@ public class PassiveState extends RaftState {
    */
   private void cancelSyncTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling sync timer", context.getLocalMember().uri());
+      LOGGER.debug("{} - Cancelling sync timer", context.getLocalMember().id());
       currentTimer.cancel(false);
     }
   }
