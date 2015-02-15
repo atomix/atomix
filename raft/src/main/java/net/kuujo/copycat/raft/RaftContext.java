@@ -17,6 +17,7 @@ package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.raft.protocol.*;
+import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.internal.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
@@ -65,15 +67,23 @@ public class RaftContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private volatile boolean open;
 
-  public RaftContext(String name, String uri, RaftConfig config, ScheduledExecutorService executor) {
+  public RaftContext(String resource) {
+    this(new RaftConfig(resource));
+  }
+
+  public RaftContext(RaftConfig config) {
+    this(config, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(config.getName())));
+  }
+
+  public RaftContext(RaftConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
     this.config = config;
-    this.localMember = new RaftMember(Assert.isNotNull(uri, "uri"), config.getReplicas().contains(uri) ? RaftMember.Type.PROMOTABLE : RaftMember.Type.PASSIVE, RaftMember.Status.ALIVE);
+    this.localMember = new RaftMember(config.getId(), config.getReplicas().contains(config.getId()) ? RaftMember.Type.PROMOTABLE : RaftMember.Type.PASSIVE, RaftMember.Status.ALIVE);
     members.put(localMember.uri(), localMember);
     config.getReplicas().forEach(r -> {
       members.put(r, new RaftMember(r, RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
     });
-    this.log = config.getLog().getLogManager(name);
+    this.log = config.getLog().getLogManager(config.getName());
     this.electionTimeout = config.getElectionTimeout();
     this.heartbeatInterval = config.getHeartbeatInterval();
     try {
