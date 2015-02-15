@@ -51,6 +51,8 @@ public class ResourceContext implements Managed<ResourceContext> {
   private final Serializer serializer;
   private final ScheduledExecutorService scheduler;
   private final Executor executor;
+  private CompletableFuture<ResourceContext> openFuture;
+  private CompletableFuture<Void> closeFuture;
   private volatile boolean open;
 
   public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster) {
@@ -185,9 +187,8 @@ public class ResourceContext implements Managed<ResourceContext> {
    * @return A completable future to be completed once the cluster has been synchronized.
    */
   public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency) {
-    if (!open) {
+    if (!open)
       return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
-    }
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     QueryRequest request = QueryRequest.builder()
@@ -216,9 +217,8 @@ public class ResourceContext implements Managed<ResourceContext> {
    * @return A completable future to be completed once the entry has been committed.
    */
   public synchronized CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
-    if (!open) {
+    if (!open)
       return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
-    }
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     CommandRequest request = CommandRequest.builder()
@@ -241,18 +241,29 @@ public class ResourceContext implements Managed<ResourceContext> {
 
   @Override
   public synchronized CompletableFuture<ResourceContext> open() {
-    CompletableFuture<ResourceContext> future = new CompletableFuture<>();
-    scheduler.execute(() -> {
-      cluster.open().thenCompose(v -> context.open()).whenComplete((result, error) -> {
-        if (error == null) {
-          open = true;
-          future.complete(this);
-        } else {
-          future.completeExceptionally(error);
-        }
+    if (open)
+      return CompletableFuture.completedFuture(this);
+
+    if (openFuture == null) {
+      openFuture = new CompletableFuture<>();
+      scheduler.execute(() -> {
+        cluster.open().thenCompose(v -> context.open()).whenComplete((result, error) -> {
+          CompletableFuture<ResourceContext> openFuture = this.openFuture;
+          if (openFuture != null) {
+            synchronized (this) {
+              this.openFuture = null;
+              if (error == null) {
+                open = true;
+                openFuture.complete(this);
+              } else {
+                openFuture.completeExceptionally(error);
+              }
+            }
+          }
+        });
       });
-    });
-    return future;
+    }
+    return openFuture;
   }
 
   @Override
@@ -262,19 +273,30 @@ public class ResourceContext implements Managed<ResourceContext> {
 
   @Override
   public synchronized CompletableFuture<Void> close() {
-    CompletableFuture<Void> future = new CompletableFuture<>();
-    scheduler.execute(() -> {
-      open = false;
-      context.close().thenCompose(v -> cluster.close()).whenComplete((result, error) -> {
-        if (error == null) {
-          scheduler.shutdown();
-          future.complete(null);
-        } else {
-          future.completeExceptionally(error);
-        }
+    if (!open)
+      return CompletableFuture.completedFuture(null);
+
+    if (closeFuture == null) {
+      closeFuture = new CompletableFuture<>();
+      scheduler.execute(() -> {
+        context.close().thenCompose(v -> cluster.close()).whenComplete((result, error) -> {
+          CompletableFuture<Void> closeFuture = this.closeFuture;
+          if (closeFuture != null) {
+            synchronized (this) {
+              this.closeFuture = null;
+              if (error == null) {
+                open = false;
+                scheduler.shutdown();
+                closeFuture.complete(null);
+              } else {
+                closeFuture.completeExceptionally(error);
+              }
+            }
+          }
+        });
       });
-    });
-    return future;
+    }
+    return closeFuture;
   }
 
   @Override
