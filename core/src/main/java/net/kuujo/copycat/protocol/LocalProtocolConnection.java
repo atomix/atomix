@@ -36,7 +36,7 @@ public class LocalProtocolConnection implements ProtocolConnection {
 
   @Override
   public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
-    return handler.apply(request);
+    return handler.apply(request.duplicate()).thenApply(ByteBuffer::duplicate);
   }
 
   @Override
