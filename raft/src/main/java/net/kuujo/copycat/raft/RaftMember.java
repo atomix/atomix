@@ -186,7 +186,7 @@ public class RaftMember {
    *
    * @return The member info.
    */
-  public RaftMember succeed() {
+  RaftMember succeed() {
     if (type == Type.PASSIVE && status != Status.ALIVE) {
       failures.clear();
       status = Status.ALIVE;
@@ -201,7 +201,7 @@ public class RaftMember {
    * @param uri The URI recording the failure.
    * @return The member info.
    */
-  public RaftMember fail(String uri) {
+  RaftMember fail(String uri) {
     // If the member is a passive member, add the failure to the failures set and change the status. If the current
     // status is ACTIVE then change the status to SUSPICIOUS. If the current status is SUSPICIOUS and the number of
     // failures from *unique* nodes is equal to or greater than the failure limit then change the status to DEAD.
@@ -225,7 +225,7 @@ public class RaftMember {
    *
    * @param info The member info to update.
    */
-  public void update(RaftMember info) {
+  void update(RaftMember info) {
     // If the given version is greater than the current version then update the member status.
     if (info.version > this.version) {
       this.type = info.type;
