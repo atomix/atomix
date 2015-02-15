@@ -284,8 +284,8 @@ abstract class ActiveState extends PassiveState {
       ByteBuffer entry = context.log().getEntry(index);
 
       // Extract a view of the entry after the entry term.
-      byte type = entry.get();
       long term = entry.getLong();
+      byte type = entry.get();
       switch (type) {
         case ENTRY_TYPE_USER:
           try {

@@ -273,9 +273,10 @@ class LeaderState extends ActiveState {
     final long term = context.getTerm();
     ByteBuffer config = serializer.writeObject(members);
     ByteBuffer entry = ByteBuffer.allocate(config.limit() + 9);
-    entry.put(ENTRY_TYPE_CONFIG);
     entry.putLong(term);
+    entry.put(ENTRY_TYPE_CONFIG);
     entry.put(config);
+    entry.flip();
 
     final long index;
     try {
@@ -407,8 +408,8 @@ class LeaderState extends ActiveState {
     // Create a log entry containing the current term and entry.
     ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 9);
     long term = context.getTerm();
-    logEntry.put(ENTRY_TYPE_USER);
     logEntry.putLong(term);
+    logEntry.put(ENTRY_TYPE_USER);
     logEntry.put(entry);
     entry.flip();
 
