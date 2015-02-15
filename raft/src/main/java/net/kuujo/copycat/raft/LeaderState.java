@@ -511,6 +511,7 @@ class LeaderState extends ActiveState {
       for (RaftMember member : members) {
         if (!replicas.contains(member.uri())) {
           this.replicas.add(new Replica(this.replicas.size(), member));
+          this.commitTimes.add(System.currentTimeMillis());
         }
       }
 

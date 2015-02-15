@@ -72,10 +72,10 @@
     <module>log</module>
     <module>raft</module>
     <module>core</module>
-    <module>api</module>
     <module>protocols</module>
     <module>resources</module>
     <module>test-tools</module>
+    <module>api</module>
   </modules>
 
   <dependencies>
