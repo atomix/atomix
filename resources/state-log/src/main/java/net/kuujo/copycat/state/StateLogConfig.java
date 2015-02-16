@@ -44,6 +44,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
 
   public StateLogConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected StateLogConfig(String... resources) {
@@ -80,8 +81,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setDefaultConsistency(Consistency consistency) {
-    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(consistency, "consistency")
-      .toString()));
+    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(consistency, "consistency").toString()));
   }
 
   /**
@@ -119,6 +119,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
 
   @Override
   public ResourceConfig<?> resolve() {
+    super.resolve();
     return withLog(new SnapshottableLog(getLog()));
   }
 

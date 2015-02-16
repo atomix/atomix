@@ -40,10 +40,12 @@ public class StateLogTest extends ConcurrentTestCase {
     LocalProtocol.reset();
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol())
-      .withMembers("local://foo", "local://bar", "local://baz");
-    StateLog<String> log1 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://foo"), new StateLogConfig().withLog(new BufferedLog()).withDefaultConsistency(Consistency.STRONG)).registerQuery("test", v -> v);
-    StateLog<String> log2 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://bar"), new StateLogConfig().withLog(new BufferedLog()).withDefaultConsistency(Consistency.STRONG)).registerQuery("test", v -> v);
-    StateLog<String> log3 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://baz"), new StateLogConfig().withLog(new BufferedLog()).withDefaultConsistency(Consistency.STRONG)).registerQuery("test", v -> v);
+      .addMember("foo", "local://foo")
+      .addMember("bar", "local://bar")
+      .addMember("baz", "local://baz");
+    StateLog<String> log1 = StateLog.<String>create(new StateLogConfig("test").withLog(new BufferedLog()).withDefaultConsistency(Consistency.STRONG), cluster.copy().withLocalMember("local://foo")).registerQuery("test", v -> v);
+    StateLog<String> log2 = StateLog.<String>create(new StateLogConfig("test").withLog(new BufferedLog()).withDefaultConsistency(Consistency.STRONG), cluster.copy().withLocalMember("local://bar")).registerQuery("test", v -> v);
+    StateLog<String> log3 = StateLog.<String>create(new StateLogConfig("test").withLog(new BufferedLog()).withDefaultConsistency(Consistency.STRONG), cluster.copy().withLocalMember("local://baz")).registerQuery("test", v -> v);
 
     CompletableFuture<StateLog<String>>[] futures = new CompletableFuture[3];
     futures[0] = log1.open();
@@ -70,10 +72,13 @@ public class StateLogTest extends ConcurrentTestCase {
     LocalProtocol.reset();
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol())
-      .withMembers("local://foo", "local://bar", "local://baz");
-    StateLog<String> log1 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://foo"), new StateLogConfig()
+      .addMember("foo", "local://foo")
+      .addMember("bar", "local://bar")
+      .addMember("baz", "local://baz");
+    StateLog<String> log1 = StateLog.<String>create(new StateLogConfig("test")
       .withLog(new BufferedLog().withSegmentSize(1024))
-      .withDefaultConsistency(Consistency.STRONG))
+      .withDefaultConsistency(Consistency.STRONG),
+      cluster.copy().withLocalMember("local://foo"))
       .registerCommand("command", v -> v)
       .registerQuery("query", v -> v)
       .snapshotWith(() -> "Snapshot data")
@@ -81,9 +86,10 @@ public class StateLogTest extends ConcurrentTestCase {
         threadAssertEquals(s, "Snapshot data");
         resume();
       });
-    StateLog<String> log2 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://bar"), new StateLogConfig()
-      .withLog(new BufferedLog().withSegmentSize(1024))
-      .withDefaultConsistency(Consistency.STRONG))
+    StateLog<String> log2 = StateLog.<String>create(new StateLogConfig("test")
+        .withLog(new BufferedLog().withSegmentSize(1024))
+        .withDefaultConsistency(Consistency.STRONG),
+      cluster.copy().withLocalMember("local://bar"))
       .registerCommand("command", v -> v)
       .registerQuery("query", v -> v)
       .snapshotWith(() -> "Snapshot data")
@@ -91,9 +97,10 @@ public class StateLogTest extends ConcurrentTestCase {
         threadAssertEquals(s, "Snapshot data");
         resume();
       });
-    StateLog<String> log3 = StateLog.<String>create("test", cluster.copy().withLocalMember("local://baz"), new StateLogConfig()
-      .withLog(new BufferedLog().withSegmentSize(1024))
-      .withDefaultConsistency(Consistency.STRONG))
+    StateLog<String> log3 = StateLog.<String>create(new StateLogConfig("test")
+        .withLog(new BufferedLog().withSegmentSize(1024))
+        .withDefaultConsistency(Consistency.STRONG),
+      cluster.copy().withLocalMember("local://baz"))
       .registerCommand("command", v -> v)
       .registerQuery("query", v -> v)
       .snapshotWith(() -> "Snapshot data")

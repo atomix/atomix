@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state.internal;
 
 import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -35,6 +36,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -61,9 +63,17 @@ public class DefaultStateLog<T> extends AbstractResource<StateLog<T>> implements
   private SnapshotInfo snapshotInfo;
   private List<ByteBuffer> snapshotChunks;
 
+  public DefaultStateLog(StateLogConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultStateLog(StateLogConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
+
   public DefaultStateLog(ResourceContext context) {
     super(context);
-    this.log = (SnapshottableLogManager) context.log();
+    this.log = (SnapshottableLogManager) context.raft().log();
     defaultConsistency = context.<StateLogConfig>config().getDefaultConsistency();
     context.commitHandler(this::commit);
   }
