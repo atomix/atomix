@@ -16,12 +16,18 @@ package net.kuujo.copycat.util.internal;
 
 import net.kuujo.copycat.util.ConfigurationException;
 
+import java.util.function.Function;
+
 /**
  * Argument assertions.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public final class Assert {
+  public static final Function<Object, Boolean> NOT_NULL = value -> value != null;
+  public static final Function<Boolean, Boolean> TRUE = value -> value;
+  public static final Function<Boolean, Boolean> FALSE = value -> !value;
+
   private Assert() {}
 
   /**
@@ -83,6 +89,22 @@ public final class Assert {
   }
 
   /**
+   * Validates that a configuration condition applies.
+   *
+   * @param value The resulting value to passthrough
+   * @param condition The condition to assert.
+   * @param message The failure exception message.
+   * @param args A list of message string formatting arguments.
+   * @throws IllegalArgumentException if {@code condition} is not true
+   */
+  public static <T> T config(T value, Function<T, Boolean> condition, String message, Object... args) {
+    if (!condition.apply(value)) {
+      throw new ConfigurationException(String.format(message, args));
+    }
+    return value;
+  }
+
+  /**
    * Validates that a condition applies.
    *
    * @param value The resulting entry to passthrough
@@ -93,6 +115,22 @@ public final class Assert {
    */
   public static <T> T arg(T value, boolean condition, String message, Object... args) {
     if (!condition) {
+      throw new IllegalArgumentException(String.format(message, args));
+    }
+    return value;
+  }
+
+  /**
+   * Validates that a condition applies.
+   *
+   * @param value The resulting entry to passthrough
+   * @param condition The condition to assert.
+   * @param message The failure exception message.
+   * @param args A list of message string formatting arguments.
+   * @throws IllegalArgumentException if {@code condition} is not true
+   */
+  public static <T> T arg(T value, Function<T, Boolean> condition, String message, Object... args) {
+    if (!condition.apply(value)) {
       throw new IllegalArgumentException(String.format(message, args));
     }
     return value;
@@ -111,6 +149,24 @@ public final class Assert {
    */
   public static <T extends Number> T index(T value, boolean condition, String message, Object... args) {
     if (!condition) {
+      throw new IndexOutOfBoundsException(String.format(message, args));
+    }
+    return value;
+  }
+
+  /**
+   * Validates that an index meets the given condition.
+   *
+   * @param value The value to validate.
+   * @param condition The The condition to assert.
+   * @param message The failure exception message.
+   * @param args A list of message string formatting arguments.
+   * @param <T> The index type.
+   * @return The index.
+   * @throws IllegalArgumentException if {@code condition} is not true
+   */
+  public static <T extends Number> T index(T value, Function<T, Boolean> condition, String message, Object... args) {
+    if (!condition.apply(value)) {
       throw new IndexOutOfBoundsException(String.format(message, args));
     }
     return value;
