@@ -50,6 +50,7 @@ public class StateMachineConfig extends StateLogConfig {
 
   public StateMachineConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected StateMachineConfig(StateMachineConfig config) {
@@ -202,6 +203,18 @@ public class StateMachineConfig extends StateLogConfig {
   }
 
   @Override
+  public StateMachineConfig withName(String name) {
+    setName(name);
+    return this;
+  }
+
+  @Override
+  public StateMachineConfig withDefaultName(String name) {
+    setDefaultName(name);
+    return this;
+  }
+
+  @Override
   public StateMachineConfig withSerializer(String serializer) {
     setSerializer(serializer);
     return this;
@@ -244,8 +257,8 @@ public class StateMachineConfig extends StateLogConfig {
   }
 
   @Override
-  public StateMachineConfig withReplicas(String... replicas) {
-    setReplicas(Arrays.asList(replicas));
+  public StateMachineConfig withReplicas(String... ids) {
+    setReplicas(Arrays.asList(ids));
     return this;
   }
 
@@ -288,6 +301,14 @@ public class StateMachineConfig extends StateLogConfig {
   @Override
   public StateMachineConfig withDefaultConsistency(Consistency consistency) {
     setDefaultConsistency(consistency);
+    return this;
+  }
+
+  @Override
+  public StateMachineConfig resolve() {
+    super.resolve();
+    Assert.config(getStateType(), Assert.NOT_NULL, "No state type configured");
+    Assert.config(getInitialState(), Assert.NOT_NULL, "No initial state configured");
     return this;
   }
 

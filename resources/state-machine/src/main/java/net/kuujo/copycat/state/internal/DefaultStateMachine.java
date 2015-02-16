@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state.internal;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.state.*;
@@ -25,6 +26,7 @@ import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -84,6 +86,14 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     }
   };
 
+  public DefaultStateMachine(StateMachineConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultStateMachine(StateMachineConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
+
   @SuppressWarnings("unchecked")
   public DefaultStateMachine(ResourceContext context) {
     super(context);
@@ -93,7 +103,7 @@ public class DefaultStateMachine<T> extends AbstractResource<StateMachine<T>> im
     } catch (InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }
-    this.log = new DefaultStateLog<>((ResourceContext) context);
+    this.log = new DefaultStateLog<>(context);
     registerCommands();
   }
 
