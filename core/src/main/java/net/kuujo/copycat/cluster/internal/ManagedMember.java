@@ -40,8 +40,8 @@ abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Ob
   private Status status;
 
   public ManagedMember(String id, ResourceContext context) {
-    this.id = Assert.isNotNull(id, "id");
-    this.context = Assert.isNotNull(context, "context");
+    this.id = Assert.notNull(id, "id");
+    this.context = Assert.notNull(context, "context");
   }
 
   @Override

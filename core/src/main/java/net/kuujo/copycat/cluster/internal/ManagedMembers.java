@@ -47,9 +47,9 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   private boolean open;
 
   ManagedMembers(ClusterConfig config, ResourceContext context) {
-    this.config = Assert.isNotNull(config, "config").copy();
+    this.config = Assert.notNull(config, "config").copy();
     this.protocol = config.getProtocol();
-    this.context = Assert.isNotNull(context, "context");
+    this.context = Assert.notNull(context, "context");
     this.raft = context.raft();
   }
 
@@ -82,13 +82,13 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
 
   @Override
   public Members addListener(EventListener<MembershipEvent> listener) {
-    listeners.add(Assert.isNotNull(listener, "listener"));
+    listeners.add(Assert.notNull(listener, "listener"));
     return this;
   }
 
   @Override
   public Members removeListener(EventListener<MembershipEvent> listener) {
-    listeners.remove(Assert.isNotNull(listener, "listener"));
+    listeners.remove(Assert.notNull(listener, "listener"));
     return this;
   }
 

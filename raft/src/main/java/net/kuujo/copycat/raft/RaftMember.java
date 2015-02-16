@@ -106,10 +106,10 @@ public class RaftMember {
   }
 
   RaftMember(String id, String address, Type type, Status status, long version) {
-    this.id = Assert.isNotNull(id, "id");
-    this.address = Assert.isNotNull(address, "address");
-    this.type = Assert.isNotNull(type, "type");
-    this.status = Assert.isNotNull(status, "status");
+    this.id = Assert.notNull(id, "id");
+    this.address = Assert.notNull(address, "address");
+    this.type = Assert.notNull(type, "type");
+    this.status = Assert.notNull(status, "status");
     this.version = Assert.arg(version, version >= 0, "version must be positive");
   }
 

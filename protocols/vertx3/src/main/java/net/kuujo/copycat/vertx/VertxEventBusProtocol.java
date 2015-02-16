@@ -105,7 +105,7 @@ public class VertxEventBusProtocol extends AbstractProtocol {
    * @throws java.lang.NullPointerException If the host is {@code null}
    */
   public void setHost(String host) {
-    this.config = config.withValue(VERTX_HOST, ConfigValueFactory.fromAnyRef(Assert.isNotNull(host, "host")));
+    this.config = config.withValue(VERTX_HOST, ConfigValueFactory.fromAnyRef(Assert.notNull(host, "host")));
   }
 
   /**

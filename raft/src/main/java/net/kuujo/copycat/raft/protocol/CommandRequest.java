@@ -95,14 +95,14 @@ public class CommandRequest extends AbstractRequest {
      * @return The request builder.
      */
     public Builder withEntry(ByteBuffer entry) {
-      request.entry = Assert.isNotNull(entry, "entry");
+      request.entry = Assert.notNull(entry, "entry");
       return this;
     }
 
     @Override
     public CommandRequest build() {
       super.build();
-      Assert.isNotNull(request.entry, "entry");
+      Assert.notNull(request.entry, "entry");
       return request;
     }
 

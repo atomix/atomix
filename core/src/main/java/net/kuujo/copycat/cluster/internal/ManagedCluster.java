@@ -48,7 +48,7 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
   private long lastTerm;
 
   public ManagedCluster(ClusterConfig config, ResourceContext context) {
-    this.raft = Assert.isNotNull(context, "context").raft();
+    this.raft = Assert.notNull(context, "context").raft();
     this.members = new ManagedMembers(config, context);
   }
 

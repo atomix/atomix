@@ -34,7 +34,7 @@ public abstract class AbstractResource<T extends Resource<T>> implements Resourc
   protected final Serializer serializer;
 
   protected AbstractResource(ResourceContext context) {
-    this.context = Assert.isNotNull(context, "context");
+    this.context = Assert.notNull(context, "context");
     this.serializer = context.serializer();
   }
 

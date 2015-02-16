@@ -27,6 +27,8 @@ public final class Assert {
   public static final Function<Object, Boolean> NOT_NULL = value -> value != null;
   public static final Function<Boolean, Boolean> TRUE = value -> value;
   public static final Function<Boolean, Boolean> FALSE = value -> !value;
+  public static final Function<Long, Boolean> POSITIVE = value -> value > 0;
+  public static final Function<Long, Boolean> POSITIVE_INCLUSIVE = value -> value >= 0;
 
   private Assert() {}
 
@@ -36,24 +38,9 @@ public final class Assert {
    * @param value The entry to validate.
    * @throws NullPointerException if {@code entry} is null
    */
-  public static <T> T isNotNull(T value, String parameterName) {
+  public static <T> T notNull(T value, String parameterName) {
     if (value == null) {
       throw new NullPointerException(String.format("%s cannot be null", parameterName));
-    }
-    return value;
-  }
-
-  /**
-   * Validates that a entry is null.
-   *
-   * @param value The entry to validate.
-   * @param message The exception message.
-   * @param args A list of message string formatting arguments.
-   * @throws NullPointerException if {@code entry} is null
-   */
-  public static <T> T isNull(T value, String message, Object... args) {
-    if (value != null) {
-      throw new NullPointerException(String.format(message, args));
     }
     return value;
   }

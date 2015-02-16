@@ -80,7 +80,7 @@ public class BufferedLogSegment extends AbstractLogSegment {
 
   @Override
   public long appendEntry(ByteBuffer entry) {
-    Assert.isNotNull(entry, "entry");
+    Assert.notNull(entry, "entry");
     assertIsOpen();
     long index = log.isEmpty() ? firstIndex : log.lastKey() + 1;
     log.put(index, entry);

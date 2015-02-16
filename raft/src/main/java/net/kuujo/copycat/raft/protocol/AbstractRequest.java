@@ -57,14 +57,14 @@ abstract class AbstractRequest implements Request {
     @Override
     @SuppressWarnings("unchecked")
     public T withId(String id) {
-      Assert.isNotNull(id, "id");
+      Assert.notNull(id, "id");
       request.id = id;
       return (T) this;
     }
 
     @Override
     public U build() {
-      Assert.isNotNull(request.id, "id");
+      Assert.notNull(request.id, "id");
       return request;
     }
   }

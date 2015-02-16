@@ -65,7 +65,7 @@ public class FileLog extends Log {
    * @throws java.lang.NullPointerException If the directory is {@code null}
    */
   public void setDirectory(String directory) {
-    this.config = config.withValue(FILE_LOG_DIRECTORY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(directory, "directory")));
+    this.config = config.withValue(FILE_LOG_DIRECTORY, ConfigValueFactory.fromAnyRef(Assert.notNull(directory, "directory")));
   }
 
   /**

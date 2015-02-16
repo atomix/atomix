@@ -69,7 +69,7 @@ abstract class AbstractResponse implements Response {
     @Override
     @SuppressWarnings("unchecked")
     public T withId(String member) {
-      Assert.isNotNull(member, "id");
+      Assert.notNull(member, "id");
       response.id = member;
       return (T) this;
     }
@@ -77,7 +77,7 @@ abstract class AbstractResponse implements Response {
     @Override
     @SuppressWarnings("unchecked")
     public T withStatus(Status status) {
-      Assert.isNotNull(status, "status");
+      Assert.notNull(status, "status");
       response.status = status;
       return (T) this;
     }
@@ -85,15 +85,15 @@ abstract class AbstractResponse implements Response {
     @Override
     @SuppressWarnings("unchecked")
     public T withError(Throwable error) {
-      Assert.isNotNull(error, "error");
+      Assert.notNull(error, "error");
       response.error = error;
       return (T) this;
     }
 
     @Override
     public U build() {
-      Assert.isNotNull(response.id, "id");
-      Assert.isNotNull(response.status, "status");
+      Assert.notNull(response.id, "id");
+      Assert.notNull(response.status, "status");
       return response;
     }
   }

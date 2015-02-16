@@ -37,9 +37,9 @@ public class CoordinatedProtocol extends AbstractProtocol {
 
   public CoordinatedProtocol(int id, Protocol protocol, ProtocolServerRegistry registry, Executor executor) {
     this.id = id;
-    this.protocol = Assert.isNotNull(protocol, "protocol");
-    this.registry = Assert.isNotNull(registry, "registry");
-    this.executor = Assert.isNotNull(executor, "executor");
+    this.protocol = Assert.notNull(protocol, "protocol");
+    this.registry = Assert.notNull(registry, "registry");
+    this.executor = Assert.notNull(executor, "executor");
   }
 
   @Override

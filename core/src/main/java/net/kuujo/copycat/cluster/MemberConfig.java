@@ -30,11 +30,11 @@ public class MemberConfig {
   }
 
   public MemberConfig(String id) {
-    this.id = Assert.isNotNull(id, "id");
+    this.id = Assert.notNull(id, "id");
   }
 
   public MemberConfig(String id, String address) {
-    this.id = Assert.isNotNull(id, "id");
+    this.id = Assert.notNull(id, "id");
     this.address = address;
   }
 
@@ -45,7 +45,7 @@ public class MemberConfig {
    * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
   public void setId(String id) {
-    this.id = Assert.isNotNull(id, "id");
+    this.id = Assert.notNull(id, "id");
   }
 
   /**
@@ -76,7 +76,7 @@ public class MemberConfig {
    * @throws java.lang.NullPointerException If the member address is {@code null}
    */
   public void setAddress(String address) {
-    this.address = Assert.isNotNull(address, "address");
+    this.address = Assert.notNull(address, "address");
   }
 
   /**

@@ -69,7 +69,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the ID is {@code null}
    */
   public void setId(String id) {
-    this.config = config.withValue(RAFT_ID, ConfigValueFactory.fromAnyRef(Assert.isNotNull(id, "id")));
+    this.config = config.withValue(RAFT_ID, ConfigValueFactory.fromAnyRef(Assert.notNull(id, "id")));
   }
 
   /**
@@ -100,7 +100,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the name is {@code null}
    */
   public void setName(String name) {
-    this.config = config.withValue(RAFT_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
+    this.config = config.withValue(RAFT_NAME, ConfigValueFactory.fromAnyRef(Assert.notNull(name, "name")));
   }
 
   /**
@@ -131,7 +131,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the address is {@code null}
    */
   public void setAddress(String address) {
-    this.config = config.withValue(RAFT_ADDRESS, ConfigValueFactory.fromAnyRef(Assert.isNotNull(address, "address")));
+    this.config = config.withValue(RAFT_ADDRESS, ConfigValueFactory.fromAnyRef(Assert.notNull(address, "address")));
   }
 
   /**
@@ -272,7 +272,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the map is {@code null}
    */
   public void setMembers(Map<String, String> members) {
-    this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(Assert.isNotNull(members, "members")));
+    this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(Assert.notNull(members, "members")));
   }
 
   /**
@@ -315,7 +315,7 @@ public class RaftConfig extends AbstractConfigurable {
     }
     ConfigObject members = this.config.getObject(RAFT_MEMBERS);
     Map<String, Object> unwrapped = members.unwrapped();
-    unwrapped.put(Assert.isNotNull(id, "id"), Assert.isNotNull(address, "address"));
+    unwrapped.put(Assert.notNull(id, "id"), Assert.notNull(address, "address"));
     this.config = this.config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
     return this;
   }
@@ -333,7 +333,7 @@ public class RaftConfig extends AbstractConfigurable {
     }
     ConfigObject members = this.config.getObject(RAFT_MEMBERS);
     Map<String, Object> unwrapped = members.unwrapped();
-    unwrapped.remove(Assert.isNotNull(id, "id"));
+    unwrapped.remove(Assert.notNull(id, "id"));
     this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
     return this;
   }

@@ -321,7 +321,7 @@ public class RaftContext extends Observable implements RaftProtocol {
     if (firstCommitIndex == null) {
       firstCommitIndex = commitIndex;
     }
-    this.commitIndex = this.commitIndex != null ? Assert.arg(Assert.isNotNull(commitIndex, "commitIndex"), commitIndex >= this.commitIndex, "cannot decrease command index") : commitIndex;
+    this.commitIndex = this.commitIndex != null ? Assert.arg(Assert.notNull(commitIndex, "commitIndex"), commitIndex >= this.commitIndex, "cannot decrease command index") : commitIndex;
     localMember.index(this.commitIndex);
     return this;
   }
@@ -342,7 +342,7 @@ public class RaftContext extends Observable implements RaftProtocol {
    * @return The Raft context.
    */
   RaftContext setLastApplied(Long lastApplied) {
-    this.lastApplied = this.lastApplied != null ? Assert.arg(Assert.isNotNull(lastApplied, "lastApplied"), lastApplied >= this.lastApplied, "cannot decrease last applied index") : lastApplied;
+    this.lastApplied = this.lastApplied != null ? Assert.arg(Assert.notNull(lastApplied, "lastApplied"), lastApplied >= this.lastApplied, "cannot decrease last applied index") : lastApplied;
     if (recovering && this.lastApplied != null && firstCommitIndex != null && this.lastApplied >= firstCommitIndex) {
       recovering = false;
     }

@@ -138,7 +138,7 @@ public class VoteRequest extends AbstractRequest {
      * @return The vote request builder.
      */
     public Builder withCandidate(String candidate) {
-      request.candidate = Assert.isNotNull(candidate, "candidate");
+      request.candidate = Assert.notNull(candidate, "candidate");
       return this;
     }
 
@@ -167,7 +167,7 @@ public class VoteRequest extends AbstractRequest {
     @Override
     public VoteRequest build() {
       super.build();
-      Assert.isNotNull(request.candidate, "candidate");
+      Assert.notNull(request.candidate, "candidate");
       Assert.arg(request.term, request.term > 0, "term must be greater than zero");
       Assert.index(request.logIndex, request.logIndex == null || request.logIndex > 0, "index must be greater than zero");
       Assert.arg(request.logTerm, request.logTerm == null || request.logTerm > 0, "term must be greater than zero");

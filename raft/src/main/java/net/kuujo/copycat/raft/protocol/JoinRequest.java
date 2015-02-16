@@ -105,7 +105,7 @@ public class JoinRequest extends AbstractRequest {
      * @return The join request builder.
      */
     public Builder withMember(String member) {
-      request.member = Assert.isNotNull(member, "member");
+      request.member = Assert.notNull(member, "member");
       return this;
     }
 
@@ -116,14 +116,14 @@ public class JoinRequest extends AbstractRequest {
      * @return The join request builder.
      */
     public Builder withAddress(String address) {
-      request.address = Assert.isNotNull(address, "address");
+      request.address = Assert.notNull(address, "address");
       return this;
     }
 
     @Override
     public JoinRequest build() {
       super.build();
-      Assert.isNotNull(request.member, "member");
+      Assert.notNull(request.member, "member");
       return request;
     }
 

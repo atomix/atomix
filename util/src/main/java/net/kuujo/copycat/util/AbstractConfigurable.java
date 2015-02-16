@@ -46,7 +46,7 @@ public abstract class AbstractConfigurable implements Configurable {
   }
 
   protected AbstractConfigurable(String... resources) {
-    Assert.isNotNull(resources, "resources");
+    Assert.notNull(resources, "resources");
     Config config = null;
     for (String resource : resources) {
       if (config == null) {

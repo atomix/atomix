@@ -52,7 +52,7 @@ public abstract class AsyncCollectionConfig<T extends AsyncCollectionConfig<T>> 
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setConsistency(String consistency) {
-    this.config = config.withValue(ASYNC_COLLECTION_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString()));
+    this.config = config.withValue(ASYNC_COLLECTION_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.notNull(consistency, "consistency")).toString()));
   }
 
   /**
@@ -62,7 +62,7 @@ public abstract class AsyncCollectionConfig<T extends AsyncCollectionConfig<T>> 
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setConsistency(Consistency consistency) {
-    this.config = config.withValue(ASYNC_COLLECTION_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(consistency, "consistency").toString()));
+    this.config = config.withValue(ASYNC_COLLECTION_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.notNull(consistency, "consistency").toString()));
   }
 
   /**

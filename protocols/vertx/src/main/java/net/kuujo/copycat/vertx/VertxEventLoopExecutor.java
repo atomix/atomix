@@ -34,7 +34,7 @@ public class VertxEventLoopExecutor implements Executor {
   }
 
   public VertxEventLoopExecutor(Context context) {
-    this.context = Assert.isNotNull(context, "context");
+    this.context = Assert.notNull(context, "context");
   }
 
   @Override

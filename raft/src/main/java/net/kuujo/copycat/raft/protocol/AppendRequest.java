@@ -174,7 +174,7 @@ public class AppendRequest extends AbstractRequest {
      * @return The append request builder.
      */
     public Builder withLeader(String leader) {
-      request.leader = Assert.isNotNull(leader, "leader");
+      request.leader = Assert.notNull(leader, "leader");
       return this;
     }
 
@@ -217,7 +217,7 @@ public class AppendRequest extends AbstractRequest {
      * @return The append request builder.
      */
     public Builder withEntries(List<ByteBuffer> entries) {
-      request.entries = Assert.isNotNull(entries, "entries");
+      request.entries = Assert.notNull(entries, "entries");
       return this;
     }
 
@@ -246,11 +246,11 @@ public class AppendRequest extends AbstractRequest {
     @Override
     public AppendRequest build() {
       super.build();
-      Assert.isNotNull(request.leader, "leader");
+      Assert.notNull(request.leader, "leader");
       Assert.arg(request.term, request.term > 0, "term must be greater than zero");
       Assert.index(request.logIndex, request.logIndex == null || request.logIndex > 0, "index must be greater than zero");
       Assert.arg(request.logTerm, request.logTerm == null || request.logTerm > 0, "term must be greater than zero");
-      Assert.isNotNull(request.entries, "entries");
+      Assert.notNull(request.entries, "entries");
       Assert.index(request.commitIndex, request.commitIndex == null || request.commitIndex > 0, "command index must be greater than zero");
       return request;
     }

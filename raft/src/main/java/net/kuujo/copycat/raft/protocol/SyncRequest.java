@@ -187,7 +187,7 @@ public class SyncRequest extends AbstractRequest {
      * @return The sync request builder.
      */
     public Builder withEntries(List<ByteBuffer> entries) {
-      request.entries = Assert.isNotNull(entries, "entries");
+      request.entries = Assert.notNull(entries, "entries");
       return this;
     }
 
@@ -220,7 +220,7 @@ public class SyncRequest extends AbstractRequest {
      * @return The sync request builder.
      */
     public Builder withMembers(Collection<RaftMember> members) {
-      request.members = Assert.isNotNull(members, "members");
+      request.members = Assert.notNull(members, "members");
       return this;
     }
 
@@ -228,8 +228,8 @@ public class SyncRequest extends AbstractRequest {
     public SyncRequest build() {
       super.build();
       Assert.arg(request.term, request.term >= 0, "term must be greater than zero");
-      Assert.isNotNull(request.entries, "entries");
-      Assert.isNotNull(request.members, "members");
+      Assert.notNull(request.entries, "entries");
+      Assert.notNull(request.members, "members");
       return request;
     }
 

@@ -197,7 +197,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws java.lang.NullPointerException If the key store path is {@code null}
    */
   public void setKeyStorePath(String keyStorePath) {
-    this.config = config.withValue(VERTX_TCP_KEY_STORE_PATH, ConfigValueFactory.fromAnyRef(Assert.isNotNull(keyStorePath, "keyStorePath")));
+    this.config = config.withValue(VERTX_TCP_KEY_STORE_PATH, ConfigValueFactory.fromAnyRef(Assert.notNull(keyStorePath, "keyStorePath")));
   }
 
   /**
@@ -228,7 +228,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws java.lang.NullPointerException If the key store password is {@code null}
    */
   public void setKeyStorePassword(String keyStorePassword) {
-    this.config = config.withValue(VERTX_TCP_KEY_STORE_PASSWORD, ConfigValueFactory.fromAnyRef(Assert.isNotNull(keyStorePassword, "keyStorePassword")));
+    this.config = config.withValue(VERTX_TCP_KEY_STORE_PASSWORD, ConfigValueFactory.fromAnyRef(Assert.notNull(keyStorePassword, "keyStorePassword")));
   }
 
   /**
@@ -259,7 +259,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws java.lang.NullPointerException If the trust store path is {@code null}
    */
   public void setTrustStorePath(String path) {
-    this.config = config.withValue(VERTX_TCP_TRUST_STORE_PATH, ConfigValueFactory.fromAnyRef(Assert.isNotNull(path, "path")));
+    this.config = config.withValue(VERTX_TCP_TRUST_STORE_PATH, ConfigValueFactory.fromAnyRef(Assert.notNull(path, "path")));
   }
 
   /**
@@ -290,7 +290,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws java.lang.NullPointerException If the trust store password is {@code null}
    */
   public void setTrustStorePassword(String password) {
-    this.config = config.withValue(VERTX_TCP_TRUST_STORE_PASSWORD, ConfigValueFactory.fromAnyRef(Assert.isNotNull(password, "password")));
+    this.config = config.withValue(VERTX_TCP_TRUST_STORE_PASSWORD, ConfigValueFactory.fromAnyRef(Assert.notNull(password, "password")));
   }
 
   /**

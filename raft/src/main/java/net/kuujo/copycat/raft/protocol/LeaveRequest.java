@@ -95,14 +95,14 @@ public class LeaveRequest extends AbstractRequest {
      * @return The leave request builder.
      */
     public Builder withMember(String member) {
-      request.member = Assert.isNotNull(member, "member");
+      request.member = Assert.notNull(member, "member");
       return this;
     }
 
     @Override
     public LeaveRequest build() {
       super.build();
-      Assert.isNotNull(request.member, "member");
+      Assert.notNull(request.member, "member");
       return request;
     }
 

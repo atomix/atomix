@@ -66,11 +66,11 @@ public class ResourceContext implements Managed<ResourceContext> {
   }
 
   public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster, ScheduledExecutorService scheduler, Executor executor) {
-    this.config = Assert.isNotNull(config, "config").resolve();
+    this.config = Assert.notNull(config, "config").resolve();
     this.name = this.config.getName();
     this.serializer = this.config.getSerializer();
-    this.scheduler = Assert.isNotNull(scheduler, "scheduler");
-    this.executor = Assert.isNotNull(executor, "executor");
+    this.scheduler = Assert.notNull(scheduler, "scheduler");
+    this.executor = Assert.notNull(executor, "executor");
     this.context = new RaftContext(createRaftConfig(config, cluster), scheduler);
     this.cluster = new ManagedCluster(cluster, this);
   }

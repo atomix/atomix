@@ -66,7 +66,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the name is {@code null}
    */
   public void setName(String name) {
-    this.config = config.withValue(COPYCAT_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
+    this.config = config.withValue(COPYCAT_NAME, ConfigValueFactory.fromAnyRef(Assert.notNull(name, "name")));
   }
 
   /**
@@ -97,7 +97,8 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the cluster configuration is {@code null}
    */
   public void setClusterConfig(ClusterConfig cluster) {
-    this.config = config.withValue(COPYCAT_CLUSTER, ConfigValueFactory.fromMap(Assert.isNotNull(cluster, "cluster").toMap()));
+    this.config = config.withValue(COPYCAT_CLUSTER, ConfigValueFactory.fromMap(Assert.notNull(cluster, "cluster")
+      .toMap()));
   }
 
   /**
@@ -156,7 +157,7 @@ public class CopycatConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setDefaultSerializer(Serializer serializer) {
-    this.config = config.withValue(COPYCAT_DEFAULT_SERIALIZER, ConfigValueFactory.fromMap(Assert.isNotNull(serializer, "serializer").toMap()));
+    this.config = config.withValue(COPYCAT_DEFAULT_SERIALIZER, ConfigValueFactory.fromMap(Assert.notNull(serializer, "serializer").toMap()));
   }
 
   /**

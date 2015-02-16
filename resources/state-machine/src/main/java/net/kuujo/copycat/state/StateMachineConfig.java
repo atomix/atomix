@@ -72,7 +72,7 @@ public class StateMachineConfig extends StateLogConfig {
    */
   public void setStateType(String stateType) {
     try {
-      setStateType(Class.forName(Assert.isNotNull(stateType, "stateType")));
+      setStateType(Class.forName(Assert.notNull(stateType, "stateType")));
     } catch (ClassNotFoundException e) {
       throw new ConfigurationException("Failed to load state type", e);
     }
@@ -86,7 +86,7 @@ public class StateMachineConfig extends StateLogConfig {
    * @throws java.lang.IllegalArgumentException If the given class is not a valid interface
    */
   public void setStateType(Class<?> stateType) {
-    this.config = config.withValue(STATE_MACHINE_STATE_TYPE, ConfigValueFactory.fromAnyRef(Assert.arg(stateType, Assert.isNotNull(stateType, "stateType").isInterface(), "state type must be an interface").getName()));
+    this.config = config.withValue(STATE_MACHINE_STATE_TYPE, ConfigValueFactory.fromAnyRef(Assert.arg(stateType, Assert.notNull(stateType, "stateType").isInterface(), "state type must be an interface").getName()));
   }
 
   /**
@@ -141,7 +141,7 @@ public class StateMachineConfig extends StateLogConfig {
    */
   public void setInitialState(String initialState) {
     try {
-      setInitialState(Class.forName(Assert.isNotNull(initialState, "initialState")));
+      setInitialState(Class.forName(Assert.notNull(initialState, "initialState")));
     } catch (ClassNotFoundException e) {
       throw new ConfigurationException("Failed to load initial state", e);
     }
@@ -155,7 +155,7 @@ public class StateMachineConfig extends StateLogConfig {
    * @throws java.lang.IllegalArgumentException If the given class is not a valid interface
    */
   public void setInitialState(Class<?> initialState) {
-    Assert.isNotNull(initialState, "initialState");
+    Assert.notNull(initialState, "initialState");
     Assert.arg(initialState, !initialState.isInterface() && !initialState.isEnum() && !initialState.isAnonymousClass() && !Modifier.isAbstract(initialState.getModifiers()), "state implementations must be concrete classes");
     this.config = config.withValue(STATE_MACHINE_INITIAL_STATE, ConfigValueFactory.fromAnyRef(initialState.getName()));
   }

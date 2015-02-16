@@ -43,8 +43,8 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   private final Map<String, ProtocolConnection> connections = new ConcurrentHashMap<>(1024);
 
   public VertxEventBusProtocolClient(String address, Vertx vertx) {
-    this.address = Assert.isNotNull(address, "Vert.x event bus address cannot be null");
-    this.vertx = Assert.isNotNull(vertx, "Vert.x instance cannot be null");
+    this.address = Assert.notNull(address, "Vert.x event bus address cannot be null");
+    this.vertx = Assert.notNull(vertx, "Vert.x instance cannot be null");
     this.context = vertx.getOrCreateContext();
   }
 

@@ -186,9 +186,9 @@ public class StateMachine<T> extends AbstractResource<StateMachine<T>> {
   @SuppressWarnings("unchecked")
   public StateMachine(ResourceContext context) {
     super(context);
-    this.stateType = Assert.isNotNull(context.<StateMachineConfig>config().getStateType(), "stateType");
+    this.stateType = Assert.notNull(context.<StateMachineConfig>config().getStateType(), "stateType");
     try {
-      this.state = (T) Assert.isNotNull(context.<StateMachineConfig>config().getInitialState(), "initialState").newInstance();
+      this.state = (T) Assert.notNull(context.<StateMachineConfig>config().getInitialState(), "initialState").newInstance();
     } catch (InstantiationException | IllegalAccessException e) {
       throw new RuntimeException(e);
     }

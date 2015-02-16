@@ -50,7 +50,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   public ManagedRemoteMember(String id, String address, Protocol protocol, ResourceContext context) {
     super(id, context);
     try {
-      this.client = protocol.createClient(new URI(Assert.isNotNull(address, "address")));
+      this.client = protocol.createClient(new URI(Assert.notNull(address, "address")));
     } catch (URISyntaxException e) {
       throw new ConfigurationException("Invalid protocol URI");
     }

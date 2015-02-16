@@ -71,7 +71,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setDefaultConsistency(String consistency) {
-    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.isNotNull(consistency, "consistency")).toString()));
+    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.notNull(consistency, "consistency")).toString()));
   }
 
   /**
@@ -81,7 +81,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setDefaultConsistency(Consistency consistency) {
-    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(consistency, "consistency").toString()));
+    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.notNull(consistency, "consistency").toString()));
   }
 
   /**

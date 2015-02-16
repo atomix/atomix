@@ -98,14 +98,14 @@ public class SyncResponse extends AbstractResponse {
      * @return The sync response builder.
      */
     public Builder withMembers(Collection<RaftMember> members) {
-      response.members = Assert.isNotNull(members, "members");
+      response.members = Assert.notNull(members, "members");
       return this;
     }
 
     @Override
     public SyncResponse build() {
       super.build();
-      Assert.isNotNull(response.members, "members");
+      Assert.notNull(response.members, "members");
       return response;
     }
 

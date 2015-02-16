@@ -59,8 +59,8 @@ public class MembershipEvent implements Event<MembershipEvent.Type> {
   private final Member member;
 
   public MembershipEvent(Type type, Member member) {
-    this.type = Assert.isNotNull(type, "type");
-    this.member = Assert.isNotNull(member, "member");
+    this.type = Assert.notNull(type, "type");
+    this.member = Assert.notNull(member, "member");
   }
 
   @Override

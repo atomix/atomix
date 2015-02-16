@@ -78,7 +78,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @param name The cluster-wide resource name.
    */
   public void setName(String name) {
-    this.config = config.withValue(RESOURCE_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
+    this.config = config.withValue(RESOURCE_NAME, ConfigValueFactory.fromAnyRef(Assert.notNull(name, "name")));
   }
 
   /**
@@ -108,7 +108,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @param name The default resource name.
    */
   public void setDefaultName(String name) {
-    this.config = config.withValue(RESOURCE_DEFAULT_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
+    this.config = config.withValue(RESOURCE_DEFAULT_NAME, ConfigValueFactory.fromAnyRef(Assert.notNull(name, "name")));
   }
 
   /**
@@ -141,7 +141,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   public void setSerializer(String serializer) {
     try {
-      setSerializer((Serializer) Class.forName(Assert.isNotNull(serializer, "serializer")).newInstance());
+      setSerializer((Serializer) Class.forName(Assert.notNull(serializer, "serializer")).newInstance());
     } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
       throw new ConfigurationException("Failed to instantiate serializer", e);
     }
@@ -156,7 +156,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   public void setSerializer(Class<? extends Serializer> serializer) {
     try {
-      setSerializer(Assert.isNotNull(serializer, "serializer").newInstance());
+      setSerializer(Assert.notNull(serializer, "serializer").newInstance());
     } catch (InstantiationException | IllegalAccessException e) {
       throw new ConfigurationException("Failed to instantiate serializer", e);
     }
@@ -169,7 +169,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.NullPointerException If the serializer is {@code null}
    */
   public void setSerializer(Serializer serializer) {
-    this.config = config.withValue(RESOURCE_SERIALIZER, ConfigValueFactory.fromMap(Assert.isNotNull(serializer, "serializer").toMap()));
+    this.config = config.withValue(RESOURCE_SERIALIZER, ConfigValueFactory.fromMap(Assert.notNull(serializer, "serializer").toMap()));
   }
 
   /**
@@ -351,12 +351,12 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @throws java.lang.NullPointerException If {@code ids} is {@code null}
    */
   public void setReplicas(Collection<String> ids) {
-    Assert.isNotNull(ids, "ids");
+    Assert.notNull(ids, "ids");
     Set<String> replicas = new HashSet<>(ids.size());
     for (String id : ids) {
-      replicas.add(Assert.isNotNull(id, "id"));
+      replicas.add(Assert.notNull(id, "id"));
     }
-    this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.isNotNull(replicas, "replicas"))));
+    this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.notNull(replicas, "replicas"))));
   }
 
   /**
@@ -382,7 +382,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
       this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
     }
     List<Object> replicas = config.getList(RESOURCE_REPLICAS).unwrapped();
-    replicas.add(Assert.isNotNull(id, "id"));
+    replicas.add(Assert.notNull(id, "id"));
     this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(replicas));
     return (T) this;
   }
@@ -431,7 +431,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    */
   @SuppressWarnings("unchecked")
   public T addReplicas(Collection<String> ids) {
-    Assert.isNotNull(ids, "ids");
+    Assert.notNull(ids, "ids");
     ids.forEach(this::addReplica);
     return (T) this;
   }
@@ -446,7 +446,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   @SuppressWarnings("unchecked")
   public T removeReplica(String id) {
     List<Object> replicas = config.getList(RESOURCE_REPLICAS).unwrapped();
-    replicas.remove(Assert.isNotNull(id, "id"));
+    replicas.remove(Assert.notNull(id, "id"));
     this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(replicas));
     return (T) this;
   }

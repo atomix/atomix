@@ -95,7 +95,7 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
    * @throws java.lang.NullPointerException If the retention policy is {@code null}
    */
   public void setRetentionPolicy(RetentionPolicy retentionPolicy) {
-    this.config = config.withValue(EVENT_LOG_RETENTION_POLICY, ConfigValueFactory.fromAnyRef(Assert.isNotNull(retentionPolicy, "retentionPolicy")));
+    this.config = config.withValue(EVENT_LOG_RETENTION_POLICY, ConfigValueFactory.fromAnyRef(Assert.notNull(retentionPolicy, "retentionPolicy")));
   }
 
   /**

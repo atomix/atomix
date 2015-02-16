@@ -67,7 +67,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public void setProtocol(Protocol protocol) {
-    this.config = config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.isNotNull(protocol, "protocol").toMap()));
+    this.config = config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.notNull(protocol, "protocol").toMap()));
   }
 
   /**
@@ -98,7 +98,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the member identifier id {@code null}
    */
   public void setLocalMember(String id) {
-    this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.isNotNull(id, "id")));
+    this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.notNull(id, "id")));
   }
 
   /**
@@ -112,7 +112,7 @@ public class ClusterConfig extends AbstractConfigurable {
     if (address == null) {
       setLocalMember(id);
     } else {
-      this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.isNotNull(id, "id")))
+      this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.notNull(id, "id")))
         .withValue(CLUSTER_ADDRESS, ConfigValueFactory.fromAnyRef(address));
     }
   }
@@ -180,7 +180,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the set of members is {@code null}
    */
   public void setMembers(MemberConfig... members) {
-    setMembers(Arrays.asList(Assert.isNotNull(members, "members")));
+    setMembers(Arrays.asList(Assert.notNull(members, "members")));
   }
 
   /**
@@ -195,7 +195,7 @@ public class ClusterConfig extends AbstractConfigurable {
     }
     ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
     Map<String, Object> unwrapped = config.unwrapped();
-    Assert.isNotNull(members, "members").forEach(member -> unwrapped.put(member.getId(), Assert.isNotNull(member, "member").getAddress()));
+    Assert.notNull(members, "members").forEach(member -> unwrapped.put(member.getId(), Assert.notNull(member, "member").getAddress()));
     this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
   }
 
@@ -225,7 +225,7 @@ public class ClusterConfig extends AbstractConfigurable {
   public MemberConfig getMember(String id) {
     if (config.hasPath(CLUSTER_MEMBERS)) {
       Map<String, Object> members = config.getObject(CLUSTER_MEMBERS).unwrapped();
-      String address = (String) members.get(Assert.isNotNull(id, "id"));
+      String address = (String) members.get(Assert.notNull(id, "id"));
       if (address != null) {
         return new MemberConfig(id, address);
       }
@@ -241,7 +241,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the set of members is {@code null}
    */
   public ClusterConfig withMembers(MemberConfig... members) {
-    setMembers(Assert.isNotNull(members, "members"));
+    setMembers(Assert.notNull(members, "members"));
     return this;
   }
 
@@ -265,7 +265,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the member is {@code null}
    */
   public ClusterConfig addMember(MemberConfig member) {
-    return addMember(Assert.isNotNull(member, "member").getId(), member.getAddress());
+    return addMember(Assert.notNull(member, "member").getId(), member.getAddress());
   }
 
   /**
@@ -282,7 +282,7 @@ public class ClusterConfig extends AbstractConfigurable {
     }
     ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
     Map<String, Object> unwrapped = config.unwrapped();
-    unwrapped.put(Assert.isNotNull(id, "id"), Assert.isNotNull(address, "address"));
+    unwrapped.put(Assert.notNull(id, "id"), Assert.notNull(address, "address"));
     this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
     return this;
   }
@@ -309,7 +309,7 @@ public class ClusterConfig extends AbstractConfigurable {
     if (config.hasPath(CLUSTER_MEMBERS)) {
       ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
       Map<String, Object> unwrapped = config.unwrapped();
-      unwrapped.remove(Assert.isNotNull(id, "id"));
+      unwrapped.remove(Assert.notNull(id, "id"));
       this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
     }
     return this;

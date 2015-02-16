@@ -32,7 +32,7 @@ public class ProtocolServerRegistry {
   private final Map<URI, ProtocolServerCoordinator> servers = new ConcurrentHashMap<>();
 
   public ProtocolServerRegistry(Protocol protocol) {
-    this.protocol = Assert.isNotNull(protocol, "protocol");
+    this.protocol = Assert.notNull(protocol, "protocol");
   }
 
   public ProtocolServerCoordinator get(URI uri) {

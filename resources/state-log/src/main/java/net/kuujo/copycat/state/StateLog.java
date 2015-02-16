@@ -208,8 +208,8 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
    */
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    Assert.isNotNull(name, "name");
-    Assert.isNotNull(query, "query");
+    Assert.notNull(name, "name");
+    Assert.notNull(query, "query");
     operations.put(Hash.hash32(name.getBytes()), new OperationInfo<>(query, true, defaultConsistency));
     LOGGER.debug("{} - Registered state log query {} with default consistency", context.name(), name);
     return this;
@@ -227,8 +227,8 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
    */
   public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency) {
     Assert.state(isClosed(), "Cannot register command on open state log");
-    Assert.isNotNull(name, "name");
-    Assert.isNotNull(query, "query");
+    Assert.notNull(name, "name");
+    Assert.notNull(query, "query");
     operations.put(Hash.hash32(name.getBytes()), new OperationInfo<>(query, true, consistency == null || consistency == Consistency.DEFAULT ? defaultConsistency : consistency));
     LOGGER.debug("{} - Registered state log query {} with consistency {}", context.name(), name, consistency);
     return this;
