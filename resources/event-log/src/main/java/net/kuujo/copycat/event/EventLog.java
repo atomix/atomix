@@ -18,7 +18,6 @@ import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.internal.DefaultEventLog;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -31,104 +30,92 @@ import java.util.concurrent.Executor;
 public interface EventLog<T> extends Resource<EventLog<T>> {
 
   /**
-   * Creates a new event log with the default cluster and event log configurations.<p>
+   * Creates a new event log, loading the log configuration from the classpath.
    *
-   * The event log will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   * @param <T> The event log entry type.
+   * @return A new event log instance.
+   */
+  static <T> EventLog<T> create() {
+    return create(new EventLogConfig(), new ClusterConfig());
+  }
+
+  /**
+   * Creates a new event log, loading the log configuration from the classpath.
    *
-   * Additionally, the event log will be constructed with an event log configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code event-log}, {@code event-log-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the event log resource. If the resource is namespaced - e.g. `event-logs.my-log.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
+   * @param <T> The event log entry type.
+   * @return A new event log instance.
+   */
+  static <T> EventLog<T> create(Executor executor) {
+    return create(new EventLogConfig(), new ClusterConfig(), executor);
+  }
+
+  /**
+   * Creates a new event log, loading the log configuration from the classpath.
    *
-   * @param name The log resource name.
+   * @param name The event log resource name to be used to load the event log configuration from the classpath.
+   * @param <T> The event log entry type.
    * @return A new event log instance.
    */
   static <T> EventLog<T> create(String name) {
-    return create(name, new ClusterConfig(), new EventLogConfig(name));
+    return create(new EventLogConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
   /**
-   * Creates a new event log with the default cluster and event log configurations.<p>
+   * Creates a new event log, loading the log configuration from the classpath.
    *
-   * The event log will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
-   *
-   * Additionally, the event log will be constructed with an event log configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code event-log}, {@code event-log-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the event log resource. If the resource is namespaced - e.g. `event-logs.my-log.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
-   *
-   * @param name The log resource name.
+   * @param name The event log resource name to be used to load the event log configuration from the classpath.
    * @param executor An executor on which to execute event log callbacks.
+   * @param <T> The event log entry type.
    * @return A new event log instance.
    */
   static <T> EventLog<T> create(String name, Executor executor) {
-    return create(name, new ClusterConfig(), new EventLogConfig(name), executor);
+    return create(new EventLogConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
   /**
-   * Creates a new event log.<p>
+   * Creates a new event log with the given cluster and event log configurations.
    *
-   * The event log will be constructed with an event log configuration that searches the classpath for three
-   * configuration files - {@code {name}}, {@code event-log}, {@code event-log-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the event log resource. If the resource is namespaced - e.g. `event-logs.my-log.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
-   *
-   * @param name The log resource name.
-   * @param cluster The event log cluster.
+   * @param name The event log resource name to be used to load the event log configuration from the classpath.
+   * @param cluster The cluster configuration.
    * @return A new event log instance.
    */
   static <T> EventLog<T> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new EventLogConfig(name));
+    return create(new EventLogConfig(name), cluster);
   }
 
   /**
-   * Creates a new event log.<p>
+   * Creates a new event log with the given cluster and event log configurations.
    *
-   * The event log will be constructed with an event log configuration that searches the classpath for three
-   * configuration files - {@code {name}}, {@code event-log}, {@code event-log-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the event log resource. If the resource is namespaced - e.g. `event-logs.my-log.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `event-logs.conf`.
-   *
-   * @param name The log resource name.
-   * @param cluster The event log cluster.
+   * @param name The event log resource name to be used to load the event log configuration from the classpath.
+   * @param cluster The cluster configuration.
    * @param executor An executor on which to execute event log callbacks.
    * @return A new event log instance.
    */
   static <T> EventLog<T> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(name, cluster, new EventLogConfig(name), executor);
+    return create(new EventLogConfig(name), cluster, executor);
   }
 
   /**
    * Creates a new event log with the given cluster and event log configurations.
    *
-   * @param name The log name.
-   * @param cluster The event log cluster.
    * @param config The event log configuration.
+   * @param cluster The cluster configuration.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, ClusterConfig cluster, EventLogConfig config) {
-    return new DefaultEventLog<>(new ResourceContext(name, config, cluster));
+  static <T> EventLog<T> create(EventLogConfig config, ClusterConfig cluster) {
+    return new DefaultEventLog<>(config, cluster);
   }
 
   /**
    * Creates a new event log with the given cluster and event log configurations.
    *
-   * @param name The log name.
-   * @param cluster The event log cluster.
    * @param config The event log configuration.
+   * @param cluster The cluster configuration.
    * @param executor An executor on which to execute event log callbacks.
    * @return A new event log instance.
    */
-  static <T> EventLog<T> create(String name, ClusterConfig cluster, EventLogConfig config, Executor executor) {
-    return new DefaultEventLog<>(new ResourceContext(name, config, cluster, executor));
+  static <T> EventLog<T> create(EventLogConfig config, ClusterConfig cluster, Executor executor) {
+    return new DefaultEventLog<>(config, cluster, executor);
   }
 
   /**

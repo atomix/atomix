@@ -45,6 +45,7 @@ public class EventLogConfig extends ResourceConfig<EventLogConfig> {
 
   public EventLogConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   private EventLogConfig(EventLogConfig config) {

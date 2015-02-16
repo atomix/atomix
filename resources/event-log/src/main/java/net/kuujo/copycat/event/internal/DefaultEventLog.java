@@ -16,6 +16,7 @@
 package net.kuujo.copycat.event.internal;
 
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.log.LogSegment;
@@ -27,6 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -39,6 +41,14 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   private EventListener<T> consumer;
   private ScheduledFuture<?> retentionFuture;
   private Long commitIndex;
+
+  public DefaultEventLog(EventLogConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultEventLog(EventLogConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   public DefaultEventLog(ResourceContext context) {
     super(context);
@@ -55,10 +65,10 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
   public CompletableFuture<T> get(long index) {
     CompletableFuture<T> future = new CompletableFuture<>();
     context.scheduler().execute(() -> {
-      if (!context.log().containsIndex(index)) {
+      if (!context.raft().log().containsIndex(index)) {
         context.executor().execute(() -> future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index))));
       } else {
-        ByteBuffer buffer = context.log().getEntry(index);
+        ByteBuffer buffer = context.raft().log().getEntry(index);
         if (buffer != null) {
           T entry = serializer.readObject(buffer);
           context.executor().execute(() -> future.complete(entry));
@@ -100,10 +110,10 @@ public class DefaultEventLog<T> extends AbstractResource<EventLog<T>> implements
       // - The segment is not the last segment in the log
       // - The segment's last index is less than or equal to the commit index
       // - The configured retention policy's retain(LogSegment) method returns false.
-      for (Iterator<Map.Entry<Long, LogSegment>> iterator = context.log().segments().entrySet().iterator(); iterator.hasNext(); ) {
+      for (Iterator<Map.Entry<Long, LogSegment>> iterator = context.raft().log().segments().entrySet().iterator(); iterator.hasNext(); ) {
         Map.Entry<Long, LogSegment> entry = iterator.next();
         LogSegment segment = entry.getValue();
-        if (context.log().lastSegment() != segment
+        if (context.raft().log().lastSegment() != segment
           && segment.lastIndex() != null
           && segment.lastIndex() <= commitIndex
           && !context.<EventLogConfig>config().getRetentionPolicy().retain(entry.getValue())) {
