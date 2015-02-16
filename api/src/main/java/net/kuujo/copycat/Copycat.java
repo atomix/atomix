@@ -15,22 +15,13 @@
 package net.kuujo.copycat;
 
 import net.kuujo.copycat.atomic.*;
-import net.kuujo.copycat.atomic.internal.DefaultAsyncBoolean;
-import net.kuujo.copycat.atomic.internal.DefaultAsyncLong;
-import net.kuujo.copycat.atomic.internal.DefaultAsyncReference;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.*;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncList;
-import net.kuujo.copycat.collections.internal.collection.DefaultAsyncSet;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMultiMap;
 import net.kuujo.copycat.election.LeaderElection;
 import net.kuujo.copycat.election.LeaderElectionConfig;
-import net.kuujo.copycat.election.internal.DefaultLeaderElection;
 import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
-import net.kuujo.copycat.event.internal.DefaultEventLog;
 import net.kuujo.copycat.internal.CoordinatedProtocol;
 import net.kuujo.copycat.internal.ProtocolServerRegistry;
 import net.kuujo.copycat.log.BufferedLog;
@@ -42,8 +33,6 @@ import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateLogConfig;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.StateMachineConfig;
-import net.kuujo.copycat.state.internal.DefaultStateLog;
-import net.kuujo.copycat.state.internal.DefaultStateMachine;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import net.kuujo.copycat.util.internal.Hash;
@@ -246,7 +235,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The event log instance.
    */
   public <T> EventLog<T> createEventLog(String name) {
-    return createResource(new EventLogConfig(name).withDefaultName(name), context.executor(), DefaultEventLog::new);
+    return createResource(new EventLogConfig(name), context.executor(), EventLog::new);
   }
 
   /**
@@ -258,7 +247,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The event log instance.
    */
   public <T> EventLog<T> createEventLog(String name, Executor executor) {
-    return createResource(new EventLogConfig(name).withDefaultName(name), executor, DefaultEventLog::new);
+    return createResource(new EventLogConfig(name), executor, EventLog::new);
   }
 
   /**
@@ -269,7 +258,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The event log instance.
    */
   public <T> EventLog<T> createEventLog(EventLogConfig config) {
-    return createResource(config, context.executor(), DefaultEventLog::new);
+    return createResource(config, context.executor(), EventLog::new);
   }
 
   /**
@@ -281,7 +270,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The event log instance.
    */
   public <T> EventLog<T> createEventLog(EventLogConfig config, Executor executor) {
-    return createResource(config, executor, DefaultEventLog::new);
+    return createResource(config, executor, EventLog::new);
   }
 
   /**
@@ -292,7 +281,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state log instance.
    */
   public <T> StateLog<T> createStateLog(String name) {
-    return createResource(new StateLogConfig(name).withDefaultName(name), context.executor(), DefaultStateLog::new);
+    return createResource(new StateLogConfig(name), context.executor(), StateLog::new);
   }
 
   /**
@@ -304,7 +293,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state log instance.
    */
   public <T> StateLog<T> createStateLog(String name, Executor executor) {
-    return createResource(new StateLogConfig(name).withDefaultName(name), context.executor(), DefaultStateLog::new);
+    return createResource(new StateLogConfig(name), context.executor(), StateLog::new);
   }
 
   /**
@@ -315,7 +304,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state log instance.
    */
   public <T> StateLog<T> createStateLog(StateLogConfig config) {
-    return createResource(config, context.executor(), DefaultStateLog::new);
+    return createResource(config, context.executor(), StateLog::new);
   }
 
   /**
@@ -327,7 +316,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state log instance.
    */
   public <T> StateLog<T> createStateLog(StateLogConfig config, Executor executor) {
-    return createResource(config, executor, DefaultStateLog::new);
+    return createResource(config, executor, StateLog::new);
   }
 
   /**
@@ -340,7 +329,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state machine instance.
    */
   public <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState) {
-    return createResource(new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState).withDefaultName(name), context.executor(), DefaultStateMachine::new);
+    return createResource(new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState), context.executor(), StateMachine::new);
   }
 
   /**
@@ -354,7 +343,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state machine instance.
    */
   public <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState, Executor executor) {
-    return createResource(new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState).withDefaultName(name), executor, DefaultStateMachine::new);
+    return createResource(new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState), executor, StateMachine::new);
   }
 
   /**
@@ -365,7 +354,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state machine instance.
    */
   public <T> StateMachine<T> createStateMachine(StateMachineConfig config) {
-    return createResource(config, context.executor(), DefaultStateMachine::new);
+    return createResource(config, context.executor(), StateMachine::new);
   }
 
   /**
@@ -377,7 +366,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The state machine instance.
    */
   public <T> StateMachine<T> createStateMachine(StateMachineConfig config, Executor executor) {
-    return createResource(config, executor, DefaultStateMachine::new);
+    return createResource(config, executor, StateMachine::new);
   }
 
   /**
@@ -387,7 +376,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The leader election instance.
    */
   public LeaderElection createLeaderElection(String name) {
-    return createResource(new LeaderElectionConfig(name).withDefaultName(name), context.executor(), DefaultLeaderElection::new);
+    return createResource(new LeaderElectionConfig(name), context.executor(), LeaderElection::new);
   }
 
   /**
@@ -398,7 +387,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The leader election instance.
    */
   public LeaderElection createLeaderElection(String name, Executor executor) {
-    return createResource(new LeaderElectionConfig(name).withDefaultName(name), executor, DefaultLeaderElection::new);
+    return createResource(new LeaderElectionConfig(name), executor, LeaderElection::new);
   }
 
   /**
@@ -408,7 +397,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The leader election instance.
    */
   public LeaderElection createLeaderElection(LeaderElectionConfig config) {
-    return createResource(config, context.executor(), DefaultLeaderElection::new);
+    return createResource(config, context.executor(), LeaderElection::new);
   }
 
   /**
@@ -419,7 +408,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The leader election instance.
    */
   public LeaderElection createLeaderElection(LeaderElectionConfig config, Executor executor) {
-    return createResource(config, executor, DefaultLeaderElection::new);
+    return createResource(config, executor, LeaderElection::new);
   }
 
   /**
@@ -431,7 +420,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous map instance.
    */
   public <K, V> AsyncMap<K, V> createMap(String name) {
-    return createResource(new AsyncMapConfig(name).withDefaultName(name), context.executor(), DefaultAsyncMap::new);
+    return createResource(new AsyncMapConfig(name), context.executor(), AsyncMap::new);
   }
 
   /**
@@ -444,7 +433,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous map instance.
    */
   public <K, V> AsyncMap<K, V> createMap(String name, Executor executor) {
-    return createResource(new AsyncMapConfig(name).withDefaultName(name), executor, DefaultAsyncMap::new);
+    return createResource(new AsyncMapConfig(name), executor, AsyncMap::new);
   }
 
   /**
@@ -456,7 +445,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous map instance.
    */
   public <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config) {
-    return createResource(config, context.executor(), DefaultAsyncMap::new);
+    return createResource(config, context.executor(), AsyncMap::new);
   }
 
   /**
@@ -469,7 +458,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous map instance.
    */
   public <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config, Executor executor) {
-    return createResource(config, executor, DefaultAsyncMap::new);
+    return createResource(config, executor, AsyncMap::new);
   }
 
   /**
@@ -481,7 +470,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous multimap instance.
    */
   public <K, V> AsyncMultiMap<K, V> createMultiMap(String name) {
-    return createResource(new AsyncMultiMapConfig(name).withDefaultName(name), context.executor(), DefaultAsyncMultiMap::new);
+    return createResource(new AsyncMultiMapConfig(name), context.executor(), AsyncMultiMap::new);
   }
 
   /**
@@ -494,7 +483,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous multimap instance.
    */
   public <K, V> AsyncMultiMap<K, V> createMultiMap(String name, Executor executor) {
-    return createResource(new AsyncMultiMapConfig(name).withDefaultName(name), executor, DefaultAsyncMultiMap::new);
+    return createResource(new AsyncMultiMapConfig(name), executor, AsyncMultiMap::new);
   }
 
   /**
@@ -506,7 +495,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous multimap instance.
    */
   public <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config) {
-    return createResource(config, context.executor(), DefaultAsyncMultiMap::new);
+    return createResource(config, context.executor(), AsyncMultiMap::new);
   }
 
   /**
@@ -519,7 +508,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous multimap instance.
    */
   public <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config, Executor executor) {
-    return createResource(config, executor, DefaultAsyncMultiMap::new);
+    return createResource(config, executor, AsyncMultiMap::new);
   }
 
   /**
@@ -530,7 +519,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous list instance.
    */
   public <T> AsyncList<T> createList(String name) {
-    return createResource(new AsyncListConfig(name).withDefaultName(name), context.executor(), DefaultAsyncList::new);
+    return createResource(new AsyncListConfig(name), context.executor(), AsyncList::new);
   }
 
   /**
@@ -542,7 +531,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous list instance.
    */
   public <T> AsyncList<T> createList(String name, Executor executor) {
-    return createResource(new AsyncListConfig(name).withDefaultName(name), executor, DefaultAsyncList::new);
+    return createResource(new AsyncListConfig(name), executor, AsyncList::new);
   }
 
   /**
@@ -553,7 +542,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous list instance.
    */
   public <T> AsyncList<T> createList(AsyncListConfig config) {
-    return createResource(config, context.executor(), DefaultAsyncList::new);
+    return createResource(config, context.executor(), AsyncList::new);
   }
 
   /**
@@ -565,7 +554,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous list instance.
    */
   public <T> AsyncList<T> createList(AsyncListConfig config, Executor executor) {
-    return createResource(config, executor, DefaultAsyncList::new);
+    return createResource(config, executor, AsyncList::new);
   }
 
   /**
@@ -576,7 +565,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous set instance.
    */
   public <T> AsyncSet<T> createSet(String name) {
-    return createResource(new AsyncSetConfig(name).withDefaultName(name), context.executor(), DefaultAsyncSet::new);
+    return createResource(new AsyncSetConfig(name), context.executor(), AsyncSet::new);
   }
 
   /**
@@ -588,7 +577,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous set instance.
    */
   public <T> AsyncSet<T> createSet(String name, Executor executor) {
-    return createResource(new AsyncSetConfig(name).withDefaultName(name), executor, DefaultAsyncSet::new);
+    return createResource(new AsyncSetConfig(name), executor, AsyncSet::new);
   }
 
   /**
@@ -599,7 +588,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous set instance.
    */
   public <T> AsyncSet<T> createSet(AsyncSetConfig config) {
-    return createResource(config, context.executor(), DefaultAsyncSet::new);
+    return createResource(config, context.executor(), AsyncSet::new);
   }
 
   /**
@@ -611,7 +600,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous set instance.
    */
   public <T> AsyncSet<T> createSet(AsyncSetConfig config, Executor executor) {
-    return createResource(config, executor, DefaultAsyncSet::new);
+    return createResource(config, executor, AsyncSet::new);
   }
 
   /**
@@ -621,7 +610,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic long instance.
    */
   public AsyncLong createLong(String name) {
-    return createResource(new AsyncLongConfig(name).withDefaultName(name), context.executor(), DefaultAsyncLong::new);
+    return createResource(new AsyncLongConfig(name), context.executor(), AsyncLong::new);
   }
 
   /**
@@ -632,7 +621,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic long instance.
    */
   public AsyncLong createLong(String name, Executor executor) {
-    return createResource(new AsyncLongConfig(name).withDefaultName(name), executor, DefaultAsyncLong::new);
+    return createResource(new AsyncLongConfig(name), executor, AsyncLong::new);
   }
 
   /**
@@ -642,7 +631,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic long instance.
    */
   public AsyncLong createLong(AsyncLongConfig config) {
-    return createResource(config, context.executor(), DefaultAsyncLong::new);
+    return createResource(config, context.executor(), AsyncLong::new);
   }
 
   /**
@@ -653,7 +642,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic long instance.
    */
   public AsyncLong createLong(AsyncLongConfig config, Executor executor) {
-    return createResource(config, executor, DefaultAsyncLong::new);
+    return createResource(config, executor, AsyncLong::new);
   }
 
   /**
@@ -663,7 +652,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic boolean instance.
    */
   public AsyncBoolean createBoolean(String name) {
-    return createResource(new AsyncBooleanConfig(name).withDefaultName(name), context.executor(), DefaultAsyncBoolean::new);
+    return createResource(new AsyncBooleanConfig(name), context.executor(), AsyncBoolean::new);
   }
 
   /**
@@ -674,7 +663,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic boolean instance.
    */
   public AsyncBoolean createBoolean(String name, Executor executor) {
-    return createResource(new AsyncBooleanConfig(name).withDefaultName(name), executor, DefaultAsyncBoolean::new);
+    return createResource(new AsyncBooleanConfig(name), executor, AsyncBoolean::new);
   }
 
   /**
@@ -684,7 +673,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic boolean instance.
    */
   public AsyncBoolean createBoolean(AsyncBooleanConfig config) {
-    return createResource(config, context.executor(), DefaultAsyncBoolean::new);
+    return createResource(config, context.executor(), AsyncBoolean::new);
   }
 
   /**
@@ -695,7 +684,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic boolean instance.
    */
   public AsyncBoolean createBoolean(AsyncBooleanConfig config, Executor executor) {
-    return createResource(config, executor, DefaultAsyncBoolean::new);
+    return createResource(config, executor, AsyncBoolean::new);
   }
 
   /**
@@ -705,7 +694,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic reference instance.
    */
   public <T> AsyncReference<T> createReference(String name) {
-    return createResource(new AsyncReferenceConfig(name).withDefaultName(name), context.executor(), DefaultAsyncReference::new);
+    return createResource(new AsyncReferenceConfig(name), context.executor(), AsyncReference::new);
   }
 
   /**
@@ -716,7 +705,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic reference instance.
    */
   public <T> AsyncReference<T> createReference(String name, Executor executor) {
-    return createResource(new AsyncReferenceConfig(name).withDefaultName(name), executor, DefaultAsyncReference::new);
+    return createResource(new AsyncReferenceConfig(name), executor, AsyncReference::new);
   }
 
   /**
@@ -726,7 +715,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic reference instance.
    */
   public <T> AsyncReference<T> createReference(AsyncReferenceConfig config) {
-    return createResource(config, context.executor(), DefaultAsyncReference::new);
+    return createResource(config, context.executor(), AsyncReference::new);
   }
 
   /**
@@ -737,7 +726,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic reference instance.
    */
   public <T> AsyncReference<T> createReference(AsyncReferenceConfig config, Executor executor) {
-    return createResource(config, executor, DefaultAsyncReference::new);
+    return createResource(config, executor, AsyncReference::new);
   }
 
   @Override
