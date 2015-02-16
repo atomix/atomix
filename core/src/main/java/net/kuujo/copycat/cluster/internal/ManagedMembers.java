@@ -16,9 +16,7 @@
 package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.Members;
-import net.kuujo.copycat.cluster.MembershipEvent;
+import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMember;
@@ -30,6 +28,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -38,6 +37,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ManagedMembers implements Members, Managed<Void>, Observer {
+  private final ClusterConfig config;
   private final Protocol protocol;
   private final ResourceContext context;
   private final RaftContext raft;
@@ -46,8 +46,9 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   private final Set<EventListener<MembershipEvent>> listeners = new CopyOnWriteArraySet<>();
   private boolean open;
 
-  ManagedMembers(Protocol protocol, ResourceContext context) {
-    this.protocol = Assert.isNotNull(protocol, "protocol");
+  ManagedMembers(ClusterConfig config, ResourceContext context) {
+    this.config = Assert.isNotNull(config, "config").copy();
+    this.protocol = config.getProtocol();
     this.context = Assert.isNotNull(context, "context");
     this.raft = context.raft();
   }
@@ -56,7 +57,7 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   @SuppressWarnings("rawtypes")
   public void update(Observable o, Object arg) {
     RaftContext raft = (RaftContext) o;
-    Set<String> uris = raft.getMembers().stream().map(RaftMember::uri).collect(Collectors.toSet());
+    Set<String> uris = raft.getMembers().stream().map(RaftMember::id).collect(Collectors.toSet());
     Iterator<Map.Entry<String, ManagedMember>> iterator = members.entrySet().iterator();
     while (iterator.hasNext()) {
       Map.Entry<String, ManagedMember> entry = iterator.next();
@@ -68,9 +69,13 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     }
 
     for (RaftMember member : raft.getMembers()) {
-      if (!members.containsKey(member.uri())) {
-        members.put(member.uri(), new ManagedRemoteMember(member, protocol, context));
-        listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(member.uri()))));
+      if (!members.containsKey(member.id())) {
+        try {
+          members.put(member.id(), (ManagedMember) new ManagedRemoteMember(member.id(), member.address(), protocol, context).open().get());
+          listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(member.id()))));
+        } catch (InterruptedException | ExecutionException e) {
+          throw new RuntimeException(e);
+        }
       }
     }
   }
@@ -163,16 +168,31 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     open = true;
     raft.addObserver(this);
     members.clear();
-    for (RaftMember member : raft.getMembers()) {
-      members.put(member.uri(), member.uri().equals(raft.getLocalMember().uri()) ? new ManagedLocalMember(member, protocol, context) : new ManagedRemoteMember(member, protocol, context));
-    }
 
-    CompletableFuture<? extends Member>[] futures = new CompletableFuture[members.size()];
-    int i = 0;
-    for (ManagedMember member : members.values()) {
-      futures[i++] = member.open();
-    }
-    return CompletableFuture.allOf(futures);
+    ManagedLocalMember localMember = new ManagedLocalMember(config.getLocalMember().getId(), config.getLocalMember().getAddress(), protocol, context);
+    return localMember.open().thenCompose(v -> {
+      members.put(localMember.id(), localMember);
+      if (context.config().getReplicas().isEmpty()) {
+        for (MemberConfig member : config.getMembers()) {
+          if (!member.getId().equals(config.getLocalMember().getId())) {
+            members.put(member.getId(), new ManagedRemoteMember(member.getId(), member.getAddress(), protocol, context));
+          }
+        }
+      } else {
+        for (String replica : context.config().getReplicas()) {
+          if (!replica.equals(config.getLocalMember().getId())) {
+            members.put(replica, new ManagedRemoteMember(replica, config.getMember(replica).getAddress(), protocol, context));
+          }
+        }
+      }
+
+      CompletableFuture<? extends Member>[] futures = new CompletableFuture[members.size()];
+      int i = 0;
+      for (ManagedMember member : members.values()) {
+        futures[i++] = member.open();
+      }
+      return CompletableFuture.allOf(futures);
+    });
   }
 
   @Override

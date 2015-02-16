@@ -119,11 +119,18 @@ public interface Member {
   }
 
   /**
-   * Returns the member URI.
+   * Returns the unique member ID.
    *
-   * @return The member URI.
+   * @return The unique member ID.
    */
-  String uri();
+  String id();
+
+  /**
+   * Returns the member address.
+   *
+   * @return The member address.
+   */
+  String address();
 
   /**
    * Returns the member type.

@@ -41,13 +41,15 @@ public class ClusterConfigTest {
     ClusterConfig cluster = new ClusterConfig();
     assertTrue(cluster.getMembers().isEmpty());
     assertTrue(cluster.getProtocol() instanceof LocalProtocol);
-    cluster.addMember("local://foo");
+    cluster.addMember("foo", "local://foo");
     assertEquals(1, cluster.getMembers().size());
-    assertEquals("local://foo", cluster.getMembers().iterator().next());
+    assertEquals("foo", cluster.getMembers().iterator().next().getId());
+    assertEquals("local://foo", cluster.getMembers().iterator().next().getAddress());
 
     ClusterConfig copy = cluster.copy();
     assertEquals(1, copy.getMembers().size());
-    assertEquals("local://foo", copy.getMembers().iterator().next());
+    assertEquals("foo", copy.getMembers().iterator().next().getId());
+    assertEquals("local://foo", copy.getMembers().iterator().next().getAddress());
   }
 
   /**

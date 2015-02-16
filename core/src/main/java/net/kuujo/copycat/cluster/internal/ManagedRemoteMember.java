@@ -20,9 +20,9 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolConnection;
-import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.internal.Hash;
 
 import java.net.URI;
@@ -47,10 +47,10 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   private final Map<String, Integer> hashMap = new HashMap<>();
   private boolean open;
 
-  public ManagedRemoteMember(RaftMember member, Protocol protocol, ResourceContext context) {
-    super(member, context);
+  public ManagedRemoteMember(String id, String address, Protocol protocol, ResourceContext context) {
+    super(id, context);
     try {
-      this.client = protocol.createClient(new URI(member.uri()));
+      this.client = protocol.createClient(new URI(Assert.isNotNull(address, "address")));
     } catch (URISyntaxException e) {
       throw new ConfigurationException("Invalid protocol URI");
     }
@@ -113,6 +113,19 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
+    if (connection == null) {
+      return client.connect()
+        .thenAcceptAsync(c -> this.connection = c, context.scheduler())
+        .thenCompose(v -> doSubmit(task));
+    } else {
+      return doSubmit(task);
+    }
+  }
+
+  /**
+   * Submits a task for remote execution.
+   */
+  private <T> CompletableFuture<T> doSubmit(Task<T> task) {
     ByteBuffer serialized = context.serializer().writeObject(task);
     ByteBuffer request = ByteBuffer.allocate(serialized.limit() + 1);
     request.put(TASK);
@@ -124,7 +137,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   @Override
   public CompletableFuture<Member> open() {
     open = true;
-    return CompletableFuture.completedFuture(null);
+    return super.open();
   }
 
   @Override
@@ -134,7 +147,10 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
 
   @Override
   public CompletableFuture<Void> close() {
-    return client.close().thenRun(() -> this.connection = null);
+    open = false;
+    return super.close()
+      .thenCompose(v -> connection != null ? client.close() : CompletableFuture.completedFuture(null))
+      .thenRunAsync(() -> this.connection = null, context.scheduler());
   }
 
   @Override

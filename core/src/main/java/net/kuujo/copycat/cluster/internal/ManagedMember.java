@@ -16,11 +16,15 @@
 package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
+import net.kuujo.copycat.util.internal.Assert;
 
 import java.nio.ByteBuffer;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -28,47 +32,85 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class ManagedMember<T extends Member> implements Member, Managed<T> {
-  protected final RaftMember member;
+abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Observer {
   protected final ResourceContext context;
+  private final String id;
+  private String address;
+  private Type type;
+  private Status status;
 
-  public ManagedMember(RaftMember member, ResourceContext context) {
-    this.member = member;
-    this.context = context;
+  public ManagedMember(String id, ResourceContext context) {
+    this.id = Assert.isNotNull(id, "id");
+    this.context = Assert.isNotNull(context, "context");
   }
 
   @Override
-  public String uri() {
-    return member.uri();
+  public void update(Observable o, Object arg) {
+    RaftContext raft = (RaftContext) o;
+    RaftMember member = raft.getMember(id);
+    if (member != null) {
+      address = member.address();
+      type = Type.lookup(member.type());
+      status = Status.lookup(member.status());
+    }
+  }
+
+  @Override
+  public String id() {
+    return id;
+  }
+
+  @Override
+  public String address() {
+    Assert.state(isOpen(), "member not open");
+    return address;
   }
 
   @Override
   public Type type() {
-    return Member.Type.lookup(member.type());
+    Assert.state(isOpen(), "member not open");
+    return type;
   }
 
   @Override
   public Status status() {
-    return Member.Status.lookup(member.status());
+    Assert.state(isOpen(), "member not open");
+    return status;
   }
 
   @Override
   public boolean equals(Object object) {
-    return object instanceof Member && ((Member) object).uri().equals(uri());
+    return object instanceof Member && ((Member) object).address().equals(address());
   }
 
+  /**
+   * Sends an internal message.
+   */
   abstract CompletableFuture<ByteBuffer> sendInternal(String topic, ByteBuffer request);
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<T> open() {
+    context.raft().addObserver(this);
+    return CompletableFuture.completedFuture((T) this);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    context.raft().deleteObserver(this);
+    return CompletableFuture.completedFuture(null);
+  }
 
   @Override
   public int hashCode() {
     int hashCode = 23;
-    hashCode = 37 * hashCode + uri().hashCode();
+    hashCode = 37 * hashCode + id().hashCode();
     return hashCode;
   }
 
   @Override
   public String toString() {
-    return String.format("%s[uri=%s, type=%s, status=%s]", getClass().getSimpleName(), member.uri(), member.type(), member.status());
+    return String.format("%s[id=%s, address=%s, type=%s, status=%s]", getClass().getSimpleName(), id, address, type, status);
   }
 
 }

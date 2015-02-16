@@ -17,7 +17,6 @@ package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.*;
-import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.protocol.Request;
 import net.kuujo.copycat.raft.protocol.Response;
@@ -48,9 +47,9 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
   private String lastLeader;
   private long lastTerm;
 
-  public ManagedCluster(Protocol protocol, ResourceContext context) {
+  public ManagedCluster(ClusterConfig config, ResourceContext context) {
     this.raft = Assert.isNotNull(context, "context").raft();
-    this.members = new ManagedMembers(protocol, context);
+    this.members = new ManagedMembers(config, context);
   }
 
   @Override
@@ -65,31 +64,37 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
 
   @Override
   public Member leader() {
+    Assert.state(isOpen(), "cluster not open");
     return members.members.get(raft.getLeader());
   }
 
   @Override
   public long term() {
+    Assert.state(isOpen(), "cluster not open");
     return raft.getTerm();
   }
 
   @Override
   public ManagedLocalMember member() {
-    return (ManagedLocalMember) members.members.get(raft.getLocalMember().uri());
+    Assert.state(isOpen(), "cluster not open");
+    return (ManagedLocalMember) members.members.get(raft.getLocalMember().id());
   }
 
   @Override
-  public Member member(String uri) {
-    return members.members.get(uri);
+  public Member member(String id) {
+    Assert.state(isOpen(), "cluster not open");
+    return members.members.get(id);
   }
 
   @Override
   public Members members() {
+    Assert.state(isOpen(), "cluster not open");
     return members;
   }
 
   @Override
   public <T> Cluster broadcast(String topic, T message) {
+    Assert.state(isOpen(), "cluster not open");
     members.forEach(m -> {
       if (m instanceof ManagedRemoteMember) {
         m.send(topic, message);
@@ -183,7 +188,7 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
    * Wraps an outbound context call.
    */
   private <T extends Request, U extends Response> CompletableFuture<U> wrapOutboundRequest(String topic, T request) {
-    ManagedMember<?> member = members.members.get(request.uri());
+    ManagedMember<?> member = members.members.get(request.id());
     if (member != null) {
       return member.sendInternal(topic, serializer.writeObject(request)).thenApply(serializer::readObject);
     }

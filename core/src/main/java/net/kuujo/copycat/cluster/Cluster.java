@@ -54,9 +54,9 @@ import net.kuujo.copycat.EventListener;
  *   {@code
  *     cluster.addMembershipListener(event -> {
  *       if (event.type() == MembershipEvent.Type.JOIN) {
- *         LOGGER.info("{} joined the cluster", event.member().uri());
+ *         LOGGER.info("{} joined the cluster", event.member().id());
  *       } else {
- *         LOGGER.info("{} left the cluster", event.member().uri());
+ *         LOGGER.info("{} left the cluster", event.member().id());
  *       }
  *     });
  *   }
@@ -94,13 +94,13 @@ public interface Cluster {
   LocalMember member();
 
   /**
-   * Returns a member by URI.
+   * Returns a member by member address.
    *
-   * @param uri The unique member URI.
+   * @param id The unique member address.
    * @return The member or {@code null} if the member does not exist.
-   * @throws NullPointerException If the given {@code uri} is {@code null}
+   * @throws NullPointerException If the given {@code address} is {@code null}
    */
-  Member member(String uri);
+  Member member(String id);
 
   /**
    * Returns an immutable set of all cluster members.

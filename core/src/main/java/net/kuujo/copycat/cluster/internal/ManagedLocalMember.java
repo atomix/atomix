@@ -23,7 +23,6 @@ import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
@@ -57,10 +56,10 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   private final Map<String, Integer> hashMap = new HashMap<>();
   private boolean open;
 
-  public ManagedLocalMember(RaftMember member, Protocol protocol, ResourceContext context) {
-    super(member, context);
+  public ManagedLocalMember(String id, String address, Protocol protocol, ResourceContext context) {
+    super(id, context);
     try {
-      this.server = protocol.createServer(new URI(member.uri()));
+      this.server = protocol.createServer(address != null ? new URI(address) : null);
     } catch (URISyntaxException e) {
       throw new ConfigurationException("Invalid protocol URI");
     }
@@ -222,7 +221,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   public CompletableFuture<LocalMember> open() {
     open = true;
     server.connectListener(this::connect);
-    return server.listen().thenApply(v -> this);
+    return server.listen().thenAccept(v -> context.raft().getConfig().setAddress(server.address())).thenCompose(v -> super.open());
   }
 
   @Override
@@ -233,7 +232,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   @Override
   public CompletableFuture<Void> close() {
     open = false;
-    return server.close();
+    return super.close().thenCompose(v -> server.close());
   }
 
   @Override

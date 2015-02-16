@@ -35,7 +35,7 @@ import java.util.UUID;
  *     cluster.addMembershipListener(event -> {
  *       if (event.type() == MembershipEvent.Type.JOIN) {
  *         event.member().send("Hello!").thenAccept(reply -> {
- *           System.out.println(event.member().uri() + " said " + reply);
+ *           System.out.println(event.member().id() + " said " + reply);
  *         });
  *       }
  *     });

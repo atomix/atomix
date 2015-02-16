@@ -18,7 +18,6 @@ package net.kuujo.copycat.resource;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.ManagedCluster;
-import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.raft.CommitHandler;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.raft.RaftConfig;
@@ -26,6 +25,7 @@ import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.protocol.CommandRequest;
 import net.kuujo.copycat.raft.protocol.QueryRequest;
 import net.kuujo.copycat.raft.protocol.Response;
+import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
@@ -33,6 +33,8 @@ import net.kuujo.copycat.util.internal.Assert;
 import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -46,35 +48,54 @@ import java.util.concurrent.ScheduledExecutorService;
 public class ResourceContext implements Managed<ResourceContext> {
   private final String name;
   private final ResourceConfig<?> config;
-  private final RaftContext context;
-  private final ManagedCluster cluster;
   private final Serializer serializer;
   private final ScheduledExecutorService scheduler;
   private final Executor executor;
+  private final ManagedCluster cluster;
+  private final RaftContext context;
   private CompletableFuture<ResourceContext> openFuture;
   private CompletableFuture<Void> closeFuture;
   private volatile boolean open;
 
-  public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster) {
-    this(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d")), Executors.newSingleThreadExecutor(new NamedThreadFactory(name)));
+  public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster) {
+    this(config, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory(config.getName())));
   }
 
-  public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster, Executor executor) {
-    this(name, config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + name + "-%d")), executor);
+  public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster, Executor executor) {
+    this(config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + config.getName() + "-%d")), executor);
   }
 
-  public ResourceContext(String name, ResourceConfig<?> config, ClusterConfig cluster, ScheduledExecutorService scheduler, Executor executor) {
-    this.name = Assert.isNotNull(name, "name");
+  public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster, ScheduledExecutorService scheduler, Executor executor) {
     this.config = Assert.isNotNull(config, "config").resolve();
-    RaftConfig raftConfig = new RaftConfig(this.config.toMap());
-    if (raftConfig.getReplicas().isEmpty()) {
-      raftConfig.setReplicas(cluster.getMembers());
-    }
+    this.name = this.config.getName();
     this.serializer = this.config.getSerializer();
     this.scheduler = Assert.isNotNull(scheduler, "scheduler");
     this.executor = Assert.isNotNull(executor, "executor");
-    this.context = new RaftContext(name, cluster.getLocalMember(), raftConfig, scheduler);
-    this.cluster = new ManagedCluster(cluster.getProtocol(), this);
+    this.context = new RaftContext(createRaftConfig(config, cluster), scheduler);
+    this.cluster = new ManagedCluster(cluster, this);
+  }
+
+  /**
+   * Creates a Raft configuration from a resource and cluster configuration.
+   */
+  private static RaftConfig createRaftConfig(ResourceConfig<?> config, ClusterConfig cluster) {
+    RaftConfig raft = new RaftConfig(config.toMap())
+      .withName(config.getName())
+      .withId(cluster.getLocalMember().getId())
+      .withAddress(cluster.getLocalMember().getAddress());
+
+    Map<String, String> members = new HashMap<>(cluster.getMembers().size());
+    if (config.getReplicas().isEmpty()) {
+      cluster.getMembers().forEach(m -> members.put(m.getId(), m.getAddress()));
+    } else {
+      for (String id : config.getReplicas()) {
+        if (!cluster.hasMember(id)) {
+          throw new ConfigurationException(String.format("Invalid cluster member: %s", id));
+        }
+        members.put(id, cluster.getMember(id).getAddress());
+      }
+    }
+    return raft;
   }
 
   /**
@@ -121,15 +142,6 @@ public class ResourceContext implements Managed<ResourceContext> {
    */
   public Cluster cluster() {
     return cluster;
-  }
-
-  /**
-   * Returns the Copycat log.
-   *
-   * @return The Copycat log.
-   */
-  public LogManager log() {
-    return context.log();
   }
 
   /**
@@ -192,7 +204,7 @@ public class ResourceContext implements Managed<ResourceContext> {
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     QueryRequest request = QueryRequest.builder()
-      .withUri(context.getLocalMember().uri())
+      .withId(context.getLocalMember().id())
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
@@ -222,7 +234,7 @@ public class ResourceContext implements Managed<ResourceContext> {
 
     CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
     CommandRequest request = CommandRequest.builder()
-      .withUri(context.getLocalMember().uri())
+      .withId(context.getLocalMember().id())
       .withEntry(entry)
       .build();
     context.command(request).whenComplete((response, error) -> {

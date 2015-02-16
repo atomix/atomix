@@ -34,11 +34,13 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class ResourceConfig<T extends ResourceConfig<T>> extends AbstractConfigurable {
+  private static final String RESOURCE_NAME = "name";
+  private static final String RESOURCE_DEFAULT_NAME = "default-name";
+  private static final String RESOURCE_REPLICAS = "replicas";
+  private static final String RESOURCE_LOG = "log";
   private static final String RESOURCE_SERIALIZER = "serializer";
   private static final String RESOURCE_ELECTION_TIMEOUT = "election.timeout";
   private static final String RESOURCE_HEARTBEAT_INTERVAL = "heartbeat.interval";
-  private static final String RESOURCE_REPLICAS = "replicas";
-  private static final String RESOURCE_LOG = "log";
 
   private static final String CONFIGURATION = "resource";
   private static final String DEFAULT_CONFIGURATION = "resource-defaults";
@@ -68,6 +70,66 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
     } catch (NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new ConfigurationException("Failed to instantiate configuration via copy constructor", e);
     }
+  }
+
+  /**
+   * Sets the cluster-wide resource name.
+   *
+   * @param name The cluster-wide resource name.
+   */
+  public void setName(String name) {
+    this.config = config.withValue(RESOURCE_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
+  }
+
+  /**
+   * Returns the cluster-wide resource name.
+   *
+   * @return The cluster-wide resource name.
+   */
+  public String getName() {
+    return config.hasPath(RESOURCE_NAME) ? config.getString(RESOURCE_NAME) : config.getString(RESOURCE_DEFAULT_NAME);
+  }
+
+  /**
+   * Sets the cluster-wide resource name, returning the configuration for method chaining.
+   *
+   * @param name The cluster-wide resource name.
+   * @return The resource configuration.
+   */
+  @SuppressWarnings("unchecked")
+  public T withName(String name) {
+    setName(name);
+    return (T) this;
+  }
+
+  /**
+   * Sets the default resource name.
+   *
+   * @param name The default resource name.
+   */
+  public void setDefaultName(String name) {
+    this.config = config.withValue(RESOURCE_DEFAULT_NAME, ConfigValueFactory.fromAnyRef(Assert.isNotNull(name, "name")));
+  }
+
+  /**
+   * Returns the default resource name.
+   *
+   * @return The default resource name.
+   */
+  public String getDefaultName() {
+    return config.getString(RESOURCE_DEFAULT_NAME);
+  }
+
+  /**
+   * Sets the default resource name, returning the configuration for method chaining.
+   *
+   * @param name The default resource name.
+   * @return The resource configuration.
+   */
+  @SuppressWarnings("unchecked")
+  public T withDefaultName(String name) {
+    setName(name);
+    return (T) this;
   }
 
   /**
@@ -274,29 +336,33 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   }
 
   /**
-   * Sets the set of replicas for the resource.
+   * Sets all resource replica identifiers.
    *
-   * @param replicas The set of replicas for the resource.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
+   * @param ids A collection of resource replica identifiers.
    */
-  public void setReplicas(String... replicas) {
-    setReplicas(Arrays.asList(replicas));
+  public void setReplicas(String... ids) {
+    setReplicas(new ArrayList<>(Arrays.asList(ids)));
   }
 
   /**
-   * Sets the set of replicas for the resource.
+   * Sets all resource replica identifiers.
    *
-   * @param replicas The set of replicas for the resource.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
+   * @param ids A collection of resource replica identifiers.
+   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
    */
-  public void setReplicas(Collection<String> replicas) {
+  public void setReplicas(Collection<String> ids) {
+    Assert.isNotNull(ids, "ids");
+    Set<String> replicas = new HashSet<>(ids.size());
+    for (String id : ids) {
+      replicas.add(Assert.isNotNull(id, "id"));
+    }
     this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.isNotNull(replicas, "replicas"))));
   }
 
   /**
-   * Returns the set of replicas for the resource.
+   * Returns a set of all resource replica identifiers.
    *
-   * @return The set of replicas for the resource.
+   * @return A set of all resource replica identifiers.
    */
   @SuppressWarnings({"unchecked", "rawtypes"})
   public Set<String> getReplicas() {
@@ -304,66 +370,112 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
   }
 
   /**
-   * Sets the set of replicas for the resource, returning the configuration for method chaining.
+   * Adds a replica to the resource, returning the resource configuration for method chaining.
    *
-   * @param replicas The set of replicas for the resource.
+   * @param id The replica identifier to add.
    * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
+   * @throws java.lang.NullPointerException If {@code id} is {@code null}
    */
   @SuppressWarnings("unchecked")
-  public T withReplicas(String... replicas) {
-    setReplicas(Arrays.asList(replicas));
-    return (T) this;
-  }
-
-  /**
-   * Sets the set of replicas for the resource, returning the configuration for method chaining.
-   *
-   * @param replicas The set of replicas for the resource.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T withReplicas(Collection<String> replicas) {
-    setReplicas(replicas);
-    return (T) this;
-  }
-
-  /**
-   * Adds a replica to the set of replicas for the resource.
-   *
-   * @param replica The replica URI to add.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replica} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T addReplica(String replica) {
+  public T addReplica(String id) {
     if (!config.hasPath(RESOURCE_REPLICAS)) {
       this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
     }
     List<Object> replicas = config.getList(RESOURCE_REPLICAS).unwrapped();
-    replicas.add(Assert.isNotNull(replica, "replica"));
+    replicas.add(Assert.isNotNull(id, "id"));
     this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(replicas));
     return (T) this;
   }
 
   /**
-   * Removes a replica from the set of replicas for the resource.
+   * Sets all resource replica identifiers, returning the resource configuration for method chaining.
    *
-   * @param replica The replica URI to remove.
+   * @param ids A collection of resource replica identifiers.
    * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replica} is {@code null}
    */
   @SuppressWarnings("unchecked")
-  public T removeReplica(String replica) {
+  public T withReplicas(String... ids) {
+    setReplicas(ids);
+    return (T) this;
+  }
+
+  /**
+   * Sets all resource replica identifiers, returning the resource configuration for method chaining.
+   *
+   * @param ids A collection of resource replica identifiers.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  public T withReplicas(Collection<String> ids) {
+    setReplicas(ids);
+    return (T) this;
+  }
+
+  /**
+   * Adds a collection of replica identifiers to the configuration, returning the resource configuration for method chaining.
+   *
+   * @param ids A collection of resource replica identifiers to add.
+   * @return The resource configuration.
+   */
+  public T addReplicas(String... ids) {
+    return addReplicas(Arrays.asList(ids));
+  }
+
+  /**
+   * Adds a collection of replica identifiers to the configuration, returning the resource configuration for method chaining.
+   *
+   * @param ids A collection of resource replica identifiers to add.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  public T addReplicas(Collection<String> ids) {
+    Assert.isNotNull(ids, "ids");
+    ids.forEach(this::addReplica);
+    return (T) this;
+  }
+
+  /**
+   * Removes a replica from the configuration, returning the resource configuration for method chaining.
+   *
+   * @param id The replica identifier to remove.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If {@code id} is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  public T removeReplica(String id) {
     List<Object> replicas = config.getList(RESOURCE_REPLICAS).unwrapped();
-    replicas.remove(Assert.isNotNull(replica, "replica"));
+    replicas.remove(Assert.isNotNull(id, "id"));
     this.config = config.withValue(RESOURCE_REPLICAS, ConfigValueFactory.fromIterable(replicas));
     return (T) this;
   }
 
   /**
-   * Clears the set of replicas for the resource.
+   * Removes a collection of replica identifiers from the configuration, returning the resource configuration for method chaining.
+   *
+   * @param ids A collection of resource replica identifiers to remove.
+   * @return The resource configuration.
+   */
+  public T removeReplicas(String... ids) {
+    return removeReplicas(Arrays.asList(ids));
+  }
+
+  /**
+   * Removes a collection of replica identifiers from the configuration, returning the resource configuration for method chaining.
+   *
+   * @param ids A collection of resource replica identifiers to remove.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
+   */
+  @SuppressWarnings("unchecked")
+  public T removeReplicas(Collection<String> ids) {
+    ids.forEach(this::removeReplica);
+    return (T) this;
+  }
+
+  /**
+   * Clears all replica identifiers from the configuration, returning the resource configuration for method chaining.
    *
    * @return The resource configuration.
    */
@@ -389,7 +501,7 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The resource log.
    */
   public Log getLog() {
-    return Configurable.load(config.getObject(RESOURCE_LOG).unwrapped());
+    return config.hasPath(RESOURCE_LOG) ? Configurable.load(config.getObject(RESOURCE_LOG).unwrapped()) : null;
   }
 
   /**
@@ -411,6 +523,8 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> extends Abstra
    * @return The resolved resource configuration.
    */
   public ResourceConfig<?> resolve() {
+    Assert.config(getName(), Assert.NOT_NULL, "No resource name configured");
+    Assert.config(getLog(), Assert.NOT_NULL, "No resource log configured");
     return this;
   }
 

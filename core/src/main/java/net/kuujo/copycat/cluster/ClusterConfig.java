@@ -15,45 +15,25 @@
  */
 package net.kuujo.copycat.cluster;
 
+import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
-import net.kuujo.copycat.util.ConfigurationException;
 import net.kuujo.copycat.util.internal.Assert;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
- * Copycat cluster configuration.<p>
- *
- * The cluster configuration defines how Copycat communicates with other nodes and defines the set of full voting
- * members of the Raft cluster.<p>
- *
- * Most importantly, users should explicitly configure the {@link net.kuujo.copycat.protocol.Protocol} for the Copycat
- * cluster in all scenarios except testing. By default, the configuration uses a
- * {@link net.kuujo.copycat.protocol.LocalProtocol}, but users should use a network based protocol according to the
- * environment in which Copycat is being run.<p>
- *
- * Members of the Copycat cluster are specified by providing member URIs. URIs must agree with the configured protocol
- * when they are added to the configuration.<p>
- *
- * <pre>
- *   {@code
- *     ClusterConfig cluster = new ClusterConfig()
- *       .withProtocol(new VertxEventBusProtocol(vertx))
- *       .withLocalMember("eventbus://foo")
- *       .withMembers("eventbus://foo", "eventbus://bar", "eventbus://baz");
- *   }
- * </pre>
+ * Cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ClusterConfig extends AbstractConfigurable {
+  private static final String CLUSTER_ID = "member.id";
+  private static final String CLUSTER_ADDRESS = "member.address";
   private static final String CLUSTER_PROTOCOL = "protocol";
-  private static final String CLUSTER_LOCAL_MEMBER = "local-member";
   private static final String CLUSTER_MEMBERS = "members";
 
   private static final String CONFIGURATION = "cluster";
@@ -63,15 +43,15 @@ public class ClusterConfig extends AbstractConfigurable {
     super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public ClusterConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
+  public ClusterConfig(Map<String, Object> map) {
+    super(map, CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public ClusterConfig(String resource) {
-    super(addResources(new String[]{resource}, CONFIGURATION, DEFAULT_CONFIGURATION));
+  public ClusterConfig(String... resources) {
+    super(addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
-  private ClusterConfig(ClusterConfig config) {
+  public ClusterConfig(Configurable config) {
     super(config);
   }
 
@@ -84,7 +64,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * Sets the cluster protocol.
    *
    * @param protocol The cluster protocol.
-   * @throws NullPointerException If @{code protocol} is {@code null}
+   * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public void setProtocol(Protocol protocol) {
     this.config = config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.isNotNull(protocol, "protocol").toMap()));
@@ -104,7 +84,7 @@ public class ClusterConfig extends AbstractConfigurable {
    *
    * @param protocol The cluster protocol.
    * @return The cluster configuration.
-   * @throws NullPointerException If @{code protocol} is {@code null}
+   * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public ClusterConfig withProtocol(Protocol protocol) {
     setProtocol(protocol);
@@ -112,193 +92,238 @@ public class ClusterConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the local cluster member.
+   * Sets the local member identifier.
    *
-   * @param uri The local cluster member.
+   * @param id The local member identifier.
+   * @throws java.lang.NullPointerException If the member identifier id {@code null}
    */
-  public void setLocalMember(String uri) {
-    if (uri != null) {
-      this.config = config.withValue(CLUSTER_LOCAL_MEMBER, ConfigValueFactory.fromAnyRef(uri));
+  public void setLocalMember(String id) {
+    this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.isNotNull(id, "id")));
+  }
+
+  /**
+   * Sets the local member identifier and address.
+   *
+   * @param id The local member identifier.
+   * @param address The local member address.
+   * @throws java.lang.NullPointerException If the member identifier is {@code null}
+   */
+  public void setLocalMember(String id, String address) {
+    if (address == null) {
+      setLocalMember(id);
     } else {
-      this.config = config.withoutPath(CLUSTER_LOCAL_MEMBER);
+      this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.isNotNull(id, "id")))
+        .withValue(CLUSTER_ADDRESS, ConfigValueFactory.fromAnyRef(address));
     }
   }
 
   /**
-   * Returns the local cluster member.
+   * Sets the local member configuration.
    *
-   * @return The local cluster member or {@code null} if no local member is specified.
+   * @param member The local member configuration.
+   * @throws java.lang.NullPointerException If the member configuration is {@code null}
    */
-  public String getLocalMember() {
-    return config.hasPath(CLUSTER_LOCAL_MEMBER) ? config.getString(CLUSTER_LOCAL_MEMBER) : null;
+  public void setLocalMember(MemberConfig member) {
+    setLocalMember(member.getId(), member.getAddress());
   }
 
   /**
-   * Sets the local member, returning the configuration for method chaining.
+   * Returns the local member configuration.
    *
-   * @param uri The local cluster member URI.
-   * @return The cluster configuration.
+   * @return The local member configuration.
    */
-  public ClusterConfig withLocalMember(String uri) {
-    setLocalMember(uri);
+  public MemberConfig getLocalMember() {
+    return new MemberConfig(config.getString(CLUSTER_ID), config.hasPath(CLUSTER_ADDRESS) ? config.getString(CLUSTER_ADDRESS) : null);
+  }
+
+  /**
+   * Sets the local member identifier, returning the cluster configuration for method chaining.
+   *
+   * @param id The local member identifier.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the member identifier id {@code null}
+   */
+  public ClusterConfig withLocalMember(String id) {
+    setLocalMember(id);
     return this;
   }
 
   /**
-   * Sets all cluster member URIs.
+   * Sets the local member identifier and address, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of cluster member URIs.
-   * @throws IllegalArgumentException If a given URI is invalid
+   * @param id The local member identifier.
+   * @param address The local member address.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
-  public void setMembers(String... uris) {
-    setMembers(new ArrayList<>(Arrays.asList(uris)));
+  public ClusterConfig withLocalMember(String id, String address) {
+    setLocalMember(id, address);
+    return this;
   }
 
   /**
-   * Sets all cluster member URIs.
+   * Sets the local member configuration, returning the cluster configuration for method chaining.
    *
-   * @param uris A collection of cluster member URIs.
-   * @throws NullPointerException If {@code uris} is {@code null}
-   * @throws IllegalArgumentException If a given URI is invalid
+   * @param member The local member configuration.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the member configuration is {@code null}
    */
-  public void setMembers(Collection<String> uris) {
-    Assert.isNotNull(uris, "uris");
-    Set<String> members = new HashSet<>(uris.size());
-    for (String uri : uris) {
-      try {
-        members.add(Assert.isNotNull(Assert.arg(uri, getProtocol().isValidUri(new URI(uri)), "invalid protocol URI"), "uri"));
-      } catch (URISyntaxException e) {
-        throw new IllegalArgumentException(e);
+  public ClusterConfig withLocalMember(MemberConfig member) {
+    setLocalMember(member);
+    return this;
+  }
+
+  /**
+   * Sets the set of cluster members.
+   *
+   * @param members The set of cluster members.
+   * @throws java.lang.NullPointerException If the set of members is {@code null}
+   */
+  public void setMembers(MemberConfig... members) {
+    setMembers(Arrays.asList(Assert.isNotNull(members, "members")));
+  }
+
+  /**
+   * Sets the set of cluster members.
+   *
+   * @param members The set of cluster members.
+   * @throws java.lang.NullPointerException If the set of members is {@code null}
+   */
+  public void setMembers(Collection<MemberConfig> members) {
+    if (!config.hasPath(CLUSTER_MEMBERS)) {
+      this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
+    }
+    ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
+    Map<String, Object> unwrapped = config.unwrapped();
+    Assert.isNotNull(members, "members").forEach(member -> unwrapped.put(member.getId(), Assert.isNotNull(member, "member").getAddress()));
+    this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
+  }
+
+  /**
+   * Returns the set of cluster members.
+   *
+   * @return The set of cluster members.
+   */
+  public Set<MemberConfig> getMembers() {
+    return new HashSet<>(config.hasPath(CLUSTER_MEMBERS)
+      ? config.getObject(CLUSTER_MEMBERS).unwrapped().entrySet().stream()
+      .map(e -> new MemberConfig(e.getKey(), e.getValue().toString())).collect(Collectors.toSet())
+      : new HashSet<>(0));
+  }
+
+  /**
+   * Returns a boolean value indicating whether the cluster contains a member with the given identifier.
+   *
+   * @param id The unique member identifier.
+   * @return Indicates whether the cluster contains a member with the given identifier.
+   * @throws java.lang.NullPointerException If the member identifier is {@code null}
+   */
+  public boolean hasMember(String id) {
+    return config.hasPath(CLUSTER_MEMBERS) && config.getObject(CLUSTER_MEMBERS).containsKey(id);
+  }
+
+  public MemberConfig getMember(String id) {
+    if (config.hasPath(CLUSTER_MEMBERS)) {
+      Map<String, Object> members = config.getObject(CLUSTER_MEMBERS).unwrapped();
+      String address = (String) members.get(Assert.isNotNull(id, "id"));
+      if (address != null) {
+        return new MemberConfig(id, address);
       }
     }
-    this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.isNotNull(members, "members"))));
+    return null;
   }
 
   /**
-   * Returns a set of all cluster member URIs.
+   * Sets the set of cluster members, returning the configuration for method chaining.
    *
-   * @return A set of all cluster member URIs.
-   */
-  @SuppressWarnings({ "unchecked", "rawtypes" })
-  public Set<String> getMembers() {
-    return new HashSet<String>(config.hasPath(CLUSTER_MEMBERS) ? (List) config.getList(CLUSTER_MEMBERS).unwrapped() : new ArrayList<>(0));
-  }
-
-  /**
-   * Adds a member to the cluster, returning the cluster configuration for method chaining.
-   *
-   * @param uri The member URI to add.
+   * @param members The set of cluster members.
    * @return The cluster configuration.
-   * @throws NullPointerException If {@code uri} is {@code null}
-   * @throws IllegalArgumentException If the given URI is invalid
+   * @throws java.lang.NullPointerException If the set of members is {@code null}
    */
-  public ClusterConfig addMember(String uri) {
+  public ClusterConfig withMembers(MemberConfig... members) {
+    setMembers(Assert.isNotNull(members, "members"));
+    return this;
+  }
+
+  /**
+   * Sets the set of cluster members, returning the configuration for method chaining.
+   *
+   * @param members The set of cluster members.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the set of members is {@code null}
+   */
+  public ClusterConfig withMembers(Collection<MemberConfig> members) {
+    setMembers(members);
+    return this;
+  }
+
+  /**
+   * Adds a seed member to the cluster.
+   *
+   * @param member The seed member to add.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the member is {@code null}
+   */
+  public ClusterConfig addMember(MemberConfig member) {
+    return addMember(Assert.isNotNull(member, "member").getId(), member.getAddress());
+  }
+
+  /**
+   * Adds a seed member to the cluster.
+   *
+   * @param id The seed member's unique identifier.
+   * @param address The seed member's unique address.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the member identifier or address is {@code null}
+   */
+  public ClusterConfig addMember(String id, String address) {
     if (!config.hasPath(CLUSTER_MEMBERS)) {
-      this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
+      this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
     }
-    List<Object> members = config.getList(CLUSTER_MEMBERS).unwrapped();
-    try {
-      members.add(Assert.arg(Assert.isNotNull(uri, "uri"), getProtocol().isValidUri(new URI(uri)), "invalid protocol URI"));
-    } catch (URISyntaxException e) {
-      throw new ConfigurationException("Invalid protocol URI", e);
+    ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
+    Map<String, Object> unwrapped = config.unwrapped();
+    unwrapped.put(Assert.isNotNull(id, "id"), Assert.isNotNull(address, "address"));
+    this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
+    return this;
+  }
+
+  /**
+   * Removes a seed member from the cluster.
+   *
+   * @param member The seed member to remove.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the member is {@code null}
+   */
+  public ClusterConfig removeMember(MemberConfig member) {
+    return removeMember(member.getId());
+  }
+
+  /**
+   * Removes a seed member from the cluster.
+   *
+   * @param id The seed member's unique identifier.
+   * @return The cluster configuration.
+   * @throws java.lang.NullPointerException If the member identifier is {@code null}
+   */
+  public ClusterConfig removeMember(String id) {
+    if (config.hasPath(CLUSTER_MEMBERS)) {
+      ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
+      Map<String, Object> unwrapped = config.unwrapped();
+      unwrapped.remove(Assert.isNotNull(id, "id"));
+      this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
     }
-    this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(members));
     return this;
   }
 
   /**
-   * Sets all cluster member URIs, returning the cluster configuration for method chaining.
-   *
-   * @param uris A collection of cluster member URIs.
-   * @return The cluster configuration.
-   * @throws IllegalArgumentException If a given URI is invalid
-   */
-  public ClusterConfig withMembers(String... uris) {
-    setMembers(uris);
-    return this;
-  }
-
-  /**
-   * Sets all cluster member URIs, returning the cluster configuration for method chaining.
-   *
-   * @param uris A collection of cluster member URIs.
-   * @return The cluster configuration.
-   * @throws NullPointerException If {@code uris} is {@code null}
-   * @throws IllegalArgumentException If a given URI is invalid
-   */
-  public ClusterConfig withMembers(Collection<String> uris) {
-    setMembers(uris);
-    return this;
-  }
-
-  /**
-   * Adds a collection of member URIs to the configuration, returning the cluster configuration for method chaining.
-   *
-   * @param uris A collection of cluster member URIs to add.
-   * @return The cluster configuration.
-   * @throws IllegalArgumentException If a given URI is invalid
-   */
-  public ClusterConfig addMembers(String... uris) {
-    return addMembers(Arrays.asList(uris));
-  }
-
-  /**
-   * Adds a collection of member URIs to the configuration, returning the cluster configuration for method chaining.
-   *
-   * @param uris A collection of cluster member URIs to add.
-   * @return The cluster configuration.
-   * @throws NullPointerException If {@code uris} is {@code null}
-   * @throws IllegalArgumentException If a given URI is invalid
-   */
-  public ClusterConfig addMembers(Collection<String> uris) {
-    Assert.isNotNull(uris, "uris");
-    uris.forEach(this::addMember);
-    return this;
-  }
-
-  /**
-   * Removes a member from the configuration, returning the cluster configuration for method chaining.
-   *
-   * @param uri The member URI to remove.
-   * @return The cluster configuration.
-   * @throws NullPointerException If {@code uri} is {@code null}
-   */
-  public ClusterConfig removeMember(String uri) {
-    List<Object> members = config.getList(CLUSTER_MEMBERS).unwrapped();
-    members.remove(Assert.isNotNull(uri, "uri"));
-    this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromIterable(members));
-    return this;
-  }
-
-  /**
-   * Removes a collection of member URIs from the configuration, returning the cluster configuration for method chaining.
-   *
-   * @param uris A collection of cluster member URIs to remove.
-   * @return The cluster configuration.
-   */
-  public ClusterConfig removeMembers(String... uris) {
-    return removeMembers(Arrays.asList(uris));
-  }
-
-  /**
-   * Removes a collection of member URIs from the configuration, returning the cluster configuration for method chaining.
-   *
-   * @param uris A collection of cluster member URIs to remove.
-   * @return The cluster configuration.
-   * @throws NullPointerException If {@code uris} is {@code null}
-   */
-  public ClusterConfig removeMembers(Collection<String> uris) {
-    uris.forEach(this::removeMember);
-    return this;
-  }
-
-  /**
-   * Clears all member URIs from the configuration, returning the cluster configuration for method chaining.
+   * Clears all seed members from the cluster.
    *
    * @return The cluster configuration.
    */
   public ClusterConfig clearMembers() {
-    this.config = config.withoutPath(CLUSTER_MEMBERS);
+    if (config.hasPath(CLUSTER_MEMBERS)) {
+      this.config = config.withoutPath(CLUSTER_MEMBERS);
+    }
     return this;
   }
 
