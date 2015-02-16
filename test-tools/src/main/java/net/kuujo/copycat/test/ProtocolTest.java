@@ -56,7 +56,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
    * Creates a new test resource.
    */
   private TestResource createTestResource(ClusterConfig cluster) {
-    return new TestResource(new ResourceContext("test", new TestResource.Config().withLog(new BufferedLog()), cluster, Executors
+    return new TestResource(new ResourceContext(new TestResource.Config().withLog(new BufferedLog()), cluster, Executors
       .newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-test-%d"))));
   }
 
@@ -84,7 +84,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
     expectResume();
     Cluster cluster = active.cluster();
     cluster.addMembershipListener(event -> {
-      if (event.member().uri().equals(passive.cluster().member().uri())) {
+      if (event.member().address().equals(passive.cluster().member().address())) {
         threadAssertTrue(event.type() == MembershipEvent.Type.JOIN);
         resume();
       }
@@ -107,7 +107,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
     expectResume();
     Cluster cluster = passive1.cluster();
     cluster.addMembershipListener(event -> {
-      if (event.member().uri().equals(passive2.cluster().member().uri())) {
+      if (event.member().address().equals(passive2.cluster().member().address())) {
         threadAssertTrue(event.type() == MembershipEvent.Type.JOIN);
         resume();
       }
@@ -130,9 +130,9 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
     expectResume();
     Cluster cluster = active.cluster();
     cluster.addMembershipListener(event -> {
-      if (event.type() == MembershipEvent.Type.JOIN && event.member().uri().equals(passive.cluster().member().uri())) {
+      if (event.type() == MembershipEvent.Type.JOIN && event.member().address().equals(passive.cluster().member().address())) {
         threadAssertTrue(joined.compareAndSet(false, true));
-      } else if (event.type() == MembershipEvent.Type.LEAVE && event.member().uri().equals(passive.cluster().member().uri())) {
+      } else if (event.type() == MembershipEvent.Type.LEAVE && event.member().address().equals(passive.cluster().member().address())) {
         threadAssertTrue(joined.get());
         resume();
       }
@@ -156,9 +156,9 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
     expectResume();
     Cluster cluster = passive1.cluster();
     cluster.addMembershipListener(event -> {
-      if (event.type() == MembershipEvent.Type.JOIN && event.member().uri().equals(passive2.cluster().member().uri())) {
+      if (event.type() == MembershipEvent.Type.JOIN && event.member().address().equals(passive2.cluster().member().address())) {
         threadAssertTrue(joined.compareAndSet(false, true));
-      } else if (event.type() == MembershipEvent.Type.LEAVE && event.member().uri().equals(passive2.cluster().member().uri())) {
+      } else if (event.type() == MembershipEvent.Type.LEAVE && event.member().address().equals(passive2.cluster().member().address())) {
         threadAssertTrue(joined.get());
         resume();
       }

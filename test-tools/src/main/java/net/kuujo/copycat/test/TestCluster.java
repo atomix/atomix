@@ -16,6 +16,7 @@
 package net.kuujo.copycat.test;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.resource.Resource;
 
@@ -52,7 +53,7 @@ public class TestCluster<T extends Resource<T>> {
     private int activeMembers = 3;
     private int passiveMembers = 2;
     private Function<Integer, String> uriFactory;
-    private Function<Collection<String>, ClusterConfig> clusterFactory;
+    private Function<Collection<MemberConfig>, ClusterConfig> clusterFactory;
     private Function<ClusterConfig, T> resourceFactory;
 
     /**
@@ -82,7 +83,7 @@ public class TestCluster<T extends Resource<T>> {
     /**
      * Sets the cluster configuration factory.
      */
-    public Builder<T> withClusterFactory(Function<Collection<String>, ClusterConfig> clusterFactory) {
+    public Builder<T> withClusterFactory(Function<Collection<MemberConfig>, ClusterConfig> clusterFactory) {
       this.clusterFactory = clusterFactory;
       return this;
     }
@@ -103,14 +104,14 @@ public class TestCluster<T extends Resource<T>> {
 
       List<T> activeResources = new ArrayList<>(activeMembers);
 
-      Set<String> members = new HashSet<>(activeMembers);
+      Set<MemberConfig> members = new HashSet<>(activeMembers);
       int activeCount = activeMembers + id;
       while (id < activeCount) {
         String uri = uriFactory.apply(id++);
-        members.add(uri);
+        members.add(new MemberConfig(uri, uri));
       }
 
-      for (String member : members) {
+      for (MemberConfig member : members) {
         ClusterConfig cluster = clusterFactory.apply(members).withLocalMember(member);
         activeResources.add(resourceFactory.apply(cluster));
       }
@@ -152,10 +153,10 @@ public class TestCluster<T extends Resource<T>> {
     CompletableFuture<Void>[] futures = new CompletableFuture[activeResources.size() + passiveResources.size()];
     int i = 0;
     for (T resource : activeResources) {
-      futures[i++] = resource.open().thenRun(() -> System.out.println(resource.cluster().member().uri() + " started successfully!")).thenApply(v -> null);
+      futures[i++] = resource.open().thenRun(() -> System.out.println(resource.cluster().member().address() + " started successfully!")).thenApply(v -> null);
     }
     for (T resource : passiveResources) {
-      futures[i++] = resource.open().thenRun(() -> System.out.println(resource.cluster().member().uri() + " started successfully!")).thenApply(v -> null);
+      futures[i++] = resource.open().thenRun(() -> System.out.println(resource.cluster().member().address() + " started successfully!")).thenApply(v -> null);
     }
     return CompletableFuture.allOf(futures);
   }
