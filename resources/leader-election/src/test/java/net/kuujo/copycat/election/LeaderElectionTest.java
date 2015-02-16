@@ -36,7 +36,9 @@ public class LeaderElectionTest {
   public void testLeaderElectionAsSeedMember() throws Exception {
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol())
-      .withMembers("local://foo", "local://bar", "local://baz");
+      .addMember("foo", "local://foo")
+      .addMember("bar", "local://bar")
+      .addMember("baz", "local://baz");
 
     LeaderElection election1 = LeaderElection.create("test", cluster.copy().withLocalMember("local://foo"));
     LeaderElection election2 = LeaderElection.create("test", cluster.copy().withLocalMember("local://bar"));

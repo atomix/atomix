@@ -16,14 +16,17 @@
 package net.kuujo.copycat.election.internal;
 
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ElectionEvent;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.election.LeaderElection;
+import net.kuujo.copycat.election.LeaderElectionConfig;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Default leader election implementation.
@@ -32,6 +35,14 @@ import java.util.Map;
  */
 public class DefaultLeaderElection extends AbstractResource<LeaderElection> implements LeaderElection {
   private final Map<EventListener<Member>, EventListener<ElectionEvent>> listeners = new HashMap<>();
+
+  public DefaultLeaderElection(LeaderElectionConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultLeaderElection(LeaderElectionConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   public DefaultLeaderElection(ResourceContext context) {
     super(context);

@@ -38,6 +38,7 @@ public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
 
   public LeaderElectionConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   private LeaderElectionConfig(LeaderElectionConfig config) {
