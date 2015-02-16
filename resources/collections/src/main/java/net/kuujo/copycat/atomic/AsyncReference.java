@@ -15,10 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.DefaultAsyncReference;
+import net.kuujo.copycat.atomic.internal.ReferenceState;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.state.StateMachine;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
@@ -26,7 +29,7 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<AsyncReference<T>> {
+public class AsyncReference<T> extends AbstractResource<AsyncReference<T>> implements AsyncReferenceProxy<T> {
 
   /**
    * Creates a new asynchronous atomic reference, loading the log configuration from the classpath.
@@ -34,7 +37,7 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param <T> The asynchronous atomic reference entry type.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create() {
+  public static <T> AsyncReference<T> create() {
     return create(new AsyncReferenceConfig(), new ClusterConfig());
   }
 
@@ -44,7 +47,7 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param <T> The asynchronous atomic reference entry type.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create(Executor executor) {
+  public static <T> AsyncReference<T> create(Executor executor) {
     return create(new AsyncReferenceConfig(), new ClusterConfig(), executor);
   }
 
@@ -55,7 +58,7 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param <T> The asynchronous atomic reference entry type.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create(String name) {
+  public static <T> AsyncReference<T> create(String name) {
     return create(new AsyncReferenceConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
@@ -67,7 +70,7 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param <T> The asynchronous atomic reference entry type.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create(String name, Executor executor) {
+  public static <T> AsyncReference<T> create(String name, Executor executor) {
     return create(new AsyncReferenceConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
@@ -78,7 +81,7 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param cluster The cluster configuration.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create(String name, ClusterConfig cluster) {
+  public static <T> AsyncReference<T> create(String name, ClusterConfig cluster) {
     return create(new AsyncReferenceConfig(name), cluster);
   }
 
@@ -90,7 +93,7 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param executor An executor on which to execute asynchronous atomic reference callbacks.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create(String name, ClusterConfig cluster, Executor executor) {
+  public static <T> AsyncReference<T> create(String name, ClusterConfig cluster, Executor executor) {
     return create(new AsyncReferenceConfig(name), cluster, executor);
   }
 
@@ -101,8 +104,8 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param cluster The cluster configuration.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create(AsyncReferenceConfig config, ClusterConfig cluster) {
-    return new DefaultAsyncReference<>(config, cluster);
+  public static <T> AsyncReference<T> create(AsyncReferenceConfig config, ClusterConfig cluster) {
+    return new AsyncReference<>(config, cluster);
   }
 
   /**
@@ -113,8 +116,60 @@ public interface AsyncReference<T> extends AsyncReferenceProxy<T>, Resource<Asyn
    * @param executor An executor on which to execute asynchronous atomic reference callbacks.
    * @return A new asynchronous atomic reference instance.
    */
-  static <T> AsyncReference<T> create(AsyncReferenceConfig config, ClusterConfig cluster, Executor executor) {
-    return new DefaultAsyncReference<>(config, cluster, executor);
+  public static <T> AsyncReference<T> create(AsyncReferenceConfig config, ClusterConfig cluster, Executor executor) {
+    return new AsyncReference<>(config, cluster, executor);
+  }
+
+  private StateMachine<ReferenceState<T>> stateMachine;
+  private AsyncReferenceProxy<T> proxy;
+
+  public AsyncReference(AsyncReferenceConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public AsyncReference(AsyncReferenceConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
+
+  @SuppressWarnings("unchecked")
+  public AsyncReference(ResourceContext context) {
+    super(context);
+    this.stateMachine = new StateMachine<>(context);
+  }
+
+  @Override
+  public CompletableFuture<T> get() {
+    return proxy.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> set(T value) {
+    return proxy.set(value);
+  }
+
+  @Override
+  public CompletableFuture<T> getAndSet(T value) {
+    return proxy.getAndSet(value);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> compareAndSet(T expect, T update) {
+    return proxy.compareAndSet(expect, update);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized CompletableFuture<AsyncReference<T>> open() {
+    return stateMachine.open()
+      .thenRun(() -> {
+        this.proxy = stateMachine.createProxy(AsyncReferenceProxy.class);
+      }).thenApply(v -> this);
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    proxy = null;
+    return stateMachine.close();
   }
 
 }

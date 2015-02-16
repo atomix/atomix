@@ -15,10 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.DefaultAsyncLong;
+import net.kuujo.copycat.atomic.internal.LongState;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.state.StateMachine;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
@@ -26,14 +29,14 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
+public class AsyncLong extends AbstractResource<AsyncLong> implements AsyncLongProxy {
 
   /**
    * Creates a new asynchronous atomic long, loading the log configuration from the classpath.
    *
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create() {
+  public static AsyncLong create() {
     return create(new AsyncLongConfig(), new ClusterConfig());
   }
 
@@ -42,7 +45,7 @@ public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
    *
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create(Executor executor) {
+  public static AsyncLong create(Executor executor) {
     return create(new AsyncLongConfig(), new ClusterConfig(), executor);
   }
 
@@ -52,7 +55,7 @@ public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
    * @param name The asynchronous atomic long resource name to be used to load the asynchronous atomic long configuration from the classpath.
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create(String name) {
+  public static AsyncLong create(String name) {
     return create(new AsyncLongConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
@@ -63,7 +66,7 @@ public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
    * @param executor An executor on which to execute asynchronous atomic long callbacks.
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create(String name, Executor executor) {
+  public static AsyncLong create(String name, Executor executor) {
     return create(new AsyncLongConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
@@ -74,7 +77,7 @@ public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
    * @param cluster The cluster configuration.
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create(String name, ClusterConfig cluster) {
+  public static AsyncLong create(String name, ClusterConfig cluster) {
     return create(new AsyncLongConfig(name), cluster);
   }
 
@@ -86,7 +89,7 @@ public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
    * @param executor An executor on which to execute asynchronous atomic long callbacks.
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create(String name, ClusterConfig cluster, Executor executor) {
+  public static AsyncLong create(String name, ClusterConfig cluster, Executor executor) {
     return create(new AsyncLongConfig(name), cluster, executor);
   }
 
@@ -97,8 +100,8 @@ public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
    * @param cluster The cluster configuration.
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create(AsyncLongConfig config, ClusterConfig cluster) {
-    return new DefaultAsyncLong(config, cluster);
+  public static AsyncLong create(AsyncLongConfig config, ClusterConfig cluster) {
+    return new AsyncLong(config, cluster);
   }
 
   /**
@@ -109,8 +112,89 @@ public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
    * @param executor An executor on which to execute asynchronous atomic long callbacks.
    * @return A new asynchronous atomic long instance.
    */
-  static AsyncLong create(AsyncLongConfig config, ClusterConfig cluster, Executor executor) {
-    return new DefaultAsyncLong(config, cluster, executor);
+  public static AsyncLong create(AsyncLongConfig config, ClusterConfig cluster, Executor executor) {
+    return new AsyncLong(config, cluster, executor);
+  }
+
+  private StateMachine<LongState> stateMachine;
+  private AsyncLongProxy proxy;
+
+  public AsyncLong(AsyncLongConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public AsyncLong(AsyncLongConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
+
+  public AsyncLong(ResourceContext context) {
+    super(context);
+    this.stateMachine = new StateMachine<>(context);
+  }
+
+  @Override
+  public CompletableFuture<Long> get() {
+    return proxy.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> set(long value) {
+    return proxy.set(value);
+  }
+
+  @Override
+  public CompletableFuture<Long> addAndGet(long value) {
+    return proxy.addAndGet(value);
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndAdd(long value) {
+    return proxy.getAndAdd(value);
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndSet(long value) {
+    return proxy.getAndSet(value);
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndIncrement() {
+    return proxy.getAndIncrement();
+  }
+
+  @Override
+  public CompletableFuture<Long> getAndDecrement() {
+    return proxy.getAndDecrement();
+  }
+
+  @Override
+  public CompletableFuture<Long> incrementAndGet() {
+    return proxy.incrementAndGet();
+  }
+
+  @Override
+  public CompletableFuture<Long> decrementAndGet() {
+    return proxy.decrementAndGet();
+  }
+
+  @Override
+  public CompletableFuture<Boolean> compareAndSet(long expect, long update) {
+    return proxy.compareAndSet(expect, update);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized CompletableFuture<AsyncLong> open() {
+    return stateMachine.open()
+      .thenRun(() -> {
+        this.proxy = stateMachine.createProxy(AsyncLongProxy.class);
+      }).thenApply(v -> this);
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    proxy = null;
+    return stateMachine.close();
   }
 
 }

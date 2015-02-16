@@ -16,10 +16,20 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
-import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.collections.internal.map.MapState;
+import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.util.concurrent.Futures;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Asynchronous map.
@@ -29,7 +39,7 @@ import java.util.concurrent.Executor;
  * @param <K> The map key type.
  * @param <V> The map entry type.
  */
-public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K, V>> {
+public class AsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> implements AsyncMapProxy<K, V> {
 
   /**
    * Creates a new asynchronous map, loading the log configuration from the classpath.
@@ -38,7 +48,7 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create() {
+  public static <K, V> AsyncMap<K, V> create() {
     return create(new AsyncMapConfig(), new ClusterConfig());
   }
 
@@ -49,7 +59,7 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(Executor executor) {
+  public static <K, V> AsyncMap<K, V> create(Executor executor) {
     return create(new AsyncMapConfig(), new ClusterConfig(), executor);
   }
 
@@ -61,7 +71,7 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(String name) {
+  public static <K, V> AsyncMap<K, V> create(String name) {
     return create(new AsyncMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
@@ -74,7 +84,7 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(String name, Executor executor) {
+  public static <K, V> AsyncMap<K, V> create(String name, Executor executor) {
     return create(new AsyncMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
@@ -87,7 +97,7 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster) {
+  public static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster) {
     return create(new AsyncMapConfig(name), cluster);
   }
 
@@ -101,7 +111,7 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, Executor executor) {
+  public static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, Executor executor) {
     return create(new AsyncMapConfig(name), cluster, executor);
   }
 
@@ -114,8 +124,8 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster) {
-    return new DefaultAsyncMap<>(config, cluster);
+  public static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster) {
+    return new AsyncMap<>(config, cluster);
   }
 
   /**
@@ -128,8 +138,166 @@ public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
-    return new DefaultAsyncMap<>(config, cluster, executor);
+  public static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
+    return new AsyncMap<>(config, cluster, executor);
+  }
+
+  private final StateMachine<MapState<K, V>> stateMachine;
+  private AsyncMapProxy<K, V> proxy;
+
+  public AsyncMap(AsyncMapConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public AsyncMap(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
+
+  @SuppressWarnings("unchecked")
+  public AsyncMap(ResourceContext context) {
+    super(context);
+    this.stateMachine = new StateMachine<>(context);
+  }
+
+  /**
+   * If the map is closed, returning a failed CompletableFuture. Otherwise, calls the given supplier to
+   * return the completed future result.
+   *
+   * @param supplier The supplier to call if the map is open.
+   * @param <T> The future result type.
+   * @return A completable future that if this map is closed is immediately failed.
+   */
+  protected <T> CompletableFuture<T> checkOpen(Supplier<CompletableFuture<T>> supplier) {
+    if (proxy == null) {
+      return Futures.exceptionalFuture(new IllegalStateException("Map closed"));
+    }
+    return supplier.get();
+  }
+
+  @Override
+  public CompletableFuture<Integer> size() {
+    return checkOpen(proxy::size);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> isEmpty() {
+    return checkOpen(proxy::isEmpty);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsKey(Object key) {
+    return checkOpen(() -> proxy.containsKey(key));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> containsValue(Object value) {
+    return checkOpen(() -> proxy.containsValue(value));
+  }
+
+  @Override
+  public CompletableFuture<V> get(Object key) {
+    return checkOpen(() -> proxy.get(key));
+  }
+
+  @Override
+  public CompletableFuture<V> put(K key, V value) {
+    return checkOpen(() -> proxy.put(key, value));
+  }
+
+  @Override
+  public CompletableFuture<V> remove(Object key) {
+    return checkOpen(() -> proxy.remove(key));
+  }
+
+  @Override
+  public CompletableFuture<Void> putAll(Map<? extends K, ? extends V> m) {
+    return checkOpen(() -> proxy.putAll(m));
+  }
+
+  @Override
+  public CompletableFuture<Void> clear() {
+    return checkOpen(proxy::clear);
+  }
+
+  @Override
+  public CompletableFuture<Set<K>> keySet() {
+    return checkOpen(proxy::keySet);
+  }
+
+  @Override
+  public CompletableFuture<Collection<V>> values() {
+    return checkOpen(proxy::values);
+  }
+
+  @Override
+  public CompletableFuture<Set<Map.Entry<K, V>>> entrySet() {
+    return checkOpen(proxy::entrySet);
+  }
+
+  @Override
+  public CompletableFuture<V> getOrDefault(Object key, V defaultValue) {
+    return checkOpen(() -> proxy.getOrDefault(key, defaultValue));
+  }
+
+  @Override
+  public CompletableFuture<Void> replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
+    return checkOpen(() -> proxy.replaceAll(function));
+  }
+
+  @Override
+  public CompletableFuture<V> putIfAbsent(K key, V value) {
+    return checkOpen(() -> proxy.putIfAbsent(key, value));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> remove(Object key, Object value) {
+    return checkOpen(() -> proxy.remove(key, value));
+  }
+
+  @Override
+  public CompletableFuture<Boolean> replace(K key, V oldValue, V newValue) {
+    return checkOpen(() -> proxy.replace(key, oldValue, newValue));
+  }
+
+  @Override
+  public CompletableFuture<V> replace(K key, V value) {
+    return checkOpen(() -> proxy.replace(key, value));
+  }
+
+  @Override
+  public CompletableFuture<V> computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
+    return checkOpen(() -> proxy.computeIfAbsent(key, mappingFunction));
+  }
+
+  @Override
+  public CompletableFuture<V> computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return checkOpen(() -> proxy.computeIfPresent(key, remappingFunction));
+  }
+
+  @Override
+  public CompletableFuture<V> compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    return checkOpen(() -> proxy.compute(key, remappingFunction));
+  }
+
+  @Override
+  public CompletableFuture<V> merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
+    return checkOpen(() -> proxy.merge(key, value, remappingFunction));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized CompletableFuture<AsyncMap<K, V>> open() {
+    return stateMachine.open()
+      .thenRun(() -> {
+        this.proxy = stateMachine.createProxy(AsyncMapProxy.class);
+      })
+      .thenApply(v -> null);
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    proxy = null;
+    return stateMachine.close();
   }
 
 }

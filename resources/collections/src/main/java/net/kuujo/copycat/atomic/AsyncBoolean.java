@@ -15,10 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.DefaultAsyncBoolean;
+import net.kuujo.copycat.atomic.internal.BooleanState;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.state.StateMachine;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
@@ -26,14 +29,14 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> {
+public class AsyncBoolean extends AbstractResource<AsyncBoolean> implements AsyncBooleanProxy {
 
   /**
    * Creates a new asynchronous boolean, loading the log configuration from the classpath.
    *
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create() {
+  public static AsyncBoolean create() {
     return create(new AsyncBooleanConfig(), new ClusterConfig());
   }
 
@@ -42,7 +45,7 @@ public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> 
    *
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create(Executor executor) {
+  public static AsyncBoolean create(Executor executor) {
     return create(new AsyncBooleanConfig(), new ClusterConfig(), executor);
   }
 
@@ -52,7 +55,7 @@ public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> 
    * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create(String name) {
+  public static AsyncBoolean create(String name) {
     return create(new AsyncBooleanConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
@@ -63,7 +66,7 @@ public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> 
    * @param executor An executor on which to execute asynchronous boolean callbacks.
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create(String name, Executor executor) {
+  public static AsyncBoolean create(String name, Executor executor) {
     return create(new AsyncBooleanConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
@@ -74,7 +77,7 @@ public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> 
    * @param cluster The cluster configuration.
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create(String name, ClusterConfig cluster) {
+  public static AsyncBoolean create(String name, ClusterConfig cluster) {
     return create(new AsyncBooleanConfig(name), cluster);
   }
 
@@ -86,7 +89,7 @@ public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> 
    * @param executor An executor on which to execute asynchronous boolean callbacks.
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create(String name, ClusterConfig cluster, Executor executor) {
+  public static AsyncBoolean create(String name, ClusterConfig cluster, Executor executor) {
     return create(new AsyncBooleanConfig(name), cluster, executor);
   }
 
@@ -97,8 +100,8 @@ public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> 
    * @param cluster The cluster configuration.
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create(AsyncBooleanConfig config, ClusterConfig cluster) {
-    return new DefaultAsyncBoolean(config, cluster);
+  public static AsyncBoolean create(AsyncBooleanConfig config, ClusterConfig cluster) {
+    return new AsyncBoolean(config, cluster);
   }
 
   /**
@@ -109,8 +112,59 @@ public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> 
    * @param executor An executor on which to execute asynchronous boolean callbacks.
    * @return A new asynchronous boolean instance.
    */
-  static AsyncBoolean create(AsyncBooleanConfig config, ClusterConfig cluster, Executor executor) {
-    return new DefaultAsyncBoolean(config, cluster, executor);
+  public static AsyncBoolean create(AsyncBooleanConfig config, ClusterConfig cluster, Executor executor) {
+    return new AsyncBoolean(config, cluster, executor);
+  }
+
+  private StateMachine<BooleanState> stateMachine;
+  private AsyncBooleanProxy proxy;
+
+  public AsyncBoolean(AsyncBooleanConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public AsyncBoolean(AsyncBooleanConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
+
+  public AsyncBoolean(ResourceContext context) {
+    super(context);
+    this.stateMachine = new StateMachine<>(context);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> get() {
+    return proxy.get();
+  }
+
+  @Override
+  public CompletableFuture<Void> set(boolean value) {
+    return proxy.set(value);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> getAndSet(boolean value) {
+    return proxy.getAndSet(value);
+  }
+
+  @Override
+  public CompletableFuture<Boolean> compareAndSet(boolean expect, boolean update) {
+    return proxy.compareAndSet(expect, update);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public synchronized CompletableFuture<AsyncBoolean> open() {
+    return stateMachine.open()
+      .thenRun(() -> {
+        this.proxy = stateMachine.createProxy(AsyncBooleanProxy.class);
+      }).thenApply(v -> this);
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    proxy = null;
+    return stateMachine.close();
   }
 
 }
