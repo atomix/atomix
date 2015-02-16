@@ -18,7 +18,6 @@ package net.kuujo.copycat.atomic;
 import net.kuujo.copycat.atomic.internal.DefaultAsyncLong;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.Executor;
 
@@ -30,106 +29,88 @@ import java.util.concurrent.Executor;
 public interface AsyncLong extends AsyncLongProxy, Resource<AsyncLong> {
 
   /**
-   * Creates a new asynchronous atomic long with the default cluster configuration.<p>
+   * Creates a new asynchronous atomic long, loading the log configuration from the classpath.
    *
-   * The atomic long will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   * @return A new asynchronous atomic long instance.
+   */
+  static AsyncLong create() {
+    return create(new AsyncLongConfig(), new ClusterConfig());
+  }
+
+  /**
+   * Creates a new asynchronous atomic long, loading the log configuration from the classpath.
    *
-   * Additionally, the atomic long will be constructed with an atomic long configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic long resource. If the resource is namespaced - e.g. `longs.my-long.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `longs.conf`.
+   * @return A new asynchronous atomic long instance.
+   */
+  static AsyncLong create(Executor executor) {
+    return create(new AsyncLongConfig(), new ClusterConfig(), executor);
+  }
+
+  /**
+   * Creates a new asynchronous atomic long, loading the log configuration from the classpath.
    *
-   * @param name The asynchronous atomic long name.
-   * @return The asynchronous atomic long.
+   * @param name The asynchronous atomic long resource name to be used to load the asynchronous atomic long configuration from the classpath.
+   * @return A new asynchronous atomic long instance.
    */
   static AsyncLong create(String name) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncLongConfig(name));
+    return create(new AsyncLongConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
   /**
-   * Creates a new asynchronous atomic long with the default cluster configuration.<p>
+   * Creates a new asynchronous atomic long, loading the log configuration from the classpath.
    *
-   * The atomic long will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
-   *
-   * Additionally, the atomic long will be constructed with an atomic long configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic long resource. If the resource is namespaced - e.g. `longs.my-long.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `longs.conf`.
-   *
-   * @param name The asynchronous atomic long name.
-   * @param executor An executor on which to execute long callbacks.
-   * @return The asynchronous atomic long.
+   * @param name The asynchronous atomic long resource name to be used to load the asynchronous atomic long configuration from the classpath.
+   * @param executor An executor on which to execute asynchronous atomic long callbacks.
+   * @return A new asynchronous atomic long instance.
    */
   static AsyncLong create(String name, Executor executor) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncLongConfig(name), executor);
+    return create(new AsyncLongConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
   /**
-   * Creates a new asynchronous atomic long with the default atomic long configuration.<p>
+   * Creates a new asynchronous atomic long with the given cluster and asynchronous atomic long configurations.
    *
-   * The atomic long will be constructed with an atomic long configuration that searches the classpath for three
-   * configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic long resource. If the resource is namespaced - e.g. `longs.my-long.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `longs.conf`.
-   *
-   * @param name The asynchronous atomic long name.
+   * @param name The asynchronous atomic long resource name to be used to load the asynchronous atomic long configuration from the classpath.
    * @param cluster The cluster configuration.
-   * @return The asynchronous atomic long.
+   * @return A new asynchronous atomic long instance.
    */
   static AsyncLong create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncLongConfig(name));
+    return create(new AsyncLongConfig(name), cluster);
   }
 
   /**
-   * Creates a new asynchronous atomic long with the default atomic long configuration.<p>
+   * Creates a new asynchronous atomic long with the given cluster and asynchronous atomic long configurations.
    *
-   * The atomic long will be constructed with an atomic long configuration that searches the classpath for three
-   * configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic long resource. If the resource is namespaced - e.g. `longs.my-long.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `longs.conf`.
-   *
-   * @param name The asynchronous atomic long name.
+   * @param name The asynchronous atomic long resource name to be used to load the asynchronous atomic long configuration from the classpath.
    * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute long callbacks.
-   * @return The asynchronous atomic long.
+   * @param executor An executor on which to execute asynchronous atomic long callbacks.
+   * @return A new asynchronous atomic long instance.
    */
   static AsyncLong create(String name, ClusterConfig cluster, Executor executor) {
-    return create(name, cluster, new AsyncLongConfig(name), executor);
+    return create(new AsyncLongConfig(name), cluster, executor);
   }
 
   /**
-   * Creates a new asynchronous atomic long.
+   * Creates a new asynchronous atomic long with the given cluster and asynchronous atomic long configurations.
    *
-   * @param name The asynchronous atomic long name.
+   * @param config The asynchronous atomic long configuration.
    * @param cluster The cluster configuration.
-   * @param config The atomic long configuration.
-   * @return The asynchronous atomic long.
+   * @return A new asynchronous atomic long instance.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncLong create(String name, ClusterConfig cluster, AsyncLongConfig config) {
-    return new DefaultAsyncLong(new ResourceContext(name, config, cluster));
+  static AsyncLong create(AsyncLongConfig config, ClusterConfig cluster) {
+    return new DefaultAsyncLong(config, cluster);
   }
 
   /**
-   * Creates a new asynchronous atomic long.
+   * Creates a new asynchronous atomic long with the given cluster and asynchronous atomic long configurations.
    *
-   * @param name The asynchronous atomic long name.
+   * @param config The asynchronous atomic long configuration.
    * @param cluster The cluster configuration.
-   * @param config The atomic long configuration.
-   * @param executor An executor on which to execute long callbacks.
-   * @return The asynchronous atomic long.
+   * @param executor An executor on which to execute asynchronous atomic long callbacks.
+   * @return A new asynchronous atomic long instance.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncLong create(String name, ClusterConfig cluster, AsyncLongConfig config, Executor executor) {
-    return new DefaultAsyncLong(new ResourceContext(name, config, cluster, executor));
+  static AsyncLong create(AsyncLongConfig config, ClusterConfig cluster, Executor executor) {
+    return new DefaultAsyncLong(config, cluster, executor);
   }
 
 }

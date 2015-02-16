@@ -18,7 +18,6 @@ package net.kuujo.copycat.atomic;
 import net.kuujo.copycat.atomic.internal.DefaultAsyncBoolean;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.Executor;
 
@@ -30,106 +29,88 @@ import java.util.concurrent.Executor;
 public interface AsyncBoolean extends AsyncBooleanProxy, Resource<AsyncBoolean> {
 
   /**
-   * Creates a new asynchronous atomic boolean with the default cluster configuration.<p>
+   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
    *
-   * The atomic boolean will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
+   * @return A new asynchronous boolean instance.
+   */
+  static AsyncBoolean create() {
+    return create(new AsyncBooleanConfig(), new ClusterConfig());
+  }
+
+  /**
+   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
    *
-   * Additionally, the atomic boolean will be constructed with an atomic boolean configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic boolean resource. If the resource is namespaced - e.g. `booleans.my-boolean.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `booleans.conf`.
+   * @return A new asynchronous boolean instance.
+   */
+  static AsyncBoolean create(Executor executor) {
+    return create(new AsyncBooleanConfig(), new ClusterConfig(), executor);
+  }
+
+  /**
+   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
    *
-   * @param name The asynchronous atomic boolean name.
-   * @return The asynchronous atomic boolean.
+   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
+   * @return A new asynchronous boolean instance.
    */
   static AsyncBoolean create(String name) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncBooleanConfig(name));
+    return create(new AsyncBooleanConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
   /**
-   * Creates a new asynchronous atomic boolean with the default cluster configuration.<p>
+   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
    *
-   * The atomic boolean will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
-   *
-   * Additionally, the atomic boolean will be constructed with an atomic boolean configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic boolean resource. If the resource is namespaced - e.g. `booleans.my-boolean.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `booleans.conf`.
-   *
-   * @param name The asynchronous atomic boolean name.
-   * @param executor An executor on which to execute boolean callbacks.
-   * @return The asynchronous atomic boolean.
+   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
+   * @param executor An executor on which to execute asynchronous boolean callbacks.
+   * @return A new asynchronous boolean instance.
    */
   static AsyncBoolean create(String name, Executor executor) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncBooleanConfig(name), executor);
+    return create(new AsyncBooleanConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
   /**
-   * Creates a new asynchronous atomic boolean with the default atomic boolean configuration.<p>
+   * Creates a new asynchronous boolean with the given cluster and asynchronous boolean configurations.
    *
-   * The atomic boolean will be constructed with an atomic boolean configuration that searches the classpath for three
-   * configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic boolean resource. If the resource is namespaced - e.g. `booleans.my-boolean.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `booleans.conf`.
-   *
-   * @param name The asynchronous atomic boolean name.
+   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
    * @param cluster The cluster configuration.
-   * @return The asynchronous atomic boolean.
+   * @return A new asynchronous boolean instance.
    */
   static AsyncBoolean create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncBooleanConfig(name));
+    return create(new AsyncBooleanConfig(name), cluster);
   }
 
   /**
-   * Creates a new asynchronous atomic boolean with the default atomic boolean configuration.<p>
+   * Creates a new asynchronous boolean with the given cluster and asynchronous boolean configurations.
    *
-   * The atomic boolean will be constructed with an atomic boolean configuration that searches the classpath for three
-   * configuration files - {@code {name}}, {@code atomic}, {@code atomic-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the atomic boolean resource. If the resource is namespaced - e.g. `booleans.my-boolean.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `booleans.conf`.
-   *
-   * @param name The asynchronous atomic boolean name.
+   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
    * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute boolean callbacks.
-   * @return The asynchronous atomic boolean.
+   * @param executor An executor on which to execute asynchronous boolean callbacks.
+   * @return A new asynchronous boolean instance.
    */
   static AsyncBoolean create(String name, ClusterConfig cluster, Executor executor) {
-    return create(name, cluster, new AsyncBooleanConfig(name), executor);
+    return create(new AsyncBooleanConfig(name), cluster, executor);
   }
 
   /**
-   * Creates a new asynchronous atomic boolean.
+   * Creates a new asynchronous boolean with the given cluster and asynchronous boolean configurations.
    *
-   * @param name The asynchronous atomic boolean name.
+   * @param config The asynchronous boolean configuration.
    * @param cluster The cluster configuration.
-   * @param config The atomic boolean configuration.
-   * @return The asynchronous atomic boolean.
+   * @return A new asynchronous boolean instance.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncBoolean create(String name, ClusterConfig cluster, AsyncBooleanConfig config) {
-    return new DefaultAsyncBoolean(new ResourceContext(name, config, cluster));
+  static AsyncBoolean create(AsyncBooleanConfig config, ClusterConfig cluster) {
+    return new DefaultAsyncBoolean(config, cluster);
   }
 
   /**
-   * Creates a new asynchronous atomic boolean.
+   * Creates a new asynchronous boolean with the given cluster and asynchronous boolean configurations.
    *
-   * @param name The asynchronous atomic boolean name.
+   * @param config The asynchronous boolean configuration.
    * @param cluster The cluster configuration.
-   * @param config The atomic boolean configuration.
-   * @param executor An executor on which to execute boolean callbacks.
-   * @return The asynchronous atomic boolean.
+   * @param executor An executor on which to execute asynchronous boolean callbacks.
+   * @return A new asynchronous boolean instance.
    */
-  @SuppressWarnings({"unchecked", "rawtypes"})
-  static AsyncBoolean create(String name, ClusterConfig cluster, AsyncBooleanConfig config, Executor executor) {
-    return new DefaultAsyncBoolean(new ResourceContext(name, config, cluster, executor));
+  static AsyncBoolean create(AsyncBooleanConfig config, ClusterConfig cluster, Executor executor) {
+    return new DefaultAsyncBoolean(config, cluster, executor);
   }
 
 }

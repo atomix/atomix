@@ -15,7 +15,9 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.AsyncMultiMap;
+import net.kuujo.copycat.collections.AsyncMultiMapConfig;
 import net.kuujo.copycat.collections.AsyncMultiMapProxy;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -27,6 +29,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -38,6 +41,14 @@ import java.util.function.Supplier;
 public class DefaultAsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K, V>> implements AsyncMultiMap<K, V> {
   private final StateMachine<MultiMapState<K, V>> stateMachine;
   private AsyncMultiMapProxy<K, V> proxy;
+
+  public DefaultAsyncMultiMap(AsyncMultiMapConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultAsyncMultiMap(AsyncMultiMapConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   @SuppressWarnings("unchecked")
   public DefaultAsyncMultiMap(ResourceContext context) {

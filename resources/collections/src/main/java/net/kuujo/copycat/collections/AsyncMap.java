@@ -18,7 +18,6 @@ package net.kuujo.copycat.collections;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.internal.map.DefaultAsyncMap;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceContext;
 
 import java.util.concurrent.Executor;
 
@@ -33,116 +32,104 @@ import java.util.concurrent.Executor;
 public interface AsyncMap<K, V> extends AsyncMapProxy<K, V>, Resource<AsyncMap<K, V>> {
 
   /**
-   * Creates a new asynchronous map with the default cluster configuration.<p>
+   * Creates a new asynchronous map, loading the log configuration from the classpath.
    *
-   * The map will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
-   *
-   * Additionally, the map will be constructed with an map configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code map}, {@code map-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the map resource. If the resource is namespaced - e.g. `maps.my-map.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
-   *
-   * @param name The asynchronous map name.
-   * @param <K> The map key type.
+   * @param <K> the map key type.
    * @param <V> The map value type.
-   * @return The asynchronous map.
+   * @return A new asynchronous map instance.
+   */
+  static <K, V> AsyncMap<K, V> create() {
+    return create(new AsyncMapConfig(), new ClusterConfig());
+  }
+
+  /**
+   * Creates a new asynchronous map, loading the log configuration from the classpath.
+   *
+   * @param <K> the map key type.
+   * @param <V> The map value type.
+   * @return A new asynchronous map instance.
+   */
+  static <K, V> AsyncMap<K, V> create(Executor executor) {
+    return create(new AsyncMapConfig(), new ClusterConfig(), executor);
+  }
+
+  /**
+   * Creates a new asynchronous map, loading the log configuration from the classpath.
+   *
+   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
+   * @param <K> the map key type.
+   * @param <V> The map value type.
+   * @return A new asynchronous map instance.
    */
   static <K, V> AsyncMap<K, V> create(String name) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncMapConfig(name));
+    return create(new AsyncMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
   /**
-   * Creates a new asynchronous map with the default cluster configuration.<p>
+   * Creates a new asynchronous map, loading the log configuration from the classpath.
    *
-   * The map will be constructed with the default cluster configuration. The default cluster configuration
-   * searches for two resources on the classpath - {@code cluster} and {cluster-defaults} - in that order. Configuration
-   * options specified in {@code cluster.conf} will override those in {cluster-defaults.conf}.<p>
-   *
-   * Additionally, the map will be constructed with an map configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code map}, {@code map-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the map resource. If the resource is namespaced - e.g. `maps.my-map.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
-   *
-   * @param name The asynchronous map name.
-   * @param executor An executor on which to execute map callbacks.
-   * @param <K> The map key type.
+   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
+   * @param executor An executor on which to execute asynchronous map callbacks.
+   * @param <K> the map key type.
    * @param <V> The map value type.
-   * @return The asynchronous map.
+   * @return A new asynchronous map instance.
    */
   static <K, V> AsyncMap<K, V> create(String name, Executor executor) {
-    return create(name, new ClusterConfig(String.format("%s-cluster", name)), new AsyncMapConfig(name), executor);
+    return create(new AsyncMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
   /**
-   * Creates a new asynchronous map.<p>
+   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
    *
-   * The map will be constructed with an map configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code map}, {@code map-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the map resource. If the resource is namespaced - e.g. `maps.my-map.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
-   *
-   * @param name The asynchronous map name.
+   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
    * @param cluster The cluster configuration.
-   * @param <K> The map key type.
+   * @param <K> the map key type.
    * @param <V> The map value type.
-   * @return The asynchronous map.
+   * @return A new asynchronous map instance.
    */
   static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster) {
-    return create(name, cluster, new AsyncMapConfig(name));
+    return create(new AsyncMapConfig(name), cluster);
   }
 
   /**
-   * Creates a new asynchronous map.<p>
+   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
    *
-   * The map will be constructed with an map configuration that searches the classpath for
-   * three configuration files - {@code {name}}, {@code map}, {@code map-defaults}, {@code resource}, and
-   * {@code resource-defaults} - in that order. The first resource is a configuration resource with the same name
-   * as the map resource. If the resource is namespaced - e.g. `maps.my-map.conf` - then resource
-   * configurations will be loaded according to namespaces as well; for example, `maps.conf`.
-   *
-   * @param name The asynchronous map name.
+   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
    * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute map callbacks.
-   * @param <K> The map key type.
+   * @param executor An executor on which to execute asynchronous map callbacks.
+   * @param <K> the map key type.
    * @param <V> The map value type.
-   * @return The asynchronous map.
+   * @return A new asynchronous map instance.
    */
   static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(name, cluster, new AsyncMapConfig(name), executor);
+    return create(new AsyncMapConfig(name), cluster, executor);
   }
 
   /**
-   * Creates a new asynchronous map.
+   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
    *
-   * @param name The asynchronous map name.
+   * @param config The asynchronous map configuration.
    * @param cluster The cluster configuration.
-   * @param config The map configuration.
-   * @param <K> The map key type.
+   * @param <K> the map key type.
    * @param <V> The map value type.
-   * @return The asynchronous map.
+   * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, AsyncMapConfig config) {
-    return new DefaultAsyncMap<>(new ResourceContext(name, config, cluster));
+  static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster) {
+    return new DefaultAsyncMap<>(config, cluster);
   }
 
   /**
-   * Creates a new asynchronous map.
+   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
    *
-   * @param name The asynchronous map name.
+   * @param config The asynchronous map configuration.
    * @param cluster The cluster configuration.
-   * @param config The map configuration.
-   * @param executor An executor on which to execute map callbacks.
-   * @param <K> The map key type.
+   * @param executor An executor on which to execute asynchronous map callbacks.
+   * @param <K> the map key type.
    * @param <V> The map value type.
-   * @return The asynchronous map.
+   * @return A new asynchronous map instance.
    */
-  static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, AsyncMapConfig config, Executor executor) {
-    return new DefaultAsyncMap<>(new ResourceContext(name, config, cluster, executor));
+  static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
+    return new DefaultAsyncMap<>(config, cluster, executor);
   }
 
 }

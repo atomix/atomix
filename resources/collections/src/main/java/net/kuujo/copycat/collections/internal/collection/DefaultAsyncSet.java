@@ -15,10 +15,14 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.AsyncSet;
+import net.kuujo.copycat.collections.AsyncSetConfig;
 import net.kuujo.copycat.collections.AsyncSetProxy;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
+
+import java.util.concurrent.Executor;
 
 /**
  * Default asynchronous set.
@@ -26,6 +30,14 @@ import net.kuujo.copycat.state.internal.DefaultStateMachine;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultAsyncSet<T> extends AbstractAsyncCollection<AsyncSet<T>, SetState<T>, AsyncSetProxy<T>, T> implements AsyncSet<T> {
+
+  public DefaultAsyncSet(AsyncSetConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultAsyncSet(AsyncSetConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   @SuppressWarnings("unchecked")
   public DefaultAsyncSet(ResourceContext context) {

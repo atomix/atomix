@@ -40,6 +40,7 @@ public class AsyncSetConfig extends AsyncCollectionConfig<AsyncSetConfig> {
 
   public AsyncSetConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected AsyncSetConfig(AsyncSetConfig config) {
@@ -55,7 +56,8 @@ public class AsyncSetConfig extends AsyncCollectionConfig<AsyncSetConfig> {
   public ResourceConfig<?> resolve() {
     return new StateMachineConfig(toMap())
       .withStateType(SetState.class)
-      .withInitialState(SetState.class);
+      .withInitialState(SetState.class)
+      .resolve();
   }
 
 }

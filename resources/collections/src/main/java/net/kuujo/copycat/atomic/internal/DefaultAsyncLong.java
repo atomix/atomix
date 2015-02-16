@@ -16,13 +16,16 @@
 package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.atomic.AsyncLong;
+import net.kuujo.copycat.atomic.AsyncLongConfig;
 import net.kuujo.copycat.atomic.AsyncLongProxy;
-import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Default asynchronous atomic long implementation.
@@ -32,6 +35,14 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultAsyncLong extends AbstractResource<AsyncLong> implements AsyncLong {
   private StateMachine<LongState> stateMachine;
   private AsyncLongProxy proxy;
+
+  public DefaultAsyncLong(AsyncLongConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultAsyncLong(AsyncLongConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   public DefaultAsyncLong(ResourceContext context) {
     super(context);

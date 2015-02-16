@@ -40,6 +40,7 @@ public class AsyncLongConfig extends ResourceConfig<AsyncLongConfig> {
 
   public AsyncLongConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected AsyncLongConfig(AsyncLongConfig config) {
@@ -55,7 +56,8 @@ public class AsyncLongConfig extends ResourceConfig<AsyncLongConfig> {
   public ResourceConfig<?> resolve() {
     return new StateMachineConfig(toMap())
       .withStateType(LongState.class)
-      .withInitialState(LongState.class);
+      .withInitialState(LongState.class)
+      .resolve();
   }
 
 }

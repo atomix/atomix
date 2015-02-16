@@ -45,6 +45,7 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
 
   public AsyncMapConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected AsyncMapConfig(AsyncMapConfig config) {
@@ -113,7 +114,8 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
   public ResourceConfig<?> resolve() {
     return new StateMachineConfig(toMap())
       .withStateType(MapState.class)
-      .withInitialState(MapState.class);
+      .withInitialState(MapState.class)
+      .resolve();
   }
 
 }

@@ -45,6 +45,7 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
 
   public AsyncMultiMapConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected AsyncMultiMapConfig(AsyncMultiMapConfig config) {
@@ -113,7 +114,8 @@ public class AsyncMultiMapConfig extends ResourceConfig<AsyncMultiMapConfig> {
   public ResourceConfig<?> resolve() {
     return new StateMachineConfig(toMap())
       .withStateType(MultiMapState.class)
-      .withInitialState(MultiMapState.class);
+      .withInitialState(MultiMapState.class)
+      .resolve();
   }
 
 }

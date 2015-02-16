@@ -16,13 +16,16 @@
 package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.atomic.AsyncBoolean;
+import net.kuujo.copycat.atomic.AsyncBooleanConfig;
 import net.kuujo.copycat.atomic.AsyncBooleanProxy;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Default asynchronous atomic long implementation.
@@ -32,6 +35,14 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultAsyncBoolean extends AbstractResource<AsyncBoolean> implements AsyncBoolean {
   private StateMachine<BooleanState> stateMachine;
   private AsyncBooleanProxy proxy;
+
+  public DefaultAsyncBoolean(AsyncBooleanConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultAsyncBoolean(AsyncBooleanConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   public DefaultAsyncBoolean(ResourceContext context) {
     super(context);

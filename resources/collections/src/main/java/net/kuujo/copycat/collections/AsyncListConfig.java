@@ -40,6 +40,7 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
 
   public AsyncListConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected AsyncListConfig(AsyncListConfig config) {
@@ -55,7 +56,8 @@ public class AsyncListConfig extends AsyncCollectionConfig<AsyncListConfig> {
   public ResourceConfig<?> resolve() {
     return new StateMachineConfig(toMap())
       .withStateType(ListState.class)
-      .withInitialState(ListState.class);
+      .withInitialState(ListState.class)
+      .resolve();
   }
 
 }

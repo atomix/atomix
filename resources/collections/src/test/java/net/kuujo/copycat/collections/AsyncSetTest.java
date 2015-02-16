@@ -39,7 +39,7 @@ public class AsyncSetTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncSet.create("test", config, new AsyncSetConfig().withLog(new BufferedLog())))
+      .withResourceFactory(config -> AsyncSet.create(new AsyncSetConfig("test").withLog(new BufferedLog()), config))
       .build();
 
     expectResume();

@@ -15,13 +15,16 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.collections.AsyncList;
+import net.kuujo.copycat.collections.AsyncListConfig;
 import net.kuujo.copycat.collections.AsyncListProxy;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Default asynchronous list.
@@ -29,6 +32,14 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultAsyncList<T> extends AbstractAsyncCollection<AsyncList<T>, ListState<T>, AsyncListProxy<T>, T> implements AsyncList<T> {
+
+  public DefaultAsyncList(AsyncListConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultAsyncList(AsyncListConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   @SuppressWarnings("unchecked")
   public DefaultAsyncList(ResourceContext context) {

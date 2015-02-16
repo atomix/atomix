@@ -16,13 +16,16 @@
 package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.atomic.AsyncReference;
+import net.kuujo.copycat.atomic.AsyncReferenceConfig;
 import net.kuujo.copycat.atomic.AsyncReferenceProxy;
-import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.internal.DefaultStateMachine;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * Default asynchronous atomic reference implementation.
@@ -32,6 +35,14 @@ import java.util.concurrent.CompletableFuture;
 public class DefaultAsyncReference<T> extends AbstractResource<AsyncReference<T>> implements AsyncReference<T> {
   private StateMachine<ReferenceState<T>> stateMachine;
   private AsyncReferenceProxy<T> proxy;
+
+  public DefaultAsyncReference(AsyncReferenceConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultAsyncReference(AsyncReferenceConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   @SuppressWarnings("unchecked")
   public DefaultAsyncReference(ResourceContext context) {

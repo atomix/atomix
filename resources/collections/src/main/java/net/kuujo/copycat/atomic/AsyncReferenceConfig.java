@@ -40,6 +40,7 @@ public class AsyncReferenceConfig extends ResourceConfig<AsyncReferenceConfig> {
 
   public AsyncReferenceConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected AsyncReferenceConfig(AsyncReferenceConfig config) {
@@ -55,7 +56,8 @@ public class AsyncReferenceConfig extends ResourceConfig<AsyncReferenceConfig> {
   public ResourceConfig<?> resolve() {
     return new StateMachineConfig(toMap())
       .withStateType(ReferenceState.class)
-      .withInitialState(ReferenceState.class);
+      .withInitialState(ReferenceState.class)
+      .resolve();
   }
 
 }

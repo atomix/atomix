@@ -40,6 +40,7 @@ public class AsyncBooleanConfig extends ResourceConfig<AsyncBooleanConfig> {
 
   public AsyncBooleanConfig(String resource) {
     super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+    setDefaultName(resource);
   }
 
   protected AsyncBooleanConfig(AsyncBooleanConfig config) {
@@ -55,7 +56,8 @@ public class AsyncBooleanConfig extends ResourceConfig<AsyncBooleanConfig> {
   public ResourceConfig<?> resolve() {
     return new StateMachineConfig(toMap())
       .withStateType(BooleanState.class)
-      .withInitialState(BooleanState.class);
+      .withInitialState(BooleanState.class)
+      .resolve();
   }
 
 }

@@ -15,7 +15,10 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
+import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.collections.AsyncListConfig;
 import net.kuujo.copycat.collections.AsyncMap;
+import net.kuujo.copycat.collections.AsyncMapConfig;
 import net.kuujo.copycat.collections.AsyncMapProxy;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -27,6 +30,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -39,6 +43,14 @@ import java.util.function.Supplier;
 public class DefaultAsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> implements AsyncMap<K, V> {
   private final StateMachine<MapState<K, V>> stateMachine;
   private AsyncMapProxy<K, V> proxy;
+
+  public DefaultAsyncMap(AsyncMapConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public DefaultAsyncMap(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
 
   @SuppressWarnings("unchecked")
   public DefaultAsyncMap(ResourceContext context) {
