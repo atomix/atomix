@@ -54,6 +54,11 @@ public class VertxTcpProtocolServer implements ProtocolServer {
   }
 
   @Override
+  public String address() {
+    return String.format("tcp://%s:%d", host, server.actualPort());
+  }
+
+  @Override
   public ProtocolServer connectListener(EventListener<ProtocolConnection> listener) {
     this.listener = listener;
     return this;

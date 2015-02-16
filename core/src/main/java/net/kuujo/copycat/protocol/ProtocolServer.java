@@ -26,6 +26,13 @@ import java.util.concurrent.CompletableFuture;
 public interface ProtocolServer {
 
   /**
+   * Returns the server address.
+   *
+   * @return The server address.
+   */
+  String address();
+
+  /**
    * Starts the server.
    *
    * @return A completable future to be completed once the server is started.

@@ -39,6 +39,11 @@ public class LocalProtocolServer implements ProtocolServer {
     this.registry = registry;
   }
 
+  @Override
+  public String address() {
+    return address;
+  }
+
   CompletableFuture<ProtocolConnection> connect() {
     if (listener != null) {
       LocalProtocolConnection connection = new LocalProtocolConnection();

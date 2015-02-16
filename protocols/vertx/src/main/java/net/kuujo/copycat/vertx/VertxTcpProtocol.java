@@ -436,7 +436,11 @@ public class VertxTcpProtocol extends AbstractProtocol {
 
   @Override
   public ProtocolServer createServer(URI uri) {
-    return new VertxTcpProtocolServer(uri.getHost(), uri.getPort(), this);
+    if (uri != null) {
+      return new VertxTcpProtocolServer(uri.getHost(), uri.getPort(), this);
+    } else {
+      return new VertxTcpProtocolServer(null, 0, this);
+    }
   }
 
   @Override

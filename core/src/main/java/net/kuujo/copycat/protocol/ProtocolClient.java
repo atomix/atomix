@@ -24,6 +24,13 @@ import java.util.concurrent.CompletableFuture;
 public interface ProtocolClient {
 
   /**
+   * Returns the client address.
+   *
+   * @return The client address.
+   */
+  String address();
+
+  /**
    * Connects the protocol client.
    *
    * @return A completable future to be completed once the client is connected.

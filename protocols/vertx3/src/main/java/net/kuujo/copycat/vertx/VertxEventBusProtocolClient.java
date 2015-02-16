@@ -49,6 +49,11 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   }
 
   @Override
+  public String address() {
+    return String.format("eventbus://%s", address);
+  }
+
+  @Override
   public CompletableFuture<ProtocolConnection> connect() {
     CompletableFuture<ProtocolConnection> future = new CompletableFuture<>();
     String address = UUID.randomUUID().toString();

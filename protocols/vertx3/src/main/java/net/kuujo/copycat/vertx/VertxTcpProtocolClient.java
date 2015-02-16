@@ -51,6 +51,11 @@ public class VertxTcpProtocolClient implements ProtocolClient {
   }
 
   @Override
+  public String address() {
+    return String.format("tcp://%s:%d", host, port);
+  }
+
+  @Override
   public CompletableFuture<ProtocolConnection> connect() {
     final CompletableFuture<ProtocolConnection> future = new CompletableFuture<>();
 

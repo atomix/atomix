@@ -51,6 +51,11 @@ public class VertxEventBusProtocolServer implements ProtocolServer, Handler<Mess
   }
 
   @Override
+  public String address() {
+    return String.format("eventbus://%s", address);
+  }
+
+  @Override
   public ProtocolServer connectListener(EventListener<ProtocolConnection> listener) {
     this.listener = listener;
     return this;

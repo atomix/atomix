@@ -37,6 +37,11 @@ public class LocalProtocolClient implements ProtocolClient {
   }
 
   @Override
+  public String address() {
+    return address;
+  }
+
+  @Override
   public CompletableFuture<ProtocolConnection> connect() {
     CompletableFuture<ProtocolConnection> future = new CompletableFuture<>();
     executor.execute(() -> {

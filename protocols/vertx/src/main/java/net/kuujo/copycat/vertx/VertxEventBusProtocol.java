@@ -25,6 +25,7 @@ import org.vertx.java.core.VertxFactory;
 
 import java.net.URI;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Vert.x event bus protocol implementation.
@@ -169,9 +170,9 @@ public class VertxEventBusProtocol extends AbstractProtocol {
   public ProtocolServer createServer(URI uri) {
     Vertx vertx = getVertx();
     if (vertx != null) {
-      return new VertxEventBusProtocolServer(uri.getAuthority(), vertx);
+      return new VertxEventBusProtocolServer(uri != null ? uri.getAuthority() : UUID.randomUUID().toString(), vertx);
     } else {
-      return new VertxEventBusProtocolServer(uri.getAuthority(), createVertx());
+      return new VertxEventBusProtocolServer(uri != null ? uri.getAuthority() : UUID.randomUUID().toString(), createVertx());
     }
   }
 
