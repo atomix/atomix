@@ -37,6 +37,11 @@ public class CoordinatedProtocolClient implements ProtocolClient {
   }
 
   @Override
+  public String address() {
+    return client.address();
+  }
+
+  @Override
   public CompletableFuture<ProtocolConnection> connect() {
     CompletableFuture<ProtocolConnection> future = new CompletableFuture<>();
     client.connect().whenComplete((connection, connectionError) -> {

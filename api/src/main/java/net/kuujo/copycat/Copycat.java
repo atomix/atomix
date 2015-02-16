@@ -58,6 +58,27 @@ public interface Copycat extends Managed<Copycat> {
   }
 
   /**
+   * Creates a new Copycat instance with a named configuration.
+   *
+   * @param name The Copycat configuration resource name.
+   * @return The Copycat instance.
+   */
+  static Copycat create(String name) {
+    return create(new CopycatConfig(name).withClusterConfig(new ClusterConfig()));
+  }
+
+  /**
+   * Creates a new Copycat instance with the default Copycat and cluster configuration.
+   *
+   * @param name The Copycat configuration resource name.
+   * @param executor An executor on which to execute callbacks.
+   * @return The Copycat instance.
+   */
+  static Copycat create(String name, Executor executor) {
+    return create(new CopycatConfig(name).withClusterConfig(new ClusterConfig()), executor);
+  }
+
+  /**
    * Creates a new Copycat instance, overriding the default cluster configuration.
    *
    * @param cluster The global cluster configuration.
@@ -76,6 +97,29 @@ public interface Copycat extends Managed<Copycat> {
    */
   static Copycat create(ClusterConfig cluster, Executor executor) {
     return create(new CopycatConfig().withClusterConfig(cluster), executor);
+  }
+
+  /**
+   * Creates a new Copycat instance, overriding the default cluster configuration.
+   *
+   * @param name The Copycat configuration resource name.
+   * @param cluster The global cluster configuration.
+   * @return The Copycat instance.
+   */
+  static Copycat create(String name, ClusterConfig cluster) {
+    return create(new CopycatConfig(name).withClusterConfig(cluster));
+  }
+
+  /**
+   * Creates a new Copycat instance, overriding the default cluster configuration.
+   *
+   * @param name The Copycat configuration resource name.
+   * @param cluster The global cluster configuration.
+   * @param executor An executor on which to execute callbacks.
+   * @return The Copycat instance.
+   */
+  static Copycat create(String name, ClusterConfig cluster, Executor executor) {
+    return create(new CopycatConfig(name).withClusterConfig(cluster), executor);
   }
 
   /**
@@ -114,18 +158,18 @@ public interface Copycat extends Managed<Copycat> {
   Cluster cluster();
 
   /**
-   * Creates a new event log.
+   * Creates a new event log from a named resource configuration.
    *
-   * @param name The name of the event log to create.
+   * @param name The event log resource name.
    * @param <T> the event log entry type.
    * @return The event log instance.
    */
   <T> EventLog<T> createEventLog(String name);
 
   /**
-   * Creates a new event log.
+   * Creates a new event log from a named resource configuration.
    *
-   * @param name The name of the event log to create.
+   * @param name The event log resource name.
    * @param executor An executor on which to execute callbacks.
    * @param <T> the event log entry type.
    * @return The event log instance.
@@ -135,37 +179,35 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a new event log.
    *
-   * @param name The name of the event log to create.
    * @param config The event log configuration.
    * @param <T> The event log entry type.
    * @return The event log instance.
    */
-  <T> EventLog<T> createEventLog(String name, EventLogConfig config);
+  <T> EventLog<T> createEventLog(EventLogConfig config);
 
   /**
    * Creates a new event log.
    *
-   * @param name The name of the event log to create.
    * @param config The event log configuration.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The event log entry type.
    * @return The event log instance.
    */
-  <T> EventLog<T> createEventLog(String name, EventLogConfig config, Executor executor);
+  <T> EventLog<T> createEventLog(EventLogConfig config, Executor executor);
 
   /**
-   * Creates a new state log.
+   * Creates a new state log from a named resource configuration.
    *
-   * @param name The name of the state log to create.
+   * @param name The state log resource name.
    * @param <T> The state log entry type.
    * @return The state log instance.
    */
   <T> StateLog<T> createStateLog(String name);
 
   /**
-   * Creates a new state log.
+   * Creates a new state log from a named resource configuration.
    *
-   * @param name The name of the state log to create.
+   * @param name The state log resource name.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The state log entry type.
    * @return The state log instance.
@@ -175,28 +217,26 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a new state log.
    *
-   * @param name The name of the state log to create.
    * @param config The state log configuration.
    * @param <T> The state log entry type.
    * @return The state log instance.
    */
-  <T> StateLog<T> createStateLog(String name, StateLogConfig config);
+  <T> StateLog<T> createStateLog(StateLogConfig config);
 
   /**
    * Creates a new state log.
    *
-   * @param name The name of the state log to create.
    * @param config The state log configuration.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The state log entry type.
    * @return The state log instance.
    */
-  <T> StateLog<T> createStateLog(String name, StateLogConfig config, Executor executor);
+  <T> StateLog<T> createStateLog(StateLogConfig config, Executor executor);
 
   /**
-   * Creates a new replicated state machine.
+   * Creates a new replicated state machine from a named resource configuration.
    *
-   * @param name The name of the state machine to create.
+   * @param name The state machine resource name.
    * @param stateType The state machine state type.
    * @param initialState The state machine's initial state.
    * @param <T> The state machine state type.
@@ -205,9 +245,9 @@ public interface Copycat extends Managed<Copycat> {
   <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState);
 
   /**
-   * Creates a new replicated state machine.
+   * Creates a new replicated state machine from a named resource configuration.
    *
-   * @param name The name of the state machine to create.
+   * @param name The state machine resource name.
    * @param stateType The state machine state type.
    * @param initialState The state machine's initial state.
    * @param executor An executor on which to execute callbacks.
@@ -219,36 +259,34 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a new replicated state machine.
    *
-   * @param name The name of the state machine to create.
    * @param config The state machine configuration.
    * @param <T> The state machine state type.
    * @return The state machine instance.
    */
-  <T> StateMachine<T> createStateMachine(String name, StateMachineConfig config);
+  <T> StateMachine<T> createStateMachine(StateMachineConfig config);
 
   /**
    * Creates a new replicated state machine.
    *
-   * @param name The name of the state machine to create.
    * @param config The state machine configuration.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The state machine state type.
    * @return The state machine instance.
    */
-  <T> StateMachine<T> createStateMachine(String name, StateMachineConfig config, Executor executor);
+  <T> StateMachine<T> createStateMachine(StateMachineConfig config, Executor executor);
 
   /**
-   * Creates a new leader election.
+   * Creates a new leader election from a named resource configuration.
    *
-   * @param name The leader election name.
+   * @param name The leader election resource name.
    * @return The leader election instance.
    */
   LeaderElection createLeaderElection(String name);
 
   /**
-   * Creates a new leader election.
+   * Creates a new leader election from a named resource configuration.
    *
-   * @param name The leader election name.
+   * @param name The leader election resource name.
    * @param executor An executor on which to execute callbacks.
    * @return The leader election instance.
    */
@@ -257,26 +295,24 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a new leader election.
    *
-   * @param name The leader election name.
    * @param config The leader election configuration.
    * @return The leader election instance.
    */
-  LeaderElection createLeaderElection(String name, LeaderElectionConfig config);
+  LeaderElection createLeaderElection(LeaderElectionConfig config);
 
   /**
    * Creates a new leader election.
    *
-   * @param name The leader election name.
    * @param config The leader election configuration.
    * @param executor An executor on which to execute callbacks.
    * @return The leader election instance.
    */
-  LeaderElection createLeaderElection(String name, LeaderElectionConfig config, Executor executor);
+  LeaderElection createLeaderElection(LeaderElectionConfig config, Executor executor);
 
   /**
-   * Creates a named asynchronous map.
+   * Creates a named asynchronous map from a named resource configuration.
    *
-   * @param name The map name.
+   * @param name The map resource name.
    * @param <K> The map key type.
    * @param <V> The map value type.
    * @return The asynchronous map instance.
@@ -284,9 +320,9 @@ public interface Copycat extends Managed<Copycat> {
   <K, V> AsyncMap<K, V> createMap(String name);
 
   /**
-   * Creates a named asynchronous map.
+   * Creates a named asynchronous map from a named resource configuration.
    *
-   * @param name The map name.
+   * @param name The map resource name.
    * @param executor An executor on which to execute callbacks.
    * @param <K> The map key type.
    * @param <V> The map value type.
@@ -297,30 +333,28 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a named asynchronous map.
    *
-   * @param name The map name.
    * @param config The map configuration.
    * @param <K> The map key type.
    * @param <V> The map value type.
    * @return The asynchronous map instance.
    */
-  <K, V> AsyncMap<K, V> createMap(String name, AsyncMapConfig config);
+  <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config);
 
   /**
    * Creates a named asynchronous map.
    *
-   * @param name The map name.
    * @param config The map configuration.
    * @param executor An executor on which to execute callbacks.
    * @param <K> The map key type.
    * @param <V> The map value type.
    * @return The asynchronous map instance.
    */
-  <K, V> AsyncMap<K, V> createMap(String name, AsyncMapConfig config, Executor executor);
+  <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config, Executor executor);
 
   /**
-   * Creates a named asynchronous multimap.
+   * Creates a named asynchronous multimap from a named resource configuration.
    *
-   * @param name The multimap name.
+   * @param name The multimap resource name.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return The asynchronous multimap instance.
@@ -328,9 +362,9 @@ public interface Copycat extends Managed<Copycat> {
   <K, V> AsyncMultiMap<K, V> createMultiMap(String name);
 
   /**
-   * Creates a named asynchronous multimap.
+   * Creates a named asynchronous multimap from a named resource configuration.
    *
-   * @param name The multimap name.
+   * @param name The multimap resource name.
    * @param executor An executor on which to execute callbacks.
    * @param <K> The map key type.
    * @param <V> The map entry type.
@@ -341,39 +375,37 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a named asynchronous multimap.
    *
-   * @param name The multimap name.
    * @param config The multimap configuration.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return The asynchronous multimap instance.
    */
-  <K, V> AsyncMultiMap<K, V> createMultiMap(String name, AsyncMultiMapConfig config);
+  <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config);
 
   /**
    * Creates a named asynchronous multimap.
    *
-   * @param name The multimap name.
    * @param config The multimap configuration.
    * @param executor An executor on which to execute callbacks.
    * @param <K> The map key type.
    * @param <V> The map entry type.
    * @return The asynchronous multimap instance.
    */
-  <K, V> AsyncMultiMap<K, V> createMultiMap(String name, AsyncMultiMapConfig config, Executor executor);
+  <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config, Executor executor);
 
   /**
-   * Creates a named asynchronous list.
+   * Creates a named asynchronous list from a named resource configuration.
    *
-   * @param name The list name.
+   * @param name The list resource name.
    * @param <T> The list entry type.
    * @return The asynchronous list instance.
    */
   <T> AsyncList<T> createList(String name);
 
   /**
-   * Creates a named asynchronous list.
+   * Creates a named asynchronous list from a named resource configuration.
    *
-   * @param name The list name.
+   * @param name The list resource name.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The list entry type.
    * @return The asynchronous list instance.
@@ -383,37 +415,35 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a named asynchronous list.
    *
-   * @param name The list name.
    * @param config The list configuration.
    * @param <T> The list entry type.
    * @return The asynchronous list instance.
    */
-  <T> AsyncList<T> createList(String name, AsyncListConfig config);
+  <T> AsyncList<T> createList(AsyncListConfig config);
 
   /**
    * Creates a named asynchronous list.
    *
-   * @param name The list name.
    * @param config The list configuration.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The list entry type.
    * @return The asynchronous list instance.
    */
-  <T> AsyncList<T> createList(String name, AsyncListConfig config, Executor executor);
+  <T> AsyncList<T> createList(AsyncListConfig config, Executor executor);
 
   /**
-   * Creates a named asynchronous set.
+   * Creates a named asynchronous set from a named resource configuration.
    *
-   * @param name The set name.
+   * @param name The set resource name.
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
    */
   <T> AsyncSet<T> createSet(String name);
 
   /**
-   * Creates a named asynchronous set.
+   * Creates a named asynchronous set from a named resource configuration.
    *
-   * @param name The set name.
+   * @param name The set resource name.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
@@ -423,36 +453,34 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a named asynchronous set.
    *
-   * @param name The set name.
    * @param config The set configuration.
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
    */
-  <T> AsyncSet<T> createSet(String name, AsyncSetConfig config);
+  <T> AsyncSet<T> createSet(AsyncSetConfig config);
 
   /**
    * Creates a named asynchronous set.
    *
-   * @param name The set name.
    * @param config The set configuration.
    * @param executor An executor on which to execute callbacks.
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
    */
-  <T> AsyncSet<T> createSet(String name, AsyncSetConfig config, Executor executor);
+  <T> AsyncSet<T> createSet(AsyncSetConfig config, Executor executor);
 
   /**
-   * Creates a named asynchronous atomic long value.
+   * Creates a named asynchronous atomic long value from a named resource configuration.
    *
-   * @param name The atomic long name.
+   * @param name The atomic long resource name.
    * @return The asynchronous atomic long instance.
    */
   AsyncLong createLong(String name);
 
   /**
-   * Creates a named asynchronous atomic long value.
+   * Creates a named asynchronous atomic long value from a named resource configuration.
    *
-   * @param name The atomic long name.
+   * @param name The atomic long resource name.
    * @param executor An executor on which to execute callbacks.
    * @return The asynchronous atomic long instance.
    */
@@ -461,34 +489,32 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a named asynchronous atomic long value.
    *
-   * @param name The atomic long name.
    * @param config The long configuration.
    * @return The asynchronous atomic long instance.
    */
-  AsyncLong createLong(String name, AsyncLongConfig config);
+  AsyncLong createLong(AsyncLongConfig config);
 
   /**
    * Creates a named asynchronous atomic long value.
    *
-   * @param name The atomic long name.
    * @param config The long configuration.
    * @param executor An executor on which to execute callbacks.
    * @return The asynchronous atomic long instance.
    */
-  AsyncLong createLong(String name, AsyncLongConfig config, Executor executor);
+  AsyncLong createLong(AsyncLongConfig config, Executor executor);
 
   /**
-   * Creates a named asynchronous atomic boolean value.
+   * Creates a named asynchronous atomic boolean value from a named resource configuration.
    *
-   * @param name The atomic boolean name.
+   * @param name The atomic boolean resource name.
    * @return The asynchronous atomic boolean instance.
    */
   AsyncBoolean createBoolean(String name);
 
   /**
-   * Creates a named asynchronous atomic boolean value.
+   * Creates a named asynchronous atomic boolean value from a named resource configuration.
    *
-   * @param name The atomic boolean name.
+   * @param name The atomic boolean resource name.
    * @param executor An executor on which to execute callbacks.
    * @return The asynchronous atomic boolean instance.
    */
@@ -497,34 +523,32 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a named asynchronous atomic boolean value.
    *
-   * @param name The atomic boolean name.
    * @param config The boolean configuration.
    * @return The asynchronous atomic boolean instance.
    */
-  AsyncBoolean createBoolean(String name, AsyncBooleanConfig config);
+  AsyncBoolean createBoolean(AsyncBooleanConfig config);
 
   /**
    * Creates a named asynchronous atomic boolean value.
    *
-   * @param name The atomic boolean name.
    * @param config The boolean configuration.
    * @param executor An executor on which to execute callbacks.
    * @return The asynchronous atomic boolean instance.
    */
-  AsyncBoolean createBoolean(String name, AsyncBooleanConfig config, Executor executor);
+  AsyncBoolean createBoolean(AsyncBooleanConfig config, Executor executor);
 
   /**
-   * Creates a named asynchronous atomic reference value.
+   * Creates a named asynchronous atomic reference value from a named resource configuration.
    *
-   * @param name The atomic reference name.
+   * @param name The atomic reference resource name.
    * @return The asynchronous atomic reference instance.
    */
   <T> AsyncReference<T> createReference(String name);
 
   /**
-   * Creates a named asynchronous atomic reference value.
+   * Creates a named asynchronous atomic reference value from a named resource configuration.
    *
-   * @param name The atomic reference name.
+   * @param name The atomic reference resource name.
    * @param executor An executor on which to execute callbacks.
    * @return The asynchronous atomic reference instance.
    */
@@ -533,20 +557,18 @@ public interface Copycat extends Managed<Copycat> {
   /**
    * Creates a named asynchronous atomic reference value.
    *
-   * @param name The atomic reference name.
    * @param config The reference configuration.
    * @return The asynchronous atomic reference instance.
    */
-  <T> AsyncReference<T> createReference(String name, AsyncReferenceConfig config);
+  <T> AsyncReference<T> createReference(AsyncReferenceConfig config);
 
   /**
    * Creates a named asynchronous atomic reference value.
    *
-   * @param name The atomic reference name.
    * @param config The reference configuration.
    * @param executor An executor on which to execute callbacks.
    * @return The asynchronous atomic reference instance.
    */
-  <T> AsyncReference<T> createReference(String name, AsyncReferenceConfig config, Executor executor);
+  <T> AsyncReference<T> createReference(AsyncReferenceConfig config, Executor executor);
 
 }

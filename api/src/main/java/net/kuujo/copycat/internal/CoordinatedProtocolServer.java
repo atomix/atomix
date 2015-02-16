@@ -39,6 +39,11 @@ public class CoordinatedProtocolServer implements ProtocolServer {
   }
 
   @Override
+  public String address() {
+    return coordinator.address();
+  }
+
+  @Override
   public CompletableFuture<Void> listen() {
     return coordinator.listen();
   }

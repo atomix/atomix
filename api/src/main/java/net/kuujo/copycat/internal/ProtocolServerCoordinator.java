@@ -54,6 +54,13 @@ public class ProtocolServerCoordinator {
   }
 
   /**
+   * Returns the server address.
+   */
+  public String address() {
+    return server.address();
+  }
+
+  /**
    * Starts the server.
    */
   public CompletableFuture<Void> listen() {

@@ -34,6 +34,7 @@ import net.kuujo.copycat.event.EventLog;
 import net.kuujo.copycat.event.EventLogConfig;
 import net.kuujo.copycat.event.internal.DefaultEventLog;
 import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.resource.ResourceContext;
@@ -58,6 +59,7 @@ import java.util.function.Function;
 public class DefaultCopycat implements Copycat {
   private final ProtocolServerRegistry registry;
   private final CopycatConfig config;
+  private final Protocol protocol;
   private final ResourceContext context;
   @SuppressWarnings("rawtypes")
   private final Map<String, Resource> resources = new ConcurrentHashMap<>(1024);
@@ -67,10 +69,10 @@ public class DefaultCopycat implements Copycat {
   }
 
   public DefaultCopycat(CopycatConfig config, Executor executor) {
-    this.registry = new ProtocolServerRegistry(config.getClusterConfig().getProtocol());
+    this.protocol = config.getClusterConfig().getProtocol();
+    this.registry = new ProtocolServerRegistry(protocol);
     this.config = config;
-    this.context = new ResourceContext(config.getName(),
-      new CopycatResourceConfig(config.toMap()).withLog(new BufferedLog()),
+    this.context = new ResourceContext(new CopycatResourceConfig(config.toMap()).withLog(new BufferedLog()),
       config.getClusterConfig(),
       Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(config.getName())),
       executor);
@@ -107,238 +109,238 @@ public class DefaultCopycat implements Copycat {
    * Creates a cluster configuration for the given resource.
    */
   private ClusterConfig createClusterConfig(String name, ScheduledExecutorService executor) {
-    return this.config.getClusterConfig().withProtocol(new CoordinatedProtocol(Hash.hash32(name.getBytes()), this.config.getClusterConfig().getProtocol(), registry, executor));
+    return this.config.getClusterConfig().withProtocol(new CoordinatedProtocol(Hash.hash32(name.getBytes()), protocol, registry, executor));
   }
 
   /**
    * Creates a new resource.
    */
   @SuppressWarnings("unchecked")
-  private <T extends Resource<T>, U extends ResourceConfig<U>> T createResource(String name, U config, Executor executor, Function<ResourceContext, T> factory) {
-    return (T) resources.computeIfAbsent(name, n -> {
+  private <T extends Resource<T>, U extends ResourceConfig<U>> T createResource(U config, Executor executor, Function<ResourceContext, T> factory) {
+    return (T) resources.computeIfAbsent(config.getName(), n -> {
       ScheduledExecutorService scheduler = createExecutor(n);
-      return factory.apply(new ResourceContext(n, setDefaults(config), createClusterConfig(name, scheduler), scheduler, executor));
+      return factory.apply(new ResourceContext(setDefaults(config), createClusterConfig(config.getName(), scheduler), scheduler, executor));
     });
   }
 
   @Override
   public <T> EventLog<T> createEventLog(String name) {
-    return createResource(name, new EventLogConfig(name), context.executor(), DefaultEventLog::new);
+    return createResource(new EventLogConfig(name).withDefaultName(name), context.executor(), DefaultEventLog::new);
   }
 
   @Override
   public <T> EventLog<T> createEventLog(String name, Executor executor) {
-    return createResource(name, new EventLogConfig(name), executor, DefaultEventLog::new);
+    return createResource(new EventLogConfig(name).withDefaultName(name), executor, DefaultEventLog::new);
   }
 
   @Override
-  public <T> EventLog<T> createEventLog(String name, EventLogConfig config) {
-    return createResource(name, config, context.executor(), DefaultEventLog::new);
+  public <T> EventLog<T> createEventLog(EventLogConfig config) {
+    return createResource(config, context.executor(), DefaultEventLog::new);
   }
 
   @Override
-  public <T> EventLog<T> createEventLog(String name, EventLogConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultEventLog::new);
+  public <T> EventLog<T> createEventLog(EventLogConfig config, Executor executor) {
+    return createResource(config, executor, DefaultEventLog::new);
   }
 
   @Override
   public <T> StateLog<T> createStateLog(String name) {
-    return createResource(name, new StateLogConfig(name), context.executor(), DefaultStateLog::new);
+    return createResource(new StateLogConfig(name).withDefaultName(name), context.executor(), DefaultStateLog::new);
   }
 
   @Override
   public <T> StateLog<T> createStateLog(String name, Executor executor) {
-    return createResource(name, new StateLogConfig(name), context.executor(), DefaultStateLog::new);
+    return createResource(new StateLogConfig(name).withDefaultName(name), context.executor(), DefaultStateLog::new);
   }
 
   @Override
-  public <T> StateLog<T> createStateLog(String name, StateLogConfig config) {
-    return createResource(name, config, context.executor(), DefaultStateLog::new);
+  public <T> StateLog<T> createStateLog(StateLogConfig config) {
+    return createResource(config, context.executor(), DefaultStateLog::new);
   }
 
   @Override
-  public <T> StateLog<T> createStateLog(String name, StateLogConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultStateLog::new);
+  public <T> StateLog<T> createStateLog(StateLogConfig config, Executor executor) {
+    return createResource(config, executor, DefaultStateLog::new);
   }
 
   @Override
   public <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState) {
-    return createResource(name, new StateMachineConfig().withStateType(stateType).withInitialState(initialState), context.executor(), DefaultStateMachine::new);
+    return createResource(new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState).withDefaultName(name), context.executor(), DefaultStateMachine::new);
   }
 
   @Override
   public <T> StateMachine<T> createStateMachine(String name, Class<T> stateType, Class<? extends T> initialState, Executor executor) {
-    return createResource(name, new StateMachineConfig().withStateType(stateType).withInitialState(initialState), executor, DefaultStateMachine::new);
+    return createResource(new StateMachineConfig(name).withStateType(stateType).withInitialState(initialState).withDefaultName(name), executor, DefaultStateMachine::new);
   }
 
   @Override
-  public <T> StateMachine<T> createStateMachine(String name, StateMachineConfig config) {
-    return createResource(name, config, context.executor(), DefaultStateMachine::new);
+  public <T> StateMachine<T> createStateMachine(StateMachineConfig config) {
+    return createResource(config, context.executor(), DefaultStateMachine::new);
   }
 
   @Override
-  public <T> StateMachine<T> createStateMachine(String name, StateMachineConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultStateMachine::new);
+  public <T> StateMachine<T> createStateMachine(StateMachineConfig config, Executor executor) {
+    return createResource(config, executor, DefaultStateMachine::new);
   }
 
   @Override
   public LeaderElection createLeaderElection(String name) {
-    return createResource(name, new LeaderElectionConfig(name), context.executor(), DefaultLeaderElection::new);
+    return createResource(new LeaderElectionConfig(name).withDefaultName(name), context.executor(), DefaultLeaderElection::new);
   }
 
   @Override
   public LeaderElection createLeaderElection(String name, Executor executor) {
-    return createResource(name, new LeaderElectionConfig(name), executor, DefaultLeaderElection::new);
+    return createResource(new LeaderElectionConfig(name).withDefaultName(name), executor, DefaultLeaderElection::new);
   }
 
   @Override
-  public LeaderElection createLeaderElection(String name, LeaderElectionConfig config) {
-    return createResource(name, config, context.executor(), DefaultLeaderElection::new);
+  public LeaderElection createLeaderElection(LeaderElectionConfig config) {
+    return createResource(config, context.executor(), DefaultLeaderElection::new);
   }
 
   @Override
-  public LeaderElection createLeaderElection(String name, LeaderElectionConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultLeaderElection::new);
+  public LeaderElection createLeaderElection(LeaderElectionConfig config, Executor executor) {
+    return createResource(config, executor, DefaultLeaderElection::new);
   }
 
   @Override
   public <K, V> AsyncMap<K, V> createMap(String name) {
-    return createResource(name, new AsyncMapConfig(name), context.executor(), DefaultAsyncMap::new);
+    return createResource(new AsyncMapConfig(name).withDefaultName(name), context.executor(), DefaultAsyncMap::new);
   }
 
   @Override
   public <K, V> AsyncMap<K, V> createMap(String name, Executor executor) {
-    return createResource(name, new AsyncMapConfig(name), executor, DefaultAsyncMap::new);
+    return createResource(new AsyncMapConfig(name).withDefaultName(name), executor, DefaultAsyncMap::new);
   }
 
   @Override
-  public <K, V> AsyncMap<K, V> createMap(String name, AsyncMapConfig config) {
-    return createResource(name, config, context.executor(), DefaultAsyncMap::new);
+  public <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config) {
+    return createResource(config, context.executor(), DefaultAsyncMap::new);
   }
 
   @Override
-  public <K, V> AsyncMap<K, V> createMap(String name, AsyncMapConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultAsyncMap::new);
+  public <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config, Executor executor) {
+    return createResource(config, executor, DefaultAsyncMap::new);
   }
 
   @Override
   public <K, V> AsyncMultiMap<K, V> createMultiMap(String name) {
-    return createResource(name, new AsyncMultiMapConfig(name), context.executor(), DefaultAsyncMultiMap::new);
+    return createResource(new AsyncMultiMapConfig(name).withDefaultName(name), context.executor(), DefaultAsyncMultiMap::new);
   }
 
   @Override
   public <K, V> AsyncMultiMap<K, V> createMultiMap(String name, Executor executor) {
-    return createResource(name, new AsyncMultiMapConfig(name), executor, DefaultAsyncMultiMap::new);
+    return createResource(new AsyncMultiMapConfig(name).withDefaultName(name), executor, DefaultAsyncMultiMap::new);
   }
 
   @Override
-  public <K, V> AsyncMultiMap<K, V> createMultiMap(String name, AsyncMultiMapConfig config) {
-    return createResource(name, config, context.executor(), DefaultAsyncMultiMap::new);
+  public <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config) {
+    return createResource(config, context.executor(), DefaultAsyncMultiMap::new);
   }
 
   @Override
-  public <K, V> AsyncMultiMap<K, V> createMultiMap(String name, AsyncMultiMapConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultAsyncMultiMap::new);
+  public <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config, Executor executor) {
+    return createResource(config, executor, DefaultAsyncMultiMap::new);
   }
 
   @Override
   public <T> AsyncList<T> createList(String name) {
-    return createResource(name, new AsyncListConfig(name), context.executor(), DefaultAsyncList::new);
+    return createResource(new AsyncListConfig(name).withDefaultName(name), context.executor(), DefaultAsyncList::new);
   }
 
   @Override
   public <T> AsyncList<T> createList(String name, Executor executor) {
-    return createResource(name, new AsyncListConfig(name), executor, DefaultAsyncList::new);
+    return createResource(new AsyncListConfig(name).withDefaultName(name), executor, DefaultAsyncList::new);
   }
 
   @Override
-  public <T> AsyncList<T> createList(String name, AsyncListConfig config) {
-    return createResource(name, config, context.executor(), DefaultAsyncList::new);
+  public <T> AsyncList<T> createList(AsyncListConfig config) {
+    return createResource(config, context.executor(), DefaultAsyncList::new);
   }
 
   @Override
-  public <T> AsyncList<T> createList(String name, AsyncListConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultAsyncList::new);
+  public <T> AsyncList<T> createList(AsyncListConfig config, Executor executor) {
+    return createResource(config, executor, DefaultAsyncList::new);
   }
 
   @Override
   public <T> AsyncSet<T> createSet(String name) {
-    return createResource(name, new AsyncSetConfig(name), context.executor(), DefaultAsyncSet::new);
+    return createResource(new AsyncSetConfig(name).withDefaultName(name), context.executor(), DefaultAsyncSet::new);
   }
 
   @Override
   public <T> AsyncSet<T> createSet(String name, Executor executor) {
-    return createResource(name, new AsyncSetConfig(name), executor, DefaultAsyncSet::new);
+    return createResource(new AsyncSetConfig(name).withDefaultName(name), executor, DefaultAsyncSet::new);
   }
 
   @Override
-  public <T> AsyncSet<T> createSet(String name, AsyncSetConfig config) {
-    return createResource(name, config, context.executor(), DefaultAsyncSet::new);
+  public <T> AsyncSet<T> createSet(AsyncSetConfig config) {
+    return createResource(config, context.executor(), DefaultAsyncSet::new);
   }
 
   @Override
-  public <T> AsyncSet<T> createSet(String name, AsyncSetConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultAsyncSet::new);
+  public <T> AsyncSet<T> createSet(AsyncSetConfig config, Executor executor) {
+    return createResource(config, executor, DefaultAsyncSet::new);
   }
 
   @Override
   public AsyncLong createLong(String name) {
-    return createResource(name, new AsyncLongConfig(), context.executor(), DefaultAsyncLong::new);
+    return createResource(new AsyncLongConfig(name).withDefaultName(name), context.executor(), DefaultAsyncLong::new);
   }
 
   @Override
   public AsyncLong createLong(String name, Executor executor) {
-    return createResource(name, new AsyncLongConfig(), executor, DefaultAsyncLong::new);
+    return createResource(new AsyncLongConfig(name).withDefaultName(name), executor, DefaultAsyncLong::new);
   }
 
   @Override
-  public AsyncLong createLong(String name, AsyncLongConfig config) {
-    return createResource(name, config, context.executor(), DefaultAsyncLong::new);
+  public AsyncLong createLong(AsyncLongConfig config) {
+    return createResource(config, context.executor(), DefaultAsyncLong::new);
   }
 
   @Override
-  public AsyncLong createLong(String name, AsyncLongConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultAsyncLong::new);
+  public AsyncLong createLong(AsyncLongConfig config, Executor executor) {
+    return createResource(config, executor, DefaultAsyncLong::new);
   }
 
   @Override
   public AsyncBoolean createBoolean(String name) {
-    return createResource(name, new AsyncBooleanConfig(), context.executor(), DefaultAsyncBoolean::new);
+    return createResource(new AsyncBooleanConfig(name).withDefaultName(name), context.executor(), DefaultAsyncBoolean::new);
   }
 
   @Override
   public AsyncBoolean createBoolean(String name, Executor executor) {
-    return createResource(name, new AsyncBooleanConfig(), executor, DefaultAsyncBoolean::new);
+    return createResource(new AsyncBooleanConfig(name).withDefaultName(name), executor, DefaultAsyncBoolean::new);
   }
 
   @Override
-  public AsyncBoolean createBoolean(String name, AsyncBooleanConfig config) {
-    return createResource(name, config, context.executor(), DefaultAsyncBoolean::new);
+  public AsyncBoolean createBoolean(AsyncBooleanConfig config) {
+    return createResource(config, context.executor(), DefaultAsyncBoolean::new);
   }
 
   @Override
-  public AsyncBoolean createBoolean(String name, AsyncBooleanConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultAsyncBoolean::new);
+  public AsyncBoolean createBoolean(AsyncBooleanConfig config, Executor executor) {
+    return createResource(config, executor, DefaultAsyncBoolean::new);
   }
 
   @Override
   public <T> AsyncReference<T> createReference(String name) {
-    return createResource(name, new AsyncReferenceConfig(), context.executor(), DefaultAsyncReference::new);
+    return createResource(new AsyncReferenceConfig(name).withDefaultName(name), context.executor(), DefaultAsyncReference::new);
   }
 
   @Override
   public <T> AsyncReference<T> createReference(String name, Executor executor) {
-    return createResource(name, new AsyncReferenceConfig(), executor, DefaultAsyncReference::new);
+    return createResource(new AsyncReferenceConfig(name).withDefaultName(name), executor, DefaultAsyncReference::new);
   }
 
   @Override
-  public <T> AsyncReference<T> createReference(String name, AsyncReferenceConfig config) {
-    return createResource(name, config, context.executor(), DefaultAsyncReference::new);
+  public <T> AsyncReference<T> createReference(AsyncReferenceConfig config) {
+    return createResource(config, context.executor(), DefaultAsyncReference::new);
   }
 
   @Override
-  public <T> AsyncReference<T> createReference(String name, AsyncReferenceConfig config, Executor executor) {
-    return createResource(name, config, executor, DefaultAsyncReference::new);
+  public <T> AsyncReference<T> createReference(AsyncReferenceConfig config, Executor executor) {
+    return createResource(config, executor, DefaultAsyncReference::new);
   }
 
   @Override
