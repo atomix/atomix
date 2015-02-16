@@ -17,10 +17,13 @@ package net.kuujo.copycat.election;
 
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.ElectionEvent;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.election.internal.DefaultLeaderElection;
-import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.internal.AbstractResource;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
@@ -28,14 +31,14 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface LeaderElection extends Resource<LeaderElection> {
+public class LeaderElection extends AbstractResource<LeaderElection> {
 
   /**
    * Creates a new leader election, loading the log configuration from the classpath.
    *
    * @return A new leader election instance.
    */
-  static LeaderElection create() {
+  public static LeaderElection create() {
     return create(new LeaderElectionConfig(), new ClusterConfig());
   }
 
@@ -44,7 +47,7 @@ public interface LeaderElection extends Resource<LeaderElection> {
    *
    * @return A new leader election instance.
    */
-  static LeaderElection create(Executor executor) {
+  public static LeaderElection create(Executor executor) {
     return create(new LeaderElectionConfig(), new ClusterConfig(), executor);
   }
 
@@ -54,7 +57,7 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param name The leader election resource name to be used to load the leader election configuration from the classpath.
    * @return A new leader election instance.
    */
-  static LeaderElection create(String name) {
+  public static LeaderElection create(String name) {
     return create(new LeaderElectionConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
   }
 
@@ -65,7 +68,7 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param executor An executor on which to execute leader election callbacks.
    * @return A new leader election instance.
    */
-  static LeaderElection create(String name, Executor executor) {
+  public static LeaderElection create(String name, Executor executor) {
     return create(new LeaderElectionConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
   }
 
@@ -76,7 +79,7 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param cluster The cluster configuration.
    * @return A new leader election instance.
    */
-  static LeaderElection create(String name, ClusterConfig cluster) {
+  public static LeaderElection create(String name, ClusterConfig cluster) {
     return create(new LeaderElectionConfig(name), cluster);
   }
 
@@ -88,7 +91,7 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param executor An executor on which to execute leader election callbacks.
    * @return A new leader election instance.
    */
-  static LeaderElection create(String name, ClusterConfig cluster, Executor executor) {
+  public static LeaderElection create(String name, ClusterConfig cluster, Executor executor) {
     return create(new LeaderElectionConfig(name), cluster, executor);
   }
 
@@ -99,8 +102,8 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param cluster The cluster configuration.
    * @return A new leader election instance.
    */
-  static LeaderElection create(LeaderElectionConfig config, ClusterConfig cluster) {
-    return new DefaultLeaderElection(config, cluster);
+  public static LeaderElection create(LeaderElectionConfig config, ClusterConfig cluster) {
+    return new LeaderElection(config, cluster);
   }
 
   /**
@@ -111,8 +114,22 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param executor An executor on which to execute leader election callbacks.
    * @return A new leader election instance.
    */
-  static LeaderElection create(LeaderElectionConfig config, ClusterConfig cluster, Executor executor) {
-    return new DefaultLeaderElection(config, cluster, executor);
+  public static LeaderElection create(LeaderElectionConfig config, ClusterConfig cluster, Executor executor) {
+    return new LeaderElection(config, cluster, executor);
+  }
+
+  private final Map<EventListener<Member>, EventListener<ElectionEvent>> listeners = new HashMap<>();
+
+  public LeaderElection(LeaderElectionConfig config, ClusterConfig cluster) {
+    this(new ResourceContext(config, cluster));
+  }
+
+  public LeaderElection(LeaderElectionConfig config, ClusterConfig cluster, Executor executor) {
+    this(new ResourceContext(config, cluster, executor));
+  }
+
+  public LeaderElection(ResourceContext context) {
+    super(context);
   }
 
   /**
@@ -121,7 +138,14 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param listener The leader election listener.
    * @return The leader election.
    */
-  LeaderElection addListener(EventListener<Member> listener);
+  public synchronized LeaderElection addListener(EventListener<Member> listener) {
+    if (!listeners.containsKey(listener)) {
+      EventListener<ElectionEvent> wrapper = event -> listener.accept(event.winner());
+      listeners.put(listener, wrapper);
+      context.cluster().addElectionListener(wrapper);
+    }
+    return this;
+  }
 
   /**
    * Removes a leader election listener.
@@ -129,6 +153,12 @@ public interface LeaderElection extends Resource<LeaderElection> {
    * @param listener The leader election listener.
    * @return The leader election.
    */
-  LeaderElection removeListener(EventListener<Member> listener);
+  public synchronized LeaderElection removeListener(EventListener<Member> listener) {
+    EventListener<ElectionEvent> wrapper = listeners.remove(listener);
+    if (wrapper != null) {
+      context.cluster().removeElectionListener(wrapper);
+    }
+    return this;
+  }
 
 }
