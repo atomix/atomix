@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.util.internal.Assert;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,6 +31,7 @@ public class RaftMember {
   private Status status;
   private long changed;
   private String id;
+  private String address;
   private long version = 1;
   private Long index;
   private Set<String> failures = new HashSet<>();
@@ -94,15 +97,20 @@ public class RaftMember {
   public RaftMember() {
   }
 
-  public RaftMember(String id, Type type, Status status) {
-    this(id, type, status, 1);
+  public RaftMember(String id, String address, Type type) {
+    this(id, address, type, Status.ALIVE, 1);
   }
 
-  public RaftMember(String id, Type type, Status status, long version) {
-    this.id = id;
-    this.type = type;
-    this.status = status;
-    this.version = version;
+  RaftMember(String id, String address, Type type, Status status) {
+    this(id, address, type, status, 1);
+  }
+
+  RaftMember(String id, String address, Type type, Status status, long version) {
+    this.id = Assert.isNotNull(id, "id");
+    this.address = Assert.isNotNull(address, "address");
+    this.type = Assert.isNotNull(type, "type");
+    this.status = Assert.isNotNull(status, "status");
+    this.version = Assert.arg(version, version >= 0, "version must be positive");
   }
 
   /**
@@ -112,6 +120,15 @@ public class RaftMember {
    */
   public String id() {
     return id;
+  }
+
+  /**
+   * Returns the member address.
+   *
+   * @return The member address.
+   */
+  public String address() {
+    return address;
   }
 
   /**
@@ -224,12 +241,15 @@ public class RaftMember {
    * Updates the member info.
    *
    * @param info The member info to update.
+   * @return Indicates whether the member's state was updated.
    */
-  void update(RaftMember info) {
+  boolean update(RaftMember info) {
     // If the given version is greater than the current version then update the member status.
+    boolean updated = false;
     if (info.version > this.version) {
       this.type = info.type;
       this.version = info.version;
+      this.address = info.address;
       this.index = info.index;
 
       // Any time the version is incremented, clear failures for the previous version.
@@ -244,8 +264,14 @@ public class RaftMember {
         }
         this.status = info.status;
       }
+      updated = true;
     } else if (info.version == this.version) {
-      this.type = info.type;
+      // If this is a new type then update the type and return true.
+      if (this.type != info.type) {
+        this.type = info.type;
+        updated = true;
+      }
+
       if (info.status == Status.SUSPICIOUS) {
         // If the given version is the same as the current version then update failures. If the member has experienced
         // FAILURE_LIMIT failures then transition the member's status to DEAD.
@@ -253,12 +279,15 @@ public class RaftMember {
         if (this.failures.size() >= FAILURE_LIMIT) {
           this.status = Status.DEAD;
           changed = System.currentTimeMillis();
+          updated = true;
         }
-      } else if (info.status == Status.DEAD) {
+      } else if (info.status == Status.DEAD && this.status != Status.DEAD) {
         this.status = Status.DEAD;
         changed = System.currentTimeMillis();
+        updated = true;
       }
     }
+    return updated;
   }
 
   @Override

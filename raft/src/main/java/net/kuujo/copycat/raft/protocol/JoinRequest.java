@@ -46,14 +46,24 @@ public class JoinRequest extends AbstractRequest {
   }
 
   private String member;
+  private String address;
+
+  /**
+   * Returns the member's identifier.
+   *
+   * @return The member's identifier.
+   */
+  public String member() {
+    return member;
+  }
 
   /**
    * Returns the member's address.
    *
    * @return The member's address.
    */
-  public String member() {
-    return member;
+  public String address() {
+    return address;
   }
 
   @Override
@@ -96,6 +106,17 @@ public class JoinRequest extends AbstractRequest {
      */
     public Builder withMember(String member) {
       request.member = Assert.isNotNull(member, "member");
+      return this;
+    }
+
+    /**
+     * Sets the request member address.
+     *
+     * @param address The request member address.
+     * @return The join request builder.
+     */
+    public Builder withAddress(String address) {
+      request.address = Assert.isNotNull(address, "address");
       return this;
     }
 

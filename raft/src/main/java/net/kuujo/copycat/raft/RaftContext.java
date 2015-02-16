@@ -39,7 +39,7 @@ public class RaftContext extends Observable implements RaftProtocol {
   private final ScheduledExecutorService executor;
   private Thread thread;
   private final RaftConfig config;
-  private final LogManager log;
+  private LogManager log;
   private RaftState state;
   private final CommitHandler defaultCommitHandler = (term, index, entry) -> null;
   private CommitHandler commitHandler = defaultCommitHandler;
@@ -53,7 +53,7 @@ public class RaftContext extends Observable implements RaftProtocol {
   private ProtocolHandler<QueryRequest, QueryResponse> queryHandler;
   private ProtocolHandler<CommandRequest, CommandResponse> commandHandler;
   private CompletableFuture<Void> openFuture;
-  private final RaftMember localMember;
+  private RaftMember localMember;
   private final Map<String, RaftMember> members = new HashMap<>();
   private boolean recovering = true;
   private String leader;
@@ -78,14 +78,6 @@ public class RaftContext extends Observable implements RaftProtocol {
   public RaftContext(RaftConfig config, ScheduledExecutorService executor) {
     this.executor = executor;
     this.config = config;
-    this.localMember = new RaftMember(config.getId(), config.getReplicas().contains(config.getId()) ? RaftMember.Type.PROMOTABLE : RaftMember.Type.PASSIVE, RaftMember.Status.ALIVE);
-    members.put(localMember.id(), localMember);
-    config.getReplicas().forEach(r -> {
-      members.put(r, new RaftMember(r, RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
-    });
-    this.log = config.getLog().getLogManager(config.getName());
-    this.electionTimeout = config.getElectionTimeout();
-    this.heartbeatInterval = config.getHeartbeatInterval();
     try {
       executor.submit(() -> this.thread = Thread.currentThread()).get();
     } catch (InterruptedException | ExecutionException e) {
@@ -145,6 +137,7 @@ public class RaftContext extends Observable implements RaftProtocol {
       }
     }
     members.forEach(this::addMember);
+    triggerChangeEvent();
     return this;
   }
 
@@ -168,7 +161,9 @@ public class RaftContext extends Observable implements RaftProtocol {
   RaftContext addMember(RaftMember member) {
     RaftMember m = members.get(member.id());
     if (m != null) {
-      m.update(member);
+      if (m.update(member)) {
+        triggerChangeEvent();
+      }
     } else {
       members.put(member.id(), member);
     }
@@ -633,7 +628,18 @@ public class RaftContext extends Observable implements RaftProtocol {
     if (openFuture != null) {
       return openFuture;
     }
+
     openFuture = new CompletableFuture<>();
+
+    this.localMember = new RaftMember(config.getId(), config.getAddress(), config.getMembers().containsKey(config.getId()) ? RaftMember.Type.PROMOTABLE : RaftMember.Type.PASSIVE, RaftMember.Status.ALIVE);
+    members.put(localMember.id(), localMember);
+    config.getMembers().entrySet().forEach(entry -> {
+      members.put(entry.getKey(), new RaftMember(entry.getKey(), entry.getValue(), RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
+    });
+    this.log = config.getLog().getLogManager(config.getName());
+    this.electionTimeout = config.getElectionTimeout();
+    this.heartbeatInterval = config.getHeartbeatInterval();
+
     executor.execute(() -> {
       try {
         open = true;
@@ -669,6 +675,8 @@ public class RaftContext extends Observable implements RaftProtocol {
         if (error == null) {
           try {
             log.close();
+            localMember = null;
+            members.clear();
             future.complete(null);
           } catch (Exception e) {
             future.completeExceptionally(e);

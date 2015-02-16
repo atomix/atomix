@@ -129,7 +129,7 @@ class LeaderState extends ActiveState {
       context.getMembers().stream()
         .filter(m -> m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE)
         .forEach(members::add);
-      final RaftMember member = new RaftMember(request.member(), RaftMember.Type.PROMOTABLE, RaftMember.Status.ALIVE);
+      final RaftMember member = new RaftMember(request.member(), request.address(), RaftMember.Type.PROMOTABLE, RaftMember.Status.ALIVE);
       members.add(member);
 
       CompletableFuture<JoinResponse> future = new CompletableFuture<>();
@@ -180,7 +180,7 @@ class LeaderState extends ActiveState {
         .filter(m -> m.type() == RaftMember.Type.ACTIVE || m.type() == RaftMember.Type.PROMOTABLE)
         .forEach(members::add);
       members.remove(member);
-      members.add(new RaftMember(member.id(), RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
+      members.add(new RaftMember(member.id(), member.address(), RaftMember.Type.ACTIVE, RaftMember.Status.ALIVE));
 
       CompletableFuture<PromoteResponse> future = new CompletableFuture<>();
       commitConfig(members).whenComplete((result, error) -> {

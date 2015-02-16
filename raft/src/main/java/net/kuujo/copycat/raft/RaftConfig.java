@@ -15,14 +15,16 @@
  */
 package net.kuujo.copycat.raft;
 
-import com.typesafe.config.ConfigList;
+import com.typesafe.config.ConfigObject;
 import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.internal.Assert;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -33,10 +35,11 @@ import java.util.concurrent.TimeUnit;
 public class RaftConfig extends AbstractConfigurable {
   private static final String RAFT_ID = "id";
   private static final String RAFT_NAME = "name";
+  private static final String RAFT_ADDRESS = "address";
   private static final String RAFT_ELECTION_TIMEOUT = "election.timeout";
   private static final String RAFT_HEARTBEAT_INTERVAL = "heartbeat.interval";
-  private static final String RAFT_REPLICAS = "replicas";
-  private static final String RESOURCE_LOG = "log";
+  private static final String RAFT_MEMBERS = "members";
+  private static final String RAFT_LOG = "log";
 
   public RaftConfig() {
     super();
@@ -60,43 +63,30 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the unique identifier of this instance of the Raft algorithm.<p>
+   * Sets the local member's unique ID.
    *
-   * If the given identifier is {@code null} then a {@link java.util.UUID} based unique identifier will be automatically
-   * generated.
-   *
-   * @param id The unique identifier of this instance of the Raft algorithm.
+   * @param id The local member's unique ID.
+   * @throws java.lang.NullPointerException If the ID is {@code null}
    */
   public void setId(String id) {
-    if (id != null) {
-      this.config = config.withValue(RAFT_ID, ConfigValueFactory.fromAnyRef(id));
-    } else if (!this.config.hasPath(RAFT_ID)) {
-      this.config = config.withValue(RAFT_ID, ConfigValueFactory.fromAnyRef(UUID.randomUUID().toString()));
-    }
+    this.config = config.withValue(RAFT_ID, ConfigValueFactory.fromAnyRef(Assert.isNotNull(id, "id")));
   }
 
   /**
-   * Returns the unique identifier of this instance of the Raft algorithm.<p>
+   * Returns the local member's unique ID.
    *
-   * If the unique ID for this instance has not yet been set, a {@link java.util.UUID} based identifier will be generated.
-   *
-   * @return The unique identifier of this instance of the Raft algorithm.
+   * @return The local member's unique ID.
    */
   public String getId() {
-    if (!config.hasPath(RAFT_ID)) {
-      setId(null);
-    }
     return config.getString(RAFT_ID);
   }
 
   /**
-   * Sets the unique identifier of this instance of the Raft algorithm, returning the configuration for method chaining.<p>
+   * Sets the local member's unique ID, returning the configuration for method chaining.
    *
-   * If the given identifier is {@code null} then a {@link java.util.UUID} based unique identifier will be automatically
-   * generated.
-   *
-   * @param id The unique identifier of this instance of the Raft algorithm.
+   * @param id The local member's unique ID.
    * @return The Raft configuration.
+   * @throws java.lang.NullPointerException If the ID is {@code null}
    */
   public RaftConfig withId(String id) {
     setId(id);
@@ -135,9 +125,40 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource election timeout.
+   * Sets the local member address.
    *
-   * @param electionTimeout The resource election timeout in milliseconds.
+   * @param address The local member address.
+   * @throws java.lang.NullPointerException If the address is {@code null}
+   */
+  public void setAddress(String address) {
+    this.config = config.withValue(RAFT_ADDRESS, ConfigValueFactory.fromAnyRef(Assert.isNotNull(address, "address")));
+  }
+
+  /**
+   * Returns the local member address.
+   *
+   * @return The local member address.
+   */
+  public String getAddress() {
+    return config.getString(RAFT_ADDRESS);
+  }
+
+  /**
+   * Sets the local member address, returning the configuration for method chaining.
+   *
+   * @param address The local member address.
+   * @return The Raft configuration.
+   * @throws java.lang.NullPointerException If the address is {@code null}
+   */
+  public RaftConfig withAddress(String address) {
+    setAddress(address);
+    return this;
+  }
+
+  /**
+   * Sets the Raft election timeout.
+   *
+   * @param electionTimeout The Raft election timeout in milliseconds.
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public void setElectionTimeout(long electionTimeout) {
@@ -145,9 +166,9 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource election timeout.
+   * Sets the Raft election timeout.
    *
-   * @param electionTimeout The resource election timeout.
+   * @param electionTimeout The Raft election timeout.
    * @param unit The timeout unit.
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
@@ -156,19 +177,19 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Returns the resource election timeout in milliseconds.
+   * Returns the Raft election timeout in milliseconds.
    *
-   * @return The resource election timeout in milliseconds.
+   * @return The Raft election timeout in milliseconds.
    */
   public long getElectionTimeout() {
     return config.getLong(RAFT_ELECTION_TIMEOUT);
   }
 
   /**
-   * Sets the resource election timeout, returning the resource configuration for method chaining.
+   * Sets the Raft election timeout, returning the Raft configuration for method chaining.
    *
-   * @param electionTimeout The resource election timeout in milliseconds.
-   * @return The resource configuration.
+   * @param electionTimeout The Raft election timeout in milliseconds.
+   * @return The Raft configuration.
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public RaftConfig withElectionTimeout(long electionTimeout) {
@@ -177,11 +198,11 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource election timeout, returning the resource configuration for method chaining.
+   * Sets the Raft election timeout, returning the Raft configuration for method chaining.
    *
-   * @param electionTimeout The resource election timeout.
+   * @param electionTimeout The Raft election timeout.
    * @param unit The timeout unit.
-   * @return The resource configuration.
+   * @return The Raft configuration.
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public RaftConfig withElectionTimeout(long electionTimeout, TimeUnit unit) {
@@ -190,9 +211,9 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource heartbeat interval.
+   * Sets the Raft heartbeat interval.
    *
-   * @param heartbeatInterval The resource heartbeat interval in milliseconds.
+   * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public void setHeartbeatInterval(long heartbeatInterval) {
@@ -200,9 +221,9 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource heartbeat interval.
+   * Sets the Raft heartbeat interval.
    *
-   * @param heartbeatInterval The resource heartbeat interval.
+   * @param heartbeatInterval The Raft heartbeat interval.
    * @param unit The heartbeat interval unit.
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
@@ -211,7 +232,7 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Returns the resource heartbeat interval.
+   * Returns the Raft heartbeat interval.
    *
    * @return The interval at which nodes send heartbeats to each other.
    */
@@ -220,10 +241,10 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource heartbeat interval, returning the resource configuration for method chaining.
+   * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
    *
-   * @param heartbeatInterval The resource heartbeat interval in milliseconds.
-   * @return The resource configuration.
+   * @param heartbeatInterval The Raft heartbeat interval in milliseconds.
+   * @return The Raft configuration.
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public RaftConfig withHeartbeatInterval(long heartbeatInterval) {
@@ -232,11 +253,11 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the resource heartbeat interval, returning the resource configuration for method chaining.
+   * Sets the Raft heartbeat interval, returning the Raft configuration for method chaining.
    *
-   * @param heartbeatInterval The resource heartbeat interval.
+   * @param heartbeatInterval The Raft heartbeat interval.
    * @param unit The heartbeat interval unit.
-   * @return The resource configuration.
+   * @return The Raft configuration.
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public RaftConfig withHeartbeatInterval(long heartbeatInterval, TimeUnit unit) {
@@ -245,122 +266,114 @@ public class RaftConfig extends AbstractConfigurable {
   }
 
   /**
-   * Sets the set of replicas for the resource.
+   * Sets the map of Raft seed members.
    *
-   * @param replicas The set of replicas for the resource.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
+   * @param members A map of Raft seed member IDs to member addresses.
+   * @throws java.lang.NullPointerException If the map is {@code null}
    */
-  public void setReplicas(String... replicas) {
-    setReplicas(Arrays.asList(replicas));
+  public void setMembers(Map<String, String> members) {
+    this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(Assert.isNotNull(members, "members")));
   }
 
   /**
-   * Sets the set of replicas for the resource.
+   * Returns the map of Raft seed members.
    *
-   * @param replicas The set of replicas for the resource.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
+   * @return A map of Raft seed member IDs to member addresses.
    */
-  public void setReplicas(Collection<String> replicas) {
-    this.config = config.withValue(RAFT_REPLICAS, ConfigValueFactory.fromIterable(new HashSet<>(Assert.isNotNull(replicas, "replicas"))));
-  }
-
-  /**
-   * Returns the set of replicas for the resource.
-   *
-   * @return The set of replicas for the resource.
-   */
-  @SuppressWarnings({ "rawtypes", "unchecked" })
-  public Set<String> getReplicas() {
-    return new HashSet<String>(config.hasPath(RAFT_REPLICAS) ? (List) config.getList(RAFT_REPLICAS).unwrapped() : new ArrayList<>(0));
-  }
-
-  /**
-   * Sets the set of replicas for the resource, returning the configuration for method chaining.
-   *
-   * @param replicas The set of replicas for the resource.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
-   */
-  public RaftConfig withReplicas(String... replicas) {
-    setReplicas(Arrays.asList(replicas));
-    return this;
-  }
-
-  /**
-   * Sets the set of replicas for the resource, returning the configuration for method chaining.
-   *
-   * @param replicas The set of replicas for the resource.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replicas} is {@code null}
-   */
-  public RaftConfig withReplicas(Collection<String> replicas) {
-    setReplicas(replicas);
-    return this;
-  }
-
-  /**
-   * Adds a replica to the set of replicas for the resource.
-   *
-   * @param replica The replica URI to add.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replica} is {@code null}
-   */
-  public RaftConfig addReplica(String replica) {
-    if (!config.hasPath(RAFT_REPLICAS)) {
-      this.config = config.withValue(RAFT_REPLICAS, ConfigValueFactory.fromIterable(new ArrayList<String>(1)));
+  @SuppressWarnings("unchecked")
+  public Map<String, String> getMembers() {
+    if (!config.hasPath(RAFT_MEMBERS)) {
+      return Collections.EMPTY_MAP;
     }
-    ConfigList replicas = config.getList(RAFT_REPLICAS);
-    replicas.add(ConfigValueFactory.fromAnyRef(Assert.isNotNull(replica, "replica")));
-    return this;
+    ConfigObject members = this.config.getObject(RAFT_MEMBERS);
+    return (Map) members.unwrapped();
   }
 
   /**
-   * Removes a replica from the set of replicas for the resource.
+   * Sets the map of Raft seed members, returning the configuration for method chaining.
    *
-   * @param replica The replica URI to remove.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code replica} is {@code null}
+   * @param members The map of Raft seed members.
+   * @return The Raft configuration.
+   * @throws java.lang.NullPointerException If the map is {@code null}
    */
-  public RaftConfig removeReplica(String replica) {
-    ConfigList replicas = config.getList(RAFT_REPLICAS);
-    replicas.remove(ConfigValueFactory.fromAnyRef(Assert.isNotNull(replica, "replica")));
+  public RaftConfig withMembers(Map<String, String> members) {
+    setMembers(members);
     return this;
   }
 
   /**
-   * Clears the set of replicas for the resource.
+   * Adds a member to the map of Raft seed members.
    *
-   * @return The resource configuration.
+   * @param id The unique seed member ID.
+   * @param address The seed member address.
+   * @return The Raft configuration.
+   * @throws java.lang.NullPointerException If the member ID or address is {@code null}
    */
-  public RaftConfig clearReplicas() {
-    config.withoutPath(RAFT_REPLICAS);
+  public RaftConfig addMember(String id, String address) {
+    if (!config.hasPath(RAFT_MEMBERS)) {
+      this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
+    }
+    ConfigObject members = this.config.getObject(RAFT_MEMBERS);
+    Map<String, Object> unwrapped = members.unwrapped();
+    unwrapped.put(Assert.isNotNull(id, "id"), Assert.isNotNull(address, "address"));
+    this.config = this.config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
     return this;
   }
 
   /**
-   * Sets the resource log.
+   * Removes a member from the map of Raft seed members.
    *
-   * @param log The resource log.
+   * @param id The unique seed member ID.
+   * @return The Raft configuration.
+   * @throws java.lang.NullPointerException If the member ID is {@code null}
+   */
+  public RaftConfig removeMember(String id) {
+    if (!config.hasPath(RAFT_MEMBERS)) {
+      this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
+    }
+    ConfigObject members = this.config.getObject(RAFT_MEMBERS);
+    Map<String, Object> unwrapped = members.unwrapped();
+    unwrapped.remove(Assert.isNotNull(id, "id"));
+    this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
+    return this;
+  }
+
+  /**
+   * Clears the set of members.
+   *
+   * @return The Raft configuration.
+   */
+  public RaftConfig clearMembers() {
+    if (config.hasPath(RAFT_MEMBERS)) {
+      this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
+    }
+    return this;
+  }
+
+  /**
+   * Sets the Raft log.
+   *
+   * @param log The Raft log.
    * @throws java.lang.NullPointerException If the {@code log} is {@code null}
    */
   public void setLog(Log log) {
-    this.config = config.withValue(RESOURCE_LOG, ConfigValueFactory.fromMap(log.toMap()));
+    this.config = config.withValue(RAFT_LOG, ConfigValueFactory.fromMap(log.toMap()));
   }
 
   /**
-   * Returns the resource log.
+   * Returns the Raft log.
    *
-   * @return The resource log.
+   * @return The Raft log.
    */
   public Log getLog() {
-    return Configurable.load(config.getObject(RESOURCE_LOG).unwrapped());
+    return Configurable.load(config.getObject(RAFT_LOG).unwrapped());
   }
 
   /**
-   * Sets the resource log, returning the resource configuration for method chaining.
+   * Sets the Raft log, returning the Raft configuration for method chaining.
    *
-   * @param log The resource log.
-   * @return The resource configuration.
+   * @param log The Raft log.
+   * @return The Raft configuration.
    * @throws java.lang.NullPointerException If the {@code log} is {@code null}
    */
   public RaftConfig withLog(Log log) {
