@@ -17,7 +17,7 @@ package net.kuujo.copycat.log;
 
 import org.testng.annotations.Test;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 /**
  * Buffered log test.
@@ -37,15 +37,6 @@ public class BufferedLogTest extends AbstractLogTest {
     assertEquals(log.getSegmentSize(), 1024 * 1024);
     assertEquals(log.getSegmentInterval(), Long.MAX_VALUE);
     log.setSegmentInterval(60000);
-    assertEquals(log.getSegmentInterval(), 60000);
-  }
-
-  /**
-   * Tests configuring the buffered log via a configuration file.
-   */
-  public void testConfigurationFile() throws Throwable {
-    Log log = new BufferedLog("log-test");
-    assertEquals(log.getSegmentSize(), 1024 * 1024);
     assertEquals(log.getSegmentInterval(), 60000);
   }
 

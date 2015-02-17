@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.state.internal;
 
-import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.log.Log;
 import net.kuujo.copycat.log.LogManager;
 import net.kuujo.copycat.util.Configurable;
@@ -39,7 +38,7 @@ public class SnapshottableLog extends Log {
 
   public SnapshottableLog(Log log) {
     super();
-    this.config = config.withValue("log", ConfigValueFactory.fromMap(log.toMap()));
+    config.put("log", log.toMap());
   }
 
   @Override
@@ -49,7 +48,7 @@ public class SnapshottableLog extends Log {
 
   @Override
   public LogManager getLogManager(String name) {
-    Log log = Configurable.load(config.getObject("log").unwrapped());
+    Log log = Configurable.load((Map<String, Object>) config.get("log"));
     LogManager logManager = log.getLogManager(name);
     return new SnapshottableLogManager(logManager, log.copy()
       .getLogManager(String.format("%s.snapshot", name)));

@@ -271,7 +271,7 @@ class LeaderState extends ActiveState {
    */
   private CompletableFuture<Long> commitConfig(Set<RaftMember> members) {
     final long term = context.getTerm();
-    ByteBuffer config = serializer.writeObject(members);
+    ByteBuffer config = writeMembers(members);
     ByteBuffer entry = ByteBuffer.allocate(config.limit() + 9);
     entry.putLong(term);
     entry.put(ENTRY_TYPE_CONFIG);

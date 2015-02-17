@@ -15,11 +15,10 @@
  */
 package net.kuujo.copycat.log;
 
-import com.typesafe.config.ConfigValueFactory;
-import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.internal.Assert;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -27,34 +26,34 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class LogConfig extends AbstractConfigurable implements Configurable {
+public abstract class LogConfig implements Configurable {
   private static final String LOG_SEGMENT_SIZE = "segment.size";
   private static final String LOG_SEGMENT_INTERVAL = "segment.interval";
   private static final String LOG_FLUSH_ON_WRITE = "flush.on-write";
   private static final String LOG_FLUSH_INTERVAL = "flush.interval";
 
-  private static final String DEFAULT_CONFIGURATION = "log-defaults";
-  private static final String CONFIGURATION = "log";
+  private static final int DEFAULT_LOG_SEGMENT_SIZE = 1024 * 1024 * 32;
+  private static final long DEFAULT_LOG_SEGMENT_INTERVAL = Long.MAX_VALUE;
+  private static final boolean DEFAULT_LOG_FLUSH_ON_WRITE = false;
+  private static final long DEFAULT_LOG_FLUSH_INTERVAL = Long.MAX_VALUE;
+
+  protected Map<String, Object> config;
 
   protected LogConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
+    this.config = new HashMap<>(128);
   }
 
-  protected LogConfig(Map<String, Object> config, String... resources) {
-    super(config, AbstractConfigurable.addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
+  protected LogConfig(Map<String, Object> config) {
+    this.config = config;
   }
 
   protected LogConfig(LogConfig log) {
-    super(log);
-  }
-
-  protected LogConfig(String... resources) {
-    super(AbstractConfigurable.addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
+    this.config = new HashMap<>(log.toMap());
   }
 
   @Override
-  public LogConfig copy() {
-    return (LogConfig) super.copy();
+  public void configure(Map<String, Object> config) {
+    this.config = config;
   }
 
   /**
@@ -64,7 +63,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @throws java.lang.IllegalArgumentException If the segment size is not positive
    */
   public void setSegmentSize(int segmentSize) {
-    this.config = config.withValue(LOG_SEGMENT_SIZE, ConfigValueFactory.fromAnyRef(Assert.arg(segmentSize, segmentSize > 0, "segment size must be positive")));
+    config.put(LOG_SEGMENT_SIZE, Assert.arg(segmentSize, Assert.POSITIVE, "segment size must be positive"));
   }
 
   /**
@@ -73,7 +72,8 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return The log segment size in bytes.
    */
   public int getSegmentSize() {
-    return config.getInt(LOG_SEGMENT_SIZE);
+    Integer segmentSize = (Integer) config.get(LOG_SEGMENT_SIZE);
+    return segmentSize != null ? segmentSize : DEFAULT_LOG_SEGMENT_SIZE;
   }
 
   /**
@@ -95,7 +95,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @throws java.lang.IllegalArgumentException If the segment interval is not positive
    */
   public void setSegmentInterval(long segmentInterval) {
-    this.config = config.withValue(LOG_SEGMENT_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(segmentInterval, segmentInterval > 0, "segment interval must be positive")));
+    config.put(LOG_SEGMENT_INTERVAL, Assert.arg(segmentInterval, Assert.POSITIVE, "segment interval must be positive"));
   }
 
   /**
@@ -104,8 +104,8 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return The log segment interval.
    */
   public long getSegmentInterval() {
-    long interval = config.getLong(LOG_SEGMENT_INTERVAL);
-    return interval > -1 ? interval : Long.MAX_VALUE;
+    Long segmentInterval = (Long) config.get(LOG_SEGMENT_INTERVAL);
+    return segmentInterval != null ? segmentInterval : DEFAULT_LOG_SEGMENT_INTERVAL;
   }
 
   /**
@@ -126,7 +126,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @param flushOnWrite Whether to flush the log to disk on every write.
    */
   public void setFlushOnWrite(boolean flushOnWrite) {
-    this.config = config.withValue(LOG_FLUSH_ON_WRITE, ConfigValueFactory.fromAnyRef(flushOnWrite));
+    config.put(LOG_FLUSH_ON_WRITE, flushOnWrite);
   }
 
   /**
@@ -135,7 +135,8 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return Whether to flush the log to disk on every write.
    */
   public boolean isFlushOnWrite() {
-    return config.getBoolean(LOG_FLUSH_ON_WRITE);
+    Boolean flushOnWrite = (Boolean) config.get(LOG_FLUSH_ON_WRITE);
+    return flushOnWrite != null ? flushOnWrite : DEFAULT_LOG_FLUSH_ON_WRITE;
   }
 
   /**
@@ -156,7 +157,7 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @throws java.lang.IllegalArgumentException If the flush interval is not positive
    */
   public void setFlushInterval(long flushInterval) {
-    this.config = config.withValue(LOG_FLUSH_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(flushInterval, flushInterval > 0, "flush interval must be positive")));
+    config.put(LOG_FLUSH_INTERVAL, Assert.arg(flushInterval, Assert.POSITIVE, "flush interval must be positive"));
   }
 
   /**
@@ -165,8 +166,8 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
    * @return The log flush interval.
    */
   public long getFlushInterval() {
-    long interval = config.getLong(LOG_FLUSH_INTERVAL);
-    return interval > -1 ? interval : Long.MAX_VALUE;
+    Long flushInterval = (Long) config.get(LOG_FLUSH_INTERVAL);
+    return flushInterval != null ? flushInterval : DEFAULT_LOG_FLUSH_INTERVAL;
   }
 
   /**
@@ -179,6 +180,11 @@ public abstract class LogConfig extends AbstractConfigurable implements Configur
   public LogConfig withFlushInterval(long flushInterval) {
     setFlushInterval(flushInterval);
     return this;
+  }
+
+  @Override
+  public Map<String, Object> toMap() {
+    return config;
   }
 
 }

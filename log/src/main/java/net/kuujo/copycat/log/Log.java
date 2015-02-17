@@ -28,26 +28,16 @@ public abstract class Log extends LogConfig {
     super();
   }
 
-  protected Log(Map<String, Object> config, String... resources) {
-    super(config, resources);
+  protected Log(Map<String, Object> config) {
+    super(config);
   }
 
   protected Log(Log log) {
     super(log);
   }
 
-  protected Log(String resource) {
-    super(resource);
-  }
-
-  protected Log(String... resources) {
-    super(resources);
-  }
-
   @Override
-  public Log copy() {
-    return (Log) super.copy();
-  }
+  public abstract Log copy();
 
   @Override
   public Log withSegmentSize(int segmentSize) {

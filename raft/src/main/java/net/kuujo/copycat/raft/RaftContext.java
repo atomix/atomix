@@ -67,10 +67,6 @@ public class RaftContext extends Observable implements RaftProtocol {
   private long heartbeatInterval = 250;
   private volatile boolean open;
 
-  public RaftContext(String resource) {
-    this(new RaftConfig(resource));
-  }
-
   public RaftContext(RaftConfig config) {
     this(config, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(config.getName())));
   }

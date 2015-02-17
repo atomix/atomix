@@ -15,14 +15,11 @@
  */
 package net.kuujo.copycat.raft;
 
-import com.typesafe.config.ConfigObject;
-import com.typesafe.config.ConfigValueFactory;
+import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.log.Log;
-import net.kuujo.copycat.util.AbstractConfigurable;
 import net.kuujo.copycat.util.Configurable;
 import net.kuujo.copycat.util.internal.Assert;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftConfig extends AbstractConfigurable {
+public class RaftConfig implements Configurable {
   private static final String RAFT_ID = "id";
   private static final String RAFT_NAME = "name";
   private static final String RAFT_ADDRESS = "address";
@@ -41,25 +38,37 @@ public class RaftConfig extends AbstractConfigurable {
   private static final String RAFT_MEMBERS = "members";
   private static final String RAFT_LOG = "log";
 
-  public RaftConfig() {
-    super();
-  }
+  private static final long DEFAULT_RAFT_ELECTION_TIMEOUT = 500;
+  private static final long DEFAULT_RAFT_HEARTBEAT_INTERVAL = 150;
+  private final Log DEFAULT_RAFT_LOG = new BufferedLog();
 
-  public RaftConfig(String resource) {
-    super(resource);
+  private Map<String, Object> config;
+
+  public RaftConfig() {
+    this.config = new HashMap<>(128);
   }
 
   public RaftConfig(Map<String, Object> config) {
-    super(config);
+    this.config = config;
   }
 
   protected RaftConfig(RaftConfig config) {
-    super(config);
+    this.config = new HashMap<>(config.toMap());
   }
 
   @Override
   public RaftConfig copy() {
     return new RaftConfig(this);
+  }
+
+  @Override
+  public void configure(Map<String, Object> config) {
+    this.config = config;
+  }
+
+  @Override
+  public Map<String, Object> toMap() {
+    return null;
   }
 
   /**
@@ -69,7 +78,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the ID is {@code null}
    */
   public void setId(String id) {
-    this.config = config.withValue(RAFT_ID, ConfigValueFactory.fromAnyRef(Assert.notNull(id, "id")));
+    config.put(RAFT_ID, Assert.notNull(id, "id"));
   }
 
   /**
@@ -78,7 +87,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @return The local member's unique ID.
    */
   public String getId() {
-    return config.getString(RAFT_ID);
+    return (String) config.get(RAFT_ID);
   }
 
   /**
@@ -100,7 +109,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the name is {@code null}
    */
   public void setName(String name) {
-    this.config = config.withValue(RAFT_NAME, ConfigValueFactory.fromAnyRef(Assert.notNull(name, "name")));
+    config.put(RAFT_NAME, Assert.notNull(name, "name"));
   }
 
   /**
@@ -110,7 +119,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the algorithm name has not been configured.
    */
   public String getName() {
-    return config.getString(RAFT_NAME);
+    return (String) config.get(RAFT_NAME);
   }
 
   /**
@@ -131,7 +140,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the address is {@code null}
    */
   public void setAddress(String address) {
-    this.config = config.withValue(RAFT_ADDRESS, ConfigValueFactory.fromAnyRef(Assert.notNull(address, "address")));
+    config.put(RAFT_ADDRESS, Assert.notNull(address, "address"));
   }
 
   /**
@@ -140,7 +149,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @return The local member address.
    */
   public String getAddress() {
-    return config.getString(RAFT_ADDRESS);
+    return (String) config.get(RAFT_ADDRESS);
   }
 
   /**
@@ -162,7 +171,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.IllegalArgumentException If the election timeout is not positive
    */
   public void setElectionTimeout(long electionTimeout) {
-    this.config = config.withValue(RAFT_ELECTION_TIMEOUT, ConfigValueFactory.fromAnyRef(Assert.arg(electionTimeout, electionTimeout > 0, "election timeout must be positive")));
+    config.put(RAFT_ELECTION_TIMEOUT, Assert.arg(electionTimeout, Assert.POSITIVE, "election timeout must be positive"));
   }
 
   /**
@@ -182,7 +191,8 @@ public class RaftConfig extends AbstractConfigurable {
    * @return The Raft election timeout in milliseconds.
    */
   public long getElectionTimeout() {
-    return config.getLong(RAFT_ELECTION_TIMEOUT);
+    Long electionTimeout = (Long) config.get(RAFT_ELECTION_TIMEOUT);
+    return electionTimeout != null ? electionTimeout : DEFAULT_RAFT_ELECTION_TIMEOUT;
   }
 
   /**
@@ -217,7 +227,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.IllegalArgumentException If the heartbeat interval is not positive
    */
   public void setHeartbeatInterval(long heartbeatInterval) {
-    this.config = config.withValue(RAFT_HEARTBEAT_INTERVAL, ConfigValueFactory.fromAnyRef(Assert.arg(heartbeatInterval, heartbeatInterval > 0, "heartbeat interval must be positive")));
+    config.put(RAFT_HEARTBEAT_INTERVAL, Assert.arg(heartbeatInterval, Assert.POSITIVE, "heartbeat interval must be positive"));
   }
 
   /**
@@ -237,7 +247,8 @@ public class RaftConfig extends AbstractConfigurable {
    * @return The interval at which nodes send heartbeats to each other.
    */
   public long getHeartbeatInterval() {
-    return config.getLong(RAFT_HEARTBEAT_INTERVAL);
+    Long heartbeatInterval = (Long) config.get(RAFT_HEARTBEAT_INTERVAL);
+    return heartbeatInterval != null ? heartbeatInterval : DEFAULT_RAFT_HEARTBEAT_INTERVAL;
   }
 
   /**
@@ -272,7 +283,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the map is {@code null}
    */
   public void setMembers(Map<String, String> members) {
-    this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(Assert.notNull(members, "members")));
+    config.put(RAFT_MEMBERS, Assert.notNull(members, "members"));
   }
 
   /**
@@ -282,11 +293,12 @@ public class RaftConfig extends AbstractConfigurable {
    */
   @SuppressWarnings("unchecked")
   public Map<String, String> getMembers() {
-    if (!config.hasPath(RAFT_MEMBERS)) {
-      return Collections.EMPTY_MAP;
+    Map<String, String> members = (Map<String, String>) config.get(RAFT_MEMBERS);
+    if (members == null) {
+      members = new HashMap<>();
+      config.put(RAFT_MEMBERS, members);
     }
-    ConfigObject members = this.config.getObject(RAFT_MEMBERS);
-    return (Map) members.unwrapped();
+    return members;
   }
 
   /**
@@ -309,14 +321,14 @@ public class RaftConfig extends AbstractConfigurable {
    * @return The Raft configuration.
    * @throws java.lang.NullPointerException If the member ID or address is {@code null}
    */
+  @SuppressWarnings("unchecked")
   public RaftConfig addMember(String id, String address) {
-    if (!config.hasPath(RAFT_MEMBERS)) {
-      this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
+    Map<String, String> members = (Map<String, String>) config.get(RAFT_MEMBERS);
+    if (members == null) {
+      members = new HashMap<>();
+      config.put(RAFT_MEMBERS, members);
     }
-    ConfigObject members = this.config.getObject(RAFT_MEMBERS);
-    Map<String, Object> unwrapped = members.unwrapped();
-    unwrapped.put(Assert.notNull(id, "id"), Assert.notNull(address, "address"));
-    this.config = this.config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
+    members.put(Assert.notNull(id, "id"), Assert.notNull(address, "address"));
     return this;
   }
 
@@ -327,14 +339,14 @@ public class RaftConfig extends AbstractConfigurable {
    * @return The Raft configuration.
    * @throws java.lang.NullPointerException If the member ID is {@code null}
    */
+  @SuppressWarnings("unchecked")
   public RaftConfig removeMember(String id) {
-    if (!config.hasPath(RAFT_MEMBERS)) {
-      this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
+    Map<String, String> members = (Map<String, String>) config.get(RAFT_MEMBERS);
+    if (members == null) {
+      members = new HashMap<>();
+      config.put(RAFT_MEMBERS, members);
     }
-    ConfigObject members = this.config.getObject(RAFT_MEMBERS);
-    Map<String, Object> unwrapped = members.unwrapped();
-    unwrapped.remove(Assert.notNull(id, "id"));
-    this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
+    members.remove(Assert.notNull(id, "id"));
     return this;
   }
 
@@ -344,9 +356,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @return The Raft configuration.
    */
   public RaftConfig clearMembers() {
-    if (config.hasPath(RAFT_MEMBERS)) {
-      this.config = config.withValue(RAFT_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
-    }
+    config.remove(RAFT_MEMBERS);
     return this;
   }
 
@@ -357,7 +367,7 @@ public class RaftConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the {@code log} is {@code null}
    */
   public void setLog(Log log) {
-    this.config = config.withValue(RAFT_LOG, ConfigValueFactory.fromMap(log.toMap()));
+    config.put(RAFT_LOG, Assert.notNull(log, "log").toMap());
   }
 
   /**
@@ -365,8 +375,10 @@ public class RaftConfig extends AbstractConfigurable {
    *
    * @return The Raft log.
    */
+  @SuppressWarnings("unchecked")
   public Log getLog() {
-    return Configurable.load(config.getObject(RAFT_LOG).unwrapped());
+    Map<String, Object> log = (Map<String, Object>) config.get(RAFT_LOG);
+    return log != null ? Configurable.load(log) : DEFAULT_RAFT_LOG;
   }
 
   /**

@@ -27,8 +27,8 @@ public final class Assert {
   public static final Function<Object, Boolean> NOT_NULL = value -> value != null;
   public static final Function<Boolean, Boolean> TRUE = value -> value;
   public static final Function<Boolean, Boolean> FALSE = value -> !value;
-  public static final Function<Long, Boolean> POSITIVE = value -> value > 0;
-  public static final Function<Long, Boolean> POSITIVE_INCLUSIVE = value -> value >= 0;
+  public static final Function<Number, Boolean> POSITIVE = value -> value.doubleValue() > 0;
+  public static final Function<Number, Boolean> POSITIVE_INCLUSIVE = value -> value.doubleValue() >= 0;
 
   private Assert() {}
 

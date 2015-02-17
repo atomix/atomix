@@ -16,11 +16,11 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.raft.protocol.*;
-import net.kuujo.copycat.util.serializer.KryoSerializer;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
@@ -30,7 +30,6 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class ActiveState extends PassiveState {
-  protected final Serializer serializer = new KryoSerializer();
   protected boolean transition;
 
   protected ActiveState(RaftContext context) {
@@ -45,6 +44,61 @@ abstract class ActiveState extends PassiveState {
       return transitionHandler.apply(state);
     }
     return exceptionalFuture(new IllegalStateException("No transition handler registered"));
+  }
+
+  /**
+   * Writes a set of members to a byte buffer.
+   *
+   * @param members The set of members to write.
+   * @return A byte buffer containing the given set of members.
+   */
+  protected ByteBuffer writeMembers(Set<RaftMember> members) {
+    ByteBuffer buffer = ByteBuffer.allocate(calculateBufferSize(members));
+    for (RaftMember member : members) {
+      buffer.putInt(member.id().getBytes().length);
+      buffer.put(member.id().getBytes());
+      buffer.putInt(member.address().getBytes().length);
+      buffer.put(member.address().getBytes());
+      buffer.put(member.type() == RaftMember.Type.ACTIVE ? (byte) 1 : (byte) 0);
+      buffer.putLong(member.version());
+    }
+    buffer.flip();
+    return buffer;
+  }
+
+  /**
+   * Calculates the buffer size for the given set of members.
+   */
+  private int calculateBufferSize(Set<RaftMember> members) {
+    int bufferSize = 0;
+    for (RaftMember member : members) {
+      bufferSize += 4 + 4 + 1 + 8; // id length, address length, type, version
+      bufferSize += member.id().getBytes().length;
+      bufferSize += member.address().getBytes().length;
+    }
+    return bufferSize;
+  }
+
+  /**
+   * Reads a set of members from a byte buffer.
+   *
+   * @param buffer The byte buffer from which to read the set of members.
+   * @return A set of Raft members read from the given byte buffer.
+   */
+  protected Set<RaftMember> readMembers(ByteBuffer buffer) {
+    Set<RaftMember> members = new HashSet<>();
+    while (buffer.hasRemaining()) {
+      int idLength = buffer.getInt();
+      byte[] idBytes = new byte[idLength];
+      buffer.get(idBytes);
+      int addressLength = buffer.getInt();
+      byte[] addressBytes = new byte[addressLength];
+      buffer.get(addressBytes);
+      byte type = buffer.get();
+      long version = buffer.getLong();
+      members.add(new RaftMember(new String(idBytes), new String(addressBytes), type == 1 ? RaftMember.Type.ACTIVE : RaftMember.Type.PROMOTABLE, RaftMember.Status.ALIVE, version));
+    }
+    return members;
   }
 
   @Override
@@ -298,7 +352,7 @@ abstract class ActiveState extends PassiveState {
           }
           break;
         case ENTRY_TYPE_CONFIG:
-          context.setMembers(serializer.readObject(entry.slice()));
+          context.setMembers(readMembers(entry.slice()));
           context.commitHandler().commit(term, index, null);
           context.setLastApplied(index);
           break;

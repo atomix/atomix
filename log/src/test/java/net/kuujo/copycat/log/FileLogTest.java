@@ -47,15 +47,6 @@ public class FileLogTest extends AbstractLogTest {
     assertEquals(log.getSegmentInterval(), 60000);
   }
 
-  /**
-   * Tests configuring the buffered log via a configuration file.
-   */
-  public void testConfigurationFile() throws Throwable {
-    Log log = new FileLog("log-test");
-    assertEquals(log.getSegmentSize(), 1024 * 1024);
-    assertEquals(log.getSegmentInterval(), 60000);
-  }
-
   @AfterTest
   protected void cleanLogDir() throws IOException {
     Path directory = Paths.get("target/test-logs/");
