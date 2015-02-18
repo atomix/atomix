@@ -16,6 +16,7 @@
 package net.kuujo.copycat.raft.protocol;
 
 import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.raft.log.RaftEntry;
 import org.testng.annotations.Test;
 
 import java.nio.ByteBuffer;
@@ -146,7 +147,7 @@ public class RequestResponseTest {
     AppendRequest.builder()
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -162,7 +163,7 @@ public class RequestResponseTest {
       .withId(null)
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -177,7 +178,7 @@ public class RequestResponseTest {
     AppendRequest.builder()
       .withId("foo")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -193,7 +194,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader(null)
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -208,7 +209,7 @@ public class RequestResponseTest {
     AppendRequest.builder()
       .withId("foo")
       .withLeader("bar")
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -224,7 +225,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(-1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -255,7 +256,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries((List<ByteBuffer>) null)
+      .withEntries((List<RaftEntry>) null)
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -271,7 +272,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(-1L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -287,7 +288,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(-1L)
       .withCommitIndex(4L)
@@ -302,7 +303,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(null)
       .withLogTerm(null)
       .withCommitIndex(4L)
@@ -317,7 +318,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(null)
       .withCommitIndex(4L)
@@ -332,7 +333,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(null)
@@ -348,7 +349,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(-1L)
@@ -363,7 +364,7 @@ public class RequestResponseTest {
       .withId("foo")
       .withLeader("bar")
       .withTerm(1)
-      .withEntries(ByteBuffer.wrap("Hello world!".getBytes()))
+      .withEntries(new RaftEntry(RaftEntry.Type.COMMAND, 1, ByteBuffer.wrap("Hello world!".getBytes())))
       .withLogIndex(5L)
       .withLogTerm(1L)
       .withCommitIndex(4L)
@@ -371,7 +372,7 @@ public class RequestResponseTest {
     assertEquals(request.id(), "foo");
     assertEquals(request.leader(), "bar");
     assertEquals(request.term(), 1);
-    assertEquals(new String(request.entries().get(0).array()), "Hello world!");
+    assertEquals(new String(request.entries().get(0).buffer().array()), "Hello world!");
     assertEquals(request.logIndex().longValue(), 5);
     assertEquals(request.logTerm().longValue(), 1);
     assertEquals(request.commitIndex().longValue(), 4);

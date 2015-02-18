@@ -15,6 +15,7 @@
 package net.kuujo.copycat.raft;
 
 import net.kuujo.copycat.CopycatException;
+import net.kuujo.copycat.raft.log.RaftEntry;
 import net.kuujo.copycat.raft.protocol.*;
 
 import java.io.IOException;
@@ -606,7 +607,7 @@ class LeaderState extends ActiveState {
      * Remote replica.
      */
     private class Replica {
-      private final List<ByteBuffer> EMPTY_LIST = new ArrayList<>(0);
+      private final List<RaftEntry> EMPTY_LIST = new ArrayList<>(0);
       private final int id;
       private final RaftMember member;
       private Long nextIndex;
@@ -647,9 +648,9 @@ class LeaderState extends ActiveState {
       /**
        * Gets the previous entry.
        */
-      private ByteBuffer getPrevEntry(Long prevIndex) {
+      private RaftEntry getPrevEntry(Long prevIndex) {
         if (prevIndex != null && context.log().containsIndex(prevIndex)) {
-          return context.log().getEntry(prevIndex);
+          return new RaftEntry(context.log().getEntry(prevIndex));
         }
         return null;
       }
@@ -657,7 +658,7 @@ class LeaderState extends ActiveState {
       /**
        * Gets a list of entries to send.
        */
-      private List<ByteBuffer> getEntries(Long prevIndex) {
+      private List<RaftEntry> getEntries(Long prevIndex) {
         long index;
         if (context.log().isEmpty()) {
           return EMPTY_LIST;
@@ -667,11 +668,11 @@ class LeaderState extends ActiveState {
           index = context.log().firstIndex();
         }
 
-        List<ByteBuffer> entries = new ArrayList<>(1024);
+        List<RaftEntry> entries = new ArrayList<>(1024);
         int size = 0;
         while (size < MAX_BATCH_SIZE && index <= context.log().lastIndex()) {
-          ByteBuffer entry = context.log().getEntry(index);
-          size += entry.limit();
+          RaftEntry entry = new RaftEntry(context.log().getEntry(index));
+          size += entry.size();
           entries.add(entry);
           index++;
         }
@@ -683,7 +684,7 @@ class LeaderState extends ActiveState {
        */
       private void emptyCommit() {
         Long prevIndex = getPrevIndex();
-        ByteBuffer prevEntry = getPrevEntry(prevIndex);
+        RaftEntry prevEntry = getPrevEntry(prevIndex);
         commit(prevIndex, prevEntry, EMPTY_LIST);
       }
 
@@ -692,21 +693,21 @@ class LeaderState extends ActiveState {
        */
       private void entriesCommit() {
         Long prevIndex = getPrevIndex();
-        ByteBuffer prevEntry = getPrevEntry(prevIndex);
-        List<ByteBuffer> entries = getEntries(prevIndex);
+        RaftEntry prevEntry = getPrevEntry(prevIndex);
+        List<RaftEntry> entries = getEntries(prevIndex);
         commit(prevIndex, prevEntry, entries);
       }
 
       /**
        * Sends a commit message.
        */
-      private void commit(Long prevIndex, ByteBuffer prevEntry, List<ByteBuffer> entries) {
+      private void commit(Long prevIndex, RaftEntry prevEntry, List<RaftEntry> entries) {
         AppendRequest request = AppendRequest.builder()
           .withId(member.id())
           .withTerm(context.getTerm())
           .withLeader(context.getLocalMember().id())
           .withLogIndex(prevIndex)
-          .withLogTerm(prevEntry != null ? prevEntry.getLong() : null)
+          .withLogTerm(prevEntry != null ? prevEntry.term() : null)
           .withEntries(entries)
           .withFirstIndex(prevIndex == null || context.log().firstIndex() == prevIndex + 1)
           .withCommitIndex(context.getCommitIndex())

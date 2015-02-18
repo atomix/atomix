@@ -14,9 +14,9 @@
  */
 package net.kuujo.copycat.raft.protocol;
 
+import net.kuujo.copycat.raft.log.RaftEntry;
 import net.kuujo.copycat.util.internal.Assert;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -51,7 +51,7 @@ public class AppendRequest extends AbstractRequest {
   private String leader;
   private Long logIndex;
   private Long logTerm;
-  private List<ByteBuffer> entries;
+  private List<RaftEntry> entries;
   private boolean firstIndex;
   private Long commitIndex;
 
@@ -96,7 +96,7 @@ public class AppendRequest extends AbstractRequest {
    *
    * @return A list of log entries.
    */
-  public List<ByteBuffer> entries() {
+  public List<RaftEntry> entries() {
     return entries;
   }
 
@@ -206,7 +206,7 @@ public class AppendRequest extends AbstractRequest {
      * @param entries The request entries.
      * @return The append request builder.
      */
-    public Builder withEntries(ByteBuffer... entries) {
+    public Builder withEntries(RaftEntry... entries) {
       return withEntries(Arrays.asList(entries));
     }
 
@@ -216,7 +216,7 @@ public class AppendRequest extends AbstractRequest {
      * @param entries The request entries.
      * @return The append request builder.
      */
-    public Builder withEntries(List<ByteBuffer> entries) {
+    public Builder withEntries(List<RaftEntry> entries) {
       request.entries = Assert.notNull(entries, "entries");
       return this;
     }

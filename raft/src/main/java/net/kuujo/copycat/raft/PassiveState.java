@@ -15,10 +15,10 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.raft.log.RaftEntry;
 import net.kuujo.copycat.raft.protocol.*;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledFuture;
@@ -104,15 +104,15 @@ public class PassiveState extends RaftState {
    */
   private void recursiveSync(RaftMember member, boolean requireEntries, CompletableFuture<Void> future) {
     // Get a list of entries up to 1MB in size.
-    List<ByteBuffer> entries = new ArrayList<>(1024);
+    List<RaftEntry> entries = new ArrayList<>(1024);
     Long firstIndex = null;
     if (!context.log().isEmpty() && context.getCommitIndex() != null) {
       firstIndex = Math.max(member.index() != null ? member.index() + 1 : context.log().firstIndex(), context.log().lastIndex());
       long index = firstIndex;
       int size = 0;
       while (size < MAX_BATCH_SIZE && index <= context.getCommitIndex()) {
-        ByteBuffer entry = context.log().getEntry(index);
-        size += entry.limit();
+        RaftEntry entry = new RaftEntry(context.log().getEntry(index));
+        size += entry.size();
         entries.add(entry);
         index++;
       }
@@ -201,17 +201,13 @@ public class PassiveState extends RaftState {
     for (int i = 0; i < request.entries().size(); i++) {
       long index = request.logIndex() != null ? request.logIndex() + i + 1 : i + 1;
       if (!context.log().containsIndex(index)) {
-        ByteBuffer entry = request.entries().get(i);
+        RaftEntry entry = request.entries().get(i);
         try {
-          context.log().appendEntry(entry);
+          context.log().appendEntry(entry.buffer());
           context.setCommitIndex(index);
 
-          // Extract a view of the entry after the entry term.
-          long term = entry.getLong();
-          ByteBuffer userEntry = entry.slice();
-
           try {
-            context.commitHandler().commit(term, index, userEntry);
+            context.commitHandler().commit(entry.term(), index, entry.entry());
           } catch (Exception e) {
           }
 

@@ -16,9 +16,9 @@
 package net.kuujo.copycat.raft.protocol;
 
 import net.kuujo.copycat.raft.RaftMember;
+import net.kuujo.copycat.raft.log.RaftEntry;
 import net.kuujo.copycat.util.internal.Assert;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -54,7 +54,7 @@ public class SyncRequest extends AbstractRequest {
   private String leader;
   private Long logIndex;
   private boolean firstIndex;
-  private List<ByteBuffer> entries;
+  private List<RaftEntry> entries;
   private Collection<RaftMember> members;
 
   /**
@@ -98,7 +98,7 @@ public class SyncRequest extends AbstractRequest {
    *
    * @return A list of log entries.
    */
-  public List<ByteBuffer> entries() {
+  public List<RaftEntry> entries() {
     return entries;
   }
 
@@ -176,7 +176,7 @@ public class SyncRequest extends AbstractRequest {
      * @param entries The request entries.
      * @return The sync request builder.
      */
-    public Builder withEntries(ByteBuffer... entries) {
+    public Builder withEntries(RaftEntry... entries) {
       return withEntries(Arrays.asList(entries));
     }
 
@@ -186,7 +186,7 @@ public class SyncRequest extends AbstractRequest {
      * @param entries The request entries.
      * @return The sync request builder.
      */
-    public Builder withEntries(List<ByteBuffer> entries) {
+    public Builder withEntries(List<RaftEntry> entries) {
       request.entries = Assert.notNull(entries, "entries");
       return this;
     }

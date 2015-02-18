@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.raft;
 
+import net.kuujo.copycat.raft.log.RaftEntry;
 import net.kuujo.copycat.raft.protocol.*;
 
 import java.io.IOException;
@@ -226,21 +227,21 @@ abstract class ActiveState extends PassiveState {
       }
 
       // Iterate through request entries and append them to the log.
-      for (ByteBuffer entry : request.entries()) {
+      for (RaftEntry entry : request.entries()) {
         index++;
         // Replicated snapshot entries are *always* immediately logged and applied to the status machine
         // since snapshots are only taken of committed status machine status. This will cause all previous
         // entries to be removed from the log.
         if (context.log().containsIndex(index)) {
           // Compare the term of the received entry with the matching entry in the log.
-          ByteBuffer match = context.log().getEntry(index);
-          if (entry.getLong() != match.getLong()) {
+          RaftEntry match = new RaftEntry(context.log().getEntry(index));
+          if (entry.term() != match.term()) {
             // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
             // If appending to the log fails, apply commits and reply false to the append request.
             LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getLocalMember().id());
             try {
               context.log().removeAfter(index - 1);
-              context.log().appendEntry(entry);
+              context.log().appendEntry(entry.buffer());
             } catch (IOException e) {
               doApplyCommits(request.commitIndex());
               return AppendResponse.builder()
@@ -255,7 +256,7 @@ abstract class ActiveState extends PassiveState {
         } else {
           // If appending to the log fails, apply commits and reply false to the append request.
           try {
-            context.log().appendEntry(entry);
+            context.log().appendEntry(entry.buffer());
           } catch (IOException e) {
             doApplyCommits(request.commitIndex());
             return AppendResponse.builder()
