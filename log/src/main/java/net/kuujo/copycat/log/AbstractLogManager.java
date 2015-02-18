@@ -258,7 +258,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   }
 
   @Override
-  public void rollOver(long index) throws IOException {
+  public void roll(long index) throws IOException {
     // If the current segment is empty then just remove it.
     if (currentSegment.isEmpty()) {
       segments.remove(currentSegment.index());
@@ -364,7 +364,7 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
       && System.currentTimeMillis() > currentSegment.timestamp() + config.getSegmentInterval();
 
     if (segmentSizeExceeded || segmentExpired) {
-      rollOver(lastIndex + 1);
+      roll(lastIndex + 1);
     }
   }
 

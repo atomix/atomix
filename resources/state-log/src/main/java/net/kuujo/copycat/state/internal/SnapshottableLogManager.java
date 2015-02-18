@@ -136,7 +136,7 @@ public class SnapshottableLogManager implements LogManager {
 
     // When appending a snapshot, force the snapshot log manager to roll over to a new segment, append the snapshot
     // to the log, and then compact the log once the snapshot has been appended.
-    snapshotManager.rollOver(index - snapshot.size() + 1);
+    snapshotManager.roll(index - snapshot.size() + 1);
     for (ByteBuffer entry : snapshot) {
       snapshotManager.appendEntry(entry);
     }
@@ -192,9 +192,9 @@ public class SnapshottableLogManager implements LogManager {
   }
 
   @Override
-  public void rollOver(long index) throws IOException {
-    logManager.rollOver(index);
-    snapshotManager.rollOver(index);
+  public void roll(long index) throws IOException {
+    logManager.roll(index);
+    snapshotManager.roll(index);
   }
 
   @Override

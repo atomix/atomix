@@ -186,7 +186,7 @@ public class PassiveState extends RaftState {
     if (!request.entries().isEmpty() && request.logIndex() != null && request.firstIndex()) {
       rollOverIndex = request.logIndex() + 1;
       try {
-        context.log().rollOver(rollOverIndex);
+        context.log().roll(rollOverIndex);
       } catch (IOException e) {
         LOGGER.error("{} - Failed to roll over log", context.getLocalMember().id());
         return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()

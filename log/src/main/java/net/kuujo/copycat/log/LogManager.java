@@ -66,7 +66,7 @@ public interface LogManager extends Loggable {
    *
    * @throws IOException If the log failed to create a new segment.
    */
-  void rollOver(long index) throws IOException;
+  void roll(long index) throws IOException;
 
   /**
    * Compacts the log, removing all segments up to and including the given index.

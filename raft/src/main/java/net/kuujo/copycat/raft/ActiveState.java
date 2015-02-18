@@ -208,7 +208,7 @@ abstract class ActiveState extends PassiveState {
       if (request.firstIndex() && (context.log().segment().firstIndex() == null || context.log().segment().firstIndex() != index + 1)) {
         rollOverIndex = index + 1;
         try {
-          context.log().rollOver(rollOverIndex);
+          context.log().roll(rollOverIndex);
         } catch (IOException e) {
           LOGGER.error("{} - Failed to roll over local log", context.getLocalMember().id());
 
