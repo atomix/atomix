@@ -179,10 +179,9 @@ abstract class ActiveState extends PassiveState {
     }
 
     // If the previous entry term doesn't match the local previous term then reject the request.
-    ByteBuffer entry = context.log().getEntry(request.logIndex());
-    long localTerm = entry.getLong();
-    if (localTerm != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getLocalMember().id(), request, localTerm);
+    RaftEntry entry = new RaftEntry(context.log().getEntry(request.logIndex()));
+    if (entry.term() != request.logTerm()) {
+      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getLocalMember().id(), request, entry.term());
       return AppendResponse.builder()
         .withId(context.getLocalMember().id())
         .withTerm(context.getTerm())
@@ -338,23 +337,21 @@ abstract class ActiveState extends PassiveState {
    */
   protected void applyEntry(long index) {
     if ((context.getLastApplied() == null && index == context.log().firstIndex()) || (context.getLastApplied() != null && context.getLastApplied() == index - 1)) {
-      ByteBuffer entry = context.log().getEntry(index);
+      RaftEntry entry = new RaftEntry(context.log().getEntry(index));
 
       // Extract a view of the entry after the entry term.
-      long term = entry.getLong();
-      byte type = entry.get();
-      switch (type) {
-        case ENTRY_TYPE_USER:
+      switch (entry.type()) {
+        case COMMAND:
           try {
-            context.commitHandler().commit(term, index, entry.slice());
+            context.commitHandler().commit(entry.term(), index, entry.entry());
           } catch (Exception e) {
           } finally {
             context.setLastApplied(index);
           }
           break;
-        case ENTRY_TYPE_CONFIG:
-          context.setMembers(readMembers(entry.slice()));
-          context.commitHandler().commit(term, index, null);
+        case CONFIGURATION:
+          context.setMembers(readMembers(entry.entry()));
+          context.commitHandler().commit(entry.term(), index, null);
           context.setLastApplied(index);
           break;
       }

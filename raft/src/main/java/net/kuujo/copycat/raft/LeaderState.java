@@ -273,15 +273,11 @@ class LeaderState extends ActiveState {
   private CompletableFuture<Long> commitConfig(Set<RaftMember> members) {
     final long term = context.getTerm();
     ByteBuffer config = writeMembers(members);
-    ByteBuffer entry = ByteBuffer.allocate(config.limit() + 9);
-    entry.putLong(term);
-    entry.put(ENTRY_TYPE_CONFIG);
-    entry.put(config);
-    entry.flip();
 
+    RaftEntry entry = new RaftEntry(RaftEntry.Type.CONFIGURATION, term, config);
     final long index;
     try {
-      index = context.log().appendEntry(entry);
+      index = context.log().appendEntry(entry.buffer());
       context.log().flush();
     } catch (IOException e) {
       return exceptionalFuture(e);
@@ -407,17 +403,13 @@ class LeaderState extends ActiveState {
     CommitHandler committer = context.commitHandler();
 
     // Create a log entry containing the current term and entry.
-    ByteBuffer logEntry = ByteBuffer.allocate(entry.capacity() + 9);
     long term = context.getTerm();
-    logEntry.putLong(term);
-    logEntry.put(ENTRY_TYPE_USER);
-    logEntry.put(entry);
-    entry.flip();
+    RaftEntry logEntry = new RaftEntry(RaftEntry.Type.COMMAND, term, entry);
 
     // Try to append the entry to the log. If appending the entry fails then just reply with an exception immediately.
     final long index;
     try {
-      index = context.log().appendEntry(logEntry);
+      index = context.log().appendEntry(logEntry.buffer());
       context.log().flush();
     } catch (IOException e) {
       future.completeExceptionally(new CopycatException(e));
