@@ -1,6 +1,8 @@
 package net.kuujo.copycat.log;
 
+import java.nio.ByteBuffer;
 import java.util.Comparator;
+import java.util.Iterator;
 
 /**
  * Base LogSegment implementation.
@@ -29,6 +31,11 @@ public abstract class AbstractLogSegment extends AbstractLoggable implements Log
   @Override
   public long index() {
     return firstIndex;
+  }
+
+  @Override
+  public Iterator<ByteBuffer> iterator() {
+    return new LoggableIterator(this);
   }
 
   @Override

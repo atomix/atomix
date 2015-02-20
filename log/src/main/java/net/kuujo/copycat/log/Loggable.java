@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Loggable extends Closeable {
+public interface Loggable extends Iterable<ByteBuffer>, Closeable {
 
   /**
    * Opens the logger.

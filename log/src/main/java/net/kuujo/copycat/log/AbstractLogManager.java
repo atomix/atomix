@@ -334,6 +334,11 @@ public abstract class AbstractLogManager extends AbstractLoggable implements Log
   }
 
   @Override
+  public Iterator<ByteBuffer> iterator() {
+    return new LoggableIterator(this);
+  }
+
+  @Override
   public String toString() {
     return segments.toString();
   }
