@@ -68,10 +68,21 @@ abstract class AbstractLookupStrategy implements LookupStrategy {
 
   @Override
   public void put(ByteBuffer key, long index) {
-    byte[] bytes = Bytes.getBytes(key);
-    int i = 0;
-    int hash = Math.abs(Hash.hash32(bytes));
+    put(Math.abs(Hash.hash32(Bytes.getBytes(key))), index);
+  }
 
+  /**
+   * Puts the given key hash and index in the lookup table.
+   */
+  protected void put(byte[] bytes, long index) {
+    put(Math.abs(Hash.hash32(bytes)), index);
+  }
+
+  /**
+   * Puts the given key hash and index in the lookup table.
+   */
+  protected void put(int hash, long index) {
+    int i = 0;
     int position = (hash % slots) * ENTRY_SIZE;
     while (isOccupied(position)) {
       if (readKey(position) == hash) {
@@ -86,11 +97,49 @@ abstract class AbstractLookupStrategy implements LookupStrategy {
   }
 
   @Override
-  public Long get(ByteBuffer key) {
-    byte[] bytes = Bytes.getBytes(key);
-    int i = 0;
-    int hash = Math.abs(Hash.hash32(bytes));
+  public boolean contains(ByteBuffer key) {
+    return contains(Math.abs(Hash.hash32(Bytes.getBytes(key))));
+  }
 
+  /**
+   * Checks whether the given key hash exists in the lookup table.
+   */
+  protected boolean contains(byte[] bytes) {
+    return contains(Math.abs(Hash.hash32(bytes)));
+  }
+
+  /**
+   * Checks whether the given key hash exists in the lookup table.
+   */
+  protected boolean contains(int hash) {
+    int i = 0;
+    int position = (hash % slots) * ENTRY_SIZE;
+    while (isOccupied(position)) {
+      if (readKey(position) == hash) {
+        return true;
+      }
+      position = ((hash + ++i) % slots) * ENTRY_SIZE;
+    }
+    return false;
+  }
+
+  @Override
+  public Long get(ByteBuffer key) {
+    return get(Math.abs(Hash.hash32(Bytes.getBytes(key))));
+  }
+
+  /**
+   * Looks up the given key hash.
+   */
+  protected Long get(byte[] bytes) {
+    return get(Math.abs(Hash.hash32(bytes)));
+  }
+
+  /**
+   * Looks up the given key hash.
+   */
+  protected Long get(int hash) {
+    int i = 0;
     int position = (hash % slots) * ENTRY_SIZE;
     while (isOccupied(position)) {
       if (readKey(position) == hash) {

@@ -33,6 +33,14 @@ public interface LookupStrategy {
   void put(ByteBuffer key, long index);
 
   /**
+   * Returns a boolean value indicating whether the lookup table contains the given key.
+   *
+   * @param key The key for which to search the lookup table.
+   * @return Indicates whether the lookup table contains the given key.
+   */
+  boolean contains(ByteBuffer key);
+
+  /**
    * Gets the index of a key in the table.
    *
    * @param key The key to get.

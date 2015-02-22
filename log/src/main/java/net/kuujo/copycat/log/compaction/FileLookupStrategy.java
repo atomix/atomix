@@ -16,6 +16,8 @@
 package net.kuujo.copycat.log.compaction;
 
 import net.kuujo.copycat.log.LogException;
+import net.kuujo.copycat.util.internal.BloomFilter;
+import net.kuujo.copycat.util.internal.Bytes;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,17 +31,39 @@ import java.nio.file.StandardOpenOption;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class FileLookupStrategy extends AbstractLookupStrategy {
+  private final BloomFilter<Void> filter;
   private final FileChannel channel;
   private final ByteBuffer keyBuffer = ByteBuffer.allocateDirect(4);
   private final ByteBuffer indexBuffer = ByteBuffer.allocateDirect(8);
 
   public FileLookupStrategy(File file, int entryLimit) {
     super(entryLimit / 2);
+    this.filter = new BloomFilter<>(.03, entryLimit / 2);
     try {
       this.channel = FileChannel.open(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
     } catch (IOException e) {
       throw new LogException(e);
     }
+  }
+
+  @Override
+  public void put(ByteBuffer key, long index) {
+    byte[] bytes = Bytes.getBytes(key);
+    if (!filter.add(bytes)) {
+      put(bytes, index);
+    }
+  }
+
+  @Override
+  public boolean contains(ByteBuffer key) {
+    byte[] bytes = Bytes.getBytes(key);
+    return filter.contains(bytes) && contains(bytes);
+  }
+
+  @Override
+  public Long get(ByteBuffer key) {
+    byte[] bytes = Bytes.getBytes(key);
+    return filter.contains(bytes) ? get(bytes) : null;
   }
 
   @Override
