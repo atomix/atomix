@@ -28,7 +28,7 @@ public final class Hash {
   private static final int C2 = 0x1b873593;
 
   /**
-   * Hashes the given string value.
+   * Hashes the given value.
    *
    * Taken from Guava:
    * https://github.com/google/guava/blob/master/guava/src/com/google/common/hash/Murmur3_32HashFunction.java
@@ -39,7 +39,22 @@ public final class Hash {
    * - Kurt Alfred Kluever
    */
   public static int hash32(byte[] bytes) {
-    int h1 = 0;
+    return hash32(bytes, 0);
+  }
+
+  /**
+   * Hashes the given value.
+   *
+   * Taken from Guava:
+   * https://github.com/google/guava/blob/master/guava/src/com/google/common/hash/Murmur3_32HashFunction.java
+   *
+   * Authors:
+   * - Austin Appleby
+   * - Dimitris Andreou
+   * - Kurt Alfred Kluever
+   */
+  public static int hash32(byte[] bytes, int seed) {
+    int h1 = seed;
     int length = 0;
 
     ByteBuffer buffer = ByteBuffer.allocate(11).order(ByteOrder.LITTLE_ENDIAN);

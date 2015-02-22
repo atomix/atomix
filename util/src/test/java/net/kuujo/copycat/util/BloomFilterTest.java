@@ -15,26 +15,27 @@
  */
 package net.kuujo.copycat.util;
 
-import net.kuujo.copycat.util.internal.Hash;
+import net.kuujo.copycat.util.internal.BloomFilter;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
 /**
- * Hash test.
+ * Bloom filter test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class HashTest {
+public class BloomFilterTest {
 
   /**
-   * Tests equality in the Murmur3 hash algorithm.
+   * Tests adding an element to a bloom filter and then checking that the filter contains that element.
    */
-  public void testHash() {
-    String string = "abcdefghijklmnopqrstuvwxyz";
-    Assert.assertEquals(Hash.hash32(string.getBytes()), Hash.hash32(string.getBytes()));
-    Assert.assertEquals(Hash.hash32(string.getBytes(), 2), Hash.hash32(string.getBytes(), 2));
-    Assert.assertNotEquals(Hash.hash32(string.getBytes()), Hash.hash32(string.getBytes(), 2));
+  public void testAddContains() {
+    BloomFilter<String> filter = new BloomFilter<>(.1, 100);
+    filter.add("Hello world!");
+    Assert.assertTrue(filter.contains("Hello world!"));
+    Assert.assertFalse(filter.contains("Hello world again!"));
+    System.out.println(filter.toString());for (;;);
   }
 
 }
