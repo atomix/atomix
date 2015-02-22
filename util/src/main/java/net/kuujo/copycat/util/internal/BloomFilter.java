@@ -79,22 +79,26 @@ public class BloomFilter<T> {
    * Adds a byte array value to the bloom filter.
    *
    * @param bytes The byte array to add.
-   * @return The bloom filter.
+   * @return Indicates whether the filter's bits changed.
    */
-  public BloomFilter<T> add(byte[] bytes) {
+  public boolean add(byte[] bytes) {
+    boolean changed = false;
     for (int index : indexes(bytes, numHashes, numBits)) {
-      bits.set(index, true);
+      if (bits.get(index)) {
+        bits.set(index, true);
+        changed = true;
+      }
     }
-    return this;
+    return changed;
   }
 
   /**
    * Adds a value to the bloom filter.
    *
    * @param value The value to add.
-   * @return The bloom filter.
+   * @return Indicates whether the filter's bits changed.
    */
-  public BloomFilter<T> add(T value) {
+  public boolean add(T value) {
     return add(value.toString().getBytes());
   }
 
