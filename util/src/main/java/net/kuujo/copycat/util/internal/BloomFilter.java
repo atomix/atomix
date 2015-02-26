@@ -15,7 +15,12 @@
  */
 package net.kuujo.copycat.util.internal;
 
-import java.util.BitSet;
+import net.kuujo.copycat.util.hash.CityHashFunction;
+import net.kuujo.copycat.util.hash.HashFunction;
+import net.kuujo.copycat.util.hash.Murmur3HashFunction;
+import net.openhft.lang.collection.DirectBitSet;
+import net.openhft.lang.collection.DirectBitSetBuilder;
+
 import java.util.Objects;
 
 /**
@@ -25,8 +30,11 @@ import java.util.Objects;
  */
 public class BloomFilter<T> {
   private final int numHashes;
-  private final int numBits;
-  private final BitSet bits;
+  private final long numBits;
+  private final DirectBitSet bits;
+  private final HashFunction function1;
+  private final HashFunction function2;
+  private int size;
 
   /**
    * Calculation of number of bits and hashes taken from Guava.
@@ -38,9 +46,11 @@ public class BloomFilter<T> {
    *                     with the desired false positive probability to calculate the number of bits and hashes to use.
    */
   public BloomFilter(double falsePositiveProbability, int expectedSize) {
-    numBits = (int) (-expectedSize * Math.log(falsePositiveProbability == 0 ? Double.MIN_VALUE : falsePositiveProbability) / (Math.log(2) * Math.log(2)));
+    numBits = (long) Math.pow(2, (long) Math.log(((-expectedSize * Math.log(falsePositiveProbability == 0 ? Double.MIN_VALUE : falsePositiveProbability) / (Math.log(2) * Math.log(2))) - 1) / Math.log(2)) + 1);
     numHashes = Math.max(1, (int) Math.round((double) numBits / expectedSize * Math.log(2)));
-    bits = new BitSet(numBits);
+    bits = new DirectBitSetBuilder().threadSafe(false).create(numBits);
+    function1 = new CityHashFunction();
+    function2 = new Murmur3HashFunction();
   }
 
   /**
@@ -51,23 +61,23 @@ public class BloomFilter<T> {
    * @param bits The total number of available bits.
    * @return An array of bit indexes.
    */
-  private static int[] indexes(byte[] bytes, int numHashes, int bits) {
+  private long[] indexes(byte[] bytes, int numHashes, long bits) {
     if (numHashes == 1) {
-      return new int[]{Hash.hash32(bytes)};
+      return new long[]{Math.abs(function1.hashBytes(bytes) % bits)};
     } else if (numHashes == 2) {
-      return new int[]{Hash.hash32(bytes, 0), Hash.hash32(bytes, 1)};
+      return new long[]{Math.abs(function1.hashBytes(bytes) % bits), Math.abs(function2.hashBytes(bytes) % bits)};
     }
 
-    int[] hashes = new int[numHashes];
+    long[] hashes = new long[numHashes];
 
-    int h1 = Hash.hash32(bytes, 0);
+    long h1 = function1.hashBytes(bytes);
     hashes[0] = Math.abs(h1 % bits);
 
-    int h2 = Hash.hash32(bytes, 1);
+    long h2 = function2.hashBytes(bytes);
     hashes[1] = Math.abs(h2 % bits);
 
     for (int i = 2; i < numHashes; i++) {
-      int h = h1 + i * h2;
+      long h = h1 + i * h2;
       if (h < 0)
         h = ~h;
       hashes[i] = Math.abs(h % bits);
@@ -83,9 +93,10 @@ public class BloomFilter<T> {
    */
   public boolean add(byte[] bytes) {
     boolean changed = false;
-    for (int index : indexes(bytes, numHashes, numBits)) {
-      if (bits.get(index)) {
+    for (long index : indexes(bytes, numHashes, numBits)) {
+      if (!bits.isSet(index)) {
         bits.set(index, true);
+        size++;
         changed = true;
       }
     }
@@ -109,8 +120,8 @@ public class BloomFilter<T> {
    * @return Indicates whether the bloom filter *might* contain the given bytes.
    */
   public boolean contains(byte[] bytes) {
-    for (int index : indexes(bytes, numHashes, numBits)) {
-      if (!bits.get(index)) {
+    for (long index : indexes(bytes, numHashes, numBits)) {
+      if (!bits.isSet(index)) {
         return false;
       }
     }
@@ -132,29 +143,15 @@ public class BloomFilter<T> {
    *
    * @return The number of bits in the bloom filter.
    */
-  public int size() {
+  public long size() {
     return numBits;
-  }
-
-  /**
-   * Combines the given bloom filter with this bloom filter.
-   *
-   * @param filter The filter to combine.
-   * @return The combined filter.
-   */
-  public BloomFilter<T> combine(BloomFilter<T> filter) {
-    Assert.arg(filter, filter != this, "cannot combine a bloom filter with itself");
-    Assert.arg(filter, filter.numBits == numBits, "cannot combine a bloom filter with a different number of bits");
-    Assert.arg(filter, filter.numHashes == numHashes, "cannot combine a bloom filter with a different number of hashes");
-    bits.or(filter.bits);
-    return this;
   }
 
   /**
    * Calculates the probability that a false positive will occur.
    */
   private double calculateFalsePositiveProbability() {
-    return 1 - Math.pow((double) bits.size() / numBits, numHashes);
+    return 1 - Math.pow((double) size / numBits, numHashes);
   }
 
   @Override

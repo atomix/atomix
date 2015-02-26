@@ -1,9 +1,15 @@
 package net.kuujo.copycat.util.internal;
 
+import sun.misc.Cleaner;
+import sun.nio.ch.DirectBuffer;
+
 import java.nio.ByteBuffer;
 
-public final class Bytes {
-  private Bytes() {
+/**
+ * Buffer utilities.
+ */
+public final class Buffers {
+  private Buffers() {
   }
 
   /**
@@ -30,6 +36,18 @@ public final class Bytes {
    */
   public static ByteBuffer of(int number) {
     return ByteBuffer.allocate(4).putInt(number);
+  }
+
+  /**
+   * Frees memory from a byte buffer.
+   */
+  public static void free(ByteBuffer buffer) {
+    if (buffer.isDirect()) {
+      Cleaner cleaner = ((DirectBuffer) buffer).cleaner();
+      if (cleaner != null) {
+        cleaner.clean();
+      }
+    }
   }
 
 }

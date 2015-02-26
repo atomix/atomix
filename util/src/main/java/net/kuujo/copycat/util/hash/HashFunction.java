@@ -13,28 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
-
-import net.kuujo.copycat.util.internal.Hash;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+package net.kuujo.copycat.util.hash;
 
 /**
- * Hash test.
+ * Hash function.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
-public class HashTest {
+public interface HashFunction {
 
   /**
-   * Tests equality in the Murmur3 hash algorithm.
+   * Hashes the given bytes.
+   *
+   * @param bytes The bytes to hash.
+   * @return The hashed bytes.
    */
-  public void testHash() {
-    String string = "abcdefghijklmnopqrstuvwxyz";
-    Assert.assertEquals(Hash.hash32(string.getBytes()), Hash.hash32(string.getBytes()));
-    Assert.assertEquals(Hash.hash32(string.getBytes(), 2), Hash.hash32(string.getBytes(), 2));
-    Assert.assertNotEquals(Hash.hash32(string.getBytes()), Hash.hash32(string.getBytes(), 2));
-  }
+  long hashBytes(byte[] bytes);
 
 }
