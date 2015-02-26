@@ -20,6 +20,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Named thread factory.
  *
+ * TODO: This can be replaced with OpenHFT's NamedThreadFactory
+ *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NamedThreadFactory implements ThreadFactory {

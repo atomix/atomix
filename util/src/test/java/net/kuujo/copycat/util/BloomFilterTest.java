@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.util;
 
-import net.kuujo.copycat.util.internal.BloomFilter;
+import net.kuujo.copycat.util.hash.BloomFilter;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -35,7 +35,6 @@ public class BloomFilterTest {
     filter.add("Hello world!");
     Assert.assertTrue(filter.contains("Hello world!"));
     Assert.assertFalse(filter.contains("Hello world again!"));
-    System.out.println(filter.toString());for (;;);
   }
 
 }

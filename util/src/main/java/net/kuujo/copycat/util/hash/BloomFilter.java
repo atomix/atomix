@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util.internal;
+package net.kuujo.copycat.util.hash;
 
-import net.kuujo.copycat.util.hash.CityHashFunction;
-import net.kuujo.copycat.util.hash.HashFunction;
-import net.kuujo.copycat.util.hash.Murmur3HashFunction;
+import net.openhft.lang.Maths;
 import net.openhft.lang.collection.DirectBitSet;
 import net.openhft.lang.collection.DirectBitSetBuilder;
 
@@ -46,7 +44,7 @@ public class BloomFilter<T> {
    *                     with the desired false positive probability to calculate the number of bits and hashes to use.
    */
   public BloomFilter(double falsePositiveProbability, int expectedSize) {
-    numBits = (long) Math.pow(2, (long) Math.log(((-expectedSize * Math.log(falsePositiveProbability == 0 ? Double.MIN_VALUE : falsePositiveProbability) / (Math.log(2) * Math.log(2))) - 1) / Math.log(2)) + 1);
+    numBits = Maths.nextPower2((long) (-expectedSize * Math.log(falsePositiveProbability == 0 ? Double.MIN_VALUE : falsePositiveProbability) / (Math.log(2) * Math.log(2))), 128);
     numHashes = Math.max(1, (int) Math.round((double) numBits / expectedSize * Math.log(2)));
     bits = new DirectBitSetBuilder().threadSafe(false).create(numBits);
     function1 = new CityHashFunction();
