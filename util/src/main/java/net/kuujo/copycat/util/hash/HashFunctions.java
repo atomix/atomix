@@ -13,30 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
-
-import net.kuujo.copycat.util.hash.DirectBitSet;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+package net.kuujo.copycat.util.hash;
 
 /**
- * Direct memory bit set test.
+ * Hash function constants.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
-public class BitSetTest {
+public enum HashFunctions implements HashFunction {
 
   /**
-   * Tests the bit set.
+   * City hash function.
    */
-  public void testBitSet() {
-    DirectBitSet bits = new DirectBitSet(1024);
-    bits.set(10);
-    bits.set(20);
-    Assert.assertTrue(bits.get(10));
-    Assert.assertTrue(bits.get(20));
-    Assert.assertFalse(bits.get(30));
+  CITY_HASH {
+    private final HashFunction function = new CityHashFunction();
+    @Override
+    public long hashBytes(byte[] bytes) {
+      return function.hashBytes(bytes);
+    }
+  },
+
+  /**
+   * 64-bit Murmur3 hash function.
+   */
+  MURMUR3 {
+    private final HashFunction function = new Murmur3HashFunction();
+    @Override
+    public long hashBytes(byte[] bytes) {
+      return function.hashBytes(bytes);
+    }
   }
 
 }
