@@ -28,7 +28,6 @@
 
   <properties>
     <hash.version>0.2</hash.version>
-    <lang.version>6.6.0</lang.version>
   </properties>
 
   <dependencies>
@@ -36,11 +35,6 @@
       <groupId>net.openhft</groupId>
       <artifactId>zero-allocation-hashing</artifactId>
       <version>${hash.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.openhft</groupId>
-      <artifactId>lang</artifactId>
-      <version>${lang.version}</version>
     </dependency>
   </dependencies>
 

@@ -15,10 +15,8 @@
  */
 package net.kuujo.copycat.util.hash;
 
-import net.openhft.lang.Maths;
-import net.openhft.lang.collection.DirectBitSet;
-import net.openhft.lang.collection.DirectBitSetBuilder;
-
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Objects;
 
 /**
@@ -26,7 +24,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BloomFilter<T> {
+public class BloomFilter<T> implements Closeable {
   private final int numHashes;
   private final long numBits;
   private final DirectBitSet bits;
@@ -43,12 +41,26 @@ public class BloomFilter<T> {
    * @param expectedSize The expected number of elements to be added to the filter. This will be used in conjunction
    *                     with the desired false positive probability to calculate the number of bits and hashes to use.
    */
-  public BloomFilter(double falsePositiveProbability, int expectedSize) {
-    numBits = Maths.nextPower2((long) (-expectedSize * Math.log(falsePositiveProbability == 0 ? Double.MIN_VALUE : falsePositiveProbability) / (Math.log(2) * Math.log(2))), 128);
+  public BloomFilter(double falsePositiveProbability, long expectedSize) {
+    numBits = roundBits((long) (-expectedSize * Math.log(falsePositiveProbability == 0 ? Double.MIN_VALUE : falsePositiveProbability) / (Math.log(2) * Math.log(2))));
     numHashes = Math.max(1, (int) Math.round((double) numBits / expectedSize * Math.log(2)));
-    bits = new DirectBitSetBuilder().threadSafe(false).create(numBits);
+    bits = new DirectBitSet(numBits);
     function1 = new CityHashFunction();
     function2 = new Murmur3HashFunction();
+  }
+
+  /**
+   * Rounds the number of bits to the nearest power of two.
+   */
+  private static long roundBits(long bits) {
+    if ((bits & (bits - 1)) == 0)
+      return bits;
+    int i = 128;
+    while (i < bits) {
+      i *= 2;
+      if (i <= 0) return 1L << 62;
+    }
+    return i;
   }
 
   /**
@@ -92,8 +104,8 @@ public class BloomFilter<T> {
   public boolean add(byte[] bytes) {
     boolean changed = false;
     for (long index : indexes(bytes, numHashes, numBits)) {
-      if (!bits.isSet(index)) {
-        bits.set(index, true);
+      if (!bits.get(index)) {
+        bits.set(index);
         size++;
         changed = true;
       }
@@ -119,7 +131,7 @@ public class BloomFilter<T> {
    */
   public boolean contains(byte[] bytes) {
     for (long index : indexes(bytes, numHashes, numBits)) {
-      if (!bits.isSet(index)) {
+      if (!bits.get(index)) {
         return false;
       }
     }
@@ -150,6 +162,11 @@ public class BloomFilter<T> {
    */
   private double calculateFalsePositiveProbability() {
     return 1 - Math.pow((double) size / numBits, numHashes);
+  }
+
+  @Override
+  public void close() throws IOException {
+    bits.close();
   }
 
   @Override
