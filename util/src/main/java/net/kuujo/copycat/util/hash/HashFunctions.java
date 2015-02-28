@@ -25,7 +25,7 @@ public enum HashFunctions implements HashFunction {
   /**
    * City hash function.
    */
-  CITY_HASH {
+  CITYHASH {
     private final HashFunction function = new CityHashFunction();
     @Override
     public long hashBytes(byte[] bytes) {

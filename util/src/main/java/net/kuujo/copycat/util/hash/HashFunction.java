@@ -15,12 +15,47 @@
  */
 package net.kuujo.copycat.util.hash;
 
+import net.kuujo.copycat.util.internal.Buffers;
+
+import java.nio.ByteBuffer;
+
 /**
  * Hash function.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public interface HashFunction {
+
+  /**
+   * Converts a 64-bit hash value into a 32-bit hash.
+   *
+   * @param hash The hash value to convert.
+   * @return The converted hash value.
+   */
+  static int asInt(long hash) {
+    return (int) (hash - (hash >> 32)) & (2^32 - 1);
+  }
+
+  /**
+   * Creates a 32-bit hash of the given bytes.
+   *
+   * @param bytes The bytes to hash.
+   * @return The hash value.
+   */
+  default int asInt(byte[] bytes) {
+    long hash = hashBytes(bytes);
+    return asInt(hash);
+  }
+
+  /**
+   * Hashes the remaining bytes in the given buffer.
+   *
+   * @param buffer The buffer to hash.
+   * @return The hashed buffer bytes.
+   */
+  default long hashBytes(ByteBuffer buffer) {
+    return hashBytes(Buffers.getBytes(buffer));
+  }
 
   /**
    * Hashes the given bytes.
