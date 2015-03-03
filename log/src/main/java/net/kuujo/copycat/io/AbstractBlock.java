@@ -15,36 +15,44 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.copycat.io.util.Referenceable;
+
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Abstract block implementation.
+ * <p>
+ * This is a base block implementation that handles common methods for all blocks. It handles the navigability
+ * of the block and delegates read/write calls to the subclass's respective index specific read/write methods.
+ * <p>
+ * Blocks that extend {@code AbstractBlock} are reference counted. Reference counting is used to keep track of when the
+ * block is in use. When {@link AbstractBlock#reader()} or {@link AbstractBlock#writer()} is called, a new reference to
+ * the block is created. Once the returned {@link BlockReader} or {@link BlockWriter} is closed, the reference is
+ * released. Once all references to the block have been released - including the reference to tbe block itself via
+ * {@link Block#close()} - the storage instance which allocated the block will be allowed to free the block. Note that
+ * the behavior of storage implementations when block references are released varies widely across storage implementations.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractBlock<T extends AbstractBlock<T>> implements Block, Referenceable<T> {
+public abstract class AbstractBlock<T extends AbstractBlock<T>> extends BytesNavigator<Block> implements Block, Referenceable<T> {
   private final AtomicInteger referenceCounter = new AtomicInteger();
   private final ReferenceManager<T> referenceManager;
-  private final ReusableBufferReaderPool<T> readerPool;
-  private final ReusableBufferWriterPool<T> writerPool;
+  private final ReusableBlockReaderPool<T> readerPool;
+  private final ReusableBlockWriterPool<T> writerPool;
   private final int index;
-  private long capacity;
-  private long position;
-  private long limit;
-  private long mark;
 
   @SuppressWarnings("unchecked")
   public AbstractBlock(int index, long capacity, ReferenceManager<T> manager) {
+    super(capacity);
+    if (index < 0)
+      throw new IndexOutOfBoundsException("block index cannot be negative");
     if (manager == null)
       throw new NullPointerException("manager cannot be null");
     this.referenceManager = manager;
-    this.readerPool = new ReusableBufferReaderPool<>((T) this);
-    this.writerPool = new ReusableBufferWriterPool<>((T) this);
+    this.readerPool = new ReusableBlockReaderPool<>((T) this);
+    this.writerPool = new ReusableBlockWriterPool<>((T) this);
     this.index = index;
-    this.capacity = capacity;
-    this.position = 0;
-    this.mark = position;
-    this.limit = capacity;
   }
 
   @Override
@@ -72,174 +80,13 @@ public abstract class AbstractBlock<T extends AbstractBlock<T>> implements Block
   }
 
   @Override
-  public BufferReader reader() {
+  public BlockReader reader() {
     return readerPool.acquire();
   }
 
   @Override
-  public BufferWriter writer() {
+  public BlockWriter writer() {
     return writerPool.acquire();
-  }
-
-  @Override
-  public long capacity() {
-    return capacity;
-  }
-
-  @Override
-  public long position() {
-    return position;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T position(long position) {
-    if (position > capacity)
-      throw new IllegalArgumentException("Position cannot be greater than block capacity");
-    this.position = position;
-    return (T) this;
-  }
-
-  @Override
-  public long limit() {
-    return limit;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T limit(long limit) {
-    if (limit > capacity)
-      throw new IllegalArgumentException("Limit cannot be greater than block capacity");
-    return (T) this;
-  }
-
-  @Override
-  public long remaining() {
-    return limit - position;
-  }
-
-  @Override
-  public boolean hasRemaining() {
-    return limit - position > 0;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T mark(long mark) {
-    checkBounds(mark);
-    this.mark = mark;
-    return (T) this;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T rewind() {
-    position = 0;
-    mark = position;
-    return (T) this;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T reset() {
-    position = mark;
-    return (T) this;
-  }
-
-  @Override
-  @SuppressWarnings("unchecked")
-  public T clear() {
-    position = 0;
-    limit = capacity;
-    mark = position;
-    return (T) this;
-  }
-
-  /**
-   * Checks the bounds of the given offset.
-   */
-  protected void checkBounds(long offset) {
-    if (offset > capacity)
-      throw new IllegalArgumentException("Offset cannot be greater than the block capacity");
-  }
-
-  /**
-   * Returns the current position and increments the position by the given number of bytes.
-   */
-  protected long incrementPosition(int bytes) {
-    long position = this.position;
-    this.position += bytes;
-    return position;
-  }
-
-  @Override
-  public char readChar() {
-    return readChar(incrementPosition(Character.BYTES));
-  }
-
-  @Override
-  public short readShort() {
-    return readShort(incrementPosition(Short.BYTES));
-  }
-
-  @Override
-  public int readInt() {
-    return readInt(incrementPosition(Integer.BYTES));
-  }
-
-  @Override
-  public long readLong() {
-    return readLong(incrementPosition(Long.BYTES));
-  }
-
-  @Override
-  public float readFloat() {
-    return readFloat(incrementPosition(Float.BYTES));
-  }
-
-  @Override
-  public double readDouble() {
-    return readDouble(incrementPosition(Double.BYTES));
-  }
-
-  @Override
-  public boolean readBoolean() {
-    return readBoolean(incrementPosition(1));
-  }
-
-  @Override
-  public Buffer writeChar(char c) {
-    return writeChar(incrementPosition(Character.BYTES), c);
-  }
-
-  @Override
-  public Buffer writeShort(short s) {
-    return writeShort(incrementPosition(Short.BYTES), s);
-  }
-
-  @Override
-  public Buffer writeInt(int i) {
-    return writeInt(incrementPosition(Integer.BYTES), i);
-  }
-
-  @Override
-  public Buffer writeLong(long l) {
-    return writeLong(incrementPosition(Long.BYTES), l);
-  }
-
-  @Override
-  public Buffer writeFloat(float f) {
-    return writeFloat(incrementPosition(Float.BYTES), f);
-  }
-
-  @Override
-  public Buffer writeDouble(double d) {
-    return writeDouble(incrementPosition(Double.BYTES), d);
-  }
-
-  @Override
-  public Buffer writeBoolean(boolean b) {
-    return writeBoolean(incrementPosition(1), b);
   }
 
   @Override

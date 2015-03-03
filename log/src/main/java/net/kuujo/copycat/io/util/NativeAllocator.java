@@ -13,38 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 /**
- * Referenceable.
+ * Native memory allocator implementation.
+ * <p>
+ * The native allocator uses {@link sun.misc.Unsafe} directly to allocate memory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Referenceable<T> extends AutoCloseable {
+public class NativeAllocator implements Allocator {
 
-  /**
-   * Acquires a reference.
-   *
-   * @return The acquired reference.
-   */
-  T acquire();
-
-  /**
-   * Releases a reference.
-   */
-  void release();
-
-  /**
-   * Returns the number of open references.
-   *
-   * @return The number of open references.
-   */
-  int references();
-
-  /**
-   * Defines an exception free close implementation.
-   */
   @Override
-  void close();
+  public Memory allocate(long size) {
+    return new NativeMemory(NativeMemory.UNSAFE.allocateMemory(size), size, this);
+  }
+
+  @Override
+  public void free(Memory memory) {
+    NativeMemory.UNSAFE.freeMemory(memory.address());
+  }
 
 }

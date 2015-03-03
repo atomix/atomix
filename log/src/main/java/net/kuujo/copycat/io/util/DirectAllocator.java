@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 import sun.misc.Cleaner;
 import sun.nio.ch.DirectBuffer;
@@ -24,6 +24,8 @@ import java.util.Map;
 
 /**
  * Direct memory allocator.
+ * <p>
+ * This allocator implementation allocates memory via {@link sun.nio.ch.DirectBuffer}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

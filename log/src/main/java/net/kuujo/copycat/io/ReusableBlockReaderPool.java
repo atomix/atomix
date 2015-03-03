@@ -15,19 +15,25 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.copycat.io.util.Referenceable;
+
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 /**
- * Buffer reader pool.
+ * Block reader pool.
+ * <p>
+ * The reader pool reduces garbage produced by frequent reads by tracking references to existing readers and recycling
+ * readers once they're closed.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ReusableBufferReaderPool<T extends Buffer & Referenceable<T>> implements ReferenceManager<ReusableBufferReader<T>> {
+public class ReusableBlockReaderPool<T extends Block & Referenceable<T>> implements ReferenceManager<ReusableBlockReader<T>> {
   private final T buffer;
-  private final Queue<ReusableBufferReader<T>> pool = new ArrayDeque<>(1024);
+  private final Queue<ReusableBlockReader<T>> pool = new ArrayDeque<>(1024);
 
-  public ReusableBufferReaderPool(T buffer) {
+  public ReusableBlockReaderPool(T buffer) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     this.buffer = buffer;
@@ -36,22 +42,22 @@ public class ReusableBufferReaderPool<T extends Buffer & Referenceable<T>> imple
   /**
    * Acquires a new multi buffer reader.
    */
-  public ReusableBufferReader<T> acquire() {
-    ReusableBufferReader<T> reader = pool.poll();
+  public ReusableBlockReader<T> acquire() {
+    ReusableBlockReader<T> reader = pool.poll();
     if (reader == null) {
       synchronized (pool) {
         reader = pool.poll();
         if (reader == null) {
-          reader = new ReusableBufferReader<>(buffer, this);
+          reader = new ReusableBlockReader<>(buffer, this);
         }
       }
     }
-    reader.reset();
+    reader.clear();
     return reader;
   }
 
   @Override
-  public void release(ReusableBufferReader<T> reference) {
+  public void release(ReusableBlockReader<T> reference) {
     pool.add(reference);
     reference.buffer().release();
   }

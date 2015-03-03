@@ -15,10 +15,18 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.Allocator;
+import net.kuujo.copycat.io.util.ReferenceManager;
+
 import java.io.IOException;
 
 /**
  * Native memory storage.
+ * <p>
+ * This storage implementation allocates off-heap memory and provides direct access via {@link sun.misc.Unsafe}. It's
+ * important to note that once a block has been acquired for the first time via {@link NativeStorage#acquire(int)}, the
+ * memory allocated for that block will remain available for the lifetime of the storage instance (until
+ * {@link NativeStorage#close()} is called).
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

@@ -20,27 +20,43 @@ package net.kuujo.copycat.io;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Block extends Buffer {
+public interface Block extends Bytes<Block>, AutoCloseable {
 
   /**
    * Returns the index of the block in the parent storage.
+   * <p>
+   * Indexes are zero-based references to the position of the block within the parent storage implementation. For
+   * instance, if the storage instance was initialized with a block size of {@code 1024} then block {@code 1} will be
+   * bytes {@code 1024} through {@code 2047}.
    *
    * @return The index of the block.
    */
   int index();
 
   /**
-   * Returns a storage reader.
+   * Returns a block reader.
+   * <p>
+   * The block reader is a special buffer type designed for writing to storage blocks. The returned block will have
+   * unique {@code position} and {@code limit} that are separate from other readers returned by this block. The block
+   * will maintain a reference to the returned reader. Once bytes have been written to the block, close the reader
+   * via {@link BlockReader#close()} to release the reader back to the block. This allows blocks to recycle existing
+   * readers with {@link ReusableBlockReaderPool} rather than creating a new block for each new write.
    *
-   * @return The storage reader.
+   * @return The block reader.
    */
-  BufferReader reader();
+  BlockReader reader();
 
   /**
-   * Returns a storage writer.
+   * Returns a block writer.
+   * <p>
+   * The block writer is a special buffer type designed for writing to storage blocks. The returned block will have
+   * unique {@code position} and {@code limit} that are separate from other writers returned by this block. The block
+   * will maintain a reference to the returned writer. Once bytes have been written to the block, close the writer
+   * via {@link BlockWriter#close()} to release the writer back to the block. This allows blocks to recycle existing
+   * writers with {@link ReusableBlockWriterPool} rather than creating a new block for each new write.
    *
-   * @return The storage writer.
+   * @return The block writer.
    */
-  BufferWriter writer();
+  BlockWriter writer();
 
 }

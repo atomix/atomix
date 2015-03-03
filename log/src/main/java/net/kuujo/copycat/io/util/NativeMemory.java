@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
 /**
- * Native memory.
+ * Native memory. Represents memory that can be accessed directly via {@link sun.misc.Unsafe}
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

@@ -15,6 +15,11 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.Allocator;
+import net.kuujo.copycat.io.util.Memory;
+import net.kuujo.copycat.io.util.NativeAllocator;
+import net.kuujo.copycat.io.util.ReferenceManager;
+
 /**
  * Native buffer utility.
  *

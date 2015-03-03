@@ -16,17 +16,9 @@
 package net.kuujo.copycat.io;
 
 /**
- * Reference manager.
+ * Aggregate of byte read/write/navigate interfaces.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ReferenceManager<T> {
-
-  /**
-   * Releases the given reference.
-   *
-   * @param reference The reference to release.
-   */
-  void release(T reference);
-
+public interface Bytes<T extends Bytes<?>> extends ReadableBytes<T>, WritableBytes<T>, NavigableBytes<T> {
 }

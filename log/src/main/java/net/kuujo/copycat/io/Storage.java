@@ -16,7 +16,12 @@
 package net.kuujo.copycat.io;
 
 /**
- * Storage.
+ * Byte storage.
+ * <p>
+ * This is the primary interface for managing the persistence layer that underlies {@link Block} and {@link Buffer}.
+ * Storage implementations serve to manage references to either in-memory or on-disk storage. The storage abstraction
+ * provides access to underlying persistence via fixed-size blocks. This allows memory and disk space to be dynamically
+ * allocated according to the needs of higher-level systems.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -24,6 +29,10 @@ public interface Storage extends AutoCloseable {
 
   /**
    * Acquires a reference to the block for the given block index.
+   * <p>
+   * Although a block may already exist when this method is called, block instances returned by this method will
+   * be unique wrappers around the existing block instance. This means that the respective block buffer {@code position}
+   * and {@code limit} will be unique among all instances of the block.
    *
    * @param index The index of the block to acquire.
    * @return The acquired block.

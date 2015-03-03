@@ -13,41 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 /**
- * Writable buffer.
+ * Memory allocator.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface WritableBuffer<T extends WritableBuffer<T>> {
+public interface Memory {
 
-  T writeChar(char c);
+  /**
+   * Returns the memory address.
+   *
+   * @return The memory address.
+   */
+  long address();
 
-  T writeChar(long offset, char c);
+  /**
+   * Returns the memory size.
+   *
+   * @return The memory size.
+   */
+  long size();
 
-  T writeShort(short s);
+  /**
+   * Clears the memory.
+   */
+  void clear();
 
-  T writeShort(long offset, short s);
-
-  T writeInt(int i);
-
-  T writeInt(long offset, int i);
-
-  T writeLong(long l);
-
-  T writeLong(long offset, long l);
-
-  T writeFloat(float f);
-
-  T writeFloat(long offset, float f);
-
-  T writeDouble(double d);
-
-  T writeDouble(long offset, double d);
-
-  T writeBoolean(boolean b);
-
-  T writeBoolean(long offset, boolean b);
+  /**
+   * Frees the memory.
+   */
+  void free();
 
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 import sun.misc.Cleaner;
 import sun.nio.ch.DirectBuffer;
@@ -22,6 +22,8 @@ import java.nio.MappedByteBuffer;
 
 /**
  * Mapped memory.
+ * <p>
+ * This is a special memory descriptor that handles management of {@link java.nio.MappedByteBuffer} based memory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

@@ -15,16 +15,23 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.copycat.io.util.Referenceable;
+
 /**
- * Buffer writer that delegates reference counting to the underlying buffer.
+ * Block reader that delegates reference counting to the underlying buffer.
+ * <p>
+ * This reader is designed to handle reference counting for an underlying buffer. Instead of constructing a new reader
+ * each time a block reader is opened, {@link ReusableBlockReaderPool} uses this class to determine when the use of a
+ * reader has finished and recycle the reader.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ReusableBufferWriter<T extends Buffer & Referenceable<T>> extends BufferWriter {
+public class ReusableBlockReader<T extends Block & Referenceable<T>> extends BlockReader {
   private final T buffer;
-  private final ReferenceManager<ReusableBufferWriter<T>> referenceManager;
+  private final ReferenceManager<ReusableBlockReader<T>> referenceManager;
 
-  public ReusableBufferWriter(T buffer, ReferenceManager<ReusableBufferWriter<T>> referenceManager) {
+  public ReusableBlockReader(T buffer, ReferenceManager<ReusableBlockReader<T>> referenceManager) {
     super(buffer);
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");

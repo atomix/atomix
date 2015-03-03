@@ -15,6 +15,9 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.MappedMemory;
+import net.kuujo.copycat.io.util.ReferenceManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
@@ -24,7 +27,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Mapped byte storage.
+ * Memory mapped storage.
+ * <p>
+ * This storage implementation manages {@link Block} and {@link Buffer} instances backed by {@link java.nio.MappedByteBuffer}.
+ * Each block provided by {@code MappedStorage} is mapped to a relative portion of the {@link File} provided in the
+ * constructor. When a block is acquired, the storage instance maintains a reference count for the block and once the
+ * reference count decreases to {@code 0} it may deallocate the {@link java.nio.MappedByteBuffer} memory.
+ * <p>
+ * Once file contents are mapped into memory, memory is accessed directly for reads and writes via {@link sun.misc.Unsafe}
+ * rather than via {@link java.nio.MappedByteBuffer} directly. This reduces the overhead required for interacting with
+ * the mapped memory.
+ * <p>
+ * Currently, all blocks are mapped into memory using {@link java.nio.channels.FileChannel.MapMode#READ_WRITE}. However,
+ * that may change in the future to allow for read-only access to mapped files.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

@@ -15,52 +15,74 @@
  */
 package net.kuujo.copycat.io;
 
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
+
 /**
- * Buffer navigator.
+ * Base buffer navigator implementation.
+ * <p>
+ * This is a simple {@link BytesNavigator} implementation that provides the common behaviors
+ * required of navigating buffers. Additionally, because the state within the {@code BufferNavigator} is unique and
+ * external to the underlying buffer, users can use the {@code BufferNavigator} to wrap an existing buffer and maintain
+ * multiple positions on top of that buffer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferNavigator<T extends NavigableBuffer<T>> implements NavigableBuffer<T> {
-  private final Buffer buffer;
+public class BytesNavigator<T extends NavigableBytes<?>> implements NavigableBytes<T> {
+  private long capacity;
   private long position;
   private long limit;
   private long mark;
 
-  public BufferNavigator(Buffer buffer) {
-    if (buffer == null)
-      throw new NullPointerException("buffer cannot be null");
-    this.buffer = buffer;
-    this.limit = buffer.capacity();
+  public BytesNavigator(long capacity) {
+    if (capacity < 0)
+      throw new IllegalArgumentException("capacity cannot be negative");
+    this.capacity = capacity;
+    this.limit = capacity;
   }
 
   /**
-   * Checks the bounds of the given offset.
+   * Checks that the offset is within the bounds of the buffer.
    */
-  protected long checkBounds(long offset) {
-    if (offset > limit)
-      throw new IllegalArgumentException("offset is greater than the block limit");
-    return offset;
+  private void checkOffset(long offset) {
+    if (offset < 0 || offset > limit)
+      throw new IndexOutOfBoundsException();
   }
 
   /**
-   * Checks the bounds of the given offset given the number of bytes.
+   * Checks bounds for a read.
    */
-  protected long checkBounds(long offset, int bytes) {
-    return checkBounds(offset + bytes);
-  }
-
-  /**
-   * Returns the current position and increments the position by the given number of bytes.
-   */
-  protected long incrementPosition(int bytes) {
-    long position = this.position;
-    this.position += bytes;
+  protected long checkRead(long offset, int length) {
+    checkOffset(offset);
+    long position = offset + length;
+    if (position > limit)
+      throw new BufferUnderflowException();
     return position;
+  }
+
+  /**
+   * Checks bounds for a write.
+   */
+  protected long checkWrite(long offset, int length) {
+    checkOffset(offset);
+    long position = offset + length;
+    if (position > limit)
+      throw new BufferOverflowException();
+    return position;
+  }
+
+  /**
+   * Sets the position.
+   */
+  protected long getAndSetPosition(long position) {
+    long previousPosition = this.position;
+    this.position = position;
+    return previousPosition;
   }
 
   @Override
   public long capacity() {
-    return buffer.capacity();
+    return capacity;
   }
 
   @Override
@@ -85,7 +107,7 @@ public class BufferNavigator<T extends NavigableBuffer<T>> implements NavigableB
   @Override
   @SuppressWarnings("unchecked")
   public T limit(long limit) {
-    if (limit > buffer.capacity())
+    if (limit > capacity)
       throw new IllegalArgumentException("limit cannot be greater than buffer capacity");
     this.limit = limit;
     return (T) this;
@@ -103,9 +125,17 @@ public class BufferNavigator<T extends NavigableBuffer<T>> implements NavigableB
 
   @Override
   @SuppressWarnings("unchecked")
-  public T mark(long mark) {
-    checkBounds(mark);
-    this.mark = mark;
+  public T flip() {
+    limit = position;
+    position = 0;
+    mark = position;
+    return (T) this;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public T mark() {
+    this.mark = position;
     return (T) this;
   }
 
@@ -128,7 +158,7 @@ public class BufferNavigator<T extends NavigableBuffer<T>> implements NavigableB
   @SuppressWarnings("unchecked")
   public T clear() {
     position = 0;
-    limit = buffer.capacity();
+    limit = capacity;
     mark = position;
     return (T) this;
   }

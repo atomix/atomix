@@ -15,10 +15,17 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.copycat.io.util.Referenceable;
+
 import java.util.*;
 
 /**
- * Multi-block pool.
+ * Reusable block pool.
+ * <p>
+ * This is a {@link net.kuujo.copycat.io.util.ReferenceManager} implementation that tracks references to blocks in order
+ * to determine when all references to a block and its readers have been released. This allows storage implementations
+ * to automatically release memory if necessary once a block is no longer in use.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -67,14 +74,14 @@ public class ReusableBlockPool<T extends Block & Referenceable<T>> implements Re
         }
       }
     }
-    block.reset();
+    block.clear();
     return block;
   }
 
   @Override
   public void release(ReusableBlock<T> reference) {
     getPool(reference.index()).add(reference);
-    reference.buffer().release();
+    reference.block().release();
   }
 
   /**

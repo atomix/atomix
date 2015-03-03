@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.ReferenceManager;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -23,6 +25,11 @@ import java.util.Map;
 
 /**
  * File storage.
+ * <p>
+ * This is a {@link java.io.RandomAccessFile} based storage implementation. This storage implementation is intended to
+ * be used for strongly consistent, critical logging. Blocks and buffers provided by the same {@code FileStorage}
+ * instance are all backed by the same {@code RandomAccessFile} instance. Writes and reads to and from {@code FileStorage}
+ * provided blocks and buffers are not buffered and will immediately hit disk.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

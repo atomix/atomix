@@ -13,23 +13,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 /**
- * Native memory allocator implementation.
+ * Memory allocator.<p>
+ *
+ * Memory allocators handle allocation of off-heap memory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NativeAllocator implements Allocator {
+public interface Allocator {
 
-  @Override
-  public Memory allocate(long size) {
-    return new NativeMemory(NativeMemory.UNSAFE.allocateMemory(size), size, this);
-  }
+  /**
+   * Allocates memory.
+   *
+   * @param size The size of the memory to allocate.
+   * @return The allocated memory.
+   */
+  Memory allocate(long size);
 
-  @Override
-  public void free(Memory memory) {
-    NativeMemory.UNSAFE.freeMemory(memory.address());
-  }
+  /**
+   * Frees memory.
+   * <p>
+   * The memory will be freed using the provided {@link Memory#address()}.
+   *
+   * @param memory The memory to free.
+   */
+  void free(Memory memory);
 
 }

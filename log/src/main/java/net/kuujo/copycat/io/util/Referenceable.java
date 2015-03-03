@@ -13,35 +13,41 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 /**
- * Navigable buffer.
+ * Reference counting interface.
+ * <p>
+ * Types that implement {@code Referenceable} can be counted for references and thus used to clean up resources once
+ * a given instance of an object is no longer in use.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface NavigableBuffer<T extends NavigableBuffer<T>> {
+public interface Referenceable<T> extends AutoCloseable {
 
-  long capacity();
+  /**
+   * Acquires a reference.
+   *
+   * @return The acquired reference.
+   */
+  T acquire();
 
-  long position();
+  /**
+   * Releases a reference.
+   */
+  void release();
 
-  T position(long position);
+  /**
+   * Returns the number of open references.
+   *
+   * @return The number of open references.
+   */
+  int references();
 
-  long limit();
-
-  T limit(long limit);
-
-  long remaining();
-
-  boolean hasRemaining();
-
-  T mark(long mark);
-
-  T rewind();
-
-  T reset();
-
-  T clear();
+  /**
+   * Defines an exception free close implementation.
+   */
+  @Override
+  void close();
 
 }

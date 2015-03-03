@@ -13,41 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 /**
- * Readable buffer.
+ * Reference manager. Manages {@link Referenceable} objects.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ReadableBuffer<T extends ReadableBuffer<T>> {
+public interface ReferenceManager<T> {
 
-  char readChar();
-
-  char readChar(long offset);
-
-  short readShort();
-
-  short readShort(long offset);
-
-  int readInt();
-
-  int readInt(long offset);
-
-  long readLong();
-
-  long readLong(long offset);
-
-  float readFloat();
-
-  float readFloat(long offset);
-
-  double readDouble();
-
-  double readDouble(long offset);
-
-  boolean readBoolean();
-
-  boolean readBoolean(long offset);
+  /**
+   * Releases the given reference.
+   *
+   * @param reference The reference to release.
+   */
+  void release(T reference);
 
 }
