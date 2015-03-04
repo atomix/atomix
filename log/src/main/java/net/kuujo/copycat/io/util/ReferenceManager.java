@@ -16,7 +16,7 @@
 package net.kuujo.copycat.io.util;
 
 /**
- * Reference manager. Manages {@link Referenceable} objects.
+ * Reference manager. Manages {@link ReferenceCounted} objects.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

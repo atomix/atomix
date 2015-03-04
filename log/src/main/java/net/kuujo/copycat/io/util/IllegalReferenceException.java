@@ -13,22 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.io;
+package net.kuujo.copycat.io.util;
 
 /**
- * Storage block factory.
+ * Exception thrown when a {@link net.kuujo.copycat.io.util.ReferenceCounted} object with no active references is accessed.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface BlockFactory<T extends Block> {
+public class IllegalReferenceException extends IllegalStateException {
 
-  /**
-   * Creates a block for the given index.
-   *
-   * @param index The block index.
-   * @return The block instance.
-   */
-  T createBlock(int index);
+  public IllegalReferenceException() {
+  }
+
+  public IllegalReferenceException(String s) {
+    super(s);
+  }
+
+  public IllegalReferenceException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public IllegalReferenceException(Throwable cause) {
+    super(cause);
+  }
 
 }

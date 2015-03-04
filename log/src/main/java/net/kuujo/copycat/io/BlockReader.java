@@ -15,122 +15,171 @@
  */
 package net.kuujo.copycat.io;
 
+import net.kuujo.copycat.io.util.IllegalReferenceException;
+import net.kuujo.copycat.io.util.ReferenceCounted;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
- * Buffer reader.
+ * Block reader.
+ * <p>
+ * Block readers expose a simple position based interface for reading block bytes. When a new block reader is created,
+ * the reader will start at the requested position in the block and may only advance forward while reading bytes from
+ * the underlying {@link Bytes} instance. Readers are intended for single use only. Once all the necessary bytes have
+ * been read by the reader, close the reader via {@link BlockReader#close()} to dereference the reader. Block readers
+ * are lightweight, and the underlying block will recycle the reader once it's closed to make it accessible to future
+ * {@link Block#reader()} calls.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BlockReader extends BytesNavigator<BlockReader> implements ReadableBytes<BlockReader>, AutoCloseable {
+public class BlockReader implements BufferInput<BlockReader>, ReferenceCounted<BlockReader>, AutoCloseable {
+  private final AtomicInteger references;
   private final Block block;
+  private final BufferNavigator navigator;
+  private boolean open;
 
-  public BlockReader(Block block) {
-    super(block.capacity());
+  public BlockReader(Block block, long offset, long limit) {
+    if (block == null)
+      throw new NullPointerException("block cannot be null");
+    if (offset < 0)
+      throw new IllegalArgumentException("offset cannot be negative");
+    if (offset > block.limit())
+      throw new IllegalArgumentException("offset cannot be greater than the underlying block's limit");
+    if (limit < 0)
+      throw new IllegalArgumentException("limit cannot be negative");
+    if (limit > block.limit())
+      throw new IllegalArgumentException("limit cannot be greater than the underlying block's limit");
     this.block = block;
+    this.references = new AtomicInteger(1);
+    block.acquire();
+
+    // Initialize the navigator to the correct position and limit in order to make sure
+    // exception messages are accurate (don't just use the offset and capacity).
+    this.navigator = new BufferNavigator(0, block.limit());
+    navigator.position(offset);
+    navigator.limit(limit);
+  }
+
+  /**
+   * Resets the reader.
+   */
+  BlockReader reset(long offset, long limit) {
+    navigator.clear();
+    navigator.position(offset);
+    navigator.limit(limit);
+    block.acquire();
+    references.set(1);
+    open = true;
+    return this;
+  }
+
+  /**
+   * Returns the current position of the reader.
+   *
+   * @return The current position of the reader.
+   */
+  public long position() {
+    return navigator.position();
+  }
+
+  /**
+   * Returns the reader limit.
+   *
+   * @return The reader limit.
+   */
+  public long limit() {
+    return navigator.limit();
+  }
+
+  @Override
+  public BlockReader acquire() {
+    references.incrementAndGet();
+    return this;
+  }
+
+  @Override
+  public void release() {
+    if (references.decrementAndGet() == 0) {
+      block.readers().release(this);
+      block.release();
+    }
+  }
+
+  @Override
+  public int references() {
+    return references.get();
+  }
+
+  /**
+   * Checks that the reader is open.
+   */
+  private void checkOpen() {
+    if (!open)
+      throw new IllegalStateException("writer not open");
+    if (references.get() == 0)
+      throw new IllegalReferenceException("block reader has no active references");
   }
 
   @Override
   public BlockReader read(byte[] bytes) {
-    return read(bytes, getAndSetPosition(checkRead(position(), bytes.length)), bytes.length);
-  }
-
-  @Override
-  public BlockReader read(byte[] bytes, long offset, int length) {
-    checkRead(offset, length);
-    block.read(bytes, offset, length);
+    checkOpen();
+    block.bytes().read(bytes, navigator.getAndSetPosition(navigator.checkRead(bytes.length)), bytes.length);
     return this;
   }
 
   @Override
   public int readByte() {
-    return block.readByte(getAndSetPosition(checkRead(position(), Byte.BYTES)));
-  }
-
-  @Override
-  public int readByte(long offset) {
-    checkRead(offset, Byte.BYTES);
-    return block.readByte(offset);
+    checkOpen();
+    return block.bytes().readByte(navigator.getAndSetPosition(navigator.checkRead(Byte.BYTES)));
   }
 
   @Override
   public char readChar() {
-    return block.readChar(getAndSetPosition(checkRead(position(), Character.BYTES)));
-  }
-
-  @Override
-  public char readChar(long offset) {
-    checkRead(offset, Character.BYTES);
-    return block.readChar(offset);
+    checkOpen();
+    return block.bytes().readChar(navigator.getAndSetPosition(navigator.checkRead(Character.BYTES)));
   }
 
   @Override
   public short readShort() {
-    return block.readShort(getAndSetPosition(checkRead(position(), Short.BYTES)));
-  }
-
-  @Override
-  public short readShort(long offset) {
-    checkRead(offset, Short.BYTES);
-    return block.readShort(offset);
+    checkOpen();
+    return block.bytes().readShort(navigator.getAndSetPosition(navigator.checkRead(Short.BYTES)));
   }
 
   @Override
   public int readInt() {
-    return block.readInt(getAndSetPosition(checkRead(position(), Integer.BYTES)));
-  }
-
-  @Override
-  public int readInt(long offset) {
-    checkRead(offset, Integer.BYTES);
-    return block.readInt(offset);
+    checkOpen();
+    return block.bytes().readInt(navigator.getAndSetPosition(navigator.checkRead(Integer.BYTES)));
   }
 
   @Override
   public long readLong() {
-    return block.readLong(getAndSetPosition(checkRead(position(), Long.BYTES)));
-  }
-
-  @Override
-  public long readLong(long offset) {
-    checkRead(offset, Long.BYTES);
-    return block.readLong(offset);
+    checkOpen();
+    return block.bytes().readLong(navigator.getAndSetPosition(navigator.checkRead(Long.BYTES)));
   }
 
   @Override
   public float readFloat() {
-    return block.readFloat(getAndSetPosition(checkRead(position(), Float.BYTES)));
-  }
-
-  @Override
-  public float readFloat(long offset) {
-    checkRead(offset, Float.BYTES);
-    return block.readFloat(offset);
+    checkOpen();
+    return block.bytes().readFloat(navigator.getAndSetPosition(navigator.checkRead(Float.BYTES)));
   }
 
   @Override
   public double readDouble() {
-    return block.readDouble(getAndSetPosition(checkRead(position(), Double.BYTES)));
-  }
-
-  @Override
-  public double readDouble(long offset) {
-    checkRead(offset, Double.BYTES);
-    return block.readDouble(offset);
+    checkOpen();
+    return block.bytes().readDouble(navigator.getAndSetPosition(navigator.checkRead(Double.BYTES)));
   }
 
   @Override
   public boolean readBoolean() {
-    return block.readBoolean(getAndSetPosition(checkRead(position(), Byte.BYTES)));
-  }
-
-  @Override
-  public boolean readBoolean(long offset) {
-    checkRead(offset, Byte.BYTES);
-    return block.readBoolean(offset);
+    checkOpen();
+    return block.bytes().readBoolean(navigator.getAndSetPosition(navigator.checkRead(Byte.BYTES)));
   }
 
   @Override
   public void close() {
-    // Do nothing useful.
+    block.readers().release(this);
+    block.release();
+    open = false;
   }
 
 }

@@ -23,7 +23,7 @@ package net.kuujo.copycat.io.util;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Referenceable<T> extends AutoCloseable {
+public interface ReferenceCounted<T> extends AutoCloseable {
 
   /**
    * Acquires a reference.

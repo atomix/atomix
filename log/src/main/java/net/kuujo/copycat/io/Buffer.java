@@ -25,10 +25,159 @@ package net.kuujo.copycat.io;
  * Aside from the underlying storage implementation, this buffer works very similarly to Java's
  * {@link java.nio.ByteBuffer}. It intentionally exposes methods that can be easily understood by any developer with
  * experience with {@code ByteBuffer}.
+ * <p>
+ * In order to support reading and writing from buffers, {@code NavigableBuffer} implementations maintain a series of
+ * pointers to aid in navigating the buffer.
+ * <p>
+ * Most notable of these pointers is the {@code position}. When values are written to or read from the buffer, the
+ * buffer increments its internal {@code position} according to the number of bytes read. This allows users to iterate
+ * through the bytes in the buffer without maintaining external pointers.
+ * <p>
+ * <pre>
+ *   {@code
+ *      Buffer buffer = NativeBuffer.allocate(1024);
+ *      buffer.writeInt(1);
+ *      buffer.flip();
+ *      assert buffer.readInt() == 1;
+ *   }
+ * </pre>
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Buffer extends Bytes<Buffer>, AutoCloseable {
+public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOutput<Buffer>, BufferOutput<Buffer>, AutoCloseable {
+
+  /**
+   * Returns the buffer's capacity.
+   * <p>
+   * The capacity represents the total amount of storage space allocated to the buffer by the underlying storage
+   * implementation. As such, capacity is defined at the time of the object construction and cannot change.
+   *
+   * @return The buffer's capacity.
+   */
+  long capacity();
+
+  /**
+   * Returns the buffer's current read/write position.
+   * <p>
+   * The position is an internal cursor that tracks where to write/read bytes in the underlying storage implementation.
+   *
+   * @return The buffer's current position.
+   */
+  long position();
+
+  /**
+   * Sets the buffer's current read/write position.
+   * <p>
+   * The position is an internal cursor that tracks where to write/read bytes in the underlying storage implementation.
+   *
+   * @param position The position to set.
+   * @return This buffer.
+   * @throws IllegalArgumentException If the given position is less than {@code 0} or more than {@link Buffer#limit()}
+   */
+  Buffer position(long position);
+
+  /**
+   * Returns tbe buffer's read/write limit.
+   * <p>
+   * The limit dictates the highest position to which bytes can be read from or written to the buffer. By default, the
+   * limit is initialized to {@link Buffer#capacity()}, but it may be explicitly set via
+   * {@link Buffer#limit(long)} or {@link Buffer#flip()}.
+   *
+   * @return The buffer's limit.
+   */
+  long limit();
+
+  /**
+   * Sets the buffer's read/write limit.
+   * <p>
+   * The limit dictates the highest position to which bytes can be read from or written to the buffer. The limit must
+   * be within the bounds of the buffer, i.e. greater than {@code 0} and less than or equal to {@link Buffer#capacity()}
+   *
+   * @param limit The limit to set.
+   * @return This buffer.
+   * @throws IllegalArgumentException If the given limit is less than {@code 0} or more than {@link Buffer#capacity()}
+   */
+  Buffer limit(long limit);
+
+  /**
+   * Returns the number of bytes remaining in the buffer until the {@link Buffer#limit()} is reached.
+   * <p>
+   * The bytes remaining is calculated by {@code buffer.limit() - buffer.position()}
+   *
+   * @return The number of bytes remaining in the buffer.
+   */
+  long remaining();
+
+  /**
+   * Returns a boolean indicating whether the buffer has bytes remaining.
+   * <p>
+   * If {@link Buffer#remaining()} is greater than {@code 0} then this method will return {@code true}, otherwise
+   * {@code false}
+   *
+   * @return Indicates whether bytes are remaining in the buffer. {@code true} if {@link Buffer#remaining()} is
+   *         greater than {@code 0}, {@code false} otherwise.
+   */
+  boolean hasRemaining();
+
+  /**
+   * Flips the buffer. The limit is set to the current position and then the position is set to zero. If the mark is
+   * defined then it is discarded.
+   *
+   * @return This buffer.
+   */
+  Buffer flip();
+
+  /**
+   * Sets a mark at the current position.
+   * <p>
+   * The mark is a simple internal reference to the buffer's current position. Marks can be used to reset the buffer
+   * to a specific position after some operation.
+   * <p>
+   * <pre>
+   *   {@code
+   *   buffer.mark();
+   *   buffer.writeInt(1).writeBoolean(true);
+   *   buffer.reset();
+   *   assert buffer.readInt() == 1;
+   *   }
+   * </pre>
+   *
+   * @return This buffer.
+   */
+  Buffer mark();
+
+  /**
+   * Resets the buffer's position to the previously-marked position.
+   * <p>
+   * Invoking this method neither changes nor discards the mark's value.
+   *
+   * @return This buffer.
+   */
+  Buffer reset();
+
+  /**
+   * Rewinds the buffer. The position is set to zero and the mark is discarded.
+   *
+   * @return This buffer.
+   */
+  Buffer rewind();
+
+  /**
+   * Clears the buffer. The position is set to zero, the limit is set to the capacity, and the mark is discarded.
+   *
+   * @return This buffer.
+   */
+  Buffer clear();
+
+  /**
+   * Returns the bytes underlying the buffer.
+   * <p>
+   * The buffer is a wrapper around {@link Bytes} that handles writing sequences of bytes by tracking positions and
+   * limits. This method returns the {@link Bytes} that this buffer wraps.
+   *
+   * @return The underlying bytes.
+   */
+  Bytes bytes();
 
   /**
    * Reads bytes into the given byte array.
@@ -50,7 +199,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * <p>
    * Bytes will be read from the given starting offset up to the given length. If the provided {@code length} is
    * greater than {@link net.kuujo.copycat.io.Buffer#remaining()} then a {@link java.nio.BufferUnderflowException} will
-   * be thrown. If the {@code offset} is out of bounds of the buffer then an {@link java.lang.IndexOutOfBoundsException}
+   * be thrown. If the {@code offset} is out of bounds of the buffer then an {@link IndexOutOfBoundsException}
    * will be thrown.
    *
    * @param bytes The byte array into which to read bytes.
@@ -58,7 +207,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param length The total number of bytes to read.
    * @return The buffer.
    * @throws java.nio.BufferUnderflowException If {@code length} is greater than {@link net.kuujo.copycat.io.Buffer#remaining()}
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -80,11 +229,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a byte from the buffer at the given offset.
    * <p>
    * The byte will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the byte.
    * @return The read byte.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -107,11 +256,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a 16-bit character from the buffer at the given offset.
    * <p>
    * The character will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the character.
    * @return The read character.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -134,11 +283,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a 16-bit signed integer from the buffer at the given offset.
    * <p>
    * The short will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the short.
    * @return The read short.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -161,11 +310,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a 32-bit signed integer from the buffer at the given offset.
    * <p>
    * The integer will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the integer.
    * @return The read integer.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -188,11 +337,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a 64-bit signed integer from the buffer at the given offset.
    * <p>
    * The long will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the long.
    * @return The read long.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -215,11 +364,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a single-precision 32-bit floating point number from the buffer at the given offset.
    * <p>
    * The float will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the float.
    * @return The read float.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -242,11 +391,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a double-precision 64-bit floating point number from the buffer at the given offset.
    * <p>
    * The double will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the double.
    * @return The read double.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -268,11 +417,11 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Reads a 1 byte boolean from the buffer at the given offset.
    * <p>
    * The boolean will be read from the given offset. If the given index is out of the bounds of the buffer then a
-   * {@link java.lang.IndexOutOfBoundsException} will be thrown.
+   * {@link IndexOutOfBoundsException} will be thrown.
    *
    * @param offset The offset at which to read the boolean.
    * @return The read boolean.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -282,7 +431,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * Writes an array of bytes to the buffer.
    * <p>
    * When the bytes are written to the buffer, the buffer's {@code position} will be advanced by the number of bytes
-   * in the provided byte array. If the number of bytes exceeds {@link Buffer#limit()} then an
+   * in the provided byte array. If the number of bytes exceeds {@link net.kuujo.copycat.io.Buffer#limit()} then an
    * {@link java.nio.BufferOverflowException} will be thrown.
    *
    * @param bytes The array of bytes to write.
@@ -305,7 +454,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param length The number of bytes from the provided byte array to write to the buffer.
    * @return The written buffer.
    * @throws java.nio.BufferOverflowException If there are not enough bytes remaining in the buffer.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer.
    */
   @Override
   Buffer write(byte[] bytes, long offset, int length);
@@ -333,7 +482,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param b The byte to write.
    * @return The written buffer.
    * @throws java.nio.BufferOverflowException If there are not enough bytes remaining in the buffer.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -348,7 +497,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    *
    * @param c The character to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Character#BYTES}.
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Character#BYTES}.
    */
   @Override
   Buffer writeChar(char c);
@@ -362,8 +511,8 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param offset The offset at which to write the character.
    * @param c The character to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Character#BYTES}.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Character#BYTES}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -378,7 +527,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    *
    * @param s The short to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Short#BYTES}.
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Short#BYTES}.
    */
   @Override
   Buffer writeShort(short s);
@@ -392,8 +541,8 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param offset The offset at which to write the short.
    * @param s The short to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Short#BYTES}.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Short#BYTES}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -408,7 +557,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    *
    * @param i The integer to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Integer#BYTES}.
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Integer#BYTES}.
    */
   @Override
   Buffer writeInt(int i);
@@ -422,8 +571,8 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param offset The offset at which to write the integer.
    * @param i The integer to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Integer#BYTES}.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Integer#BYTES}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -438,7 +587,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    *
    * @param l The long to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Long#BYTES}.
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Long#BYTES}.
    */
   @Override
   Buffer writeLong(long l);
@@ -452,8 +601,8 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param offset The offset at which to write the long.
    * @param l The long to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Long#BYTES}.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Long#BYTES}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -468,7 +617,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    *
    * @param f The float to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Float#BYTES}.
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Float#BYTES}.
    */
   @Override
   Buffer writeFloat(float f);
@@ -482,8 +631,8 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param offset The offset at which to write the float.
    * @param f The float to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Float#BYTES}.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Float#BYTES}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -498,7 +647,7 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    *
    * @param d The double to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Double#BYTES}.
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Double#BYTES}.
    */
   @Override
   Buffer writeDouble(double d);
@@ -512,8 +661,8 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param offset The offset at which to write the double.
    * @param d The double to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@link Double#BYTES}.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@link Double#BYTES}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override
@@ -542,8 +691,8 @@ public interface Buffer extends Bytes<Buffer>, AutoCloseable {
    * @param offset The offset at which to write the boolean.
    * @param b The boolean to write.
    * @return The written buffer.
-   * @throws java.nio.BufferOverflowException If {@link Buffer#remaining()} is less than {@code 1}.
-   * @throws java.lang.IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
+   * @throws java.nio.BufferOverflowException If {@link net.kuujo.copycat.io.Buffer#remaining()} is less than {@code 1}.
+   * @throws IndexOutOfBoundsException If the given offset is out of the bounds of the buffer. Note that
    *         bounds are determined by the buffer's {@link net.kuujo.copycat.io.Buffer#limit()} rather than capacity.
    */
   @Override

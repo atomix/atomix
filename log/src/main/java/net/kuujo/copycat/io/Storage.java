@@ -18,10 +18,10 @@ package net.kuujo.copycat.io;
 /**
  * Byte storage.
  * <p>
- * This is the primary interface for managing the persistence layer that underlies {@link Block} and {@link Buffer}.
- * Storage implementations serve to manage references to either in-memory or on-disk storage. The storage abstraction
- * provides access to underlying persistence via fixed-size blocks. This allows memory and disk space to be dynamically
- * allocated according to the needs of higher-level systems.
+ * This is the primary interface for managing the persistence layer that underlies {@link net.kuujo.copycat.io.Block}
+ * and {@link net.kuujo.copycat.io.Buffer}. Storage implementations serve to manage references to either in-memory or
+ * on-disk storage. The storage abstraction provides access to underlying persistence via fixed-size blocks. This allows
+ * memory and disk space to be dynamically allocated according to the needs of higher-level systems.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

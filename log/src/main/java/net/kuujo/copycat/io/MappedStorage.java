@@ -29,8 +29,8 @@ import java.util.Map;
 /**
  * Memory mapped storage.
  * <p>
- * This storage implementation manages {@link Block} and {@link Buffer} instances backed by {@link java.nio.MappedByteBuffer}.
- * Each block provided by {@code MappedStorage} is mapped to a relative portion of the {@link File} provided in the
+ * This storage implementation manages {@link net.kuujo.copycat.io.Block} and {@link net.kuujo.copycat.io.Buffer} instances backed by {@link java.nio.MappedByteBuffer}.
+ * Each block provided by {@code MappedStorage} is mapped to a relative portion of the {@link java.io.File} provided in the
  * constructor. When a block is acquired, the storage instance maintains a reference count for the block and once the
  * reference count decreases to {@code 0} it may deallocate the {@link java.nio.MappedByteBuffer} memory.
  * <p>
@@ -43,10 +43,10 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MappedStorage implements Storage, ReferenceManager<NativeBlock> {
+public class MappedStorage implements Storage, ReferenceManager<Block> {
   private static final int MAX_BLOCKS = 2;
   private final FileChannel channel;
-  private final Map<Integer, NativeBlock> blocks = new HashMap<>(1024);
+  private final Map<Integer, Block> blocks = new HashMap<>(1024);
   private final long blockSize;
 
   public MappedStorage(File file, long blockSize) throws IOException {
@@ -58,14 +58,14 @@ public class MappedStorage implements Storage, ReferenceManager<NativeBlock> {
 
   @Override
   public Block acquire(int index) {
-    NativeBlock block = blocks.get(index);
+    Block block = blocks.get(index);
     if (block == null) {
       synchronized (blocks) {
         block = blocks.get(index);
         if (block == null) {
           try {
             MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_WRITE, blockSize * index, blockSize);
-            block = new NativeBlock(index, new MappedMemory(buffer), this);
+            block = new Block(index, new NativeBytes(new MappedMemory(buffer)), this);
             blocks.put(index, block);
           } catch (IOException e) {
             throw new RuntimeException(e);
@@ -77,15 +77,15 @@ public class MappedStorage implements Storage, ReferenceManager<NativeBlock> {
   }
 
   @Override
-  public void release(NativeBlock reference) {
-    NativeBlock block  = blocks.get(reference.index());
+  public void release(Block reference) {
+    Block block  = blocks.get(reference.index());
     if (block != null) {
       if (block.references() == 0 && blocks.size() > MAX_BLOCKS) {
         synchronized (blocks) {
           if (block.references() == 0) {
             block = blocks.remove(reference.index());
             if (block != null) {
-              block.memory().free();
+              ((NativeBytes) block.bytes()).memory().free();
             }
           }
         }
@@ -96,7 +96,7 @@ public class MappedStorage implements Storage, ReferenceManager<NativeBlock> {
   @Override
   public void close() {
     synchronized (blocks) {
-      blocks.values().forEach(b -> b.memory().free());
+      blocks.values().forEach(b -> ((NativeBytes) b.bytes()).memory().free());
     }
   }
 

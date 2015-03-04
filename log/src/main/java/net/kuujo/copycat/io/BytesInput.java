@@ -16,19 +16,13 @@
 package net.kuujo.copycat.io;
 
 /**
- * Readable buffer.
+ * Readable bytes.
+ * <p>
+ * This interface exposes methods for reading bytes from specific positions in a byte array.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ReadableBytes<T extends ReadableBytes<?>> {
-
-  /**
-   * Reads bytes into the given byte array.
-   *
-   * @param bytes The byte array into which to read bytes.
-   * @return The buffer.
-   */
-  T read(byte[] bytes);
+public interface BytesInput<T extends BytesInput<?>> {
 
   /**
    * Reads bytes into the given byte array starting at the given offset up to the given length.
@@ -41,26 +35,12 @@ public interface ReadableBytes<T extends ReadableBytes<?>> {
   T read(byte[] bytes, long offset, int length);
 
   /**
-   * Reads a byte from the buffer at the current position.
-   *
-   * @return The read byte.
-   */
-  int readByte();
-
-  /**
    * Reads a byte from the buffer at the given offset.
    *
    * @param offset The offset at which to read the byte.
    * @return The read byte.
    */
   int readByte(long offset);
-
-  /**
-   * Reads a 16-bit character from the buffer at the current position.
-   *
-   * @return The read character.
-   */
-  char readChar();
 
   /**
    * Reads a 16-bit character from the buffer at the given offset.
@@ -71,26 +51,12 @@ public interface ReadableBytes<T extends ReadableBytes<?>> {
   char readChar(long offset);
 
   /**
-   * Reads a 16-bit signed integer from the buffer at the current position.
-   *
-   * @return The read short.
-   */
-  short readShort();
-
-  /**
    * Reads a 16-bit signed integer from the buffer at the given offset.
    *
    * @param offset The offset at which to read the short.
    * @return The read short.
    */
   short readShort(long offset);
-
-  /**
-   * Reads a 32-bit signed integer from the buffer at the current position.
-   *
-   * @return The read integer.
-   */
-  int readInt();
 
   /**
    * Reads a 32-bit signed integer from the buffer at the given offset.
@@ -101,26 +67,12 @@ public interface ReadableBytes<T extends ReadableBytes<?>> {
   int readInt(long offset);
 
   /**
-   * Reads a 64-bit signed integer from the buffer at the current position.
-   *
-   * @return The read long.
-   */
-  long readLong();
-
-  /**
    * Reads a 64-bit signed integer from the buffer at the given offset.
    *
    * @param offset The offset at which to read the long.
    * @return The read long.
    */
   long readLong(long offset);
-
-  /**
-   * Reads a single-precision 32-bit floating point number from the buffer at the current position.
-   *
-   * @return The read float.
-   */
-  float readFloat();
 
   /**
    * Reads a single-precision 32-bit floating point number from the buffer at the given offset.
@@ -131,26 +83,12 @@ public interface ReadableBytes<T extends ReadableBytes<?>> {
   float readFloat(long offset);
 
   /**
-   * Reads a double-precision 64-bit floating point number from the buffer at the current position.
-   *
-   * @return The read double.
-   */
-  double readDouble();
-
-  /**
    * Reads a double-precision 64-bit floating point number from the buffer at the given offset.
    *
    * @param offset The offset at which to read the double.
    * @return The read double.
    */
   double readDouble(long offset);
-
-  /**
-   * Reads a 1 byte boolean from the buffer at the current position.
-   *
-   * @return The read boolean.
-   */
-  boolean readBoolean();
 
   /**
    * Reads a 1 byte boolean from the buffer at the given offset.

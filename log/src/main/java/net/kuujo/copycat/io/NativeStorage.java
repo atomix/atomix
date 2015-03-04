@@ -16,9 +16,9 @@
 package net.kuujo.copycat.io;
 
 import net.kuujo.copycat.io.util.Allocator;
-import net.kuujo.copycat.io.util.ReferenceManager;
 
-import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Native memory storage.
@@ -30,41 +30,29 @@ import java.io.IOException;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NativeStorage implements Storage, ReferenceManager<NativeBlock> {
+public class NativeStorage implements Storage {
   private final Allocator allocator;
-  private final ReusableBlockPool<NativeBlock> pool;
   private final long blockSize;
+  private final Map<Integer, NativeBytes> bytes = new HashMap<>(1024);
 
   public NativeStorage(Allocator allocator, long blockSize) {
+    super();
     if (allocator == null)
       throw new NullPointerException("memory allocator cannot be null");
     if (blockSize <= 0)
       throw new IllegalArgumentException("block size must be positive");
     this.allocator = allocator;
     this.blockSize = blockSize;
-    this.pool = new ReusableBlockPool<>(this::createBlock);
-  }
-
-  /**
-   * Creates a new block.
-   */
-  private NativeBlock createBlock(int index) {
-    return new NativeBlock(index, allocator.allocate(blockSize), this);
   }
 
   @Override
   public Block acquire(int index) {
-    return pool.acquire(index);
+    return new Block(index, bytes.computeIfAbsent(index, i -> new NativeBytes(allocator.allocate(index * blockSize))));
   }
 
   @Override
-  public void release(NativeBlock reference) {
-    reference.reset();
-  }
-
-  @Override
-  public void close() throws IOException {
-    pool.blocks().forEach(b -> b.memory().free());
+  public void close() {
+    bytes.values().forEach(b -> b.memory().free());
   }
 
 }

@@ -20,5 +20,13 @@ package net.kuujo.copycat.io;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Bytes<T extends Bytes<?>> extends ReadableBytes<T>, WritableBytes<T>, NavigableBytes<T> {
+public interface Bytes extends BytesInput<Bytes>, BytesOutput<Bytes> {
+
+  /**
+   * Returns the size of the bytes.
+   *
+   * @return The size of the bytes.
+   */
+  long size();
+
 }

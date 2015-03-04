@@ -16,22 +16,13 @@
 package net.kuujo.copycat.io;
 
 /**
- * Writable buffer.
+ * Writable bytes.
  * <p>
- * This interface exposes all methods specific to writing to byte buffers. Buffers support writing all primitive
- * types and byte arrays.
+ * This interface exposes methods for writing bytes to specific positions in a byte array.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface WritableBytes<T extends WritableBytes<?>> {
-
-  /**
-   * Writes an array of bytes to the buffer.
-   *
-   * @param bytes The array of bytes to write.
-   * @return The written buffer.
-   */
-  T write(byte[] bytes);
+public interface BytesOutput<T extends BytesOutput<?>> {
 
   /**
    * Writes an array of bytes to the buffer.
@@ -44,14 +35,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
   T write(byte[] bytes, long offset, int length);
 
   /**
-   * Writes a byte to the buffer.
-   *
-   * @param b The byte to write.
-   * @return The written buffer.
-   */
-  T writeByte(int b);
-
-  /**
    * Writes a byte to the buffer at the given offset.
    *
    * @param offset The offset at which to write the byte.
@@ -59,14 +42,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
    * @return The written buffer.
    */
   T writeByte(long offset, int b);
-
-  /**
-   * Writes a 16-bit character to the buffer.
-   *
-   * @param c The character to write.
-   * @return The written buffer.
-   */
-  T writeChar(char c);
 
   /**
    * Writes a 16-bit character to the buffer at the given offset.
@@ -78,14 +53,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
   T writeChar(long offset, char c);
 
   /**
-   * Writes a 16-bit signed integer to the buffer.
-   *
-   * @param s The short to write.
-   * @return The written buffer.
-   */
-  T writeShort(short s);
-
-  /**
    * Writes a 16-bit signed integer to the buffer at the given offset.
    *
    * @param offset The offset at which to write the short.
@@ -93,14 +60,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
    * @return The written buffer.
    */
   T writeShort(long offset, short s);
-
-  /**
-   * Writes a 32-bit signed integer to the buffer.
-   *
-   * @param i The integer to write.
-   * @return The written buffer.
-   */
-  T writeInt(int i);
 
   /**
    * Writes a 32-bit signed integer to the buffer at the given offset.
@@ -112,14 +71,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
   T writeInt(long offset, int i);
 
   /**
-   * Writes a 64-bit signed integer to the buffer.
-   *
-   * @param l The long to write.
-   * @return The written buffer.
-   */
-  T writeLong(long l);
-
-  /**
    * Writes a 64-bit signed integer to the buffer at the given offset.
    *
    * @param offset The offset at which to write the long.
@@ -127,14 +78,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
    * @return The written buffer.
    */
   T writeLong(long offset, long l);
-
-  /**
-   * Writes a single-precision 32-bit floating point number to the buffer.
-   *
-   * @param f The float to write.
-   * @return The written buffer.
-   */
-  T writeFloat(float f);
 
   /**
    * Writes a single-precision 32-bit floating point number to the buffer at the given offset.
@@ -146,14 +89,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
   T writeFloat(long offset, float f);
 
   /**
-   * Writes a double-precision 64-bit floating point number to the buffer.
-   *
-   * @param d The double to write.
-   * @return The written buffer.
-   */
-  T writeDouble(double d);
-
-  /**
    * Writes a double-precision 64-bit floating point number to the buffer at the given offset.
    *
    * @param offset The offset at which to write the double.
@@ -161,14 +96,6 @@ public interface WritableBytes<T extends WritableBytes<?>> {
    * @return The written buffer.
    */
   T writeDouble(long offset, double d);
-
-  /**
-   * Writes a 1 byte boolean to the buffer.
-   *
-   * @param b The boolean to write.
-   * @return The written buffer.
-   */
-  T writeBoolean(boolean b);
 
   /**
    * Writes a 1 byte boolean to the buffer at the given offset.

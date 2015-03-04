@@ -16,35 +16,39 @@
 package net.kuujo.copycat.io;
 
 import net.kuujo.copycat.io.util.Allocator;
-import net.kuujo.copycat.io.util.Memory;
 import net.kuujo.copycat.io.util.NativeAllocator;
-import net.kuujo.copycat.io.util.ReferenceManager;
 
 /**
- * Native buffer utility.
+ * Native byte buffer implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NativeBuffer extends NativeBlock implements AutoCloseable {
+public class NativeBuffer extends CheckedBuffer {
   private static final Allocator allocator = new NativeAllocator();
 
   /**
-   * Allocates a native buffer.
+   * Allocates a new native buffer.
+   * <p>
+   * When the buffer is constructed, {@link net.kuujo.copycat.io.util.NativeAllocator} will be used to allocate
+   * {@code size} bytes of off-heap memory. Memory is accessed by the buffer directly via {@link sun.misc.Unsafe}.
    *
-   * @param size The buffer size.
-   * @return The buffer instance.
+   * @param size The size of the buffer to allocate (in bytes).
+   * @return The native buffer.
    */
-  public static NativeBuffer allocate(long size) {
-    return new NativeBuffer(allocator.allocate(size), new ReferenceManager<NativeBlock>() {
-      @Override
-      public void release(NativeBlock reference) {
-        reference.memory().free();
-      }
-    });
+  public static Buffer allocate(long size) {
+    return new NativeBuffer(new NativeBytes(allocator.allocate(size)));
   }
 
-  private NativeBuffer(Memory memory, ReferenceManager<NativeBlock> referenceManager) {
-    super(0, memory, referenceManager);
+  private final NativeBytes bytes;
+
+  private NativeBuffer(NativeBytes bytes) {
+    super(bytes);
+    this.bytes = bytes;
+  }
+
+  @Override
+  public void close() throws Exception {
+    bytes.memory().free();
   }
 
 }

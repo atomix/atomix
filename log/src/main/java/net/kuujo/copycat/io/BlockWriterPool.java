@@ -16,7 +16,6 @@
 package net.kuujo.copycat.io;
 
 import net.kuujo.copycat.io.util.ReferenceManager;
-import net.kuujo.copycat.io.util.Referenceable;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
@@ -24,42 +23,40 @@ import java.util.Queue;
 /**
  * Block writer pool.
  * <p>
- * The writer pool reduces garbage produced by frequent writes by tracking references to existing writers and recycling
+ * The writer pool reduces garbage produced by frequent reads by tracking references to existing writers and recycling
  * writers once they're closed.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ReusableBlockWriterPool<T extends Block & Referenceable<T>> implements ReferenceManager<ReusableBlockWriter<T>> {
-  private final T buffer;
-  private final Queue<ReusableBlockWriter<T>> pool = new ArrayDeque<>(1024);
+class BlockWriterPool implements ReferenceManager<BlockWriter> {
+  private final Block block;
+  private final Queue<BlockWriter> pool = new ArrayDeque<>(1024);
 
-  public ReusableBlockWriterPool(T buffer) {
-    if (buffer == null)
-      throw new NullPointerException("buffer cannot be null");
-    this.buffer = buffer;
+  public BlockWriterPool(Block block) {
+    if (block == null)
+      throw new NullPointerException("block cannot be null");
+    this.block = block;
   }
 
   /**
    * Acquires a new multi buffer writer.
    */
-  public ReusableBlockWriter<T> acquire() {
-    ReusableBlockWriter<T> writer = pool.poll();
+  public BlockWriter acquire() {
+    BlockWriter writer = pool.poll();
     if (writer == null) {
       synchronized (pool) {
         writer = pool.poll();
         if (writer == null) {
-          writer = new ReusableBlockWriter<>(buffer, this);
+          writer = new BlockWriter(block, 0, 0);
         }
       }
     }
-    writer.clear();
     return writer;
   }
 
   @Override
-  public void release(ReusableBlockWriter<T> reference) {
+  public void release(BlockWriter reference) {
     pool.add(reference);
-    reference.buffer().release();
   }
 
 }

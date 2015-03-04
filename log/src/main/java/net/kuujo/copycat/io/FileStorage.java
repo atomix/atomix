@@ -15,13 +15,9 @@
  */
 package net.kuujo.copycat.io;
 
-import net.kuujo.copycat.io.util.ReferenceManager;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * File storage.
@@ -33,10 +29,9 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FileStorage implements Storage, ReferenceManager<FileBlock> {
+public class FileStorage implements Storage {
   private final int blockSize;
   private final RandomAccessFile file;
-  private final Map<Integer, FileBlock> blocks = new HashMap<>(1024);
 
   public FileStorage(File file, int blockSize) throws IOException {
     if (blockSize <= 0)
@@ -47,22 +42,7 @@ public class FileStorage implements Storage, ReferenceManager<FileBlock> {
 
   @Override
   public Block acquire(int index) {
-    FileBlock block = blocks.get(index);
-    if (block == null) {
-      synchronized (blocks) {
-        block = blocks.get(index);
-        if (block == null) {
-          block = new FileBlock(index, file, blockSize * index, blockSize, this);
-          blocks.put(index, block);
-        }
-      }
-    }
-    return block.acquire();
-  }
-
-  @Override
-  public void release(FileBlock reference) {
-    reference.reset();
+    return new Block(index, new FileBytes(file, index * blockSize, blockSize));
   }
 
   @Override
