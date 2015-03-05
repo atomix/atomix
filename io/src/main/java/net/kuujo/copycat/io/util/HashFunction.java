@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util.hash;
+package net.kuujo.copycat.io.util;
 
 import net.kuujo.copycat.util.internal.Buffers;
 

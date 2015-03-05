@@ -13,28 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util;
+package net.kuujo.copycat.io.util;
 
-import net.kuujo.copycat.util.hash.BloomFilter;
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import net.openhft.hashing.LongHashFunction;
 
 /**
- * Bloom filter test.
+ * City hash function.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
-public class BloomFilterTest {
+public class CityHashFunction implements HashFunction {
+  private final LongHashFunction function;
 
-  /**
-   * Tests adding an element to a bloom filter and then checking that the filter contains that element.
-   */
-  public void testAddContains() {
-    BloomFilter<String> filter = new BloomFilter<>(.1, 100);
-    filter.add("Hello world!");
-    Assert.assertTrue(filter.contains("Hello world!"));
-    Assert.assertFalse(filter.contains("Hello world again!"));
+  public CityHashFunction() {
+    function = LongHashFunction.city_1_1();
+  }
+
+  public CityHashFunction(long seed) {
+    function = LongHashFunction.city_1_1(seed);
+  }
+
+  @Override
+  public long hashBytes(byte[] bytes) {
+    return function.hashBytes(bytes);
   }
 
 }

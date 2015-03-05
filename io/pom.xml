@@ -26,11 +26,20 @@
   <artifactId>copycat-io</artifactId>
   <name>Copycat I/O</name>
 
+  <properties>
+    <hash.version>0.2</hash.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-util</artifactId>
       <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.openhft</groupId>
+      <artifactId>zero-allocation-hashing</artifactId>
+      <version>${hash.version}</version>
     </dependency>
   </dependencies>
 

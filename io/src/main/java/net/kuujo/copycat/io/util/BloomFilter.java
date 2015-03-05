@@ -15,10 +15,6 @@
  */
 package net.kuujo.copycat.io.util;
 
-import net.kuujo.copycat.util.hash.CityHashFunction;
-import net.kuujo.copycat.util.hash.HashFunction;
-import net.kuujo.copycat.util.hash.Murmur3HashFunction;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Objects;
