@@ -23,7 +23,7 @@ package net.kuujo.copycat.log.io;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface BufferOutput<T extends BufferOutput<T>> {
+public interface BufferOutput<T extends BufferOutput<?>> {
 
   /**
    * Writes an array of bytes to the buffer.

@@ -23,7 +23,7 @@ package net.kuujo.copycat.log.io;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface BufferInput<T extends BufferInput<T>> {
+public interface BufferInput<T extends BufferInput<?>> {
 
   /**
    * Reads bytes into the given byte array.

@@ -29,9 +29,9 @@ import java.util.Queue;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferReaderPool<T extends Buffer & ReferenceCounted<? extends Buffer>> implements ReferenceManager<BufferReader> {
+public class BufferReaderPool<T extends Buffer & ReferenceCounted<? extends Buffer>> implements ReferenceManager<BufferReader<T>> {
   private final T buffer;
-  private final Queue<BufferReader> pool = new ArrayDeque<>(1024);
+  private final Queue<BufferReader<T>> pool = new ArrayDeque<>(1024);
 
   public BufferReaderPool(T buffer) {
     if (buffer == null)
@@ -48,7 +48,7 @@ public class BufferReaderPool<T extends Buffer & ReferenceCounted<? extends Buff
       synchronized (pool) {
         reader = pool.poll();
         if (reader == null) {
-          reader = new BufferReader(buffer, 0, 0, this);
+          reader = new BufferReader<>(buffer, 0, 0, this);
         }
       }
     }
@@ -57,7 +57,7 @@ public class BufferReaderPool<T extends Buffer & ReferenceCounted<? extends Buff
   }
 
   @Override
-  public void release(BufferReader reference) {
+  public void release(BufferReader<T> reference) {
     buffer.release();
     pool.add(reference);
   }

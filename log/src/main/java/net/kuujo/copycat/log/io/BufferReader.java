@@ -33,14 +33,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferReader implements BufferInput<BufferReader>, ReferenceCounted<BufferReader>, AutoCloseable {
+public class BufferReader<T extends Buffer> implements BufferInput<T>, ReferenceCounted<BufferReader>, AutoCloseable {
   private final AtomicInteger references;
   private final Buffer buffer;
-  private final ReferenceManager<BufferReader> referenceManager;
+  private final ReferenceManager<BufferReader<T>> referenceManager;
   private final BufferNavigator bufferNavigator;
   private boolean open;
 
-  public BufferReader(Buffer buffer, long offset, long limit, ReferenceManager<BufferReader> referenceManager) {
+  public BufferReader(Buffer buffer, long offset, long limit, ReferenceManager<BufferReader<T>> referenceManager) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     if (offset < 0)
@@ -123,17 +123,19 @@ public class BufferReader implements BufferInput<BufferReader>, ReferenceCounted
   }
 
   @Override
-  public BufferReader read(Bytes bytes) {
+  @SuppressWarnings("unchecked")
+  public T read(Bytes bytes) {
     checkOpen();
     buffer.bytes().read(bytes, bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(bytes.size())), bytes.size());
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferReader read(byte[] bytes) {
+  @SuppressWarnings("unchecked")
+  public T read(byte[] bytes) {
     checkOpen();
     buffer.bytes().read(bytes, bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(bytes.length)), bytes.length);
-    return this;
+    return (T) this;
   }
 
   @Override

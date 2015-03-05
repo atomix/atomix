@@ -33,14 +33,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferWriter implements BufferOutput<BufferWriter>, ReferenceCounted<BufferWriter>, AutoCloseable {
+public class BufferWriter<T extends Buffer> implements BufferOutput<T>, ReferenceCounted<BufferWriter>, AutoCloseable {
   private final AtomicInteger referenceCount;
   private final Buffer buffer;
-  private final ReferenceManager<BufferWriter> referenceManager;
+  private final ReferenceManager<BufferWriter<T>> referenceManager;
   private final BufferNavigator bufferNavigator;
   private boolean open;
 
-  public BufferWriter(Buffer buffer, long offset, long limit, ReferenceManager<BufferWriter> referenceManager) {
+  public BufferWriter(Buffer buffer, long offset, long limit, ReferenceManager<BufferWriter<T>> referenceManager) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     if (offset < 0)
@@ -123,73 +123,83 @@ public class BufferWriter implements BufferOutput<BufferWriter>, ReferenceCounte
   }
 
   @Override
-  public BufferWriter write(Bytes bytes) {
+  @SuppressWarnings("unchecked")
+  public T write(Bytes bytes) {
     checkOpen();
     buffer.bytes().write(bytes, bufferNavigator.getAndSetPosition(bufferNavigator.checkWrite(bytes.size())), bytes.size());
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter write(byte[] bytes) {
+  @SuppressWarnings("unchecked")
+  public T write(byte[] bytes) {
     checkOpen();
     buffer.bytes().write(bytes, bufferNavigator.getAndSetPosition(bufferNavigator.checkWrite(bytes.length)), bytes.length);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeByte(int b) {
+  @SuppressWarnings("unchecked")
+  public T writeByte(int b) {
     checkOpen();
     buffer.bytes().writeByte(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Byte.BYTES)), b);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeChar(char c) {
+  @SuppressWarnings("unchecked")
+  public T writeChar(char c) {
     checkOpen();
     buffer.bytes().writeChar(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Character.BYTES)), c);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeShort(short s) {
+  @SuppressWarnings("unchecked")
+  public T writeShort(short s) {
     checkOpen();
     buffer.bytes().writeShort(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Short.BYTES)), s);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeInt(int i) {
+  @SuppressWarnings("unchecked")
+  public T writeInt(int i) {
     checkOpen();
     buffer.bytes().writeInt(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Integer.BYTES)), i);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeLong(long l) {
+  @SuppressWarnings("unchecked")
+  public T writeLong(long l) {
     checkOpen();
     buffer.bytes().writeLong(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Long.BYTES)), l);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeFloat(float f) {
+  @SuppressWarnings("unchecked")
+  public T writeFloat(float f) {
     checkOpen();
     buffer.bytes().writeFloat(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Float.BYTES)), f);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeDouble(double d) {
+  @SuppressWarnings("unchecked")
+  public T writeDouble(double d) {
     checkOpen();
     buffer.bytes().writeDouble(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Double.BYTES)), d);
-    return this;
+    return (T) this;
   }
 
   @Override
-  public BufferWriter writeBoolean(boolean b) {
+  @SuppressWarnings("unchecked")
+  public T writeBoolean(boolean b) {
     checkOpen();
     buffer.bytes().writeBoolean(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Byte.BYTES)), b);
-    return this;
+    return (T) this;
   }
 
   @Override
