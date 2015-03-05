@@ -29,26 +29,30 @@ import java.util.Queue;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferWriterPool<T extends Buffer & ReferenceCounted<? extends Buffer>> implements ReferenceManager<BufferWriter<T>> {
+public class BufferWriterPool<T extends Buffer & ReferenceCounted<? extends Buffer>, U extends BufferWriter<U, T>> implements ReferenceManager<U> {
   private final T buffer;
-  private final Queue<BufferWriter<T>> pool = new ArrayDeque<>(1024);
+  private final BufferWriterFactory<U, T> factory;
+  private final Queue<U> pool = new ArrayDeque<>(1024);
 
-  public BufferWriterPool(T buffer) {
+  public BufferWriterPool(T buffer, BufferWriterFactory<U, T> factory) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
+    if (factory == null)
+      throw new NullPointerException("factory cannot be null");
     this.buffer = buffer;
+    this.factory = factory;
   }
 
   /**
    * Acquires a new multi buffer writer.
    */
-  public BufferWriter acquire() {
-    BufferWriter writer = pool.poll();
+  public U acquire() {
+    U writer = pool.poll();
     if (writer == null) {
       synchronized (pool) {
         writer = pool.poll();
         if (writer == null) {
-          writer = new BufferWriter<>(buffer, 0, 0, this);
+          writer = factory.createWriter(buffer, 0, 0, this);
         }
       }
     }
@@ -57,7 +61,7 @@ public class BufferWriterPool<T extends Buffer & ReferenceCounted<? extends Buff
   }
 
   @Override
-  public void release(BufferWriter<T> reference) {
+  public void release(U reference) {
     buffer.release();
     pool.add(reference);
   }

@@ -33,14 +33,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferReader<T extends Buffer> implements BufferInput<T>, ReferenceCounted<BufferReader>, AutoCloseable {
+public class BufferReader<T extends BufferReader<T, U>, U extends Buffer> implements BufferInput<T>, ReferenceCounted<T>, AutoCloseable {
   private final AtomicInteger references;
   private final Buffer buffer;
-  private final ReferenceManager<BufferReader<T>> referenceManager;
+  private final ReferenceManager<T> referenceManager;
   private final BufferNavigator bufferNavigator;
   private boolean open;
 
-  public BufferReader(Buffer buffer, long offset, long limit, ReferenceManager<BufferReader<T>> referenceManager) {
+  public BufferReader(Buffer buffer, long offset, long limit, ReferenceManager<T> referenceManager) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     if (offset < 0)
@@ -95,15 +95,17 @@ public class BufferReader<T extends Buffer> implements BufferInput<T>, Reference
   }
 
   @Override
-  public BufferReader acquire() {
+  @SuppressWarnings("unchecked")
+  public T acquire() {
     references.incrementAndGet();
-    return this;
+    return (T) this;
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void release() {
     if (references.decrementAndGet() == 0) {
-      referenceManager.release(this);
+      referenceManager.release((T) this);
     }
   }
 
@@ -187,8 +189,9 @@ public class BufferReader<T extends Buffer> implements BufferInput<T>, Reference
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void close() {
-    referenceManager.release(this);
+    referenceManager.release((T) this);
     open = false;
   }
 

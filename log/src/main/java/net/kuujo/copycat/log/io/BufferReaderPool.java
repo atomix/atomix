@@ -29,26 +29,30 @@ import java.util.Queue;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferReaderPool<T extends Buffer & ReferenceCounted<? extends Buffer>> implements ReferenceManager<BufferReader<T>> {
+public class BufferReaderPool<T extends Buffer & ReferenceCounted<? extends Buffer>, U extends BufferReader<U, T>> implements ReferenceManager<U> {
   private final T buffer;
-  private final Queue<BufferReader<T>> pool = new ArrayDeque<>(1024);
+  private final BufferReaderFactory<U, T> factory;
+  private final Queue<U> pool = new ArrayDeque<>(1024);
 
-  public BufferReaderPool(T buffer) {
+  public BufferReaderPool(T buffer, BufferReaderFactory<U, T> factory) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
+    if (factory == null)
+      throw new NullPointerException("factory cannot be null");
     this.buffer = buffer;
+    this.factory = factory;
   }
 
   /**
    * Acquires a new multi buffer reader.
    */
-  public BufferReader acquire() {
-    BufferReader reader = pool.poll();
+  public U acquire() {
+    U reader = pool.poll();
     if (reader == null) {
       synchronized (pool) {
         reader = pool.poll();
         if (reader == null) {
-          reader = new BufferReader<>(buffer, 0, 0, this);
+          reader = factory.createReader(buffer, 0, 0, this);
         }
       }
     }
@@ -57,7 +61,7 @@ public class BufferReaderPool<T extends Buffer & ReferenceCounted<? extends Buff
   }
 
   @Override
-  public void release(BufferReader<T> reference) {
+  public void release(U reference) {
     buffer.release();
     pool.add(reference);
   }

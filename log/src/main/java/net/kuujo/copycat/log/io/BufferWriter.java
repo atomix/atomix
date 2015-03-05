@@ -33,14 +33,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BufferWriter<T extends Buffer> implements BufferOutput<T>, ReferenceCounted<BufferWriter>, AutoCloseable {
+public class BufferWriter<T extends BufferWriter<T, U>, U extends Buffer> implements BufferOutput<T>, ReferenceCounted<T>, AutoCloseable {
   private final AtomicInteger referenceCount;
   private final Buffer buffer;
-  private final ReferenceManager<BufferWriter<T>> referenceManager;
+  private final ReferenceManager<T> referenceManager;
   private final BufferNavigator bufferNavigator;
   private boolean open;
 
-  public BufferWriter(Buffer buffer, long offset, long limit, ReferenceManager<BufferWriter<T>> referenceManager) {
+  public BufferWriter(Buffer buffer, long offset, long limit, ReferenceManager<T> referenceManager) {
     if (buffer == null)
       throw new NullPointerException("buffer cannot be null");
     if (offset < 0)
@@ -95,15 +95,17 @@ public class BufferWriter<T extends Buffer> implements BufferOutput<T>, Referenc
   }
 
   @Override
-  public BufferWriter acquire() {
+  @SuppressWarnings("unchecked")
+  public T acquire() {
     referenceCount.incrementAndGet();
-    return this;
+    return (T) this;
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void release() {
     if (referenceCount.decrementAndGet() == 0) {
-      referenceManager.release(this);
+      referenceManager.release((T) this);
     }
   }
 
@@ -203,8 +205,9 @@ public class BufferWriter<T extends Buffer> implements BufferOutput<T>, Referenc
   }
 
   @Override
+  @SuppressWarnings("unchecked")
   public void close() {
-    referenceManager.release(this);
+    referenceManager.release((T) this);
     open = false;
   }
 

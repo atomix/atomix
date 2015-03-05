@@ -35,8 +35,8 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
   private final AtomicInteger references = new AtomicInteger();
   private final int index;
   private final ReferenceManager<Block> manager;
-  private final BufferReaderPool<Block> readerPool;
-  private final BufferWriterPool<Block> writerPool;
+  private final BufferReaderPool<Block, BlockReader> readerPool;
+  private final BufferWriterPool<Block, BlockWriter> writerPool;
   private boolean open;
 
   public Block(int index, Bytes bytes) {
@@ -49,7 +49,7 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
       throw new IllegalArgumentException("index cannot be negative");
     this.index = index;
     this.manager = manager;
-    this.readerPool = new BufferReaderPool<>(this);
+    this.readerPool = new BufferReaderPool<>(this, BlockReader::new);
     this.writerPool = new BufferWriterPool<>(this);
   }
 
@@ -105,13 +105,13 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
    * The block reader is a special buffer type designed for writing to storage blocks. The returned block will have
    * unique {@code position} and {@code limit} that are separate from other readers returned by this block. The block
    * will maintain a reference to the returned reader. Once bytes have been written to the block, close the reader
-   * via {@link BufferReader#close()} to release the reader back to the block. This allows blocks to recycle existing
+   * via {@link BlockReader#close()} to release the reader back to the block. This allows blocks to recycle existing
    * readers with {@link net.kuujo.copycat.log.io.BufferReaderPool} rather than creating a new block for each new write.
    *
    * @return The block reader.
    */
-  public BufferReader reader() {
-    return readerPool.acquire().reset(position(), limit());
+  public BlockReader reader() {
+    return (BlockReader) readerPool.acquire().reset(position(), limit());
   }
 
   /**
@@ -120,14 +120,14 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
    * The block reader is a special buffer type designed for writing to storage blocks. The returned block will have
    * unique {@code position} and {@code limit} that are separate from other readers returned by this block. The block
    * will maintain a reference to the returned reader. Once bytes have been written to the block, close the reader
-   * via {@link BufferReader#close()} to release the reader back to the block. This allows blocks to recycle existing
+   * via {@link BlockReader#close()} to release the reader back to the block. This allows blocks to recycle existing
    * readers with {@link net.kuujo.copycat.log.io.BufferReaderPool} rather than creating a new block for each new write.
    *
    * @param offset The offset from which to begin reading.
    * @return The block reader.
    */
-  public BufferReader reader(long offset) {
-    return readerPool.acquire().reset(offset, limit());
+  public BlockReader reader(long offset) {
+    return (BlockReader) readerPool.acquire().reset(offset, limit());
   }
 
   /**
@@ -136,15 +136,15 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
    * The block reader is a special buffer type designed for writing to storage blocks. The returned block will have
    * unique {@code position} and {@code limit} that are separate from other readers returned by this block. The block
    * will maintain a reference to the returned reader. Once bytes have been written to the block, close the reader
-   * via {@link BufferReader#close()} to release the reader back to the block. This allows blocks to recycle existing
+   * via {@link BlockReader#close()} to release the reader back to the block. This allows blocks to recycle existing
    * readers with {@link BufferReaderPool} rather than creating a new block for each new write.
    *
    * @param offset The offset from which to begin reading.
    * @param length The maximum number of bytes to be read by the returned reader.
    * @return The block reader.
    */
-  public BufferReader reader(long offset, long length) {
-    return readerPool.acquire().reset(offset, offset + length);
+  public BlockReader reader(long offset, long length) {
+    return (BlockReader) readerPool.acquire().reset(offset, offset + length);
   }
 
   /**
@@ -153,13 +153,13 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
    * The block writer is a special buffer type designed for writing to storage blocks. The returned block will have
    * unique {@code position} and {@code limit} that are separate from other writers returned by this block. The block
    * will maintain a reference to the returned writer. Once bytes have been written to the block, close the writer
-   * via {@link BufferWriter#close()} to release the writer back to the block. This allows blocks to recycle existing
+   * via {@link BlockWriter#close()} to release the writer back to the block. This allows blocks to recycle existing
    * writers with {@link BufferWriterPool} rather than creating a new block for each new write.
    *
    * @return The block writer.
    */
-  public BufferWriter writer() {
-    return writerPool.acquire().reset(position(), limit());
+  public BlockWriter writer() {
+    return (BlockWriter) writerPool.acquire().reset(position(), limit());
   }
 
   /**
@@ -168,14 +168,14 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
    * The block writer is a special buffer type designed for writing to storage blocks. The returned block will have
    * unique {@code position} and {@code limit} that are separate from other writers returned by this block. The block
    * will maintain a reference to the returned writer. Once bytes have been written to the block, close the writer
-   * via {@link BufferWriter#close()} to release the writer back to the block. This allows blocks to recycle existing
+   * via {@link BlockWriter#close()} to release the writer back to the block. This allows blocks to recycle existing
    * writers with {@link BufferWriterPool} rather than creating a new block for each new write.
    *
    * @param offset The offset from which to begin writing.
    * @return The block writer.
    */
-  public BufferWriter writer(long offset) {
-    return writerPool.acquire().reset(offset, limit());
+  public BlockWriter writer(long offset) {
+    return (BlockWriter) writerPool.acquire().reset(offset, limit());
   }
 
   /**
@@ -184,15 +184,15 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
    * The block writer is a special buffer type designed for writing to storage blocks. The returned block will have
    * unique {@code position} and {@code limit} that are separate from other writers returned by this block. The block
    * will maintain a reference to the returned writer. Once bytes have been written to the block, close the writer
-   * via {@link BufferWriter#close()} to release the writer back to the block. This allows blocks to recycle existing
+   * via {@link BlockWriter#close()} to release the writer back to the block. This allows blocks to recycle existing
    * writers with {@link BufferWriterPool} rather than creating a new block for each new write.
    *
    * @param offset The offset from which to begin writing.
    * @param length The maximum number of bytes to be write by the returned writer.
    * @return The block writer.
    */
-  public BufferWriter writer(long offset, long length) {
-    return writerPool.acquire().reset(offset, offset + length);
+  public BlockWriter writer(long offset, long length) {
+    return (BlockWriter) writerPool.acquire().reset(offset, offset + length);
   }
 
   @Override
