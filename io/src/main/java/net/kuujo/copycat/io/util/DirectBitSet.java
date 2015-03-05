@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.io.util;
 
-import net.kuujo.copycat.util.internal.Assert;
+import net.kuujo.copycat.io.NativeBytes;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -26,19 +26,26 @@ import java.io.IOException;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DirectBitSet implements Closeable {
-  private final long size;
-  private long address;
+  private static final NativeAllocator allocator = new NativeAllocator();
+  private final NativeBytes bytes;
   private long length;
 
   public DirectBitSet(long size) {
-    this.size = Assert.arg(size, size > 0 & (size & (size - 1)) == 0, "size must be a power of 2");
-    this.address = NativeMemory.UNSAFE.allocateMemory(size);
+    if (!(size > 0 & (size & (size - 1)) == 0))
+      throw new IllegalArgumentException("size must be a power of 2");
+    this.bytes = new NativeBytes(allocator.allocate(size));
   }
 
-  private DirectBitSet(long size, long length, long address) {
-    this.size = size;
+  private DirectBitSet(NativeBytes bytes, long length) {
+    this.bytes = bytes;
     this.length = length;
-    this.address = address;
+  }
+
+  /**
+   * Returns the offset for the given index.
+   */
+  private int offset(long index) {
+    return (int) index >>> 6;
   }
 
   /**
@@ -49,7 +56,8 @@ public class DirectBitSet implements Closeable {
    */
   public boolean set(long index) {
     if (!get(index)) {
-      NativeMemory.UNSAFE.putLong(address + ((int) index >>> 6), NativeMemory.UNSAFE.getLong(address + ((int) index >>> 6)) | (1L << index));
+      int offset = offset(index);
+      bytes.writeLong(offset, bytes.readLong(offset) | (1L << index));
       length++;
       return true;
     }
@@ -63,7 +71,7 @@ public class DirectBitSet implements Closeable {
    * @return Indicates whether the bit is set.
    */
   public boolean get(long index) {
-    return (NativeMemory.UNSAFE.getLong(address + ((int) index >>> 6)) & (1L << index)) != 0;
+    return (bytes.readLong(offset(index)) & (1L << index)) != 0;
   }
 
   /**
@@ -72,7 +80,7 @@ public class DirectBitSet implements Closeable {
    * @return The number of bits set.
    */
   public long size() {
-    return size;
+    return length;
   }
 
   /**
@@ -81,17 +89,12 @@ public class DirectBitSet implements Closeable {
    * @return The copied bit set.
    */
   public DirectBitSet copy() {
-    long address = NativeMemory.UNSAFE.allocateMemory(size);
-    NativeMemory.UNSAFE.copyMemory(this.address, address, size);
-    return new DirectBitSet(size, length, address);
+    return new DirectBitSet(bytes.copy(), length);
   }
 
   @Override
   public void close() throws IOException {
-    if (address > 0) {
-      NativeMemory.UNSAFE.freeMemory(address);
-      address = 0;
-    }
+    bytes.memory().free();
   }
 
 }

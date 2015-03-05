@@ -25,7 +25,7 @@ package net.kuujo.copycat.io.util;
 public class NativeAllocator implements Allocator {
 
   @Override
-  public Memory allocate(long size) {
+  public NativeMemory allocate(long size) {
     return new NativeMemory(NativeMemory.UNSAFE.allocateMemory(size), size, this);
   }
 

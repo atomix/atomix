@@ -49,9 +49,9 @@ public class NativeMemory implements Memory {
 
   private long address;
   private long size;
-  private final Allocator allocator;
+  private final NativeAllocator allocator;
 
-  public NativeMemory(long address, long size, Allocator allocator) {
+  public NativeMemory(long address, long size, NativeAllocator allocator) {
     if (allocator == null)
       throw new NullPointerException("allocator cannot be null");
     this.address = address;
@@ -67,6 +67,17 @@ public class NativeMemory implements Memory {
   @Override
   public long size() {
     return size;
+  }
+
+  /**
+   * Copies the memory to a new address.
+   *
+   * @return A new memory instance at a different address.
+   */
+  public NativeMemory copy() {
+    NativeMemory memory = allocator.allocate(size);
+    UNSAFE.copyMemory(address, memory.address, size);
+    return memory;
   }
 
   @Override

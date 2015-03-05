@@ -24,10 +24,10 @@ import net.kuujo.copycat.io.util.NativeMemory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NativeBytes implements Bytes {
-  private final Memory memory;
+  private final NativeMemory memory;
   private final BufferNavigator navigator;
 
-  public NativeBytes(Memory memory) {
+  public NativeBytes(NativeMemory memory) {
     if (memory == null)
       throw new NullPointerException("memory cannot be null");
     this.memory = memory;
@@ -37,8 +37,17 @@ public class NativeBytes implements Bytes {
   /**
    * Returns the memory descriptor for the bytes.
    */
-  Memory memory() {
+  public Memory memory() {
     return memory;
+  }
+
+  /**
+   * Copies the bytes to a new byte array.
+   *
+   * @return A new {@link NativeBytes} instance backed by a copy of this instance's memory.
+   */
+  public NativeBytes copy() {
+    return new NativeBytes(memory.copy());
   }
 
   @Override
