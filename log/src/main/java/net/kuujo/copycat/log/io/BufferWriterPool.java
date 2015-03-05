@@ -15,47 +15,50 @@
  */
 package net.kuujo.copycat.log.io;
 
+import net.kuujo.copycat.log.io.util.ReferenceCounted;
 import net.kuujo.copycat.log.io.util.ReferenceManager;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
 
 /**
- * Block writer pool.
+ * Buffer writer pool.
  * <p>
  * The writer pool reduces garbage produced by frequent reads by tracking references to existing writers and recycling
  * writers once they're closed.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class BlockWriterPool implements ReferenceManager<BlockWriter> {
-  private final Block block;
-  private final Queue<BlockWriter> pool = new ArrayDeque<>(1024);
+public class BufferWriterPool<T extends Buffer & ReferenceCounted<? extends Buffer>> implements ReferenceManager<BufferWriter> {
+  private final T buffer;
+  private final Queue<BufferWriter> pool = new ArrayDeque<>(1024);
 
-  public BlockWriterPool(Block block) {
-    if (block == null)
-      throw new NullPointerException("block cannot be null");
-    this.block = block;
+  public BufferWriterPool(T buffer) {
+    if (buffer == null)
+      throw new NullPointerException("buffer cannot be null");
+    this.buffer = buffer;
   }
 
   /**
    * Acquires a new multi buffer writer.
    */
-  public BlockWriter acquire() {
-    BlockWriter writer = pool.poll();
+  public BufferWriter acquire() {
+    BufferWriter writer = pool.poll();
     if (writer == null) {
       synchronized (pool) {
         writer = pool.poll();
         if (writer == null) {
-          writer = new BlockWriter(block, 0, 0);
+          writer = new BufferWriter(buffer, 0, 0, this);
         }
       }
     }
+    buffer.acquire();
     return writer;
   }
 
   @Override
-  public void release(BlockWriter reference) {
+  public void release(BufferWriter reference) {
+    buffer.release();
     pool.add(reference);
   }
 
