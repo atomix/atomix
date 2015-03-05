@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.io.util;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.Objects;
 
@@ -24,7 +23,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class BloomFilter<T> implements Closeable {
+public class BloomFilter<T> implements AutoCloseable {
   private final int numHashes;
   private final long numBits;
   private final DirectBitSet bits;
@@ -44,7 +43,7 @@ public class BloomFilter<T> implements Closeable {
   public BloomFilter(double falsePositiveProbability, long expectedSize) {
     numBits = roundBits((long) (-expectedSize * Math.log(falsePositiveProbability == 0 ? Double.MIN_VALUE : falsePositiveProbability) / (Math.log(2) * Math.log(2))));
     numHashes = Math.max(1, (int) Math.round((double) numBits / expectedSize * Math.log(2)));
-    bits = new DirectBitSet(numBits);
+    bits = DirectBitSet.allocate(numBits);
     function1 = new CityHashFunction();
     function2 = new Murmur3HashFunction();
   }

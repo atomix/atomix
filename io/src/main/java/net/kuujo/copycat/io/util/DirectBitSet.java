@@ -17,7 +17,6 @@ package net.kuujo.copycat.io.util;
 
 import net.kuujo.copycat.io.NativeBytes;
 
-import java.io.Closeable;
 import java.io.IOException;
 
 /**
@@ -25,20 +24,33 @@ import java.io.IOException;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectBitSet implements Closeable {
+public class DirectBitSet implements AutoCloseable {
   private static final NativeAllocator allocator = new NativeAllocator();
-  private final NativeBytes bytes;
-  private long length;
 
-  public DirectBitSet(long size) {
-    if (!(size > 0 & (size & (size - 1)) == 0))
+  /**
+   * Allocates a new direct bit set.
+   *
+   * @param bits The number of bits in the bit set.
+   * @return The allocated bit set.
+   */
+  public static DirectBitSet allocate(long bits) {
+    if (!(bits > 0 & (bits & (bits - 1)) == 0))
       throw new IllegalArgumentException("size must be a power of 2");
-    this.bytes = new NativeBytes(allocator.allocate(size));
+    return new DirectBitSet(new NativeBytes(allocator.allocate(bits / 64)));
   }
 
-  private DirectBitSet(NativeBytes bytes, long length) {
+  private final NativeBytes bytes;
+  private final long length;
+  private long size;
+
+  private DirectBitSet(NativeBytes bytes) {
+    this(bytes, 0);
+  }
+
+  private DirectBitSet(NativeBytes bytes, long size) {
     this.bytes = bytes;
-    this.length = length;
+    this.length = bytes.size() * 64;
+    this.size = size;
   }
 
   /**
@@ -58,7 +70,7 @@ public class DirectBitSet implements Closeable {
     if (!get(index)) {
       int offset = offset(index);
       bytes.writeLong(offset, bytes.readLong(offset) | (1L << index));
-      length++;
+      size++;
       return true;
     }
     return false;
@@ -75,12 +87,21 @@ public class DirectBitSet implements Closeable {
   }
 
   /**
+   * Returns the total number of bits in the bit set.
+   *
+   * @return The total number of bits in the bit set.
+   */
+  public long length() {
+    return length;
+  }
+
+  /**
    * Returns the number of bits set in the bit set.
    *
    * @return The number of bits set.
    */
   public long size() {
-    return length;
+    return size;
   }
 
   /**
@@ -89,7 +110,7 @@ public class DirectBitSet implements Closeable {
    * @return The copied bit set.
    */
   public DirectBitSet copy() {
-    return new DirectBitSet(bytes.copy(), length);
+    return new DirectBitSet(bytes.copy(), size);
   }
 
   @Override
