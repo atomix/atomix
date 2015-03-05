@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.io.util;
 
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.Bytes;
 import net.kuujo.copycat.util.internal.Buffers;
 
 import java.nio.ByteBuffer;
@@ -55,6 +57,30 @@ public interface HashFunction {
    */
   default long hashBytes(ByteBuffer buffer) {
     return hashBytes(Buffers.getBytes(buffer));
+  }
+
+  /**
+   * Hashes the remaining bytes in the given buffer.
+   *
+   * @param buffer The buffer to hash.
+   * @return The hashed buffer bytes.
+   */
+  default long hashBytes(Buffer buffer) {
+    byte[] bytes = new byte[(int) buffer.remaining()];
+    buffer.read(bytes);
+    return hashBytes(bytes);
+  }
+
+  /**
+   * Hashes the given bytes.
+   *
+   * @param bytes The bytes to hash.
+   * @return The hashed bytes.
+   */
+  default long hashBytes(Bytes bytes) {
+    byte[] barray = new byte[(int) bytes.size()];
+    bytes.read(barray, 0, bytes.size());
+    return hashBytes(barray);
   }
 
   /**
