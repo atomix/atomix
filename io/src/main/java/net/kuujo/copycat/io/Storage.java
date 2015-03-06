@@ -39,4 +39,7 @@ public interface Storage extends AutoCloseable {
    */
   Block acquire(int index);
 
+  @Override
+  void close();
+
 }

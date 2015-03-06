@@ -774,4 +774,7 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
   @Override
   Buffer writeBoolean(long offset, boolean b);
 
+  @Override
+  void close();
+
 }
