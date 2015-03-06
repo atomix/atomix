@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.io;
 
-import net.kuujo.copycat.io.util.Allocator;
 import net.kuujo.copycat.io.util.NativeAllocator;
 
 /**
@@ -24,7 +23,7 @@ import net.kuujo.copycat.io.util.NativeAllocator;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NativeBuffer extends CheckedBuffer {
-  private static final Allocator allocator = new NativeAllocator();
+  private static final NativeAllocator allocator = new NativeAllocator();
 
   /**
    * Allocates a new native buffer.

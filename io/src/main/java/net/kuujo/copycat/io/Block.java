@@ -50,7 +50,7 @@ public class Block extends CheckedBuffer implements ReferenceCounted<Block> {
     this.index = index;
     this.manager = manager;
     this.readerPool = new BufferReaderPool<>(this, BlockReader::new);
-    this.writerPool = new BufferWriterPool<>(this);
+    this.writerPool = new BufferWriterPool<>(this, BlockWriter::new);
   }
 
   /**

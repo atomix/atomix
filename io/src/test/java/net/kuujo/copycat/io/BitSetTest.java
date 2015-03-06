@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.io;
 
-import net.kuujo.copycat.util.hash.DirectBitSet;
+import net.kuujo.copycat.io.util.DirectBitSet;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
@@ -31,7 +31,7 @@ public class BitSetTest {
    * Tests the bit set.
    */
   public void testBitSet() {
-    DirectBitSet bits = new DirectBitSet(1024);
+    DirectBitSet bits = DirectBitSet.allocate(1024);
     bits.set(10);
     bits.set(20);
     Assert.assertTrue(bits.get(10));

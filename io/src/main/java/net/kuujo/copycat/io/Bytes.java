@@ -29,4 +29,11 @@ public interface Bytes extends BytesInput<Bytes>, BytesOutput<Bytes> {
    */
   long size();
 
+  /**
+   * Flushes the bytes to the underlying persistence layer.
+   *
+   * @return The bytes.
+   */
+  Bytes flush();
+
 }

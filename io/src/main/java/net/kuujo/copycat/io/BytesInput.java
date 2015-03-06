@@ -53,6 +53,14 @@ public interface BytesInput<T extends BytesInput<T>> {
   int readByte(long offset);
 
   /**
+   * Reads an unsigned byte from the buffer at the given offset.
+   *
+   * @param offset The offset at which to read the byte.
+   * @return The read unsigned byte.
+   */
+  int readUnsignedByte(long offset);
+
+  /**
    * Reads a 16-bit character from the buffer at the given offset.
    *
    * @param offset The offset at which to read the character.
@@ -69,12 +77,28 @@ public interface BytesInput<T extends BytesInput<T>> {
   short readShort(long offset);
 
   /**
+   * Reads a 16-bit unsigned integer from the buffer at the given offset.
+   *
+   * @param offset The offset at which to read the short.
+   * @return The read short.
+   */
+  int readUnsignedShort(long offset);
+
+  /**
    * Reads a 32-bit signed integer from the buffer at the given offset.
    *
    * @param offset The offset at which to read the integer.
    * @return The read integer.
    */
   int readInt(long offset);
+
+  /**
+   * Reads a 32-bit unsigned integer from the buffer at the given offset.
+   *
+   * @param offset The offset at which to read the integer.
+   * @return The read integer.
+   */
+  long readUnsignedInt(long offset);
 
   /**
    * Reads a 64-bit signed integer from the buffer at the given offset.

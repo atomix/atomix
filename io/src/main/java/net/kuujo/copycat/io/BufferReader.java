@@ -147,6 +147,12 @@ public class BufferReader<T extends BufferReader<T, U>, U extends Buffer> implem
   }
 
   @Override
+  public int readUnsignedByte() {
+    checkOpen();
+    return buffer.bytes().readUnsignedByte(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Byte.BYTES)));
+  }
+
+  @Override
   public char readChar() {
     checkOpen();
     return buffer.bytes().readChar(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Character.BYTES)));
@@ -159,9 +165,21 @@ public class BufferReader<T extends BufferReader<T, U>, U extends Buffer> implem
   }
 
   @Override
+  public int readUnsignedShort() {
+    checkOpen();
+    return buffer.bytes().readUnsignedShort(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Short.BYTES)));
+  }
+
+  @Override
   public int readInt() {
     checkOpen();
     return buffer.bytes().readInt(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Integer.BYTES)));
+  }
+
+  @Override
+  public long readUnsignedInt() {
+    checkOpen();
+    return buffer.bytes().readUnsignedInt(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Integer.BYTES)));
   }
 
   @Override

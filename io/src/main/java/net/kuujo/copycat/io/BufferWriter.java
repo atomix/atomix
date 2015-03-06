@@ -150,6 +150,14 @@ public class BufferWriter<T extends BufferWriter<T, U>, U extends Buffer> implem
 
   @Override
   @SuppressWarnings("unchecked")
+  public T writeUnsignedByte(int b) {
+    checkOpen();
+    buffer.bytes().writeUnsignedByte(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Byte.BYTES)), b);
+    return (T) this;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public T writeChar(char c) {
     checkOpen();
     buffer.bytes().writeChar(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Character.BYTES)), c);
@@ -166,9 +174,25 @@ public class BufferWriter<T extends BufferWriter<T, U>, U extends Buffer> implem
 
   @Override
   @SuppressWarnings("unchecked")
+  public T writeUnsignedShort(int s) {
+    checkOpen();
+    buffer.bytes().writeUnsignedShort(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Short.BYTES)), s);
+    return (T) this;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public T writeInt(int i) {
     checkOpen();
     buffer.bytes().writeInt(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Integer.BYTES)), i);
+    return (T) this;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public T writeUnsignedInt(long i) {
+    checkOpen();
+    buffer.bytes().writeUnsignedInt(bufferNavigator.getAndSetPosition(bufferNavigator.checkRead(Integer.BYTES)), i);
     return (T) this;
   }
 

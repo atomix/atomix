@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.io;
 
-import net.kuujo.copycat.io.util.Allocator;
+import net.kuujo.copycat.io.util.NativeAllocator;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,11 +31,11 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NativeStorage implements Storage {
-  private final Allocator allocator;
+  private final NativeAllocator allocator;
   private final long blockSize;
   private final Map<Integer, NativeBytes> bytes = new HashMap<>(1024);
 
-  public NativeStorage(Allocator allocator, long blockSize) {
+  public NativeStorage(NativeAllocator allocator, long blockSize) {
     super();
     if (allocator == null)
       throw new NullPointerException("memory allocator cannot be null");

@@ -29,11 +29,11 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DirectAllocator implements Allocator {
+public class DirectAllocator extends NativeAllocator {
   private final Map<Long, DirectBuffer> buffers = new HashMap<>(1024);
 
   @Override
-  public Memory allocate(long size) {
+  public NativeMemory allocate(long size) {
     if (size > Integer.MAX_VALUE)
       throw new IllegalArgumentException("cannot allocate direct memory larger than 2GB");
     DirectBuffer buffer = (DirectBuffer) ByteBuffer.allocateDirect((int) size);

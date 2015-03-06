@@ -54,6 +54,15 @@ public interface BytesOutput<T extends BytesOutput<T>> {
   T writeByte(long offset, int b);
 
   /**
+   * Writes an unsigned byte to the buffer at the given position.
+   *
+   * @param offset The offset at which to write the byte.
+   * @param b The byte to write.
+   * @return The written buffer.
+   */
+  T writeUnsignedByte(long offset, int b);
+
+  /**
    * Writes a 16-bit character to the buffer at the given offset.
    *
    * @param offset The offset at which to write the character.
@@ -72,6 +81,15 @@ public interface BytesOutput<T extends BytesOutput<T>> {
   T writeShort(long offset, short s);
 
   /**
+   * Writes a 16-bit unsigned integer to the buffer at the given offset.
+   *
+   * @param offset The offset at which to write the short.
+   * @param s The short to write.
+   * @return The written buffer.
+   */
+  T writeUnsignedShort(long offset, int s);
+
+  /**
    * Writes a 32-bit signed integer to the buffer at the given offset.
    *
    * @param offset The offset at which to write the integer.
@@ -79,6 +97,15 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    * @return The written buffer.
    */
   T writeInt(long offset, int i);
+
+  /**
+   * Writes a 32-bit unsigned integer to the buffer at the given offset.
+   *
+   * @param offset The offset at which to write the integer.
+   * @param i The integer to write.
+   * @return The written buffer.
+   */
+  T writeUnsignedInt(long offset, long i);
 
   /**
    * Writes a 64-bit signed integer to the buffer at the given offset.

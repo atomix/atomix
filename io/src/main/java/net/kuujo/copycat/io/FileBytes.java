@@ -96,6 +96,17 @@ public class FileBytes implements Bytes {
   }
 
   @Override
+  public int readUnsignedByte(long offset) {
+    navigator.checkRead(offset, Byte.BYTES);
+    try {
+      seekToOffset(offset);
+      return file.readUnsignedByte();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public char readChar(long offset) {
     navigator.checkRead(offset, Character.BYTES);
     try {
@@ -118,11 +129,33 @@ public class FileBytes implements Bytes {
   }
 
   @Override
+  public int readUnsignedShort(long offset) {
+    navigator.checkRead(offset, Short.BYTES);
+    try {
+      seekToOffset(offset);
+      return file.readUnsignedShort();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
   public int readInt(long offset) {
     navigator.checkRead(offset, Integer.BYTES);
     try {
       seekToOffset(offset);
       return file.readInt();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public long readUnsignedInt(long offset) {
+    navigator.checkRead(offset, Integer.BYTES);
+    try {
+      seekToOffset(offset);
+      return Integer.toUnsignedLong(file.readInt());
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -211,6 +244,18 @@ public class FileBytes implements Bytes {
   }
 
   @Override
+  public Bytes writeUnsignedByte(long offset, int b) {
+    navigator.checkWrite(offset, Byte.BYTES);
+    try {
+      seekToOffset(offset);
+      file.writeByte((byte) b);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
+
+  @Override
   public Bytes writeChar(long offset, char c) {
     navigator.checkWrite(offset, Character.BYTES);
     try {
@@ -235,11 +280,35 @@ public class FileBytes implements Bytes {
   }
 
   @Override
+  public Bytes writeUnsignedShort(long offset, int s) {
+    navigator.checkWrite(offset, Short.BYTES);
+    try {
+      seekToOffset(offset);
+      file.writeShort((short) s);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
+
+  @Override
   public Bytes writeInt(long offset, int i) {
     navigator.checkWrite(offset, Integer.BYTES);
     try {
       seekToOffset(offset);
       file.writeInt(i);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
+
+  @Override
+  public Bytes writeUnsignedInt(long offset, long i) {
+    navigator.checkWrite(offset, Integer.BYTES);
+    try {
+      seekToOffset(offset);
+      file.writeInt((int) i);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
@@ -288,6 +357,16 @@ public class FileBytes implements Bytes {
     try {
       seekToOffset(offset);
       file.writeBoolean(b);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
+    return this;
+  }
+
+  @Override
+  public Bytes flush() {
+    try {
+      file.getChannel().force(false);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

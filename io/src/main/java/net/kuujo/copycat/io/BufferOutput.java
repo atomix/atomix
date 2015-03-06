@@ -50,6 +50,14 @@ public interface BufferOutput<T extends BufferOutput<?>> {
   T writeByte(int b);
 
   /**
+   * Writes an unsigned byte to the buffer.
+   *
+   * @param b The byte to write.
+   * @return The written buffer.
+   */
+  T writeUnsignedByte(int b);
+
+  /**
    * Writes a 16-bit character to the buffer.
    *
    * @param c The character to write.
@@ -66,12 +74,28 @@ public interface BufferOutput<T extends BufferOutput<?>> {
   T writeShort(short s);
 
   /**
+   * Writes a 16-bit unsigned integer to the buffer.
+   *
+   * @param s The short to write.
+   * @return The written buffer.
+   */
+  T writeUnsignedShort(int s);
+
+  /**
    * Writes a 32-bit signed integer to the buffer.
    *
    * @param i The integer to write.
    * @return The written buffer.
    */
   T writeInt(int i);
+
+  /**
+   * Writes a 32-bit unsigned integer to the buffer.
+   *
+   * @param i The integer to write.
+   * @return The written buffer.
+   */
+  T writeUnsignedInt(long i);
 
   /**
    * Writes a 64-bit signed integer to the buffer.

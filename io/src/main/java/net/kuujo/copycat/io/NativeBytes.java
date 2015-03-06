@@ -24,6 +24,10 @@ import net.kuujo.copycat.io.util.NativeMemory;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NativeBytes implements Bytes {
+  private static final int UNSIGNED_BYTE_MASK = 0xFF;
+  private static final int UNSIGNED_SHORT_MASK = 0xFFFF;
+  private static final long UNSIGNED_INT_MASK = 0xFFFFFFFFL;
+
   private final NativeMemory memory;
   private final BufferNavigator navigator;
 
@@ -89,6 +93,12 @@ public class NativeBytes implements Bytes {
   }
 
   @Override
+  public int readUnsignedByte(long offset) {
+    navigator.checkRead(offset, Character.BYTES);
+    return NativeMemory.UNSAFE.getByte(address(offset)) & UNSIGNED_BYTE_MASK;
+  }
+
+  @Override
   public char readChar(long offset) {
     navigator.checkRead(offset, Character.BYTES);
     return NativeMemory.UNSAFE.getChar(address(offset));
@@ -101,9 +111,21 @@ public class NativeBytes implements Bytes {
   }
 
   @Override
+  public int readUnsignedShort(long offset) {
+    navigator.checkRead(offset, Short.BYTES);
+    return NativeMemory.UNSAFE.getShort(address(offset)) & UNSIGNED_SHORT_MASK;
+  }
+
+  @Override
   public int readInt(long offset) {
     navigator.checkRead(offset, Integer.BYTES);
     return NativeMemory.UNSAFE.getInt(address(offset));
+  }
+
+  @Override
+  public long readUnsignedInt(long offset) {
+    navigator.checkRead(offset, Integer.BYTES);
+    return NativeMemory.UNSAFE.getInt(address(offset)) & UNSIGNED_INT_MASK;
   }
 
   @Override
@@ -162,6 +184,13 @@ public class NativeBytes implements Bytes {
   }
 
   @Override
+  public Bytes writeUnsignedByte(long offset, int b) {
+    navigator.checkWrite(offset, Byte.BYTES);
+    NativeMemory.UNSAFE.putByte(offset, (byte) b);
+    return this;
+  }
+
+  @Override
   public Bytes writeChar(long offset, char c) {
     navigator.checkWrite(offset, Character.BYTES);
     NativeMemory.UNSAFE.putChar(address(offset), c);
@@ -176,9 +205,23 @@ public class NativeBytes implements Bytes {
   }
 
   @Override
+  public Bytes writeUnsignedShort(long offset, int s) {
+    navigator.checkWrite(offset, Short.BYTES);
+    NativeMemory.UNSAFE.putShort(address(offset), (short) s);
+    return this;
+  }
+
+  @Override
   public Bytes writeInt(long offset, int i) {
     navigator.checkWrite(offset, Integer.BYTES);
     NativeMemory.UNSAFE.putInt(address(offset), i);
+    return this;
+  }
+
+  @Override
+  public Bytes writeUnsignedInt(long offset, long i) {
+    navigator.checkWrite(offset, Integer.BYTES);
+    NativeMemory.UNSAFE.putInt(address(offset), (int) i);
     return this;
   }
 
@@ -207,6 +250,11 @@ public class NativeBytes implements Bytes {
   public Bytes writeBoolean(long offset, boolean b) {
     navigator.checkWrite(offset, Byte.BYTES);
     NativeMemory.UNSAFE.putByte(address(offset), b ? (byte) 1 : (byte) 0);
+    return this;
+  }
+
+  @Override
+  public Bytes flush() {
     return this;
   }
 

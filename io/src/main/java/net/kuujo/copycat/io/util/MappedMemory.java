@@ -27,10 +27,11 @@ import java.nio.MappedByteBuffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class MappedMemory implements Memory {
+public class MappedMemory extends NativeMemory {
   private final MappedByteBuffer buffer;
 
   public MappedMemory(MappedByteBuffer buffer) {
+    super(((DirectBuffer) buffer).address(), buffer.capacity(), new NativeAllocator());
     this.buffer = buffer;
   }
 

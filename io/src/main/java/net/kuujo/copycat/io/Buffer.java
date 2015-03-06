@@ -170,6 +170,13 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
   Buffer clear();
 
   /**
+   * Flushes the buffer to the underlying persistence layer.
+   *
+   * @return This buffer.
+   */
+  Buffer flush();
+
+  /**
    * Returns the bytes underlying the buffer.
    * <p>
    * The buffer is a wrapper around {@link Bytes} that handles writing sequences of bytes by tracking positions and

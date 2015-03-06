@@ -49,6 +49,13 @@ public interface BufferInput<T extends BufferInput<?>> {
   int readByte();
 
   /**
+   * Reads an unsigned byte from the buffer at the current position.
+   *
+   * @return The read byte.
+   */
+  int readUnsignedByte();
+
+  /**
    * Reads a 16-bit character from the buffer at the current position.
    *
    * @return The read character.
@@ -63,11 +70,25 @@ public interface BufferInput<T extends BufferInput<?>> {
   short readShort();
 
   /**
+   * Reads a 16-bit unsigned integer from the buffer at the current position.
+   *
+   * @return The read short.
+   */
+  int readUnsignedShort();
+
+  /**
    * Reads a 32-bit signed integer from the buffer at the current position.
    *
    * @return The read integer.
    */
   int readInt();
+
+  /**
+   * Reads a 32-bit unsigned integer from the buffer at the current position.
+   *
+   * @return The read integer.
+   */
+  long readUnsignedInt();
 
   /**
    * Reads a 64-bit signed integer from the buffer at the current position.

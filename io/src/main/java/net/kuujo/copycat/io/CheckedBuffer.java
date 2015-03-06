@@ -120,6 +120,12 @@ public class CheckedBuffer implements Buffer {
   }
 
   @Override
+  public Buffer flush() {
+    bytes.flush();
+    return this;
+  }
+
+  @Override
   public Buffer read(Buffer output) {
     output.write(this);
     return this;
@@ -162,6 +168,17 @@ public class CheckedBuffer implements Buffer {
   }
 
   @Override
+  public int readUnsignedByte() {
+    return bytes.readUnsignedByte(navigator.getAndSetPosition(navigator.checkRead(position(), Byte.BYTES)));
+  }
+
+  @Override
+  public int readUnsignedByte(long offset) {
+    navigator.checkRead(offset, Byte.BYTES);
+    return bytes.readUnsignedByte(offset);
+  }
+
+  @Override
   public char readChar() {
     return bytes.readChar(navigator.getAndSetPosition(navigator.checkRead(position(), Character.BYTES)));
   }
@@ -185,6 +202,18 @@ public class CheckedBuffer implements Buffer {
   }
 
   @Override
+  public int readUnsignedShort() {
+    navigator.checkRead(position(), Short.BYTES);
+    return bytes.readUnsignedShort(navigator.getAndSetPosition(navigator.checkRead(position(), Short.BYTES)));
+  }
+
+  @Override
+  public int readUnsignedShort(long offset) {
+    navigator.checkRead(offset, Short.BYTES);
+    return bytes.readUnsignedShort(offset);
+  }
+
+  @Override
   public int readInt() {
     navigator.checkRead(position(), Integer.BYTES);
     return bytes.readInt(navigator.getAndSetPosition(navigator.checkRead(position(), Integer.BYTES)));
@@ -194,6 +223,18 @@ public class CheckedBuffer implements Buffer {
   public int readInt(long offset) {
     navigator.checkRead(offset, Integer.BYTES);
     return bytes.readInt(offset);
+  }
+
+  @Override
+  public long readUnsignedInt() {
+    navigator.checkRead(position(), Integer.BYTES);
+    return bytes.readUnsignedInt(navigator.getAndSetPosition(navigator.checkRead(position(), Integer.BYTES)));
+  }
+
+  @Override
+  public long readUnsignedInt(long offset) {
+    navigator.checkRead(offset, Integer.BYTES);
+    return bytes.readUnsignedInt(offset);
   }
 
   @Override
@@ -299,6 +340,19 @@ public class CheckedBuffer implements Buffer {
   }
 
   @Override
+  public Buffer writeUnsignedByte(int b) {
+    bytes.writeUnsignedByte(navigator.getAndSetPosition(navigator.checkWrite(position(), Byte.BYTES)), b);
+    return this;
+  }
+
+  @Override
+  public Buffer writeUnsignedByte(long offset, int b) {
+    navigator.checkWrite(offset, Byte.BYTES);
+    bytes.writeUnsignedByte(offset, b);
+    return this;
+  }
+
+  @Override
   public Buffer writeChar(char c) {
     bytes.writeChar(navigator.getAndSetPosition(navigator.checkWrite(position(), Character.BYTES)), c);
     return this;
@@ -325,6 +379,19 @@ public class CheckedBuffer implements Buffer {
   }
 
   @Override
+  public Buffer writeUnsignedShort(int s) {
+    bytes.writeUnsignedShort(navigator.getAndSetPosition(navigator.checkWrite(position(), Short.BYTES)), s);
+    return this;
+  }
+
+  @Override
+  public Buffer writeUnsignedShort(long offset, int s) {
+    navigator.checkWrite(offset, Short.BYTES);
+    bytes.writeUnsignedShort(offset, s);
+    return this;
+  }
+
+  @Override
   public Buffer writeInt(int i) {
     bytes.writeInt(navigator.getAndSetPosition(navigator.checkWrite(position(), Integer.BYTES)), i);
     return this;
@@ -334,6 +401,19 @@ public class CheckedBuffer implements Buffer {
   public Buffer writeInt(long offset, int i) {
     navigator.checkWrite(offset, Integer.BYTES);
     bytes.writeInt(offset, i);
+    return this;
+  }
+
+  @Override
+  public Buffer writeUnsignedInt(long i) {
+    bytes.writeUnsignedInt(navigator.getAndSetPosition(navigator.checkWrite(position(), Integer.BYTES)), i);
+    return this;
+  }
+
+  @Override
+  public Buffer writeUnsignedInt(long offset, long i) {
+    navigator.checkWrite(offset, Integer.BYTES);
+    bytes.writeUnsignedInt(offset, i);
     return this;
   }
 
