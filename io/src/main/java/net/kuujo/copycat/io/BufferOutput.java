@@ -129,4 +129,11 @@ public interface BufferOutput<T extends BufferOutput<?>> {
    */
   T writeBoolean(boolean b);
 
+  /**
+   * Flushes the buffer to the underlying persistence layer.
+   *
+   * @return The flushed buffer.
+   */
+  T flush();
+
 }

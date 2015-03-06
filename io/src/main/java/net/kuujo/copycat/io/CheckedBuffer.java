@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.io;
 
+import java.nio.BufferUnderflowException;
+
 /**
  * Abstract buffer implementation.
  *
@@ -29,10 +31,19 @@ public class CheckedBuffer implements Buffer {
   }
 
   protected CheckedBuffer(Bytes bytes, long offset) {
+    this(bytes, offset, bytes.size() - offset);
+  }
+
+  protected CheckedBuffer(Bytes bytes, long offset, long length) {
     if (bytes == null)
       throw new NullPointerException("bytes cannot be null");
+    if (offset < 0 || offset >= bytes.size())
+      throw new IndexOutOfBoundsException("offset out of bounds of the underlying byte array");
+    long capacity = offset + length;
+    if (capacity < 0 || capacity >= bytes.size())
+      throw new BufferUnderflowException();
     this.bytes = bytes;
-    this.navigator = new BufferNavigator(offset, bytes.size());
+    this.navigator = new BufferNavigator(offset, offset + length);
   }
 
   @Override
@@ -43,6 +54,11 @@ public class CheckedBuffer implements Buffer {
   @Override
   public Buffer slice() {
     return new CheckedBuffer(bytes, navigator.position());
+  }
+
+  @Override
+  public Buffer slice(long offset, long length) {
+    return new CheckedBuffer(bytes, offset, length);
   }
 
   @Override

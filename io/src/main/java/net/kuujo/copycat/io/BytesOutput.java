@@ -143,4 +143,11 @@ public interface BytesOutput<T extends BytesOutput<T>> {
    */
   T writeBoolean(long offset, boolean b);
 
+  /**
+   * Flushes the bytes to the underlying persistence layer.
+   *
+   * @return The flushed buffer.
+   */
+  T flush();
+
 }

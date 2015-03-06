@@ -170,13 +170,6 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
   Buffer clear();
 
   /**
-   * Flushes the buffer to the underlying persistence layer.
-   *
-   * @return This buffer.
-   */
-  Buffer flush();
-
-  /**
    * Returns the bytes underlying the buffer.
    * <p>
    * The buffer is a wrapper around {@link Bytes} that handles writing sequences of bytes by tracking positions and
@@ -192,6 +185,17 @@ public interface Buffer extends BytesInput<Buffer>, BufferInput<Buffer>, BytesOu
    * @return A slice of this buffer.
    */
   Buffer slice();
+
+  /**
+   * Returns a view of this buffer starting at the given offset with the given length.
+   *
+   * @param offset The offset at which to begin the slice.
+   * @param length The number of bytes in the slice.
+   * @return The buffer slice.
+   * @throws java.lang.IndexOutOfBoundsException If the given offset is not contained within the bounds of this buffer
+   * @throws java.nio.BufferUnderflowException If the length of the remaining bytes in the buffer is less than {@code length}
+   */
+  Buffer slice(long offset, long length);
 
   /**
    * Reads bytes into the given buffer.

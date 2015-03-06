@@ -67,6 +67,26 @@ public class MappedBuffer extends CheckedBuffer {
     this.bytes = bytes;
   }
 
+  private MappedBuffer(NativeBytes bytes, long offset) {
+    super(bytes, offset);
+    this.bytes = bytes;
+  }
+
+  private MappedBuffer(NativeBytes bytes, long offset, long length) {
+    super(bytes, offset, length);
+    this.bytes = bytes;
+  }
+
+  @Override
+  public Buffer slice() {
+    return new MappedBuffer(bytes, position());
+  }
+
+  @Override
+  public Buffer slice(long offset, long length) {
+    return new MappedBuffer(bytes, offset, length);
+  }
+
   @Override
   public void close() throws Exception {
     bytes.memory().free();
