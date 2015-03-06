@@ -45,6 +45,16 @@ public class NativeBuffer extends CheckedBuffer {
     this.bytes = bytes;
   }
 
+  private NativeBuffer(NativeBytes bytes, long offset, long length) {
+    super(bytes, offset, length);
+    this.bytes = bytes;
+  }
+
+  @Override
+  protected Buffer createChild(long offset, long length) {
+    return new NativeBuffer(bytes, offset, length);
+  }
+
   @Override
   public void close() throws Exception {
     bytes.memory().free();

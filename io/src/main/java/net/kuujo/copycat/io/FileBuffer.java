@@ -75,4 +75,13 @@ public class FileBuffer extends CheckedBuffer {
     super(bytes);
   }
 
+  private FileBuffer(Bytes bytes, long offset, long length) {
+    super(bytes, offset, length);
+  }
+
+  @Override
+  protected Buffer createChild(long offset, long length) {
+    return new FileBuffer(bytes, offset, length);
+  }
+
 }

@@ -23,8 +23,8 @@ import java.nio.BufferUnderflowException;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CheckedBuffer implements Buffer {
-  private final Bytes bytes;
-  private final BufferNavigator navigator;
+  protected final Bytes bytes;
+  protected final BufferNavigator navigator;
 
   protected CheckedBuffer(Bytes bytes) {
     this(bytes, 0);
@@ -46,6 +46,13 @@ public class CheckedBuffer implements Buffer {
     this.navigator = new BufferNavigator(offset, offset + length);
   }
 
+  /**
+   * Creates a duplicate buffer.
+   */
+  protected Buffer createChild(long offset, long length) {
+    return new CheckedBuffer(bytes, offset, length);
+  }
+
   @Override
   public Bytes bytes() {
     return bytes;
@@ -53,12 +60,12 @@ public class CheckedBuffer implements Buffer {
 
   @Override
   public Buffer slice() {
-    return new CheckedBuffer(bytes, navigator.position());
+    return createChild(navigator.position(), navigator.remaining());
   }
 
   @Override
   public Buffer slice(long offset, long length) {
-    return new CheckedBuffer(bytes, offset, length);
+    return createChild(offset, length);
   }
 
   @Override

@@ -230,6 +230,14 @@ public class BufferWriter<T extends BufferWriter<T, U>, U extends Buffer> implem
 
   @Override
   @SuppressWarnings("unchecked")
+  public T flush() {
+    checkOpen();
+    buffer.bytes().flush();
+    return (T) this;
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
   public void close() {
     referenceManager.release((T) this);
     open = false;

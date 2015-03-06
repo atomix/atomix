@@ -157,9 +157,14 @@ public class NativeBytes implements Bytes {
     navigator.checkWrite(offset, length);
     if (bytes.size() < length)
       throw new IllegalArgumentException("length is greater than provided byte array size");
-    long address = address(offset);
-    for (int i = 0; i < length; i++) {
-      NativeMemory.UNSAFE.putByte(address + i, (byte) bytes.readByte(i));
+
+    if (bytes instanceof NativeBytes) {
+      NativeMemory.UNSAFE.copyMemory(((NativeBytes) bytes).memory.address(), address(offset), length);
+    } else {
+      long address = address(offset);
+      for (int i = 0; i < length; i++) {
+        NativeMemory.UNSAFE.putByte(address + i, (byte) bytes.readByte(i));
+      }
     }
     return this;
   }
