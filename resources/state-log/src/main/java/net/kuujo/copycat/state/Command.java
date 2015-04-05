@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.util.serializer;
-
-import net.kuujo.copycat.CopycatException;
+package net.kuujo.copycat.state;
 
 /**
- * Copycat serialization exception.
+ * State log command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class SerializationException extends CopycatException {
-  public SerializationException(String message, Object... args) {
-    super(String.format(message, args));
+@FunctionalInterface
+public interface Command<K, V, R> {
+
+  /**
+   * Applies a key and entry to the command.
+   *
+   * @param key The command key.
+   * @param entry The command entry.
+   * @return The command result.
+   */
+  R apply(K key, V entry);
+
+  /**
+   * Command type.
+   */
+  static enum Type {
+
+    /**
+     * Read command.
+     */
+    READ,
+
+    /**
+     * Write command.
+     */
+    WRITE,
+
+    /**
+     * Delete command.
+     */
+    DELETE
+
   }
 
-  public SerializationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public SerializationException(Throwable cause) {
-    super(cause);
-  }
 }

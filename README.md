@@ -714,7 +714,7 @@ StateMachine<Map<String, String>> stateMachine = copycat.createStateMachine("map
 
 When a Copycat resource - such as a state machine, log, or election - is created, the resource must be opened before
 it can be used. Practically all Copycat interfaces return `CompletableFuture` instances which can either be used to
-block until the result is received or receive the result asynchronously. In this case we just block by calling the
+buffer until the result is received or receive the result asynchronously. In this case we just buffer by calling the
 `get()` method on the `CompletableFuture`.
 
 ### Creating a state machine as a standalone service

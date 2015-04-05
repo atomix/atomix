@@ -16,13 +16,12 @@
 package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
-import net.kuujo.copycat.util.internal.Assert;
 
-import java.nio.ByteBuffer;
 import java.util.Observable;
 import java.util.Observer;
 import java.util.concurrent.CompletableFuture;
@@ -34,14 +33,18 @@ import java.util.concurrent.CompletableFuture;
  */
 abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Observer {
   protected final ResourceContext context;
-  private final String id;
+  private final int id;
   private String address;
   private Type type;
   private Status status;
 
-  public ManagedMember(String id, ResourceContext context) {
-    this.id = Assert.notNull(id, "id");
-    this.context = Assert.notNull(context, "context");
+  public ManagedMember(int id, ResourceContext context) {
+    if (id <= 0)
+      throw new IllegalArgumentException("id cannot be negative");
+    if (context == null)
+      throw new NullPointerException("context cannot be null");
+    this.id = id;
+    this.context = context;
   }
 
   @Override
@@ -49,32 +52,40 @@ abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Ob
     RaftContext raft = (RaftContext) o;
     RaftMember member = raft.getMember(id);
     if (member != null) {
-      address = member.address();
+      address = member.get("address");
       type = Type.lookup(member.type());
       status = Status.lookup(member.status());
     }
   }
 
   @Override
-  public String id() {
+  public int id() {
     return id;
+  }
+
+  /**
+   * Checks that the member is open.
+   */
+  private void checkOpen() {
+    if (!isOpen())
+      throw new IllegalStateException("member not open");
   }
 
   @Override
   public String address() {
-    Assert.state(isOpen(), "member not open");
+    checkOpen();
     return address;
   }
 
   @Override
   public Type type() {
-    Assert.state(isOpen(), "member not open");
+    checkOpen();
     return type;
   }
 
   @Override
   public Status status() {
-    Assert.state(isOpen(), "member not open");
+    checkOpen();
     return status;
   }
 
@@ -86,7 +97,7 @@ abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Ob
   /**
    * Sends an internal message.
    */
-  abstract CompletableFuture<ByteBuffer> sendInternal(String topic, ByteBuffer request);
+  abstract CompletableFuture<Buffer> sendInternal(String topic, Buffer request);
 
   @Override
   @SuppressWarnings("unchecked")
@@ -104,7 +115,7 @@ abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Ob
   @Override
   public int hashCode() {
     int hashCode = 23;
-    hashCode = 37 * hashCode + id().hashCode();
+    hashCode = 37 * hashCode + id();
     return hashCode;
   }
 

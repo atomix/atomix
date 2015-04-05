@@ -16,7 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Event;
-import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -59,8 +58,12 @@ public class MembershipEvent implements Event<MembershipEvent.Type> {
   private final Member member;
 
   public MembershipEvent(Type type, Member member) {
-    this.type = Assert.notNull(type, "type");
-    this.member = Assert.notNull(member, "member");
+    if (type == null)
+      throw new NullPointerException("type cannot be null");
+    if (member == null)
+      throw new NullPointerException("member cannot be null");
+    this.type = type;
+    this.member = member;
   }
 
   @Override

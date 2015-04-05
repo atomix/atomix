@@ -16,12 +16,10 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.protocol.*;
-import net.kuujo.copycat.util.Configurable;
 import org.testng.annotations.Test;
 
 import java.net.URI;
 import java.util.HashMap;
-import java.util.Map;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -41,14 +39,14 @@ public class ClusterConfigTest {
     ClusterConfig cluster = new ClusterConfig();
     assertTrue(cluster.getMembers().isEmpty());
     assertTrue(cluster.getProtocol() instanceof LocalProtocol);
-    cluster.addMember("foo", "local://foo");
+    cluster.addMember(1, "local://foo");
     assertEquals(1, cluster.getMembers().size());
-    assertEquals("foo", cluster.getMembers().iterator().next().getId());
+    assertEquals(1, cluster.getMembers().iterator().next().getId());
     assertEquals("local://foo", cluster.getMembers().iterator().next().getAddress());
 
     ClusterConfig copy = cluster.copy();
     assertEquals(1, copy.getMembers().size());
-    assertEquals("foo", copy.getMembers().iterator().next().getId());
+    assertEquals(1, copy.getMembers().iterator().next().getId());
     assertEquals("local://foo", copy.getMembers().iterator().next().getAddress());
   }
 
@@ -66,20 +64,13 @@ public class ClusterConfigTest {
   /**
    * Test protocol
    */
-  public static class TestProtocol extends AbstractProtocol {
+  public static class TestProtocol implements Protocol {
     public TestProtocol() {
     }
 
-    public TestProtocol(Map<String, Object> config) {
-      super(config);
-    }
-
-    public TestProtocol(String... resources) {
-      super(resources);
-    }
-
-    public TestProtocol(Configurable config) {
-      super(config);
+    @Override
+    public Protocol copy() {
+      return new TestProtocol();
     }
 
     @Override

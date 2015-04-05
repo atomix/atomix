@@ -15,32 +15,14 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.collections.internal.collection.SetState;
-import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.state.StateMachineConfig;
-
-import java.util.Map;
-
 /**
  * Asynchronous set configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncSetConfig extends AsyncCollectionConfig<AsyncSetConfig> {
-  private static final String DEFAULT_CONFIGURATION = "set-defaults";
-  private static final String CONFIGURATION = "set";
 
   public AsyncSetConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncSetConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncSetConfig(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
-    setDefaultName(resource);
   }
 
   protected AsyncSetConfig(AsyncSetConfig config) {
@@ -50,14 +32,6 @@ public class AsyncSetConfig extends AsyncCollectionConfig<AsyncSetConfig> {
   @Override
   public AsyncSetConfig copy() {
     return new AsyncSetConfig(this);
-  }
-
-  @Override
-  public ResourceConfig<?> resolve() {
-    return new StateMachineConfig(toMap())
-      .withStateType(SetState.class)
-      .withInitialState(SetState.class)
-      .resolve();
   }
 
 }

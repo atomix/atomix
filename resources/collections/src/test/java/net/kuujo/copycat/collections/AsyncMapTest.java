@@ -17,7 +17,6 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.test.TestCluster;
@@ -43,7 +42,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig("test").withLog(new BufferedLog()), config))
+      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig(), config))
       .build();
     expectResume();
     cluster.open().thenRun(this::resume);
@@ -69,7 +68,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig("test").withLog(new BufferedLog()), config))
+      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig(), config))
       .build();
     expectResume();
     cluster.open().thenRun(this::resume);
@@ -100,7 +99,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig("test").withConsistency(Consistency.WEAK).withLog(new BufferedLog()), config))
+      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig().withConsistency(Consistency.WEAK), config))
       .build();
     
     expectResume();
@@ -132,7 +131,7 @@ public class AsyncMapTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig("test").withConsistency(Consistency.WEAK).withLog(new BufferedLog().withSegmentInterval(1024).withFlushOnWrite(true)), config))
+      .withResourceFactory(config -> AsyncMap.create(new AsyncMapConfig().withConsistency(Consistency.WEAK), config))
       .build();
 
     expectResume();

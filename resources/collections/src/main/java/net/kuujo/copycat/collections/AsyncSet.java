@@ -16,6 +16,7 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.collections.internal.collection.DefaultSetState;
 import net.kuujo.copycat.collections.internal.collection.SetState;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -37,69 +38,24 @@ import java.util.function.Supplier;
 public class AsyncSet<T> extends AbstractResource<AsyncSet<T>> implements AsyncCollection<AsyncSet<T>, T>, AsyncSetProxy<T> {
 
   /**
-   * Creates a new asynchronous set, loading the log configuration from the classpath.
+   * Creates a new asynchronous set with the given cluster.
    *
-   * @param <T> The asynchronous set entry type.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create() {
-    return create(new AsyncSetConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new asynchronous set, loading the log configuration from the classpath.
-   *
-   * @param <T> The asynchronous set entry type.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create(Executor executor) {
-    return create(new AsyncSetConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous set, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous set resource name to be used to load the asynchronous set configuration from the classpath.
-   * @param <T> The asynchronous set entry type.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create(String name) {
-    return create(new AsyncSetConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new asynchronous set, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous set resource name to be used to load the asynchronous set configuration from the classpath.
-   * @param executor An executor on which to execute asynchronous set callbacks.
-   * @param <T> The asynchronous set entry type.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create(String name, Executor executor) {
-    return create(new AsyncSetConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new asynchronous set with the given cluster and asynchronous set configurations.
-   *
-   * @param name The asynchronous set resource name to be used to load the asynchronous set configuration from the classpath.
    * @param cluster The cluster configuration.
    * @return A new asynchronous set instance.
    */
-  public static <T> AsyncSet<T> create(String name, ClusterConfig cluster) {
-    return create(new AsyncSetConfig(name), cluster);
+  public static <T> AsyncSet<T> create(ClusterConfig cluster) {
+    return new AsyncSet<>(new AsyncSetConfig(), cluster);
   }
 
   /**
-   * Creates a new asynchronous set with the given cluster and asynchronous set configurations.
+   * Creates a new asynchronous set with the given cluster.
    *
-   * @param name The asynchronous set resource name to be used to load the asynchronous set configuration from the classpath.
    * @param cluster The cluster configuration.
    * @param executor An executor on which to execute asynchronous set callbacks.
    * @return A new asynchronous set instance.
    */
-  public static <T> AsyncSet<T> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new AsyncSetConfig(name), cluster, executor);
+  public static <T> AsyncSet<T> create(ClusterConfig cluster, Executor executor) {
+    return new AsyncSet<>(new AsyncSetConfig(), cluster, executor);
   }
 
   /**
@@ -139,7 +95,7 @@ public class AsyncSet<T> extends AbstractResource<AsyncSet<T>> implements AsyncC
   @SuppressWarnings("unchecked")
   public AsyncSet(ResourceContext context) {
     super(context);
-    this.stateMachine = new StateMachine<>(context);
+    this.stateMachine = new StateMachine<>(new DefaultSetState<>(), context);
   }
 
   /**

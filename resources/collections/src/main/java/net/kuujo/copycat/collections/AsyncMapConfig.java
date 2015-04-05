@@ -15,14 +15,8 @@
  */
 package net.kuujo.copycat.collections;
 
-import com.typesafe.config.ConfigValueFactory;
-import net.kuujo.copycat.collections.internal.map.MapState;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.state.StateMachineConfig;
-import net.kuujo.copycat.util.internal.Assert;
-
-import java.util.Map;
 
 /**
  * Asynchronous map configuration.
@@ -30,22 +24,9 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
-  private static final String ASYNC_MAP_CONSISTENCY = "consistency";
-
-  private static final String DEFAULT_CONFIGURATION = "map-defaults";
-  private static final String CONFIGURATION = "map";
+  private Consistency consistency = Consistency.DEFAULT;
 
   public AsyncMapConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncMapConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncMapConfig(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
-    setDefaultName(resource);
   }
 
   protected AsyncMapConfig(AsyncMapConfig config) {
@@ -63,18 +44,10 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
    * @param consistency The map read consistency.
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
-  public void setConsistency(String consistency) {
-    this.config = config.withValue(ASYNC_MAP_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.notNull(consistency, "consistency")).toString()));
-  }
-
-  /**
-   * Sets the map read consistency.
-   *
-   * @param consistency The map read consistency.
-   * @throws java.lang.NullPointerException If the consistency is {@code null}
-   */
   public void setConsistency(Consistency consistency) {
-    this.config = config.withValue(ASYNC_MAP_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.notNull(consistency, "consistency").toString()));
+    if (consistency == null)
+      consistency = Consistency.DEFAULT;
+    this.consistency = consistency;
   }
 
   /**
@@ -83,19 +56,7 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
    * @return The map read consistency.
    */
   public Consistency getConsistency() {
-    return Consistency.parse(config.getString(ASYNC_MAP_CONSISTENCY));
-  }
-
-  /**
-   * Sets the map read consistency, returning the configuration for method chaining.
-   *
-   * @param consistency The map read consistency.
-   * @return The map configuration.
-   * @throws java.lang.NullPointerException If the consistency is {@code null}
-   */
-  public AsyncMapConfig withConsistency(String consistency) {
-    setConsistency(consistency);
-    return this;
+    return consistency;
   }
 
   /**
@@ -108,14 +69,6 @@ public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
   public AsyncMapConfig withConsistency(Consistency consistency) {
     setConsistency(consistency);
     return this;
-  }
-
-  @Override
-  public ResourceConfig<?> resolve() {
-    return new StateMachineConfig(toMap())
-      .withStateType(MapState.class)
-      .withInitialState(MapState.class)
-      .resolve();
   }
 
 }

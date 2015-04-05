@@ -22,7 +22,6 @@ import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMember;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.util.Managed;
-import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -47,9 +46,13 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   private boolean open;
 
   ManagedMembers(ClusterConfig config, ResourceContext context) {
-    this.config = Assert.notNull(config, "config").copy();
+    if (config == null)
+      throw new NullPointerException("config cannot be null");
+    if (context == null)
+      throw new NullPointerException("context cannot be null");
+    this.config = config;
+    this.context = context;
     this.protocol = config.getProtocol();
-    this.context = Assert.notNull(context, "context");
     this.raft = context.raft();
   }
 
@@ -57,11 +60,11 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   @SuppressWarnings("rawtypes")
   public void update(Observable o, Object arg) {
     RaftContext raft = (RaftContext) o;
-    Set<String> uris = raft.getMembers().stream().map(RaftMember::id).collect(Collectors.toSet());
+    Set<Integer> ids = raft.getMembers().stream().map(RaftMember::id).collect(Collectors.toSet());
     Iterator<Map.Entry<String, ManagedMember>> iterator = members.entrySet().iterator();
     while (iterator.hasNext()) {
       Map.Entry<String, ManagedMember> entry = iterator.next();
-      if (!uris.contains(entry.getKey())) {
+      if (!ids.contains(entry.getValue().id())) {
         listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.LEAVE, entry.getValue())));
         entry.getValue().close().join();
         iterator.remove();
@@ -69,10 +72,11 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     }
 
     for (RaftMember member : raft.getMembers()) {
-      if (!members.containsKey(member.id())) {
+      String address = member.get("address");
+      if (address != null && !members.containsKey(address)) {
         try {
-          members.put(member.id(), (ManagedMember) new ManagedRemoteMember(member.id(), member.address(), protocol, context).open().get());
-          listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(member.id()))));
+          members.put(address, (ManagedMember) new ManagedRemoteMember(member.id(), address, protocol, context).open().get());
+          listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(address))));
         } catch (InterruptedException | ExecutionException e) {
           throw new RuntimeException(e);
         }
@@ -82,13 +86,17 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
 
   @Override
   public Members addListener(EventListener<MembershipEvent> listener) {
-    listeners.add(Assert.notNull(listener, "listener"));
+    if (listener == null)
+      throw new NullPointerException("listener cannot be null");
+    listeners.add(listener);
     return this;
   }
 
   @Override
   public Members removeListener(EventListener<MembershipEvent> listener) {
-    listeners.remove(Assert.notNull(listener, "listener"));
+    if (listener == null)
+      throw new NullPointerException("listener cannot be null");
+    listeners.remove(listener);
     return this;
   }
 
@@ -171,17 +179,17 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
 
     ManagedLocalMember localMember = new ManagedLocalMember(config.getLocalMember().getId(), config.getLocalMember().getAddress(), protocol, context);
     return localMember.open().thenCompose(v -> {
-      members.put(localMember.id(), localMember);
+      members.put(localMember.address(), localMember);
       if (context.config().getReplicas().isEmpty()) {
         for (MemberConfig member : config.getMembers()) {
-          if (!member.getId().equals(config.getLocalMember().getId())) {
-            members.put(member.getId(), new ManagedRemoteMember(member.getId(), member.getAddress(), protocol, context));
+          if (member.getId() != config.getLocalMember().getId()) {
+            members.put(member.getAddress(), new ManagedRemoteMember(member.getId(), member.getAddress(), protocol, context));
           }
         }
       } else {
-        for (String replica : context.config().getReplicas()) {
-          if (!replica.equals(config.getLocalMember().getId())) {
-            members.put(replica, new ManagedRemoteMember(replica, config.getMember(replica).getAddress(), protocol, context));
+        for (int replica : context.config().getReplicas()) {
+          if (replica != config.getLocalMember().getId() && config.hasMember(replica)) {
+            members.put(config.getMember(replica).getAddress(), new ManagedRemoteMember(replica, config.getMember(replica).getAddress(), protocol, context));
           }
         }
       }

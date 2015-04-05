@@ -16,6 +16,7 @@
 package net.kuujo.copycat.atomic;
 
 import net.kuujo.copycat.atomic.internal.BooleanState;
+import net.kuujo.copycat.atomic.internal.DefaultBooleanState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -32,65 +33,24 @@ import java.util.concurrent.Executor;
 public class AsyncBoolean extends AbstractResource<AsyncBoolean> implements AsyncBooleanProxy {
 
   /**
-   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
+   * Creates a new asynchronous boolean with the given cluster.
    *
-   * @return A new asynchronous boolean instance.
-   */
-  public static AsyncBoolean create() {
-    return create(new AsyncBooleanConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
-   *
-   * @return A new asynchronous boolean instance.
-   */
-  public static AsyncBoolean create(Executor executor) {
-    return create(new AsyncBooleanConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
-   * @return A new asynchronous boolean instance.
-   */
-  public static AsyncBoolean create(String name) {
-    return create(new AsyncBooleanConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new asynchronous boolean, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
-   * @param executor An executor on which to execute asynchronous boolean callbacks.
-   * @return A new asynchronous boolean instance.
-   */
-  public static AsyncBoolean create(String name, Executor executor) {
-    return create(new AsyncBooleanConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new asynchronous boolean with the given cluster and asynchronous boolean configurations.
-   *
-   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
    * @param cluster The cluster configuration.
    * @return A new asynchronous boolean instance.
    */
-  public static AsyncBoolean create(String name, ClusterConfig cluster) {
-    return create(new AsyncBooleanConfig(name), cluster);
+  public static AsyncBoolean create(ClusterConfig cluster) {
+    return new AsyncBoolean(new AsyncBooleanConfig(), cluster);
   }
 
   /**
-   * Creates a new asynchronous boolean with the given cluster and asynchronous boolean configurations.
+   * Creates a new asynchronous boolean with the given cluster.
    *
-   * @param name The asynchronous boolean resource name to be used to load the asynchronous boolean configuration from the classpath.
    * @param cluster The cluster configuration.
    * @param executor An executor on which to execute asynchronous boolean callbacks.
    * @return A new asynchronous boolean instance.
    */
-  public static AsyncBoolean create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new AsyncBooleanConfig(name), cluster, executor);
+  public static AsyncBoolean create(ClusterConfig cluster, Executor executor) {
+    return new AsyncBoolean(new AsyncBooleanConfig(), cluster, executor);
   }
 
   /**
@@ -129,7 +89,7 @@ public class AsyncBoolean extends AbstractResource<AsyncBoolean> implements Asyn
 
   public AsyncBoolean(ResourceContext context) {
     super(context);
-    this.stateMachine = new StateMachine<>(context);
+    this.stateMachine = new StateMachine<>(new DefaultBooleanState(), context);
   }
 
   @Override

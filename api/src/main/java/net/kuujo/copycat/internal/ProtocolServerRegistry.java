@@ -16,7 +16,6 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.util.internal.Assert;
 
 import java.net.URI;
 import java.util.Map;
@@ -32,7 +31,7 @@ public class ProtocolServerRegistry {
   private final Map<URI, ProtocolServerCoordinator> servers = new ConcurrentHashMap<>();
 
   public ProtocolServerRegistry(Protocol protocol) {
-    this.protocol = Assert.notNull(protocol, "protocol");
+    this.protocol = protocol;
   }
 
   public ProtocolServerCoordinator get(URI uri) {

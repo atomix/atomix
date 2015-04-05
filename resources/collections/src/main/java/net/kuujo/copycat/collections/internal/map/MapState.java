@@ -15,10 +15,8 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.Write;
 
 import java.util.Collection;
 import java.util.Map;
@@ -33,100 +31,92 @@ import java.util.function.Function;
  */
 public interface MapState<K, V> extends Map<K, V> {
 
-  /**
-   * Initializes the map status.
-   *
-   * @param context The map status context.
-   */
-  @Initializer
-  public void init(StateContext<MapState<K, V>> context);
-
   @Override
-  @Query
+  @Read
   int size();
 
   @Override
-  @Query
+  @Read
   boolean isEmpty();
 
   @Override
-  @Query
+  @Read
   boolean containsKey(Object key);
 
   @Override
-  @Query
+  @Read
   boolean containsValue(Object value);
 
   @Override
-  @Query
+  @Read
   V get(Object key);
 
   @Override
-  @Command
+  @Write
   V put(K key, V value);
 
   @Override
-  @Command
+  @Write
   V remove(Object key);
 
   @Override
-  @Command
+  @Write
   void putAll(Map<? extends K, ? extends V> m);
 
   @Override
-  @Command
+  @Write
   void clear();
 
   @Override
-  @Query
+  @Read
   Set<K> keySet();
 
   @Override
-  @Query
+  @Read
   Collection<V> values();
 
   @Override
-  @Query
+  @Read
   Set<Entry<K, V>> entrySet();
 
   @Override
-  @Query
+  @Read
   V getOrDefault(Object key, V defaultValue);
 
   @Override
-  @Command
+  @Write
   void replaceAll(BiFunction<? super K, ? super V, ? extends V> function);
 
   @Override
-  @Command
+  @Write
   V putIfAbsent(K key, V value);
 
   @Override
-  @Command
+  @Write
   boolean remove(Object key, Object value);
 
   @Override
-  @Command
+  @Write
   boolean replace(K key, V oldValue, V newValue);
 
   @Override
-  @Command
+  @Write
   V replace(K key, V value);
 
   @Override
-  @Command
+  @Write
   V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction);
 
   @Override
-  @Command
+  @Write
   V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
   @Override
-  @Command
+  @Write
   V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction);
 
   @Override
-  @Command
+  @Write
   V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction);
 
 }

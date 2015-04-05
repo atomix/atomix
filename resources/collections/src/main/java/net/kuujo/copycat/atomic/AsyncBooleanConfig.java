@@ -15,11 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.BooleanState;
 import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.state.StateMachineConfig;
-
-import java.util.Map;
 
 /**
  * Asynchronous atomic boolean configuration.
@@ -27,20 +23,8 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncBooleanConfig extends ResourceConfig<AsyncBooleanConfig> {
-  private static final String DEFAULT_CONFIGURATION = "atomic-defaults";
-  private static final String CONFIGURATION = "atomic";
 
   public AsyncBooleanConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncBooleanConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncBooleanConfig(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
-    setDefaultName(resource);
   }
 
   protected AsyncBooleanConfig(AsyncBooleanConfig config) {
@@ -50,14 +34,6 @@ public class AsyncBooleanConfig extends ResourceConfig<AsyncBooleanConfig> {
   @Override
   public AsyncBooleanConfig copy() {
     return new AsyncBooleanConfig(this);
-  }
-
-  @Override
-  public ResourceConfig<?> resolve() {
-    return new StateMachineConfig(toMap())
-      .withStateType(BooleanState.class)
-      .withInitialState(BooleanState.class)
-      .resolve();
   }
 
 }

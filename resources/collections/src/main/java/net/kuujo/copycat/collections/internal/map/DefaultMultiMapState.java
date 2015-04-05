@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.StateContext;
-
 import java.util.*;
 import java.util.function.BiFunction;
 
@@ -27,17 +24,7 @@ import java.util.function.BiFunction;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultMultiMapState<K, V> implements MultiMapState<K, V> {
-  private Map<K, Collection<V>> map;
-
-  @Override
-  @Initializer
-  public void init(StateContext<MultiMapState<K, V>> context) {
-    map = context.get("value");
-    if (map == null) {
-      map = new HashMap<>();
-      context.put("value", map);
-    }
-  }
+  private Map<K, Collection<V>> map = new HashMap<>();
 
   @Override
   public int size() {

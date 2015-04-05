@@ -16,10 +16,8 @@
 package net.kuujo.copycat.collections.internal.map;
 
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.Write;
 
 import java.util.Collection;
 import java.util.Map;
@@ -34,119 +32,111 @@ import java.util.function.BiFunction;
 public interface MultiMapState<K, V> {
 
   /**
-   * Initializes the multimap status.
-   *
-   * @param context The multimap status context.
-   */
-  @Initializer
-  public void init(StateContext<MultiMapState<K, V>> context);
-
-  /**
    * Returns the map size.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   int size();
 
   /**
    * Returns a boolean indicating whether the map is empty.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   boolean isEmpty();
 
   /**
    * Returns a boolean indicating whether the map contains a key.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   boolean containsKey(K key);
 
   /**
    * Returns a boolean indicating whether the map contains a value.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   boolean containsValue(V value);
 
   /**
    * Returns a boolean indicating whether the map contains an entry.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   boolean containsEntry(K key, V value);
 
   /**
    * Gets a value from the map.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   Collection<V> get(K key);
 
   /**
    * Puts a value in the map.
    */
-  @Command
+  @Write
   Collection<V> put(K key, V value);
 
   /**
    * Removes a key from the map.
    */
-  @Command
+  @Write
   Collection<V> remove(K key);
 
   /**
    * Removes an entry from the map.
    */
-  @Command
+  @Write
   boolean remove(K key, V value);
 
   /**
    * Puts a collection of values in the map.
    */
-  @Command
+  @Write
   void putAll(Map<? extends K, ? extends Collection<V>> m);
 
   /**
    * Clears the map.
    */
-  @Command
+  @Write
   void clear();
 
   /**
    * Returns a set of keys in the map.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   Set<K> keySet();
 
   /**
    * Returns a set of values in the map.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   Collection<V> values();
 
   /**
    * Returns a set of entries in the map.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   Set<Map.Entry<K, V>> entrySet();
 
   /**
    * Gets a key from the map or returns a default value.
    */
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   Collection<V> getOrDefault(K key, Collection<V> defaultValue);
 
   /**
    * Replaces a set of keys in the map.
    */
-  @Command
+  @Write
   void replaceAll(BiFunction<? super K, ? super Collection<V>, ? extends Collection<V>> function);
 
   /**
    * Replaces a value in the map.
    */
-  @Command
+  @Write
   boolean replace(K key, V oldValue, V newValue);
 
   /**
    * Replaces a key in the map.
    */
-  @Command
+  @Write
   Collection<V> replace(K key, Collection<V> value);
 
 }

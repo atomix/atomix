@@ -16,10 +16,8 @@
 package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.Write;
 
 /**
  * Atomic long status.
@@ -28,42 +26,34 @@ import net.kuujo.copycat.state.StateContext;
  */
 public interface LongState {
 
-  /**
-   * Initializes the status.
-   *
-   * @param context The status context.
-   */
-  @Initializer
-  void init(StateContext<LongState> context);
-
-  @Query(consistency= Consistency.STRONG)
+  @Read(consistency= Consistency.STRONG)
   long get();
 
-  @Command
+  @Write
   void set(long value);
 
-  @Command
+  @Write
   long addAndGet(long value);
 
-  @Command
+  @Write
   long getAndAdd(long value);
 
-  @Command
+  @Write
   long getAndSet(long value);
 
-  @Command
+  @Write
   long getAndIncrement();
 
-  @Command
+  @Write
   long getAndDecrement();
 
-  @Command
+  @Write
   long incrementAndGet();
 
-  @Command
+  @Write
   long decrementAndGet();
 
-  @Command
+  @Write
   boolean compareAndSet(long expect, long update);
 
 }

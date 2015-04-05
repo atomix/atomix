@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
+import net.kuujo.copycat.atomic.internal.DefaultReferenceState;
 import net.kuujo.copycat.atomic.internal.ReferenceState;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.resource.ResourceContext;
@@ -32,69 +33,24 @@ import java.util.concurrent.Executor;
 public class AsyncReference<T> extends AbstractResource<AsyncReference<T>> implements AsyncReferenceProxy<T> {
 
   /**
-   * Creates a new asynchronous atomic reference, loading the log configuration from the classpath.
+   * Creates a new asynchronous atomic reference with the given cluster.
    *
-   * @param <T> The asynchronous atomic reference entry type.
-   * @return A new asynchronous atomic reference instance.
-   */
-  public static <T> AsyncReference<T> create() {
-    return create(new AsyncReferenceConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new asynchronous atomic reference, loading the log configuration from the classpath.
-   *
-   * @param <T> The asynchronous atomic reference entry type.
-   * @return A new asynchronous atomic reference instance.
-   */
-  public static <T> AsyncReference<T> create(Executor executor) {
-    return create(new AsyncReferenceConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous atomic reference, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous atomic reference resource name to be used to load the asynchronous atomic reference configuration from the classpath.
-   * @param <T> The asynchronous atomic reference entry type.
-   * @return A new asynchronous atomic reference instance.
-   */
-  public static <T> AsyncReference<T> create(String name) {
-    return create(new AsyncReferenceConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new asynchronous atomic reference, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous atomic reference resource name to be used to load the asynchronous atomic reference configuration from the classpath.
-   * @param executor An executor on which to execute asynchronous atomic reference callbacks.
-   * @param <T> The asynchronous atomic reference entry type.
-   * @return A new asynchronous atomic reference instance.
-   */
-  public static <T> AsyncReference<T> create(String name, Executor executor) {
-    return create(new AsyncReferenceConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new asynchronous atomic reference with the given cluster and asynchronous atomic reference configurations.
-   *
-   * @param name The asynchronous atomic reference resource name to be used to load the asynchronous atomic reference configuration from the classpath.
    * @param cluster The cluster configuration.
    * @return A new asynchronous atomic reference instance.
    */
-  public static <T> AsyncReference<T> create(String name, ClusterConfig cluster) {
-    return create(new AsyncReferenceConfig(name), cluster);
+  public static <T> AsyncReference<T> create(ClusterConfig cluster) {
+    return new AsyncReference<>(new AsyncReferenceConfig(), cluster);
   }
 
   /**
-   * Creates a new asynchronous atomic reference with the given cluster and asynchronous atomic reference configurations.
+   * Creates a new asynchronous atomic reference with the given cluster.
    *
-   * @param name The asynchronous atomic reference resource name to be used to load the asynchronous atomic reference configuration from the classpath.
    * @param cluster The cluster configuration.
    * @param executor An executor on which to execute asynchronous atomic reference callbacks.
    * @return A new asynchronous atomic reference instance.
    */
-  public static <T> AsyncReference<T> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new AsyncReferenceConfig(name), cluster, executor);
+  public static <T> AsyncReference<T> create(ClusterConfig cluster, Executor executor) {
+    return new AsyncReference<>(new AsyncReferenceConfig(), cluster, executor);
   }
 
   /**
@@ -134,7 +90,7 @@ public class AsyncReference<T> extends AbstractResource<AsyncReference<T>> imple
   @SuppressWarnings("unchecked")
   public AsyncReference(ResourceContext context) {
     super(context);
-    this.stateMachine = new StateMachine<>(context);
+    this.stateMachine = new StateMachine<>(new DefaultReferenceState<>(), context);
   }
 
   @Override

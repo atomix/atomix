@@ -17,28 +17,14 @@ package net.kuujo.copycat.election;
 
 import net.kuujo.copycat.resource.ResourceConfig;
 
-import java.util.Map;
-
 /**
  * Leader election configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaderElectionConfig extends ResourceConfig<LeaderElectionConfig> {
-  private static final String CONFIGURATION = "election";
-  private static final String DEFAULT_CONFIGURATION = "election-defaults";
 
   public LeaderElectionConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public LeaderElectionConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public LeaderElectionConfig(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
-    setDefaultName(resource);
   }
 
   private LeaderElectionConfig(LeaderElectionConfig config) {

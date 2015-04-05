@@ -16,11 +16,10 @@
 package net.kuujo.copycat.resource.internal;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.ResourceState;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -31,10 +30,12 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractResource<T extends Resource<T>> implements Resource<T> {
   protected final ResourceContext context;
-  protected final Serializer serializer;
+  protected final CopycatSerializer serializer;
 
   protected AbstractResource(ResourceContext context) {
-    this.context = Assert.notNull(context, "context");
+    if (context == null)
+      throw new NullPointerException("context cannot be null");
+    this.context = context;
     this.serializer = context.serializer();
   }
 

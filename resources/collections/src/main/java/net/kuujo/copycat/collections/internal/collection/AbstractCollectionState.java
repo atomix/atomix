@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.collection;
 
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.StateContext;
-
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -27,22 +24,12 @@ import java.util.Iterator;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractCollectionState<T extends CollectionState<T, V>, U extends Collection<V>, V> implements CollectionState<T, V> {
-  protected U collection;
+  protected U collection = createCollection();
 
   /**
    * Creates the collection.
    */
   protected abstract U createCollection();
-
-  @Override
-  @Initializer
-  public void init(StateContext<T> context) {
-    collection = context.get("value");
-    if (collection == null) {
-      collection = createCollection();
-      context.put("value", collection);
-    }
-  }
 
   @Override
   public boolean add(V value) {

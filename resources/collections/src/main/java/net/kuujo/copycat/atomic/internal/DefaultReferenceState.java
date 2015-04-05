@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.atomic.internal;
 
-import net.kuujo.copycat.state.StateContext;
-
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -25,16 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultReferenceState<T> implements ReferenceState<T> {
-  private AtomicReference<T> value;
-
-  @Override
-  public void init(StateContext<ReferenceState<T>> context) {
-    value = context.get("value");
-    if (value == null) {
-      value = new AtomicReference<>();
-      context.put("value", value);
-    }
-  }
+  private AtomicReference<T> value = new AtomicReference<>();
 
   @Override
   public T get() {

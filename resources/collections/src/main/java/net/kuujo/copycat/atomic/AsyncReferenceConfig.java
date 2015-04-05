@@ -15,11 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.ReferenceState;
 import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.state.StateMachineConfig;
-
-import java.util.Map;
 
 /**
  * Asynchronous atomic reference configuration.
@@ -27,20 +23,8 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncReferenceConfig extends ResourceConfig<AsyncReferenceConfig> {
-  private static final String DEFAULT_CONFIGURATION = "atomic-defaults";
-  private static final String CONFIGURATION = "atomic";
 
   public AsyncReferenceConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncReferenceConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncReferenceConfig(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
-    setDefaultName(resource);
   }
 
   protected AsyncReferenceConfig(AsyncReferenceConfig config) {
@@ -50,14 +34,6 @@ public class AsyncReferenceConfig extends ResourceConfig<AsyncReferenceConfig> {
   @Override
   public AsyncReferenceConfig copy() {
     return new AsyncReferenceConfig(this);
-  }
-
-  @Override
-  public ResourceConfig<?> resolve() {
-    return new StateMachineConfig(toMap())
-      .withStateType(ReferenceState.class)
-      .withInitialState(ReferenceState.class)
-      .resolve();
   }
 
 }

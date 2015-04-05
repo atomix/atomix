@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.state;
-
-import net.kuujo.copycat.raft.Consistency;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+package net.kuujo.copycat;
 
 /**
- * State machine query annotation.
+ * Base Copycat exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface Query {
+public class CopycatException extends RuntimeException {
 
-  /**
-   * The query consistency.
-   */
-  Consistency consistency() default Consistency.DEFAULT;
+  public CopycatException(String message, Object... args) {
+    super(String.format(message, args));
+  }
+
+  public CopycatException(Throwable cause, String message, Object... args) {
+    super(String.format(message, args), cause);
+  }
+
+  public CopycatException(Throwable cause) {
+    super(cause);
+  }
 
 }

@@ -15,19 +15,19 @@
  */
 package net.kuujo.copycat.cluster.internal;
 
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.util.ConfigurationException;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.internal.Hash;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -44,13 +44,15 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   private static final byte TASK = 2;
   private final ProtocolClient client;
   private ProtocolConnection connection;
-  private final Map<String, Integer> hashMap = new HashMap<>();
+  private final Map<String, Long> hashMap = new HashMap<>();
   private boolean open;
 
-  public ManagedRemoteMember(String id, String address, Protocol protocol, ResourceContext context) {
+  public ManagedRemoteMember(int id, String address, Protocol protocol, ResourceContext context) {
     super(id, context);
+    if (address == null)
+      throw new NullPointerException("address cannot be null");
     try {
-      this.client = protocol.createClient(new URI(Assert.notNull(address, "address")));
+      this.client = protocol.createClient(new URI(address));
     } catch (URISyntaxException e) {
       throw new ConfigurationException("Invalid protocol URI");
     }
@@ -71,19 +73,19 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
    * Sends a message to the remote member.
    */
   private <T, U> CompletableFuture<U> doSend(String topic, T message) {
-    ByteBuffer serialized = context.serializer().writeObject(message);
-    ByteBuffer request = ByteBuffer.allocate(serialized.limit() + 6);
-    request.put(MESSAGE);
-    request.put(USER);
-    request.putInt(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
-    request.put(serialized);
+    Buffer serialized = context.serializer().writeObject(message);
+    Buffer request = HeapBuffer.allocate(serialized.limit() + 10)
+      .writeByte(MESSAGE)
+      .writeByte(USER)
+      .writeLong(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())))
+      .write(serialized);
     return connection.write(request).thenApplyAsync(b -> context.serializer().readObject(b), context.executor());
   }
 
   /**
    * Sends an internal message.
    */
-  public CompletableFuture<ByteBuffer> sendInternal(String topic, ByteBuffer message) {
+  public CompletableFuture<Buffer> sendInternal(String topic, Buffer message) {
     if (connection == null) {
       return client.connect()
         .thenAcceptAsync(c -> this.connection = c, context.scheduler())
@@ -96,13 +98,13 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   /**
    * Sends an internal message.
    */
-  private CompletableFuture<ByteBuffer> doSendInternal(String topic, ByteBuffer message) {
-    ByteBuffer request = ByteBuffer.allocate(message.limit() + 6);
-    request.put(MESSAGE);
-    request.put(INTERNAL);
-    request.putInt(hashMap.computeIfAbsent(topic, t -> Hash.hash32(t.getBytes())));
-    request.put(message);
-    request.flip();
+  private CompletableFuture<Buffer> doSendInternal(String topic, Buffer message) {
+    Buffer request = HeapBuffer.allocate(message.limit() + 10)
+      .writeByte(MESSAGE)
+      .writeByte(INTERNAL)
+      .writeLong(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())))
+      .write(message)
+      .flip();
     return connection.write(request).thenApplyAsync(v -> v, context.scheduler());
   }
 
@@ -126,11 +128,8 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
    * Submits a task for remote execution.
    */
   private <T> CompletableFuture<T> doSubmit(Task<T> task) {
-    ByteBuffer serialized = context.serializer().writeObject(task);
-    ByteBuffer request = ByteBuffer.allocate(serialized.limit() + 1);
-    request.put(TASK);
-    request.put(serialized);
-    request.flip();
+    Buffer serialized = context.serializer().writeObject(task);
+    Buffer request = HeapBuffer.allocate(serialized.limit() + 1).writeByte(TASK).write(serialized).flip();
     return connection.write(request).thenApplyAsync(b -> context.serializer().readObject(b), context.executor());
   }
 

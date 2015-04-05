@@ -28,6 +28,7 @@ final class InternalTopics {
   public static final String POLL = "poll";
   public static final String VOTE = "vote";
   public static final String APPEND = "append";
-  public static final String QUERY = "query";
-  public static final String COMMAND = "command";
+  public static final String READ = "read";
+  public static final String WRITE = "write";
+  public static final String DELETE = "delete";
 }

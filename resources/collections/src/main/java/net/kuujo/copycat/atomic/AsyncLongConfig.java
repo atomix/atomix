@@ -15,11 +15,7 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.atomic.internal.LongState;
 import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.state.StateMachineConfig;
-
-import java.util.Map;
 
 /**
  * Asynchronous atomic long configuration.
@@ -27,20 +23,8 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncLongConfig extends ResourceConfig<AsyncLongConfig> {
-  private static final String DEFAULT_CONFIGURATION = "atomic-defaults";
-  private static final String CONFIGURATION = "atomic";
 
   public AsyncLongConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncLongConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public AsyncLongConfig(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
-    setDefaultName(resource);
   }
 
   protected AsyncLongConfig(AsyncLongConfig config) {
@@ -50,14 +34,6 @@ public class AsyncLongConfig extends ResourceConfig<AsyncLongConfig> {
   @Override
   public AsyncLongConfig copy() {
     return new AsyncLongConfig(this);
-  }
-
-  @Override
-  public ResourceConfig<?> resolve() {
-    return new StateMachineConfig(toMap())
-      .withStateType(LongState.class)
-      .withInitialState(LongState.class)
-      .resolve();
   }
 
 }

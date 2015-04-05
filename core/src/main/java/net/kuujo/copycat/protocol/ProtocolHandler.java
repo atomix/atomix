@@ -15,8 +15,7 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.cluster.MessageHandler;
-
-import java.nio.ByteBuffer;
+import net.kuujo.copycat.io.Buffer;
 
 /**
  * Protocol handler.
@@ -24,5 +23,5 @@ import java.nio.ByteBuffer;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @FunctionalInterface
-public interface ProtocolHandler extends MessageHandler<ByteBuffer, ByteBuffer> {
+public interface ProtocolHandler extends MessageHandler<Buffer, Buffer> {
 }

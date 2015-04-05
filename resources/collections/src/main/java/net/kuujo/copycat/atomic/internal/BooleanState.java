@@ -16,10 +16,8 @@
 package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.Write;
 
 /**
  * Atomic boolean status.
@@ -28,24 +26,16 @@ import net.kuujo.copycat.state.StateContext;
  */
 public interface BooleanState {
 
-  /**
-   * Initializes the status.
-   *
-   * @param context The status context.
-   */
-  @Initializer
-  void init(StateContext<BooleanState> context);
-
-  @Query(consistency= Consistency.STRONG)
+  @Read(consistency= Consistency.STRONG)
   boolean get();
 
-  @Command
+  @Write
   void set(boolean value);
 
-  @Command
+  @Write
   boolean getAndSet(boolean value);
 
-  @Command
+  @Write
   boolean compareAndSet(boolean expect, boolean update);
 
 }

@@ -16,8 +16,8 @@
 package net.kuujo.copycat.protocol;
 
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.io.Buffer;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -35,8 +35,8 @@ public class LocalProtocolConnection implements ProtocolConnection {
   }
 
   @Override
-  public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
-    return handler.apply(request.duplicate()).thenApply(ByteBuffer::duplicate);
+  public CompletableFuture<Buffer> write(Buffer request) {
+    return handler.apply(request);
   }
 
   @Override

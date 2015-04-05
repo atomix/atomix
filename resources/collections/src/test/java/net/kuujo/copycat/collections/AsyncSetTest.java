@@ -17,7 +17,6 @@ package net.kuujo.copycat.collections;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.BufferedLog;
 import net.kuujo.copycat.protocol.LocalProtocol;
 import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
@@ -39,7 +38,7 @@ public class AsyncSetTest extends ConcurrentTestCase {
       .withPassiveMembers(2)
       .withUriFactory(id -> String.format("local://test%d", id))
       .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> AsyncSet.create(new AsyncSetConfig("test").withLog(new BufferedLog()), config))
+      .withResourceFactory(config -> AsyncSet.create(new AsyncSetConfig(), config))
       .build();
 
     expectResume();

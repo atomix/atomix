@@ -94,13 +94,22 @@ public interface Cluster {
   LocalMember member();
 
   /**
-   * Returns a member by member address.
+   * Returns a member by member identifier.
    *
-   * @param id The unique member address.
+   * @param id The unique member identifier.
    * @return The member or {@code null} if the member does not exist.
    * @throws NullPointerException If the given {@code address} is {@code null}
    */
-  Member member(String id);
+  Member member(int id);
+
+  /**
+   * Returns a member by member address.
+   *
+   * @param address The unique member address.
+   * @return The member or {@code null} if the member does not exist.
+   * @throws NullPointerException If the given {@code address} is {@code null}
+   */
+  Member member(String address);
 
   /**
    * Returns an immutable set of all cluster members.

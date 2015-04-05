@@ -11,26 +11,11 @@
   <artifactId>copycat-core</artifactId>
   <name>Copycat Core</name>
 
-  <properties>
-    <kryo.version>3.0.0</kryo.version>
-    <config.version>1.2.1</config.version>
-  </properties>
-
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-raft</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.esotericsoftware</groupId>
-      <artifactId>kryo</artifactId>
-      <version>${kryo.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.typesafe</groupId>
-      <artifactId>config</artifactId>
-      <version>${config.version}</version>
     </dependency>
   </dependencies>
 

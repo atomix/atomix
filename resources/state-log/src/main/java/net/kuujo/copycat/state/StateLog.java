@@ -17,101 +17,28 @@ package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.HeapBufferPool;
+import net.kuujo.copycat.io.util.HashFunctions;
+import net.kuujo.copycat.io.util.ReferencePool;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.state.internal.SnapshottableLogManager;
 import net.kuujo.copycat.util.concurrent.Futures;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.internal.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 /**
  * Copycat state log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateLog<T> extends AbstractResource<StateLog<T>> {
-
-  /**
-   * Creates a new state log, loading the log configuration from the classpath.
-   *
-   * @param <T> The state log entry type.
-   * @return A new state log instance.
-   */
-  public static <T> StateLog<T> create() {
-    return create(new StateLogConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new state log, loading the log configuration from the classpath.
-   *
-   * @param <T> The state log entry type.
-   * @return A new state log instance.
-   */
-  public static <T> StateLog<T> create(Executor executor) {
-    return create(new StateLogConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new state log, loading the log configuration from the classpath.
-   *
-   * @param name The state log resource name to be used to load the state log configuration from the classpath.
-   * @param <T> The state log entry type.
-   * @return A new state log instance.
-   */
-  public static <T> StateLog<T> create(String name) {
-    return create(new StateLogConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new state log, loading the log configuration from the classpath.
-   *
-   * @param name The state log resource name to be used to load the state log configuration from the classpath.
-   * @param executor An executor on which to execute state log callbacks.
-   * @param <T> The state log entry type.
-   * @return A new state log instance.
-   */
-  public static <T> StateLog<T> create(String name, Executor executor) {
-    return create(new StateLogConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new state log with the given cluster and state log configurations.
-   *
-   * @param name The state log resource name to be used to load the state log configuration from the classpath.
-   * @param cluster The cluster configuration.
-   * @return A new state log instance.
-   */
-  public static <T> StateLog<T> create(String name, ClusterConfig cluster) {
-    return create(new StateLogConfig(name), cluster);
-  }
-
-  /**
-   * Creates a new state log with the given cluster and state log configurations.
-   *
-   * @param name The state log resource name to be used to load the state log configuration from the classpath.
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute state log callbacks.
-   * @return A new state log instance.
-   */
-  public static <T> StateLog<T> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new StateLogConfig(name), cluster, executor);
-  }
+public class StateLog<K, V> extends AbstractResource<StateLog<K, V>> {
 
   /**
    * Creates a new state log with the given cluster and state log configurations.
@@ -120,7 +47,7 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
    * @param cluster The cluster configuration.
    * @return A new state log instance.
    */
-  public static <T> StateLog<T> create(StateLogConfig config, ClusterConfig cluster) {
+  public static <K, V> StateLog<K, V> create(StateLogConfig config, ClusterConfig cluster) {
     return new StateLog<>(config, cluster);
   }
 
@@ -132,24 +59,15 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
    * @param executor An executor on which to execute state log callbacks.
    * @return A new state log instance.
    */
-  public static <T> StateLog<T> create(StateLogConfig config, ClusterConfig cluster, Executor executor) {
+  public static <K, V> StateLog<K, V> create(StateLogConfig config, ClusterConfig cluster, Executor executor) {
     return new StateLog<>(config, cluster, executor);
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(StateLog.class);
-  private static final int SNAPSHOT_ENTRY = 0;
-  private static final int COMMAND_ENTRY = 1;
-  private static final int SNAPSHOT_CHUNK_SIZE = 1024 * 1024;
-  private static final int SNAPSHOT_INFO = 0;
-  private static final int SNAPSHOT_CHUNK = 1;
-  private final Map<Integer, OperationInfo> operations = new ConcurrentHashMap<>(128);
-  private final Map<String, Integer> hashMap = new ConcurrentHashMap<>(128);
+  private final ReferencePool<Buffer> operationPool = new HeapBufferPool();
+  private final Map<Long, OperationInfo> operations = new ConcurrentHashMap<>(128);
+  private final Map<String, Long> hashMap = new ConcurrentHashMap<>(128);
   private final Consistency defaultConsistency;
-  private final SnapshottableLogManager log;
-  private Supplier snapshotter;
-  private Consumer installer;
-  private SnapshotInfo snapshotInfo;
-  private List<ByteBuffer> snapshotChunks;
 
   public StateLog(StateLogConfig config, ClusterConfig cluster) {
     this(new ResourceContext(config, cluster));
@@ -161,7 +79,6 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
 
   public StateLog(ResourceContext context) {
     super(context);
-    this.log = (SnapshottableLogManager) context.raft().log();
     defaultConsistency = context.<StateLogConfig>config().getDefaultConsistency();
     context.commitHandler(this::commit);
   }
@@ -170,14 +87,43 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
    * Registers a state command.
    *
    * @param name The command name.
+   * @param type The command type.
    * @param command The command function.
-   * @param <U> The command input type.
-   * @param <V> The command output type.
    * @return The state log.
    */
-  public <U extends T, V> StateLog<T> registerCommand(String name, Function<U, V> command) {
-    Assert.state(isClosed(), "Cannot register command on open state log");
-    operations.put(Hash.hash32(name.getBytes()), new OperationInfo<>(command, false));
+  @SuppressWarnings("unchecked")
+  public StateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command) {
+    if (!isClosed())
+      throw new IllegalStateException("cannot register command on open state log");
+    if (type == Command.Type.READ) {
+      operations.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new OperationInfo((Command) command, type, defaultConsistency));
+    } else {
+      operations.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new OperationInfo((Command) command, type));
+    }
+    LOGGER.debug("{} - Registered state log command {}", context.name(), name);
+    return this;
+  }
+
+  /**
+   * Registers a state command.
+   *
+   * @param name The command name.
+   * @param type The command type.
+   * @param command The command function.
+   * @param consistency The operation consistency.
+   * @return The state log.
+   */
+  @SuppressWarnings("unchecked")
+  public StateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command, Consistency consistency) {
+    if (!isClosed())
+      throw new IllegalStateException("cannot register command on open state log");
+    if (type == Command.Type.READ) {
+      operations.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new OperationInfo((Command) command, type, consistency));
+    } else {
+      if (consistency != null && consistency != Consistency.STRONG)
+        throw new IllegalArgumentException("consistency level STRONG is required for write and delete commands");
+      operations.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new OperationInfo((Command) command, type));
+    }
     LOGGER.debug("{} - Registered state log command {}", context.name(), name);
     return this;
   }
@@ -188,105 +134,13 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
    * @param name The command name.
    * @return The state log.
    */
-  public StateLog<T> unregisterCommand(String name) {
-    Assert.state(isClosed(), "Cannot unregister command on open state log");
-    OperationInfo info = operations.remove(Hash.hash32(name.getBytes()));
+  public StateLog<K, V> unregister(String name) {
+    if (!isClosed())
+      throw new IllegalStateException("cannot unregister command on open state log");
+    OperationInfo info = operations.remove(HashFunctions.CITYHASH.hash64(name.getBytes()));
     if (info != null) {
       LOGGER.debug("{} - Unregistered state log command {}", context.name(), name);
     }
-    return this;
-  }
-
-  /**
-   * Registers a state query.
-   *
-   * @param name The query name.
-   * @param query The query function.
-   * @param <U> The query input type.
-   * @param <V> The query output type.
-   * @return The state log.
-   */
-  public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query) {
-    Assert.state(isClosed(), "Cannot register command on open state log");
-    Assert.notNull(name, "name");
-    Assert.notNull(query, "query");
-    operations.put(Hash.hash32(name.getBytes()), new OperationInfo<>(query, true, defaultConsistency));
-    LOGGER.debug("{} - Registered state log query {} with default consistency", context.name(), name);
-    return this;
-  }
-
-  /**
-   * Registers a state query.
-   *
-   * @param name The query name.
-   * @param query The query function.
-   * @param consistency The default query consistency.
-   * @param <U> The query input type.
-   * @param <V> The query output type.
-   * @return The state log.
-   */
-  public <U extends T, V> StateLog<T> registerQuery(String name, Function<U, V> query, Consistency consistency) {
-    Assert.state(isClosed(), "Cannot register command on open state log");
-    Assert.notNull(name, "name");
-    Assert.notNull(query, "query");
-    operations.put(Hash.hash32(name.getBytes()), new OperationInfo<>(query, true, consistency == null || consistency == Consistency.DEFAULT ? defaultConsistency : consistency));
-    LOGGER.debug("{} - Registered state log query {} with consistency {}", context.name(), name, consistency);
-    return this;
-  }
-
-  /**
-   * Unregisters a state query.
-   *
-   * @param name The query name.
-   * @return The state log.
-   */
-  public StateLog<T> unregisterQuery(String name) {
-    Assert.state(isClosed(), "Cannot unregister command on open state log");
-    OperationInfo info = operations.remove(Hash.hash32(name.getBytes()));
-    if (info != null) {
-      LOGGER.debug("{} - Unregistered state log query {}", context.name(), name);
-    }
-    return this;
-  }
-
-  /**
-   * Unregisters a state command or query.
-   *
-   * @param name The command or query name.
-   * @return The state log.
-   */
-  public StateLog<T> unregister(String name) {
-    Assert.state(isClosed(), "Cannot unregister command on open state log");
-    OperationInfo info = operations.remove(Hash.hash32(name.getBytes()));
-    if (info != null) {
-      LOGGER.debug("{} - Unregistered state log operation {}", context.name(), name);
-    }
-    return this;
-  }
-
-  /**
-   * Registers a state log snapshot function.
-   *
-   * @param snapshotter The snapshot function.
-   * @return The state log.
-   */
-  public <V> StateLog<T> snapshotWith(Supplier<V> snapshotter) {
-    Assert.state(isClosed(), "Cannot modify state log once opened");
-    this.snapshotter = snapshotter;
-    LOGGER.debug("{} - Registered state log snapshot handler", context.name());
-    return this;
-  }
-
-  /**
-   * Registers a state log snapshot installer.
-   *
-   * @param installer The snapshot installer.
-   * @return The state log.
-   */
-  public <V> StateLog<T> installWith(Consumer<V> installer) {
-    Assert.state(isClosed(), "Cannot modify state log once opened");
-    this.installer = installer;
-    LOGGER.debug("{} - Registered state log install handler", context.name());
     return this;
   }
 
@@ -298,225 +152,70 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
    * @param <U> The command return type.
    * @return A completable future to be completed once the command output is received.
    */
+  public <U> CompletableFuture<U> submit(String command, V entry) {
+    return submit(command, null, entry);
+  }
+
+  /**
+   * Submits a state command or query to the log.
+   *
+   * @param command The command name.
+   * @param key The entry key.
+   * @param entry The command entry.
+   * @param <U> The command return type.
+   * @return A completable future to be completed once the command output is received.
+   */
   @SuppressWarnings("unchecked")
-  public <U> CompletableFuture<U> submit(String command, T entry) {
-    Assert.state(isOpen(), "State log not open");
-    OperationInfo<T, U> operationInfo = operations.get(Hash.hash32(command.getBytes()));
+  public <U> CompletableFuture<U> submit(String command, K key, V entry) {
+    if (!isOpen())
+      throw new IllegalStateException("state log not open");
+    OperationInfo<K, V, U> operationInfo = operations.get(HashFunctions.CITYHASH.hash64(command.getBytes()));
     if (operationInfo == null) {
-      return Futures.exceptionalFutureAsync(new CopycatException(String.format("Invalid state log command %s", command)), context
-        .executor());
+      return Futures.exceptionalFutureAsync(new CopycatException(String.format("Invalid state log command %s", command)), context.executor());
     }
 
     // If this is a read-only command, check if the command is consistent. For consistent operations,
     // queries are forwarded to the current cluster leader for evaluation. Otherwise, it's safe to
     // read stale data from the local node.
-    ByteBuffer buffer = serializer.writeObject(entry);
-    ByteBuffer commandEntry = ByteBuffer.allocate(8 + buffer.capacity());
-    commandEntry.putInt(COMMAND_ENTRY); // Entry type
-    commandEntry.putInt(hashMap.computeIfAbsent(command, c -> Hash.hash32(c.getBytes()))); // Command ID
-    commandEntry.put(buffer);
-    commandEntry.rewind();
-    if (operationInfo.readOnly) {
-      LOGGER.debug("{} - Submitting state log query {} with entry {}", context.name(), command, entry);
-      return context.query(commandEntry, operationInfo.consistency).thenApplyAsync(serializer::readObject, context.executor());
+    Buffer keyBuffer = null;
+    if (key != null) {
+      keyBuffer = operationPool.acquire();
+      serializer.writeObject(key, keyBuffer);
+      keyBuffer.flip();
+    }
+
+    Buffer entryBuffer = operationPool.acquire().writeLong(hashMap.computeIfAbsent(command, c -> HashFunctions.CITYHASH.hash64(c.getBytes())));
+    serializer.writeObject(entry, entryBuffer);
+    entryBuffer.flip();
+
+    if (operationInfo.type == Command.Type.READ) {
+      LOGGER.debug("{} - Submitting read command {} with entry {}", context.name(), command, entry);
+      return context.read(keyBuffer, entryBuffer, operationInfo.consistency)
+        .thenApplyAsync(serializer::readObject, context.executor());
     } else {
-      LOGGER.debug("{} - Submitting state log command {} with entry {}", context.name(), command, entry);
-      return context.commit(commandEntry).thenApplyAsync(serializer::readObject, context.executor());
+      LOGGER.debug("{} - Submitting write command {} with entry {}", context.name(), command, entry);
+      return context.write(keyBuffer, entryBuffer)
+        .thenApplyAsync(serializer::readObject, context.executor());
     }
   }
 
   /**
    * Consumes a log entry.
    *
+   * @param term The entry term.
    * @param index The entry index.
+   * @param key The entry key.
    * @param entry The log entry.
    * @return The entry output.
    */
   @SuppressWarnings({"unchecked"})
-  private ByteBuffer commit(long term, Long index, ByteBuffer entry) {
-    int entryType = entry.getInt();
-    switch (entryType) {
-      case SNAPSHOT_ENTRY: // Snapshot entry
-        installSnapshot(entry.slice());
-        return ByteBuffer.allocate(0);
-      case COMMAND_ENTRY: // Command entry
-        int commandCode = entry.getInt();
-        OperationInfo operationInfo = operations.get(commandCode);
-        if (operationInfo != null) {
-          return serializer.writeObject(operationInfo.execute(term, index, serializer.readObject(entry.slice())));
-        }
-        throw new IllegalStateException("Invalid state log operation");
-      default:
-        throw new IllegalArgumentException("Invalid entry type");
+  private Buffer commit(long term, long index, Buffer key, Buffer entry) {
+    long commandCode = entry.readLong();
+    OperationInfo operationInfo = operations.get(commandCode);
+    if (operationInfo != null) {
+      return serializer.writeObject(operationInfo.execute(term, index, serializer.readObject(key), serializer.readObject(entry.slice())));
     }
-  }
-
-  /**
-   * Checks whether to take a snapshot.
-   */
-  private void checkSnapshot(long term, long index) {
-    // If the given index is the last index of a lot segment and the segment is not the last segment in the log
-    // then the index is considered snapshottable.
-    if (log.isSnapshottable(index)) {
-      takeSnapshot(term, index);
-    }
-  }
-
-  /**
-   * Takes a snapshot and compacts the log.
-   */
-  private void takeSnapshot(long term, long index) {
-    String id = UUID.randomUUID().toString();
-    LOGGER.info("{} - Taking snapshot {}", context.name(), id);
-
-    Object snapshot = snapshotter != null ? snapshotter.get() : null;
-    ByteBuffer snapshotBuffer = snapshot != null ? serializer.writeObject(snapshot) : ByteBuffer.allocate(0);
-
-    // Create a unique snapshot ID and calculate the number of chunks for the snapshot.
-    LOGGER.debug("{} - Calculating snapshot chunk size for snapshot {}", context.name(), id);
-    byte[] snapshotId = id.getBytes();
-    int numChunks = (int) Math.ceil(snapshotBuffer.limit() / (double) SNAPSHOT_CHUNK_SIZE);
-
-    LOGGER.debug("{} - Creating {} chunks for snapshot {}", context.name(), numChunks, id);
-    List<ByteBuffer> chunks = new ArrayList<>(numChunks + 1);
-
-    // The first entry in the snapshot is snapshot metadata.
-    ByteBuffer info = ByteBuffer.allocate(28 + snapshotId.length);
-    info.putLong(term);
-    info.putInt(SNAPSHOT_ENTRY);
-    info.putInt(SNAPSHOT_INFO);
-    info.putInt(snapshotId.length);
-    info.put(snapshotId);
-    info.putInt(snapshotBuffer.limit());
-    info.putInt(numChunks);
-    chunks.add(info);
-
-    // Now we append a list of snapshot chunks. This ensures that snapshots can be easily replicated in chunks.
-    int i = 0;
-    int position = 0;
-    while (position < snapshotBuffer.limit()) {
-      byte[] bytes = new byte[Math.min(snapshotBuffer.limit() - position, SNAPSHOT_CHUNK_SIZE)];
-      snapshotBuffer.get(bytes);
-      ByteBuffer chunk = ByteBuffer.allocate(24 + bytes.length);
-      chunk.putLong(term);
-      chunk.putInt(SNAPSHOT_ENTRY); // Indicates the entry is a snapshot entry.
-      chunk.putInt(SNAPSHOT_CHUNK);
-      chunk.putInt(i++); // The position of the chunk in the snapshot.
-      chunk.putInt(bytes.length); // The snapshot chunk length.
-      chunk.put(bytes); // The snapshot chunk bytes.
-      chunk.flip();
-      chunks.add(chunk);
-      position += bytes.length;
-    }
-
-    try {
-      LOGGER.debug("{} - Appending {} chunks for snapshot {} at index {}", context.name(), chunks.size(), id, index);
-      log.appendSnapshot(index, chunks);
-    } catch (IOException e) {
-      throw new CopycatException("Failed to compact state log", e);
-    }
-  }
-
-  /**
-   * Installs a snapshot.
-   *
-   * This method operates on the assumption that snapshots will always be replicated with an initial metadata entry.
-   * The metadata entry specifies a set of chunks that complete the entire snapshot.
-   */
-  @SuppressWarnings("unchecked")
-  private void installSnapshot(ByteBuffer snapshotChunk) {
-    // Get the snapshot entry type.
-    int type = snapshotChunk.getInt();
-    if (type == SNAPSHOT_INFO) {
-      // The snapshot info defines the snapshot ID and number of chunks. When a snapshot info entry is processed,
-      // reset the current snapshot chunks and store the snapshot info. The next entries to be applied should be the
-      // snapshot chunks themselves.
-      int idLength = snapshotChunk.getInt();
-      byte[] idBytes = new byte[idLength];
-      snapshotChunk.get(idBytes);
-      String id = new String(idBytes);
-      int size = snapshotChunk.getInt();
-      int numChunks = snapshotChunk.getInt();
-      if (snapshotInfo == null || !snapshotInfo.id.equals(id)) {
-        LOGGER.debug("{} - Processing snapshot metadata for snapshot {}", context.name(), id);
-        snapshotInfo = new SnapshotInfo(id, size, numChunks);
-        snapshotChunks = new ArrayList<>(numChunks);
-      }
-    } else if (type == SNAPSHOT_CHUNK && snapshotInfo != null) {
-      // When a chunk is received, use the chunk's position in the snapshot to ensure consistency. Extract the chunk
-      // bytes and only append the the chunk if it matches the expected position in the local chunks list.
-      int index = snapshotChunk.getInt();
-      int chunkLength = snapshotChunk.getInt();
-      byte[] chunkBytes = new byte[chunkLength];
-      snapshotChunk.get(chunkBytes);
-      if (snapshotChunks.size() == index) {
-        LOGGER.debug("{} - Processing snapshot chunk {} for snapshot {}", context.name(), index, snapshotInfo.id);
-        snapshotChunks.add(ByteBuffer.wrap(chunkBytes));
-
-        // Once the number of chunks has grown to the complete expected chunk count, combine and install the snapshot.
-        if (snapshotChunks.size() == snapshotInfo.chunks) {
-          LOGGER.debug("{} - Completed assembly of snapshot {} from log", context.name(), snapshotInfo.id);
-          if (installer != null) {
-            // Calculate the total aggregated size of the snapshot.
-            int size = 0;
-            for (ByteBuffer chunk : snapshotChunks) {
-              size += chunk.limit();
-            }
-
-            // Make sure the combined snapshot size is equal to the expected snapshot size.
-            Assert.state(size == snapshotInfo.size, "Received inconsistent snapshot");
-
-            LOGGER.debug("{} - Assembled snapshot size: {} bytes", context.name(), size);
-
-            if (size > 0) {
-              // Create a complete view of the snapshot by appending all chunks to each other.
-              ByteBuffer completeSnapshot = ByteBuffer.allocate(size);
-              snapshotChunks.forEach(completeSnapshot::put);
-              completeSnapshot.flip();
-
-              // Once a view of the snapshot has been created, deserialize and install the snapshot.
-              LOGGER.info("{} - Installing snapshot {}", context.name(), snapshotInfo.id);
-
-              try {
-                installer.accept(serializer.readObject(completeSnapshot));
-              } catch (Exception e) {
-                LOGGER.warn("{} - Failed to install snapshot: {}", context.name(), e.getMessage());
-              }
-            }
-          }
-          snapshotInfo = null;
-          snapshotChunks = null;
-        }
-      }
-    }
-  }
-
-  /**
-   * Current snapshot info.
-   */
-  private static class SnapshotInfo {
-    private final String id;
-    private final int size;
-    private final int chunks;
-
-    private SnapshotInfo(String id, int size, int chunks) {
-      this.id = id;
-      this.size = size;
-      this.chunks = chunks;
-    }
-  }
-
-  /**
-   * Snapshot chunk.
-   */
-  private static class SnapshotChunk {
-    private final int index;
-    private final ByteBuffer chunk;
-
-    private SnapshotChunk(int index, ByteBuffer chunk) {
-      this.index = index;
-      this.chunk = chunk;
-    }
+    throw new IllegalStateException("Invalid state log operation");
   }
 
   @Override
@@ -527,27 +226,23 @@ public class StateLog<T> extends AbstractResource<StateLog<T>> {
   /**
    * State command info.
    */
-  private class OperationInfo<TT, U> {
-    private final Function<TT, U> function;
-    private final boolean readOnly;
+  private class OperationInfo<K, V, U> {
+    private final Command<K, V, U> command;
+    private final Command.Type type;
     private final Consistency consistency;
 
-    private OperationInfo(Function<TT, U> function, boolean readOnly) {
-      this(function, readOnly, Consistency.DEFAULT);
+    private OperationInfo(Command<K, V, U> command, Command.Type type) {
+      this(command, type, Consistency.DEFAULT);
     }
 
-    private OperationInfo(Function<TT, U> function, boolean readOnly, Consistency consistency) {
-      this.function = function;
-      this.readOnly = readOnly;
+    private OperationInfo(Command<K, V, U> command, Command.Type type, Consistency consistency) {
+      this.command = command;
+      this.type = type;
       this.consistency = consistency;
     }
 
-    private U execute(long term, Long index, TT entry) {
-      if (index != null)
-        checkSnapshot(term, index);
-      if (entry != null)
-        return function.apply(entry);
-      return null;
+    private U execute(long term, long index, K key, V entry) {
+      return command.apply(key, entry);
     }
   }
 

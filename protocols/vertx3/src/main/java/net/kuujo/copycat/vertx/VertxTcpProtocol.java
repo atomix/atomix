@@ -15,55 +15,59 @@
  */
 package net.kuujo.copycat.vertx;
 
-import com.typesafe.config.ConfigValueFactory;
 import io.vertx.core.Vertx;
-import net.kuujo.copycat.protocol.AbstractProtocol;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.util.internal.Assert;
 
 import java.net.URI;
-import java.util.Map;
 
 /**
  * TCP based protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class VertxTcpProtocol extends AbstractProtocol {
-  private static final String VERTX_TCP_SEND_BUFFER_SIZE = "send.buffer.size";
-  private static final String VERTX_TCP_RECEIVE_BUFFER_SIZE = "receive.buffer.size";
-  private static final String VERTX_TCP_USE_SSL = "ssl.enabled";
-  private static final String VERTX_TCP_CLIENT_TRUST_ALL = "ssl.trust-all";
-  private static final String VERTX_TCP_CLIENT_AUTH_REQUIRED = "ssl.auth-required";
-  private static final String VERTX_TCP_ACCEPT_BACKLOG = "accept.backlog";
-  private static final String VERTX_TCP_CONNECT_TIMEOUT = "connect.timeout";
-
-  private static final String CONFIGURATION = "tcp";
-  private static final String DEFAULT_CONFIGURATION = "tcp-defaults";
+public class VertxTcpProtocol implements Protocol {
+  private static final String DEFAULT_HOST = "localhost";
+  private static final int DEFAULT_PORT = -1;
+  private static final int DEFAULT_SEND_BUFFER_SIZE = 8192;
+  private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 32768;
+  private static final int DEFAULT_ACCEPT_BACKLOG = 1024;
+  private static final int DEFAULT_CONNECT_TIMEOUT = 60000;
 
   private static Vertx vertx;
+  private String host = DEFAULT_HOST;
+  private int port = DEFAULT_PORT;
+  private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
+  private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
+  private boolean sslEnabled = false;
+  private boolean trustAll = false;
+  private boolean authRequired = false;
+  private int acceptBacklog = DEFAULT_ACCEPT_BACKLOG;
+  private int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
 
   public VertxTcpProtocol() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
   public VertxTcpProtocol(Vertx vertx) {
-    this();
     setVertx(vertx);
   }
 
-  public VertxTcpProtocol(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public VertxTcpProtocol(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
+  private VertxTcpProtocol(VertxTcpProtocol protocol) {
+    this.host = protocol.host;
+    this.port = protocol.port;
+    this.sendBufferSize = protocol.sendBufferSize;
+    this.receiveBufferSize = protocol.receiveBufferSize;
+    this.sslEnabled = protocol.sslEnabled;
+    this.trustAll = protocol.trustAll;
+    this.authRequired = protocol.authRequired;
+    this.acceptBacklog = protocol.acceptBacklog;
+    this.connectTimeout = protocol.connectTimeout;
   }
 
   @Override
   public VertxTcpProtocol copy() {
-    return (VertxTcpProtocol) super.copy();
+    return new VertxTcpProtocol(this);
   }
 
   /**
@@ -102,7 +106,9 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws IllegalArgumentException If the buffer size is not positive
    */
   public void setSendBufferSize(int bufferSize) {
-    this.config = config.withValue(VERTX_TCP_SEND_BUFFER_SIZE, ConfigValueFactory.fromAnyRef(Assert.arg(bufferSize, bufferSize > 0, "buffer size must be positive")));
+    if (bufferSize <= 0)
+      throw new IllegalArgumentException("bufferSize must be positive");
+    this.sendBufferSize = bufferSize;
   }
 
   /**
@@ -111,7 +117,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The send buffer size.
    */
   public int getSendBufferSize() {
-    return config.getInt(VERTX_TCP_SEND_BUFFER_SIZE);
+    return sendBufferSize;
   }
 
   /**
@@ -133,7 +139,9 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws IllegalArgumentException If the buffer size is not positive
    */
   public void setReceiveBufferSize(int bufferSize) {
-    this.config = config.withValue(VERTX_TCP_RECEIVE_BUFFER_SIZE, ConfigValueFactory.fromAnyRef(Assert.arg(bufferSize, bufferSize > 0, "buffer size must be positive")));
+    if (bufferSize <= 0)
+      throw new IllegalArgumentException("bufferSize must be positive");
+    this.receiveBufferSize = bufferSize;
   }
 
   /**
@@ -142,7 +150,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The receive buffer size.
    */
   public int getReceiveBufferSize() {
-    return config.getInt(VERTX_TCP_RECEIVE_BUFFER_SIZE);
+    return receiveBufferSize;
   }
 
   /**
@@ -163,7 +171,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @param useSsl Whether to use SSL encryption.
    */
   public void setSsl(boolean useSsl) {
-    this.config = config.withValue(VERTX_TCP_USE_SSL, ConfigValueFactory.fromAnyRef(useSsl));
+    this.sslEnabled = useSsl;
   }
 
   /**
@@ -172,7 +180,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return Indicates whether SSL encryption is enabled.
    */
   public boolean isSsl() {
-    return config.getBoolean(VERTX_TCP_USE_SSL);
+    return sslEnabled;
   }
 
   /**
@@ -192,7 +200,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @param trustAll Whether to trust all server certs.
    */
   public void setClientTrustAll(boolean trustAll) {
-    this.config = config.withValue(VERTX_TCP_CLIENT_TRUST_ALL, ConfigValueFactory.fromAnyRef(trustAll));
+    this.trustAll = trustAll;
   }
 
   /**
@@ -201,7 +209,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return Whether to trust all server certs.
    */
   public boolean isClientTrustAll() {
-    return config.getBoolean(VERTX_TCP_CLIENT_TRUST_ALL);
+    return trustAll;
   }
 
   /**
@@ -221,7 +229,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @param required Whether client authentication is required.
    */
   public void setClientAuthRequired(boolean required) {
-    this.config = config.withValue(VERTX_TCP_CLIENT_AUTH_REQUIRED, ConfigValueFactory.fromAnyRef(required));
+    this.authRequired = required;
   }
 
   /**
@@ -230,7 +238,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return Whether client authentication is required.
    */
   public boolean isClientAuthRequired() {
-    return config.getBoolean(VERTX_TCP_CLIENT_AUTH_REQUIRED);
+    return authRequired;
   }
 
   /**
@@ -251,7 +259,9 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws IllegalArgumentException If the accept backlog is not positive
    */
   public void setAcceptBacklog(int backlog) {
-    this.config = config.withValue(VERTX_TCP_ACCEPT_BACKLOG, ConfigValueFactory.fromAnyRef(Assert.arg(backlog, backlog > -1, "backlog must be positive")));
+    if (backlog <= -1)
+      throw new IllegalArgumentException("backlog must be positive or -1");
+    this.acceptBacklog = backlog;
   }
 
   /**
@@ -260,7 +270,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The accept backlog.
    */
   public int getAcceptBacklog() {
-    return config.getInt(VERTX_TCP_ACCEPT_BACKLOG);
+    return acceptBacklog;
   }
 
   /**
@@ -282,7 +292,9 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @throws IllegalArgumentException If the connect timeout is not positive
    */
   public void setConnectTimeout(int connectTimeout) {
-    this.config = config.withValue(VERTX_TCP_CONNECT_TIMEOUT, ConfigValueFactory.fromAnyRef(Assert.arg(connectTimeout, connectTimeout > 0, "connect timeout must be greater than zero")));
+    if (connectTimeout <= 0)
+      throw new IllegalArgumentException("connectTimeout must be positive");
+    this.connectTimeout = connectTimeout;
   }
 
   /**
@@ -291,7 +303,7 @@ public class VertxTcpProtocol extends AbstractProtocol {
    * @return The connection timeout.
    */
   public int getConnectTimeout() {
-    return config.getInt(VERTX_TCP_CONNECT_TIMEOUT);
+    return connectTimeout;
   }
 
   /**

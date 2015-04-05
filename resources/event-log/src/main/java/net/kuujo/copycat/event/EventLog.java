@@ -14,93 +14,22 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.LogSegment;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.HeapBufferPool;
+import net.kuujo.copycat.io.util.ReferencePool;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.Iterator;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Copycat event log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventLog<T> extends AbstractResource<EventLog<T>> {
-
-  /**
-   * Creates a new event log, loading the log configuration from the classpath.
-   *
-   * @param <T> The event log entry type.
-   * @return A new event log instance.
-   */
-  public static <T> EventLog<T> create() {
-    return create(new EventLogConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new event log, loading the log configuration from the classpath.
-   *
-   * @param <T> The event log entry type.
-   * @return A new event log instance.
-   */
-  public static <T> EventLog<T> create(Executor executor) {
-    return create(new EventLogConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new event log, loading the log configuration from the classpath.
-   *
-   * @param name The event log resource name to be used to load the event log configuration from the classpath.
-   * @param <T> The event log entry type.
-   * @return A new event log instance.
-   */
-  public static <T> EventLog<T> create(String name) {
-    return create(new EventLogConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new event log, loading the log configuration from the classpath.
-   *
-   * @param name The event log resource name to be used to load the event log configuration from the classpath.
-   * @param executor An executor on which to execute event log callbacks.
-   * @param <T> The event log entry type.
-   * @return A new event log instance.
-   */
-  public static <T> EventLog<T> create(String name, Executor executor) {
-    return create(new EventLogConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new event log with the given cluster and event log configurations.
-   *
-   * @param name The event log resource name to be used to load the event log configuration from the classpath.
-   * @param cluster The cluster configuration.
-   * @return A new event log instance.
-   */
-  public static <T> EventLog<T> create(String name, ClusterConfig cluster) {
-    return create(new EventLogConfig(name), cluster);
-  }
-
-  /**
-   * Creates a new event log with the given cluster and event log configurations.
-   *
-   * @param name The event log resource name to be used to load the event log configuration from the classpath.
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute event log callbacks.
-   * @return A new event log instance.
-   */
-  public static <T> EventLog<T> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new EventLogConfig(name), cluster, executor);
-  }
+public class EventLog<K, V> extends AbstractResource<EventLog<K, V>> {
 
   /**
    * Creates a new event log with the given cluster and event log configurations.
@@ -109,7 +38,7 @@ public class EventLog<T> extends AbstractResource<EventLog<T>> {
    * @param cluster The cluster configuration.
    * @return A new event log instance.
    */
-  public static <T> EventLog<T> create(EventLogConfig config, ClusterConfig cluster) {
+  public static <K, V> EventLog<K, V> create(EventLogConfig config, ClusterConfig cluster) {
     return new EventLog<>(config, cluster);
   }
 
@@ -121,12 +50,12 @@ public class EventLog<T> extends AbstractResource<EventLog<T>> {
    * @param executor An executor on which to execute event log callbacks.
    * @return A new event log instance.
    */
-  public static <T> EventLog<T> create(EventLogConfig config, ClusterConfig cluster, Executor executor) {
+  public static <K, V> EventLog<K, V> create(EventLogConfig config, ClusterConfig cluster, Executor executor) {
     return new EventLog<>(config, cluster, executor);
   }
-  private EventListener<T> consumer;
-  private ScheduledFuture<?> retentionFuture;
-  private Long commitIndex;
+
+  private final ReferencePool<Buffer> resultPool = new HeapBufferPool();
+  private EventConsumer<K, V> consumer;
 
   public EventLog(EventLogConfig config, ClusterConfig cluster) {
     this(new ResourceContext(config, cluster));
@@ -147,104 +76,43 @@ public class EventLog<T> extends AbstractResource<EventLog<T>> {
    * @param consumer The log entry consumer.
    * @return The event log.
    */
-  public EventLog<T> consumer(EventListener<T> consumer) {
+  public EventLog<K, V> consumer(EventConsumer<K, V> consumer) {
     this.consumer = consumer;
     return this;
   }
 
   /**
-   * Gets an entry from the log.
+   * Commits an entry to the log.
    *
-   * @param index The index from which to get the entry.
-   * @return A completable future to be completed with the retrieved entry.
+   * @param entry The entry key.
+   * @return The entry to commit.
    */
-  public CompletableFuture<T> get(long index) {
-    CompletableFuture<T> future = new CompletableFuture<>();
-    context.scheduler().execute(() -> {
-      if (!context.raft().log().containsIndex(index)) {
-        context.executor().execute(() -> future.completeExceptionally(new IndexOutOfBoundsException(String.format("Log index %d out of bounds", index))));
-      } else {
-        ByteBuffer buffer = context.raft().log().getEntry(index);
-        if (buffer != null) {
-          T entry = serializer.readObject(buffer);
-          context.executor().execute(() -> future.complete(entry));
-        } else {
-          context.executor().execute(() -> future.complete(null));
-        }
-      }
-    });
-    return future;
+  public CompletableFuture<Long> commit(V entry) {
+    return commit(null, entry);
   }
 
   /**
    * Commits an entry to the log.
    *
+   * @param key The entry key.
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
-  public CompletableFuture<Long> commit(T entry) {
-    return context.commit(serializer.writeObject(entry)).thenApplyAsync(ByteBuffer::getLong, context.executor());
+  public CompletableFuture<Long> commit(K key, V entry) {
+    return context.write(serializer.writeObject(key), serializer.writeObject(entry)).thenApplyAsync(Buffer::readLong, context.executor());
   }
 
   /**
    * Handles a log write.
    */
-  private ByteBuffer commit(long term, Long index, ByteBuffer entry) {
-    ByteBuffer result = ByteBuffer.allocateDirect(8);
-    result.putLong(index);
+  private Buffer commit(long term, long index, Buffer key, Buffer entry) {
+    Buffer result = resultPool.acquire();
+    result.writeLong(index);
     if (consumer != null && entry != null) {
-      T value = serializer.readObject(entry);
-      context.executor().execute(() -> consumer.accept(value));
+      context.executor().execute(() -> consumer.consume(serializer.readObject(key), serializer.readObject(entry)));
     }
-    commitIndex = index;
     result.flip();
     return result;
-  }
-
-  /**
-   * Compacts the log.
-   */
-  private synchronized void compact() {
-    if (commitIndex != null) {
-      // Iterate through segments in the log and remove/close/delete segments that should no longer be retained.
-      // A segment is no longer retained if all of the following conditions are met:
-      // - The segment is not the last segment in the log
-      // - The segment's last index is less than or equal to the commit index
-      // - The configured retention policy's retain(LogSegment) method returns false.
-      for (Iterator<Map.Entry<Long, LogSegment>> iterator = context.raft().log().segments().entrySet().iterator(); iterator.hasNext(); ) {
-        Map.Entry<Long, LogSegment> entry = iterator.next();
-        LogSegment segment = entry.getValue();
-        if (context.raft().log().lastSegment() != segment
-          && segment.lastIndex() != null
-          && segment.lastIndex() <= commitIndex
-          && !context.<EventLogConfig>config().getRetentionPolicy().retain(entry.getValue())) {
-          iterator.remove();
-          try {
-            segment.close();
-            segment.delete();
-          } catch (IOException e) {
-          }
-        }
-      }
-    }
-  }
-
-  @Override
-  public synchronized CompletableFuture<EventLog<T>> open() {
-    return super.open()
-      .thenRun(() -> {
-        retentionFuture = context.scheduler().scheduleWithFixedDelay(this::compact, 0, context.<EventLogConfig>config()
-          .getRetentionCheckInterval(), TimeUnit.MILLISECONDS);
-      })
-      .thenApply(v -> this);
-  }
-
-  @Override
-  public synchronized CompletableFuture<Void> close() {
-    if (retentionFuture != null) {
-      retentionFuture.cancel(false);
-    }
-    return super.close();
   }
 
 }

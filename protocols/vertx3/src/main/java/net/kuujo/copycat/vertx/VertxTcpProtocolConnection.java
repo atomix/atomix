@@ -17,15 +17,16 @@ package net.kuujo.copycat.vertx;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.net.NetSocket;
 import io.vertx.core.parsetools.RecordParser;
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.HeapBufferPool;
+import net.kuujo.copycat.io.util.ReferencePool;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolHandler;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -38,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 public class VertxTcpProtocolConnection implements ProtocolConnection {
   private static final byte REQUEST = 0;
   private static final byte RESPONSE = 1;
+  private final ReferencePool<Buffer> bufferPool = new HeapBufferPool();
   private final Vertx vertx;
   private final NetSocket socket;
   private ProtocolHandler handler;
@@ -48,9 +50,9 @@ public class VertxTcpProtocolConnection implements ProtocolConnection {
    * Holder for response handlers.
    */
   private static class ResponseHolder {
-    private final CompletableFuture<ByteBuffer> future;
+    private final CompletableFuture<Buffer> future;
     private final long timer;
-    private ResponseHolder(long timerId, CompletableFuture<ByteBuffer> future) {
+    private ResponseHolder(long timerId, CompletableFuture<Buffer> future) {
       this.timer = timerId;
       this.future = future;
     }
@@ -60,15 +62,15 @@ public class VertxTcpProtocolConnection implements ProtocolConnection {
     this.vertx = vertx;
     this.socket = socket;
     RecordParser parser = RecordParser.newFixed(4, null);
-    Handler<Buffer> handler = new Handler<Buffer>() {
+    Handler<io.vertx.core.buffer.Buffer> handler = new Handler<io.vertx.core.buffer.Buffer>() {
       int length = -1;
       @Override
-      public void handle(Buffer buffer) {
+      public void handle(io.vertx.core.buffer.Buffer buffer) {
         if (length == -1) {
           length = buffer.getInt(0);
           parser.fixedSizeMode(length + 8);
         } else {
-          handleMessage(buffer.getByte(0), buffer.getLong(1), buffer.getBuffer(9, length + 9).getByteBuf().nioBuffer());
+          handleMessage(buffer.getByte(0), buffer.getLong(1), bufferPool.acquire().write(buffer.getBytes(9, length + 9)).flip());
           length = -1;
           parser.fixedSizeMode(4);
         }
@@ -84,24 +86,20 @@ public class VertxTcpProtocolConnection implements ProtocolConnection {
   }
 
   @Override
-  public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    if (socket != null) {
-      long requestId = this.requestId++;
-      byte[] bytes = new byte[request.remaining()];
-      request.get(bytes);
-      socket.write(Buffer.buffer().appendByte(REQUEST).appendInt(bytes.length).appendLong(requestId).appendBytes(bytes));
-      storeFuture(requestId, future);
-    } else {
-      future.completeExceptionally(new ProtocolException("Client not connected"));
-    }
+  public CompletableFuture<Buffer> write(Buffer request) {
+    CompletableFuture<Buffer> future = new CompletableFuture<>();
+    long requestId = this.requestId++;
+    byte[] bytes = new byte[(int) request.remaining()];
+    request.read(bytes);
+    socket.write(io.vertx.core.buffer.Buffer.buffer().appendByte(REQUEST).appendInt(bytes.length).appendLong(requestId).appendBytes(bytes));
+    storeFuture(requestId, future);
     return future;
   }
 
   /**
    * Handles a request or response.
    */
-  private void handleMessage(byte type, long id, ByteBuffer message) {
+  private void handleMessage(byte type, long id, Buffer message) {
     if (type == REQUEST) {
       handleRequest(id, message);
     } else if (type == RESPONSE) {
@@ -112,12 +110,13 @@ public class VertxTcpProtocolConnection implements ProtocolConnection {
   /**
    * Handles a request.
    */
-  private void handleRequest(final long id, final ByteBuffer request) {
+  private void handleRequest(final long id, final Buffer request) {
     if (handler != null) {
       handler.apply(request).whenComplete((response, error) -> {
         if (error == null) {
           respond(socket, id, response);
         }
+        request.close();
       });
     }
   }
@@ -126,7 +125,7 @@ public class VertxTcpProtocolConnection implements ProtocolConnection {
    * Handles an identifiable response.
    */
   @SuppressWarnings("unchecked")
-  private void handleResponse(long id, ByteBuffer response) {
+  private void handleResponse(long id, Buffer response) {
     ResponseHolder holder = responses.remove(id);
     if (holder != null) {
       vertx.cancelTimer(holder.timer);
@@ -148,7 +147,7 @@ public class VertxTcpProtocolConnection implements ProtocolConnection {
   /**
    * Stores a response callback by ID.
    */
-  private void storeFuture(final long id, CompletableFuture<ByteBuffer> future) {
+  private void storeFuture(final long id, CompletableFuture<Buffer> future) {
     long timerId = vertx.setTimer(5000, timer -> {
       handleError(id, new ProtocolException("Request timed out"));
     });
@@ -159,11 +158,11 @@ public class VertxTcpProtocolConnection implements ProtocolConnection {
   /**
    * Responds to a request from the given socket.
    */
-  private void respond(NetSocket socket, long id, ByteBuffer response) {
-    int length = response.remaining();
+  private void respond(NetSocket socket, long id, Buffer response) {
+    int length = (int) response.remaining();
     byte[] bytes = new byte[length];
-    response.get(bytes);
-    socket.write(Buffer.buffer().appendByte(RESPONSE).appendInt(length).appendLong(id).appendBytes(bytes));
+    response.read(bytes);
+    socket.write(io.vertx.core.buffer.Buffer.buffer().appendByte(RESPONSE).appendInt(length).appendLong(id).appendBytes(bytes));
   }
 
   @Override

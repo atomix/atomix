@@ -16,10 +16,10 @@
 package net.kuujo.copycat.internal;
 
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolServer;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -85,15 +85,15 @@ public class ProtocolServerCoordinator {
    */
   private void connect(ProtocolConnection connection) {
     connection.handler(buffer -> {
-      int id = buffer.getInt();
+      int id = buffer.readInt();
       ListenerHolder listener = listeners.get(id);
       if (listener != null) {
         connection.handler(null);
         listener.executor.execute(() -> listener.listener.accept(connection));
-        return CompletableFuture.completedFuture(ByteBuffer.wrap(new byte[]{1}));
+        return CompletableFuture.completedFuture(HeapBuffer.allocate(1).writeByte(1).flip());
       } else {
         connection.close();
-        return CompletableFuture.completedFuture(ByteBuffer.wrap(new byte[]{0}));
+        return CompletableFuture.completedFuture(HeapBuffer.allocate(1).writeByte(0).flip());
       }
     });
   }

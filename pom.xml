@@ -68,9 +68,6 @@
   </distributionManagement>
 
   <modules>
-    <module>util</module>
-    <module>log</module>
-    <module>raft</module>
     <module>core</module>
     <module>protocols</module>
     <module>resources</module>

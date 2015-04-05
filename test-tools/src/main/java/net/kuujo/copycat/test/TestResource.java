@@ -20,8 +20,6 @@ import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.ResourceState;
 import net.kuujo.copycat.resource.internal.AbstractResource;
 
-import java.util.Map;
-
 /**
  * Test resource implementation.
  *
@@ -42,19 +40,9 @@ public class TestResource extends AbstractResource<TestResource> {
    * Test resource configuration.
    */
   public static class Config extends ResourceConfig<Config> {
+
     public Config() {
-    }
-
-    public Config(Map<String, Object> config, String... resources) {
-      super(config, resources);
-    }
-
-    public Config(Config config) {
-      super(config);
-    }
-
-    public Config(String... resources) {
-      super(resources);
+      super();
     }
 
   }

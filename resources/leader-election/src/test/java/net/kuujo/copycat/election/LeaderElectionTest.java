@@ -36,13 +36,13 @@ public class LeaderElectionTest {
   public void testLeaderElectionAsSeedMember() throws Exception {
     ClusterConfig cluster = new ClusterConfig()
       .withProtocol(new LocalProtocol())
-      .addMember("foo", "local://foo")
-      .addMember("bar", "local://bar")
-      .addMember("baz", "local://baz");
+      .addMember(1, "local://foo")
+      .addMember(2, "local://bar")
+      .addMember(3, "local://baz");
 
-    LeaderElection election1 = LeaderElection.create("test", cluster.copy().withLocalMember("local://foo"));
-    LeaderElection election2 = LeaderElection.create("test", cluster.copy().withLocalMember("local://bar"));
-    LeaderElection election3 = LeaderElection.create("test", cluster.copy().withLocalMember("local://baz"));
+    LeaderElection election1 = LeaderElection.create(new LeaderElectionConfig(), cluster.copy().withLocalMember(1));
+    LeaderElection election2 = LeaderElection.create(new LeaderElectionConfig(), cluster.copy().withLocalMember(2));
+    LeaderElection election3 = LeaderElection.create(new LeaderElectionConfig(), cluster.copy().withLocalMember(3));
 
     CountDownLatch latch = new CountDownLatch(3);
 

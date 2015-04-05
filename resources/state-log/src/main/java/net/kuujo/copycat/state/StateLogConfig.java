@@ -15,13 +15,8 @@
  */
 package net.kuujo.copycat.state;
 
-import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.state.internal.SnapshottableLog;
-import net.kuujo.copycat.util.internal.Assert;
-
-import java.util.Map;
 
 /**
  * State log configuration.
@@ -29,30 +24,9 @@ import java.util.Map;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateLogConfig extends ResourceConfig<StateLogConfig> {
-  private static final String STATE_LOG_CONSISTENCY = "consistency";
-
-  private static final String DEFAULT_CONFIGURATION = "event-log-defaults";
-  private static final String CONFIGURATION = "event-log";
+  private Consistency defaultConsistency = Consistency.DEFAULT;
 
   public StateLogConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public StateLogConfig(Map<String, Object> config) {
-    super(config, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public StateLogConfig(String resource) {
-    super(resource, CONFIGURATION, DEFAULT_CONFIGURATION);
-    setDefaultName(resource);
-  }
-
-  protected StateLogConfig(String... resources) {
-    super(addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
-  }
-
-  protected StateLogConfig(Map<String, Object> config, String... resources) {
-    super(config, addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
   }
 
   protected StateLogConfig(StateLogConfig config) {
@@ -71,7 +45,9 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setDefaultConsistency(String consistency) {
-    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Consistency.parse(Assert.notNull(consistency, "consistency")).toString()));
+    if (consistency == null)
+      throw new NullPointerException("consistency cannot be null");
+    this.defaultConsistency = Consistency.forName(consistency);
   }
 
   /**
@@ -81,7 +57,9 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @throws java.lang.NullPointerException If the consistency is {@code null}
    */
   public void setDefaultConsistency(Consistency consistency) {
-    this.config = config.withValue(STATE_LOG_CONSISTENCY, ConfigValueFactory.fromAnyRef(Assert.notNull(consistency, "consistency").toString()));
+    if (consistency == null)
+      throw new NullPointerException("consistency cannot be null");
+    this.defaultConsistency = consistency;
   }
 
   /**
@@ -90,7 +68,7 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
    * @return The status log read consistency.
    */
   public Consistency getDefaultConsistency() {
-    return Consistency.parse(config.getString(STATE_LOG_CONSISTENCY));
+    return defaultConsistency;
   }
 
   /**
@@ -115,12 +93,6 @@ public class StateLogConfig extends ResourceConfig<StateLogConfig> {
   public StateLogConfig withDefaultConsistency(Consistency consistency) {
     setDefaultConsistency(consistency);
     return this;
-  }
-
-  @Override
-  public ResourceConfig<?> resolve() {
-    super.resolve();
-    return withLog(new SnapshottableLog(getLog()));
   }
 
 }

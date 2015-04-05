@@ -19,7 +19,8 @@ import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MembershipEvent;
-import net.kuujo.copycat.log.BufferedLog;
+import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
@@ -28,7 +29,6 @@ import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import org.testng.annotations.Test;
 
 import java.net.URI;
-import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -56,7 +56,7 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
    * Creates a new test resource.
    */
   private TestResource createTestResource(ClusterConfig cluster) {
-    return new TestResource(new ResourceContext(new TestResource.Config().withLog(new BufferedLog()), cluster, Executors
+    return new TestResource(new ResourceContext(new TestResource.Config().withLog(new LogConfig()), cluster, Executors
       .newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-test-%d"))));
   }
 
@@ -180,10 +180,10 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
 
     server.connectListener(connection -> {
       connection.handler(buffer -> {
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
+        byte[] bytes = new byte[(int) buffer.remaining()];
+        buffer.read(bytes);
         threadAssertEquals(new String(bytes), "Hello world!");
-        return CompletableFuture.completedFuture(ByteBuffer.wrap("Hello world back!".getBytes()));
+        return CompletableFuture.completedFuture(HeapBuffer.allocate("Hello world back!".getBytes().length).write("Hello world back!".getBytes()).flip());
       });
     });
 
@@ -195,23 +195,23 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
 
     expectResumes(3);
     client.connect().thenAccept(connection -> {
-      connection.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
+      connection.write(HeapBuffer.allocate("Hello world!".getBytes().length).write("Hello world!".getBytes()).flip()).thenAcceptAsync(buffer -> {
+        byte[] bytes = new byte[(int) buffer.remaining()];
+        buffer.read(bytes);
         threadAssertEquals(new String(bytes), "Hello world back!");
         resume();
       });
 
-      connection.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
+      connection.write(HeapBuffer.allocate("Hello world!".getBytes().length).write("Hello world!".getBytes()).flip()).thenAcceptAsync(buffer -> {
+        byte[] bytes = new byte[(int) buffer.remaining()];
+        buffer.read(bytes);
         threadAssertEquals(new String(bytes), "Hello world back!");
         resume();
       });
 
-      connection.write(ByteBuffer.wrap("Hello world!".getBytes())).thenAcceptAsync(buffer -> {
-        byte[] bytes = new byte[buffer.remaining()];
-        buffer.get(bytes);
+      connection.write(HeapBuffer.allocate("Hello world!".getBytes().length).write("Hello world!".getBytes()).flip()).thenAcceptAsync(buffer -> {
+        byte[] bytes = new byte[(int) buffer.remaining()];
+        buffer.read(bytes);
         threadAssertEquals(new String(bytes), "Hello world back!");
         resume();
       });

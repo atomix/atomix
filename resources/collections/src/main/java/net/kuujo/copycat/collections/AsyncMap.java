@@ -16,6 +16,7 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.collections.internal.map.DefaultMapState;
 import net.kuujo.copycat.collections.internal.map.MapState;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -42,77 +43,27 @@ import java.util.function.Supplier;
 public class AsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> implements AsyncMapProxy<K, V> {
 
   /**
-   * Creates a new asynchronous map, loading the log configuration from the classpath.
+   * Creates a new asynchronous map with the given cluster.
    *
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create() {
-    return create(new AsyncMapConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new asynchronous map, loading the log configuration from the classpath.
-   *
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create(Executor executor) {
-    return create(new AsyncMapConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous map, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create(String name) {
-    return create(new AsyncMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new asynchronous map, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
-   * @param executor An executor on which to execute asynchronous map callbacks.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create(String name, Executor executor) {
-    return create(new AsyncMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
-   *
-   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
    * @param cluster The cluster configuration.
    * @param <K> the map key type.
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  public static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster) {
-    return create(new AsyncMapConfig(name), cluster);
+  public static <K, V> AsyncMap<K, V> create(ClusterConfig cluster) {
+    return new AsyncMap<>(new AsyncMapConfig(), cluster);
   }
 
   /**
    * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
    *
-   * @param name The asynchronous map resource name to be used to load the asynchronous map configuration from the classpath.
    * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute asynchronous map callbacks.
    * @param <K> the map key type.
    * @param <V> The map value type.
    * @return A new asynchronous map instance.
    */
-  public static <K, V> AsyncMap<K, V> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new AsyncMapConfig(name), cluster, executor);
+  public static <K, V> AsyncMap<K, V> create(ClusterConfig cluster, Executor executor) {
+    return new AsyncMap<>(new AsyncMapConfig(), cluster, executor);
   }
 
   /**
@@ -156,7 +107,7 @@ public class AsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> implements 
   @SuppressWarnings("unchecked")
   public AsyncMap(ResourceContext context) {
     super(context);
-    this.stateMachine = new StateMachine<>(context);
+    this.stateMachine = new StateMachine<>(new DefaultMapState<>(), context);
   }
 
   /**

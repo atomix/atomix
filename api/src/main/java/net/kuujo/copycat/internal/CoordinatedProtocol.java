@@ -15,11 +15,9 @@
  */
 package net.kuujo.copycat.internal;
 
-import net.kuujo.copycat.protocol.AbstractProtocol;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.util.internal.Assert;
 
 import java.net.URI;
 import java.util.concurrent.Executor;
@@ -29,7 +27,7 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CoordinatedProtocol extends AbstractProtocol {
+public class CoordinatedProtocol implements Protocol {
   private final int id;
   private final Protocol protocol;
   private final ProtocolServerRegistry registry;
@@ -37,9 +35,14 @@ public class CoordinatedProtocol extends AbstractProtocol {
 
   public CoordinatedProtocol(int id, Protocol protocol, ProtocolServerRegistry registry, Executor executor) {
     this.id = id;
-    this.protocol = Assert.notNull(protocol, "protocol");
-    this.registry = Assert.notNull(registry, "registry");
-    this.executor = Assert.notNull(executor, "executor");
+    this.protocol = protocol;
+    this.registry = registry;
+    this.executor = executor;
+  }
+
+  @Override
+  public Protocol copy() {
+    return new CoordinatedProtocol(id, protocol, registry, executor);
   }
 
   @Override

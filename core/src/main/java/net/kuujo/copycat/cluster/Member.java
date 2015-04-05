@@ -123,7 +123,7 @@ public interface Member {
    *
    * @return The unique member ID.
    */
-  String id();
+  int id();
 
   /**
    * Returns the member address.

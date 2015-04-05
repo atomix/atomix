@@ -15,26 +15,24 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.internal.ManagedCluster;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.raft.CommitHandler;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.raft.RaftConfig;
 import net.kuujo.copycat.raft.RaftContext;
-import net.kuujo.copycat.raft.protocol.CommandRequest;
-import net.kuujo.copycat.raft.protocol.QueryRequest;
+import net.kuujo.copycat.raft.protocol.DeleteRequest;
+import net.kuujo.copycat.raft.protocol.ReadRequest;
 import net.kuujo.copycat.raft.protocol.Response;
-import net.kuujo.copycat.util.ConfigurationException;
+import net.kuujo.copycat.raft.protocol.WriteRequest;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Futures;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
-import net.kuujo.copycat.util.internal.Assert;
-import net.kuujo.copycat.util.serializer.Serializer;
 
-import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -48,7 +46,7 @@ import java.util.concurrent.ScheduledExecutorService;
 public class ResourceContext implements Managed<ResourceContext> {
   private final String name;
   private final ResourceConfig<?> config;
-  private final Serializer serializer;
+  private final CopycatSerializer serializer;
   private final ScheduledExecutorService scheduler;
   private final Executor executor;
   private final ManagedCluster cluster;
@@ -66,11 +64,19 @@ public class ResourceContext implements Managed<ResourceContext> {
   }
 
   public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster, ScheduledExecutorService scheduler, Executor executor) {
-    this.config = Assert.notNull(config, "config").resolve();
+    if (config == null)
+      throw new NullPointerException("config cannot be null");
+    if (cluster == null)
+      throw new NullPointerException("cluster cannot be null");
+    if (scheduler == null)
+      throw new NullPointerException("scheduler cannot be null");
+    if (executor == null)
+      throw new NullPointerException("executor cannot be null");
+    this.config = config.resolve();
     this.name = this.config.getName();
     this.serializer = this.config.getSerializer();
-    this.scheduler = Assert.notNull(scheduler, "scheduler");
-    this.executor = Assert.notNull(executor, "executor");
+    this.scheduler = scheduler;
+    this.executor = executor;
     this.context = new RaftContext(createRaftConfig(config, cluster), scheduler);
     this.cluster = new ManagedCluster(cluster, this);
   }
@@ -79,20 +85,20 @@ public class ResourceContext implements Managed<ResourceContext> {
    * Creates a Raft configuration from a resource and cluster configuration.
    */
   private static RaftConfig createRaftConfig(ResourceConfig<?> config, ClusterConfig cluster) {
-    RaftConfig raft = new RaftConfig(config.toMap())
-      .withName(config.getName())
+    RaftConfig raft = new RaftConfig()
       .withId(cluster.getLocalMember().getId())
-      .withAddress(cluster.getLocalMember().getAddress());
+      .withHeartbeatInterval(config.getHeartbeatInterval())
+      .withElectionTimeout(config.getElectionTimeout())
+      .withLog(config.getLog());
 
-    Map<String, String> members = new HashMap<>(cluster.getMembers().size());
     if (config.getReplicas().isEmpty()) {
-      cluster.getMembers().forEach(m -> members.put(m.getId(), m.getAddress()));
+      cluster.getMembers().forEach(m -> raft.addMember(m.getId()));
     } else {
-      for (String id : config.getReplicas()) {
+      for (int id : config.getReplicas()) {
         if (!cluster.hasMember(id)) {
           throw new ConfigurationException(String.format("Invalid cluster member: %s", id));
         }
-        members.put(id, cluster.getMember(id).getAddress());
+        raft.addMember(id);
       }
     }
     return raft;
@@ -158,7 +164,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    *
    * @return The context serializer.
    */
-  public Serializer serializer() {
+  public CopycatSerializer serializer() {
     return serializer;
   }
 
@@ -185,35 +191,27 @@ public class ResourceContext implements Managed<ResourceContext> {
   /**
    * Submits a synchronous entry to the context.
    *
+   * @param key The entry key.
    * @param entry The entry to query.
    * @return A completable future to be completed once the cluster has been synchronized.
    */
-  public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry) {
-    return query(entry, Consistency.DEFAULT);
-  }
-
-  /**
-   * Submits a synchronous entry to the context.
-   *
-   * @param entry The entry to query.
-   * @return A completable future to be completed once the cluster has been synchronized.
-   */
-  public synchronized CompletableFuture<ByteBuffer> query(ByteBuffer entry, Consistency consistency) {
+  public synchronized CompletableFuture<Buffer> read(Buffer key, Buffer entry, Consistency consistency) {
     if (!open)
       return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
 
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    QueryRequest request = QueryRequest.builder()
+    CompletableFuture<Buffer> future = new CompletableFuture<>();
+    ReadRequest request = ReadRequest.builder()
       .withId(context.getLocalMember().id())
+      .withKey(key)
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
-    context.query(request).whenComplete((response, error) -> {
+    context.read(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
           future.complete(response.result());
         } else {
-          future.completeExceptionally(response.error());
+          future.completeExceptionally(response.error().createException());
         }
       } else {
         future.completeExceptionally(error);
@@ -225,24 +223,55 @@ public class ResourceContext implements Managed<ResourceContext> {
   /**
    * Submits a persistent entry to the context.
    *
+   * @param key The entry key.
    * @param entry The entry to commit.
    * @return A completable future to be completed once the entry has been committed.
    */
-  public synchronized CompletableFuture<ByteBuffer> commit(ByteBuffer entry) {
+  public synchronized CompletableFuture<Buffer> write(Buffer key, Buffer entry) {
     if (!open)
       return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
 
-    CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    CommandRequest request = CommandRequest.builder()
+    CompletableFuture<Buffer> future = new CompletableFuture<>();
+    WriteRequest request = WriteRequest.builder()
       .withId(context.getLocalMember().id())
+      .withKey(key)
       .withEntry(entry)
       .build();
-    context.command(request).whenComplete((response, error) -> {
+    context.write(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
           future.complete(response.result());
         } else {
-          future.completeExceptionally(response.error());
+          future.completeExceptionally(response.error().createException());
+        }
+      } else {
+        future.completeExceptionally(error);
+      }
+    });
+    return future;
+  }
+
+  /**
+   * Submits a delete entry to the context.
+   *
+   * @param key The key to delete.
+   * @return A completable future to be completed once the entry has been committed.
+   */
+  public synchronized CompletableFuture<Buffer> delete(Buffer key) {
+    if (!open)
+      return Futures.exceptionalFuture(new IllegalStateException("Context not open"));
+
+    CompletableFuture<Buffer> future = new CompletableFuture<>();
+    DeleteRequest request = DeleteRequest.builder()
+      .withId(context.getLocalMember().id())
+      .withKey(key)
+      .build();
+    context.delete(request).whenComplete((response, error) -> {
+      if (error == null) {
+        if (response.status() == Response.Status.OK) {
+          future.complete(response.result());
+        } else {
+          future.completeExceptionally(response.error().createException());
         }
       } else {
         future.completeExceptionally(error);

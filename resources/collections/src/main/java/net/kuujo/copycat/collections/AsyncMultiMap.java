@@ -16,6 +16,7 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.collections.internal.map.DefaultMultiMapState;
 import net.kuujo.copycat.collections.internal.map.MultiMapState;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.internal.AbstractResource;
@@ -41,77 +42,28 @@ import java.util.function.Supplier;
 public class AsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K, V>> implements AsyncMultiMapProxy<K, V> {
 
   /**
-   * Creates a new asynchronous multimap, loading the log configuration from the classpath.
+   * Creates a new asynchronous multimap with the given cluster.
    *
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create() {
-    return create(new AsyncMultiMapConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new asynchronous multimap, loading the log configuration from the classpath.
-   *
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create(Executor executor) {
-    return create(new AsyncMultiMapConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new asynchronous multimap, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous multimap resource name to be used to load the asynchronous multimap configuration from the classpath.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create(String name) {
-    return create(new AsyncMultiMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new asynchronous multimap, loading the log configuration from the classpath.
-   *
-   * @param name The asynchronous multimap resource name to be used to load the asynchronous multimap configuration from the classpath.
-   * @param executor An executor on which to execute asynchronous multimap callbacks.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create(String name, Executor executor) {
-    return create(new AsyncMultiMapConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new asynchronous multimap with the given cluster and asynchronous multimap configurations.
-   *
-   * @param name The asynchronous multimap resource name to be used to load the asynchronous multimap configuration from the classpath.
    * @param cluster The cluster configuration.
    * @param <K> the map key type.
    * @param <V> The map value type.
    * @return A new asynchronous multimap instance.
    */
-  public static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster) {
-    return create(new AsyncMultiMapConfig(name), cluster);
+  public static <K, V> AsyncMultiMap<K, V> create(ClusterConfig cluster) {
+    return new AsyncMultiMap<>(new AsyncMultiMapConfig(), cluster);
   }
 
   /**
-   * Creates a new asynchronous multimap with the given cluster and asynchronous multimap configurations.
+   * Creates a new asynchronous multimap with the given cluster.
    *
-   * @param name The asynchronous multimap resource name to be used to load the asynchronous multimap configuration from the classpath.
    * @param cluster The cluster configuration.
    * @param executor An executor on which to execute asynchronous multimap callbacks.
    * @param <K> the map key type.
    * @param <V> The map value type.
    * @return A new asynchronous multimap instance.
    */
-  public static <K, V> AsyncMultiMap<K, V> create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new AsyncMultiMapConfig(name), cluster, executor);
+  public static <K, V> AsyncMultiMap<K, V> create(ClusterConfig cluster, Executor executor) {
+    return new AsyncMultiMap<>(new AsyncMultiMapConfig(), cluster, executor);
   }
 
   /**
@@ -155,7 +107,7 @@ public class AsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K, V>> i
   @SuppressWarnings("unchecked")
   public AsyncMultiMap(ResourceContext context) {
     super(context);
-    this.stateMachine = new StateMachine<>(context);
+    this.stateMachine = new StateMachine<>(new DefaultMultiMapState<>(), context);
   }
 
   /**

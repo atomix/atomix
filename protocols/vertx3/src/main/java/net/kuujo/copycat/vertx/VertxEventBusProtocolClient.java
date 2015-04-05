@@ -24,7 +24,6 @@ import io.vertx.core.eventbus.Message;
 import io.vertx.core.json.JsonObject;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolConnection;
-import net.kuujo.copycat.util.internal.Assert;
 
 import java.util.Map;
 import java.util.UUID;
@@ -43,8 +42,12 @@ public class VertxEventBusProtocolClient implements ProtocolClient {
   private final Map<String, ProtocolConnection> connections = new ConcurrentHashMap<>(1024);
 
   public VertxEventBusProtocolClient(String address, Vertx vertx) {
-    this.address = Assert.notNull(address, "Vert.x event bus address cannot be null");
-    this.vertx = Assert.notNull(vertx, "Vert.x instance cannot be null");
+    if (address == null)
+      throw new NullPointerException("address cannot be null");
+    if (vertx == null)
+      throw new NullPointerException("vertx cannot be null");
+    this.address = address;
+    this.vertx = vertx;
     this.context = vertx.getOrCreateContext();
   }
 

@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.atomic.internal;
 
-import net.kuujo.copycat.state.StateContext;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -25,16 +23,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultLongState implements LongState {
-  private AtomicLong value;
-
-  @Override
-  public void init(StateContext<LongState> context) {
-    value = context.get("value");
-    if (value == null) {
-      value = new AtomicLong();
-      context.put("value", value);
-    }
-  }
+  private AtomicLong value = new AtomicLong();
 
   @Override
   public long get() {

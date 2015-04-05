@@ -17,6 +17,9 @@ package net.kuujo.copycat.vertx;
 
 import net.kuujo.copycat.CopycatException;
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.HeapBufferPool;
+import net.kuujo.copycat.io.util.ReferencePool;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolHandler;
@@ -29,7 +32,6 @@ import org.vertx.java.core.eventbus.ReplyException;
 import org.vertx.java.core.eventbus.ReplyFailure;
 import org.vertx.java.core.impl.DefaultFutureResult;
 
-import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -38,6 +40,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class VertxEventBusProtocolConnection implements ProtocolConnection, Handler<Message<byte[]>> {
+  private final ReferencePool<Buffer> bufferPool = new HeapBufferPool();
   private final String id;
   private String address;
   private final Vertx vertx;
@@ -79,13 +82,13 @@ public class VertxEventBusProtocolConnection implements ProtocolConnection, Hand
   @Override
   public void handle(Message<byte[]> message) {
     if (handler != null) {
-      handler.apply(ByteBuffer.wrap(message.body())).whenComplete((reply, error) -> {
+      handler.apply(bufferPool.acquire().write(message.body()).flip()).whenComplete((reply, error) -> {
         context.runOnContext(v -> {
           if (error != null) {
             message.fail(0, error.getMessage());
           } else {
-            byte[] bytes = new byte[reply.remaining()];
-            reply.get(bytes);
+            byte[] bytes = new byte[(int) reply.remaining()];
+            reply.read(bytes);
             message.reply(bytes);
           }
         });
@@ -96,15 +99,15 @@ public class VertxEventBusProtocolConnection implements ProtocolConnection, Hand
   }
 
   @Override
-  public CompletableFuture<ByteBuffer> write(ByteBuffer request) {
-    final CompletableFuture<ByteBuffer> future = new CompletableFuture<>();
-    byte[] bytes = new byte[request.remaining()];
-    request.get(bytes);
+  public CompletableFuture<Buffer> write(Buffer request) {
+    final CompletableFuture<Buffer> future = new CompletableFuture<>();
+    byte[] bytes = new byte[(int) request.remaining()];
+    request.read(bytes);
     if (context != null) {
       context.runOnContext(v -> {
         vertx.eventBus().sendWithTimeout(address, bytes, 5000, (Handler<AsyncResult<Message<byte[]>>>) result -> {
           if (result.succeeded()) {
-            future.complete(ByteBuffer.wrap(result.result().body()));
+            future.complete(bufferPool.acquire().write(result.result().body()).flip());
           } else {
             ReplyException exception = (ReplyException) result.cause();
             if (exception.failureType() == ReplyFailure.NO_HANDLERS || exception.failureType() == ReplyFailure.TIMEOUT) {
@@ -118,7 +121,7 @@ public class VertxEventBusProtocolConnection implements ProtocolConnection, Hand
     } else {
       vertx.eventBus().sendWithTimeout(address, bytes, 5000, (Handler<AsyncResult<Message<byte[]>>>) result -> {
         if (result.succeeded()) {
-          future.complete(ByteBuffer.wrap(result.result().body()));
+          future.complete(bufferPool.acquire().write(result.result().body()).flip());
         } else {
           ReplyException exception = (ReplyException) result.cause();
           if (exception.failureType() == ReplyFailure.NO_HANDLERS || exception.failureType() == ReplyFailure.TIMEOUT) {

@@ -15,44 +15,31 @@
  */
 package net.kuujo.copycat.cluster;
 
-import com.typesafe.config.ConfigObject;
-import com.typesafe.config.ConfigValueFactory;
 import net.kuujo.copycat.protocol.Protocol;
-import net.kuujo.copycat.util.AbstractConfigurable;
-import net.kuujo.copycat.util.Configurable;
-import net.kuujo.copycat.util.internal.Assert;
+import net.kuujo.copycat.util.Copyable;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Cluster configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterConfig extends AbstractConfigurable {
-  private static final String CLUSTER_ID = "member.id";
-  private static final String CLUSTER_ADDRESS = "member.address";
-  private static final String CLUSTER_PROTOCOL = "protocol";
-  private static final String CLUSTER_MEMBERS = "members";
-
-  private static final String CONFIGURATION = "cluster";
-  private static final String DEFAULT_CONFIGURATION = "cluster-defaults";
+public class ClusterConfig implements Copyable<ClusterConfig> {
+  private Protocol protocol;
+  private MemberConfig localMember;
+  private Set<MemberConfig> members = new HashSet<>();
 
   public ClusterConfig() {
-    super(CONFIGURATION, DEFAULT_CONFIGURATION);
   }
 
-  public ClusterConfig(Map<String, Object> map) {
-    super(map, CONFIGURATION, DEFAULT_CONFIGURATION);
-  }
-
-  public ClusterConfig(String... resources) {
-    super(addResources(resources, CONFIGURATION, DEFAULT_CONFIGURATION));
-  }
-
-  public ClusterConfig(Configurable config) {
-    super(config);
+  public ClusterConfig(ClusterConfig copy) {
+    this.protocol = copy.getProtocol().copy();
+    this.localMember = copy.getLocalMember();
+    this.members = copy.getMembers();
   }
 
   @Override
@@ -67,7 +54,9 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If @{code protocol} is {@code null}
    */
   public void setProtocol(Protocol protocol) {
-    this.config = config.withValue(CLUSTER_PROTOCOL, ConfigValueFactory.fromMap(Assert.notNull(protocol, "protocol").toMap()));
+    if (protocol == null)
+      throw new NullPointerException("protocol cannot be null");
+    this.protocol = protocol;
   }
 
   /**
@@ -76,7 +65,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster protocol.
    */
   public Protocol getProtocol() {
-    return Configurable.load(config.getObject(CLUSTER_PROTOCOL).unwrapped());
+    return protocol;
   }
 
   /**
@@ -97,8 +86,8 @@ public class ClusterConfig extends AbstractConfigurable {
    * @param id The local member identifier.
    * @throws java.lang.NullPointerException If the member identifier id {@code null}
    */
-  public void setLocalMember(String id) {
-    this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.notNull(id, "id")));
+  public void setLocalMember(int id) {
+    this.localMember = new MemberConfig(id);
   }
 
   /**
@@ -108,12 +97,11 @@ public class ClusterConfig extends AbstractConfigurable {
    * @param address The local member address.
    * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
-  public void setLocalMember(String id, String address) {
+  public void setLocalMember(int id, String address) {
     if (address == null) {
       setLocalMember(id);
     } else {
-      this.config = config.withValue(CLUSTER_ID, ConfigValueFactory.fromAnyRef(Assert.notNull(id, "id")))
-        .withValue(CLUSTER_ADDRESS, ConfigValueFactory.fromAnyRef(address));
+      this.localMember = new MemberConfig(id, address);
     }
   }
 
@@ -133,7 +121,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The local member configuration.
    */
   public MemberConfig getLocalMember() {
-    return new MemberConfig(config.getString(CLUSTER_ID), config.hasPath(CLUSTER_ADDRESS) ? config.getString(CLUSTER_ADDRESS) : null);
+    return localMember;
   }
 
   /**
@@ -143,7 +131,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster configuration.
    * @throws java.lang.NullPointerException If the member identifier id {@code null}
    */
-  public ClusterConfig withLocalMember(String id) {
+  public ClusterConfig withLocalMember(int id) {
     setLocalMember(id);
     return this;
   }
@@ -156,7 +144,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster configuration.
    * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
-  public ClusterConfig withLocalMember(String id, String address) {
+  public ClusterConfig withLocalMember(int id, String address) {
     setLocalMember(id, address);
     return this;
   }
@@ -180,7 +168,9 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the set of members is {@code null}
    */
   public void setMembers(MemberConfig... members) {
-    setMembers(Arrays.asList(Assert.notNull(members, "members")));
+    if (members == null)
+      throw new NullPointerException("members cannot be null");
+    setMembers(Arrays.asList(members));
   }
 
   /**
@@ -190,13 +180,9 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the set of members is {@code null}
    */
   public void setMembers(Collection<MemberConfig> members) {
-    if (!config.hasPath(CLUSTER_MEMBERS)) {
-      this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
-    }
-    ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
-    Map<String, Object> unwrapped = config.unwrapped();
-    Assert.notNull(members, "members").forEach(member -> unwrapped.put(member.getId(), Assert.notNull(member, "member").getAddress()));
-    this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
+    if (members == null)
+      throw new NullPointerException("members cannot be null");
+    this.members = new HashSet<>(members);
   }
 
   /**
@@ -205,10 +191,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The set of cluster members.
    */
   public Set<MemberConfig> getMembers() {
-    return new HashSet<>(config.hasPath(CLUSTER_MEMBERS)
-      ? config.getObject(CLUSTER_MEMBERS).unwrapped().entrySet().stream()
-      .map(e -> new MemberConfig(e.getKey(), e.getValue().toString())).collect(Collectors.toSet())
-      : new HashSet<>(0));
+    return members;
   }
 
   /**
@@ -218,19 +201,18 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return Indicates whether the cluster contains a member with the given identifier.
    * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
-  public boolean hasMember(String id) {
-    return config.hasPath(CLUSTER_MEMBERS) && config.getObject(CLUSTER_MEMBERS).containsKey(id);
+  public boolean hasMember(int id) {
+    return members.stream().anyMatch(m -> m.getId() == id);
   }
 
-  public MemberConfig getMember(String id) {
-    if (config.hasPath(CLUSTER_MEMBERS)) {
-      Map<String, Object> members = config.getObject(CLUSTER_MEMBERS).unwrapped();
-      String address = (String) members.get(Assert.notNull(id, "id"));
-      if (address != null) {
-        return new MemberConfig(id, address);
-      }
-    }
-    return null;
+  /**
+   * Returns the configuration for a given member.
+   *
+   * @param id The unique member identifier.
+   * @return The member configuration or {@code null} if the member doesn't exist.
+   */
+  public MemberConfig getMember(int id) {
+    return members.stream().filter(m -> m.getId() == id).findFirst().get();
   }
 
   /**
@@ -241,7 +223,9 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the set of members is {@code null}
    */
   public ClusterConfig withMembers(MemberConfig... members) {
-    setMembers(Assert.notNull(members, "members"));
+    if (members == null)
+      throw new NullPointerException("members cannot be null");
+    setMembers(members);
     return this;
   }
 
@@ -265,7 +249,10 @@ public class ClusterConfig extends AbstractConfigurable {
    * @throws java.lang.NullPointerException If the member is {@code null}
    */
   public ClusterConfig addMember(MemberConfig member) {
-    return addMember(Assert.notNull(member, "member").getId(), member.getAddress());
+    if (member == null)
+      throw new NullPointerException("member cannot be null");
+    members.add(member);
+    return this;
   }
 
   /**
@@ -276,15 +263,8 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster configuration.
    * @throws java.lang.NullPointerException If the member identifier or address is {@code null}
    */
-  public ClusterConfig addMember(String id, String address) {
-    if (!config.hasPath(CLUSTER_MEMBERS)) {
-      this.config = config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(new HashMap<>(128)));
-    }
-    ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
-    Map<String, Object> unwrapped = config.unwrapped();
-    unwrapped.put(Assert.notNull(id, "id"), Assert.notNull(address, "address"));
-    this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
-    return this;
+  public ClusterConfig addMember(int id, String address) {
+    return addMember(new MemberConfig(id, address));
   }
 
   /**
@@ -305,13 +285,8 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster configuration.
    * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
-  public ClusterConfig removeMember(String id) {
-    if (config.hasPath(CLUSTER_MEMBERS)) {
-      ConfigObject config = this.config.getObject(CLUSTER_MEMBERS);
-      Map<String, Object> unwrapped = config.unwrapped();
-      unwrapped.remove(Assert.notNull(id, "id"));
-      this.config = this.config.withValue(CLUSTER_MEMBERS, ConfigValueFactory.fromMap(unwrapped));
-    }
+  public ClusterConfig removeMember(int id) {
+    members.stream().filter(m -> m.getId() == id).forEach(members::remove);
     return this;
   }
 
@@ -321,9 +296,7 @@ public class ClusterConfig extends AbstractConfigurable {
    * @return The cluster configuration.
    */
   public ClusterConfig clearMembers() {
-    if (config.hasPath(CLUSTER_MEMBERS)) {
-      this.config = config.withoutPath(CLUSTER_MEMBERS);
-    }
+    members.clear();
     return this;
   }
 

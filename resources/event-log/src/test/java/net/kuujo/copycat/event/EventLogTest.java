@@ -16,10 +16,6 @@
 package net.kuujo.copycat.event;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.log.BufferedLog;
-import net.kuujo.copycat.protocol.LocalProtocol;
-import net.kuujo.copycat.test.TestCluster;
 import org.testng.annotations.Test;
 
 /**
@@ -29,33 +25,4 @@ import org.testng.annotations.Test;
  */
 @Test
 public class EventLogTest extends ConcurrentTestCase {
-
-  /**
-   * Tests that a passive member receives events for the event log.
-   */
-  public void testPassiveEvents() throws Throwable {
-    TestCluster<EventLog<String>> cluster = TestCluster.<EventLog<String>>builder()
-      .withActiveMembers(3)
-      .withPassiveMembers(2)
-      .withUriFactory(id -> String.format("local://test%d", id))
-      .withClusterFactory(members -> new ClusterConfig().withProtocol(new LocalProtocol()).withMembers(members))
-      .withResourceFactory(config -> EventLog.create(new EventLogConfig("test").withLog(new BufferedLog()), config))
-      .build();
-    expectResume();
-    cluster.open().thenRun(this::resume);
-    await(15000);
-
-    expectResume();
-    EventLog<String> passive = cluster.passiveResources().iterator().next();
-    passive.consumer(message -> {
-      threadAssertEquals(message, "Hello world!");
-      resume();
-    });
-
-    EventLog<String> active = cluster.activeResources().iterator().next();
-    active.commit("Hello world!");
-
-    await(5000);
-  }
-
 }

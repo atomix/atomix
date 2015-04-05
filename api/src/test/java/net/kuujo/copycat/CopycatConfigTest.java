@@ -15,11 +15,9 @@
  */
 package net.kuujo.copycat;
 
-import net.kuujo.copycat.util.serializer.KryoSerializer;
 import org.testng.annotations.Test;
 
 import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
 
 /**
  * Copycat configuration test.
@@ -37,8 +35,6 @@ public class CopycatConfigTest {
     assertEquals(config.getName(), "copycat");
     config.setName("foo");
     assertEquals(config.getName(), "foo");
-    config.setDefaultSerializer(KryoSerializer.class);
-    assertTrue(config.getDefaultSerializer() instanceof KryoSerializer);
   }
 
 }

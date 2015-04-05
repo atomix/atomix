@@ -34,68 +34,6 @@ import java.util.concurrent.Executor;
 public class LeaderElection extends AbstractResource<LeaderElection> {
 
   /**
-   * Creates a new leader election, loading the log configuration from the classpath.
-   *
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create() {
-    return create(new LeaderElectionConfig(), new ClusterConfig());
-  }
-
-  /**
-   * Creates a new leader election, loading the log configuration from the classpath.
-   *
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create(Executor executor) {
-    return create(new LeaderElectionConfig(), new ClusterConfig(), executor);
-  }
-
-  /**
-   * Creates a new leader election, loading the log configuration from the classpath.
-   *
-   * @param name The leader election resource name to be used to load the leader election configuration from the classpath.
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create(String name) {
-    return create(new LeaderElectionConfig(name), new ClusterConfig(String.format("cluster.%s", name)));
-  }
-
-  /**
-   * Creates a new leader election, loading the log configuration from the classpath.
-   *
-   * @param name The leader election resource name to be used to load the leader election configuration from the classpath.
-   * @param executor An executor on which to execute leader election callbacks.
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create(String name, Executor executor) {
-    return create(new LeaderElectionConfig(name), new ClusterConfig(String.format("cluster.%s", name)), executor);
-  }
-
-  /**
-   * Creates a new leader election with the given cluster and leader election configurations.
-   *
-   * @param name The leader election resource name to be used to load the leader election configuration from the classpath.
-   * @param cluster The cluster configuration.
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create(String name, ClusterConfig cluster) {
-    return create(new LeaderElectionConfig(name), cluster);
-  }
-
-  /**
-   * Creates a new leader election with the given cluster and leader election configurations.
-   *
-   * @param name The leader election resource name to be used to load the leader election configuration from the classpath.
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute leader election callbacks.
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create(String name, ClusterConfig cluster, Executor executor) {
-    return create(new LeaderElectionConfig(name), cluster, executor);
-  }
-
-  /**
    * Creates a new leader election with the given cluster and leader election configurations.
    *
    * @param config The leader election configuration.

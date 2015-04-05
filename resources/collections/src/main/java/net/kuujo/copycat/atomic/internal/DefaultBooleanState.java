@@ -15,8 +15,6 @@
  */
 package net.kuujo.copycat.atomic.internal;
 
-import net.kuujo.copycat.state.StateContext;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -25,16 +23,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultBooleanState implements BooleanState {
-  private AtomicBoolean value;
-
-  @Override
-  public void init(StateContext<BooleanState> context) {
-    value = context.get("value");
-    if (value == null) {
-      value = new AtomicBoolean();
-      context.put("value", value);
-    }
-  }
+  private AtomicBoolean value = new AtomicBoolean();
 
   @Override
   public boolean get() {

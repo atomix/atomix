@@ -15,10 +15,12 @@
  */
 package net.kuujo.copycat.internal;
 
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.HeapBufferPool;
+import net.kuujo.copycat.io.util.ReferencePool;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolException;
-import net.kuujo.copycat.util.internal.Bytes;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -28,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class CoordinatedProtocolClient implements ProtocolClient {
+  private final ReferencePool<Buffer> bufferPool = new HeapBufferPool();
   private final int id;
   private final ProtocolClient client;
 
@@ -46,9 +49,9 @@ public class CoordinatedProtocolClient implements ProtocolClient {
     CompletableFuture<ProtocolConnection> future = new CompletableFuture<>();
     client.connect().whenComplete((connection, connectionError) -> {
       if (connectionError == null) {
-        connection.write(Bytes.of(id)).whenComplete((response, responseError) -> {
+        connection.write(bufferPool.acquire().writeInt(id).flip()).whenComplete((response, responseError) -> {
           if (responseError == null) {
-            byte result = response.get();
+            int result = response.readByte();
             if (result == 1) {
               future.complete(connection);
             } else {

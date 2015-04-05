@@ -16,10 +16,8 @@
 package net.kuujo.copycat.collections.internal.collection;
 
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.Write;
 
 import java.util.Collection;
 
@@ -30,52 +28,44 @@ import java.util.Collection;
  */
 public interface CollectionState<T extends CollectionState<T, U>, U> extends Collection<U> {
 
-  /**
-   * Initializes the status.
-   *
-   * @param context The status context.
-   */
-  @Initializer
-  void init(StateContext<T> context);
-
   @Override
-  @Command
+  @Write
   boolean add(U value);
 
   @Override
-  @Command
+  @Write
   boolean addAll(Collection<? extends U> c);
 
   @Override
-  @Command
+  @Write
   boolean retainAll(Collection<?> c);
 
   @Override
-  @Command
+  @Write
   boolean remove(Object value);
 
   @Override
-  @Command
+  @Write
   boolean removeAll(Collection<?> c);
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   boolean contains(Object value);
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   boolean containsAll(Collection<?> c);
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   int size();
 
   @Override
-  @Query(consistency=Consistency.DEFAULT)
+  @Read(consistency=Consistency.DEFAULT)
   boolean isEmpty();
 
   @Override
-  @Command
+  @Write
   void clear();
 
 }

@@ -16,10 +16,8 @@
 package net.kuujo.copycat.atomic.internal;
 
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.state.Command;
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.Query;
-import net.kuujo.copycat.state.StateContext;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.Write;
 
 /**
  * Atomic reference status.
@@ -28,24 +26,16 @@ import net.kuujo.copycat.state.StateContext;
  */
 public interface ReferenceState<T> {
 
-  /**
-   * Initializes the status.
-   *
-   * @param context The status context.
-   */
-  @Initializer
-  void init(StateContext<ReferenceState<T>> context);
-
-  @Query(consistency= Consistency.STRONG)
+  @Read(consistency= Consistency.STRONG)
   T get();
 
-  @Command
+  @Write
   void set(T value);
 
-  @Command
+  @Write
   T getAndSet(T value);
 
-  @Command
+  @Write
   boolean compareAndSet(T expect, T update);
 
 }

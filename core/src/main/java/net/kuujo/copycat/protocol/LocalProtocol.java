@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocol extends AbstractProtocol {
+public class LocalProtocol implements Protocol {
   private static Map<String, LocalProtocolServer> REGISTRY = new ConcurrentHashMap<>(32);
 
   /**
@@ -33,21 +33,9 @@ public class LocalProtocol extends AbstractProtocol {
     REGISTRY = new ConcurrentHashMap<>(32);
   }
 
-  public LocalProtocol() {
-    super();
-  }
-
-  public LocalProtocol(Map<String, Object> config) {
-    super(config);
-  }
-
-  private LocalProtocol(LocalProtocol protocol) {
-    super(protocol);
-  }
-
   @Override
   public LocalProtocol copy() {
-    return new LocalProtocol(this);
+    return new LocalProtocol();
   }
 
   @Override

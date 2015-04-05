@@ -14,7 +14,7 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.util.Configurable;
+import net.kuujo.copycat.util.Copyable;
 
 import java.net.URI;
 
@@ -23,7 +23,7 @@ import java.net.URI;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol extends Configurable {
+public interface Protocol extends Copyable<Protocol> {
 
   /**
    * Returns a boolean indicating whether the given URI is valid.

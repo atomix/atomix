@@ -15,9 +15,6 @@
  */
 package net.kuujo.copycat.collections.internal.map;
 
-import net.kuujo.copycat.state.Initializer;
-import net.kuujo.copycat.state.StateContext;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -31,17 +28,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class DefaultMapState<K, V> implements MapState<K, V> {
-  private Map<K, V> map;
-
-  @Override
-  @Initializer
-  public void init(StateContext<MapState<K, V>> context) {
-    map = context.get("value");
-    if (map == null) {
-      map = new HashMap<>();
-      context.put("value", map);
-    }
-  }
+  private Map<K, V> map = new HashMap<>();
 
   @Override
   public int size() {

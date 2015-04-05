@@ -15,26 +15,26 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.util.internal.Assert;
-
 /**
  * Cluster member configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class MemberConfig {
-  private String id;
+  private int id;
   private String address;
 
   public MemberConfig() {
   }
 
-  public MemberConfig(String id) {
-    this.id = Assert.notNull(id, "id");
+  public MemberConfig(int id) {
+    if (id <= 0)
+      throw new IllegalArgumentException("id cannot be negative");
+    this.id = id;
   }
 
-  public MemberConfig(String id, String address) {
-    this.id = Assert.notNull(id, "id");
+  public MemberConfig(int id, String address) {
+    this.id = id;
     this.address = address;
   }
 
@@ -44,8 +44,10 @@ public class MemberConfig {
    * @param id The unique member identifier.
    * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
-  public void setId(String id) {
-    this.id = Assert.notNull(id, "id");
+  public void setId(int id) {
+    if (id <= 0)
+      throw new IllegalArgumentException("id cannot be negative");
+    this.id = id;
   }
 
   /**
@@ -53,7 +55,7 @@ public class MemberConfig {
    *
    * @return The unique member identifier.
    */
-  public String getId() {
+  public int getId() {
     return id;
   }
 
@@ -64,7 +66,7 @@ public class MemberConfig {
    * @return The member configuration.
    * @throws java.lang.NullPointerException If the member identifier is {@code null}
    */
-  public MemberConfig withId(String id) {
+  public MemberConfig withId(int id) {
     setId(id);
     return this;
   }
@@ -76,7 +78,9 @@ public class MemberConfig {
    * @throws java.lang.NullPointerException If the member address is {@code null}
    */
   public void setAddress(String address) {
-    this.address = Assert.notNull(address, "address");
+    if (address == null)
+      throw new NullPointerException("address cannot be null");
+    this.address = address;
   }
 
   /**
@@ -104,8 +108,7 @@ public class MemberConfig {
   public boolean equals(Object object) {
     if (object instanceof MemberConfig) {
       MemberConfig config = (MemberConfig) object;
-      return ((config.id == null && id == null) || (config.id != null && id != null && config.id.equals(id)))
-        && ((config.address == null && address == null) || (config.address != null && address != null && config.address.equals(address)));
+      return config.id == id && ((config.address == null && address == null) || (config.address != null && address != null && config.address.equals(address)));
     }
     return false;
   }
@@ -113,7 +116,7 @@ public class MemberConfig {
   @Override
   public int hashCode() {
     int hashCode = 23;
-    hashCode = 37 * hashCode + (id != null ? id.hashCode() : 0);
+    hashCode = 37 * hashCode + id;
     hashCode = 37 * hashCode + (address != null ? address.hashCode() : 0);
     return hashCode;
   }
