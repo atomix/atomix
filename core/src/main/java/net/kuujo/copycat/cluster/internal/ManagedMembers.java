@@ -41,7 +41,7 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   private final ResourceContext context;
   private final RaftContext raft;
   @SuppressWarnings("rawtypes")
-  final Map<String, ManagedMember> members = new ConcurrentHashMap<>(128);
+  final Map<Integer, ManagedMember> members = new ConcurrentHashMap<>(128);
   private final Set<EventListener<MembershipEvent>> listeners = new CopyOnWriteArraySet<>();
   private boolean open;
 
@@ -61,9 +61,9 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
   public void update(Observable o, Object arg) {
     RaftContext raft = (RaftContext) o;
     Set<Integer> ids = raft.getMembers().stream().map(RaftMember::id).collect(Collectors.toSet());
-    Iterator<Map.Entry<String, ManagedMember>> iterator = members.entrySet().iterator();
+    Iterator<Map.Entry<Integer, ManagedMember>> iterator = members.entrySet().iterator();
     while (iterator.hasNext()) {
-      Map.Entry<String, ManagedMember> entry = iterator.next();
+      Map.Entry<Integer, ManagedMember> entry = iterator.next();
       if (!ids.contains(entry.getValue().id())) {
         listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.LEAVE, entry.getValue())));
         entry.getValue().close().join();
@@ -72,11 +72,10 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     }
 
     for (RaftMember member : raft.getMembers()) {
-      String address = member.get("address");
-      if (address != null && !members.containsKey(address)) {
+      if (!members.containsKey(member.id())) {
         try {
-          members.put(address, (ManagedMember) new ManagedRemoteMember(member.id(), address, protocol, context).open().get());
-          listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(address))));
+          members.put(member.id(), (ManagedMember) new ManagedRemoteMember(member.id(), member.get("address"), protocol, context).open().get());
+          listeners.forEach(l -> l.accept(new MembershipEvent(MembershipEvent.Type.JOIN, members.get(member.id()))));
         } catch (InterruptedException | ExecutionException e) {
           throw new RuntimeException(e);
         }
@@ -179,17 +178,17 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
 
     ManagedLocalMember localMember = new ManagedLocalMember(config.getLocalMember().getId(), config.getLocalMember().getAddress(), protocol, context);
     return localMember.open().thenCompose(v -> {
-      members.put(localMember.address(), localMember);
+      members.put(localMember.id(), localMember);
       if (context.config().getReplicas().isEmpty()) {
         for (MemberConfig member : config.getMembers()) {
           if (member.getId() != config.getLocalMember().getId()) {
-            members.put(member.getAddress(), new ManagedRemoteMember(member.getId(), member.getAddress(), protocol, context));
+            members.put(member.getId(), new ManagedRemoteMember(member.getId(), member.getAddress(), protocol, context));
           }
         }
       } else {
         for (int replica : context.config().getReplicas()) {
           if (replica != config.getLocalMember().getId() && config.hasMember(replica)) {
-            members.put(config.getMember(replica).getAddress(), new ManagedRemoteMember(replica, config.getMember(replica).getAddress(), protocol, context));
+            members.put(config.getMember(replica).getId(), new ManagedRemoteMember(replica, config.getMember(replica).getAddress(), protocol, context));
           }
         }
       }
