@@ -15,9 +15,9 @@
  */
 package net.kuujo.copycat.test;
 
-import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.resource.ResourceState;
+import net.kuujo.copycat.resource.PartitionConfig;
+import net.kuujo.copycat.resource.PartitionContext;
+import net.kuujo.copycat.resource.PartitionState;
 import net.kuujo.copycat.resource.internal.AbstractPartition;
 
 /**
@@ -27,19 +27,24 @@ import net.kuujo.copycat.resource.internal.AbstractPartition;
  */
 public class TestPartition extends AbstractPartition<TestPartition> {
 
-  public TestPartition(ResourceContext context) {
+  public TestPartition(PartitionContext context) {
     super(context);
   }
 
   @Override
-  public ResourceState state() {
-    return ResourceState.HEALTHY;
+  public int partition() {
+    return context.getPartitionId();
+  }
+
+  @Override
+  public PartitionState state() {
+    return PartitionState.HEALTHY;
   }
 
   /**
    * Test resource configuration.
    */
-  public static class Config extends ResourceConfig<Config> {
+  public static class Config extends PartitionConfig {
 
     public Config() {
       super();

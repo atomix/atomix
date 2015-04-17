@@ -20,11 +20,12 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MembershipEvent;
 import net.kuujo.copycat.io.HeapBuffer;
-import net.kuujo.copycat.log.LogConfig;
+import net.kuujo.copycat.raft.log.LogConfig;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.PartitionContext;
+import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 import org.testng.annotations.Test;
 
@@ -55,16 +56,16 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
   /**
    * Creates a new test resource.
    */
-  private TestResource createTestResource(ClusterConfig cluster) {
-    return new TestResource(new ResourceContext(new TestResource.Config().withLog(new LogConfig()), cluster, Executors
-      .newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-test-%d"))));
+  private TestPartition createTestResource(ClusterConfig cluster) {
+    return new TestPartition(new PartitionContext(new ResourceConfig() {}, new TestPartition.Config().withLog(new LogConfig()),
+      cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-test-%d"))));
   }
 
   /**
    * Creates a new test cluster.
    */
-  private TestCluster<TestResource> createTestCluster() {
-    return TestCluster.<TestResource>builder()
+  private TestCluster<TestPartition> createTestCluster() {
+    return TestCluster.<TestPartition>builder()
       .withActiveMembers(3)
       .withPassiveMembers(2)
       .withUriFactory(this::createUri)
@@ -77,9 +78,9 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
    * Tests a member joining on an active member of the cluster.
    */
   public void testClusterJoinActiveMember() throws Throwable {
-    TestCluster<TestResource> test = createTestCluster();
-    TestResource active = test.activeResources().iterator().next();
-    TestResource passive = test.passiveResources().iterator().next();
+    TestCluster<TestPartition> test = createTestCluster();
+    TestPartition active = test.activeResources().iterator().next();
+    TestPartition passive = test.passiveResources().iterator().next();
 
     expectResume();
     Cluster cluster = active.cluster();
@@ -99,10 +100,10 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
    * Tests a member joining on a passive member of the cluster.
    */
   public void testClusterJoinPassiveMember() throws Throwable {
-    TestCluster<TestResource> test = createTestCluster();
-    Iterator<TestResource> iterator = test.passiveResources().iterator();
-    TestResource passive1 = iterator.next();
-    TestResource passive2 = iterator.next();
+    TestCluster<TestPartition> test = createTestCluster();
+    Iterator<TestPartition> iterator = test.passiveResources().iterator();
+    TestPartition passive1 = iterator.next();
+    TestPartition passive2 = iterator.next();
 
     expectResume();
     Cluster cluster = passive1.cluster();
@@ -122,9 +123,9 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
    * Tests a member leaving on an active member of the cluster.
    */
   public void testClusterLeaveActiveMember() throws Throwable {
-    TestCluster<TestResource> test = createTestCluster();
-    TestResource active = test.activeResources().iterator().next();
-    TestResource passive = test.passiveResources().iterator().next();
+    TestCluster<TestPartition> test = createTestCluster();
+    TestPartition active = test.activeResources().iterator().next();
+    TestPartition passive = test.passiveResources().iterator().next();
 
     AtomicBoolean joined = new AtomicBoolean();
     expectResume();
@@ -147,10 +148,10 @@ public abstract class ProtocolTest extends ConcurrentTestCase {
    * Tests a member leaving on a passive member of the cluster.
    */
   public void testClusterLeavePassiveMember() throws Throwable {
-    TestCluster<TestResource> test = createTestCluster();
-    Iterator<TestResource> iterator = test.passiveResources().iterator();
-    TestResource passive1 = iterator.next();
-    TestResource passive2 = iterator.next();
+    TestCluster<TestPartition> test = createTestCluster();
+    Iterator<TestPartition> iterator = test.passiveResources().iterator();
+    TestPartition passive1 = iterator.next();
+    TestPartition passive2 = iterator.next();
 
     AtomicBoolean joined = new AtomicBoolean();
     expectResume();

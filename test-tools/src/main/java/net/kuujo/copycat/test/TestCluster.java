@@ -18,7 +18,7 @@ package net.kuujo.copycat.test;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.MemberConfig;
 import net.kuujo.copycat.protocol.LocalProtocol;
-import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.resource.Partition;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -29,7 +29,7 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TestCluster<T extends Resource<T>> {
+public class TestCluster<T extends Partition<T>> {
   private static int id = 1;
   private final List<T> activeResources;
   private final List<T> passiveResources;
@@ -42,14 +42,14 @@ public class TestCluster<T extends Resource<T>> {
   /**
    * Creates a new test cluster builder.
    */
-  public static <T extends Resource<T>> Builder<T> builder() {
+  public static <T extends Partition<T>> Builder<T> builder() {
     return new Builder<>();
   }
 
   /**
    * Test cluster builder.
    */
-  public static class Builder<T extends Resource<T>> {
+  public static class Builder<T extends Partition<T>> {
     private int activeMembers = 3;
     private int passiveMembers = 2;
     private Function<Integer, String> uriFactory;
