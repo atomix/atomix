@@ -26,19 +26,16 @@ import net.kuujo.copycat.internal.CoordinatedProtocol;
 import net.kuujo.copycat.internal.ProtocolServerRegistry;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.resource.PartitionConfig;
+import net.kuujo.copycat.resource.PartitionContext;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.resource.ResourceConfig;
-import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.state.StateLog;
-import net.kuujo.copycat.state.StateLogConfig;
-import net.kuujo.copycat.state.StateMachine;
-import net.kuujo.copycat.state.StateMachineConfig;
+import net.kuujo.copycat.state.*;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.NamedThreadFactory;
 
 import java.util.Map;
 import java.util.concurrent.*;
-import java.util.function.Function;
 
 /**
  * Copycat.
@@ -111,7 +108,7 @@ public class Copycat implements Managed<Copycat> {
   private final ProtocolServerRegistry registry;
   private final CopycatConfig config;
   private final Protocol protocol;
-  private final ResourceContext context;
+  private final PartitionContext context;
   @SuppressWarnings("rawtypes")
   private final Map<String, Resource> resources = new ConcurrentHashMap<>(1024);
 
@@ -123,7 +120,9 @@ public class Copycat implements Managed<Copycat> {
     this.protocol = config.getClusterConfig().getProtocol();
     this.registry = new ProtocolServerRegistry(protocol);
     this.config = config;
-    this.context = new ResourceContext(new ResourceConfig() {},
+    this.context = new PartitionContext(
+      new ResourceConfig() {},
+      new PartitionConfig() {},
       config.getClusterConfig(),
       Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory(config.getName())),
       executor);
@@ -144,7 +143,7 @@ public class Copycat implements Managed<Copycat> {
    * @return The core Copycat cluster.
    */
   public Cluster cluster() {
-    return context.cluster();
+    return context.getCluster();
   }
 
   /**
@@ -162,13 +161,16 @@ public class Copycat implements Managed<Copycat> {
   }
 
   /**
-   * Creates a new resource.
+   * Creates a new event log.
+   *
+   * @param config The event log configuration.
+   * @return The event log instance.
    */
   @SuppressWarnings("unchecked")
-  private <T extends Resource<T>, U extends ResourceConfig<U>> T createResource(U config, Executor executor, Function<ResourceContext, T> factory) {
-    return (T) resources.computeIfAbsent(config.getName(), n -> {
+  public <K, V> EventLog<K, V> createEventLog(EventLogConfig config) {
+    return (EventLog<K, V>) resources.computeIfAbsent(config.getName(), n -> {
       ScheduledExecutorService scheduler = createExecutor(n);
-      return factory.apply(new ResourceContext(config, createClusterConfig(config.getName(), scheduler), scheduler, executor));
+      return new EventLog<>(config, createClusterConfig(config.getName(), scheduler));
     });
   }
 
@@ -176,21 +178,15 @@ public class Copycat implements Managed<Copycat> {
    * Creates a new event log.
    *
    * @param config The event log configuration.
-   * @return The event log instance.
-   */
-  public <K, V> EventLog<K, V> createEventLog(EventLogConfig config) {
-    return createResource(config, context.executor(), EventLog::new);
-  }
-
-  /**
-   * Creates a new event log.
-   *
-   * @param config The event log configuration.
    * @param executor An executor on which to execute callbacks.
    * @return The event log instance.
    */
+  @SuppressWarnings("unchecked")
   public <K, V> EventLog<K, V> createEventLog(EventLogConfig config, Executor executor) {
-    return createResource(config, executor, EventLog::new);
+    return (EventLog<K, V>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new EventLog<>(config, createClusterConfig(config.getName(), scheduler), executor);
+    });
   }
 
   /**
@@ -199,8 +195,12 @@ public class Copycat implements Managed<Copycat> {
    * @param config The state log configuration.
    * @return The state log instance.
    */
+  @SuppressWarnings("unchecked")
   public <K, V> StateLog<K, V> createStateLog(StateLogConfig config) {
-    return createResource(config, context.executor(), StateLog::new);
+    return (StateLog<K, V>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new StateLog<>(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -210,20 +210,28 @@ public class Copycat implements Managed<Copycat> {
    * @param executor An executor on which to execute callbacks.
    * @return The state log instance.
    */
+  @SuppressWarnings("unchecked")
   public <K, V> StateLog<K, V> createStateLog(StateLogConfig config, Executor executor) {
-    return createResource(config, executor, StateLog::new);
+    return (StateLog<K, V>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new StateLog<>(config, createClusterConfig(config.getName(), scheduler), executor);
+    });
   }
 
   /**
    * Creates a new replicated state machine.
    *
-   * @param state The state machine state.
+   * @param stateFactory The state machine state factory.
    * @param config The state machine configuration.
    * @param <T> The state machine state type.
    * @return The state machine instance.
    */
-  public <T> StateMachine<T> createStateMachine(T state, StateMachineConfig config) {
-    return createResource(config, context.executor(), context -> new StateMachine<>(state, context));
+  @SuppressWarnings("unchecked")
+  public <T> StateMachine<T> createStateMachine(StateFactory<T> stateFactory, StateMachineConfig config) {
+    return (StateMachine<T>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new EventLog<>(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -235,8 +243,12 @@ public class Copycat implements Managed<Copycat> {
    * @param <T> The state machine state type.
    * @return The state machine instance.
    */
+  @SuppressWarnings("unchecked")
   public <T> StateMachine<T> createStateMachine(T state, StateMachineConfig config, Executor executor) {
-    return createResource(config, executor, context -> new StateMachine<>(state, context));
+    return (StateMachine<T>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new EventLog<>(config, createClusterConfig(config.getName(), scheduler), executor);
+    });
   }
 
   /**
@@ -246,7 +258,10 @@ public class Copycat implements Managed<Copycat> {
    * @return The leader election instance.
    */
   public LeaderElection createLeaderElection(LeaderElectionConfig config) {
-    return createResource(config, context.executor(), LeaderElection::new);
+    return (LeaderElection) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new LeaderElection(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -257,7 +272,10 @@ public class Copycat implements Managed<Copycat> {
    * @return The leader election instance.
    */
   public LeaderElection createLeaderElection(LeaderElectionConfig config, Executor executor) {
-    return createResource(config, executor, LeaderElection::new);
+    return (LeaderElection) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new LeaderElection(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -268,8 +286,12 @@ public class Copycat implements Managed<Copycat> {
    * @param <V> The map value type.
    * @return The asynchronous map instance.
    */
+  @SuppressWarnings("unchecked")
   public <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config) {
-    return createResource(config, context.executor(), AsyncMap::new);
+    return (AsyncMap<K, V>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncMap<>(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -281,8 +303,12 @@ public class Copycat implements Managed<Copycat> {
    * @param <V> The map value type.
    * @return The asynchronous map instance.
    */
+  @SuppressWarnings("unchecked")
   public <K, V> AsyncMap<K, V> createMap(AsyncMapConfig config, Executor executor) {
-    return createResource(config, executor, AsyncMap::new);
+    return (AsyncMap<K, V>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncMap<>(config, createClusterConfig(config.getName(), scheduler), executor);
+    });
   }
 
   /**
@@ -293,8 +319,12 @@ public class Copycat implements Managed<Copycat> {
    * @param <V> The map entry type.
    * @return The asynchronous multimap instance.
    */
+  @SuppressWarnings("unchecked")
   public <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config) {
-    return createResource(config, context.executor(), AsyncMultiMap::new);
+    return (AsyncMultiMap<K, V>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncMultiMap<>(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -306,8 +336,12 @@ public class Copycat implements Managed<Copycat> {
    * @param <V> The map entry type.
    * @return The asynchronous multimap instance.
    */
+  @SuppressWarnings("unchecked")
   public <K, V> AsyncMultiMap<K, V> createMultiMap(AsyncMultiMapConfig config, Executor executor) {
-    return createResource(config, executor, AsyncMultiMap::new);
+    return (AsyncMultiMap<K, V>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncMultiMap<>(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -317,8 +351,12 @@ public class Copycat implements Managed<Copycat> {
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
    */
+  @SuppressWarnings("unchecked")
   public <T> AsyncSet<T> createSet(AsyncSetConfig config) {
-    return createResource(config, context.executor(), AsyncSet::new);
+    return (AsyncSet<T>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncSet<>(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -329,8 +367,12 @@ public class Copycat implements Managed<Copycat> {
    * @param <T> The set entry type.
    * @return The asynchronous set instance.
    */
+  @SuppressWarnings("unchecked")
   public <T> AsyncSet<T> createSet(AsyncSetConfig config, Executor executor) {
-    return createResource(config, executor, AsyncSet::new);
+    return (AsyncSet<T>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncSet<>(config, createClusterConfig(config.getName(), scheduler), executor);
+    });
   }
 
   /**
@@ -340,7 +382,10 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic long instance.
    */
   public AsyncLong createLong(AsyncLongConfig config) {
-    return createResource(config, context.executor(), AsyncLong::new);
+    return (AsyncLong) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncLong(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -351,7 +396,10 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic long instance.
    */
   public AsyncLong createLong(AsyncLongConfig config, Executor executor) {
-    return createResource(config, executor, AsyncLong::new);
+    return (AsyncLong) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncLong(config, createClusterConfig(config.getName(), scheduler), executor);
+    });
   }
 
   /**
@@ -361,7 +409,10 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic boolean instance.
    */
   public AsyncBoolean createBoolean(AsyncBooleanConfig config) {
-    return createResource(config, context.executor(), AsyncBoolean::new);
+    return (AsyncBoolean) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncBoolean(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -372,7 +423,10 @@ public class Copycat implements Managed<Copycat> {
    * @return The asynchronous atomic boolean instance.
    */
   public AsyncBoolean createBoolean(AsyncBooleanConfig config, Executor executor) {
-    return createResource(config, executor, AsyncBoolean::new);
+    return (AsyncBoolean) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncBoolean(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -381,8 +435,12 @@ public class Copycat implements Managed<Copycat> {
    * @param config The reference configuration.
    * @return The asynchronous atomic reference instance.
    */
+  @SuppressWarnings("unchecked")
   public <T> AsyncReference<T> createReference(AsyncReferenceConfig config) {
-    return createResource(config, context.executor(), AsyncReference::new);
+    return (AsyncReference<T>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncReference<>(config, createClusterConfig(config.getName(), scheduler));
+    });
   }
 
   /**
@@ -392,8 +450,12 @@ public class Copycat implements Managed<Copycat> {
    * @param executor An executor on which to execute callbacks.
    * @return The asynchronous atomic reference instance.
    */
+  @SuppressWarnings("unchecked")
   public <T> AsyncReference<T> createReference(AsyncReferenceConfig config, Executor executor) {
-    return createResource(config, executor, AsyncReference::new);
+    return (AsyncReference<T>) resources.computeIfAbsent(config.getName(), n -> {
+      ScheduledExecutorService scheduler = createExecutor(n);
+      return new AsyncReference<>(config, createClusterConfig(config.getName(), scheduler), executor);
+    });
   }
 
   @Override

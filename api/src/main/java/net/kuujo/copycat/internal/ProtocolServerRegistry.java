@@ -34,7 +34,7 @@ public class ProtocolServerRegistry {
     this.protocol = protocol;
   }
 
-  public ProtocolServerCoordinator get(URI uri) {
+  ProtocolServerCoordinator get(URI uri) {
     return servers.computeIfAbsent(uri, u -> new ProtocolServerCoordinator(protocol.createServer(u)));
   }
 
