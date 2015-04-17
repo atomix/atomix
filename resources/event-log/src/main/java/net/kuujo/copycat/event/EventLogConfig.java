@@ -15,14 +15,14 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
 /**
  * Event log configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventLogConfig extends ResourceConfig<EventLogConfig> {
+public class EventLogConfig extends PartitionedResourceConfig<EventLogConfig> {
 
   public EventLogConfig() {
   }

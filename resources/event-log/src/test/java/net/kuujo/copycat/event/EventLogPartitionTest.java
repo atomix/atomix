@@ -24,5 +24,5 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class EventLogTest extends ConcurrentTestCase {
+public class EventLogPartitionTest extends ConcurrentTestCase {
 }
