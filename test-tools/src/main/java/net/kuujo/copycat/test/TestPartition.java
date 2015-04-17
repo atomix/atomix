@@ -18,16 +18,16 @@ package net.kuujo.copycat.test;
 import net.kuujo.copycat.resource.ResourceConfig;
 import net.kuujo.copycat.resource.ResourceContext;
 import net.kuujo.copycat.resource.ResourceState;
-import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.AbstractPartition;
 
 /**
  * Test resource implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class TestResource extends AbstractResource<TestResource> {
+public class TestPartition extends AbstractPartition<TestPartition> {
 
-  public TestResource(ResourceContext context) {
+  public TestPartition(ResourceContext context) {
     super(context);
   }
 
