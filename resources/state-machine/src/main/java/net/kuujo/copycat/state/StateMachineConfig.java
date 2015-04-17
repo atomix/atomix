@@ -15,6 +15,10 @@
  */
 package net.kuujo.copycat.state;
 
+import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.resource.PartitionedResourceConfig;
+import net.kuujo.copycat.resource.ResourceConfig;
+
 /**
  * State machine configuration.
  *
@@ -25,6 +29,14 @@ public class StateMachineConfig extends StateLogConfig {
   public StateMachineConfig() {
   }
 
+  public StateMachineConfig(ResourceConfig<?> config) {
+    super(config);
+  }
+
+  public StateMachineConfig(PartitionedResourceConfig<?> config) {
+    super(config);
+  }
+
   protected StateMachineConfig(StateMachineConfig config) {
     super(config);
   }
@@ -32,6 +44,12 @@ public class StateMachineConfig extends StateLogConfig {
   @Override
   public StateMachineConfig copy() {
     return new StateMachineConfig(this);
+  }
+
+  @Override
+  public StateMachineConfig withDefaultConsistency(Consistency consistency) {
+    super.setDefaultConsistency(consistency);
+    return this;
   }
 
 }

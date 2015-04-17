@@ -23,5 +23,5 @@ import org.testng.annotations.Test;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class StateMachineTest {
+public class StateMachinePartitionTest {
 }
