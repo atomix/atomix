@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,98 +16,47 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.DefaultMultiMapState;
-import net.kuujo.copycat.collections.internal.map.MultiMapState;
-import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.state.*;
 import net.kuujo.copycat.util.concurrent.Futures;
 
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 /**
- * Asynchronous multi-map.
+ * Asynchronous multi map.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  *
- * @param <K> The multimap key type.
- * @param <V> The multimap entry type.
+ * @param <K> The map key type.
+ * @param <V> The map entry type.
  */
-public class AsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K, V>> implements AsyncMultiMapProxy<K, V> {
-
-  /**
-   * Creates a new asynchronous multimap with the given cluster.
-   *
-   * @param cluster The cluster configuration.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create(ClusterConfig cluster) {
-    return new AsyncMultiMap<>(new AsyncMultiMapConfig(), cluster);
-  }
-
-  /**
-   * Creates a new asynchronous multimap with the given cluster.
-   *
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute asynchronous multimap callbacks.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create(ClusterConfig cluster, Executor executor) {
-    return new AsyncMultiMap<>(new AsyncMultiMapConfig(), cluster, executor);
-  }
-
-  /**
-   * Creates a new asynchronous multimap with the given cluster and asynchronous multimap configurations.
-   *
-   * @param config The asynchronous multimap configuration.
-   * @param cluster The cluster configuration.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create(AsyncMultiMapConfig config, ClusterConfig cluster) {
-    return new AsyncMultiMap<>(config, cluster);
-  }
-
-  /**
-   * Creates a new asynchronous multimap with the given cluster and asynchronous multimap configurations.
-   *
-   * @param config The asynchronous multimap configuration.
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute asynchronous multimap callbacks.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous multimap instance.
-   */
-  public static <K, V> AsyncMultiMap<K, V> create(AsyncMultiMapConfig config, ClusterConfig cluster, Executor executor) {
-    return new AsyncMultiMap<>(config, cluster, executor);
-  }
-
-  private final StateMachine<MultiMapState<K, V>> stateMachine;
+public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, AsyncMultiMapProxy<K, V> {
+  private final StateMachine<AsyncMapState<K, V>> stateMachine;
   private AsyncMultiMapProxy<K, V> proxy;
 
+  @SuppressWarnings("unchecked")
   public AsyncMultiMap(AsyncMultiMapConfig config, ClusterConfig cluster) {
-    this(new ResourceContext(config, cluster));
-  }
-
-  public AsyncMultiMap(AsyncMultiMapConfig config, ClusterConfig cluster, Executor executor) {
-    this(new ResourceContext(config, cluster, executor));
+    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
+      .withDefaultConsistency(config.getConsistency());
+    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
+    proxy = stateMachine.createProxy(AsyncMultiMapProxy.class);
   }
 
   @SuppressWarnings("unchecked")
-  public AsyncMultiMap(ResourceContext context) {
-    super(context);
-    this.stateMachine = new StateMachine<>(new DefaultMultiMapState<>(), context);
+  public AsyncMultiMap(AsyncMultiMapConfig config, ClusterConfig cluster, Executor executor) {
+    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
+      .withDefaultConsistency(config.getConsistency());
+    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
+    proxy = stateMachine.createProxy(AsyncMultiMapProxy.class);
+  }
+
+  @Override
+  public String name() {
+    return stateMachine.name();
   }
 
   /**
@@ -216,18 +165,150 @@ public class AsyncMultiMap<K, V> extends AbstractResource<AsyncMultiMap<K, V>> i
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<AsyncMultiMap<K, V>> open() {
-    return stateMachine.open()
-      .thenRun(() -> {
-        this.proxy = stateMachine.createProxy(AsyncMultiMapProxy.class);
-      }).thenApply(v -> this);
+  public CompletableFuture<AsyncMultiMap<K, V>> open() {
+    return stateMachine.open().thenApply(v -> this);
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
-    proxy = null;
+  public boolean isOpen() {
+    return stateMachine.isOpen();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
     return stateMachine.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return stateMachine.isClosed();
+  }
+
+  /**
+   * Asynchronous map state.
+   */
+  private static class AsyncMapState<K, V> {
+    private Map<K, Collection<V>> map = new HashMap<>();
+
+    @Read
+    public int size() {
+      return map.size();
+    }
+
+    @Read
+    public boolean isEmpty() {
+      return map.isEmpty();
+    }
+
+    @Read
+    public boolean containsKey(K key) {
+      return map.containsKey(key);
+    }
+
+    @Read
+    public boolean containsValue(V value) {
+      for (Collection<V> values : map.values()) {
+        if (values.contains(value)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    @Read
+    public boolean containsEntry(K key, V value) {
+      return map.containsKey(key) && map.get(key).contains(value);
+    }
+
+    @Read
+    public Collection<V> get(K key) {
+      return map.get(key);
+    }
+
+    @Write
+    public Collection<V> put(K key, V value) {
+      Collection<V> values = map.get(key);
+      if (values == null) {
+        values = new ArrayList<>();
+        map.put(key, values);
+      }
+      values.add(value);
+      return values;
+    }
+
+    @Delete
+    public Collection<V> remove(K key) {
+      return map.remove(key);
+    }
+
+    @Delete
+    public boolean remove(K key, V value) {
+      Collection<V> values = map.get(key);
+      if (values != null) {
+        boolean result = values.remove(value);
+        if (values.isEmpty()) {
+          map.remove(key);
+        }
+        return result;
+      }
+      return false;
+    }
+
+    @Write
+    public void putAll(Map<? extends K, ? extends Collection<V>> m) {
+      map.putAll(m);
+    }
+
+    @Delete
+    public void clear() {
+      map.clear();
+    }
+
+    @Read
+    public Set<K> keySet() {
+      return map.keySet();
+    }
+
+    @Read
+    public Collection<V> values() {
+      Collection<V> values = new ArrayList<>();
+      map.values().forEach(values::addAll);
+      return values;
+    }
+
+    @Read
+    public Set<Map.Entry<K, V>> entrySet() {
+      Set<Map.Entry<K, V>> entries = new HashSet<>();
+      for (Map.Entry<K, Collection<V>> entry : map.entrySet()) {
+        entry.getValue().forEach(value -> entries.add(new AbstractMap.SimpleEntry<>(entry.getKey(), value)));
+      }
+      return entries;
+    }
+
+    @Read
+    public Collection<V> getOrDefault(K key, Collection<V> defaultValue) {
+      return map.getOrDefault(key, defaultValue);
+    }
+
+    @Write
+    public void replaceAll(BiFunction<? super K, ? super Collection<V>, ? extends Collection<V>> function) {
+      map.replaceAll(function);
+    }
+
+    @Write
+    public boolean replace(K key, V oldValue, V newValue) {
+      Collection<V> values = map.get(key);
+      if (values != null && values.remove(oldValue)) {
+        values.add(newValue);
+        return true;
+      }
+      return false;
+    }
+
+    @Write
+    public Collection<V> replace(K key, Collection<V> value) {
+      return map.replace(key, value);
+    }
   }
 
 }

@@ -16,14 +16,14 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.collection.DefaultSetState;
-import net.kuujo.copycat.collections.internal.collection.SetState;
-import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.state.*;
 import net.kuujo.copycat.util.concurrent.Futures;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
@@ -35,67 +35,29 @@ import java.util.function.Supplier;
  *
  * @param <T> The set data type.
  */
-public class AsyncSet<T> extends AbstractResource<AsyncSet<T>> implements AsyncCollection<AsyncSet<T>, T>, AsyncSetProxy<T> {
+public class AsyncSet<T> implements AsyncCollection<AsyncSet<T>, T>, AsyncSetProxy<T> {
+  private final StateMachine<AsyncSetState<T>> stateMachine;
+  private final AsyncSetProxy<T> proxy;
 
-  /**
-   * Creates a new asynchronous set with the given cluster.
-   *
-   * @param cluster The cluster configuration.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create(ClusterConfig cluster) {
-    return new AsyncSet<>(new AsyncSetConfig(), cluster);
-  }
-
-  /**
-   * Creates a new asynchronous set with the given cluster.
-   *
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute asynchronous set callbacks.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create(ClusterConfig cluster, Executor executor) {
-    return new AsyncSet<>(new AsyncSetConfig(), cluster, executor);
-  }
-
-  /**
-   * Creates a new asynchronous set with the given cluster and asynchronous set configurations.
-   *
-   * @param config The asynchronous set configuration.
-   * @param cluster The cluster configuration.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create(AsyncSetConfig config, ClusterConfig cluster) {
-    return new AsyncSet<>(config, cluster);
-  }
-
-  /**
-   * Creates a new asynchronous set with the given cluster and asynchronous set configurations.
-   *
-   * @param config The asynchronous set configuration.
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute asynchronous set callbacks.
-   * @return A new asynchronous set instance.
-   */
-  public static <T> AsyncSet<T> create(AsyncSetConfig config, ClusterConfig cluster, Executor executor) {
-    return new AsyncSet<>(config, cluster, executor);
-  }
-
-  private final StateMachine<SetState<T>> stateMachine;
-  private AsyncSetProxy<T> proxy;
-
+  @SuppressWarnings("unchecked")
   public AsyncSet(AsyncSetConfig config, ClusterConfig cluster) {
-    this(new ResourceContext(config, cluster));
-  }
-
-  public AsyncSet(AsyncSetConfig config, ClusterConfig cluster, Executor executor) {
-    this(new ResourceContext(config, cluster, executor));
+    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
+      .withDefaultConsistency(config.getConsistency());
+    stateMachine = new StateMachine<>(AsyncSetState::new, stateMachineConfig, cluster);
+    proxy = stateMachine.createProxy(AsyncSetProxy.class);
   }
 
   @SuppressWarnings("unchecked")
-  public AsyncSet(ResourceContext context) {
-    super(context);
-    this.stateMachine = new StateMachine<>(new DefaultSetState<>(), context);
+  public AsyncSet(AsyncSetConfig config, ClusterConfig cluster, Executor executor) {
+    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
+      .withDefaultConsistency(config.getConsistency());
+    stateMachine = new StateMachine<>(AsyncSetState::new, stateMachineConfig, cluster, executor);
+    proxy = stateMachine.createProxy(AsyncSetProxy.class);
+  }
+
+  @Override
+  public String name() {
+    return stateMachine.name();
   }
 
   /**
@@ -164,18 +126,110 @@ public class AsyncSet<T> extends AbstractResource<AsyncSet<T>> implements AsyncC
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<AsyncSet<T>> open() {
-    return stateMachine.open()
-      .thenRun(() -> {
-        this.proxy = stateMachine.createProxy(AsyncSetProxy.class);
-      }).thenApply(v -> this);
+  public CompletableFuture<AsyncSet<T>> open() {
+    return stateMachine.open().thenApply(r -> this);
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
-    proxy = null;
+  public boolean isOpen() {
+    return stateMachine.isOpen();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
     return stateMachine.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return stateMachine.isClosed();
+  }
+
+  /**
+   * Asynchronous set state.
+   */
+  private static class AsyncSetState<T> implements Set<T> {
+    private final Set<T> state = new HashSet<>();
+
+    @Read
+    @Override
+    public int size() {
+      return state.size();
+    }
+
+    @Read
+    @Override
+    public boolean isEmpty() {
+      return state.isEmpty();
+    }
+
+    @Read
+    @Override
+    public boolean contains(Object o) {
+      return state.contains(o);
+    }
+
+    @NotNull
+    @Override
+    public Iterator<T> iterator() {
+      throw new UnsupportedOperationException();
+    }
+
+    @Read
+    @NotNull
+    @Override
+    public Object[] toArray() {
+      return state.toArray();
+    }
+
+    @Read
+    @NotNull
+    @Override
+    public <T1> T1[] toArray(T1[] a) {
+      return state.toArray(a);
+    }
+
+    @Write
+    @Override
+    public boolean add(T t) {
+      return state.add(t);
+    }
+
+    @Delete
+    @Override
+    public boolean remove(Object o) {
+      return state.remove(o);
+    }
+
+    @Read
+    @Override
+    public boolean containsAll(Collection<?> c) {
+      return state.containsAll(c);
+    }
+
+    @Write
+    @Override
+    public boolean addAll(Collection<? extends T> c) {
+      return state.addAll(c);
+    }
+
+    @Write
+    @Override
+    public boolean retainAll(Collection<?> c) {
+      return state.retainAll(c);
+    }
+
+    @Write
+    @Override
+    public boolean removeAll(Collection<?> c) {
+      return state.removeAll(c);
+    }
+
+    @Delete
+    @Override
+    public void clear() {
+      state.clear();
+    }
   }
 
 }

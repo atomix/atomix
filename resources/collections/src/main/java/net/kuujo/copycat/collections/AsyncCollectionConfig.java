@@ -16,14 +16,14 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
 /**
  * Asynchronous collection configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AsyncCollectionConfig<T extends AsyncCollectionConfig<T>> extends ResourceConfig<T> {
+public abstract class AsyncCollectionConfig<T extends AsyncCollectionConfig<T>> extends PartitionedResourceConfig<T> {
   private Consistency consistency = Consistency.DEFAULT;
 
   protected AsyncCollectionConfig() {

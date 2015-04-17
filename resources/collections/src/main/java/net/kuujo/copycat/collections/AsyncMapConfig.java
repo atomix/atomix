@@ -16,14 +16,14 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.resource.ResourceConfig;
+import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
 /**
  * Asynchronous map configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class AsyncMapConfig extends ResourceConfig<AsyncMapConfig> {
+public class AsyncMapConfig extends PartitionedResourceConfig<AsyncMapConfig> {
   private Consistency consistency = Consistency.DEFAULT;
 
   public AsyncMapConfig() {

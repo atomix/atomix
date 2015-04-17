@@ -16,14 +16,13 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.collections.internal.map.DefaultMapState;
-import net.kuujo.copycat.collections.internal.map.MapState;
-import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.resource.internal.AbstractResource;
-import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.state.*;
 import net.kuujo.copycat.util.concurrent.Futures;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -40,74 +39,29 @@ import java.util.function.Supplier;
  * @param <K> The map key type.
  * @param <V> The map entry type.
  */
-public class AsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> implements AsyncMapProxy<K, V> {
-
-  /**
-   * Creates a new asynchronous map with the given cluster.
-   *
-   * @param cluster The cluster configuration.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create(ClusterConfig cluster) {
-    return new AsyncMap<>(new AsyncMapConfig(), cluster);
-  }
-
-  /**
-   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
-   *
-   * @param cluster The cluster configuration.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create(ClusterConfig cluster, Executor executor) {
-    return new AsyncMap<>(new AsyncMapConfig(), cluster, executor);
-  }
-
-  /**
-   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
-   *
-   * @param config The asynchronous map configuration.
-   * @param cluster The cluster configuration.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster) {
-    return new AsyncMap<>(config, cluster);
-  }
-
-  /**
-   * Creates a new asynchronous map with the given cluster and asynchronous map configurations.
-   *
-   * @param config The asynchronous map configuration.
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute asynchronous map callbacks.
-   * @param <K> the map key type.
-   * @param <V> The map value type.
-   * @return A new asynchronous map instance.
-   */
-  public static <K, V> AsyncMap<K, V> create(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
-    return new AsyncMap<>(config, cluster, executor);
-  }
-
-  private final StateMachine<MapState<K, V>> stateMachine;
+public class AsyncMap<K, V> implements Resource<AsyncMap<K, V>>, AsyncMapProxy<K, V> {
+  private final StateMachine<AsyncMapState<K, V>> stateMachine;
   private AsyncMapProxy<K, V> proxy;
 
+  @SuppressWarnings("unchecked")
   public AsyncMap(AsyncMapConfig config, ClusterConfig cluster) {
-    this(new ResourceContext(config, cluster));
-  }
-
-  public AsyncMap(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
-    this(new ResourceContext(config, cluster, executor));
+    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
+      .withDefaultConsistency(config.getConsistency());
+    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
+    proxy = stateMachine.createProxy(AsyncMapProxy.class);
   }
 
   @SuppressWarnings("unchecked")
-  public AsyncMap(ResourceContext context) {
-    super(context);
-    this.stateMachine = new StateMachine<>(new DefaultMapState<>(), context);
+  public AsyncMap(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
+    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
+      .withDefaultConsistency(config.getConsistency());
+    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
+    proxy = stateMachine.createProxy(AsyncMapProxy.class);
+  }
+
+  @Override
+  public String name() {
+    return stateMachine.name();
   }
 
   /**
@@ -236,19 +190,105 @@ public class AsyncMap<K, V> extends AbstractResource<AsyncMap<K, V>> implements 
   }
 
   @Override
-  @SuppressWarnings("unchecked")
-  public synchronized CompletableFuture<AsyncMap<K, V>> open() {
-    return stateMachine.open()
-      .thenRun(() -> {
-        this.proxy = stateMachine.createProxy(AsyncMapProxy.class);
-      })
-      .thenApply(v -> null);
+  public CompletableFuture<AsyncMap<K, V>> open() {
+    return stateMachine.open().thenApply(v -> this);
   }
 
   @Override
-  public synchronized CompletableFuture<Void> close() {
-    proxy = null;
+  public boolean isOpen() {
+    return stateMachine.isOpen();
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
     return stateMachine.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return stateMachine.isClosed();
+  }
+
+  /**
+   * Asynchronous map state.
+   */
+  private static class AsyncMapState<K, V> implements Map<K, V> {
+    private final Map<K, V> state = new HashMap<>();
+
+    @Read
+    @Override
+    public int size() {
+      return state.size();
+    }
+
+    @Read
+    @Override
+    public boolean isEmpty() {
+      return state.isEmpty();
+    }
+
+    @Read
+    @Override
+    public boolean containsKey(Object key) {
+      return state.containsKey(key);
+    }
+
+    @Read
+    @Override
+    public boolean containsValue(Object value) {
+      return state.containsValue(value);
+    }
+
+    @Read
+    @Override
+    public V get(Object key) {
+      return state.get(key);
+    }
+
+    @Write
+    @Override
+    public V put(K key, V value) {
+      return state.put(key, value);
+    }
+
+    @Delete
+    @Override
+    public V remove(Object key) {
+      return state.remove(key);
+    }
+
+    @Write
+    @Override
+    public void putAll(Map<? extends K, ? extends V> m) {
+      state.putAll(m);
+    }
+
+    @Delete
+    @Override
+    public void clear() {
+      state.clear();
+    }
+
+    @Read
+    @NotNull
+    @Override
+    public Set<K> keySet() {
+      return state.keySet();
+    }
+
+    @Read
+    @NotNull
+    @Override
+    public Collection<V> values() {
+      return state.values();
+    }
+
+    @Read
+    @NotNull
+    @Override
+    public Set<Entry<K, V>> entrySet() {
+      return state.entrySet();
+    }
   }
 
 }
