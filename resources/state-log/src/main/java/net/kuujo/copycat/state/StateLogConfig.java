@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.resource.PartitionedResourceConfig;
 import net.kuujo.copycat.resource.ResourceConfig;
 
 /**
@@ -23,14 +24,23 @@ import net.kuujo.copycat.resource.ResourceConfig;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateLogConfig extends ResourceConfig<StateLogConfig> {
+public class StateLogConfig extends PartitionedResourceConfig<StateLogConfig> {
   private Consistency defaultConsistency = Consistency.DEFAULT;
 
   public StateLogConfig() {
   }
 
+  public StateLogConfig(ResourceConfig<?> config) {
+    super(config);
+  }
+
+  public StateLogConfig(PartitionedResourceConfig<?> config) {
+    super(config);
+  }
+
   protected StateLogConfig(StateLogConfig config) {
     super(config);
+    this.defaultConsistency = config.defaultConsistency;
   }
 
   @Override
