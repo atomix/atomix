@@ -25,6 +25,7 @@ import net.kuujo.copycat.raft.CommitHandler;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.raft.RaftConfig;
 import net.kuujo.copycat.raft.RaftContext;
+import net.kuujo.copycat.raft.log.BufferedLog;
 import net.kuujo.copycat.raft.protocol.DeleteRequest;
 import net.kuujo.copycat.raft.protocol.ReadRequest;
 import net.kuujo.copycat.raft.protocol.Response;
@@ -43,53 +44,59 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ResourceContext implements Managed<ResourceContext> {
+public class PartitionContext implements Managed<PartitionContext> {
+  private final int id;
   private final String name;
-  private final ResourceConfig<?> config;
+  private final ResourceConfig<?> resourceConfig;
+  private final PartitionConfig partitionConfig;
   private final CopycatSerializer serializer;
   private final ScheduledExecutorService scheduler;
   private final Executor executor;
   private final ManagedCluster cluster;
   private final RaftContext context;
-  private CompletableFuture<ResourceContext> openFuture;
+  private CompletableFuture<PartitionContext> openFuture;
   private CompletableFuture<Void> closeFuture;
   private volatile boolean open;
 
-  public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster) {
-    this(config, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory(config.getName())));
+  public PartitionContext(ResourceConfig<?> resourceConfig, PartitionConfig partitionConfig, ClusterConfig cluster) {
+    this(resourceConfig, partitionConfig, cluster, Executors.newSingleThreadExecutor(new NamedThreadFactory(partitionConfig.getName() + "-" + partitionConfig.getPartitionId())));
   }
 
-  public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster, Executor executor) {
-    this(config, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + config.getName() + "-%d")), executor);
+  public PartitionContext(ResourceConfig<?> resourceConfig, PartitionConfig partitionConfig, ClusterConfig cluster, Executor executor) {
+    this(resourceConfig, partitionConfig, cluster, Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("copycat-" + partitionConfig.getName() + "-" + partitionConfig.getPartitionId())), executor);
   }
 
-  public ResourceContext(ResourceConfig<?> config, ClusterConfig cluster, ScheduledExecutorService scheduler, Executor executor) {
-    if (config == null)
-      throw new NullPointerException("config cannot be null");
+  public PartitionContext(ResourceConfig<?> resourceConfig, PartitionConfig partitionConfig, ClusterConfig cluster, ScheduledExecutorService scheduler, Executor executor) {
+    if (resourceConfig == null)
+      throw new NullPointerException("resourceConfig cannot be null");
+    if (partitionConfig == null)
+      throw new NullPointerException("partitionConfig cannot be null");
     if (cluster == null)
       throw new NullPointerException("cluster cannot be null");
     if (scheduler == null)
       throw new NullPointerException("scheduler cannot be null");
     if (executor == null)
       throw new NullPointerException("executor cannot be null");
-    this.config = config.resolve();
-    this.name = this.config.getName();
-    this.serializer = this.config.getSerializer();
+    this.resourceConfig = resourceConfig.resolve();
+    this.partitionConfig = partitionConfig.resolve();
+    this.name = this.resourceConfig.getName();
+    this.id = this.partitionConfig.getPartitionId();
+    this.serializer = this.partitionConfig.getSerializer();
     this.scheduler = scheduler;
     this.executor = executor;
-    this.context = new RaftContext(createRaftConfig(config, cluster), scheduler);
     this.cluster = new ManagedCluster(cluster, this);
+    this.context = new RaftContext(new BufferedLog(partitionConfig.getLog()), createRaftConfig(partitionConfig, cluster), this.cluster, scheduler);
   }
 
   /**
    * Creates a Raft configuration from a resource and cluster configuration.
    */
-  private static RaftConfig createRaftConfig(ResourceConfig<?> config, ClusterConfig cluster) {
+  private static RaftConfig createRaftConfig(PartitionConfig config, ClusterConfig cluster) {
     RaftConfig raft = new RaftConfig()
-      .withId(cluster.getLocalMember().getId())
+      .withMemberId(cluster.getLocalMember().getId())
+      .withMemberType(config.getMemberType())
       .withHeartbeatInterval(config.getHeartbeatInterval())
-      .withElectionTimeout(config.getElectionTimeout())
-      .withLog(config.getLog());
+      .withElectionTimeout(config.getElectionTimeout());
 
     if (config.getReplicas().isEmpty()) {
       cluster.getMembers().forEach(m -> raft.addMember(m.getId()));
@@ -105,22 +112,41 @@ public class ResourceContext implements Managed<ResourceContext> {
   }
 
   /**
+   * Returns the partition identifier.
+   *
+   * @return The partition identifier.
+   */
+  public int getPartitionId() {
+    return id;
+  }
+
+  /**
    * Returns the resource name.
    *
    * @return The resource name.
    */
-  public String name() {
+  public String getName() {
     return name;
   }
 
   /**
    * Returns the resource configuration.
    *
+   * @param <T> The resource configuration type.
    * @return The resource configuration.
    */
   @SuppressWarnings("unchecked")
-  public <T extends ResourceConfig<?>> T config() {
-    return (T) config;
+  public <T extends ResourceConfig<?>> T getResourceConfig() {
+    return (T) resourceConfig;
+  }
+
+  /**
+   * Returns the partition configuration.
+   *
+   * @return The partition configuration.
+   */
+  public PartitionConfig getPartitionConfig() {
+    return partitionConfig;
   }
 
   /**
@@ -128,8 +154,8 @@ public class ResourceContext implements Managed<ResourceContext> {
    *
    * @return The resource status.
    */
-  public ResourceState state() {
-    return context.isRecovering() ? ResourceState.RECOVER : ResourceState.HEALTHY;
+  public PartitionState getState() {
+    return context.isRecovering() ? PartitionState.RECOVER : PartitionState.HEALTHY;
   }
 
   /**
@@ -137,7 +163,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    *
    * @return The Raft context.
    */
-  public RaftContext raft() {
+  public RaftContext getContext() {
     return context;
   }
 
@@ -146,7 +172,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    *
    * @return The Copycat cluster.
    */
-  public Cluster cluster() {
+  public Cluster getCluster() {
     return cluster;
   }
 
@@ -155,7 +181,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    *
    * @return The internal scheduler.
    */
-  public ScheduledExecutorService scheduler() {
+  public ScheduledExecutorService getScheduler() {
     return scheduler;
   }
 
@@ -164,7 +190,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    *
    * @return The context serializer.
    */
-  public CopycatSerializer serializer() {
+  public CopycatSerializer getSerializer() {
     return serializer;
   }
 
@@ -173,7 +199,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    *
    * @return The context executor.
    */
-  public Executor executor() {
+  public Executor getExecutor() {
     return executor;
   }
 
@@ -183,7 +209,7 @@ public class ResourceContext implements Managed<ResourceContext> {
    * @param handler The entry commit handler.
    * @return The Copycat context.
    */
-  public synchronized ResourceContext commitHandler(CommitHandler handler) {
+  public synchronized PartitionContext setCommitHandler(CommitHandler handler) {
     context.commitHandler(handler);
     return this;
   }
@@ -201,15 +227,14 @@ public class ResourceContext implements Managed<ResourceContext> {
 
     CompletableFuture<Buffer> future = new CompletableFuture<>();
     ReadRequest request = ReadRequest.builder()
-      .withId(context.getLocalMember().id())
       .withKey(key)
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
-    context.read(request).whenComplete((response, error) -> {
+    context.apply(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
+          future.complete(response.asReadResponse().result());
         } else {
           future.completeExceptionally(response.error().createException());
         }
@@ -233,14 +258,13 @@ public class ResourceContext implements Managed<ResourceContext> {
 
     CompletableFuture<Buffer> future = new CompletableFuture<>();
     WriteRequest request = WriteRequest.builder()
-      .withId(context.getLocalMember().id())
       .withKey(key)
       .withEntry(entry)
       .build();
-    context.write(request).whenComplete((response, error) -> {
+    context.apply(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
+          future.complete(response.asWriteResponse().result());
         } else {
           future.completeExceptionally(response.error().createException());
         }
@@ -263,13 +287,12 @@ public class ResourceContext implements Managed<ResourceContext> {
 
     CompletableFuture<Buffer> future = new CompletableFuture<>();
     DeleteRequest request = DeleteRequest.builder()
-      .withId(context.getLocalMember().id())
       .withKey(key)
       .build();
-    context.delete(request).whenComplete((response, error) -> {
+    context.apply(request).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
+          future.complete(response.asDeleteResponse().result());
         } else {
           future.completeExceptionally(response.error().createException());
         }
@@ -281,7 +304,7 @@ public class ResourceContext implements Managed<ResourceContext> {
   }
 
   @Override
-  public synchronized CompletableFuture<ResourceContext> open() {
+  public synchronized CompletableFuture<PartitionContext> open() {
     if (open)
       return CompletableFuture.completedFuture(this);
 
@@ -289,7 +312,7 @@ public class ResourceContext implements Managed<ResourceContext> {
       openFuture = new CompletableFuture<>();
       scheduler.execute(() -> {
         cluster.open().thenCompose(v -> context.open()).whenComplete((result, error) -> {
-          CompletableFuture<ResourceContext> openFuture = this.openFuture;
+          CompletableFuture<PartitionContext> openFuture = this.openFuture;
           if (openFuture != null) {
             synchronized (this) {
               this.openFuture = null;

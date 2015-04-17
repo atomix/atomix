@@ -26,7 +26,7 @@ import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolConnection;
 import net.kuujo.copycat.protocol.ProtocolException;
 import net.kuujo.copycat.protocol.ProtocolServer;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.PartitionContext;
 import net.kuujo.copycat.util.concurrent.ComposableFuture;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -50,13 +50,13 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   private static final byte INTERNAL = 1;
   private static final byte TASK = 2;
   private final ProtocolServer server;
+  private MessageHandler<Buffer, Buffer> internalHandler;
   private final Map<Long, MessageHandler> handlers = new ConcurrentHashMap<>();
-  private final Map<Long, MessageHandler<Buffer, Buffer>> internalHandlers = new ConcurrentHashMap<>();
   private final Set<ProtocolConnection> connections = new HashSet<>();
   private final Map<String, Long> hashMap = new HashMap<>();
   private boolean open;
 
-  public ManagedLocalMember(int id, String address, Protocol protocol, ResourceContext context) {
+  public ManagedLocalMember(int id, String address, Protocol protocol, PartitionContext context) {
     super(id, context);
     try {
       this.server = protocol.createServer(address != null ? new URI(address) : null);
@@ -98,12 +98,8 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
    */
   private CompletableFuture<Buffer> handleInternalMessage(Buffer request) {
     ComposableFuture<Buffer> future = new ComposableFuture<>();
-    context.scheduler().execute(() -> {
-      long id = request.readLong();
-      MessageHandler<Buffer, Buffer> handler = internalHandlers.get(id);
-      if (handler != null) {
-        handler.apply(request.slice()).whenComplete(future);
-      }
+    context.getScheduler().execute(() -> {
+      internalHandler.apply(request).whenComplete(future);
     });
     return future;
   }
@@ -114,16 +110,16 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   @SuppressWarnings({"unchecked", "rawtypes"})
   private CompletableFuture<Buffer> handleUserMessage(Buffer request) {
     ComposableFuture<Object> future = new ComposableFuture<>();
-    context.executor().execute(() -> {
+    context.getExecutor().execute(() -> {
       long id = request.readLong();
       MessageHandler<Object, Object> handler = handlers.get(id);
       if (handler != null) {
-        handler.apply(context.serializer().readObject(request)).whenComplete(future);
+        handler.apply(context.getSerializer().readObject(request)).whenComplete(future);
       } else {
         future.completeExceptionally(new ClusterException("No handler registered"));
       }
     });
-    return future.thenApply(r -> context.serializer().writeObject(r));
+    return future.thenApply(r -> context.getSerializer().writeObject(r));
   }
 
   /**
@@ -131,10 +127,10 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
    */
   private CompletableFuture<Buffer> handleSubmit(Buffer request) {
     CompletableFuture<Buffer> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
-      Task<?> task = context.serializer().readObject(request.slice());
+    context.getExecutor().execute(() -> {
+      Task<?> task = context.getSerializer().readObject(request.slice());
       try {
-        future.complete(context.serializer().writeObject(task.execute()));
+        future.complete(context.getSerializer().writeObject(task.execute()));
       } catch (Exception e) {
         future.completeExceptionally(e);
       }
@@ -151,8 +147,8 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   /**
    * Registers an internal handler.
    */
-  ManagedLocalMember registerInternalHandler(String topic, MessageHandler<Buffer, Buffer> handler) {
-    internalHandlers.put(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())), handler);
+  ManagedLocalMember registerInternalHandler(MessageHandler<Buffer, Buffer> handler) {
+    internalHandler = handler;
     return this;
   }
 
@@ -162,39 +158,26 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
     return this;
   }
 
-  /**
-   * Unregisters an internal handler.
-   */
-  ManagedLocalMember unregisterInternalHandler(String topic) {
-    internalHandlers.remove(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())));
-    return this;
-  }
-
   @Override
   @SuppressWarnings("unchecked")
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     ComposableFuture<U> future = new ComposableFuture<>();
-    context.executor().execute(() -> {
+    context.getExecutor().execute(() -> {
       MessageHandler<T, U> handler = handlers.get(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())));
       if (handler != null) {
-        handler.apply(context.serializer().readObject(context.serializer().writeObject(message))).whenComplete(future);
+        handler.apply(context.getSerializer().readObject(context.getSerializer().writeObject(message))).whenComplete(future);
       }
     });
-    return future.thenApply(r -> context.serializer().readObject(context.serializer().writeObject(r)));
+    return future.thenApply(r -> context.getSerializer().readObject(context.getSerializer().writeObject(r)));
   }
 
   /**
    * Sends an internal message.
    */
-  public CompletableFuture<Buffer> sendInternal(String topic, Buffer message) {
+  public CompletableFuture<Buffer> sendInternal(Buffer message) {
     ComposableFuture<Buffer> future = new ComposableFuture<>();
-    context.scheduler().execute(() -> {
-      MessageHandler<Buffer, Buffer> handler = internalHandlers.get(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())));
-      if (handler != null) {
-        handler.apply(message).whenCompleteAsync(future, context.scheduler());
-      } else {
-        future.completeExceptionally(new ClusterException("No handler registered"));
-      }
+    context.getScheduler().execute(() -> {
+      internalHandler.apply(message).whenCompleteAsync(future, context.getScheduler());
     });
     return future;
   }
@@ -207,7 +190,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
     CompletableFuture<T> future = new CompletableFuture<>();
-    context.executor().execute(() -> {
+    context.getExecutor().execute(() -> {
       try {
         future.complete(task.execute());
       } catch (Exception e) {
@@ -221,7 +204,7 @@ public class ManagedLocalMember extends ManagedMember<LocalMember> implements Lo
   public CompletableFuture<LocalMember> open() {
     open = true;
     server.connectListener(this::connect);
-    return server.listen().thenAccept(v -> context.raft().getMember(id()).put("address", server.address())).thenCompose(v -> super.open());
+    return server.listen().thenAccept(v -> context.getContext().getMember(id()).put("address", server.address())).thenCompose(v -> super.open());
   }
 
   @Override

@@ -34,4 +34,5 @@ public class ResourceException extends CopycatException {
   public ResourceException(Throwable cause) {
     super(cause);
   }
+
 }

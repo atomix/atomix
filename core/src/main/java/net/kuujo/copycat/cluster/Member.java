@@ -38,14 +38,14 @@ public interface Member {
   public static enum Type {
 
     /**
+     * Indicates that the member is a remote client of the cluster.
+     */
+    REMOTE,
+
+    /**
      * Indicates that the member is a passive, non-voting member of the cluster.
      */
     PASSIVE,
-
-    /**
-     * Indicates that the member is attempting to join the cluster.
-     */
-    PROMOTABLE,
 
     /**
      * Indicates that the member is an active voting member of the cluster.
@@ -60,10 +60,10 @@ public interface Member {
      */
     public static Type lookup(RaftMember.Type type) {
       switch (type) {
+        case REMOTE:
+          return REMOTE;
         case PASSIVE:
           return PASSIVE;
-        case PROMOTABLE:
-          return PROMOTABLE;
         case ACTIVE:
           return ACTIVE;
       }

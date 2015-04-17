@@ -17,41 +17,46 @@ package net.kuujo.copycat.resource.internal;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
-import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.resource.ResourceState;
+import net.kuujo.copycat.resource.Partition;
+import net.kuujo.copycat.resource.PartitionContext;
+import net.kuujo.copycat.resource.PartitionState;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Abstract resource implementation.
+ * Abstract partition implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractResource<T extends Resource<T>> implements Resource<T> {
-  protected final ResourceContext context;
+public abstract class AbstractPartition<T extends Partition<T>> implements Partition<T> {
+  protected final PartitionContext context;
   protected final CopycatSerializer serializer;
 
-  protected AbstractResource(ResourceContext context) {
+  protected AbstractPartition(PartitionContext context) {
     if (context == null)
       throw new NullPointerException("context cannot be null");
     this.context = context;
-    this.serializer = context.serializer();
+    this.serializer = context.getSerializer();
+  }
+
+  @Override
+  public int partition() {
+    return context.getPartitionId();
   }
 
   @Override
   public String name() {
-    return context.name();
+    return context.getName();
   }
 
   @Override
-  public ResourceState state() {
-    return context.state();
+  public PartitionState state() {
+    return context.getState();
   }
 
   @Override
   public Cluster cluster() {
-    return context.cluster();
+    return context.getCluster();
   }
 
   @Override

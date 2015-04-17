@@ -13,22 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster.internal;
+package net.kuujo.copycat.resource;
+
+import java.util.List;
 
 /**
- * Internal topic constants.
+ * Copycat resource.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-final class InternalTopics {
-  public static final String JOIN = "join";
-  public static final String PROMOTE = "promote";
-  public static final String LEAVE = "leave";
-  public static final String SYNC = "sync";
-  public static final String POLL = "poll";
-  public static final String VOTE = "vote";
-  public static final String APPEND = "append";
-  public static final String READ = "read";
-  public static final String WRITE = "write";
-  public static final String DELETE = "delete";
+public interface PartitionedResource<T extends PartitionedResource<T, U>, U extends Partition<U>> extends Resource<T> {
+
+  /**
+   * Returns a list of resource partitions.
+   *
+   * @return A list of resource partitions.
+   */
+  List<U> partitions();
+
+  /**
+   * Returns a resource partition by ID.
+   *
+   * @param id The resource partition ID.
+   * @return The resource partition.
+   * @throws java.lang.IndexOutOfBoundsException If the partition number is not valid.
+   */
+  U partition(int id);
+
 }

@@ -15,20 +15,21 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.Managed;
-
 /**
- * Copycat resource.
+ * Resource status.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource<T extends Resource<T>> extends Managed<T> {
+public enum PartitionState {
 
   /**
-   * Returns the resource name.
-   *
-   * @return The resource name.
+   * Indicates that the resource is still catching up.
    */
-  String name();
+  RECOVER,
+
+  /**
+   * Indicates that the resource is caught up.
+   */
+  HEALTHY
 
 }

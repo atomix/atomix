@@ -19,12 +19,14 @@ import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.BufferPool;
 import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.copycat.io.HeapBufferPool;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.protocol.ProtocolClient;
 import net.kuujo.copycat.protocol.ProtocolConnection;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.PartitionContext;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,11 +45,12 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   private static final byte INTERNAL = 1;
   private static final byte TASK = 2;
   private final ProtocolClient client;
+  private final BufferPool bufferPool = new HeapBufferPool();
   private ProtocolConnection connection;
   private final Map<String, Long> hashMap = new HashMap<>();
   private boolean open;
 
-  public ManagedRemoteMember(int id, String address, Protocol protocol, ResourceContext context) {
+  public ManagedRemoteMember(int id, String address, Protocol protocol, PartitionContext context) {
     super(id, context);
     if (address == null)
       throw new NullPointerException("address cannot be null");
@@ -62,7 +65,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     if (connection == null) {
       return client.connect()
-        .thenAcceptAsync(c -> this.connection = c, context.scheduler())
+        .thenAcceptAsync(c -> this.connection = c, context.getScheduler())
         .thenCompose(v -> doSend(topic, message));
     } else {
       return doSend(topic, message);
@@ -73,39 +76,42 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
    * Sends a message to the remote member.
    */
   private <T, U> CompletableFuture<U> doSend(String topic, T message) {
-    Buffer serialized = context.serializer().writeObject(message);
-    Buffer request = HeapBuffer.allocate(serialized.limit() + 10)
+    Buffer serialized = context.getSerializer().writeObject(message);
+    Buffer request = bufferPool.acquire()
       .writeByte(MESSAGE)
       .writeByte(USER)
       .writeLong(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())))
-      .write(serialized);
-    return connection.write(request).thenApplyAsync(b -> context.serializer().readObject(b), context.executor());
+      .write(serialized)
+      .flip();
+    return connection.write(request).thenApplyAsync(b -> {
+      request.close();
+      return context.getSerializer().readObject(b);
+    }, context.getExecutor());
   }
 
   /**
    * Sends an internal message.
    */
-  public CompletableFuture<Buffer> sendInternal(String topic, Buffer message) {
+  public CompletableFuture<Buffer> sendInternal(Buffer message) {
     if (connection == null) {
       return client.connect()
-        .thenAcceptAsync(c -> this.connection = c, context.scheduler())
-        .thenCompose(v -> doSendInternal(topic, message));
+        .thenAcceptAsync(c -> this.connection = c, context.getScheduler())
+        .thenCompose(v -> doSendInternal(message));
     } else {
-      return doSendInternal(topic, message);
+      return doSendInternal(message);
     }
   }
 
   /**
    * Sends an internal message.
    */
-  private CompletableFuture<Buffer> doSendInternal(String topic, Buffer message) {
+  private CompletableFuture<Buffer> doSendInternal(Buffer message) {
     Buffer request = HeapBuffer.allocate(message.limit() + 10)
       .writeByte(MESSAGE)
       .writeByte(INTERNAL)
-      .writeLong(hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash64(t.getBytes())))
       .write(message)
       .flip();
-    return connection.write(request).thenApplyAsync(v -> v, context.scheduler());
+    return connection.write(request).thenApplyAsync(v -> v, context.getScheduler());
   }
 
   @Override
@@ -117,7 +123,7 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   public <T> CompletableFuture<T> submit(Task<T> task) {
     if (connection == null) {
       return client.connect()
-        .thenAcceptAsync(c -> this.connection = c, context.scheduler())
+        .thenAcceptAsync(c -> this.connection = c, context.getScheduler())
         .thenCompose(v -> doSubmit(task));
     } else {
       return doSubmit(task);
@@ -128,9 +134,9 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
    * Submits a task for remote execution.
    */
   private <T> CompletableFuture<T> doSubmit(Task<T> task) {
-    Buffer serialized = context.serializer().writeObject(task);
+    Buffer serialized = context.getSerializer().writeObject(task);
     Buffer request = HeapBuffer.allocate(serialized.limit() + 1).writeByte(TASK).write(serialized).flip();
-    return connection.write(request).thenApplyAsync(b -> context.serializer().readObject(b), context.executor());
+    return connection.write(request).thenApplyAsync(b -> context.getSerializer().readObject(b), context.getExecutor());
   }
 
   @Override
@@ -147,9 +153,10 @@ public class ManagedRemoteMember extends ManagedMember<Member> implements Member
   @Override
   public CompletableFuture<Void> close() {
     open = false;
+    bufferPool.close();
     return super.close()
       .thenCompose(v -> connection != null ? client.close() : CompletableFuture.completedFuture(null))
-      .thenRunAsync(() -> this.connection = null, context.scheduler());
+      .thenRunAsync(() -> this.connection = null, context.getScheduler());
   }
 
   @Override

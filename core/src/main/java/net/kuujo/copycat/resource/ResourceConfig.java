@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,14 @@ package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
-import net.kuujo.copycat.log.LogConfig;
 import net.kuujo.copycat.util.Copyable;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Base Copycat resource configuration.
+ * Resource configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -34,9 +33,9 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> implements Cop
   private static final long DEFAULT_HEARTBEAT_INTERVAL = 250;
 
   private String name;
-  private String defaultName;
-  private Set<Integer> replicas = new HashSet<>();
-  private LogConfig log;
+  private StorageLevel storageLevel = StorageLevel.DISK;
+  private File directory;
+  private Partitioner partitioner = new HashPartitioner();
   private CopycatSerializer serializer = new CopycatSerializer();
   private long electionTimeout = DEFAULT_ELECTION_TIMEOUT;
   private long heartbeatInterval = DEFAULT_HEARTBEAT_INTERVAL;
@@ -44,13 +43,13 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> implements Cop
   protected ResourceConfig() {
   }
 
-  protected ResourceConfig(T config) {
-    this.name = config.getName();
-    this.replicas = config.getReplicas();
-    this.log = config.getLog();
-    this.serializer = config.getSerializer();
-    this.electionTimeout = config.getElectionTimeout();
-    this.heartbeatInterval = config.getHeartbeatInterval();
+  protected ResourceConfig(ResourceConfig<?> config) {
+    name = config.getName();
+    storageLevel = config.getStorageLevel();
+    directory = config.getDirectory();
+    serializer = config.getSerializer();
+    electionTimeout = config.getElectionTimeout();
+    heartbeatInterval = config.getHeartbeatInterval();
   }
 
   @Override
@@ -96,35 +95,129 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> implements Cop
   }
 
   /**
-   * Sets the default resource name.
+   * Sets the storage level.
    *
-   * @param name The default resource name.
+   * @param level The storage level.
+   * @throws java.lang.NullPointerException If the storage level is {@code null}
    */
-  public void setDefaultName(String name) {
-    if (name == null)
-      throw new NullPointerException("name cannot be null");
-    this.defaultName = name;
+  public void setStorageLevel(StorageLevel level) {
+    if (level == null)
+      throw new NullPointerException("storageLevel cannot be null");
+    this.storageLevel = level;
   }
 
   /**
-   * Returns the default resource name.
+   * Returns the storage level.
    *
-   * @return The default resource name.
+   * @return The storage level.
    */
-  public String getDefaultName() {
-    return defaultName;
+  public StorageLevel getStorageLevel() {
+    return storageLevel;
   }
 
   /**
-   * Sets the default resource name, returning the configuration for method chaining.
+   * Sets the storage level, returning the configuration for method chaining.
    *
-   * @param name The default resource name.
+   * @param level The storage level.
    * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the storage level is {@code null}
    */
   @SuppressWarnings("unchecked")
-  public T withDefaultName(String name) {
-    setName(name);
+  public T withStorageLevel(StorageLevel level) {
+    setStorageLevel(level);
     return (T) this;
+  }
+
+  /**
+   * Sets the storage directory.
+   *
+   * @param directory The storage directory.
+   * @throws java.lang.NullPointerException If the directory is {@code null}
+   */
+  public void setDirectory(String directory) {
+    if (directory == null)
+      throw new NullPointerException("directory cannot be null");
+    setDirectory(new File(directory));
+  }
+
+  /**
+   * Sets the storage directory.
+   *
+   * @param directory The storage directory.
+   * @throws java.lang.NullPointerException If the directory is {@code null}
+   */
+  public void setDirectory(File directory) {
+    if (directory == null)
+      throw new NullPointerException("directory cannot be null");
+    this.directory = directory;
+  }
+
+  /**
+   * Returns the storage directory.
+   *
+   * @return The storage directory.
+   */
+  public File getDirectory() {
+    return directory;
+  }
+
+  /**
+   * Sets the storage directory, returning the configuration for method chaining.
+   *
+   * @param directory The storage directory.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the directory is null.
+   */
+  @SuppressWarnings("unchecked")
+  public T withDirectory(String directory) {
+    setDirectory(directory);
+    return (T) this;
+  }
+
+  /**
+   * Sets the storage directory, returning the configuration for method chaining.
+   *
+   * @param directory The storage directory.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the directory is null.
+   */
+  @SuppressWarnings("unchecked")
+  public T withDirectory(File directory) {
+    setDirectory(directory);
+    return (T) this;
+  }
+
+  /**
+   * Sets the resource partitioner.
+   *
+   * @param partitioner The resource partitioner.
+   * @throws java.lang.NullPointerException If the partitioner is {@code null}
+   */
+  public void setPartitioner(Partitioner partitioner) {
+    if (partitioner == null)
+      throw new NullPointerException("partitioner cannot be null");
+    this.partitioner = partitioner;
+  }
+
+  /**
+   * Returns the resource partitioner.
+   *
+   * @return The resource partitioner.
+   */
+  public Partitioner getPartitioner() {
+    return partitioner;
+  }
+
+  /**
+   * Sets the resource partitioner, returning the configuration for method chaining.
+   *
+   * @param partitioner The resource partitioner.
+   * @return The resource configuration.
+   * @throws java.lang.NullPointerException If the partitioner is {@code null}
+   */
+  public ResourceConfig withPartitioner(Partitioner partitioner) {
+    setPartitioner(partitioner);
+    return this;
   }
 
   /**
@@ -281,193 +374,13 @@ public abstract class ResourceConfig<T extends ResourceConfig<T>> implements Cop
   }
 
   /**
-   * Sets all resource replica identifiers.
-   *
-   * @param ids A collection of resource replica identifiers.
-   */
-  public void setReplicas(Integer... ids) {
-    setReplicas(new ArrayList<>(Arrays.asList(ids)));
-  }
-
-  /**
-   * Sets all resource replica identifiers.
-   *
-   * @param ids A collection of resource replica identifiers.
-   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
-   */
-  public void setReplicas(Collection<Integer> ids) {
-    if (ids == null)
-      throw new NullPointerException("ids cannot be null");
-    Set<Integer> replicas = new HashSet<>(ids.size());
-    for (int id : ids) {
-      if (id <= 0)
-        throw new IllegalArgumentException("id cannot be negative");
-      replicas.add(id);
-    }
-    this.replicas = replicas;
-  }
-
-  /**
-   * Returns a set of all resource replica identifiers.
-   *
-   * @return A set of all resource replica identifiers.
-   */
-  public Set<Integer> getReplicas() {
-    return replicas;
-  }
-
-  /**
-   * Adds a replica to the resource, returning the resource configuration for method chaining.
-   *
-   * @param id The replica identifier to add.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code id} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T addReplica(int id) {
-    if (id <= 0)
-      throw new IllegalArgumentException("id cannot be negative");
-    replicas.add(id);
-    return (T) this;
-  }
-
-  /**
-   * Sets all resource replica identifiers, returning the resource configuration for method chaining.
-   *
-   * @param ids A collection of resource replica identifiers.
-   * @return The resource configuration.
-   */
-  @SuppressWarnings("unchecked")
-  public T withReplicas(Integer... ids) {
-    setReplicas(ids);
-    return (T) this;
-  }
-
-  /**
-   * Sets all resource replica identifiers, returning the resource configuration for method chaining.
-   *
-   * @param ids A collection of resource replica identifiers.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T withReplicas(Collection<Integer> ids) {
-    setReplicas(ids);
-    return (T) this;
-  }
-
-  /**
-   * Adds a collection of replica identifiers to the configuration, returning the resource configuration for method chaining.
-   *
-   * @param ids A collection of resource replica identifiers to add.
-   * @return The resource configuration.
-   */
-  public T addReplicas(Integer... ids) {
-    return addReplicas(Arrays.asList(ids));
-  }
-
-  /**
-   * Adds a collection of replica identifiers to the configuration, returning the resource configuration for method chaining.
-   *
-   * @param ids A collection of resource replica identifiers to add.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T addReplicas(Collection<Integer> ids) {
-    ids.forEach(this::addReplica);
-    return (T) this;
-  }
-
-  /**
-   * Removes a replica from the configuration, returning the resource configuration for method chaining.
-   *
-   * @param id The replica identifier to remove.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code id} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T removeReplica(int id) {
-    replicas.remove(id);
-    return (T) this;
-  }
-
-  /**
-   * Removes a collection of replica identifiers from the configuration, returning the resource configuration for method chaining.
-   *
-   * @param ids A collection of resource replica identifiers to remove.
-   * @return The resource configuration.
-   */
-  public T removeReplicas(Integer... ids) {
-    return removeReplicas(Arrays.asList(ids));
-  }
-
-  /**
-   * Removes a collection of replica identifiers from the configuration, returning the resource configuration for method chaining.
-   *
-   * @param ids A collection of resource replica identifiers to remove.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If {@code ids} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T removeReplicas(Collection<Integer> ids) {
-    ids.forEach(this::removeReplica);
-    return (T) this;
-  }
-
-  /**
-   * Clears all replica identifiers from the configuration, returning the resource configuration for method chaining.
+   * Resolves the resource configuration.
    *
    * @return The resource configuration.
-   */
-  @SuppressWarnings("unchecked")
-  public T clearReplicas() {
-    replicas.clear();
-    return (T) this;
-  }
-
-  /**
-   * Sets the resource log.
-   *
-   * @param log The resource log.
-   * @throws java.lang.NullPointerException If the {@code log} is {@code null}
-   */
-  public void setLog(LogConfig log) {
-    this.log = log;
-  }
-
-  /**
-   * Returns the resource log.
-   *
-   * @return The resource log.
-   */
-  public LogConfig getLog() {
-    return log;
-  }
-
-  /**
-   * Sets the resource log, returning the resource configuration for method chaining.
-   *
-   * @param log The resource log.
-   * @return The resource configuration.
-   * @throws java.lang.NullPointerException If the {@code log} is {@code null}
-   */
-  @SuppressWarnings("unchecked")
-  public T withLog(LogConfig log) {
-    setLog(log);
-    return (T) this;
-  }
-
-  /**
-   * Resolves the configuration.
-   *
-   * @return The resolved resource configuration.
    */
   public ResourceConfig<?> resolve() {
     if (name == null)
       throw new ConfigurationException("name not configured");
-    if (log == null)
-      throw new ConfigurationException("log not configured");
     return this;
   }
 

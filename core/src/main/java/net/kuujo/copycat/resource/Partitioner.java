@@ -15,20 +15,20 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.Managed;
-
 /**
- * Copycat resource.
+ * Resource partitioner.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource<T extends Resource<T>> extends Managed<T> {
+public interface Partitioner {
 
   /**
-   * Returns the resource name.
+   * Partitions the given key.
    *
-   * @return The resource name.
+   * @param key The key to partition.
+   * @param partitions The total number of available partitions.
+   * @return The partition number.
    */
-  String name();
+  int partition(Object key, int partitions);
 
 }

@@ -17,13 +17,14 @@ package net.kuujo.copycat.cluster.internal;
 
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.*;
-import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMember;
+import net.kuujo.copycat.raft.protocol.ProtocolHandler;
+import net.kuujo.copycat.raft.protocol.RaftProtocol;
 import net.kuujo.copycat.raft.protocol.Request;
 import net.kuujo.copycat.raft.protocol.Response;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.PartitionContext;
 import net.kuujo.copycat.util.Managed;
 import net.kuujo.copycat.util.concurrent.Futures;
 
@@ -38,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
+public class ManagedCluster implements Cluster, Managed<Void>, RaftProtocol, Observer {
   private final RaftContext raft;
   private final ManagedMembers members;
   private final Set<EventListener<ElectionEvent>> listeners = new CopyOnWriteArraySet<>();
@@ -46,10 +47,10 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
   private int lastLeader;
   private long lastTerm;
 
-  public ManagedCluster(ClusterConfig config, ResourceContext context) {
+  public ManagedCluster(ClusterConfig config, PartitionContext context) {
     if (context == null)
       throw new NullPointerException("context cannot be null");
-    this.raft = context.raft();
+    this.raft = context.getContext();
     this.members = new ManagedMembers(config, context);
   }
 
@@ -144,84 +145,26 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
     return this;
   }
 
-  /**
-   * Registers handlers for the context.
-   */
-  private void registerHandlers() {
-    member().registerInternalHandler(InternalTopics.JOIN, wrapInboundRequest(raft::join));
-    member().registerInternalHandler(InternalTopics.PROMOTE, wrapInboundRequest(raft::promote));
-    member().registerInternalHandler(InternalTopics.LEAVE, wrapInboundRequest(raft::leave));
-    member().registerInternalHandler(InternalTopics.SYNC, wrapInboundRequest(raft::sync));
-    member().registerInternalHandler(InternalTopics.POLL, wrapInboundRequest(raft::poll));
-    member().registerInternalHandler(InternalTopics.VOTE, wrapInboundRequest(raft::vote));
-    member().registerInternalHandler(InternalTopics.APPEND, wrapInboundRequest(raft::append));
-    member().registerInternalHandler(InternalTopics.READ, wrapInboundRequest(raft::read));
-    member().registerInternalHandler(InternalTopics.WRITE, wrapInboundRequest(raft::write));
-    member().registerInternalHandler(InternalTopics.DELETE, wrapInboundRequest(raft::delete));
-    raft.joinHandler(request -> wrapOutboundRequest(InternalTopics.JOIN, request));
-    raft.promoteHandler(request -> wrapOutboundRequest(InternalTopics.PROMOTE, request));
-    raft.leaveHandler(request -> wrapOutboundRequest(InternalTopics.LEAVE, request));
-    raft.syncHandler(request -> wrapOutboundRequest(InternalTopics.SYNC, request));
-    raft.pollHandler(request -> wrapOutboundRequest(InternalTopics.POLL, request));
-    raft.voteHandler(request -> wrapOutboundRequest(InternalTopics.VOTE, request));
-    raft.appendHandler(request -> wrapOutboundRequest(InternalTopics.APPEND, request));
-    raft.readHandler(request -> wrapOutboundRequest(InternalTopics.READ, request));
-    raft.writeHandler(request -> wrapOutboundRequest(InternalTopics.WRITE, request));
-    raft.deleteHandler(request -> wrapOutboundRequest(InternalTopics.DELETE, request));
-  }
-
-  /**
-   * Unregisters handlers for the context.
-   */
-  private void unregisterHandlers() {
-    member().unregisterInternalHandler(InternalTopics.JOIN);
-    member().unregisterInternalHandler(InternalTopics.PROMOTE);
-    member().unregisterInternalHandler(InternalTopics.LEAVE);
-    member().unregisterInternalHandler(InternalTopics.SYNC);
-    member().unregisterInternalHandler(InternalTopics.POLL);
-    member().unregisterInternalHandler(InternalTopics.VOTE);
-    member().unregisterInternalHandler(InternalTopics.APPEND);
-    member().unregisterInternalHandler(InternalTopics.READ);
-    member().unregisterInternalHandler(InternalTopics.WRITE);
-    member().unregisterInternalHandler(InternalTopics.DELETE);
-    raft.joinHandler(null);
-    raft.promoteHandler(null);
-    raft.leaveHandler(null);
-    raft.syncHandler(null);
-    raft.pollHandler(null);
-    raft.voteHandler(null);
-    raft.appendHandler(null);
-    raft.readHandler(null);
-    raft.writeHandler(null);
-    raft.deleteHandler(null);
-  }
-
-  /**
-   * Wraps an inbound context call.
-   */
-  private <T, U> MessageHandler<Buffer, Buffer> wrapInboundRequest(MessageHandler<T, U> handler) {
-    return message -> CompletableFuture.completedFuture(null)
-        .thenCompose(v -> handler.apply(serializer.readObject(message)))
-        .thenApply(serializer::writeObject);
-  }
-
-  /**
-   * Wraps an outbound context call.
-   */
-  private <T extends Request, U extends Response> CompletableFuture<U> wrapOutboundRequest(String topic, T request) {
-    ManagedMember<?> member = members.members.get(request.id());
+  @Override
+  public CompletableFuture<Response> request(Request request, RaftMember raftMember, RaftContext raftContext) {
+    ManagedMember<?> member = members.members.get(raftMember.id());
     if (member != null) {
-      return member.sendInternal(topic, serializer.writeObject(request)).thenApply(serializer::readObject);
+      return member.sendInternal(serializer.writeObject(request)).thenApply(serializer::readObject);
     }
-    return Futures.exceptionalFuture(new ClusterException("Unknown member URI"));
+    return Futures.exceptionalFuture(new ClusterException("Unknown member"));
   }
 
   @Override
-  public CompletableFuture<Cluster> open() {
+  public void requestHandler(ProtocolHandler<Request, Response> handler) {
+    ((ManagedLocalMember) members.members.get(raft.getLocalMember().id())).registerInternalHandler(buffer -> {
+      return handler.apply(serializer.readObject(buffer)).thenApply(serializer::writeObject);
+    });
+  }
+
+  @Override
+  public CompletableFuture<Void> open() {
     raft.addObserver(this);
-    return members.open()
-      .thenRun(this::registerHandlers)
-      .thenApply(v -> this);
+    return members.open();
   }
 
   @Override
@@ -232,7 +175,6 @@ public class ManagedCluster implements Cluster, Managed<Cluster>, Observer {
   @Override
   public CompletableFuture<Void> close() {
     raft.deleteObserver(this);
-    unregisterHandlers();
     return members.close();
   }
 

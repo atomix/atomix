@@ -17,6 +17,11 @@
       <artifactId>copycat-raft</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-log</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
 
   <build>

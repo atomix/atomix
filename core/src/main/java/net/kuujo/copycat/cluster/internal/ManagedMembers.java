@@ -20,7 +20,7 @@ import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMember;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.PartitionContext;
 import net.kuujo.copycat.util.Managed;
 
 import java.util.*;
@@ -38,14 +38,14 @@ import java.util.stream.Collectors;
 public class ManagedMembers implements Members, Managed<Void>, Observer {
   private final ClusterConfig config;
   private final Protocol protocol;
-  private final ResourceContext context;
+  private final PartitionContext context;
   private final RaftContext raft;
   @SuppressWarnings("rawtypes")
   final Map<Integer, ManagedMember> members = new ConcurrentHashMap<>(128);
   private final Set<EventListener<MembershipEvent>> listeners = new CopyOnWriteArraySet<>();
   private boolean open;
 
-  ManagedMembers(ClusterConfig config, ResourceContext context) {
+  ManagedMembers(ClusterConfig config, PartitionContext context) {
     if (config == null)
       throw new NullPointerException("config cannot be null");
     if (context == null)
@@ -53,7 +53,7 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     this.config = config;
     this.context = context;
     this.protocol = config.getProtocol();
-    this.raft = context.raft();
+    this.raft = context.getContext();
   }
 
   @Override
@@ -179,14 +179,14 @@ public class ManagedMembers implements Members, Managed<Void>, Observer {
     ManagedLocalMember localMember = new ManagedLocalMember(config.getLocalMember().getId(), config.getLocalMember().getAddress(), protocol, context);
     return localMember.open().thenCompose(v -> {
       members.put(localMember.id(), localMember);
-      if (context.config().getReplicas().isEmpty()) {
+      if (context.getPartitionConfig().getReplicas().isEmpty()) {
         for (MemberConfig member : config.getMembers()) {
           if (member.getId() != config.getLocalMember().getId()) {
             members.put(member.getId(), new ManagedRemoteMember(member.getId(), member.getAddress(), protocol, context));
           }
         }
       } else {
-        for (int replica : context.config().getReplicas()) {
+        for (int replica : context.getPartitionConfig().getReplicas()) {
           if (replica != config.getLocalMember().getId() && config.hasMember(replica)) {
             members.put(config.getMember(replica).getId(), new ManagedRemoteMember(replica, config.getMember(replica).getAddress(), protocol, context));
           }

@@ -15,20 +15,26 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.Managed;
-
 /**
- * Copycat resource.
+ * Copycat resource storage level.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource<T extends Resource<T>> extends Managed<T> {
+public enum StorageLevel {
 
   /**
-   * Returns the resource name.
-   *
-   * @return The resource name.
+   * Stores all state changes in memory.
    */
-  String name();
+  MEMORY,
+
+  /**
+   * Buffers state changes and periodically flushes state to disk.
+   */
+  BUFFERED,
+
+  /**
+   * Writes all state changes directly to disk.
+   */
+  DISK
 
 }

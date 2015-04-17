@@ -19,7 +19,7 @@ import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.raft.RaftContext;
 import net.kuujo.copycat.raft.RaftMember;
-import net.kuujo.copycat.resource.ResourceContext;
+import net.kuujo.copycat.resource.PartitionContext;
 import net.kuujo.copycat.util.Managed;
 
 import java.util.Observable;
@@ -32,13 +32,13 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Observer {
-  protected final ResourceContext context;
+  protected final PartitionContext context;
   private final int id;
   private String address;
   private Type type;
   private Status status;
 
-  public ManagedMember(int id, ResourceContext context) {
+  public ManagedMember(int id, PartitionContext context) {
     if (id <= 0)
       throw new IllegalArgumentException("id cannot be negative");
     if (context == null)
@@ -97,18 +97,18 @@ abstract class ManagedMember<T extends Member> implements Member, Managed<T>, Ob
   /**
    * Sends an internal message.
    */
-  abstract CompletableFuture<Buffer> sendInternal(String topic, Buffer request);
+  abstract CompletableFuture<Buffer> sendInternal(Buffer request);
 
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<T> open() {
-    context.raft().addObserver(this);
+    context.getContext().addObserver(this);
     return CompletableFuture.completedFuture((T) this);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    context.raft().deleteObserver(this);
+    context.getContext().deleteObserver(this);
     return CompletableFuture.completedFuture(null);
   }
 

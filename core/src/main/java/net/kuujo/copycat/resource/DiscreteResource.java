@@ -15,21 +15,20 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.cluster.Cluster;
+
 /**
- * Resource status.
+ * Discrete resource.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum ResourceState {
+public interface DiscreteResource<T extends DiscreteResource<T>> extends Resource<T> {
 
   /**
-   * Indicates that the resource is still catching up.
+   * Returns the resource cluster.
+   *
+   * @return The resource cluster.
    */
-  RECOVER,
-
-  /**
-   * Indicates that the resource is caught up.
-   */
-  HEALTHY
+  Cluster cluster();
 
 }

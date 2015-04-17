@@ -18,10 +18,7 @@ package net.kuujo.copycat.cluster;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.Copyable;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Cluster configuration.
@@ -31,7 +28,7 @@ import java.util.Set;
 public class ClusterConfig implements Copyable<ClusterConfig> {
   private Protocol protocol;
   private MemberConfig localMember;
-  private Set<MemberConfig> members = new HashSet<>();
+  private List<MemberConfig> members = new ArrayList<>(128);
 
   public ClusterConfig() {
   }
@@ -182,7 +179,8 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   public void setMembers(Collection<MemberConfig> members) {
     if (members == null)
       throw new NullPointerException("members cannot be null");
-    this.members = new HashSet<>(members);
+    this.members = new ArrayList<>(new HashSet<>(members));
+    sortMembers();
   }
 
   /**
@@ -190,7 +188,7 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
    *
    * @return The set of cluster members.
    */
-  public Set<MemberConfig> getMembers() {
+  public List<MemberConfig> getMembers() {
     return members;
   }
 
@@ -251,7 +249,10 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   public ClusterConfig addMember(MemberConfig member) {
     if (member == null)
       throw new NullPointerException("member cannot be null");
-    members.add(member);
+    if (!members.contains(member)) {
+      members.add(member);
+      sortMembers();
+    }
     return this;
   }
 
@@ -298,6 +299,13 @@ public class ClusterConfig implements Copyable<ClusterConfig> {
   public ClusterConfig clearMembers() {
     members.clear();
     return this;
+  }
+
+  /**
+   * Sorts the cluster members in ascending order.
+   */
+  private void sortMembers() {
+    Collections.sort(members, (m1, m2) -> m2.getId() - m1.getId());
   }
 
 }

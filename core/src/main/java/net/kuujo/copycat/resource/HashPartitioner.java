@@ -15,20 +15,21 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.util.Managed;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Copycat resource.
+ * Hash based partitioner.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource<T extends Resource<T>> extends Managed<T> {
+public class HashPartitioner implements Partitioner {
+  private final AtomicLong count = new AtomicLong();
 
-  /**
-   * Returns the resource name.
-   *
-   * @return The resource name.
-   */
-  String name();
+  @Override
+  public int partition(Object key, int partitions) {
+    if (key == null)
+      return (int) (count.incrementAndGet() % partitions);
+    return key.hashCode() % partitions;
+  }
 
 }
