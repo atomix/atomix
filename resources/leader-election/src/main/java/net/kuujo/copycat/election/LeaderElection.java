@@ -19,8 +19,7 @@ import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.ClusterConfig;
 import net.kuujo.copycat.cluster.ElectionEvent;
 import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.resource.ResourceContext;
-import net.kuujo.copycat.resource.internal.AbstractResource;
+import net.kuujo.copycat.resource.internal.AbstractDiscreteResource;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,43 +30,15 @@ import java.util.concurrent.Executor;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LeaderElection extends AbstractResource<LeaderElection> {
-
-  /**
-   * Creates a new leader election with the given cluster and leader election configurations.
-   *
-   * @param config The leader election configuration.
-   * @param cluster The cluster configuration.
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create(LeaderElectionConfig config, ClusterConfig cluster) {
-    return new LeaderElection(config, cluster);
-  }
-
-  /**
-   * Creates a new leader election with the given cluster and leader election configurations.
-   *
-   * @param config The leader election configuration.
-   * @param cluster The cluster configuration.
-   * @param executor An executor on which to execute leader election callbacks.
-   * @return A new leader election instance.
-   */
-  public static LeaderElection create(LeaderElectionConfig config, ClusterConfig cluster, Executor executor) {
-    return new LeaderElection(config, cluster, executor);
-  }
-
+public class LeaderElection extends AbstractDiscreteResource<LeaderElection> {
   private final Map<EventListener<Member>, EventListener<ElectionEvent>> listeners = new HashMap<>();
 
   public LeaderElection(LeaderElectionConfig config, ClusterConfig cluster) {
-    this(new ResourceContext(config, cluster));
+    super(config, cluster);
   }
 
   public LeaderElection(LeaderElectionConfig config, ClusterConfig cluster, Executor executor) {
-    this(new ResourceContext(config, cluster, executor));
-  }
-
-  public LeaderElection(ResourceContext context) {
-    super(context);
+    super(config, cluster, executor);
   }
 
   /**
@@ -80,7 +51,7 @@ public class LeaderElection extends AbstractResource<LeaderElection> {
     if (!listeners.containsKey(listener)) {
       EventListener<ElectionEvent> wrapper = event -> listener.accept(event.winner());
       listeners.put(listener, wrapper);
-      context.cluster().addElectionListener(wrapper);
+      context.getCluster().addElectionListener(wrapper);
     }
     return this;
   }
@@ -94,7 +65,7 @@ public class LeaderElection extends AbstractResource<LeaderElection> {
   public synchronized LeaderElection removeListener(EventListener<Member> listener) {
     EventListener<ElectionEvent> wrapper = listeners.remove(listener);
     if (wrapper != null) {
-      context.cluster().removeElectionListener(wrapper);
+      context.getCluster().removeElectionListener(wrapper);
     }
     return this;
   }

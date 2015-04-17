@@ -40,9 +40,9 @@ public class LeaderElectionTest {
       .addMember(2, "local://bar")
       .addMember(3, "local://baz");
 
-    LeaderElection election1 = LeaderElection.create(new LeaderElectionConfig(), cluster.copy().withLocalMember(1));
-    LeaderElection election2 = LeaderElection.create(new LeaderElectionConfig(), cluster.copy().withLocalMember(2));
-    LeaderElection election3 = LeaderElection.create(new LeaderElectionConfig(), cluster.copy().withLocalMember(3));
+    LeaderElection election1 = new LeaderElection(new LeaderElectionConfig(), cluster.copy().withLocalMember(1));
+    LeaderElection election2 = new LeaderElection(new LeaderElectionConfig(), cluster.copy().withLocalMember(2));
+    LeaderElection election3 = new LeaderElection(new LeaderElectionConfig(), cluster.copy().withLocalMember(3));
 
     CountDownLatch latch = new CountDownLatch(3);
 
