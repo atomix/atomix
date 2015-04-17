@@ -28,6 +28,7 @@
   <name>Copycat Resources</name>
 
   <modules>
+    <module>atomic</module>
     <module>collections</module>
     <module>event-log</module>
     <module>leader-election</module>
