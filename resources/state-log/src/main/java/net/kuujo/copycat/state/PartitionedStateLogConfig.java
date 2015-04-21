@@ -15,32 +15,21 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.raft.Consistency;
-import net.kuujo.copycat.resource.DiscreteResourceConfig;
+import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * State log configuration.
+ * Partitioned state log configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StateLogConfig extends DiscreteResourceConfig {
+public class PartitionedStateLogConfig extends PartitionedResourceConfig {
   private Consistency defaultConsistency = Consistency.DEFAULT;
   private final Map<String, CommandInfo> commands = new HashMap<>();
-
-  @Override
-  protected void setName(String name) {
-    super.setName(name);
-  }
-
-  @Override
-  protected void setCluster(Cluster cluster) {
-    super.setCluster(cluster);
-  }
 
   /**
    * Sets the default state log consistency.
@@ -83,15 +72,6 @@ public class StateLogConfig extends DiscreteResourceConfig {
    */
   protected void addCommand(String name, Command.Type type, Command command, Consistency consistency) {
     commands.put(name, new CommandInfo(name, type, command, consistency));
-  }
-
-  /**
-   * Sets all commands.
-   *
-   * @param commands The set of commands.
-   */
-  protected void setCommands(Map<String, CommandInfo> commands) {
-    this.commands.putAll(commands);
   }
 
   /**
