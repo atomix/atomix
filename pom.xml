@@ -68,11 +68,13 @@
   </distributionManagement>
 
   <modules>
+    <module>io</module>
+    <module>raft</module>
+    <module>storage</module>
+    <module>cluster</module>
     <module>core</module>
     <module>protocols</module>
     <module>resources</module>
-    <module>test-tools</module>
-    <module>api</module>
   </modules>
 
   <dependencies>
