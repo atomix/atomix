@@ -13,49 +13,55 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.cluster.Cluster;
 
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Local protocol connection implementation.
+ * Abstract resource implementation.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LocalProtocolConnection implements ProtocolConnection {
-  private ProtocolHandler handler;
-  private EventListener<Void> closeListener;
+public abstract class AbstractResource<T extends Resource<?>> implements Resource<T> {
+  protected final String name;
+  protected final Cluster cluster;
 
-  @Override
-  public void handler(ProtocolHandler handler) {
-    this.handler = handler;
+  protected AbstractResource(ResourceConfig config) {
+    this.name = config.getName();
+    this.cluster = config.getCluster();
   }
 
   @Override
-  public CompletableFuture<Buffer> write(Buffer request) {
-    return handler.apply(request);
+  public String name() {
+    return name;
   }
 
   @Override
-  public ProtocolConnection closeListener(EventListener<Void> listener) {
-    this.closeListener = listener;
-    return this;
+  public Cluster cluster() {
+    return cluster;
   }
 
   @Override
-  public ProtocolConnection exceptionListener(EventListener<Throwable> listener) {
-    return this;
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<T> open() {
+    return cluster.open().thenApply(v -> (T) this);
+  }
+
+  @Override
+  public boolean isOpen() {
+    return cluster.isOpen();
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    if (closeListener != null) {
-      closeListener.accept(null);
-    }
-    return CompletableFuture.completedFuture(null);
+    return cluster.close();
+  }
+
+  @Override
+  public boolean isClosed() {
+    return cluster.isClosed();
   }
 
 }

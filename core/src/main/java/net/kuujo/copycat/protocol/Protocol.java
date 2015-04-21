@@ -1,11 +1,12 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
  * http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -14,41 +15,70 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.util.Copyable;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.resource.Resource;
 
-import java.net.URI;
+import java.util.concurrent.CompletableFuture;
 
 /**
- * Communication protocol.
+ * Copycat protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Protocol extends Copyable<Protocol> {
+public interface Protocol {
 
   /**
-   * Returns a boolean indicating whether the given URI is valid.
+   * Registers a protocol handler.
    *
-   * @param uri The member URI to validate.
-   * @return Indicates whether the given URI is valid.
+   * @param handler The protocol handler.
+   * @return The protocol.
    */
-  default boolean isValidUri(URI uri) {
-    return true;
-  }
+  Protocol handler(ProtocolHandler handler);
 
   /**
-   * Creates a new protocol client.
+   * Executes a read.
    *
-   * @param uri The member URI.
-   * @return The protocol client.
+   * @param key The key to read.
+   * @param entry The read arguments.
+   * @param consistency The read consistency.
+   * @return The asynchronous read result.
    */
-  ProtocolClient createClient(URI uri);
+  CompletableFuture<Buffer> read(Buffer key, Buffer entry, Consistency consistency);
 
   /**
-   * Creates a new protocol server.
+   * Executes a write.
    *
-   * @param uri The member URI.
-   * @return The protocol server.
+   * @param key The key to write.
+   * @param entry The write arguments.
+   * @param consistency The write consistency.
+   * @return The asynchronous write result.
    */
-  ProtocolServer createServer(URI uri);
+  CompletableFuture<Buffer> write(Buffer key, Buffer entry, Consistency consistency);
+
+  /**
+   * Executes a delete.
+   *
+   * @param key The key to delete.
+   * @param entry The delete arguments.
+   * @param consistency The delete consistency.
+   * @return The asynchronous delete result.
+   */
+  CompletableFuture<Buffer> delete(Buffer key, Buffer entry, Consistency consistency);
+
+  /**
+   * Opens the protocol.
+   *
+   * @param resource The resource.
+   * @return A completable future to be called once the protocol is opened.
+   */
+  CompletableFuture<Void> open(Resource resource);
+
+  /**
+   * Closes the protocol.
+   *
+   * @return A completable future to be called once the protocol is closed.
+   */
+  CompletableFuture<Void> close();
 
 }

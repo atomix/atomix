@@ -15,97 +15,77 @@
  */
 package net.kuujo.copycat.resource;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 /**
  * Partitioned resource configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class PartitionedResourceConfig<T extends PartitionedResourceConfig<T>> extends ResourceConfig<T> {
-  private static final int DEFAULT_PARTITIONS = 1;
-  private static final int DEFAULT_REPLICATION_FACTOR = -1;
-
-  private int partitions = DEFAULT_PARTITIONS;
-  private int replicationFactor = DEFAULT_REPLICATION_FACTOR;
-
-  public PartitionedResourceConfig() {
-  }
-
-  public PartitionedResourceConfig(ResourceConfig<?> config) {
-    super(config);
-  }
-
-  public PartitionedResourceConfig(PartitionedResourceConfig<?> config) {
-    super(config);
-    partitions = config.partitions;
-    replicationFactor = config.getReplicationFactor();
-  }
+public class PartitionedResourceConfig extends ResourceConfig {
+  private Partitioner partitioner;
+  private final List<Partition> partitions = new ArrayList<>(128);
 
   /**
-   * Sets the number of resource partitions.
+   * Sets the resource partitioner.
    *
-   * @param partitions The number of resource partitions.
-   * @throws java.lang.IllegalArgumentException If the number of partitions is not positive
+   * @param partitioner The resource partitioner.
    */
-  public void setPartitions(int partitions) {
-    if (partitions <= 0)
-      throw new IllegalArgumentException("number of partitions must be positive");
-    this.partitions = partitions;
+  protected void setPartitioner(Partitioner partitioner) {
+    this.partitioner = partitioner;
   }
 
   /**
-   * Returns the number of resource partitions.
+   * Returns the resource partitioner.
    *
-   * @return The number of resource partitions.
+   * @return The resource partitioner.
    */
-  public int getPartitions() {
-    return partitions;
+  public Partitioner getPartitioner() {
+    return partitioner;
   }
 
   /**
-   * Sets the number of resource partitions, returning the configuration for method chaining.
+   * Sets all partitions.
    *
-   * @param partitions The number of resource partitions.
-   * @return The resource configuration.
-   * @throws java.lang.IllegalArgumentException If the number of partitions is not positive
+   * @param partitions The set of partitions.
    */
-  @SuppressWarnings("unchecked")
-  public T withPartitions(int partitions) {
-    setPartitions(partitions);
-    return (T) this;
+  protected <T extends Partition<?>> void setPartitions(Collection<T> partitions) {
+    this.partitions.clear();
+    if (partitions != null)
+      this.partitions.addAll(partitions);
   }
 
   /**
-   * Sets the resource replication factor.
+   * Adds a partition to the resource.
    *
-   * @param replicationFactor The resource replication factor.
-   * @throws java.lang.IllegalArgumentException If the replication factor is less than {@code -1}
+   * @param partition The partition to add.
    */
-  public void setReplicationFactor(int replicationFactor) {
-    if (replicationFactor < 1 && replicationFactor != -1)
-      throw new IllegalArgumentException("replication factor must be positive or -1");
-    this.replicationFactor = replicationFactor;
+  protected <T extends Partition<?>> void addPartition(T partition) {
+    if (partition != null)
+      partitions.add(partition);
   }
 
   /**
-   * Returns the resource replication factor.
+   * Returns the resource partitions.
    *
-   * @return The resource replication factor. Defaults to {@code -1}
-   */
-  public int getReplicationFactor() {
-    return replicationFactor;
-  }
-
-  /**
-   * Sets the resource replication factor, returning the configuration for method chaining.
-   *
-   * @param replicationFactor The resource replication factor.
-   * @return The resource configuration.
-   * @throws java.lang.IllegalArgumentException If the replication factor is less than {@code -1}
+   * @param <T> The resource partition type.
+   * @return A list of resource partitions.
    */
   @SuppressWarnings("unchecked")
-  public T withReplicationFactor(int replicationFactor) {
-    setReplicationFactor(replicationFactor);
-    return (T) this;
+  public <T extends Partition<?>> List<T> getPartitions() {
+    return (List) partitions;
+  }
+
+  @Override
+  protected PartitionedResourceConfig resolve() {
+    if (partitioner == null)
+      partitioner = new HashPartitioner();
+    if (partitions.isEmpty())
+      throw new ConfigurationException("no partitions provided");
+    super.resolve();
+    return this;
   }
 
 }

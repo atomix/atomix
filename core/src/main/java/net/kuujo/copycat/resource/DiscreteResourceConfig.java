@@ -19,98 +19,78 @@ import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.protocol.Protocol;
 
 /**
- * Partition configuration.
+ * Discrete resource configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class PartitionConfig extends Config {
-  private int partitionId;
+public abstract class DiscreteResourceConfig extends ResourceConfig {
   private Protocol protocol;
   private ReplicationStrategy replicationStrategy;
   private CopycatSerializer serializer;
 
   /**
-   * Sets the partition ID.
+   * Sets the resource protocol.
    *
-   * @param partitionId The partition ID.
-   */
-  protected void setPartitionId(int partitionId) {
-    this.partitionId = partitionId;
-  }
-
-  /**
-   * Returns the partition ID.
-   *
-   * @return The partition ID.
-   */
-  public int getPartitionId() {
-    return partitionId;
-  }
-
-  /**
-   * Sets the partition protocol.
-   *
-   * @param protocol The partition protocol.
+   * @param protocol The resource protocol.
    */
   protected void setProtocol(Protocol protocol) {
     this.protocol = protocol;
   }
 
   /**
-   * Returns the partition protocol.
+   * Returns the resource protocol.
    *
-   * @return The partition protocol.
+   * @return The resource protocol.
    */
   public Protocol getProtocol() {
     return protocol;
   }
 
   /**
-   * Sets the partition replication strategy.
+   * Sets the resource replication strategy.
    *
-   * @param replicationStrategy The partition replication strategy.
+   * @param replicationStrategy The resource replication strategy.
    */
   protected void setReplicationStrategy(ReplicationStrategy replicationStrategy) {
     this.replicationStrategy = replicationStrategy;
   }
 
   /**
-   * Returns the partition replication strategy.
+   * Returns the resource replication strategy.
    *
-   * @return The partition replication strategy.
+   * @return The resource replication strategy.
    */
   public ReplicationStrategy getReplicationStrategy() {
     return replicationStrategy;
   }
 
   /**
-   * Sets the partition serializer.
+   * Sets the resource serializer.
    *
-   * @param serializer The partition serializer.
+   * @param serializer The resource serializer.
    */
   protected void setSerializer(CopycatSerializer serializer) {
     this.serializer = serializer;
   }
 
   /**
-   * Returns the partition serializer.
+   * Returns the resource serializer.
    *
-   * @return The partition serializer.
+   * @return The resource serializer.
    */
   public CopycatSerializer getSerializer() {
     return serializer;
   }
 
   @Override
-  protected PartitionConfig resolve() {
-    if (partitionId < 0)
-      throw new ConfigurationException("partition ID cannot be negative");
+  protected DiscreteResourceConfig resolve() {
     if (protocol == null)
       throw new ConfigurationException("protocol not configured");
     if (replicationStrategy == null)
       replicationStrategy = new FullReplicationStrategy();
     if (serializer == null)
       serializer = new CopycatSerializer();
+    super.resolve();
     return this;
   }
 

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.util.Managed;
 
 /**
@@ -22,7 +23,7 @@ import net.kuujo.copycat.util.Managed;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Resource<T extends Resource<T>> extends Managed<T> {
+public interface Resource<T extends Resource<?>> extends Managed<T> {
 
   /**
    * Returns the resource name.
@@ -30,5 +31,57 @@ public interface Resource<T extends Resource<T>> extends Managed<T> {
    * @return The resource name.
    */
   String name();
+
+  /**
+   * Returns the resource cluster.
+   *
+   * @return The resource cluster.
+   */
+  Cluster cluster();
+
+  /**
+   * Resource builder.
+   *
+   * @param <T> The resource builder type.
+   * @param <U> The resource type.
+   */
+  static abstract class Builder<T extends Builder<T, U>, U extends Resource<?>> {
+    private final ResourceConfig config;
+
+    protected Builder(ResourceConfig config) {
+      this.config = config;
+    }
+
+    /**
+     * Sets the resource name.
+     *
+     * @param name The resource name.
+     * @return The resource builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withName(String name) {
+      config.setName(name);
+      return (T) this;
+    }
+
+    /**
+     * Sets the resource cluster.
+     *
+     * @param cluster The resource cluster.
+     * @return The resource builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withCluster(Cluster cluster) {
+      config.setCluster(cluster);
+      return (T) this;
+    }
+
+    /**
+     * Builds the resource.
+     *
+     * @return The built resource.
+     */
+    public abstract U build();
+  }
 
 }

@@ -13,25 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat;
+package net.kuujo.copycat.resource;
+
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.Member;
+
+import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
- * Configuration exception.
+ * Full replication strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ConfigurationException extends CopycatException {
+public class FullReplicationStrategy implements ReplicationStrategy {
 
-  public ConfigurationException(String message, Object... args) {
-    super(String.format(message, args));
+  @Override
+  public Collection<Member> selectPrimaries(Cluster cluster, int partitions) {
+    return cluster.members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
   }
 
-  public ConfigurationException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ConfigurationException(Throwable cause) {
-    super(cause);
+  @Override
+  public Collection<Member> selectSecondaries(Cluster cluster, int partitions) {
+    return cluster.members().stream().filter(m -> m.type() == Member.Type.PASSIVE).collect(Collectors.toList());
   }
 
 }

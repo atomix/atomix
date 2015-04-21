@@ -15,29 +15,86 @@
  */
 package net.kuujo.copycat.resource;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
- * Copycat resource.
+ * Partitioned resource.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface PartitionedResource<T extends PartitionedResource<T, U>, U extends Partition<U>> extends Resource<T> {
+public abstract class PartitionedResource<T extends PartitionedResource<T, U, V>, U extends Partition<?>, V extends Resource<?>> extends AbstractResource<V> {
+  protected final Partitioner partitioner;
+  protected final List<U> partitions;
+
+  protected PartitionedResource(PartitionedResourceConfig config, List<U> partitions) {
+    super(config);
+    if (partitions == null)
+      throw new NullPointerException("partitions cannot be null");
+    this.partitioner = config.resolve().getPartitioner();
+    this.partitions = partitions;
+    partitions.forEach(p -> p.init(config));
+  }
 
   /**
-   * Returns a list of resource partitions.
+   * Returns the partition for the given key.
    *
-   * @return A list of resource partitions.
+   * @param key The key for which to return the partition.
+   * @return The partition for the given key.
    */
-  List<U> partitions();
+  protected U partition(Object key) {
+    return partitions.get(partitioner.partition(key, partitions.size()));
+  }
 
   /**
-   * Returns a resource partition by ID.
+   * Partitioned resource builder.
    *
-   * @param id The resource partition ID.
-   * @return The resource partition.
-   * @throws java.lang.IndexOutOfBoundsException If the partition number is not valid.
+   * @param <T> The resource builder type.
+   * @param <U> The resource type.
    */
-  U partition(int id);
+  public static abstract class Builder<T extends Builder<T, U, V, W>, U extends PartitionedResource<U, V, ?>, V extends Partition<?>, W extends Resource<?>> extends Resource.Builder<T, U> {
+    protected final PartitionedResourceConfig config;
+
+    protected Builder(PartitionedResourceConfig config) {
+      super(config);
+      this.config = config;
+    }
+
+    /**
+     * Sets the resource partitioner.
+     *
+     * @param partitioner The resource partitioner.
+     * @return The partitioned resource builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withPartitioner(Partitioner partitioner) {
+      config.setPartitioner(partitioner);
+      return (T) this;
+    }
+
+    /**
+     * Sets the resource partitions.
+     *
+     * @param partitions The resource partitions.
+     * @return The partitioned resource builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withPartitions(Collection<V> partitions) {
+      config.setPartitions(partitions);
+      return (T) this;
+    }
+
+    /**
+     * Adds a partition to the resource.
+     *
+     * @param partition The partition to add.
+     * @return The partitioned resource builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T addPartition(V partition) {
+      config.addPartition(partition);
+      return (T) this;
+    }
+  }
 
 }

@@ -14,6 +14,11 @@
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
+      <artifactId>copycat-cluster</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-raft</artifactId>
       <version>${project.version}</version>
     </dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,48 +15,84 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.Managed;
 
 /**
- * Copycat resource partition.
+ * Resource partition.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Partition<T extends Partition<T>> extends Managed<T> {
+public abstract class Partition<T> implements Managed<T> {
 
   /**
-   * Returns the resource name.
+   * Initializes the partition.
    *
-   * @return The resource name.
+   * @param config The partition's resource configuration.
    */
-  String name();
+  protected abstract void init(PartitionedResourceConfig config);
 
   /**
-   * Returns the partition identifier.
-   * <p>
-   * The partition ID is a zero-based monotonically increasing number that is unique to each partition of a given resource.
+   * Partition builder.
    *
-   * @return The partition identifier.
+   * @param <T> The partition builder type.
+   * @param <U> The partition type.
    */
-  int partition();
+  public static abstract class Builder<T extends Builder<T, U>, U extends Partition<U>> {
+    protected final PartitionConfig config;
 
-  /**
-   * Returns the current resource status.<p>
-   *
-   * All resources begin in the {@link PartitionState#RECOVER} status. Once the Raft algorithm has caught up to the
-   * leader's commit index at the time the resource was opened the resource will transition to the
-   * {@link PartitionState#HEALTHY} status.
-   *
-   * @return The current resource status.
-   */
-  PartitionState state();
+    protected Builder(PartitionConfig config) {
+      this.config = config;
+    }
 
-  /**
-   * Returns the resource cluster.
-   *
-   * @return The resource cluster.
-   */
-  Cluster cluster();
+    /**
+     * Sets the partition ID.
+     *
+     * @param partitionId The partition ID.
+     * @return The partition builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withPartitionId(int partitionId) {
+      config.setPartitionId(partitionId);
+      return (T) this;
+    }
+
+    /**
+     * Sets the partition protocol.
+     *
+     * @param protocol The partition protocol.
+     * @return The partition builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withProtocol(Protocol protocol) {
+      config.setProtocol(protocol);
+      return (T) this;
+    }
+
+    /**
+     * Sets the partition replication strategy.
+     *
+     * @param replicationStrategy The partition replication strategy.
+     * @return The partition builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withReplicationStrategy(ReplicationStrategy replicationStrategy) {
+      config.setReplicationStrategy(replicationStrategy);
+      return (T) this;
+    }
+
+    /**
+     * Sets the partition serializer.
+     *
+     * @param serializer The partition serializer.
+     * @return The partition builder.
+     */
+    @SuppressWarnings("unchecked")
+    public T withSerializer(CopycatSerializer serializer) {
+      config.setSerializer(serializer);
+      return (T) this;
+    }
+  }
 
 }

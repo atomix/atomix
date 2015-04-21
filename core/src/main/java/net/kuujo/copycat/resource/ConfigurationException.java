@@ -13,20 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.cluster;
+package net.kuujo.copycat.resource;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+import net.kuujo.copycat.CopycatException;
 
 /**
- * Cluster message handler.<p>
- *
- * Message handlers a simple extension of {@link java.util.function.Function} which perform asynchronous functions in
- * response to received messages. Messages handlers should always return a {@link java.util.concurrent.CompletableFuture}
- * instance even if the future is immediately completed.
+ * Resource configuration exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@FunctionalInterface
-public interface MessageHandler<T, U> extends Function<T, CompletableFuture<U>> {
+public class ConfigurationException extends CopycatException {
+
+  public ConfigurationException(String message, Object... args) {
+    super(String.format(message, args));
+  }
+
+  public ConfigurationException(Throwable cause, String message, Object... args) {
+    super(String.format(message, args), cause);
+  }
+
+  public ConfigurationException(Throwable cause) {
+    super(cause);
+  }
+
 }
