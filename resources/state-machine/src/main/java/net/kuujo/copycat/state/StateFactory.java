@@ -20,6 +20,7 @@ package net.kuujo.copycat.state;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
+@FunctionalInterface
 public interface StateFactory<T> {
 
   /**
