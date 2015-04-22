@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,59 +15,45 @@
  */
 package net.kuujo.copycat.election;
 
-import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.cluster.ElectionEvent;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.resource.internal.AbstractDiscreteResource;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.Executor;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.resource.DiscreteResource;
+import net.kuujo.copycat.resource.DiscreteResourceConfig;
 
 /**
  * Leader election.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LeaderElection extends AbstractDiscreteResource<LeaderElection> {
-  private final Map<EventListener<Member>, EventListener<ElectionEvent>> listeners = new HashMap<>();
+public class LeaderElection extends DiscreteResource<LeaderElection, LeaderElection> {
 
-  public LeaderElection(LeaderElectionConfig config, ClusterConfig cluster) {
-    super(config, cluster);
+  public LeaderElection(DiscreteResourceConfig config) {
+    super(config);
   }
 
-  public LeaderElection(LeaderElectionConfig config, ClusterConfig cluster, Executor executor) {
-    super(config, cluster, executor);
-  }
-
-  /**
-   * Registers a leader election listener.
-   *
-   * @param listener The leader election listener.
-   * @return The leader election.
-   */
-  public synchronized LeaderElection addListener(EventListener<Member> listener) {
-    if (!listeners.containsKey(listener)) {
-      EventListener<ElectionEvent> wrapper = event -> listener.accept(event.winner());
-      listeners.put(listener, wrapper);
-      context.getCluster().addElectionListener(wrapper);
-    }
-    return this;
+  @Override
+  protected Buffer commit(Buffer key, Buffer entry, Buffer result) {
+    throw new UnsupportedOperationException();
   }
 
   /**
-   * Removes a leader election listener.
-   *
-   * @param listener The leader election listener.
-   * @return The leader election.
+   * Leader election builder.
    */
-  public synchronized LeaderElection removeListener(EventListener<Member> listener) {
-    EventListener<ElectionEvent> wrapper = listeners.remove(listener);
-    if (wrapper != null) {
-      context.getCluster().removeElectionListener(wrapper);
+  public static class Builder extends DiscreteResource.Builder<Builder, LeaderElection> {
+    private final DiscreteResourceConfig config;
+
+    private Builder() {
+      this(new DiscreteResourceConfig() {});
     }
-    return this;
+
+    private Builder(DiscreteResourceConfig config) {
+      super(config);
+      this.config = config;
+    }
+
+    @Override
+    public LeaderElection build() {
+      return new LeaderElection(config);
+    }
   }
 
 }

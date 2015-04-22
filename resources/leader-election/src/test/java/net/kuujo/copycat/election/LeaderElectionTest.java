@@ -15,12 +15,7 @@
  */
 package net.kuujo.copycat.election;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.protocol.LocalProtocol;
 import org.testng.annotations.Test;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Leader election test.
@@ -29,28 +24,4 @@ import java.util.concurrent.TimeUnit;
  */
 @Test
 public class LeaderElectionTest {
-
-  /**
-   * Tests a leader election with a cluster seed member.
-   */
-  public void testLeaderElectionAsSeedMember() throws Exception {
-    ClusterConfig cluster = new ClusterConfig()
-      .withProtocol(new LocalProtocol())
-      .addMember(1, "local://foo")
-      .addMember(2, "local://bar")
-      .addMember(3, "local://baz");
-
-    LeaderElection election1 = new LeaderElection(new LeaderElectionConfig(), cluster.copy().withLocalMember(1));
-    LeaderElection election2 = new LeaderElection(new LeaderElectionConfig(), cluster.copy().withLocalMember(2));
-    LeaderElection election3 = new LeaderElection(new LeaderElectionConfig(), cluster.copy().withLocalMember(3));
-
-    CountDownLatch latch = new CountDownLatch(3);
-
-    election1.open().thenRun(latch::countDown);
-    election2.open().thenRun(latch::countDown);
-    election3.open().thenRun(latch::countDown);
-
-    latch.await(30, TimeUnit.SECONDS);
-  }
-
 }
