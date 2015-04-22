@@ -15,16 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.state.Read;
 import net.kuujo.copycat.state.StateMachine;
-import net.kuujo.copycat.state.StateMachineConfig;
 import net.kuujo.copycat.state.Write;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -33,28 +30,22 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncLong implements Resource<AsyncLong>, AsyncLongProxy {
-  private final StateMachine<AsyncLongState> stateMachine;
+  private final StateMachine<State> stateMachine;
   private final AsyncLongProxy proxy;
 
-  public AsyncLong(AsyncLongConfig config, ClusterConfig cluster) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(Consistency.STRONG);
-    stateMachineConfig.setPartitions(1);
-    stateMachine = new StateMachine<>(AsyncLongState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncLongProxy.class);
-  }
-
-  public AsyncLong(AsyncLongConfig config, ClusterConfig cluster, Executor executor) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(Consistency.STRONG);
-    stateMachineConfig.setPartitions(1);
-    stateMachine = new StateMachine<>(AsyncLongState::new, stateMachineConfig, cluster, executor);
-    proxy = stateMachine.createProxy(AsyncLongProxy.class);
+  public AsyncLong(StateMachine<State> stateMachine) {
+    this.stateMachine = stateMachine;
+    this.proxy = stateMachine.createProxy(AsyncLongProxy.class);
   }
 
   @Override
   public String name() {
     return stateMachine.name();
+  }
+
+  @Override
+  public Cluster cluster() {
+    return stateMachine.cluster();
   }
 
   @Override
@@ -131,7 +122,7 @@ public class AsyncLong implements Resource<AsyncLong>, AsyncLongProxy {
   /**
    * Asynchronous long state.
    */
-  private static class AsyncLongState {
+  public static class State {
     private AtomicLong value = new AtomicLong();
 
     @Read

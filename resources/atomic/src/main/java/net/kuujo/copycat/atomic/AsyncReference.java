@@ -15,16 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.state.Read;
 import net.kuujo.copycat.state.StateMachine;
-import net.kuujo.copycat.state.StateMachineConfig;
 import net.kuujo.copycat.state.Write;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -33,30 +30,23 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncReference<T> implements Resource<AsyncReference<T>>, AsyncReferenceProxy<T> {
-  private final StateMachine<AsyncReferenceState> stateMachine;
+  private final StateMachine<State> stateMachine;
   private final AsyncReferenceProxy<T> proxy;
 
   @SuppressWarnings("unchecked")
-  public AsyncReference(AsyncReferenceConfig config, ClusterConfig cluster) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(Consistency.STRONG);
-    stateMachineConfig.setPartitions(1);
-    stateMachine = new StateMachine<>(AsyncReferenceState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncReferenceProxy.class);
-  }
-
-  @SuppressWarnings("unchecked")
-  public AsyncReference(AsyncReferenceConfig config, ClusterConfig cluster, Executor executor) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(Consistency.STRONG);
-    stateMachineConfig.setPartitions(1);
-    stateMachine = new StateMachine<>(AsyncReferenceState::new, stateMachineConfig, cluster, executor);
-    proxy = stateMachine.createProxy(AsyncReferenceProxy.class);
+  public AsyncReference(StateMachine<State> stateMachine) {
+    this.stateMachine = stateMachine;
+    this.proxy = stateMachine.createProxy(AsyncReferenceProxy.class);
   }
 
   @Override
   public String name() {
     return stateMachine.name();
+  }
+
+  @Override
+  public Cluster cluster() {
+    return stateMachine.cluster();
   }
 
   @Override
@@ -102,7 +92,7 @@ public class AsyncReference<T> implements Resource<AsyncReference<T>>, AsyncRefe
   /**
    * Asynchronous reference state.
    */
-  private static class AsyncReferenceState<T> {
+  public static class State<T> {
     private AtomicReference<T> value = new AtomicReference<>();
 
     @Read

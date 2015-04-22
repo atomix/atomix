@@ -15,16 +15,13 @@
  */
 package net.kuujo.copycat.atomic;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.state.Read;
 import net.kuujo.copycat.state.StateMachine;
-import net.kuujo.copycat.state.StateMachineConfig;
 import net.kuujo.copycat.state.Write;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -33,28 +30,22 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncBoolean implements Resource<AsyncBoolean>, AsyncBooleanProxy {
-  private final StateMachine<AsyncBooleanState> stateMachine;
+  private final StateMachine<State> stateMachine;
   private final AsyncBooleanProxy proxy;
 
-  public AsyncBoolean(AsyncBooleanConfig config, ClusterConfig cluster) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(Consistency.STRONG);
-    stateMachineConfig.setPartitions(1);
-    stateMachine = new StateMachine<>(AsyncBooleanState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncBooleanProxy.class);
-  }
-
-  public AsyncBoolean(AsyncBooleanConfig config, ClusterConfig cluster, Executor executor) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(Consistency.STRONG);
-    stateMachineConfig.setPartitions(1);
-    stateMachine = new StateMachine<>(AsyncBooleanState::new, stateMachineConfig, cluster, executor);
-    proxy = stateMachine.createProxy(AsyncBooleanProxy.class);
+  public AsyncBoolean(StateMachine<State> stateMachine) {
+    this.stateMachine = stateMachine;
+    this.proxy = stateMachine.createProxy(AsyncBooleanProxy.class);
   }
 
   @Override
   public String name() {
     return stateMachine.name();
+  }
+
+  @Override
+  public Cluster cluster() {
+    return stateMachine.cluster();
   }
 
   @Override
@@ -101,7 +92,7 @@ public class AsyncBoolean implements Resource<AsyncBoolean>, AsyncBooleanProxy {
   /**
    * Asynchronous boolean state.
    */
-  private static class AsyncBooleanState {
+  public static class State {
     private final AtomicBoolean value = new AtomicBoolean();
 
     @Read
