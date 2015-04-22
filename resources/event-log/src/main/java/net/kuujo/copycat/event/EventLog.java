@@ -15,64 +15,42 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.resource.PartitionContext;
-import net.kuujo.copycat.resource.PartitionedResourceConfig;
-import net.kuujo.copycat.resource.internal.AbstractPartitionedResource;
+import net.kuujo.copycat.resource.Resource;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 /**
- * Copycat event log.
+ * Event log.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventLog<K, V> extends AbstractPartitionedResource<EventLog<K, V>, EventLogPartition<K, V>> {
-
-  public EventLog(PartitionedResourceConfig<?> config, ClusterConfig cluster) {
-    super(config, cluster);
-  }
-
-  public EventLog(PartitionedResourceConfig<?> config, ClusterConfig cluster, Executor executor) {
-    super(config, cluster, executor);
-  }
-
-  @Override
-  protected EventLogPartition<K, V> createPartition(PartitionContext context) {
-    return new EventLogPartition<>(context);
-  }
+public interface EventLog<K, V> extends Resource<EventLog<K, V>> {
 
   /**
-   * Registers a log entry consumer.
+   * Sets the event log consumer.
    *
-   * @param consumer The log entry consumer.
+   * @param consumer The event log consumer.
    * @return The event log.
    */
-  public EventLog<K, V> consumer(EventConsumer<K, V> consumer) {
-    partitions.forEach(p -> p.consumer(consumer));
-    return this;
+  EventLog<K, V> consumer(EventConsumer<K, V> consumer);
+
+  /**
+   * Commits a null-keyed value to the event log.
+   *
+   * @param value The value to commit.
+   * @return A completable future to be called once the value has been committed.
+   */
+  default CompletableFuture<Long> commit(V value) {
+    return commit(null, value);
   }
 
   /**
-   * Commits an entry to the log.
+   * Commits a key/value to the event log.
    *
-   * @param entry The entry key.
-   * @return The entry to commit.
+   * @param key The key to commit.
+   * @param value The value to commit.
+   * @return A completable future to be called once the value has been committed.
    */
-  public CompletableFuture<Long> commit(V entry) {
-    return commit(null, entry);
-  }
-
-  /**
-   * Commits an entry to the log.
-   *
-   * @param key The entry key.
-   * @param entry The entry to commit.
-   * @return A completable future to be completed once the entry has been committed.
-   */
-  public CompletableFuture<Long> commit(K key, V entry) {
-    return partition(key).commit(key, entry);
-  }
+  CompletableFuture<Long> commit(K key, V value);
 
 }

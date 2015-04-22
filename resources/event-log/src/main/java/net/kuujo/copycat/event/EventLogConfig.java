@@ -1,5 +1,5 @@
 /*
- * Copyright 2014 the original author or authors.
+ * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,24 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.resource.PartitionedResourceConfig;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.resource.DiscreteResourceConfig;
 
 /**
  * Event log configuration.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EventLogConfig extends PartitionedResourceConfig<EventLogConfig> {
+public class EventLogConfig extends DiscreteResourceConfig {
 
-  public EventLogConfig() {
-  }
-
-  private EventLogConfig(EventLogConfig config) {
-    super(config);
+  @Override
+  protected void setName(String name) {
+    super.setName(name);
   }
 
   @Override
-  public EventLogConfig copy() {
-    return new EventLogConfig(this);
+  protected void setCluster(Cluster cluster) {
+    super.setCluster(cluster);
   }
 
 }

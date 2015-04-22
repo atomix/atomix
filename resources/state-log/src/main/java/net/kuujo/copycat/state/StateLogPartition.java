@@ -135,12 +135,20 @@ public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implement
    * State log partition builder.
    */
   public static class Builder<K, V> extends Partition.Builder<Builder<K, V>, StateLogPartition<K, V>> {
-    public Builder() {
+    private final StateLogConfig config;
+
+    private Builder() {
       this(new StateLogConfig());
     }
 
-    public Builder(StateLogConfig config) {
+    private Builder(StateLogConfig config) {
       super(config);
+      this.config = config;
+    }
+
+    @Override
+    public StateLogPartition<K, V> build() {
+      return new StateLogPartition<>(config, partitionId);
     }
   }
 

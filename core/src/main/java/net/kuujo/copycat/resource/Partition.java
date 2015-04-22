@@ -39,22 +39,23 @@ public abstract class Partition<T> implements Managed<T> {
    * @param <T> The partition builder type.
    * @param <U> The partition type.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends Partition<U>> {
-    protected final PartitionConfig config;
+  public static abstract class Builder<T extends Builder<T, U>, U extends Partition<? super U>> {
+    protected final DiscreteResourceConfig config;
+    protected int partitionId;
 
-    protected Builder(PartitionConfig config) {
+    protected Builder(DiscreteResourceConfig config) {
       this.config = config;
     }
 
     /**
-     * Sets the partition ID.
+     * Sets the partition identifier.
      *
-     * @param partitionId The partition ID.
+     * @param partitionId The unique partition ID.
      * @return The partition builder.
      */
     @SuppressWarnings("unchecked")
     public T withPartitionId(int partitionId) {
-      config.setPartitionId(partitionId);
+      this.partitionId = partitionId;
       return (T) this;
     }
 
@@ -93,6 +94,13 @@ public abstract class Partition<T> implements Managed<T> {
       config.setSerializer(serializer);
       return (T) this;
     }
+
+    /**
+     * Builds the partition.
+     *
+     * @return The built partition.
+     */
+    public abstract U build();
   }
 
 }
