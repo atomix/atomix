@@ -28,6 +28,16 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implements StateLog<K, V> {
+
+  /**
+   * Returns a new state log partition builder.
+   *
+   * @return A new state log partition builder.
+   */
+  public static <K, V> Builder<K, V> builder() {
+    return new Builder<>();
+  }
+
   private final StateLogConfig config;
   private final int partitionId;
   private DiscreteStateLog<K, V> stateLog;
@@ -42,6 +52,7 @@ public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implement
     this.config.setName(String.format("%s-%d", config.getName(), partitionId));
     this.config.setCluster(config.getCluster());
     this.config.setDefaultConsistency(((PartitionedStateLogConfig) config).getDefaultConsistency());
+    this.config.setCommands(((PartitionedStateLogConfig) config).getCommands());
     this.stateLog = new DiscreteStateLog<>(this.config);
   }
 
@@ -118,6 +129,19 @@ public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implement
   @Override
   public boolean isClosed() {
     return stateLog.isClosed();
+  }
+
+  /**
+   * State log partition builder.
+   */
+  public static class Builder<K, V> extends Partition.Builder<Builder<K, V>, StateLogPartition<K, V>> {
+    public Builder() {
+      this(new StateLogConfig());
+    }
+
+    public Builder(StateLogConfig config) {
+      super(config);
+    }
   }
 
 }

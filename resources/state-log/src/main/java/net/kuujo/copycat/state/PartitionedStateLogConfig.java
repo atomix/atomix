@@ -18,7 +18,6 @@ package net.kuujo.copycat.state;
 import net.kuujo.copycat.raft.Consistency;
 import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -79,8 +78,8 @@ public class PartitionedStateLogConfig extends PartitionedResourceConfig {
    *
    * @return A collection of configured commands.
    */
-  public Collection<CommandInfo> getCommands() {
-    return commands.values();
+  public Map<String, CommandInfo> getCommands() {
+    return commands;
   }
 
 }
