@@ -15,8 +15,11 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
-import net.kuujo.copycat.state.*;
+import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.state.Delete;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.state.Write;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,7 +28,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 /**
@@ -36,28 +38,23 @@ import java.util.function.Supplier;
  * @param <T> The set data type.
  */
 public class AsyncSet<T> implements AsyncCollection<AsyncSet<T>, T>, AsyncSetProxy<T> {
-  private final StateMachine<AsyncSetState<T>> stateMachine;
+  private final StateMachine<State<T>> stateMachine;
   private final AsyncSetProxy<T> proxy;
 
   @SuppressWarnings("unchecked")
-  public AsyncSet(AsyncSetConfig config, ClusterConfig cluster) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(config.getConsistency());
-    stateMachine = new StateMachine<>(AsyncSetState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncSetProxy.class);
-  }
-
-  @SuppressWarnings("unchecked")
-  public AsyncSet(AsyncSetConfig config, ClusterConfig cluster, Executor executor) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(config.getConsistency());
-    stateMachine = new StateMachine<>(AsyncSetState::new, stateMachineConfig, cluster, executor);
-    proxy = stateMachine.createProxy(AsyncSetProxy.class);
+  public AsyncSet(StateMachine<State<T>> stateMachine) {
+    this.stateMachine = stateMachine;
+    this.proxy = stateMachine.createProxy(AsyncSetProxy.class);
   }
 
   @Override
   public String name() {
     return stateMachine.name();
+  }
+
+  @Override
+  public Cluster cluster() {
+    return stateMachine.cluster();
   }
 
   /**
@@ -148,7 +145,7 @@ public class AsyncSet<T> implements AsyncCollection<AsyncSet<T>, T>, AsyncSetPro
   /**
    * Asynchronous set state.
    */
-  private static class AsyncSetState<T> implements Set<T> {
+  public static class State<T> implements Set<T> {
     private final Set<T> state = new HashSet<>();
 
     @Read

@@ -15,14 +15,16 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.state.*;
+import net.kuujo.copycat.state.Delete;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.state.Write;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
@@ -35,28 +37,23 @@ import java.util.function.Supplier;
  * @param <V> The map entry type.
  */
 public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, AsyncMultiMapProxy<K, V> {
-  private final StateMachine<AsyncMapState<K, V>> stateMachine;
+  private final StateMachine<State<K, V>> stateMachine;
   private AsyncMultiMapProxy<K, V> proxy;
 
   @SuppressWarnings("unchecked")
-  public AsyncMultiMap(AsyncMultiMapConfig config, ClusterConfig cluster) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(config.getConsistency());
-    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncMultiMapProxy.class);
-  }
-
-  @SuppressWarnings("unchecked")
-  public AsyncMultiMap(AsyncMultiMapConfig config, ClusterConfig cluster, Executor executor) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(config.getConsistency());
-    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncMultiMapProxy.class);
+  public AsyncMultiMap(StateMachine<State<K, V>> stateMachine) {
+    this.stateMachine = stateMachine;
+    this.proxy = stateMachine.createProxy(AsyncMultiMapProxy.class);
   }
 
   @Override
   public String name() {
     return stateMachine.name();
+  }
+
+  @Override
+  public Cluster cluster() {
+    return stateMachine.cluster();
   }
 
   /**
@@ -187,7 +184,7 @@ public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, Async
   /**
    * Asynchronous map state.
    */
-  private static class AsyncMapState<K, V> {
+  public static class State<K, V> {
     private Map<K, Collection<V>> map = new HashMap<>();
 
     @Read

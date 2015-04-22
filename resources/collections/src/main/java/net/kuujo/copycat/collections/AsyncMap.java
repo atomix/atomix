@@ -15,9 +15,12 @@
  */
 package net.kuujo.copycat.collections;
 
-import net.kuujo.copycat.cluster.ClusterConfig;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.state.*;
+import net.kuujo.copycat.state.Delete;
+import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.StateMachine;
+import net.kuujo.copycat.state.Write;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,7 +29,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -40,28 +42,23 @@ import java.util.function.Supplier;
  * @param <V> The map entry type.
  */
 public class AsyncMap<K, V> implements Resource<AsyncMap<K, V>>, AsyncMapProxy<K, V> {
-  private final StateMachine<AsyncMapState<K, V>> stateMachine;
+  private final StateMachine<State<K, V>> stateMachine;
   private AsyncMapProxy<K, V> proxy;
 
   @SuppressWarnings("unchecked")
-  public AsyncMap(AsyncMapConfig config, ClusterConfig cluster) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(config.getConsistency());
-    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncMapProxy.class);
-  }
-
-  @SuppressWarnings("unchecked")
-  public AsyncMap(AsyncMapConfig config, ClusterConfig cluster, Executor executor) {
-    StateMachineConfig stateMachineConfig = new StateMachineConfig(config)
-      .withDefaultConsistency(config.getConsistency());
-    stateMachine = new StateMachine<>(AsyncMapState::new, stateMachineConfig, cluster);
-    proxy = stateMachine.createProxy(AsyncMapProxy.class);
+  public AsyncMap(StateMachine<State<K, V>> stateMachine) {
+    this.stateMachine = stateMachine;
+    this.proxy = stateMachine.createProxy(AsyncMapProxy.class);
   }
 
   @Override
   public String name() {
     return stateMachine.name();
+  }
+
+  @Override
+  public Cluster cluster() {
+    return stateMachine.cluster();
   }
 
   /**
@@ -212,7 +209,7 @@ public class AsyncMap<K, V> implements Resource<AsyncMap<K, V>>, AsyncMapProxy<K
   /**
    * Asynchronous map state.
    */
-  private static class AsyncMapState<K, V> implements Map<K, V> {
+  public static class State<K, V> implements Map<K, V> {
     private final Map<K, V> state = new HashMap<>();
 
     @Read
