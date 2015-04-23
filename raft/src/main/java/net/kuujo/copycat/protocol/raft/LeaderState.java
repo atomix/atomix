@@ -50,9 +50,9 @@ class LeaderState extends ActiveState {
   @Override
   public synchronized CompletableFuture<RaftState> open() {
     return super.open()
-      .thenRun(this::applyEntries)
-      .thenRun(replicator::commit)
       .thenRun(this::takeLeadership)
+      .thenCompose(v -> commitEntries())
+      .thenRun(this::applyEntries)
       .thenRun(this::startHeartbeatTimer)
       .thenApply(v -> this);
   }
@@ -62,6 +62,32 @@ class LeaderState extends ActiveState {
    */
   private void takeLeadership() {
     context.setLeader(context.getCluster().member().id());
+  }
+
+  /**
+   * Commits a no-op entry to the log, ensuring any entries from a previous term are committed.
+   */
+  private CompletableFuture<Void> commitEntries() {
+    final long term = context.getTerm();
+    final long index;
+    try (RaftEntry logEntry = context.log().createEntry()) {
+      logEntry.writeType(RaftEntry.Type.NOOP)
+        .writeTerm(term);
+      index = logEntry.index();
+    }
+
+    CompletableFuture<Void> future = new CompletableFuture<>();
+    replicator.commit(index).whenComplete((resultIndex, error) -> {
+      context.checkThread();
+      if (isOpen()) {
+        if (error == null) {
+          future.complete(null);
+        } else {
+          context.transition(Type.FOLLOWER);
+        }
+      }
+    });
+    return future;
   }
 
   /**
