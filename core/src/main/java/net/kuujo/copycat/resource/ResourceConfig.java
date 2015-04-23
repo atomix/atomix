@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ManagedCluster;
 
 /**
  * Resource configuration.
@@ -24,7 +24,7 @@ import net.kuujo.copycat.cluster.Cluster;
  */
 public abstract class ResourceConfig extends Config {
   private String name;
-  private Cluster cluster;
+  private ManagedCluster cluster;
 
   /**
    * Sets the resource name.
@@ -49,7 +49,7 @@ public abstract class ResourceConfig extends Config {
    *
    * @param cluster The resource cluster.
    */
-  protected void setCluster(Cluster cluster) {
+  protected void setCluster(ManagedCluster cluster) {
     this.cluster = cluster;
   }
 
@@ -58,7 +58,7 @@ public abstract class ResourceConfig extends Config {
    *
    * @return The resource cluster.
    */
-  public Cluster getCluster() {
+  public ManagedCluster getCluster() {
     return cluster;
   }
 

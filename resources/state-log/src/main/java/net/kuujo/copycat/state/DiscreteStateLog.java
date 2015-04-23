@@ -20,7 +20,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBufferPool;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.io.util.ReferencePool;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.resource.DiscreteResource;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
@@ -160,17 +160,17 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
       return Futures.exceptionalFuture(new CopycatException(String.format("Invalid state log command %s", command)));
     }
 
+    Consistency consistency = commandInfo.consistency();
     switch (commandInfo.type()) {
       case READ:
         LOGGER.debug("{} - Submitting read command {} with entry {}", name(), command, entry);
-        Consistency consistency = commandInfo.consistency();
         return protocol.read(key, entry, consistency != null ? consistency : defaultConsistency);
       case WRITE:
         LOGGER.debug("{} - Submitting write command {} with entry {}", name(), command, entry);
-        return protocol.write(key, entry, Consistency.STRONG);
+        return protocol.write(key, entry, consistency != null ? consistency : defaultConsistency);
       case DELETE:
         LOGGER.debug("{} - Submitting delete command {} with entry {}", name(), command, entry);
-        return protocol.delete(key, null, Consistency.STRONG);
+        return protocol.delete(key, null, consistency != null ? consistency : defaultConsistency);
     }
     return Futures.exceptionalFuture(new CopycatException(String.format("Invalid state log command %s", command)));
   }

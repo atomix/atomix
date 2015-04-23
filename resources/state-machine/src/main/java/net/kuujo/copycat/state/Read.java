@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.protocol.Consistency;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,7 +32,7 @@ import java.lang.annotation.Target;
 public @interface Read {
 
   /**
-   * The query consistency.
+   * The read consistency.
    */
   Consistency consistency() default Consistency.DEFAULT;
 

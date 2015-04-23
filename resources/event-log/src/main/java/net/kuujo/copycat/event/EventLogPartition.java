@@ -40,6 +40,7 @@ public class EventLogPartition<K, V> extends Partition<EventLog<K, V>> implement
   protected void init(PartitionedResourceConfig config) {
     this.config.setName(String.format("%s-%d", config.getName(), partitionId));
     this.config.setCluster(config.getCluster());
+    this.config.setPartitions(config.getPartitions().size());
     this.eventLog = new DiscreteEventLog<>(this.config);
   }
 

@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.state;
 
+import net.kuujo.copycat.protocol.Consistency;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -28,4 +30,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Write {
+
+  /**
+   * The write consistency.
+   */
+  Consistency consistency() default Consistency.STRONG;
+
 }

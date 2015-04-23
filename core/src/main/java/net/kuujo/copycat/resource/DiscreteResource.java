@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.protocol.Protocol;
@@ -28,6 +29,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U extends Resource<?>> extends AbstractResource<U> {
   protected final Protocol protocol;
+  protected final Cluster partitionedCluster;
   protected final ReplicationStrategy replicationStrategy;
   protected final CopycatSerializer serializer;
 
@@ -36,6 +38,9 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
     this.protocol = config.getProtocol();
     this.replicationStrategy = config.getReplicationStrategy();
     this.serializer = config.getSerializer();
+    this.partitionedCluster = new PartitionedCluster(config.getCluster(), config.getReplicationStrategy(), config.getPartitions());
+    protocol.setTopic(config.getName());
+    protocol.setCluster(partitionedCluster);
   }
 
   /**
@@ -46,8 +51,8 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<U> open() {
-    protocol.handler(this::commit);
-    return super.open().thenCompose(v -> protocol.open(this)).thenApply(v -> (U) this);
+    protocol.commit(this::commit);
+    return super.open().thenCompose(v -> protocol.open()).thenApply(v -> (U) this);
   }
 
   @Override

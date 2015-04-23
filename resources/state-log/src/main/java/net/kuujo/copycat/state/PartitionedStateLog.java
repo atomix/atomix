@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.resource.PartitionedResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

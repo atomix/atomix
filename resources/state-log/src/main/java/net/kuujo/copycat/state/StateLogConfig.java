@@ -15,9 +15,10 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.cluster.ManagedCluster;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.resource.DiscreteResourceConfig;
+import net.kuujo.copycat.resource.ReplicationStrategy;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -38,8 +39,18 @@ public class StateLogConfig extends DiscreteResourceConfig {
   }
 
   @Override
-  protected void setCluster(Cluster cluster) {
+  protected void setCluster(ManagedCluster cluster) {
     super.setCluster(cluster);
+  }
+
+  @Override
+  protected void setPartitions(int partitions) {
+    super.setPartitions(partitions);
+  }
+
+  @Override
+  protected void setReplicationStrategy(ReplicationStrategy replicationStrategy) {
+    super.setReplicationStrategy(replicationStrategy);
   }
 
   /**

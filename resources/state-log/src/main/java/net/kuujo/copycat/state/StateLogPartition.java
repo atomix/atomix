@@ -16,7 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.resource.Partition;
 import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
@@ -51,6 +51,7 @@ public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implement
   protected void init(PartitionedResourceConfig config) {
     this.config.setName(String.format("%s-%d", config.getName(), partitionId));
     this.config.setCluster(config.getCluster());
+    this.config.setPartitions(config.getPartitions().size());
     this.config.setDefaultConsistency(((PartitionedStateLogConfig) config).getDefaultConsistency());
     this.config.setCommands(((PartitionedStateLogConfig) config).getCommands());
     this.stateLog = new DiscreteStateLog<>(this.config);

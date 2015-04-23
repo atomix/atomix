@@ -16,7 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.resource.Resource;
 
 import java.lang.reflect.*;

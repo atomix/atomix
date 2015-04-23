@@ -18,7 +18,7 @@ package net.kuujo.copycat.event;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBufferPool;
 import net.kuujo.copycat.io.util.ReferencePool;
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.resource.DiscreteResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

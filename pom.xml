@@ -69,11 +69,9 @@
 
   <modules>
     <module>io</module>
-    <module>raft</module>
-    <module>storage</module>
-    <module>cluster</module>
     <module>core</module>
-    <module>protocols</module>
+    <module>raft</module>
+    <module>netty</module>
     <module>resources</module>
   </modules>
 

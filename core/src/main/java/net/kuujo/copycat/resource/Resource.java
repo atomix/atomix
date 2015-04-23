@@ -16,6 +16,7 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.util.Managed;
 
 /**
@@ -71,7 +72,7 @@ public interface Resource<T extends Resource<?>> extends Managed<T> {
      * @return The resource builder.
      */
     @SuppressWarnings("unchecked")
-    public T withCluster(Cluster cluster) {
+    public T withCluster(ManagedCluster cluster) {
       config.setCluster(cluster);
       return (T) this;
     }

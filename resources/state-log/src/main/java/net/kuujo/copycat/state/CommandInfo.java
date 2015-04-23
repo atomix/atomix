@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.state;
 
-import net.kuujo.copycat.raft.Consistency;
+import net.kuujo.copycat.protocol.Consistency;
 
 /**
  * Command info.

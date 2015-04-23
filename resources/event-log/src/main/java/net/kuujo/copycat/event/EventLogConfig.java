@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.event;
 
-import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ManagedCluster;
 import net.kuujo.copycat.resource.DiscreteResourceConfig;
 
 /**
@@ -31,8 +31,13 @@ public class EventLogConfig extends DiscreteResourceConfig {
   }
 
   @Override
-  protected void setCluster(Cluster cluster) {
+  protected void setCluster(ManagedCluster cluster) {
     super.setCluster(cluster);
+  }
+
+  @Override
+  protected void setPartitions(int partitions) {
+    super.setPartitions(partitions);
   }
 
 }

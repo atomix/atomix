@@ -16,6 +16,7 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.cluster.Cluster;
+import net.kuujo.copycat.cluster.ManagedCluster;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -26,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractResource<T extends Resource<?>> implements Resource<T> {
   protected final String name;
-  protected final Cluster cluster;
+  protected final ManagedCluster cluster;
 
   protected AbstractResource(ResourceConfig config) {
     this.name = config.getName();
