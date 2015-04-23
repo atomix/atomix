@@ -73,6 +73,7 @@
     <module>raft</module>
     <module>netty</module>
     <module>resources</module>
+    <module>all</module>
   </modules>
 
   <dependencies>
