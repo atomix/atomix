@@ -49,6 +49,11 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
   protected abstract Buffer commit(Buffer key, Buffer entry, Buffer result);
 
   @Override
+  public Cluster cluster() {
+    return partitionedCluster;
+  }
+
+  @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<U> open() {
     protocol.commit(this::commit);

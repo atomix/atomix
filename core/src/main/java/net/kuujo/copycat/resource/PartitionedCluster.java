@@ -1,13 +1,12 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.LocalMember;
-import net.kuujo.copycat.cluster.Member;
-import net.kuujo.copycat.cluster.MembershipChangeEvent;
+import net.kuujo.copycat.Task;
+import net.kuujo.copycat.cluster.*;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -20,13 +19,12 @@ class PartitionedCluster implements Cluster {
   private final ReplicationStrategy replicationStrategy;
   private final int partitions;
   private final Map<EventListener<MembershipChangeEvent>, EventListener<MembershipChangeEvent>> listeners = new ConcurrentHashMap<>();
-  private final LocalMember localMember;
+  private LocalMember localMember;
   private Map<Integer, Member> members = new ConcurrentHashMap<>();
   private Map<Integer, Member> remoteMembers = new ConcurrentHashMap<>();
 
   PartitionedCluster(Cluster cluster, ReplicationStrategy replicationStrategy, int partitions) {
     this.cluster = cluster;
-    this.localMember = cluster.member();
     this.replicationStrategy = replicationStrategy;
     this.partitions = partitions;
     cluster.addMembershipListener(event -> {
@@ -35,21 +33,43 @@ class PartitionedCluster implements Cluster {
     resetMembers();
   }
 
+  /**
+   * Resets the partitioned cluster membership.
+   */
   private void resetMembers() {
+    LocalMember localMember = null;
     Map<Integer, Member> members = new ConcurrentHashMap<>();
-    replicationStrategy.selectPrimaries(cluster, partitions).forEach(member -> {
-      if (!member.equals(localMember)) {
+    for (Member member : replicationStrategy.selectPrimaries(cluster, partitions)) {
+      if (member instanceof LocalMember) {
+        localMember = new PartitionedLocalMember((LocalMember) member, Member.Type.ACTIVE);
+      } else if (member.type() != Member.Type.REMOTE) {
         members.put(member.id(), member);
       }
-    });
-    replicationStrategy.selectSecondaries(cluster, partitions).forEach(member -> {
-      if (!members.equals(localMember)) {
+    }
+
+    for (Member member : replicationStrategy.selectSecondaries(cluster, partitions)) {
+      if (member instanceof LocalMember) {
+        localMember = new PartitionedLocalMember((LocalMember) member, Member.Type.PASSIVE);
+      } else if (member.type() != Member.Type.REMOTE) {
+        members.put(member.id(), new PartitionedRemoteMember((RemoteMember) member, Member.Type.PASSIVE));
+      }
+    }
+
+    for (Member member : cluster.members()) {
+      if (member instanceof RemoteMember && member.type() == Member.Type.REMOTE) {
         members.put(member.id(), member);
       }
-    });
+    }
+
     this.remoteMembers = members;
     this.members = new ConcurrentHashMap<>(members);
-    this.members.put(localMember.id(), localMember);
+    if (localMember != null) {
+      this.localMember = localMember;
+      this.members.put(localMember.id(), localMember);
+    } else {
+      this.localMember = cluster.member();
+      this.members.put(this.localMember.id(), this.localMember);
+    }
   }
 
   @Override
@@ -96,6 +116,104 @@ class PartitionedCluster implements Cluster {
       m.send(topic, message);
     });
     return this;
+  }
+
+  /**
+   * Partitioned local member.
+   */
+  private static class PartitionedLocalMember implements LocalMember {
+    private final LocalMember member;
+    private final Member.Type type;
+
+    private PartitionedLocalMember(LocalMember member, Member.Type type) {
+      this.member = member;
+      this.type = type;
+    }
+
+    @Override
+    public <T, U> LocalMember registerHandler(String topic, MessageHandler<T, U> handler) {
+      member.registerHandler(topic, handler);
+      return this;
+    }
+
+    @Override
+    public LocalMember unregisterHandler(String topic) {
+      member.unregisterHandler(topic);
+      return this;
+    }
+
+    @Override
+    public int id() {
+      return member.id();
+    }
+
+    @Override
+    public Type type() {
+      return type;
+    }
+
+    @Override
+    public Status status() {
+      return member.status();
+    }
+
+    @Override
+    public <T, U> CompletableFuture<U> send(String topic, T message) {
+      return member.send(topic, message);
+    }
+
+    @Override
+    public CompletableFuture<Void> execute(Task<Void> task) {
+      return member.execute(task);
+    }
+
+    @Override
+    public <T> CompletableFuture<T> submit(Task<T> task) {
+      return member.submit(task);
+    }
+  }
+
+  /**
+   * Partitioned remote member.
+   */
+  private static class PartitionedRemoteMember implements RemoteMember {
+    private final Member member;
+    private final Member.Type type;
+
+    private PartitionedRemoteMember(Member member, Member.Type type) {
+      this.member = member;
+      this.type = type;
+    }
+
+    @Override
+    public int id() {
+      return member.id();
+    }
+
+    @Override
+    public Type type() {
+      return type;
+    }
+
+    @Override
+    public Status status() {
+      return member.status();
+    }
+
+    @Override
+    public <T, U> CompletableFuture<U> send(String topic, T message) {
+      return member.send(topic, message);
+    }
+
+    @Override
+    public CompletableFuture<Void> execute(Task<Void> task) {
+      return member.execute(task);
+    }
+
+    @Override
+    public <T> CompletableFuture<T> submit(Task<T> task) {
+      return member.submit(task);
+    }
   }
 
 }
