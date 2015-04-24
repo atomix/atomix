@@ -47,7 +47,7 @@ class SerializerRegistry {
    *
    * @param type The serializable type.
    */
-  public void register(Class<? extends CopycatSerializable> type) {
+  public void register(Class<? extends Writable> type) {
     boolean registered = false;
     for (int i = 0; i < types.length; i++) {
       if (types[i] == null) {
@@ -67,8 +67,8 @@ class SerializerRegistry {
    * @param type The type to register.
    * @param id The type identifier.
    */
-  public void register(Class<? extends CopycatSerializable> type, int id) {
-    register(type, id, new CopycatSerializableSerializer<>());
+  public void register(Class<? extends Writable> type, int id) {
+    register(type, id, new WritableSerializer<>());
   }
 
   /**

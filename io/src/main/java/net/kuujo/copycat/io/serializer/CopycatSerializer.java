@@ -31,7 +31,7 @@ import net.kuujo.copycat.util.ServiceLoader;
  * will write the object's type as an 8-bit integer. When reading objects, the 8-bit identifier is used to construct
  * a new object.
  * <p>
- * Serializable objects must either provide a {@link Serializer} or implement the {@link CopycatSerializable} interface.
+ * Serializable objects must either provide a {@link Serializer} or implement the {@link Writable} interface.
  * For efficiency, serializable objects may implement {@link net.kuujo.copycat.io.util.ReferenceCounted} and provide
  * a {@link PooledSerializer} that reuses objects during deserialization.
  *
@@ -83,7 +83,7 @@ public class CopycatSerializer {
    * @param type The type to register.
    * @return The Copycat serializer.
    */
-  public CopycatSerializer register(Class<? extends CopycatSerializable> type) {
+  public CopycatSerializer register(Class<? extends Writable> type) {
     registry.register(type);
     return this;
   }
@@ -98,7 +98,7 @@ public class CopycatSerializer {
    * @param id The type identifier. Must be between {@code 0} and {@code 255}.
    * @return The Copycat serializer.
    */
-  public CopycatSerializer register(Class<? extends CopycatSerializable> type, int id) {
+  public CopycatSerializer register(Class<? extends Writable> type, int id) {
     registry.register(type, id);
     return this;
   }

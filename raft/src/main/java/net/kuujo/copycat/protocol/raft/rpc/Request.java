@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol.raft.rpc;
 
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.io.util.ReferenceCounted;
 
 /**
@@ -23,7 +23,7 @@ import net.kuujo.copycat.io.util.ReferenceCounted;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Request<T extends Request<T>> extends ReferenceCounted<T>, CopycatSerializable {
+public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Writable {
 
   /**
    * Request type.

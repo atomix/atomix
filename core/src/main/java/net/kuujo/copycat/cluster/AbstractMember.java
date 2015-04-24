@@ -16,7 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
@@ -34,7 +34,7 @@ public abstract class AbstractMember implements Member {
   /**
    * Member info.
    */
-  static class Info implements CopycatSerializable {
+  static class Info implements Writable {
     private static final int FAILURE_LIMIT = 3;
     private Type type;
     private Status status;

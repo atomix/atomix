@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.protocol.raft.rpc;
 
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.io.util.ReferenceCounted;
 import net.kuujo.copycat.protocol.raft.RaftError;
 
@@ -24,7 +24,7 @@ import net.kuujo.copycat.protocol.raft.RaftError;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Response<T extends Response<T>> extends ReferenceCounted<T>, CopycatSerializable {
+public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Writable {
 
   /**
    * Response type.

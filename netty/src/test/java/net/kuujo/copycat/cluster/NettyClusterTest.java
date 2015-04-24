@@ -18,6 +18,8 @@ package net.kuujo.copycat.cluster;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import org.testng.annotations.Test;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Netty cluster test.
  *
@@ -27,10 +29,112 @@ import org.testng.annotations.Test;
 public class NettyClusterTest extends ConcurrentTestCase {
 
   /**
+   * Builds a cluster.
+   */
+  private ManagedCluster buildCluster(int localMember, int members) {
+    NettyCluster.Builder builder = NettyCluster.builder()
+      .withLocalMember(NettyLocalMember.builder()
+        .withId(localMember)
+        .withType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(8080 + localMember)
+        .build());
+
+    for (int i = 0; i < members; i++) {
+      if (i != localMember) {
+        builder.addRemoteMember(NettyRemoteMember.builder()
+          .withId(i)
+          .withType(Member.Type.ACTIVE)
+          .withHost("localhost")
+          .withPort(8080 + i)
+          .build());
+      }
+    }
+    return builder.build();
+  }
+
+  /**
+   * Tests connecting a remote member to a local member.
+   */
+  public void testConnectRemoteToLocal() throws Throwable {
+    ManagedLocalMember localMember = NettyLocalMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .build();
+    expectResume();
+    localMember.listen().thenRun(this::resume);
+    await();
+
+    ManagedRemoteMember remoteMember = NettyRemoteMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .build();
+    expectResume();
+    remoteMember.connect().thenRun(this::resume);
+    await();
+  }
+
+  /**
+   * Tests connecting a remote member to a local member.
+   */
+  public void testConnectRemoteBeforeLocal() throws Throwable {
+    ManagedRemoteMember remoteMember = NettyRemoteMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .build();
+    expectResumes(2);
+    remoteMember.connect().thenRun(this::resume);
+
+    ManagedLocalMember localMember = NettyLocalMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .build();
+    localMember.listen().thenRun(this::resume);
+    await();
+  }
+
+  /**
+   * Tests sending a message between remote and local members.
+   */
+  public void testMessageRemoteToLocal() throws Throwable {
+    ManagedLocalMember localMember = NettyLocalMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .build();
+    expectResume();
+    localMember.listen().thenRun(this::resume);
+    await();
+
+    ManagedRemoteMember remoteMember = NettyRemoteMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .build();
+    expectResume();
+    remoteMember.connect().thenRun(this::resume);
+    await();
+
+    localMember.registerHandler("test", message -> CompletableFuture.completedFuture("world!"));
+    remoteMember.send("test", "Hello").whenComplete((result, error) -> {
+      threadAssertNull(error);
+      threadAssertEquals(result, "world!");
+    });
+  }
+
+  /**
    * Tests sending and receiving a message betwixt members.
    */
-  public void testClusterSend() {
+  public void testClusterSend() throws Throwable {
+    ManagedCluster cluster1 = buildCluster(1, 3);
+    ManagedCluster cluster2 = buildCluster(2, 3);
+    ManagedCluster cluster3 = buildCluster(3, 3);
 
+    expectResumes(3);
+
+    cluster1.open().thenRun(this::resume);
+    cluster2.open().thenRun(this::resume);
+    cluster3.open().thenRun(this::resume);
+
+    await();
   }
 
 }

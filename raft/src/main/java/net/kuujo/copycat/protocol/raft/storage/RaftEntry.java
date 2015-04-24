@@ -17,7 +17,7 @@ package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBuffer;
-import net.kuujo.copycat.io.serializer.CopycatSerializable;
+import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.io.util.ReferenceCounted;
 import net.kuujo.copycat.io.util.ReferenceManager;
 
@@ -28,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftEntry implements ReferenceCounted<RaftEntry>, CopycatSerializable {
+public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
 
   /**
    * Raft entry type.
