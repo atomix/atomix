@@ -18,7 +18,7 @@ package net.kuujo.copycat.cluster;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import org.testng.annotations.Test;
 
@@ -111,7 +111,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     ManagedLocalMember localMember = NettyLocalMember.builder()
       .withHost("localhost")
       .withPort(8080)
-      .withSerializer(new CopycatSerializer().register(TestTask.class, 1))
+      .withSerializer(new Serializer().register(TestTask.class, 1))
       .build();
     expectResume();
     localMember.listen().thenRun(this::resume);
@@ -120,7 +120,7 @@ public class NettyClusterTest extends ConcurrentTestCase {
     ManagedRemoteMember remoteMember = NettyRemoteMember.builder()
       .withHost("localhost")
       .withPort(8080)
-      .withSerializer(new CopycatSerializer().register(TestTask.class, 1))
+      .withSerializer(new Serializer().register(TestTask.class, 1))
       .build();
     expectResume();
     remoteMember.connect().thenRun(this::resume);
@@ -172,6 +172,62 @@ public class NettyClusterTest extends ConcurrentTestCase {
       threadAssertEquals(result, "world!");
       resume();
     });
+
+    await();
+  }
+
+  /**
+   * Tests joining the cluster as a passive member.
+   */
+  public void testClusterJoin() throws Throwable {
+    ManagedCluster cluster1 = buildCluster(1, 3);
+    ManagedCluster cluster2 = buildCluster(2, 3);
+    ManagedCluster cluster3 = buildCluster(3, 3);
+
+    expectResumes(3);
+
+    cluster1.open().thenRun(this::resume);
+    cluster2.open().thenRun(this::resume);
+    cluster3.open().thenRun(this::resume);
+
+    await();
+
+    cluster1.addMembershipListener(event -> {
+      threadAssertEquals(event.type(), MembershipChangeEvent.Type.JOIN);
+      threadAssertEquals(event.member().id(), 4);
+      resume();
+    });
+
+    ManagedCluster cluster4 = NettyCluster.builder()
+      .withLocalMember(NettyLocalMember.builder()
+        .withId(4)
+        .withType(Member.Type.PASSIVE)
+        .withHost("localhost")
+        .withPort(8080 + 4)
+        .build())
+      .addRemoteMember(NettyRemoteMember.builder()
+        .withId(1)
+        .withType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(8081)
+        .build())
+      .addRemoteMember(NettyRemoteMember.builder()
+        .withId(2)
+        .withType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(8082)
+        .build())
+      .addRemoteMember(NettyRemoteMember.builder()
+        .withId(3)
+        .withType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(8083)
+        .build())
+      .build();
+
+    expectResumes(2);
+
+    cluster4.open().thenRun(this::resume);
 
     await();
   }

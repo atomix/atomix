@@ -19,7 +19,6 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.ChannelGroupFuture;
 import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -27,7 +26,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
@@ -72,7 +71,7 @@ public class NettyLocalMember extends AbstractLocalMember {
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
-  protected NettyLocalMember(String host, int port, Info info, CopycatSerializer serializer, ExecutionContext context) {
+  protected NettyLocalMember(String host, int port, Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
     this.host = host;
     this.port = port;
@@ -346,7 +345,7 @@ public class NettyLocalMember extends AbstractLocalMember {
         throw new ConfigurationException("member id must be greater than 0");
       if (type == null)
         throw new ConfigurationException("must specify member type");
-      return new NettyLocalMember(host, port, new Info(id, type), serializer != null ? serializer : new CopycatSerializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyLocalMember(host, port, new Info(id, type), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

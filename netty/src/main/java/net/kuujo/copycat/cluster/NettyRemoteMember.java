@@ -23,10 +23,11 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -73,10 +74,11 @@ public class NettyRemoteMember extends AbstractRemoteMember {
   private CompletableFuture<Void> closeFuture;
   private ScheduledFuture<?> reconnectFuture;
 
-  protected NettyRemoteMember(String host, int port, Info info, CopycatSerializer serializer, ExecutionContext context) {
+  protected NettyRemoteMember(String host, int port, Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
     this.host = host;
     this.port = port;
+    info.address = new InetSocketAddress(host, port).toString();
   }
 
   /**
@@ -297,7 +299,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
         throw new ConfigurationException("member id must be greater than 0");
       if (type == null)
         throw new ConfigurationException("must specify member type");
-      return new NettyRemoteMember(host != null ? host : "localhost", port, new Info(id, type), serializer != null ? serializer : new CopycatSerializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyRemoteMember(host != null ? host : "localhost", port, new Info(id, type), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 
