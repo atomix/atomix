@@ -29,6 +29,8 @@ import net.kuujo.copycat.util.ExecutionContext;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Netty remote member.
@@ -46,6 +48,8 @@ public class NettyRemoteMember extends AbstractRemoteMember {
     return new Builder();
   }
 
+  private static final int RETRY_ATTEMPTS = 3;
+  private static final long RECONNECT_INTERVAL = 1000;
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
   private static ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
@@ -56,6 +60,8 @@ public class NettyRemoteMember extends AbstractRemoteMember {
   };
   private final String host;
   private final int port;
+  private EventLoopGroup eventLoopGroup;
+  private boolean eventLoopInitialized;
   private Channel channel;
   private ChannelHandlerContext context;
   private final Map<String, Integer> hashMap = new HashMap<>();
@@ -64,11 +70,21 @@ public class NettyRemoteMember extends AbstractRemoteMember {
   private long requestId;
   private CompletableFuture<RemoteMember> connectFuture;
   private CompletableFuture<Void> closeFuture;
+  private ScheduledFuture<?> reconnectFuture;
 
   protected NettyRemoteMember(String host, int port, Info info, CopycatSerializer serializer, ExecutionContext context) {
     super(info, serializer, context);
     this.host = host;
     this.port = port;
+  }
+
+  /**
+   * Sets the Netty event loop group.
+   */
+  protected NettyRemoteMember setEventLoopGroup(EventLoopGroup eventLoopGroup) {
+    this.eventLoopGroup = eventLoopGroup;
+    eventLoopInitialized = true;
+    return this;
   }
 
   @Override
@@ -77,7 +93,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
     if (channel != null) {
       long requestId = ++this.requestId;
       ByteBufBuffer buffer = BUFFER.get();
-      ByteBuf byteBuf = context.alloc().buffer(8, 1024 * 8);
+      ByteBuf byteBuf = context.alloc().buffer(13, 1024 * 8);
       byteBuf.writerIndex(13);
       buffer.setByteBuf(byteBuf);
       serializer.writeObject(message, buffer);
@@ -136,39 +152,55 @@ public class NettyRemoteMember extends AbstractRemoteMember {
       synchronized (this) {
         if (connectFuture == null) {
           connectFuture = new CompletableFuture<>();
-          final EventLoopGroup group = new NioEventLoopGroup(1);
-          Bootstrap bootstrap = new Bootstrap();
-          bootstrap.group(group)
-            .channel(NioSocketChannel.class)
-            .handler(new ChannelInitializer<SocketChannel>() {
-              @Override
-              protected void initChannel(SocketChannel channel) throws Exception {
-                ChannelPipeline pipeline = channel.pipeline();
-                pipeline.addLast(channelHandler);
-              }
-            });
-
-          bootstrap.option(ChannelOption.TCP_NODELAY, true);
-          bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
-          bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000);
-
-          bootstrap.connect(host, port).addListener((ChannelFutureListener) channelFuture -> {
-            if (channelFuture.isSuccess()) {
-              channel = channelFuture.channel();
-              connected = true;
-              connectFuture.complete(this);
-            } else  {
-              connectFuture.completeExceptionally(channelFuture.cause());
-            }
-          });
+          if (eventLoopGroup == null) {
+            eventLoopGroup = new NioEventLoopGroup(1);
+          }
+          connect(RETRY_ATTEMPTS, RECONNECT_INTERVAL);
         }
       }
     }
     return connectFuture;
   }
 
+  /**
+   * Attempts to connect for the given number of attempts.
+   */
+  private void connect(int attempts, long timeout) {
+    Bootstrap bootstrap = new Bootstrap();
+    bootstrap.group(eventLoopGroup)
+      .channel(NioSocketChannel.class)
+      .handler(new ChannelInitializer<SocketChannel>() {
+        @Override
+        protected void initChannel(SocketChannel channel) throws Exception {
+          ChannelPipeline pipeline = channel.pipeline();
+          pipeline.addLast(new ClientHandler());
+        }
+      });
+
+    bootstrap.option(ChannelOption.TCP_NODELAY, true);
+    bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
+    bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000);
+
+    bootstrap.connect(host, port).addListener((ChannelFutureListener) channelFuture -> {
+      if (channelFuture.isSuccess()) {
+        channel = channelFuture.channel();
+        connected = true;
+        connectFuture.complete(this);
+      } else if (attempts > 0) {
+        reconnectFuture = eventLoopGroup.schedule(() -> connect(attempts - 1, timeout * 2), timeout, TimeUnit.MILLISECONDS);
+      } else  {
+        connectFuture.completeExceptionally(channelFuture.cause());
+      }
+    });
+  }
+
   @Override
   public CompletableFuture<Void> close() {
+    if (reconnectFuture != null) {
+      reconnectFuture.cancel(false);
+      reconnectFuture = null;
+    }
+
     if (!connected)
       return CompletableFuture.completedFuture(null);
 
@@ -177,20 +209,25 @@ public class NettyRemoteMember extends AbstractRemoteMember {
         if (closeFuture == null) {
           closeFuture = new CompletableFuture<>();
           if (channel != null) {
-            channel.close().addListener(new ChannelFutureListener() {
-              @Override
-              public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                channel = null;
-                connected = false;
-                if (channelFuture.isSuccess()) {
-                  closeFuture.complete(null);
-                } else {
-                  closeFuture.completeExceptionally(channelFuture.cause());
-                }
+            channel.close().addListener((ChannelFutureListener) channelFuture -> {
+              channel = null;
+              connected = false;
+              if (!eventLoopInitialized && eventLoopGroup != null) {
+                eventLoopGroup.shutdownGracefully();
+                eventLoopGroup = null;
+              }
+              if (channelFuture.isSuccess()) {
+                closeFuture.complete(null);
+              } else {
+                closeFuture.completeExceptionally(channelFuture.cause());
               }
             });
           } else {
             connected = false;
+            if (!eventLoopInitialized && eventLoopGroup != null) {
+              eventLoopGroup.shutdownGracefully();
+              eventLoopGroup = null;
+            }
             closeFuture.complete(null);
           }
         }
@@ -199,14 +236,17 @@ public class NettyRemoteMember extends AbstractRemoteMember {
     return closeFuture;
   }
 
-  @SuppressWarnings("unchecked")
-  private final ChannelInboundHandlerAdapter channelHandler = new ChannelInboundHandlerAdapter() {
+  /**
+   * Client channel handler.
+   */
+  private class ClientHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelActive(ChannelHandlerContext context) {
       NettyRemoteMember.this.context = context;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void channelRead(ChannelHandlerContext context, Object message) {
       ByteBuf response = (ByteBuf) message;
       long responseId = response.readLong();
@@ -219,7 +259,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
       }
       response.release();
     }
-  };
+  }
 
   /**
    * Netty remote member builder.

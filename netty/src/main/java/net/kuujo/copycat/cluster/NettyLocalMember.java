@@ -60,6 +60,7 @@ public class NettyLocalMember extends AbstractLocalMember {
   private final Map<String, Integer> hashMap = new HashMap<>();
   private final String host;
   private final int port;
+  private final EventLoopGroup workerGroup;
   private Channel channel;
   private boolean listening;
   private CompletableFuture<LocalMember> listenFuture;
@@ -69,6 +70,7 @@ public class NettyLocalMember extends AbstractLocalMember {
     super(info, serializer, context);
     this.host = host;
     this.port = port;
+    this.workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
   }
 
   @Override
@@ -138,11 +140,8 @@ public class NettyLocalMember extends AbstractLocalMember {
         if (listenFuture == null) {
           listenFuture = new CompletableFuture<>();
 
-          final EventLoopGroup serverGroup = new NioEventLoopGroup();
-          final EventLoopGroup workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
-
           final ServerBootstrap bootstrap = new ServerBootstrap();
-          bootstrap.group(serverGroup, workerGroup)
+          bootstrap.group(workerGroup)
             .channel(NioServerSocketChannel.class)
             .childHandler(new ChannelInitializer<SocketChannel>() {
               @Override
@@ -207,6 +206,9 @@ public class NettyLocalMember extends AbstractLocalMember {
     return closeFuture;
   }
 
+  /**
+   * Server request handler.
+   */
   private class ServerHandlerAdapter extends ChannelInboundHandlerAdapter {
 
     @Override
@@ -215,49 +217,63 @@ public class NettyLocalMember extends AbstractLocalMember {
       long requestId = request.readLong();
       int type = request.readByte();
       if (type == MESSAGE) {
-        int address = request.readInt();
-        HandlerHolder handler = handlers.get(address);
-        if (handler != null) {
-          ByteBufBuffer requestBuffer = BUFFER.get();
-          requestBuffer.setByteBuf(request);
-          Object deserializedRequest = serializer.readObject(requestBuffer);
-          handler.context.execute(() -> {
-            handler.handler.handle(deserializedRequest).whenComplete((result, error) -> {
-              if (error == null) {
-                context.channel().eventLoop().execute(() -> {
-                  ByteBuf response = context.alloc().buffer(9, 1024 * 8);
-                  response.writeLong(requestId);
-                  ByteBufBuffer responseBuffer = BUFFER.get();
-                  responseBuffer.setByteBuf(response);
-                  serializer.writeObject(result, responseBuffer);
-                  context.writeAndFlush(response);
-                  request.release();
-                });
-              }
-            });
-          });
-        }
+        handleMessage(requestId, request, context);
       } else if (type == TASK) {
+        handleTask(requestId, request, context);
+      }
+    }
+
+    /**
+     * Handles a message request.
+     */
+    private void handleMessage(long requestId, ByteBuf request, ChannelHandlerContext context) {
+      int address = request.readInt();
+      HandlerHolder handler = handlers.get(address);
+      if (handler != null) {
         ByteBufBuffer requestBuffer = BUFFER.get();
         requestBuffer.setByteBuf(request);
-        Task task = serializer.readObject(requestBuffer);
-        getContext().execute(() -> {
-          try {
-            Object result = task.execute();
-            context.channel().eventLoop().execute(() -> {
-              ByteBuf response = context.alloc().buffer(9, 1024 * 8);
-              response.writeLong(requestId);
-              ByteBufBuffer responseBuffer = BUFFER.get();
-              responseBuffer.setByteBuf(response);
-              serializer.writeObject(result, responseBuffer);
-              context.writeAndFlush(response);
-              request.release();
-            });
-          } catch (Exception e) {
-
-          }
+        Object deserializedRequest = serializer.readObject(requestBuffer);
+        handler.context.execute(() -> {
+          handler.handler.handle(deserializedRequest).whenComplete((result, error) -> {
+            if (error == null) {
+              context.channel().eventLoop().execute(() -> {
+                ByteBuf response = context.alloc().buffer(9, 1024 * 8);
+                response.writeLong(requestId);
+                ByteBufBuffer responseBuffer = BUFFER.get();
+                responseBuffer.setByteBuf(response);
+                serializer.writeObject(result, responseBuffer);
+                context.writeAndFlush(response);
+                request.release();
+              });
+            }
+          });
         });
       }
+    }
+
+    /**
+     * Handles a task request.
+     */
+    private void handleTask(long requestId, ByteBuf request, ChannelHandlerContext context) {
+      ByteBufBuffer requestBuffer = BUFFER.get();
+      requestBuffer.setByteBuf(request);
+      Task task = serializer.readObject(requestBuffer);
+      getContext().execute(() -> {
+        try {
+          Object result = task.execute();
+          context.channel().eventLoop().execute(() -> {
+            ByteBuf response = context.alloc().buffer(9, 1024 * 8);
+            response.writeLong(requestId);
+            ByteBufBuffer responseBuffer = BUFFER.get();
+            responseBuffer.setByteBuf(response);
+            serializer.writeObject(result, responseBuffer);
+            context.writeAndFlush(response);
+            request.release();
+          });
+        } catch (Exception e) {
+
+        }
+      });
     }
 
     @Override

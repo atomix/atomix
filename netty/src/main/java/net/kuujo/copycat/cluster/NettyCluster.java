@@ -15,9 +15,11 @@
  */
 package net.kuujo.copycat.cluster;
 
+import io.netty.channel.EventLoopGroup;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Netty cluster implementation.
@@ -35,25 +37,47 @@ public class NettyCluster extends AbstractCluster {
     return new Builder();
   }
 
-  public NettyCluster(NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers) {
+  private final EventLoopGroup eventLoopGroup;
+
+  public NettyCluster(EventLoopGroup eventLoopGroup, NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers) {
     super(localMember, remoteMembers);
+    this.eventLoopGroup = eventLoopGroup;
+    remoteMembers.forEach(m -> m.setEventLoopGroup(eventLoopGroup));
   }
 
   @Override
   protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
-    return new NettyRemoteMember(info.address.substring(0, info.address.indexOf(':')), Integer.valueOf(info.address.substring(info.address.indexOf(':') + 1)), info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id())));
+    return new NettyRemoteMember(info.address.substring(0, info.address.indexOf(':')), Integer.valueOf(info.address.substring(info.address.indexOf(':') + 1)), info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).setEventLoopGroup(eventLoopGroup);
+  }
+
+  @Override
+  public CompletableFuture<Void> close() {
+    return super.close().thenRun(eventLoopGroup::shutdownGracefully);
   }
 
   /**
    * Netty cluster builder.
    */
   public static class Builder extends AbstractCluster.Builder<Builder, NettyLocalMember, NettyRemoteMember> {
+    private EventLoopGroup eventLoopGroup;
+
     private Builder() {
+    }
+
+    /**
+     * Sets the Netty event loop group.
+     *
+     * @param eventLoopGroup The Netty event loop group.
+     * @return The Netty cluster builder.
+     */
+    public Builder withEventLoopGroup(EventLoopGroup eventLoopGroup) {
+      this.eventLoopGroup = eventLoopGroup;
+      return this;
     }
 
     @Override
     public ManagedCluster build() {
-      return new NettyCluster(localMember, remoteMembers);
+      return new NettyCluster(eventLoopGroup, localMember, remoteMembers);
     }
   }
 
