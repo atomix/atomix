@@ -31,15 +31,19 @@ class SerializerRegistry {
   public SerializerRegistry() {
   }
 
-  private SerializerRegistry(Map<Class, ObjectWriter> serializers) {
+  private SerializerRegistry(Map<Class, Integer> ids, Map<Class, ObjectWriter> serializers) {
+    this.ids.putAll(ids);
     this.serializers.putAll(serializers);
+    for (Map.Entry<Class, Integer> entry : ids.entrySet()) {
+      types[entry.getValue()] = entry.getKey();
+    }
   }
 
   /**
    * Copies the serializer registry.
    */
   protected SerializerRegistry copy() {
-    return new SerializerRegistry(serializers);
+    return new SerializerRegistry(ids, serializers);
   }
 
   /**

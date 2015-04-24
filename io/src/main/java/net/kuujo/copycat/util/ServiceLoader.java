@@ -25,6 +25,7 @@ import java.util.*;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class ServiceLoader {
+  private static final Map<String, List<ServiceInfo>> services = new HashMap<>();
 
   /**
    * Loads a service.
@@ -44,6 +45,11 @@ public class ServiceLoader {
    * @throws ServiceNotFoundException if the service cannot be found on the classpath.
    */
   public static Collection<ServiceInfo> load(String service) {
+    List<ServiceInfo> services = ServiceLoader.services.get(service);
+    if (services != null) {
+      return services;
+    }
+
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
     Enumeration<URL> serializerUrls;
     try {
@@ -52,7 +58,7 @@ public class ServiceLoader {
       throw new ServiceNotFoundException(e);
     }
 
-    List<ServiceInfo> services = new ArrayList<>();
+    services = new ArrayList<>();
     while (serializerUrls.hasMoreElements()) {
       URL serializerUrl = serializerUrls.nextElement();
       try (InputStream sis = serializerUrl.openStream()) {
@@ -83,6 +89,8 @@ public class ServiceLoader {
         throw new ServiceNotFoundException(e);
       }
     }
+
+    ServiceLoader.services.put(service, services);
     return services;
   }
 
