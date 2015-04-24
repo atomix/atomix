@@ -37,7 +37,7 @@ public class CopycatThreadFactory implements ThreadFactory {
 
   @Override
   public Thread newThread(Runnable r) {
-    return new Thread(r, String.format(nameFormat, threadNumber.getAndIncrement()));
+    return new CopycatThread(r, String.format(nameFormat, threadNumber.getAndIncrement()));
   }
 
 }
