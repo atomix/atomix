@@ -82,7 +82,6 @@ public class ServiceLoader {
       } catch (IOException e) {
         throw new ServiceNotFoundException(e);
       }
-      return services;
     }
     return services;
   }
