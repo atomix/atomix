@@ -18,9 +18,13 @@ package net.kuujo.copycat.cluster;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.ChannelGroupFuture;
+import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.util.concurrent.GlobalEventExecutor;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.io.util.HashFunctions;
@@ -62,6 +66,7 @@ public class NettyLocalMember extends AbstractLocalMember {
   private final int port;
   private final EventLoopGroup workerGroup;
   private Channel channel;
+  private ChannelGroup channelGroup;
   private boolean listening;
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
@@ -140,6 +145,8 @@ public class NettyLocalMember extends AbstractLocalMember {
         if (listenFuture == null) {
           listenFuture = new CompletableFuture<>();
 
+          channelGroup = new DefaultChannelGroup("copycat-acceptor-channels", GlobalEventExecutor.INSTANCE);
+
           final ServerBootstrap bootstrap = new ServerBootstrap();
           bootstrap.group(workerGroup)
             .channel(NioServerSocketChannel.class)
@@ -159,7 +166,8 @@ public class NettyLocalMember extends AbstractLocalMember {
           bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
           // Bind and start to accept incoming connections.
-          bootstrap.bind(host, port).addListener((ChannelFutureListener) channelFuture -> {
+          ChannelFuture bindFuture = bootstrap.bind(host, port);
+          bindFuture.addListener((ChannelFutureListener) channelFuture -> {
             channelFuture.channel().closeFuture().addListener(closeFuture -> {
               workerGroup.shutdownGracefully();
             });
@@ -173,6 +181,7 @@ public class NettyLocalMember extends AbstractLocalMember {
               listenFuture.completeExceptionally(channelFuture.cause());
             }
           });
+          channelGroup.add(bindFuture.channel());
         }
       }
     }
@@ -191,6 +200,9 @@ public class NettyLocalMember extends AbstractLocalMember {
           if (channel != null) {
             channel.close().addListener(channelFuture -> {
               listening = false;
+              if (channelGroup != null) {
+                channelGroup.close();
+              }
               if (channelFuture.isSuccess()) {
                 closeFuture.complete(null);
               } else {
@@ -198,6 +210,9 @@ public class NettyLocalMember extends AbstractLocalMember {
               }
             });
           } else {
+            if (channelGroup != null) {
+              channelGroup.close();
+            }
             closeFuture.complete(null);
           }
         }
