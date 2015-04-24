@@ -266,6 +266,15 @@ public abstract class AbstractMember implements Member {
   }
 
   /**
+   * Returns the member info.
+   *
+   * @return The member info.
+   */
+  Info info() {
+    return info;
+  }
+
+  /**
    * Returns the current execution context.
    */
   protected ExecutionContext getContext() {

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.ManagedCluster;
 
 /**

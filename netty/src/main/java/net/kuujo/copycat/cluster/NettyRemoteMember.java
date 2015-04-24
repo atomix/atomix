@@ -21,6 +21,7 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.io.util.HashFunctions;
@@ -292,6 +293,10 @@ public class NettyRemoteMember extends AbstractRemoteMember {
 
     @Override
     public NettyRemoteMember build() {
+      if (id <= 0)
+        throw new ConfigurationException("member id must be greater than 0");
+      if (type == null)
+        throw new ConfigurationException("must specify member type");
       return new NettyRemoteMember(host != null ? host : "localhost", port, new Info(id, type), serializer != null ? serializer : new CopycatSerializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }

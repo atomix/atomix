@@ -17,6 +17,7 @@ package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -117,7 +118,7 @@ public abstract class AbstractCluster implements ManagedCluster {
             }
             return CompletableFuture.allOf(futures);
           }).thenApply(v -> {
-            membershipDetector = new MembershipDetector(this);
+            membershipDetector = new MembershipDetector(this, new ExecutionContext(String.format("copycat-membership-detector-%d", localMember.id())));
             return this;
           });
         }

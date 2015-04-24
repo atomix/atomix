@@ -25,6 +25,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
 import net.kuujo.copycat.io.util.HashFunctions;
@@ -341,6 +342,10 @@ public class NettyLocalMember extends AbstractLocalMember {
 
     @Override
     public NettyLocalMember build() {
+      if (id <= 0)
+        throw new ConfigurationException("member id must be greater than 0");
+      if (type == null)
+        throw new ConfigurationException("must specify member type");
       return new NettyLocalMember(host, port, new Info(id, type), serializer != null ? serializer : new CopycatSerializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }

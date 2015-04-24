@@ -20,6 +20,7 @@ import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 /**
  * Netty cluster implementation.
@@ -53,6 +54,11 @@ public class NettyCluster extends AbstractCluster {
   @Override
   public CompletableFuture<Void> close() {
     return super.close().thenRun(eventLoopGroup::shutdownGracefully);
+  }
+
+  @Override
+  public String toString() {
+    return String.format("NettyCluster[member=%d, members=%s]", localMember.id(), members.values().stream().map(Member::id).collect(Collectors.toList()));
   }
 
   /**

@@ -15,6 +15,8 @@
  */
 package net.kuujo.copycat.resource;
 
+import net.kuujo.copycat.ConfigurationException;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
