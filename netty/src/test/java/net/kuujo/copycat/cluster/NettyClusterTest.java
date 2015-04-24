@@ -16,6 +16,10 @@
 package net.kuujo.copycat.cluster;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
+import net.kuujo.copycat.Task;
+import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Writable;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
@@ -124,20 +128,67 @@ public class NettyClusterTest extends ConcurrentTestCase {
   }
 
   /**
-   * Tests sending and receiving a message betwixt members.
+   * Tests executing a task between remote and local members.
    */
-  public void testClusterSend() throws Throwable {
-    ManagedCluster cluster1 = buildCluster(1, 3);
-    ManagedCluster cluster2 = buildCluster(2, 3);
-    ManagedCluster cluster3 = buildCluster(3, 3);
-
-    expectResumes(3);
-
-    cluster1.open().thenRun(this::resume);
-    cluster2.open().thenRun(this::resume);
-    cluster3.open().thenRun(this::resume);
-
+  public void testTaskRemoteToLocal() throws Throwable {
+    ManagedLocalMember localMember = NettyLocalMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .withSerializer(new CopycatSerializer().register(TestTask.class, 1))
+      .build();
+    expectResume();
+    localMember.listen().thenRun(this::resume);
     await();
+
+    ManagedRemoteMember remoteMember = NettyRemoteMember.builder()
+      .withHost("localhost")
+      .withPort(8080)
+      .withSerializer(new CopycatSerializer().register(TestTask.class, 1))
+      .build();
+    expectResume();
+    remoteMember.connect().thenRun(this::resume);
+    await();
+
+    expectResume();
+    localMember.registerHandler("test", message -> CompletableFuture.completedFuture("world!"));
+    remoteMember.submit(new TestTask("Hello")).whenComplete((result, error) -> {
+      threadAssertNull(error);
+      threadAssertEquals(result, "world!");
+      resume();
+    });
+    await();
+  }
+
+  /**
+   * Test task.
+   */
+  public static class TestTask implements Task<String>, Writable {
+    private String arg;
+
+    public TestTask() {
+    }
+
+    public TestTask(String arg) {
+      this.arg = arg;
+    }
+
+    @Override
+    public String execute() {
+      return "world!";
+    }
+
+    @Override
+    public void writeObject(Buffer buffer) {
+      byte[] bytes = arg.getBytes();
+      buffer.writeInt(bytes.length).write(bytes);
+    }
+
+    @Override
+    public void readObject(Buffer buffer) {
+      byte[] bytes = new byte[buffer.readInt()];
+      buffer.read(bytes);
+      this.arg = new String(bytes);
+    }
   }
 
 }

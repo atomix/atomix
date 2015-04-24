@@ -96,7 +96,7 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
       object.readObject(buffer);
       return object;
     } catch (InstantiationException | IllegalAccessException e) {
-      throw new SerializationException(e);
+      throw new SerializationException("failed to instantiate object: must provide a no argument constructor", e);
     }
   }
 

@@ -124,13 +124,13 @@ public class NettyRemoteMember extends AbstractRemoteMember {
     if (channel != null) {
       long requestId = ++this.requestId;
       ByteBufBuffer buffer = BUFFER.get();
-      ByteBuf byteBuf = context.alloc().buffer(8, 1024 * 8);
+      ByteBuf byteBuf = context.alloc().buffer(9, 1024 * 8);
       byteBuf.writerIndex(9);
       buffer.setByteBuf(byteBuf);
       serializer.writeObject(task, buffer);
-      byteBuf.setByte(0, TASK);
-      byteBuf.setLong(1, requestId);
-      channel.writeAndFlush(buffer).addListener((channelFuture) -> {
+      byteBuf.setLong(0, requestId);
+      byteBuf.setByte(8, TASK);
+      channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
           responseFutures.put(requestId, future);
         } else {
