@@ -139,7 +139,7 @@ public interface Member {
   /**
    * Member builder.
    */
-  public static abstract interface Builder<T extends Builder<T, U>, U extends Member> extends net.kuujo.copycat.Builder<U> {
+  public static abstract interface Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends Member> extends net.kuujo.copycat.Builder<TYPE> {
 
     /**
      * Sets the member identifier.
@@ -147,7 +147,7 @@ public interface Member {
      * @param id The member identifier.
      * @return The member builder.
      */
-    T withId(int id);
+    BUILDER withId(int id);
 
     /**
      * Sets the member type.
@@ -155,7 +155,7 @@ public interface Member {
      * @param type The member type.
      * @return The member builder.
      */
-    T withType(Type type);
+    BUILDER withType(Type type);
 
     /**
      * Sets the cluster serializer.
@@ -163,7 +163,7 @@ public interface Member {
      * @param serializer The cluster serializer.
      * @return The cluster builder.
      */
-    T withSerializer(CopycatSerializer serializer);
+    BUILDER withSerializer(CopycatSerializer serializer);
 
   }
 

@@ -177,56 +177,42 @@ public abstract class AbstractCluster implements ManagedCluster {
   /**
    * Cluster builder.
    */
-  public static abstract class Builder<L extends ManagedLocalMember, R extends ManagedRemoteMember> implements Cluster.Builder<L, R> {
-    protected L localMember;
-    protected Collection<R> remoteMembers = new HashSet<>();
+  public static abstract class Builder<BUILDER extends Builder<BUILDER, LOCAL, REMOTE>, LOCAL extends ManagedLocalMember, REMOTE extends ManagedRemoteMember> implements Cluster.Builder<BUILDER, LOCAL, REMOTE> {
+    protected LOCAL localMember;
+    protected Collection<REMOTE> remoteMembers = new HashSet<>();
 
     @Override
-    public Builder withLocalMember(L member) {
+    @SuppressWarnings("unchecked")
+    public BUILDER withLocalMember(LOCAL member) {
       if (member == null)
         throw new NullPointerException("member cannot be null");
       localMember = member;
-      return this;
+      return (BUILDER) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Builder withRemoteMembers(Collection<R> members) {
+    public BUILDER withRemoteMembers(Collection<REMOTE> members) {
       remoteMembers.clear();
       remoteMembers.addAll(members);
-      return this;
+      return (BUILDER) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Builder addRemoteMembers(Collection<R> members) {
+    public BUILDER addRemoteMembers(Collection<REMOTE> members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       remoteMembers.addAll(members);
-      return this;
+      return (BUILDER) this;
     }
 
     @Override
-    public Builder withMembers(Collection<Member> members) {
+    public BUILDER withMembers(Collection<Member> members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       remoteMembers.clear();
       return addMembers(members);
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public Builder addMembers(Collection<Member> members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      members.forEach(m -> {
-        if (m instanceof LocalMember) {
-          withLocalMember((L) m);
-        } else if (m instanceof RemoteMember) {
-          addRemoteMember((R) m);
-        }
-      });
-      return this;
     }
   }
 

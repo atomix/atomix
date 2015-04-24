@@ -36,6 +36,16 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyRemoteMember extends AbstractRemoteMember {
+
+  /**
+   * Returns a new Netty remote member builder.
+   *
+   * @return A new Netty remote member builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
   private static ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {

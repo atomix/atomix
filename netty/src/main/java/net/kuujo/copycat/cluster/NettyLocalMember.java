@@ -38,6 +38,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyLocalMember extends AbstractLocalMember {
+
+  /**
+   * Returns a new Netty local member builder.
+   *
+   * @return A new Netty local member builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
   private static final ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
@@ -275,8 +285,6 @@ public class NettyLocalMember extends AbstractLocalMember {
   public static class Builder extends AbstractLocalMember.Builder<Builder, NettyLocalMember> {
     private String host;
     private int port;
-    private EventLoopGroup serverGroup;
-    private EventLoopGroup workerGroup;
 
     /**
      * Sets the member host.
@@ -297,28 +305,6 @@ public class NettyLocalMember extends AbstractLocalMember {
      */
     public Builder withPort(int port) {
       this.port = port;
-      return this;
-    }
-
-    /**
-     * Sets the server event loop group.
-     *
-     * @param group The server event loop group.
-     * @return The member builder.
-     */
-    public Builder withServerGroup(EventLoopGroup group) {
-      this.serverGroup = group;
-      return this;
-    }
-
-    /**
-     * Sets the worker event loop group.
-     *
-     * @param group The worker event loop group.
-     * @return The member builder.
-     */
-    public Builder withWorkerGroup(EventLoopGroup group) {
-      this.workerGroup = group;
       return this;
     }
 

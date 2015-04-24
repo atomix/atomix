@@ -53,7 +53,7 @@ public interface LocalMember extends Member {
   /**
    * Local member builder.
    */
-  public static interface Builder extends Member.Builder<Builder, ManagedLocalMember> {
+  public static interface Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends ManagedLocalMember> extends Member.Builder<BUILDER, TYPE> {
   }
 
 }

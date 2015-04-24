@@ -25,7 +25,7 @@ public interface RemoteMember extends Member {
   /**
    * Remote member builder.
    */
-  public static interface Builder extends Member.Builder<Builder, ManagedRemoteMember> {
+  public static interface Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends ManagedRemoteMember> extends Member.Builder<BUILDER, TYPE> {
   }
 
 }

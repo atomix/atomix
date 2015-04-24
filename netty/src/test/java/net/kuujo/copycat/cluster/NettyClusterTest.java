@@ -15,24 +15,22 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
-import net.kuujo.copycat.util.ExecutionContext;
+import net.jodah.concurrentunit.ConcurrentTestCase;
+import org.testng.annotations.Test;
 
 /**
- * Abstract local member.
+ * Netty cluster test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class AbstractLocalMember extends AbstractMember implements ManagedLocalMember {
-
-  protected AbstractLocalMember(Info info, CopycatSerializer serializer, ExecutionContext context) {
-    super(info, serializer, context);
-  }
+@Test
+public class NettyClusterTest extends ConcurrentTestCase {
 
   /**
-   * Abstract local member builder.
+   * Tests sending and receiving a message betwixt members.
    */
-  public static abstract class Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends AbstractLocalMember> extends AbstractMember.Builder<BUILDER, TYPE> {
+  public void testClusterSend() {
+
   }
 
 }

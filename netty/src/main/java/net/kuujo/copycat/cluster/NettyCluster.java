@@ -47,7 +47,7 @@ public class NettyCluster extends AbstractCluster {
   /**
    * Netty cluster builder.
    */
-  public static class Builder extends AbstractCluster.Builder<NettyLocalMember, NettyRemoteMember> {
+  public static class Builder extends AbstractCluster.Builder<Builder, NettyLocalMember, NettyRemoteMember> {
     private Builder() {
     }
 

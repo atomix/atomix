@@ -99,7 +99,7 @@ public interface Cluster {
   /**
    * Cluster builder.
    */
-  public static interface Builder<L extends ManagedLocalMember, R extends ManagedRemoteMember> extends net.kuujo.copycat.Builder<ManagedCluster> {
+  public static interface Builder<BUILDER extends Builder<BUILDER, LOCAL, REMOTE>, LOCAL extends ManagedLocalMember, REMOTE extends ManagedRemoteMember> extends net.kuujo.copycat.Builder<ManagedCluster> {
 
     /**
      * Sets the local cluster member.
@@ -107,7 +107,7 @@ public interface Cluster {
      * @param member The local cluster member.
      * @return The cluster builder.
      */
-    Builder withLocalMember(L member);
+    BUILDER withLocalMember(LOCAL member);
 
     /**
      * Sets the set of remote cluster members.
@@ -115,7 +115,7 @@ public interface Cluster {
      * @param members The set of remote cluster members.
      * @return The cluster builder.
      */
-    default Builder withRemoteMembers(R... members) {
+    default BUILDER withRemoteMembers(REMOTE... members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       return withRemoteMembers(Arrays.asList(members));
@@ -127,7 +127,7 @@ public interface Cluster {
      * @param members The set of remote cluster members.
      * @return The cluster builder.
      */
-    Builder withRemoteMembers(Collection<R> members);
+    BUILDER withRemoteMembers(Collection<REMOTE> members);
 
     /**
      * Adds a remote member to the cluster.
@@ -135,7 +135,7 @@ public interface Cluster {
      * @param member The remote member to add.
      * @return The cluster builder.
      */
-    default Builder addRemoteMember(R member) {
+    default BUILDER addRemoteMember(REMOTE member) {
       return addRemoteMembers(Collections.singleton(member));
     }
 
@@ -145,7 +145,7 @@ public interface Cluster {
      * @param members The set of remote members to add.
      * @return The cluster builder.
      */
-    default Builder addRemoteMembers(R... members) {
+    default BUILDER addRemoteMembers(REMOTE... members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       return addRemoteMembers(Arrays.asList(members));
@@ -157,7 +157,7 @@ public interface Cluster {
      * @param members The set of remote members to add.
      * @return The cluster builder.
      */
-    Builder addRemoteMembers(Collection<R> members);
+    BUILDER addRemoteMembers(Collection<REMOTE> members);
 
     /**
      * Sets the set of cluster members.
@@ -165,7 +165,7 @@ public interface Cluster {
      * @param members The set of cluster members.
      * @return The cluster builder.
      */
-    default Builder withMembers(Member... members) {
+    default BUILDER withMembers(Member... members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       return withMembers(Arrays.asList(members));
@@ -177,7 +177,7 @@ public interface Cluster {
      * @param members The set of cluster members.
      * @return The cluster builder.
      */
-    Builder withMembers(Collection<Member> members);
+    BUILDER withMembers(Collection<Member> members);
 
     /**
      * Adds a member to the cluster.
@@ -185,7 +185,7 @@ public interface Cluster {
      * @param member The member to add.
      * @return The cluster builder.
      */
-    default Builder addMember(Member member) {
+    default BUILDER addMember(Member member) {
       if (member == null)
         throw new NullPointerException("member cannot be null");
       return addMembers(Collections.singleton(member));
@@ -197,7 +197,7 @@ public interface Cluster {
      * @param members The set of members to add.
      * @return The cluster builder.
      */
-    default Builder addMembers(Member... members) {
+    default BUILDER addMembers(Member... members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       return addMembers(Arrays.asList(members));
@@ -210,17 +210,17 @@ public interface Cluster {
      * @return The cluster builder.
      */
     @SuppressWarnings("unchecked")
-    default Builder addMembers(Collection<Member> members) {
+    default BUILDER addMembers(Collection<Member> members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
       members.forEach(m -> {
         if (m instanceof LocalMember) {
-          withLocalMember((L) m);
+          withLocalMember((LOCAL) m);
         } else if (m instanceof RemoteMember) {
-          addRemoteMember((R) m);
+          addRemoteMember((REMOTE) m);
         }
       });
-      return this;
+      return (BUILDER) this;
     }
   }
 

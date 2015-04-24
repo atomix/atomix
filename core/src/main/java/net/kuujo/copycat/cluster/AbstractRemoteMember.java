@@ -32,7 +32,7 @@ public abstract class AbstractRemoteMember extends AbstractMember implements Man
   /**
    * Abstract remote member builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends AbstractRemoteMember> extends AbstractMember.Builder<T, U> {
+  public static abstract class Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends AbstractRemoteMember> extends AbstractMember.Builder<BUILDER, TYPE> {
   }
 
 }
