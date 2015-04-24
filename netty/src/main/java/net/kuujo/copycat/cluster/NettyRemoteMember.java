@@ -97,8 +97,8 @@ public class NettyRemoteMember extends AbstractRemoteMember {
       byteBuf.writerIndex(13);
       buffer.setByteBuf(byteBuf);
       serializer.writeObject(message, buffer);
-      byteBuf.setByte(0, MESSAGE);
-      byteBuf.setLong(1, requestId);
+      byteBuf.setLong(0, requestId);
+      byteBuf.setByte(8, MESSAGE);
       byteBuf.setInt(9, hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
       channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
