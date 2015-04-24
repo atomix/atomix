@@ -1,0 +1,3 @@
+id=131
+class=java.lang.Long
+serializer=net.kuujo.copycat.io.serializer.LongWriter

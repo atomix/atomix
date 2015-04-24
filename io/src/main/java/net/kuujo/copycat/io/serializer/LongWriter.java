@@ -18,27 +18,20 @@ package net.kuujo.copycat.io.serializer;
 import net.kuujo.copycat.io.Buffer;
 
 /**
- * Provides an interface for serializable types.
- * <p>
- * Classes can implement this interface as an alternative to providing a separate {@link ObjectWriter} instance. Note,
- * however, that {@link Writable} classes must still be registered via {@link CopycatSerializer#register(Class)}.
+ * Long serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Writable {
+public class LongWriter implements ObjectWriter<Long> {
 
-  /**
-   * Writes the object to the given buffer.
-   *
-   * @param buffer The buffer to which to write the object.
-   */
-  void writeObject(Buffer buffer);
+  @Override
+  public void write(Long object, Buffer buffer) {
+    buffer.writeLong(object);
+  }
 
-  /**
-   * Reads the object from the given buffer.
-   *
-   * @param buffer The buffer from which to read the object.
-   */
-  void readObject(Buffer buffer);
+  @Override
+  public Long read(Class<Long> type, Buffer buffer) {
+    return buffer.readLong();
+  }
 
 }

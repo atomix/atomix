@@ -1,0 +1,3 @@
+id=129
+class=java.lang.Short
+serializer=net.kuujo.copycat.io.serializer.ShortWriter

@@ -20,10 +20,10 @@ import net.kuujo.copycat.io.Buffer;
 /**
  * Provides custom object serialization.
  * <p>
- * This interface can be implemented to provide custom serializers to {@link net.kuujo.copycat.io.serializer.CopycatSerializer}.
- * Users can register a {@link net.kuujo.copycat.io.serializer.Serializer} in a couple of ways. The first method registers
+ * This interface can be implemented to provide custom serializers to {@link CopycatSerializer}.
+ * Users can register a {@link ObjectWriter} in a couple of ways. The first method registers
  * a serializer by creating a file in the `META-INF/services/net/kuujo/copycat/io/serializer` directory.
- * {@link net.kuujo.copycat.io.serializer.CopycatSerializer} will scan this directory for serializer registrations
+ * {@link CopycatSerializer} will scan this directory for serializer registrations
  * when a new instance is created. The file should contain an {@code id}, the serializable {@code class}, and the
  * {@code serializer} class. For example:
  * <pre>
@@ -33,11 +33,11 @@ import net.kuujo.copycat.io.Buffer;
  * serializer=net.kuujo.copycat.raft.protocol.AppendRequest.Serializer
  * }
  * </pre>
- * Similarly, serializers can be registered in code via {@link net.kuujo.copycat.io.serializer.CopycatSerializer#register(Class, int, Serializer)}.
+ * Similarly, serializers can be registered in code via {@link CopycatSerializer#register(Class, int, ObjectWriter)}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Serializer<T> {
+public interface ObjectWriter<T> {
 
   /**
    * Writes the object to the given buffer.

@@ -45,40 +45,44 @@ public class ServiceLoader {
    */
   public static Collection<ServiceInfo> load(String service) {
     ClassLoader cl = Thread.currentThread().getContextClassLoader();
-    Enumeration<URL> urls;
+    Enumeration<URL> serializerUrls;
     try {
-      urls = cl.getResources(String.format("META-INF%sservices%s%s", File.separator, File.separator, service.replace(".", File.separator)));
+      serializerUrls = cl.getResources(String.format("META-INF%sservices%s%s", File.separator, File.separator, service.replace(".", File.separator)));
     } catch (IOException e) {
       throw new ServiceNotFoundException(e);
     }
 
     List<ServiceInfo> services = new ArrayList<>();
-    while (urls.hasMoreElements()) {
-      URL url = urls.nextElement();
-      try {
-        InputStream is = url.openStream();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-        String line;
-        String serviceName = url.getPath().substring(url.getPath().lastIndexOf('/') + 1);
-        Map<String, String> serviceOptions = new HashMap<>();
-        serviceOptions.put("name", serviceName);
-        while ((line = reader.readLine()) != null) {
-          int comment = line.lastIndexOf('#');
-          if (comment >= 0) line = line.substring(0, line.lastIndexOf('#'));
-          line = line.trim();
-          if (line.contains("=")) {
-            String property = line.substring(0, line.indexOf("="));
-            String value = line.substring(line.indexOf("=") + 1);
-            serviceOptions.put(property, value);
-          } else {
-            serviceOptions.put("class", line);
+    while (serializerUrls.hasMoreElements()) {
+      URL serializerUrl = serializerUrls.nextElement();
+      try (InputStream sis = serializerUrl.openStream()) {
+        BufferedReader sreader = new BufferedReader(new InputStreamReader(sis, "UTF-8"));
+        String serviceName;
+        while ((serviceName = sreader.readLine()) != null) {
+          try (InputStream is = cl.getResourceAsStream(String.format("META-INF%sservices%s%s%s%s", File.separator, File.separator, service.replace(".", File.separator), File.separator, serviceName))) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            String line;
+            Map<String, String> serviceOptions = new HashMap<>();
+            serviceOptions.put("name", serviceName);
+            while ((line = reader.readLine()) != null) {
+              int comment = line.lastIndexOf('#');
+              if (comment >= 0) line = line.substring(0, line.lastIndexOf('#'));
+              line = line.trim();
+              if (line.contains("=")) {
+                String property = line.substring(0, line.indexOf("="));
+                String value = line.substring(line.indexOf("=") + 1);
+                serviceOptions.put(property, value);
+              } else {
+                serviceOptions.put("class", line);
+              }
+            }
+            services.add(new ServiceInfo(serviceName, serviceOptions));
           }
         }
-        is.close();
-        services.add(new ServiceInfo(serviceName, serviceOptions));
-      } catch (IOException | IllegalArgumentException | SecurityException e) {
+      } catch (IOException e) {
         throw new ServiceNotFoundException(e);
       }
+      return services;
     }
     return services;
   }

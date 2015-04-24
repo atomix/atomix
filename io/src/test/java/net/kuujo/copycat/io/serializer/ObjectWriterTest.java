@@ -16,29 +16,26 @@
 package net.kuujo.copycat.io.serializer;
 
 import net.kuujo.copycat.io.Buffer;
+import org.testng.annotations.Test;
+
+import static org.testng.Assert.*;
 
 /**
- * Provides an interface for serializable types.
- * <p>
- * Classes can implement this interface as an alternative to providing a separate {@link ObjectWriter} instance. Note,
- * however, that {@link Writable} classes must still be registered via {@link CopycatSerializer#register(Class)}.
+ * Serializer test.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Writable {
+@Test
+public class ObjectWriterTest {
 
   /**
-   * Writes the object to the given buffer.
-   *
-   * @param buffer The buffer to which to write the object.
+   * Tests serializing a string.
    */
-  void writeObject(Buffer buffer);
-
-  /**
-   * Reads the object from the given buffer.
-   *
-   * @param buffer The buffer from which to read the object.
-   */
-  void readObject(Buffer buffer);
+  public void testSerializeString() {
+    CopycatSerializer serializer = new CopycatSerializer();
+    Buffer buffer = serializer.writeObject("Hello world!").flip();
+    String result = serializer.readObject(buffer);
+    assertEquals(result, "Hello world!");
+  }
 
 }

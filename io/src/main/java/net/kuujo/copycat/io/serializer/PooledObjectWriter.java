@@ -22,12 +22,12 @@ import net.kuujo.copycat.io.util.ReferenceCounted;
  * Provides pooled object serialization.
  * <p>
  * The {@code PooledSerializer} is provided as a base class for {@link net.kuujo.copycat.io.util.ReferenceCounted} object serializers. When objects
- * are deserialized by pooled serializers, available objects will be acquired via {@link PooledSerializer#acquire(Class)}
+ * are deserialized by pooled serializers, available objects will be acquired via {@link PooledObjectWriter#acquire(Class)}
  * rather than being constructed new.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class PooledSerializer<T extends ReferenceCounted<T>> implements Serializer<T> {
+public abstract class PooledObjectWriter<T extends ReferenceCounted<T>> implements ObjectWriter<T> {
 
   @Override
   public T read(Class<T> type, Buffer buffer) {

@@ -1,0 +1,3 @@
+id=134
+class=java.lang.Boolean
+serializer=net.kuujo.copycat.io.serializer.BooleanWriter

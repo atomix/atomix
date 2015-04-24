@@ -19,19 +19,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Handles registration of serializable types and their {@link Serializer} instances.
+ * Handles registration of serializable types and their {@link ObjectWriter} instances.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class SerializerRegistry {
   private final Map<Class, Integer> ids = new HashMap<>();
   private final Class[] types = new Class[255];
-  private final Map<Class, Serializer> serializers = new HashMap<>();
+  private final Map<Class, ObjectWriter> serializers = new HashMap<>();
 
   public SerializerRegistry() {
   }
 
-  private SerializerRegistry(Map<Class, Serializer> serializers) {
+  private SerializerRegistry(Map<Class, ObjectWriter> serializers) {
     this.serializers.putAll(serializers);
   }
 
@@ -68,7 +68,7 @@ class SerializerRegistry {
    * @param id The type identifier.
    */
   public void register(Class<? extends Writable> type, int id) {
-    register(type, id, new WritableSerializer<>());
+    register(type, id, new WritableObjectWriter<>());
   }
 
   /**
@@ -78,7 +78,7 @@ class SerializerRegistry {
    * @param id The type identifier.
    * @param serializer The type serializer.
    */
-  public <T> void register(Class<T> type, int id, Serializer<T> serializer) {
+  public <T> void register(Class<T> type, int id, ObjectWriter<T> serializer) {
     if (id < 0)
       throw new IllegalArgumentException("id cannot be negative");
     if (id > 255)
@@ -109,7 +109,7 @@ class SerializerRegistry {
    * @param type The type for which to look up the serializer.
    * @return The serializer for the given type.
    */
-  protected Serializer getSerializer(Class<?> type) {
+  protected ObjectWriter getSerializer(Class<?> type) {
     return serializers.get(type);
   }
 

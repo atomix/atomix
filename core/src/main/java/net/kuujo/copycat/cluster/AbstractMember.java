@@ -16,8 +16,8 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.HashSet;

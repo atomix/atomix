@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * This is a special {@link Serializer} implementation that handles serialization for {@link Writable} objects.
+ * This is a special {@link ObjectWriter} implementation that handles serialization for {@link Writable} objects.
  * <p>
  * During deserialization, if the serializable type also implements {@link net.kuujo.copycat.io.util.ReferenceCounted} then the serializer will
  * make an effort to use a {@link net.kuujo.copycat.io.util.ReferencePool} rather than constructing new objects. However, this requires that
@@ -36,7 +36,7 @@ import java.util.Map;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class WritableSerializer<T extends Writable> implements Serializer<T> {
+class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
   private final Map<Class, ReferencePool> pools = new HashMap<>();
 
   @Override

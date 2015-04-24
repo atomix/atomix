@@ -44,36 +44,50 @@ public class ServiceInfo {
    * Gets a service property.
    *
    * @param name The property name.
-   * @param <T> The property type.
    * @return The property value.
    */
-  @SuppressWarnings("unchecked")
-  public <T> T get(String name) {
-    return (T) properties.get(name);
+  public String get(String name) {
+    return properties.get(name);
   }
 
   /**
-   * Gets a service property.
+   * Returns a class name property.
    *
    * @param name The property name.
-   * @param type The property type.
-   * @param <T> The property type.
+   * @return The class object.
+   */
+  public Class getClass(String name) {
+    String value = properties.get(name);
+    if (value != null) {
+      ClassLoader cl = Thread.currentThread().getContextClassLoader();
+      try {
+        return cl.loadClass(value);
+      } catch (ClassNotFoundException e) {
+        throw new ServiceConfigurationException(e);
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Returns a string property value.
+   *
+   * @param name The property name.
    * @return The property value.
    */
-  public <T> T get(String name, Class<T> type) {
-    if (Class.class.isAssignableFrom(type)) {
-      String value = properties.get(name);
-      if (value != null) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        try {
-          return type.cast(cl.loadClass(value));
-        } catch (ClassNotFoundException e) {
-          throw new IllegalStateException(e);
-        }
-      }
-      return null;
-    }
-    return type.cast(properties.get(name));
+  public String getString(String name) {
+    return properties.get(name);
+  }
+
+  /**
+   * Returns an integer property value.
+   *
+   * @param name The property name.
+   * @return The property value.
+   */
+  public int getInteger(String name) {
+    String value = properties.get(name);
+    return value != null ? Integer.parseInt(value) : null;
   }
 
   @Override

@@ -1,0 +1,3 @@
+id=132
+class=java.lang.Float
+serializer=net.kuujo.copycat.io.serializer.FloatWriter

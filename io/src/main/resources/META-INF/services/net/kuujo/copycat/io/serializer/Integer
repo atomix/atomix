@@ -1,0 +1,3 @@
+id=130
+class=java.lang.Integer
+serializer=net.kuujo.copycat.io.serializer.IntegerWriter

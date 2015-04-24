@@ -26,14 +26,14 @@ import net.kuujo.copycat.util.ServiceLoader;
  * Copycat serializer.
  * <p>
  * This class provides an interface for efficient serialization of Java objects. Serialization is performed by
- * {@link Serializer} instances. Objects that can be serialized by {@link CopycatSerializer} must be registered explicitly
+ * {@link ObjectWriter} instances. Objects that can be serialized by {@link CopycatSerializer} must be registered explicitly
  * via one of the {@link CopycatSerializer#register(Class) registration methods}. When objects are serialized, Copycat
  * will write the object's type as an 8-bit integer. When reading objects, the 8-bit identifier is used to construct
  * a new object.
  * <p>
- * Serializable objects must either provide a {@link Serializer} or implement the {@link Writable} interface.
+ * Serializable objects must either provide a {@link ObjectWriter} or implement the {@link Writable} interface.
  * For efficiency, serializable objects may implement {@link net.kuujo.copycat.io.util.ReferenceCounted} and provide
- * a {@link PooledSerializer} that reuses objects during deserialization.
+ * a {@link PooledObjectWriter} that reuses objects during deserialization.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -52,7 +52,7 @@ public class CopycatSerializer {
     this.registry = new SerializerRegistry();
     for (ServiceInfo serializerInfo : ServiceLoader.load(SERIALIZER_SERVICE)) {
       try {
-        registry.register(serializerInfo.get("class", Class.class), serializerInfo.get("id", Integer.class), ((Class<Serializer>) serializerInfo.get("serializer", Class.class)).newInstance());
+        registry.register(serializerInfo.getClass("class"), serializerInfo.getInteger("id"), ((Class<ObjectWriter>) serializerInfo.getClass("serializer")).newInstance());
       } catch (InstantiationException | IllegalAccessException e) {
         throw new ServiceConfigurationException(e);
       }
@@ -114,7 +114,7 @@ public class CopycatSerializer {
    * @param serializer The type serializer.
    * @return The Copycat serializer.
    */
-  public <T> CopycatSerializer register(Class<T> type, int id, Serializer<T> serializer) {
+  public <T> CopycatSerializer register(Class<T> type, int id, ObjectWriter<T> serializer) {
     registry.register(type, id, serializer);
     return this;
   }
@@ -161,7 +161,7 @@ public class CopycatSerializer {
   public <T> Buffer writeObject(T object, Buffer buffer) {
     Class<?> type = object.getClass();
     int id = registry.id(type);
-    Serializer serializer = registry.getSerializer(type);
+    ObjectWriter serializer = registry.getSerializer(type);
     if (serializer == null)
       throw new SerializationException("cannot serialize unregistered type: " + type);
     serializer.write(object, buffer.writeUnsignedByte(id));
@@ -171,7 +171,7 @@ public class CopycatSerializer {
   /**
    * Reads an object from the given buffer.
    * <p>
-   * The appropriate {@link Serializer} will be read from the buffer by reading the 8-bit signed integer from the start
+   * The appropriate {@link ObjectWriter} will be read from the buffer by reading the 8-bit signed integer from the start
    * of the buffer. If no serializer is registered for the identifier a {@link SerializationException} will be thrown.
    *
    * @param buffer The buffer from which to read the object.
@@ -184,8 +184,8 @@ public class CopycatSerializer {
     int id = buffer.readUnsignedByte();
     Class<?> type = registry.type(id);
     if (type == null)
-      throw new SerializationException("cannot deserialize unknown type");
-    Serializer serializer = registry.getSerializer(type);
+      throw new SerializationException("cannot deserialize: unknown type");
+    ObjectWriter serializer = registry.getSerializer(type);
     return (T) serializer.read(type, buffer);
   }
 
