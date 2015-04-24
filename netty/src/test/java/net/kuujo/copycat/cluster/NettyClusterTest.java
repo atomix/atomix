@@ -24,6 +24,8 @@ import org.testng.annotations.Test;
 
 import java.util.concurrent.CompletableFuture;
 
+import static org.testng.Assert.assertEquals;
+
 /**
  * Netty cluster test.
  *
@@ -31,31 +33,6 @@ import java.util.concurrent.CompletableFuture;
  */
 @Test
 public class NettyClusterTest extends ConcurrentTestCase {
-
-  /**
-   * Builds a cluster.
-   */
-  private ManagedCluster buildCluster(int localMember, int members) {
-    NettyCluster.Builder builder = NettyCluster.builder()
-      .withLocalMember(NettyLocalMember.builder()
-        .withId(localMember)
-        .withType(Member.Type.ACTIVE)
-        .withHost("localhost")
-        .withPort(8080 + localMember)
-        .build());
-
-    for (int i = 0; i < members; i++) {
-      if (i != localMember) {
-        builder.addRemoteMember(NettyRemoteMember.builder()
-          .withId(i)
-          .withType(Member.Type.ACTIVE)
-          .withHost("localhost")
-          .withPort(8080 + i)
-          .build());
-      }
-    }
-    return builder.build();
-  }
 
   /**
    * Tests connecting a remote member to a local member.
@@ -157,6 +134,71 @@ public class NettyClusterTest extends ConcurrentTestCase {
       resume();
     });
     await();
+  }
+
+  /**
+   * Tests sending and receiving messages across a cluster.
+   */
+  public void testClusterMessage() throws Throwable {
+    ManagedCluster cluster1 = buildCluster(1, 3);
+    ManagedCluster cluster2 = buildCluster(2, 3);
+    ManagedCluster cluster3 = buildCluster(3, 3);
+
+    expectResumes(3);
+
+    cluster1.open().thenRun(this::resume);
+    cluster2.open().thenRun(this::resume);
+    cluster3.open().thenRun(this::resume);
+
+    await();
+
+    assertEquals(cluster1.member().id(), 1);
+    assertEquals(cluster2.member().id(), 2);
+    assertEquals(cluster3.member().id(), 3);
+
+    assertEquals(cluster1.member().type(), Member.Type.ACTIVE);
+    assertEquals(cluster2.member().type(), Member.Type.ACTIVE);
+    assertEquals(cluster3.member().type(), Member.Type.ACTIVE);
+
+    cluster1.member().<String, String>registerHandler("test", message -> {
+      threadAssertEquals(message, "Hello");
+      return CompletableFuture.completedFuture("world!");
+    });
+
+    expectResume();
+
+    cluster2.member(1).send("test", "Hello").whenComplete((result, error) -> {
+      threadAssertNull(error);
+      threadAssertEquals(result, "world!");
+      resume();
+    });
+
+    await();
+  }
+
+  /**
+   * Builds a cluster.
+   */
+  private ManagedCluster buildCluster(int localMember, int members) {
+    NettyCluster.Builder builder = NettyCluster.builder()
+      .withLocalMember(NettyLocalMember.builder()
+        .withId(localMember)
+        .withType(Member.Type.ACTIVE)
+        .withHost("localhost")
+        .withPort(8080 + localMember)
+        .build());
+
+    for (int i = 1; i <= members; i++) {
+      if (i != localMember) {
+        builder.addRemoteMember(NettyRemoteMember.builder()
+          .withId(i)
+          .withType(Member.Type.ACTIVE)
+          .withHost("localhost")
+          .withPort(8080 + i)
+          .build());
+      }
+    }
+    return builder.build();
   }
 
   /**
