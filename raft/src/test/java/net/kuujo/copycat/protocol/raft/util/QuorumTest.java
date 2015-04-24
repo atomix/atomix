@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.protocol.raft.util;
 
-import net.kuujo.copycat.protocol.raft.util.Quorum;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
@@ -41,6 +40,9 @@ public class QuorumTest {
     });
   }
 
+  /**
+   * Tests a successful quorum.
+   */
   public void testQuorumSucceed() {
     quorum.succeed();
     quorum.succeed();
@@ -51,6 +53,9 @@ public class QuorumTest {
     assertEquals(callbackResult.get(), 1);
   }
 
+  /**
+   * Tests a failed quorum.
+   */
   public void testQuorumFail() {
     quorum.fail();
     quorum.fail();
@@ -60,4 +65,5 @@ public class QuorumTest {
     quorum.fail();
     assertEquals(callbackResult.get(), 2);
   }
+
 }
