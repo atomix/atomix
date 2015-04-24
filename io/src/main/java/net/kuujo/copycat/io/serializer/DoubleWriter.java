@@ -25,12 +25,12 @@ import net.kuujo.copycat.io.Buffer;
 public class DoubleWriter implements ObjectWriter<Double> {
 
   @Override
-  public void write(Double object, Buffer buffer) {
+  public void write(Double object, Buffer buffer, Serializer serializer) {
     buffer.writeDouble(object);
   }
 
   @Override
-  public Double read(Class<Double> type, Buffer buffer) {
+  public Double read(Class<Double> type, Buffer buffer, Serializer serializer) {
     return buffer.readDouble();
   }
 

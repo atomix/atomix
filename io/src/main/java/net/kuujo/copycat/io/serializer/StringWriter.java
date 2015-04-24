@@ -25,13 +25,13 @@ import net.kuujo.copycat.io.Buffer;
 public class StringWriter implements ObjectWriter<String> {
 
   @Override
-  public void write(String object, Buffer buffer) {
+  public void write(String object, Buffer buffer, Serializer serializer) {
     byte[] bytes = object.getBytes();
     buffer.writeInt(bytes.length).write(bytes);
   }
 
   @Override
-  public String read(Class<String> type, Buffer buffer) {
+  public String read(Class<String> type, Buffer buffer, Serializer serializer) {
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     return new String(bytes);

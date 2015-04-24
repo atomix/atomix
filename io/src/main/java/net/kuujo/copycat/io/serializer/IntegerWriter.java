@@ -25,12 +25,12 @@ import net.kuujo.copycat.io.Buffer;
 public class IntegerWriter implements ObjectWriter<Integer> {
 
   @Override
-  public void write(Integer object, Buffer buffer) {
+  public void write(Integer object, Buffer buffer, Serializer serializer) {
     buffer.writeInt(object);
   }
 
   @Override
-  public Integer read(Class<Integer> type, Buffer buffer) {
+  public Integer read(Class<Integer> type, Buffer buffer, Serializer serializer) {
     return buffer.readInt();
   }
 

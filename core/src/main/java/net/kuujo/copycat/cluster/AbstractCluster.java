@@ -16,7 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.EventListener;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.*;
@@ -34,7 +34,7 @@ public abstract class AbstractCluster implements ManagedCluster {
   protected final AbstractLocalMember localMember;
   protected final Map<Integer, AbstractRemoteMember> remoteMembers = new ConcurrentHashMap<>();
   protected final Map<Integer, AbstractMember> members = new ConcurrentHashMap<>();
-  protected final CopycatSerializer serializer = new CopycatSerializer();
+  protected final Serializer serializer = new Serializer();
   protected final Set<EventListener<MembershipChangeEvent>> membershipListeners = new CopyOnWriteArraySet<>();
   private final AtomicInteger permits = new AtomicInteger();
   private MembershipDetector membershipDetector;

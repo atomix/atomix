@@ -16,7 +16,7 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.Protocol;
 
 /**
@@ -28,7 +28,7 @@ public abstract class DiscreteResourceConfig extends ResourceConfig {
   private Protocol protocol;
   private int partitions = 1;
   private ReplicationStrategy replicationStrategy;
-  private CopycatSerializer serializer;
+  private Serializer serializer;
 
   /**
    * Sets the resource protocol.
@@ -89,7 +89,7 @@ public abstract class DiscreteResourceConfig extends ResourceConfig {
    *
    * @param serializer The resource serializer.
    */
-  protected void setSerializer(CopycatSerializer serializer) {
+  protected void setSerializer(Serializer serializer) {
     this.serializer = serializer;
   }
 
@@ -98,7 +98,7 @@ public abstract class DiscreteResourceConfig extends ResourceConfig {
    *
    * @return The resource serializer.
    */
-  public CopycatSerializer getSerializer() {
+  public Serializer getSerializer() {
     return serializer;
   }
 
@@ -109,7 +109,7 @@ public abstract class DiscreteResourceConfig extends ResourceConfig {
     if (replicationStrategy == null)
       replicationStrategy = new FullReplicationStrategy();
     if (serializer == null)
-      serializer = new CopycatSerializer();
+      serializer = new Serializer();
     super.resolve();
     return this;
   }

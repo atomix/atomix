@@ -17,7 +17,7 @@ package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.Protocol;
 
 import java.util.concurrent.CompletableFuture;
@@ -31,7 +31,7 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
   protected final Protocol protocol;
   protected final Cluster partitionedCluster;
   protected final ReplicationStrategy replicationStrategy;
-  protected final CopycatSerializer serializer;
+  protected final Serializer serializer;
 
   protected DiscreteResource(DiscreteResourceConfig config) {
     super(config.resolve());
@@ -110,7 +110,7 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
      * @return The resource builder.
      */
     @SuppressWarnings("unchecked")
-    public T withSerializer(CopycatSerializer serializer) {
+    public T withSerializer(Serializer serializer) {
       config.setSerializer(serializer);
       return (T) this;
     }

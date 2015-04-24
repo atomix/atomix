@@ -16,7 +16,7 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.ConfigurationException;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.Protocol;
 
 /**
@@ -28,7 +28,7 @@ public abstract class PartitionConfig extends Config {
   private int partitionId;
   private Protocol protocol;
   private ReplicationStrategy replicationStrategy;
-  private CopycatSerializer serializer;
+  private Serializer serializer;
 
   /**
    * Sets the partition ID.
@@ -89,7 +89,7 @@ public abstract class PartitionConfig extends Config {
    *
    * @param serializer The partition serializer.
    */
-  protected void setSerializer(CopycatSerializer serializer) {
+  protected void setSerializer(Serializer serializer) {
     this.serializer = serializer;
   }
 
@@ -98,7 +98,7 @@ public abstract class PartitionConfig extends Config {
    *
    * @return The partition serializer.
    */
-  public CopycatSerializer getSerializer() {
+  public Serializer getSerializer() {
     return serializer;
   }
 
@@ -111,7 +111,7 @@ public abstract class PartitionConfig extends Config {
     if (replicationStrategy == null)
       replicationStrategy = new FullReplicationStrategy();
     if (serializer == null)
-      serializer = new CopycatSerializer();
+      serializer = new Serializer();
     return this;
   }
 

@@ -25,12 +25,12 @@ import net.kuujo.copycat.io.Buffer;
 public class BooleanWriter implements ObjectWriter<Boolean> {
 
   @Override
-  public void write(Boolean object, Buffer buffer) {
+  public void write(Boolean object, Buffer buffer, Serializer serializer) {
     buffer.writeBoolean(object);
   }
 
   @Override
-  public Boolean read(Class<Boolean> type, Buffer buffer) {
+  public Boolean read(Class<Boolean> type, Buffer buffer, Serializer serializer) {
     return buffer.readBoolean();
   }
 

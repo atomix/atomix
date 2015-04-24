@@ -1,0 +1,3 @@
+id=135
+class=java.util.List
+serializer=net.kuujo.copycat.io.serializer.ListWriter

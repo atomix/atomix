@@ -21,7 +21,7 @@ import net.kuujo.copycat.io.Buffer;
  * Provides an interface for serializable types.
  * <p>
  * Classes can implement this interface as an alternative to providing a separate {@link ObjectWriter} instance. Note,
- * however, that {@link Writable} classes must still be registered via {@link CopycatSerializer#register(Class)}.
+ * however, that {@link Writable} classes must still be registered via {@link Serializer#register(Class)}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */

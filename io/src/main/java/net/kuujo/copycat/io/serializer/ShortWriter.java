@@ -25,12 +25,12 @@ import net.kuujo.copycat.io.Buffer;
 public class ShortWriter implements ObjectWriter<Short> {
 
   @Override
-  public void write(Short object, Buffer buffer) {
+  public void write(Short object, Buffer buffer, Serializer serializer) {
     buffer.writeShort(object);
   }
 
   @Override
-  public Short read(Class<Short> type, Buffer buffer) {
+  public Short read(Class<Short> type, Buffer buffer, Serializer serializer) {
     return buffer.readShort();
   }
 

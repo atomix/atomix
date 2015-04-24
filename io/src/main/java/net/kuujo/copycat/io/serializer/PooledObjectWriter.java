@@ -30,9 +30,9 @@ import net.kuujo.copycat.io.util.ReferenceCounted;
 public abstract class PooledObjectWriter<T extends ReferenceCounted<T>> implements ObjectWriter<T> {
 
   @Override
-  public T read(Class<T> type, Buffer buffer) {
+  public T read(Class<T> type, Buffer buffer, Serializer serializer) {
     T object = acquire(type);
-    read(object, buffer);
+    read(object, buffer, serializer);
     return object;
   }
 
@@ -49,7 +49,8 @@ public abstract class PooledObjectWriter<T extends ReferenceCounted<T>> implemen
    *
    * @param object The object to read.
    * @param buffer The buffer from which to read the object.
+   * @param serializer The Copycat serializer.
    */
-  protected abstract void read(T object, Buffer buffer);
+  protected abstract void read(T object, Buffer buffer, Serializer serializer);
 
 }

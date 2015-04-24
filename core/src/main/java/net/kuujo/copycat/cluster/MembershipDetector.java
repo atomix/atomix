@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,22 +36,38 @@ import java.util.stream.Stream;
 class MembershipDetector implements Runnable, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(MembershipDetector.class);
   private static final String MEMBERSHIP_TOPIC = "*";
+  private static final long GOSSIP_INTERVAL = 5000;
   private static final long MEMBER_INFO_EXPIRE_TIME = 1000 * 60;
   private final AbstractCluster cluster;
-  private final ExecutionContext context = new ExecutionContext("copycat-cluster");
-  private final ThreadChecker threadChecker = new ThreadChecker(context);
+  private final ExecutionContext context;
+  private final ThreadChecker threadChecker;
   private final Random random = new Random();
   private final AtomicBoolean updating = new AtomicBoolean();
+  private ScheduledFuture<?> future;
 
-  MembershipDetector(AbstractCluster cluster) {
+  MembershipDetector(AbstractCluster cluster, ExecutionContext context) {
     this.cluster = cluster;
+    this.context = context;
+    this.threadChecker = new ThreadChecker(context);
     context.execute(() -> {
       cluster.localMember.registerHandler(MEMBERSHIP_TOPIC, this::handleJoin);
+      reschedule();
     });
+  }
+
+  /**
+   * Reschedules the gossip protocol.
+   */
+  private void reschedule() {
+    threadChecker.checkThread();
+    if (future != null)
+      future.cancel(false);
+    future = context.schedule(this, GOSSIP_INTERVAL, TimeUnit.MILLISECONDS);
   }
 
   @Override
   public void run() {
+    future = null;
     sendJoins(getGossipMembers());
   }
 
@@ -58,14 +76,16 @@ class MembershipDetector implements Runnable, AutoCloseable {
    */
   private void sendJoins(Collection<AbstractMember> gossipMembers) {
     threadChecker.checkThread();
+    LOGGER.debug("{} - initiating gossip protocol", cluster.localMember);
 
     // Increment the local member version.
     cluster.localMember.info.version(cluster.localMember.info.version() + 1);
 
     // For a random set of three members, send all member info.
-    Collection<AbstractMember.Info> members = new ArrayList<>(cluster.members.values().stream().map(m -> m.info).collect(Collectors.toList()));
+    Collection<AbstractMember.Info> members = new ArrayList<>(cluster.members.values().stream().map(AbstractMember::info).collect(Collectors.toList()));
     for (AbstractMember member : gossipMembers) {
       if (member.id() != cluster.member().id()) {
+        LOGGER.debug("{} - gossipping with {}", cluster.localMember, member.id());
         member.<Collection<AbstractMember.Info>, Collection<AbstractMember.Info>>send(MEMBERSHIP_TOPIC, members).whenCompleteAsync((membersInfo, error) -> {
           // If the response was successfully received then indicate that the member is alive and update all member info.
           // Otherwise, indicate that communication with the member failed. This information will be used to determine
@@ -77,6 +97,7 @@ class MembershipDetector implements Runnable, AutoCloseable {
             } else {
               member.info.fail(cluster.localMember.id());
             }
+            reschedule();
           }
         }, context);
       }
@@ -193,6 +214,9 @@ class MembershipDetector implements Runnable, AutoCloseable {
     context.execute(() -> {
       cluster.localMember.unregisterHandler(MEMBERSHIP_TOPIC);
     });
+    if (future != null) {
+      future.cancel(false);
+    }
     context.close();
   }
 

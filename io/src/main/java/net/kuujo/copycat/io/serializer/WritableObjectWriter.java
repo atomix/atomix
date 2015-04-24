@@ -40,12 +40,12 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
   private final Map<Class, ReferencePool> pools = new HashMap<>();
 
   @Override
-  public void write(T object, Buffer buffer) {
+  public void write(T object, Buffer buffer, Serializer serializer) {
     object.writeObject(buffer);
   }
 
   @Override
-  public T read(Class<T> type, Buffer buffer) {
+  public T read(Class<T> type, Buffer buffer, Serializer serializer) {
     if (ReferenceCounted.class.isAssignableFrom(type)) {
       return readReference(type, buffer);
     } else {

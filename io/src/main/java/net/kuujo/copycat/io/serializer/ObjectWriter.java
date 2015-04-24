@@ -20,10 +20,10 @@ import net.kuujo.copycat.io.Buffer;
 /**
  * Provides custom object serialization.
  * <p>
- * This interface can be implemented to provide custom serializers to {@link CopycatSerializer}.
+ * This interface can be implemented to provide custom serializers to {@link Serializer}.
  * Users can register a {@link ObjectWriter} in a couple of ways. The first method registers
  * a serializer by creating a file in the `META-INF/services/net/kuujo/copycat/io/serializer` directory.
- * {@link CopycatSerializer} will scan this directory for serializer registrations
+ * {@link Serializer} will scan this directory for serializer registrations
  * when a new instance is created. The file should contain an {@code id}, the serializable {@code class}, and the
  * {@code serializer} class. For example:
  * <pre>
@@ -33,7 +33,7 @@ import net.kuujo.copycat.io.Buffer;
  * serializer=net.kuujo.copycat.raft.protocol.AppendRequest.Serializer
  * }
  * </pre>
- * Similarly, serializers can be registered in code via {@link CopycatSerializer#register(Class, int, ObjectWriter)}.
+ * Similarly, serializers can be registered in code via {@link Serializer#register(Class, int, ObjectWriter)}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -44,8 +44,9 @@ public interface ObjectWriter<T> {
    *
    * @param object The object to write.
    * @param buffer The buffer to which to write the object.
+   * @param serializer The Copycat serializer.
    */
-  void write(T object, Buffer buffer);
+  void write(T object, Buffer buffer, Serializer serializer);
 
   /**
    * Reads the object from the given buffer.
@@ -53,7 +54,8 @@ public interface ObjectWriter<T> {
    * @param type The type to read.
    * @param buffer The buffer from which to read the object.
    * @return The read object.
+   * @param serializer The Copycat serializer.
    */
-  T read(Class<T> type, Buffer buffer);
+  T read(Class<T> type, Buffer buffer, Serializer serializer);
 
 }

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 /**
@@ -25,7 +25,7 @@ import net.kuujo.copycat.util.ExecutionContext;
  */
 public abstract class AbstractRemoteMember extends AbstractMember implements ManagedRemoteMember {
 
-  protected AbstractRemoteMember(Info info, CopycatSerializer serializer, ExecutionContext context) {
+  protected AbstractRemoteMember(Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
   }
 

@@ -16,7 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.util.ExecutionContext;
 
@@ -34,7 +34,7 @@ public abstract class AbstractMember implements Member {
   /**
    * Member info.
    */
-  static class Info implements Writable {
+  public static class Info implements Writable {
     private static final int FAILURE_LIMIT = 3;
     private Type type;
     private Status status;
@@ -256,10 +256,10 @@ public abstract class AbstractMember implements Member {
   }
 
   protected final Info info;
-  protected final CopycatSerializer serializer;
+  protected final Serializer serializer;
   protected final ExecutionContext context;
 
-  protected AbstractMember(Info info, CopycatSerializer serializer, ExecutionContext context) {
+  protected AbstractMember(Info info, Serializer serializer, ExecutionContext context) {
     this.info = info;
     this.serializer = serializer;
     this.context = context;
@@ -320,7 +320,7 @@ public abstract class AbstractMember implements Member {
   public static abstract class Builder<T extends Builder<T, U>, U extends AbstractMember> implements Member.Builder<T, U> {
     protected int id;
     protected Type type;
-    protected CopycatSerializer serializer;
+    protected Serializer serializer;
 
     @Override
     @SuppressWarnings("unchecked")
@@ -340,7 +340,7 @@ public abstract class AbstractMember implements Member {
 
     @Override
     @SuppressWarnings("unchecked")
-    public T withSerializer(CopycatSerializer serializer) {
+    public T withSerializer(Serializer serializer) {
       if (serializer == null)
         throw new NullPointerException("serializer cannot be null");
       this.serializer = serializer;

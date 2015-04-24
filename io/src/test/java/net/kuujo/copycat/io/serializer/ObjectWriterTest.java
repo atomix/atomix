@@ -32,7 +32,7 @@ public class ObjectWriterTest {
    * Tests serializing a string.
    */
   public void testSerializeString() {
-    CopycatSerializer serializer = new CopycatSerializer();
+    Serializer serializer = new Serializer();
     Buffer buffer = serializer.writeObject("Hello world!").flip();
     String result = serializer.readObject(buffer);
     assertEquals(result, "Hello world!");

@@ -15,7 +15,7 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.io.serializer.CopycatSerializer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.util.Managed;
 
@@ -90,7 +90,7 @@ public abstract class Partition<T> implements Managed<T> {
      * @return The partition builder.
      */
     @SuppressWarnings("unchecked")
-    public T withSerializer(CopycatSerializer serializer) {
+    public T withSerializer(Serializer serializer) {
       config.setSerializer(serializer);
       return (T) this;
     }

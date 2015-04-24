@@ -25,12 +25,12 @@ import net.kuujo.copycat.io.Buffer;
 public class LongWriter implements ObjectWriter<Long> {
 
   @Override
-  public void write(Long object, Buffer buffer) {
+  public void write(Long object, Buffer buffer, Serializer serializer) {
     buffer.writeLong(object);
   }
 
   @Override
-  public Long read(Class<Long> type, Buffer buffer) {
+  public Long read(Class<Long> type, Buffer buffer, Serializer serializer) {
     return buffer.readLong();
   }
 

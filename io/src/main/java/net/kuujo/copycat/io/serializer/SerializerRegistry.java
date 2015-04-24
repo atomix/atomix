@@ -109,8 +109,16 @@ class SerializerRegistry {
    * @param type The type for which to look up the serializer.
    * @return The serializer for the given type.
    */
+  @SuppressWarnings("unchecked")
   protected ObjectWriter getSerializer(Class<?> type) {
-    return serializers.get(type);
+    ObjectWriter serializer = serializers.get(type);
+    if (serializer == null) {
+      int id = id(type);
+      if (id != 0) {
+        return serializers.get(types[id]);
+      }
+    }
+    return serializer;
   }
 
   /**
@@ -119,8 +127,20 @@ class SerializerRegistry {
    * @param type The type for which to look up the identifier.
    * @return The type identifier.
    */
+  @SuppressWarnings("unchecked")
   protected int id(Class<?> type) {
-    return ids.get(type);
+    Integer id = ids.get(type);
+    if (id == null) {
+      for (Map.Entry<Class, Integer> entry : ids.entrySet()) {
+        if (entry.getKey().isAssignableFrom(type)) {
+          id = entry.getValue();
+          ids.put(type, id);
+          return id;
+        }
+      }
+      return 0;
+    }
+    return id;
   }
 
   /**

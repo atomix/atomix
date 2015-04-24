@@ -17,21 +17,33 @@ package net.kuujo.copycat.io.serializer;
 
 import net.kuujo.copycat.io.Buffer;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- * Float serializer.
+ * List serializer.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FloatWriter implements ObjectWriter<Float> {
+public class ListWriter implements ObjectWriter<List> {
 
   @Override
-  public void write(Float object, Buffer buffer, Serializer serializer) {
-    buffer.writeFloat(object);
+  public void write(List object, Buffer buffer, Serializer serializer) {
+    buffer.writeInt(object.size());
+    for (Object value : object) {
+      serializer.writeObject(value, buffer);
+    }
   }
 
   @Override
-  public Float read(Class<Float> type, Buffer buffer, Serializer serializer) {
-    return buffer.readFloat();
+  @SuppressWarnings("unchecked")
+  public List read(Class<List> type, Buffer buffer, Serializer serializer) {
+    int size = buffer.readInt();
+    List object = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      object.add(serializer.readObject(buffer));
+    }
+    return object;
   }
 
 }
