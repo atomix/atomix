@@ -326,7 +326,7 @@ public class NettyLocalMember extends AbstractLocalMember {
 
     @Override
     public NettyLocalMember build() {
-      return new NettyLocalMember(host, port, new Info(id, type), serializer, new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyLocalMember(host, port, new Info(id, type), serializer != null ? serializer : new CopycatSerializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

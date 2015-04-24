@@ -113,11 +113,14 @@ public class NettyClusterTest extends ConcurrentTestCase {
     remoteMember.connect().thenRun(this::resume);
     await();
 
+    expectResume();
     localMember.registerHandler("test", message -> CompletableFuture.completedFuture("world!"));
     remoteMember.send("test", "Hello").whenComplete((result, error) -> {
       threadAssertNull(error);
       threadAssertEquals(result, "world!");
+      resume();
     });
+    await();
   }
 
   /**

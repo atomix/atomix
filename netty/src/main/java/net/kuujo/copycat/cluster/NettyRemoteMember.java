@@ -100,7 +100,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
       byteBuf.setByte(0, MESSAGE);
       byteBuf.setLong(1, requestId);
       byteBuf.setInt(9, hashMap.computeIfAbsent(topic, t -> HashFunctions.CITYHASH.hash32(t.getBytes())));
-      channel.writeAndFlush(buffer).addListener((channelFuture) -> {
+      channel.writeAndFlush(byteBuf).addListener((channelFuture) -> {
         if (channelFuture.isSuccess()) {
           responseFutures.put(requestId, future);
         } else {
@@ -292,7 +292,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
 
     @Override
     public NettyRemoteMember build() {
-      return new NettyRemoteMember(host != null ? host : "localhost", port, new Info(id, type), serializer, new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyRemoteMember(host != null ? host : "localhost", port, new Info(id, type), serializer != null ? serializer : new CopycatSerializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 
