@@ -31,6 +31,7 @@ import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -41,7 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyLocalMember extends AbstractLocalMember {
+public class NettyLocalMember extends AbstractLocalMember implements NettyMember{
 
   /**
    * Returns a new Netty local member builder.
@@ -62,8 +63,7 @@ public class NettyLocalMember extends AbstractLocalMember {
   };
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
-  private final String host;
-  private final int port;
+  private final NettyMember.Info info;
   private final EventLoopGroup workerGroup;
   private Channel channel;
   private ChannelGroup channelGroup;
@@ -71,11 +71,15 @@ public class NettyLocalMember extends AbstractLocalMember {
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
-  protected NettyLocalMember(String host, int port, Info info, Serializer serializer, ExecutionContext context) {
+  protected NettyLocalMember(NettyMember.Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
-    this.host = host;
-    this.port = port;
+    this.info = info;
     this.workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
+  }
+
+  @Override
+  public InetSocketAddress address() {
+    return info.address;
   }
 
   @Override
@@ -166,7 +170,7 @@ public class NettyLocalMember extends AbstractLocalMember {
           bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
           // Bind and start to accept incoming connections.
-          ChannelFuture bindFuture = bootstrap.bind(host, port);
+          ChannelFuture bindFuture = bootstrap.bind(info.address.getHostString(), info.address.getPort());
           bindFuture.addListener((ChannelFutureListener) channelFuture -> {
             channelFuture.channel().closeFuture().addListener(closeFuture -> {
               workerGroup.shutdownGracefully();
@@ -175,7 +179,7 @@ public class NettyLocalMember extends AbstractLocalMember {
             if (channelFuture.isSuccess()) {
               channel = channelFuture.channel();
               listening = true;
-              info.address = channel.localAddress().toString();
+              info.address = (InetSocketAddress) channel.localAddress();
               listenFuture.complete(null);
             } else {
               listenFuture.completeExceptionally(channelFuture.cause());
@@ -345,7 +349,7 @@ public class NettyLocalMember extends AbstractLocalMember {
         throw new ConfigurationException("member id must be greater than 0");
       if (type == null)
         throw new ConfigurationException("must specify member type");
-      return new NettyLocalMember(host, port, new Info(id, type), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyLocalMember(new NettyMember.Info(id, type, new InetSocketAddress(host, port)), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

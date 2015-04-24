@@ -40,7 +40,6 @@ public abstract class AbstractMember implements Member {
     private Status status;
     private long changed;
     private int id;
-    String address;
     private long version = 1;
     private Set<Integer> failures = new HashSet<>();
 
@@ -69,15 +68,6 @@ public abstract class AbstractMember implements Member {
      */
     public int id() {
       return id;
-    }
-
-    /**
-     * Returns the member address.
-     *
-     * @return The member address.
-     */
-    public String address() {
-      return address;
     }
 
     /**
@@ -209,8 +199,6 @@ public abstract class AbstractMember implements Member {
       buffer.writeByte(type.ordinal())
         .writeByte(status.ordinal())
         .writeInt(id)
-        .writeInt(address.getBytes().length)
-        .write(address.getBytes())
         .writeLong(version);
       buffer.writeInt(failures.size());
       failures.forEach(buffer::writeInt);
@@ -221,9 +209,6 @@ public abstract class AbstractMember implements Member {
       type = Type.values()[buffer.readByte()];
       status = Status.values()[buffer.readByte()];
       id = buffer.readInt();
-      byte[] addressBytes = new byte[buffer.readInt()];
-      buffer.read(addressBytes);
-      address = new String(addressBytes);
       version = buffer.readLong();
       int numFailures = buffer.readInt();
       failures = new HashSet<>(numFailures);

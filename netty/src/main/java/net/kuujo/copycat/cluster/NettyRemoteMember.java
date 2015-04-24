@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class NettyRemoteMember extends AbstractRemoteMember {
+public class NettyRemoteMember extends AbstractRemoteMember implements NettyMember {
 
   /**
    * Returns a new Netty remote member builder.
@@ -60,8 +60,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
       return new ByteBufBuffer();
     }
   };
-  private final String host;
-  private final int port;
+  private final NettyMember.Info info;
   private EventLoopGroup eventLoopGroup;
   private boolean eventLoopInitialized;
   private Channel channel;
@@ -74,11 +73,9 @@ public class NettyRemoteMember extends AbstractRemoteMember {
   private CompletableFuture<Void> closeFuture;
   private ScheduledFuture<?> reconnectFuture;
 
-  protected NettyRemoteMember(String host, int port, Info info, Serializer serializer, ExecutionContext context) {
+  protected NettyRemoteMember(NettyMember.Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
-    this.host = host;
-    this.port = port;
-    info.address = new InetSocketAddress(host, port).toString();
+    this.info = info;
   }
 
   /**
@@ -88,6 +85,11 @@ public class NettyRemoteMember extends AbstractRemoteMember {
     this.eventLoopGroup = eventLoopGroup;
     eventLoopInitialized = true;
     return this;
+  }
+
+  @Override
+  public InetSocketAddress address() {
+    return info.address;
   }
 
   @Override
@@ -184,7 +186,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
     bootstrap.option(ChannelOption.SO_KEEPALIVE, true);
     bootstrap.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000);
 
-    bootstrap.connect(host, port).addListener((ChannelFutureListener) channelFuture -> {
+    bootstrap.connect(info.address.getHostString(), info.address.getPort()).addListener((ChannelFutureListener) channelFuture -> {
       if (channelFuture.isSuccess()) {
         channel = channelFuture.channel();
         connected = true;
@@ -299,7 +301,7 @@ public class NettyRemoteMember extends AbstractRemoteMember {
         throw new ConfigurationException("member id must be greater than 0");
       if (type == null)
         throw new ConfigurationException("must specify member type");
-      return new NettyRemoteMember(host != null ? host : "localhost", port, new Info(id, type), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new NettyRemoteMember(new NettyMember.Info(id, type, new InetSocketAddress(host != null ? host : "localhost", port)), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

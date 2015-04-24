@@ -48,7 +48,7 @@ public class NettyCluster extends AbstractCluster {
 
   @Override
   protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
-    return new NettyRemoteMember(info.address.substring(0, info.address.indexOf(':')), Integer.valueOf(info.address.substring(info.address.indexOf(':') + 1)), info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).setEventLoopGroup(eventLoopGroup);
+    return new NettyRemoteMember((NettyMember.Info) info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).setEventLoopGroup(eventLoopGroup);
   }
 
   @Override
