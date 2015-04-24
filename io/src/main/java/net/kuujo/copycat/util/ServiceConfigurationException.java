@@ -15,14 +15,12 @@
  */
 package net.kuujo.copycat.util;
 
-import net.kuujo.copycat.CopycatException;
-
 /**
  * Service configuration exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ServiceConfigurationException extends CopycatException {
+public class ServiceConfigurationException extends RuntimeException {
 
   public ServiceConfigurationException() {
   }

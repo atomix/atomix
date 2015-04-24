@@ -15,14 +15,12 @@
  */
 package net.kuujo.copycat.io;
 
-import net.kuujo.copycat.CopycatException;
-
 /**
  * Copycat IO exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class CopycatIOException extends CopycatException {
+public class CopycatIOException extends RuntimeException {
 
   public CopycatIOException() {
   }

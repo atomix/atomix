@@ -15,14 +15,12 @@
  */
 package net.kuujo.copycat.util;
 
-import net.kuujo.copycat.CopycatException;
-
 /**
  * Service not found exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ServiceNotFoundException extends CopycatException {
+public class ServiceNotFoundException extends RuntimeException {
 
   public ServiceNotFoundException() {
   }
