@@ -16,6 +16,7 @@
 package net.kuujo.copycat.protocol.raft.rpc;
 
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.NativeBuffer;
 import net.kuujo.copycat.io.serializer.SerializationException;
 import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.protocol.raft.RaftMember;
@@ -212,6 +213,7 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
    * Sync request builder.
    */
   public static class Builder extends AbstractRequest.Builder<Builder, SyncRequest> {
+    private final Buffer buffer = NativeBuffer.allocate(1024);
 
     private Builder() {
       super(SyncRequest::new);
@@ -301,7 +303,11 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
         throw new NullPointerException("entries cannot be null");
       if (request.members == null)
         throw new NullPointerException("members cannot be null");
-      request.entries.forEach(RaftEntry::acquire);
+
+      buffer.clear();
+      request.writeObject(buffer);
+      buffer.flip();
+      request.readObject(buffer);
       return request;
     }
 

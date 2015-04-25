@@ -154,6 +154,7 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
 
     buffer.writeInt(entries.size());
     for (RaftEntry entry : entries) {
+      buffer.writeLong(entry.index());
       entry.writeObject(buffer);
     }
   }
@@ -332,8 +333,12 @@ public class AppendRequest extends AbstractRequest<AppendRequest> {
         throw new IllegalArgumentException("commit index must be positive");
       if (request.recycleIndex < 0)
         throw new IllegalArgumentException("recycle index must be positive");
+
+      buffer.clear();
       request.writeObject(buffer);
+      buffer.flip();
       request.readObject(buffer);
+
       return request;
     }
 
