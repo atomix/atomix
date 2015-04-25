@@ -290,12 +290,10 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
     RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
     RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster4 = buildCluster(4, Member.Type.PASSIVE, 4, registry);
 
     RaftProtocol protocol1 = buildProtocol(1, cluster1);
     RaftProtocol protocol2 = buildProtocol(2, cluster2);
     RaftProtocol protocol3 = buildProtocol(3, cluster3);
-    RaftProtocol protocol4 = buildProtocol(4, cluster4);
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
@@ -307,13 +305,30 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     protocol2.commit(commitHandler);
     protocol3.commit(commitHandler);
 
-    expectResumes(3);
+    expectResumes(4);
+
+    AtomicInteger electionCount = new AtomicInteger();
+    EventListener<Event> listener = new EventListener<Event>() {
+      @Override
+      public void accept(Event event) {
+        if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null && electionCount.incrementAndGet() == 3) {
+          resume();
+        }
+      }
+    };
+
+    protocol1.addListener(listener);
+    protocol2.addListener(listener);
+    protocol3.addListener(listener);
 
     protocol1.open().thenRun(this::resume);
     protocol2.open().thenRun(this::resume);
     protocol3.open().thenRun(this::resume);
 
     await();
+
+    RaftTestCluster cluster4 = buildCluster(4, Member.Type.PASSIVE, 4, registry);
+    RaftProtocol protocol4 = buildProtocol(4, cluster4);
 
     expectResume();
 
@@ -717,7 +732,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
       .withRegistry(registry)
       .withLocalMember(RaftTestLocalMember.builder()
         .withId(id)
-        .withType(Member.Type.ACTIVE)
+        .withType(type)
         .withAddress(String.format("test-%d", id))
         .build());
 

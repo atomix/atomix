@@ -73,8 +73,8 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
   private long term;
   private int leader;
   private long logIndex;
-  private List<RaftEntry> entries = new ArrayList<>(128);
-  private Collection<RaftMember> members = new ArrayList<>(128);
+  private final List<RaftEntry> entries = new ArrayList<>(128);
+  private final Collection<RaftMember> members = new ArrayList<>(128);
 
   public SyncRequest(ReferenceManager<SyncRequest> referenceManager) {
     super(referenceManager);
@@ -262,7 +262,7 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
     public Builder withEntries(List<RaftEntry> entries) {
       if (entries == null)
         throw new NullPointerException("entries cannot be null");
-      request.entries = entries;
+      request.entries.addAll(entries);
       return this;
     }
 
@@ -288,7 +288,7 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
     public Builder withMembers(Collection<RaftMember> members) {
       if (members == null)
         throw new NullPointerException("members cannot be null");
-      request.members = members;
+      request.members.addAll(members);
       return this;
     }
 

@@ -117,7 +117,7 @@ class PassiveState extends RemoteState {
       firstIndex = raftMember.commitIndex();
       long index = firstIndex;
       int size = 0;
-      while (size < MAX_BATCH_SIZE && index <= context.getCommitIndex()) {
+      while (size < MAX_BATCH_SIZE && index > 0 && index <= context.getCommitIndex()) {
         RaftEntry entry = context.log().getEntry(index);
         size += entry.size();
         entries.add(entry);
