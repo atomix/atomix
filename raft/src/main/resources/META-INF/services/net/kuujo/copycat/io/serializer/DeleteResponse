@@ -1,0 +1,2 @@
+id=144
+class=net.kuujo.copycat.protocol.raft.rpc.DeleteResponse

@@ -1,0 +1,2 @@
+id=132
+class=net.kuujo.copycat.protocol.raft.rpc.SyncResponse
