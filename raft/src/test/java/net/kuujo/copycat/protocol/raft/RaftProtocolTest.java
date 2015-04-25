@@ -25,7 +25,9 @@ import net.kuujo.copycat.util.ExecutionContext;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Raft protocol test.
@@ -42,9 +44,13 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   public void testOpen() throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
 
-    RaftProtocol protocol1 = buildProtocol(1, 3, registry);
-    RaftProtocol protocol2 = buildProtocol(2, 3, registry);
-    RaftProtocol protocol3 = buildProtocol(3, 3, registry);
+    RaftTestCluster cluster1 = buildCluster(1, 3, registry);
+    RaftTestCluster cluster2 = buildCluster(2, 3, registry);
+    RaftTestCluster cluster3 = buildCluster(3, 3, registry);
+
+    RaftProtocol protocol1 = buildProtocol(1, cluster1);
+    RaftProtocol protocol2 = buildProtocol(2, cluster2);
+    RaftProtocol protocol3 = buildProtocol(3, cluster3);
 
     expectResumes(3);
 
@@ -63,9 +69,13 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   public void testLeaderElectEvent() throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
 
-    RaftProtocol protocol1 = buildProtocol(1, 3, registry);
-    RaftProtocol protocol2 = buildProtocol(2, 3, registry);
-    RaftProtocol protocol3 = buildProtocol(3, 3, registry);
+    RaftTestCluster cluster1 = buildCluster(1, 3, registry);
+    RaftTestCluster cluster2 = buildCluster(2, 3, registry);
+    RaftTestCluster cluster3 = buildCluster(3, 3, registry);
+
+    RaftProtocol protocol1 = buildProtocol(1, cluster1);
+    RaftProtocol protocol2 = buildProtocol(2, cluster2);
+    RaftProtocol protocol3 = buildProtocol(3, cluster3);
 
     expectResumes(6);
 
@@ -86,6 +96,68 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     await();
 
     deleteDirectory(new File(TEST_DIRECTORY));
+  }
+
+  /**
+   * Tests electing a new leader after a network partition.
+   */
+  public void testElectNewLeaderAfterPartition() throws Throwable {
+    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+
+    RaftTestCluster cluster1 = buildCluster(1, 3, registry);
+    RaftTestCluster cluster2 = buildCluster(2, 3, registry);
+    RaftTestCluster cluster3 = buildCluster(3, 3, registry);
+
+    RaftProtocol protocol1 = buildProtocol(1, cluster1);
+    RaftProtocol protocol2 = buildProtocol(2, cluster2);
+    RaftProtocol protocol3 = buildProtocol(3, cluster3);
+
+    Map<Integer, RaftProtocol> protocols = new HashMap<>();
+    protocols.put(1, protocol1);
+    protocols.put(2, protocol2);
+    protocols.put(3, protocol3);
+
+    expectResumes(4);
+
+    final AtomicInteger electionCount = new AtomicInteger();
+    EventListener<Event> listener = new EventListener<Event>() {
+      @Override
+      public void accept(Event event) {
+        if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
+          protocol1.removeListener(this);
+
+          if (electionCount.incrementAndGet() == 3) {
+            int id = ((LeaderChangeEvent) event).newLeader().id();
+            cluster1.partition(id);
+            cluster2.partition(id);
+            cluster3.partition(id);
+
+            for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
+              if (!entry.getKey().equals(id)) {
+                entry.getValue().addListener(event2 -> {
+                  if (event2 instanceof LeaderChangeEvent) {
+                    threadAssertTrue(((LeaderChangeEvent) event2).newLeader()
+                      .id() != ((LeaderChangeEvent) event).newLeader().id());
+                    resume();
+                  }
+                });
+                break;
+              }
+            }
+          }
+        }
+      }
+    };
+
+    protocol1.addListener(listener);
+    protocol2.addListener(listener);
+    protocol3.addListener(listener);
+
+    protocol1.open().thenRun(this::resume);
+    protocol2.open().thenRun(this::resume);
+    protocol3.open().thenRun(this::resume);
+
+    await();
   }
 
   /**
@@ -116,10 +188,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Creates a Raft protocol for the given node.
    */
-  private static RaftProtocol buildProtocol(int id, int nodes, RaftTestMemberRegistry registry) {
-    ManagedCluster cluster = buildCluster(id, nodes, registry);
-    cluster.open().join();
-
+  private static RaftProtocol buildProtocol(int id, ManagedCluster cluster) throws Exception {
     RaftProtocol protocol = (RaftProtocol) RaftProtocol.builder()
       .withContext(new ExecutionContext("test-" + id))
       .withStorage(BufferedStorage.builder()
@@ -128,7 +197,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
         .build())
       .build();
 
-    protocol.setCluster(cluster);
+    protocol.setCluster(cluster.open().get());
     protocol.setTopic("test");
     return protocol;
   }

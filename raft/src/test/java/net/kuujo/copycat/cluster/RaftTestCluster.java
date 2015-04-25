@@ -47,6 +47,25 @@ public class RaftTestCluster extends AbstractCluster {
     return new RaftTestRemoteMember((RaftTestMember.Info) info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(registry);
   }
 
+  @Override
+  public RaftTestMember member(int id) {
+    return (RaftTestMember) super.member(id);
+  }
+
+  /**
+   * Partitions members from the given member.
+   */
+  public void partition(int id) {
+    if (localMember.id() == id) {
+      remoteMembers.values().forEach(m -> ((RaftTestRemoteMember) m).partition());
+    } else {
+      RaftTestRemoteMember member = (RaftTestRemoteMember) remoteMembers.get(id);
+      if (member != null) {
+        member.partition();
+      }
+    }
+  }
+
   /**
    * Raft test cluster builder.
    */

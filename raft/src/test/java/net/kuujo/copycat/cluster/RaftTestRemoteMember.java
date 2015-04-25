@@ -39,6 +39,7 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
 
   private final RaftTestMember.Info info;
   private RaftTestMemberRegistry registry;
+  private boolean partitioned;
 
   public RaftTestRemoteMember(RaftTestMember.Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
@@ -55,8 +56,24 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
     return info.address;
   }
 
+  /**
+   * Partitions the member, preventing it from communicating.
+   */
+  public void partition() {
+    partitioned = true;
+  }
+
+  /**
+   * Heals a member partition.
+   */
+  public void heal() {
+    partitioned = false;
+  }
+
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
+    if (partitioned)
+      return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
     RaftTestLocalMember member = registry.get(info.address);
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
@@ -70,6 +87,8 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
+    if (partitioned)
+      return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
     RaftTestLocalMember member = registry.get(info.address);
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
@@ -78,6 +97,8 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
 
   @Override
   public CompletableFuture<RemoteMember> connect() {
+    if (partitioned)
+      return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
     return CompletableFuture.completedFuture(this);
   }
 

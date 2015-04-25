@@ -89,7 +89,6 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param listener The event listener to remove.
    * @return The protocol.
    */
-  @SuppressWarnings("unchecked")
   public Protocol removeListener(EventListener<? extends Event> listener) {
     listeners.remove(listener);
     return this;

@@ -71,8 +71,7 @@ class LeaderState extends ActiveState {
     final long term = context.getTerm();
     final long index;
     try (RaftEntry logEntry = context.log().createEntry()) {
-      logEntry.writeType(RaftEntry.Type.NOOP)
-        .writeTerm(term);
+      logEntry.writeType(RaftEntry.Type.NOOP).writeTerm(term);
       index = logEntry.index();
     }
 
