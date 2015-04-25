@@ -136,8 +136,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
               if (!entry.getKey().equals(id)) {
                 entry.getValue().addListener(event2 -> {
                   if (event2 instanceof LeaderChangeEvent) {
-                    threadAssertTrue(((LeaderChangeEvent) event2).newLeader()
-                      .id() != ((LeaderChangeEvent) event).newLeader().id());
+                    threadAssertTrue(((LeaderChangeEvent) event2).newLeader().id() != ((LeaderChangeEvent) event).newLeader().id());
                     resume();
                   }
                 });

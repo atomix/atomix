@@ -1,4 +1,4 @@
-package net.kuujo.copycat.cluster;/*
+/*
  * Copyright 2015 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,7 @@ package net.kuujo.copycat.cluster;/*
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -62,6 +63,20 @@ public class RaftTestCluster extends AbstractCluster {
       RaftTestRemoteMember member = (RaftTestRemoteMember) remoteMembers.get(id);
       if (member != null) {
         member.partition();
+      }
+    }
+  }
+
+  /**
+   * Heals a partition for the given member.
+   */
+  public void heal(int id) {
+    if (localMember.id() == id) {
+      remoteMembers.values().forEach(m -> ((RaftTestRemoteMember) m).heal());
+    } else {
+      RaftTestRemoteMember member = (RaftTestRemoteMember) remoteMembers.get(id);
+      if (member != null) {
+        member.heal();
       }
     }
   }

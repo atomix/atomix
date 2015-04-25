@@ -262,7 +262,6 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     term = entry.term;
     key.write(entry.key);
     this.entry.write(entry.entry);
-    asReadOnlyEntry();
     return this;
   }
 
