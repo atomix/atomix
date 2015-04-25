@@ -138,19 +138,19 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
     context.checkThread();
     switch (request.type()) {
       case APPEND:
-        return append(request.asAppendRequest()).thenApply(Response::asAppendResponse);
+        return append((AppendRequest) request).thenApply(response -> response);
       case SYNC:
-        return sync(request.asSyncRequest()).thenApply(Response::asSyncResponse);
+        return sync((SyncRequest) request).thenApply(response -> response);
       case POLL:
-        return poll(request.asPollRequest()).thenApply(Response::asPollResponse);
+        return poll((PollRequest) request).thenApply(response -> response);
       case VOTE:
-        return vote(request.asVoteRequest()).thenApply(Response::asVoteResponse);
+        return vote((VoteRequest) request).thenApply(response -> response);
       case WRITE:
-        return write(request.asWriteRequest()).thenApply(Response::asWriteResponse);
+        return write((WriteRequest) request).thenApply(response -> response);
       case READ:
-        return read(request.asReadRequest()).thenApply(Response::asReadResponse);
+        return read((ReadRequest) request).thenApply(response -> response);
       case DELETE:
-        return delete(request.asDeleteRequest()).thenApply(Response::asDeleteResponse);
+        return delete((DeleteRequest) request).thenApply(response -> response);
     }
     throw new IllegalArgumentException("invalid request type");
   }
