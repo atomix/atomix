@@ -43,7 +43,6 @@ public class RaftMember implements ReferenceCounted<RaftMember>, Writable {
    */
   public static class Builder {
     private int id;
-    private Type type;
 
     private Builder() {
     }
@@ -60,24 +59,11 @@ public class RaftMember implements ReferenceCounted<RaftMember>, Writable {
     }
 
     /**
-     * Sets the member type.
-     *
-     * @param type The member type.
-     * @return The member builder.
-     */
-    public Builder withType(Type type) {
-      this.type = type;
-      return this;
-    }
-
-    /**
      * Builds the member.
      *
      * @return A new Raft member.
      */
     public RaftMember build() {
-      if (type == null)
-        throw new NullPointerException("member type cannot be null");
       return new RaftMember(id);
     }
   }
@@ -88,65 +74,6 @@ public class RaftMember implements ReferenceCounted<RaftMember>, Writable {
   private long version = 1;
   private long commitIndex;
   private long recycleIndex;
-
-  /**
-   * Raft member type.<p>
-   *
-   * The member type indicates how cluster members behave in terms of joining and leaving the cluster and how the
-   * members participate in log replication. {@link Type#ACTIVE} members are full voting members of the cluster that
-   * participate in Copycat's consensus protocol. {@link Type#PASSIVE} members may join and leave the cluster at will
-   * without impacting the availability of a resource and receive only committed log entries via a gossip protocol.
-   */
-  public static enum Type {
-
-    /**
-     * Indicates that the member is a remote client of the cluster.
-     */
-    REMOTE(-1),
-
-    /**
-     * Indicates that the member is a passive, non-voting member of the cluster.
-     */
-    PASSIVE(0),
-
-    /**
-     * Indicates that the member is an active voting member of the cluster.
-     */
-    ACTIVE(1);
-
-    /**
-     * Returns the type for the given identifier.
-     *
-     * @param id The type identifier.
-     * @return The member type.
-     */
-    public static Type forId(int id) {
-      switch (id) {
-        case -1:
-          return REMOTE;
-        case 0:
-          return PASSIVE;
-        case 1:
-          return ACTIVE;
-      }
-      throw new IllegalArgumentException("invalid member type identifier");
-    }
-
-    private final byte id;
-
-    private Type(int id) {
-      this.id = (byte) id;
-    }
-
-    /**
-     * Returns the type identifier.
-     *
-     * @return The unique type identifier.
-     */
-    public byte id() {
-      return id;
-    }
-  }
 
   protected RaftMember(ReferenceManager<RaftMember> referenceManager) {
     this.referenceManager = referenceManager;
