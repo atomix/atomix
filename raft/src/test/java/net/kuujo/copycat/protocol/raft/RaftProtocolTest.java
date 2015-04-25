@@ -202,7 +202,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
           RaftProtocol protocol = protocols.get(((LeaderChangeEvent) event).newLeader().id());
           protocol.write(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip()).thenAccept(result -> {
-            threadAssertEquals(result.readLong(), 5678);
+            threadAssertEquals(result.readLong(), Long.valueOf(5678));
             resume();
           });
         }
@@ -259,7 +259,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
           for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
             if (entry.getKey() != id) {
               entry.getValue().write(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip()).thenAccept(result -> {
-                threadAssertEquals(result.readLong(), 5678);
+                threadAssertEquals(result.readLong(), Long.valueOf(5678));
                 resume();
               });
               break;
@@ -321,7 +321,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     expectResume();
 
     protocol4.write(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip()).thenAccept(result -> {
-      threadAssertEquals(result.readLong(), 5678);
+      threadAssertEquals(result.readLong(), Long.valueOf(5678));
       resume();
     });
 
@@ -373,7 +373,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     expectResume();
 
     protocol4.write(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip()).thenAccept(result -> {
-      threadAssertEquals(result.readLong(), 5678);
+      threadAssertEquals(result.readLong(), Long.valueOf(5678));
       resume();
     });
 
@@ -421,7 +421,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
           RaftProtocol protocol = protocols.get(((LeaderChangeEvent) event).newLeader().id());
           protocol.delete(HeapBuffer.allocate(8).writeLong(1234).flip()).thenAccept(result -> {
-            threadAssertEquals(result.readLong(), 5678);
+            threadAssertEquals(result.readLong(), Long.valueOf(5678));
             resume();
           });
         }
@@ -478,7 +478,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
           for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
             if (entry.getKey() != id) {
               entry.getValue().delete(HeapBuffer.allocate(8).writeLong(1234).flip()).thenAccept(result -> {
-                threadAssertEquals(result.readLong(), 5678);
+                threadAssertEquals(result.readLong(), Long.valueOf(5678));
                 resume();
               });
               break;
@@ -540,7 +540,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     expectResume();
 
     protocol4.delete(HeapBuffer.allocate(8).writeLong(1234).flip()).thenAccept(result -> {
-      threadAssertEquals(result.readLong(), 5678);
+      threadAssertEquals(result.readLong(), Long.valueOf(5678));
       resume();
     });
 
@@ -592,7 +592,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     expectResume();
 
     protocol4.delete(HeapBuffer.allocate(8).writeLong(1234).flip()).thenAccept(result -> {
-      threadAssertEquals(result.readLong(), 5678);
+      threadAssertEquals(result.readLong(), Long.valueOf(5678));
       resume();
     });
 

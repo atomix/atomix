@@ -266,7 +266,7 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (error == null) {
           try {
-            context.commit(request.key(), request.entry(), RESULT.clear());
+            context.commit(key, entry, RESULT.clear());
             future.complete(logResponse(WriteResponse.builder()
               .withStatus(Response.Status.OK)
               .withResult(RESULT.flip())

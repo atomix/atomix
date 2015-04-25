@@ -226,7 +226,7 @@ abstract class ActiveState extends PassiveState {
           entry.readKey(KEY.clear());
           entry.readEntry(ENTRY.clear());
           try {
-            context.commit(KEY, ENTRY, RESULT.clear());
+            context.commit(KEY.flip(), ENTRY.flip(), RESULT.clear());
           } catch (Exception e) {
             LOGGER.warn("failed to apply command", e);
           } finally {
