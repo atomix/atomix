@@ -15,17 +15,14 @@
  */
 package net.kuujo.copycat.protocol.raft.rpc;
 
-import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.util.ReferenceManager;
-
-import java.util.Objects;
 
 /**
  * Protocol delete request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class DeleteRequest extends AbstractRequest<DeleteRequest> {
+public class DeleteRequest extends CommandRequest<DeleteRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -52,8 +49,6 @@ public class DeleteRequest extends AbstractRequest<DeleteRequest> {
     return builder.get().reset(request);
   }
 
-  private Buffer key;
-
   public DeleteRequest(ReferenceManager<DeleteRequest> referenceManager) {
     super(referenceManager);
   }
@@ -64,93 +59,12 @@ public class DeleteRequest extends AbstractRequest<DeleteRequest> {
   }
 
   /**
-   * Returns the delete key.
-   *
-   * @return The delete key.
-   */
-  public Buffer key() {
-    return key;
-  }
-
-  @Override
-  public void readObject(Buffer buffer) {
-    key = buffer.slice();
-  }
-
-  @Override
-  public void writeObject(Buffer buffer) {
-    buffer.write(key);
-  }
-
-  @Override
-  public void close() {
-    key.release();
-    super.close();
-  }
-
-  @Override
-  public int hashCode() {
-    return Objects.hash(key);
-  }
-
-  @Override
-  public boolean equals(Object object) {
-    if (object instanceof DeleteRequest) {
-      DeleteRequest request = (DeleteRequest) object;
-      return request.key.equals(key);
-    }
-    return false;
-  }
-
-  @Override
-  public String toString() {
-    return String.format("%s[key=%s]", getClass().getSimpleName(), key.toString());
-  }
-
-  /**
    * Delete request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, DeleteRequest> {
-
+  public static class Builder extends CommandRequest.Builder<Builder, DeleteRequest> {
     private Builder() {
       super(DeleteRequest::new);
     }
-
-    /**
-     * Sets the request key.
-     *
-     * @param key The request key.
-     * @return The request builder.
-     */
-    public Builder withKey(Buffer key) {
-      request.key = key;
-      return this;
-    }
-
-    @Override
-    public DeleteRequest build() {
-      super.build();
-      if (request.key == null)
-        throw new NullPointerException("key cannot be null");
-      request.key.acquire();
-      return request;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(request);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-      return object instanceof Builder && ((Builder) object).request.equals(request);
-    }
-
-    @Override
-    public String toString() {
-      return String.format("%s[request=%s]", getClass().getCanonicalName(), request);
-    }
-
   }
 
 }

@@ -403,10 +403,10 @@ public class RaftProtocol extends Protocol {
       .withEntry(entry)
       .withConsistency(consistency)
       .build();
-    runOnContext(request, state).whenComplete((response, error) -> {
+    this.<ReadRequest, ReadResponse>runOnContext(request, state).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(response.asReadResponse().result());
+          future.complete(response.result());
         } else {
           future.completeExceptionally(response.error().createException());
         }
@@ -428,10 +428,10 @@ public class RaftProtocol extends Protocol {
       .withKey(key)
       .withEntry(entry)
       .build();
-    runOnContext(request, state).whenComplete((response, error) -> {
+    this.<WriteRequest, WriteResponse>runOnContext(request, state).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(response.asWriteResponse().result());
+          future.complete(response.result());
         } else {
           future.completeExceptionally(response.error().createException());
         }
@@ -452,10 +452,10 @@ public class RaftProtocol extends Protocol {
     DeleteRequest request = DeleteRequest.builder()
       .withKey(key)
       .build();
-    runOnContext(request, state).whenComplete((response, error) -> {
+    this.<DeleteRequest, DeleteResponse>runOnContext(request, state).whenComplete((response, error) -> {
       if (error == null) {
         if (response.status() == Response.Status.OK) {
-          future.complete(response.asDeleteResponse().result());
+          future.complete(response.result());
         } else {
           future.completeExceptionally(response.error().createException());
         }

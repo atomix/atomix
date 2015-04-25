@@ -27,13 +27,13 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
+abstract class AbstractResponse<RESPONSE extends Response<RESPONSE>> implements Response<RESPONSE> {
   private final AtomicInteger references = new AtomicInteger();
-  private final ReferenceManager<T> referenceManager;
+  private final ReferenceManager<RESPONSE> referenceManager;
   protected Status status = Status.OK;
   protected RaftError error;
 
-  protected AbstractResponse(ReferenceManager<T> referenceManager) {
+  protected AbstractResponse(ReferenceManager<RESPONSE> referenceManager) {
     this.referenceManager = referenceManager;
   }
 
@@ -49,9 +49,9 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
 
   @Override
   @SuppressWarnings("unchecked")
-  public T acquire() {
+  public RESPONSE acquire() {
     references.incrementAndGet();
-    return (T) this;
+    return (RESPONSE) this;
   }
 
   @Override
@@ -68,7 +68,7 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
   @Override
   @SuppressWarnings("unchecked")
   public void close() {
-    referenceManager.release((T) this);
+    referenceManager.release((RESPONSE) this);
   }
 
   @Override
@@ -79,14 +79,14 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
   /**
    * Abstract response builder.
    *
-   * @param <T> The builder type.
-   * @param <U> The response type.
+   * @param <BUILDER> The builder type.
+   * @param <RESPONSE> The response type.
    */
-  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractResponse<U>> implements Response.Builder<T, U> {
-    protected final ReferencePool<U> pool;
-    protected U response;
+  protected static abstract class Builder<BUILDER extends Builder<BUILDER, RESPONSE>, RESPONSE extends AbstractResponse<RESPONSE>> implements Response.Builder<BUILDER, RESPONSE> {
+    protected final ReferencePool<RESPONSE> pool;
+    protected RESPONSE response;
 
-    protected Builder(Function<ReferenceManager<U>, U> factory) {
+    protected Builder(Function<ReferenceManager<RESPONSE>, RESPONSE> factory) {
       this.pool = new ReferencePool<>(factory);
     }
 
@@ -94,40 +94,40 @@ abstract class AbstractResponse<T extends Response<T>> implements Response<T> {
      * Resets the builder, acquiring a new response from the internal reference pool.
      */
     @SuppressWarnings("unchecked")
-    T reset() {
+    BUILDER reset() {
       response = pool.acquire();
       response.status = null;
       response.error = null;
-      return (T) this;
+      return (BUILDER) this;
     }
 
     /**
      * Resets the builder with the given response.
      */
     @SuppressWarnings("unchecked")
-    T reset(U response) {
+    BUILDER reset(RESPONSE response) {
       this.response = response;
-      return (T) this;
+      return (BUILDER) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public T withStatus(Status status) {
+    public BUILDER withStatus(Status status) {
       if (status == null)
         throw new NullPointerException("status cannot be null");
       response.status = status;
-      return (T) this;
+      return (BUILDER) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public T withError(RaftError error) {
+    public BUILDER withError(RaftError error) {
       response.error = error;
-      return (T) this;
+      return (BUILDER) this;
     }
 
     @Override
-    public U build() {
+    public RESPONSE build() {
       if (response.status == null)
         throw new NullPointerException("status cannot be null");
       return response;

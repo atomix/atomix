@@ -23,7 +23,7 @@ import net.kuujo.copycat.io.util.ReferenceCounted;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Writable {
+public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCounted<REQUEST>, Writable {
 
   /**
    * Request type.
@@ -74,89 +74,19 @@ public interface Request<T extends Request<T>> extends ReferenceCounted<T>, Writ
   Type type();
 
   /**
-   * Returns the request as an append request.
-   *
-   * @return An append request.
-   */
-  @SuppressWarnings("unchecked")
-  default AppendRequest asAppendRequest() {
-    return (AppendRequest) (T) this;
-  }
-
-  /**
-   * Returns the request as a sync request.
-   *
-   * @return A sync request.
-   */
-  @SuppressWarnings("unchecked")
-  default SyncRequest asSyncRequest() {
-    return (SyncRequest) (T) this;
-  }
-
-  /**
-   * Returns the request as a write request.
-   *
-   * @return A write request.
-   */
-  @SuppressWarnings("unchecked")
-  default WriteRequest asWriteRequest() {
-    return (WriteRequest) (T) this;
-  }
-
-  /**
-   * Returns the request as a read request.
-   *
-   * @return A read request.
-   */
-  @SuppressWarnings("unchecked")
-  default ReadRequest asReadRequest() {
-    return (ReadRequest) (T) this;
-  }
-
-  /**
-   * Returns the request as a delete request.
-   *
-   * @return A delete request.
-   */
-  @SuppressWarnings("unchecked")
-  default DeleteRequest asDeleteRequest() {
-    return (DeleteRequest) (T) this;
-  }
-
-  /**
-   * Returns the request as a poll request.
-   *
-   * @return A poll request.
-   */
-  @SuppressWarnings("unchecked")
-  default PollRequest asPollRequest() {
-    return (PollRequest) (T) this;
-  }
-
-  /**
-   * Returns the request as a vote request.
-   *
-   * @return A vote request.
-   */
-  @SuppressWarnings("unchecked")
-  default VoteRequest asVoteRequest() {
-    return (VoteRequest) (T) this;
-  }
-
-  /**
    * Request builder.
    *
-   * @param <T> The builder type.
-   * @param <U> The request type.
+   * @param <BUILDER> The builder type.
+   * @param <REQUEST> The request type.
    */
-  static interface Builder<T extends Builder<T, U>, U extends Request> {
+  static interface Builder<BUILDER extends Builder<BUILDER, REQUEST>, REQUEST extends Request> {
 
     /**
      * Builds the request.
      *
      * @return The built request.
      */
-    U build();
+    REQUEST build();
 
   }
 

@@ -24,7 +24,7 @@ import net.kuujo.copycat.protocol.raft.RaftError;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Writable {
+public interface Response<RESPONSE extends Response<RESPONSE>> extends ReferenceCounted<RESPONSE>, Writable {
 
   /**
    * Response type.
@@ -122,76 +122,6 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Wr
   Type type();
 
   /**
-   * Returns the response as an append response.
-   *
-   * @return An append response.
-   */
-  @SuppressWarnings("unchecked")
-  default AppendResponse asAppendResponse() {
-    return (AppendResponse) (T) this;
-  }
-
-  /**
-   * Returns the response as a sync response.
-   *
-   * @return A sync response.
-   */
-  @SuppressWarnings("unchecked")
-  default SyncResponse asSyncResponse() {
-    return (SyncResponse) (T) this;
-  }
-
-  /**
-   * Returns the response as a write response.
-   *
-   * @return A write response.
-   */
-  @SuppressWarnings("unchecked")
-  default WriteResponse asWriteResponse() {
-    return (WriteResponse) (T) this;
-  }
-
-  /**
-   * Returns the response as a read response.
-   *
-   * @return A read response.
-   */
-  @SuppressWarnings("unchecked")
-  default ReadResponse asReadResponse() {
-    return (ReadResponse) (T) this;
-  }
-
-  /**
-   * Returns the response as a delete response.
-   *
-   * @return A delete response.
-   */
-  @SuppressWarnings("unchecked")
-  default DeleteResponse asDeleteResponse() {
-    return (DeleteResponse) (T) this;
-  }
-
-  /**
-   * Returns the response as a poll response.
-   *
-   * @return A poll response.
-   */
-  @SuppressWarnings("unchecked")
-  default PollResponse asPollResponse() {
-    return (PollResponse) (T) this;
-  }
-
-  /**
-   * Returns the response as a vote response.
-   *
-   * @return A vote response.
-   */
-  @SuppressWarnings("unchecked")
-  default VoteResponse asVoteResponse() {
-    return (VoteResponse) (T) this;
-  }
-
-  /**
    * Returns the response status.
    *
    * @return The response status.
@@ -208,10 +138,10 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Wr
   /**
    * Response builder.
    *
-   * @param <T> The builder type.
-   * @param <U> The response type.
+   * @param <BUILDER> The builder type.
+   * @param <RESPONSE> The response type.
    */
-  static interface Builder<T extends Builder<T, U>, U extends Response> {
+  static interface Builder<BUILDER extends Builder<BUILDER, RESPONSE>, RESPONSE extends Response> {
 
     /**
      * Sets the response status.
@@ -219,7 +149,7 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Wr
      * @param status The response status.
      * @return The response builder.
      */
-    T withStatus(Status status);
+    BUILDER withStatus(Status status);
 
     /**
      * Sets the response error.
@@ -227,14 +157,14 @@ public interface Response<T extends Response<T>> extends ReferenceCounted<T>, Wr
      * @param error The response error.
      * @return The response builder.
      */
-    T withError(RaftError error);
+    BUILDER withError(RaftError error);
 
     /**
      * Builds the response.
      *
      * @return The built response.
      */
-    U build();
+    RESPONSE build();
 
   }
 

@@ -26,7 +26,7 @@ import java.util.Objects;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ReadRequest extends AbstractRequest<ReadRequest> {
+public class ReadRequest extends CommandRequest<ReadRequest> {
   private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
     @Override
     protected Builder initialValue() {
@@ -53,8 +53,6 @@ public class ReadRequest extends AbstractRequest<ReadRequest> {
     return builder.get().reset(request);
   }
 
-  private Buffer key;
-  private Buffer entry;
   private Consistency consistency = Consistency.DEFAULT;
 
   public ReadRequest(ReferenceManager<ReadRequest> referenceManager) {
@@ -64,24 +62,6 @@ public class ReadRequest extends AbstractRequest<ReadRequest> {
   @Override
   public Type type() {
     return Type.READ;
-  }
-
-  /**
-   * Returns the read key.
-   *
-   * @return The read key.
-   */
-  public Buffer key() {
-    return key;
-  }
-
-  /**
-   * Returns the read entry.
-   *
-   * @return The read entry.
-   */
-  public Buffer entry() {
-    return entry;
   }
 
   /**
@@ -96,31 +76,13 @@ public class ReadRequest extends AbstractRequest<ReadRequest> {
   @Override
   public void readObject(Buffer buffer) {
     consistency = Consistency.values()[buffer.readByte()];
-    int keySize = buffer.readInt();
-    if (keySize > -1) {
-      key = buffer.slice(keySize);
-      buffer.skip(keySize);
-    }
-    int entrySize = buffer.readInt();
-    entry = buffer.slice(entrySize);
+    super.readObject(buffer);
   }
 
   @Override
   public void writeObject(Buffer buffer) {
     buffer.writeByte(consistency.ordinal());
-    if (key != null)
-      buffer.writeInt((int) key.limit()).write(key);
-    else
-      buffer.writeInt(-1);
-    buffer.writeInt((int) entry.limit()).write(entry);
-  }
-
-  @Override
-  public void close() {
-    if (key != null)
-      key.release();
-    entry.release();
-    super.close();
+    super.writeObject(buffer);
   }
 
   @Override
@@ -140,40 +102,15 @@ public class ReadRequest extends AbstractRequest<ReadRequest> {
 
   @Override
   public String toString() {
-    return String.format("%s[entry=%s, consistency=%s]", getClass().getSimpleName(), entry.toString(), consistency);
+    return String.format("%s[key=%s, entry=%s, consistency=%s]", getClass().getSimpleName(), key != null ? key.toString() : "", entry != null ? entry.toString() : "", consistency);
   }
 
   /**
    * Read request builder.
    */
-  public static class Builder extends AbstractRequest.Builder<Builder, ReadRequest> {
-
+  public static class Builder extends CommandRequest.Builder<Builder, ReadRequest> {
     private Builder() {
       super(ReadRequest::new);
-    }
-
-    /**
-     * Sets the request key.
-     *
-     * @param key The request key.
-     * @return The request builder.
-     */
-    public Builder withKey(Buffer key) {
-      request.key = key;
-      return this;
-    }
-
-    /**
-     * Sets the request entry.
-     *
-     * @param entry The request entry.
-     * @return The request builder.
-     */
-    public Builder withEntry(Buffer entry) {
-      if (entry == null)
-        throw new NullPointerException("entry cannot be null");
-      request.entry = entry;
-      return this;
     }
 
     /**
@@ -188,32 +125,6 @@ public class ReadRequest extends AbstractRequest<ReadRequest> {
       request.consistency = consistency;
       return this;
     }
-
-    @Override
-    public ReadRequest build() {
-      super.build();
-      if (request.entry == null)
-        throw new NullPointerException("entry cannot be null");
-      if (request.key != null)
-        request.key.acquire();
-      return request;
-    }
-
-    @Override
-    public int hashCode() {
-      return Objects.hash(request);
-    }
-
-    @Override
-    public boolean equals(Object object) {
-      return object instanceof Builder && ((Builder) object).request.equals(request);
-    }
-
-    @Override
-    public String toString() {
-      return String.format("%s[request=%s]", getClass().getCanonicalName(), request);
-    }
-
   }
 
 }

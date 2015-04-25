@@ -26,19 +26,19 @@ import java.util.function.Function;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
+abstract class AbstractRequest<REQUEST extends Request<REQUEST>> implements Request<REQUEST> {
   private final AtomicInteger references = new AtomicInteger();
-  private ReferenceManager<T> referenceManager;
+  private ReferenceManager<REQUEST> referenceManager;
 
-  protected AbstractRequest(ReferenceManager<T> referenceManager) {
+  protected AbstractRequest(ReferenceManager<REQUEST> referenceManager) {
     this.referenceManager = referenceManager;
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public T acquire() {
+  public REQUEST acquire() {
     references.incrementAndGet();
-    return (T) this;
+    return (REQUEST) this;
   }
 
   @Override
@@ -55,20 +55,20 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
   @Override
   @SuppressWarnings("unchecked")
   public void close() {
-    referenceManager.release((T) this);
+    referenceManager.release((REQUEST) this);
   }
 
   /**
    * Abstract request builder.
    *
-   * @param <T> The builder type.
-   * @param <U> The request type.
+   * @param <BUILDER> The builder type.
+   * @param <REQUEST> The request type.
    */
-  protected static abstract class Builder<T extends Builder<T, U>, U extends AbstractRequest<U>> implements Request.Builder<T, U> {
-    protected final ReferencePool<U> pool;
-    protected U request;
+  protected static abstract class Builder<BUILDER extends Builder<BUILDER, REQUEST>, REQUEST extends AbstractRequest<REQUEST>> implements Request.Builder<BUILDER, REQUEST> {
+    protected final ReferencePool<REQUEST> pool;
+    protected REQUEST request;
 
-    protected Builder(Function<ReferenceManager<U>, U> factory) {
+    protected Builder(Function<ReferenceManager<REQUEST>, REQUEST> factory) {
       this.pool = new ReferencePool<>(factory);
     }
 
@@ -76,22 +76,22 @@ abstract class AbstractRequest<T extends Request<T>> implements Request<T> {
      * Resets the builder, acquiring a new request from the internal reference pool.
      */
     @SuppressWarnings("unchecked")
-    T reset() {
+    BUILDER reset() {
       request = pool.acquire();
-      return (T) this;
+      return (BUILDER) this;
     }
 
     /**
      * Resets the builder with the given request.
      */
     @SuppressWarnings("unchecked")
-    T reset(U request) {
+    BUILDER reset(REQUEST request) {
       this.request = request;
-      return (T) this;
+      return (BUILDER) this;
     }
 
     @Override
-    public U build() {
+    public REQUEST build() {
       return request;
     }
   }
