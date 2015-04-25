@@ -96,7 +96,8 @@ public class WriteResponse extends AbstractResponse<WriteResponse> {
 
   @Override
   public void close() {
-    result.release();
+    if (result != null)
+      result.release();
     super.close();
   }
 
@@ -144,7 +145,8 @@ public class WriteResponse extends AbstractResponse<WriteResponse> {
     @Override
     public WriteResponse build() {
       super.build();
-      response.result.acquire();
+      if (response.result != null)
+        response.result.acquire();
       return response;
     }
 
