@@ -23,7 +23,7 @@ import net.kuujo.copycat.util.Managed;
 
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * Copycat protocol.
@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentSkipListSet;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class Protocol implements Managed<Protocol> {
-  protected final Set<EventListener<Event>> listeners = new ConcurrentSkipListSet<>();
+  protected final Set<EventListener<Event>> listeners = new CopyOnWriteArraySet<>();
   protected String topic;
   protected Cluster cluster;
 

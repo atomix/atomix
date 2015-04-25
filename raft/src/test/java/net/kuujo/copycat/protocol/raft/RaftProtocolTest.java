@@ -16,10 +16,16 @@
 package net.kuujo.copycat.protocol.raft;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
+import net.kuujo.copycat.Event;
+import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.*;
+import net.kuujo.copycat.protocol.LeaderChangeEvent;
 import net.kuujo.copycat.protocol.raft.storage.BufferedStorage;
 import net.kuujo.copycat.util.ExecutionContext;
 import org.testng.annotations.Test;
+
+import java.io.File;
+import java.nio.file.Files;
 
 /**
  * Raft protocol test.
@@ -28,11 +34,12 @@ import org.testng.annotations.Test;
  */
 @Test
 public class RaftProtocolTest extends ConcurrentTestCase {
+  private static final String TEST_DIRECTORY = "test-logs";
 
   /**
-   * Tests that the protocol elects a leader.
+   * Tests opening protocols.
    */
-  public void testElectLeader() throws Throwable {
+  public void testOpen() throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
 
     RaftProtocol protocol1 = buildProtocol(1, 3, registry);
@@ -46,12 +53,45 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     protocol3.open().thenRun(this::resume);
 
     await();
+
+    deleteDirectory(new File(TEST_DIRECTORY));
+  }
+
+  /**
+   * Tests leader elect events.
+   */
+  public void testLeaderElectEvent() throws Throwable {
+    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+
+    RaftProtocol protocol1 = buildProtocol(1, 3, registry);
+    RaftProtocol protocol2 = buildProtocol(2, 3, registry);
+    RaftProtocol protocol3 = buildProtocol(3, 3, registry);
+
+    expectResumes(6);
+
+    EventListener<Event> listener = event -> {
+      if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
+        resume();
+      }
+    };
+
+    protocol1.addListener(listener);
+    protocol2.addListener(listener);
+    protocol3.addListener(listener);
+
+    protocol1.open().thenRun(this::resume);
+    protocol2.open().thenRun(this::resume);
+    protocol3.open().thenRun(this::resume);
+
+    await();
+
+    deleteDirectory(new File(TEST_DIRECTORY));
   }
 
   /**
    * Builds a Raft test cluster.
    */
-  private RaftTestCluster buildCluster(int id, int nodes, RaftTestMemberRegistry registry) {
+  private static RaftTestCluster buildCluster(int id, int nodes, RaftTestMemberRegistry registry) {
     RaftTestCluster.Builder builder = RaftTestCluster.builder()
       .withRegistry(registry)
       .withLocalMember(RaftTestLocalMember.builder()
@@ -76,7 +116,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Creates a Raft protocol for the given node.
    */
-  private RaftProtocol buildProtocol(int id, int nodes, RaftTestMemberRegistry registry) {
+  private static RaftProtocol buildProtocol(int id, int nodes, RaftTestMemberRegistry registry) {
     ManagedCluster cluster = buildCluster(id, nodes, registry);
     cluster.open().join();
 
@@ -84,13 +124,32 @@ public class RaftProtocolTest extends ConcurrentTestCase {
       .withContext(new ExecutionContext("test-" + id))
       .withStorage(BufferedStorage.builder()
         .withName(String.format("test-%d", id))
-        .withDirectory(String.format("test-logs/test-%d", id))
+        .withDirectory(String.format("%s/test-%d", TEST_DIRECTORY, id))
         .build())
       .build();
 
     protocol.setCluster(cluster);
     protocol.setTopic("test");
     return protocol;
+  }
+
+  /**
+   * Deletes a directory after tests.
+   */
+  private static void deleteDirectory(File directory) {
+    if (directory.exists()) {
+      File[] files = directory.listFiles();
+      if (files != null) {
+        for (File file : files) {
+          if(file.isDirectory()) {
+            deleteDirectory(file);
+          } else {
+            file.delete();
+          }
+        }
+      }
+    }
+    directory.delete();
   }
 
 }
