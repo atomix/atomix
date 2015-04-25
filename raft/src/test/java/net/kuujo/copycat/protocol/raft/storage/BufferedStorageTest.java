@@ -58,7 +58,6 @@ public class BufferedStorageTest {
     assertTrue(log.isEmpty());
     assertEquals(log.firstIndex(), 0);
     assertEquals(log.lastIndex(), 0);
-    assertEquals(log.size(), 0);
     assertEquals(log.length(), 0);
   }
 
@@ -228,31 +227,6 @@ public class BufferedStorageTest {
       checkLength(log, 2);
       readUncommittedKeyedTestEntry(log, 1);
       readUncommittedKeyedTestEntry(log, 2);
-    }
-    assertFalse(openLog.isOpen());
-    openLog.delete();
-  }
-
-  /**
-   * Tests that entries are deduplicated after commitment.
-   */
-  public void testDedupeAfterCommit() {
-    BufferedStorage openLog;
-    try (BufferedStorage log = createLog()) {
-      openLog = log;
-      checkInitial(log);
-      writeKeyedTestEntry(log);
-      checkLength(log, 1);
-      writeKeyedTestEntry(log);
-      checkLength(log, 2);
-      log.commit(1);
-      assertEquals(log.commitIndex(), 1);
-      readCommittedKeyedTestEntry(log, 1);
-      readUncommittedKeyedTestEntry(log, 2);
-      log.commit(2);
-      assertEquals(log.commitIndex(), 2);
-      readDeduplicatedTestEntry(log, 1);
-      readCommittedKeyedTestEntry(log, 2);
     }
     assertFalse(openLog.isOpen());
     openLog.delete();
