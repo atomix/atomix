@@ -304,7 +304,7 @@ public abstract class AbstractMember implements Member {
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends AbstractMember> implements Member.Builder<T, U> {
     protected int id;
-    protected Type type;
+    protected Type type = Type.ACTIVE;
     protected Serializer serializer;
 
     @Override
