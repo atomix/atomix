@@ -298,6 +298,9 @@ public class Segment implements AutoCloseable {
 
     int totalLength = (int) (writeBuffer.position() - position);
     offsetIndex.index(offset(entry.index()), position, totalLength);
+
+    entryLock = false;
+
     return entry.index();
   }
 
@@ -313,7 +316,6 @@ public class Segment implements AutoCloseable {
       throw new ConcurrentModificationException("attempt to commit entry with non-monotonic index");
     }
     transferEntry(entry.asReadOnlyEntry());
-    entryLock = false;
   }
 
   /**
