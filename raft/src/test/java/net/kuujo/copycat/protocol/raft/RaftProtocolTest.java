@@ -249,12 +249,11 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     expectResumes(4);
 
-    protocol1.addListener(new EventListener<Event>() {
+    AtomicInteger electionCount = new AtomicInteger();
+    EventListener<Event> listener = new EventListener<Event>() {
       @Override
       public void accept(Event event) {
-        if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-          protocol1.removeListener(this);
-
+        if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null && electionCount.incrementAndGet() == 3) {
           int id = ((LeaderChangeEvent) event).newLeader().id();
           for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
             if (entry.getKey() != id) {
@@ -267,7 +266,11 @@ public class RaftProtocolTest extends ConcurrentTestCase {
           }
         }
       }
-    });
+    };
+
+    protocol1.addListener(listener);
+    protocol2.addListener(listener);
+    protocol3.addListener(listener);
 
     protocol1.open().thenRun(this::resume);
     protocol2.open().thenRun(this::resume);
