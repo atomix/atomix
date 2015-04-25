@@ -221,13 +221,18 @@ abstract class ActiveState extends PassiveState {
     if ((context.getLastApplied() == 0 && index == context.log().firstIndex()) || (context.getLastApplied() != 0 && context.getLastApplied() == index - 1)) {
       RaftEntry entry = context.log().getEntry(index);
       if (entry != null) {
-        entry.readKey(KEY.clear());
-        entry.readEntry(ENTRY.clear());
-        try {
-          context.commit(KEY, ENTRY, RESULT.clear());
-        } catch (Exception e) {
-          LOGGER.warn("failed to apply command", e);
-        } finally {
+        RaftEntry.Type type = entry.readType();
+        if (type == RaftEntry.Type.COMMAND || type == RaftEntry.Type.TOMBSTONE) {
+          entry.readKey(KEY.clear());
+          entry.readEntry(ENTRY.clear());
+          try {
+            context.commit(KEY, ENTRY, RESULT.clear());
+          } catch (Exception e) {
+            LOGGER.warn("failed to apply command", e);
+          } finally {
+            context.setLastApplied(index);
+          }
+        } else {
           context.setLastApplied(index);
         }
       }

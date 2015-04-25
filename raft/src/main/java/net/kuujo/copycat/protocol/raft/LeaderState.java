@@ -247,9 +247,12 @@ class LeaderState extends ActiveState {
     try (RaftEntry logEntry = context.log().createEntry()) {
       logEntry.writeType(RaftEntry.Type.COMMAND)
         .writeTerm(term)
-        .writeEntry(entry);
-      if (key != null)
-        logEntry.writeKey(key);
+        .writeEntry(entry.mark());
+      entry.reset();
+      if (key != null) {
+        logEntry.writeKey(key.mark());
+        key.reset();
+      }
       index = logEntry.index();
     }
 
@@ -645,7 +648,9 @@ class LeaderState extends ActiveState {
                 LOGGER.debug("{} - Received higher term from {}", context.getCluster().member().id(), member);
                 transition(RaftState.Type.FOLLOWER);
               } else {
-                LOGGER.warn("{} - {}", context.getCluster().member().id(), response.error() != null ? response.error() : "");
+                LOGGER.warn("{} - {}", context.getCluster()
+                  .member()
+                  .id(), response.error() != null ? response.error() : "");
               }
             } else {
               LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
