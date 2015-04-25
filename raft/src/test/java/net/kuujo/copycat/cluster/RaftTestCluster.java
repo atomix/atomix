@@ -14,11 +14,10 @@ package net.kuujo.copycat.cluster;/*
  * limitations under the License.
  */
 
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.Collection;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Raft test cluster.
@@ -26,10 +25,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftTestCluster extends AbstractCluster {
-  private final Map<String, RaftTestLocalMember> registry = new ConcurrentHashMap<>();
 
-  public RaftTestCluster(RaftTestLocalMember localMember, Collection<? extends RaftTestRemoteMember> remoteMembers) {
+  /**
+   * Returns a new builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
+  private final RaftTestMemberRegistry registry;
+
+  public RaftTestCluster(RaftTestLocalMember localMember, Collection<? extends RaftTestRemoteMember> remoteMembers, RaftTestMemberRegistry registry) {
     super(localMember, remoteMembers);
+    this.registry = registry;
     localMember.init(registry);
     remoteMembers.forEach(m -> m.init(registry));
   }
@@ -43,13 +51,27 @@ public class RaftTestCluster extends AbstractCluster {
    * Raft test cluster builder.
    */
   public static class Builder extends AbstractCluster.Builder<Builder, RaftTestLocalMember, RaftTestRemoteMember> {
+    private RaftTestMemberRegistry registry;
 
     private Builder() {
     }
 
+    /**
+     * Sets the test member registry.
+     *
+     * @param registry The test member registry.
+     * @return The test cluster builder.
+     */
+    public Builder withRegistry(RaftTestMemberRegistry registry) {
+      this.registry = registry;
+      return this;
+    }
+
     @Override
-    public ManagedCluster build() {
-      return new RaftTestCluster(localMember, remoteMembers);
+    public RaftTestCluster build() {
+      if (registry == null)
+        throw new ConfigurationException("member registry must be provided");
+      return new RaftTestCluster(localMember, remoteMembers, registry);
     }
   }
 

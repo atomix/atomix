@@ -31,16 +31,24 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftTestLocalMember extends AbstractLocalMember implements RaftTestMember {
+
+  /**
+   * Returns a new builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private final RaftTestMember.Info info;
   private final Map<String, HandlerHolder> handlers = new HashMap<>();
-  private Map<String, RaftTestLocalMember> registry;
+  private RaftTestMemberRegistry registry;
 
   public RaftTestLocalMember(RaftTestMember.Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
     this.info = info;
   }
 
-  RaftTestLocalMember init(Map<String, RaftTestLocalMember> registry) {
+  RaftTestLocalMember init(RaftTestMemberRegistry registry) {
     this.registry = registry;
     return this;
   }
@@ -102,13 +110,13 @@ public class RaftTestLocalMember extends AbstractLocalMember implements RaftTest
 
   @Override
   public CompletableFuture<LocalMember> listen() {
-    registry.put(address(), this);
+    registry.register(address(), this);
     return CompletableFuture.completedFuture(this);
   }
 
   @Override
   public CompletableFuture<Void> close() {
-    registry.remove(address());
+    registry.unregister(address());
     return CompletableFuture.completedFuture(null);
   }
 

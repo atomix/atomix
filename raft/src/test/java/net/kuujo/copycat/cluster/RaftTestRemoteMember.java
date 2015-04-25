@@ -21,7 +21,6 @@ import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.concurrent.Futures;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -30,15 +29,23 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTestMember {
+
+  /**
+   * Returns a new builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private final RaftTestMember.Info info;
-  private Map<String, RaftTestLocalMember> registry;
+  private RaftTestMemberRegistry registry;
 
   public RaftTestRemoteMember(RaftTestMember.Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
     this.info = info;
   }
 
-  RaftTestRemoteMember init(Map<String, RaftTestLocalMember> registry) {
+  RaftTestRemoteMember init(RaftTestMemberRegistry registry) {
     this.registry = registry;
     return this;
   }
