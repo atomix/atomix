@@ -592,6 +592,7 @@ class LeaderState extends ActiveState {
           .withLogTerm(prevEntry != null ? prevEntry.readTerm() : 0)
           .withEntries(entries)
           .withCommitIndex(context.getCommitIndex())
+          .withRecycleIndex(context.getRecycleIndex())
           .build();
 
         committing = true;
