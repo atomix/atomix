@@ -29,11 +29,11 @@ import java.util.ConcurrentModificationException;
  * the offset index is searched for the relative position of the index.
  * <p>
  * Segments are designed to facilitate the immediate effective removal of duplicate entries from within the segment. To
- * achieve this, each segment maintains a light-weight in-memory {@link net.kuujo.copycat.raft.storage.compact.KeyTable}. When a new entry is committed
- * to the segment, its key is hashed and its offset stored in the lookup table. When an entry is read from the segment,
- * the lookup table is checked to determine whether the entry is the most recent entry for its key in the segment. If
- * a newer entry with the same key has already been written to the lookup table, the segment will behave as if the
- * entry no longer exists.
+ * achieve this, each segment maintains a light-weight in-memory {@link net.kuujo.copycat.protocol.raft.storage.compact.KeyTable}.
+ * When a new entry is committed to the segment, its key is hashed and its offset stored in the lookup table. When an entry
+ * is read from the segment, the lookup table is checked to determine whether the entry is the most recent entry for its key
+ * in the segment. If a newer entry with the same key has already been written to the lookup table, the segment will behave
+ * as if the entry no longer exists.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
@@ -62,7 +62,6 @@ public class Segment implements AutoCloseable {
   private final RaftEntryPool entryPool = new CommittingRaftEntryPool();
   private long commitIndex = 0;
   private long recycleIndex = 0;
-  private long keyIndex = 0;
   private long skip = 0;
   private boolean open = true;
   private boolean entryLock;
