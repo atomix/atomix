@@ -71,7 +71,7 @@ class StartState extends RaftState {
   }
 
   @Override
-  public CompletableFuture<? extends Response> apply(Request request) {
+  public CompletableFuture<Response> handle(Request request) {
     return exceptionalFuture(new IllegalStateException("inactive state"));
   }
 

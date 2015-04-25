@@ -470,12 +470,13 @@ public class RaftProtocol extends Protocol {
   /**
    * Wraps a call to the state context in the context executor.
    */
-  private <T extends Request, U extends Response> CompletableFuture<U> runOnContext(T request, ProtocolHandler<T, U> handler) {
+  @SuppressWarnings("unchecked")
+  private <T extends Request, U extends Response> CompletableFuture<U> runOnContext(T request, RaftState state) {
     CompletableFuture<U> future = new CompletableFuture<>();
     context.execute(() -> {
-      handler.apply(request).whenComplete((response, error) -> {
+      state.handle(request).whenComplete((response, error) -> {
         if (error == null) {
-          future.complete(response);
+          future.complete((U) response);
         } else {
           future.completeExceptionally(error);
         }

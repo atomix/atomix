@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.protocol.raft;
 
+import net.kuujo.copycat.cluster.MessageHandler;
 import net.kuujo.copycat.protocol.raft.rpc.*;
 import net.kuujo.copycat.util.Managed;
 import org.slf4j.Logger;
@@ -27,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-abstract class RaftState implements ProtocolHandler<Request, Response>, Managed<RaftState> {
+abstract class RaftState implements MessageHandler<Request, Response>, Managed<RaftState> {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
   protected final RaftProtocol context;
   private volatile boolean open;
@@ -122,6 +123,7 @@ abstract class RaftState implements ProtocolHandler<Request, Response>, Managed<
   @Override
   public CompletableFuture<RaftState> open() {
     context.checkThread();
+    context.getCluster().member().registerHandler(context.getTopic(), this);
     open = true;
     return CompletableFuture.completedFuture(null);
   }
@@ -132,23 +134,23 @@ abstract class RaftState implements ProtocolHandler<Request, Response>, Managed<
   }
 
   @Override
-  public CompletableFuture<? extends Response> apply(Request request) {
+  public CompletableFuture<Response> handle(Request request) {
     context.checkThread();
     switch (request.type()) {
       case APPEND:
-        return append(request.asAppendRequest());
+        return append(request.asAppendRequest()).thenApply(Response::asAppendResponse);
       case SYNC:
-        return sync(request.asSyncRequest());
+        return sync(request.asSyncRequest()).thenApply(Response::asSyncResponse);
       case POLL:
-        return poll(request.asPollRequest());
+        return poll(request.asPollRequest()).thenApply(Response::asPollResponse);
       case VOTE:
-        return vote(request.asVoteRequest());
+        return vote(request.asVoteRequest()).thenApply(Response::asVoteResponse);
       case WRITE:
-        return write(request.asWriteRequest());
+        return write(request.asWriteRequest()).thenApply(Response::asWriteResponse);
       case READ:
-        return read(request.asReadRequest());
+        return read(request.asReadRequest()).thenApply(Response::asReadResponse);
       case DELETE:
-        return delete(request.asDeleteRequest());
+        return delete(request.asDeleteRequest()).thenApply(Response::asDeleteResponse);
     }
     throw new IllegalArgumentException("invalid request type");
   }
@@ -191,6 +193,7 @@ abstract class RaftState implements ProtocolHandler<Request, Response>, Managed<
   @Override
   public CompletableFuture<Void> close() {
     context.checkThread();
+    context.getCluster().member().unregisterHandler(context.getTopic());
     open = false;
     return CompletableFuture.completedFuture(null);
   }
