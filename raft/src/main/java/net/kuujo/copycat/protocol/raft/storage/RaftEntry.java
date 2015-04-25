@@ -316,4 +316,9 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     referenceManager.release(this);
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[index=%d, type=%s, term=%d]", getClass().getSimpleName(), index, type, term);
+  }
+
 }
