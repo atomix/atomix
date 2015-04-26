@@ -235,7 +235,7 @@ class PassiveState extends RaftState {
     // Update the recycle index using the highest member's recycle index.
     request.members().stream()
       .mapToLong(RaftMember::recycleIndex).max()
-      .ifPresent(recycleIndex -> context.setRecycleIndex(Math.max(context.getRecycleIndex(), recycleIndex)));
+      .ifPresent(recycleIndex -> context.setRecycleIndex(Math.min(Math.max(context.getRecycleIndex(), recycleIndex), context.getCommitIndex())));
 
     // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()

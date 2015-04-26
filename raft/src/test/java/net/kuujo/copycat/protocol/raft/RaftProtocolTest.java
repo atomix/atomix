@@ -1176,58 +1176,62 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Tests a command on a remote node.
    */
-  public void testCommandOnRemote(Persistence persistence, Consistency consistency) throws Throwable {
+  public void testCommandOnRemote(int activeNodes, int passiveNodes, Persistence persistence, Consistency consistency) throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
-
-    RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
-
-    RaftProtocol protocol1 = buildProtocol(1, cluster1);
-    RaftProtocol protocol2 = buildProtocol(2, cluster2);
-    RaftProtocol protocol3 = buildProtocol(3, cluster3);
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
       threadAssertEquals(entry.readLong(), Long.valueOf(4321));
+      resume();
       return result.writeLong(5678);
     };
 
-    protocol1.commitHandler(commitHandler);
-    protocol2.commitHandler(commitHandler);
-    protocol3.commitHandler(commitHandler);
-
-    expectResumes(4);
-
-    AtomicInteger electionCount = new AtomicInteger();
-    EventListener<Event> listener = event -> {
-      if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null && electionCount.incrementAndGet() == 3) {
-        resume();
-      }
+    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
+      return new EventListener<Event>() {
+        @Override
+        public void accept(Event event) {
+          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
+            protocol.removeListener(this);
+            resume();
+          }
+        }
+      };
     };
 
-    protocol1.addListener(listener);
-    protocol2.addListener(listener);
-    protocol3.addListener(listener);
+    expectResumes(activeNodes * 2);
 
-    protocol1.open().thenRun(this::resume);
-    protocol2.open().thenRun(this::resume);
-    protocol3.open().thenRun(this::resume);
-
-    await();
-
-    RaftTestCluster cluster4 = buildCluster(4, Member.Type.REMOTE, 4, registry);
-    RaftProtocol protocol4 = buildProtocol(4, cluster4);
-
-    expectResume();
-
-    protocol4.open().thenRun(this::resume);
+    for (int i = 1; i <= activeNodes; i++) {
+      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
+      RaftProtocol protocol = buildProtocol(i, cluster);
+      protocol.commitHandler(commitHandler).addListener(createListener.apply(protocol));
+      protocol.open().thenRun(this::resume);
+    }
 
     await();
 
+    expectResumes(passiveNodes * 2);
+
+    for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
+      RaftTestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
+      RaftProtocol protocol = buildProtocol(i, cluster);
+      protocol.commitHandler(commitHandler).addListener(createListener.apply(protocol));
+      protocol.open().thenRun(this::resume);
+    }
+
+    await();
+
+    RaftTestCluster cluster = buildCluster(activeNodes + passiveNodes + 1, Member.Type.REMOTE, 4, registry);
+    RaftProtocol protocol = buildProtocol(activeNodes + passiveNodes + 1, cluster);
+
     expectResume();
 
-    protocol4.submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip()).thenAccept(result -> {
+    protocol.open().thenRun(this::resume);
+
+    await();
+
+    expectResumes(activeNodes + passiveNodes + 1);
+
+    protocol.submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
       threadAssertEquals(result.readLong(), Long.valueOf(5678));
       resume();
     });
@@ -1236,83 +1240,83 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   }
 
   public void testPersistentConsistentCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.PERSISTENT, Consistency.STRICT);
+    testCommandOnRemote(3, 3, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
   public void testDurableConsistentCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DURABLE, Consistency.STRICT);
+    testCommandOnRemote(3, 3, Persistence.DURABLE, Consistency.STRICT);
   }
 
   public void testEphemeralConsistentCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.EPHEMERAL, Consistency.STRICT);
+    testCommandOnRemote(3, 3, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
   public void testTransientConsistentCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.NONE, Consistency.STRICT);
+    testCommandOnRemote(3, 3, Persistence.NONE, Consistency.STRICT);
   }
 
   public void testDefaultConsistentCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DEFAULT, Consistency.STRICT);
+    testCommandOnRemote(3, 3, Persistence.DEFAULT, Consistency.STRICT);
   }
 
   public void testPersistentLeaseCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.PERSISTENT, Consistency.LEASE);
+    testCommandOnRemote(3, 3, Persistence.PERSISTENT, Consistency.LEASE);
   }
 
   public void testDurableLeaseCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DURABLE, Consistency.LEASE);
+    testCommandOnRemote(3, 3, Persistence.DURABLE, Consistency.LEASE);
   }
 
   public void testEphemeralLeaseCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.EPHEMERAL, Consistency.LEASE);
+    testCommandOnRemote(3, 3, Persistence.EPHEMERAL, Consistency.LEASE);
   }
 
   public void testTransientLeaseCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.NONE, Consistency.LEASE);
+    testCommandOnRemote(3, 3, Persistence.NONE, Consistency.LEASE);
   }
 
   public void testDefaultLeaseCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DEFAULT, Consistency.LEASE);
+    testCommandOnRemote(3, 3, Persistence.DEFAULT, Consistency.LEASE);
   }
 
   public void testPersistentEventualCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.PERSISTENT, Consistency.EVENTUAL);
+    testCommandOnRemote(3, 3, Persistence.PERSISTENT, Consistency.EVENTUAL);
   }
 
   public void testDurableEventualCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DURABLE, Consistency.EVENTUAL);
+    testCommandOnRemote(3, 3, Persistence.DURABLE, Consistency.EVENTUAL);
   }
 
   public void testEphemeralEventualCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.EPHEMERAL, Consistency.EVENTUAL);
+    testCommandOnRemote(3, 3, Persistence.EPHEMERAL, Consistency.EVENTUAL);
   }
 
   public void testTransientEventualCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.NONE, Consistency.EVENTUAL);
+    testCommandOnRemote(3, 3, Persistence.NONE, Consistency.EVENTUAL);
   }
 
   public void testDefaultEventualCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DEFAULT, Consistency.EVENTUAL);
+    testCommandOnRemote(3, 3, Persistence.DEFAULT, Consistency.EVENTUAL);
   }
 
   public void testPersistentDefaultCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.PERSISTENT, Consistency.DEFAULT);
+    testCommandOnRemote(3, 3, Persistence.PERSISTENT, Consistency.DEFAULT);
   }
 
   public void testDurableDefaultCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DURABLE, Consistency.DEFAULT);
+    testCommandOnRemote(3, 3, Persistence.DURABLE, Consistency.DEFAULT);
   }
 
   public void testEphemeralDefaultCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.EPHEMERAL, Consistency.DEFAULT);
+    testCommandOnRemote(3, 3, Persistence.EPHEMERAL, Consistency.DEFAULT);
   }
 
   public void testTransientDefaultCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.NONE, Consistency.DEFAULT);
+    testCommandOnRemote(3, 3, Persistence.NONE, Consistency.DEFAULT);
   }
 
   public void testDefaultDefaultCommandOnRemote() throws Throwable {
-    testCommandOnRemote(Persistence.DEFAULT, Consistency.DEFAULT);
+    testCommandOnRemote(3, 3, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
   /**

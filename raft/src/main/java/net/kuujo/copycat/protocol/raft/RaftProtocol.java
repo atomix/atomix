@@ -197,6 +197,7 @@ public class RaftProtocol extends Protocol {
    */
   RaftProtocol setVersion(long version) {
     this.version = Math.max(this.version, version);
+    getRaftMember(cluster.member().id()).version(this.version);
     return this;
   }
 
@@ -207,15 +208,6 @@ public class RaftProtocol extends Protocol {
    */
   long getVersion() {
     return version;
-  }
-
-  /**
-   * Returns whether the context is recovering.
-   *
-   * @return Indicates whether the context is currently recovering.
-   */
-  boolean isRecovering() {
-    return recovering;
   }
 
   /**
@@ -272,6 +264,7 @@ public class RaftProtocol extends Protocol {
       }
     }
     this.commitIndex = commitIndex;
+    getRaftMember(cluster.member().id()).commitIndex(commitIndex);
     return this;
   }
 
@@ -296,6 +289,7 @@ public class RaftProtocol extends Protocol {
     if (recycleIndex < this.recycleIndex)
       throw new IllegalArgumentException("cannot decrease recycle index");
     this.recycleIndex = recycleIndex;
+    getRaftMember(cluster.member().id()).recycleIndex(recycleIndex);
     return this;
   }
 
