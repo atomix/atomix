@@ -66,7 +66,7 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
   private Channel channel;
   private ChannelHandlerContext context;
   private final Map<String, Integer> hashMap = new HashMap<>();
-  private final Map<Object, CompletableFuture> responseFutures = new HashMap<>(1024);
+  private final Map<Object, ContextualFuture> responseFutures = new HashMap<>(1024);
   private boolean connected;
   private long requestId;
   private CompletableFuture<RemoteMember> connectFuture;
@@ -94,7 +94,7 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
 
   @Override
   public <T, U> CompletableFuture<U> send(String topic, T message) {
-    final CompletableFuture<U> future = new CompletableFuture<>();
+    final ContextualFuture<U> future = new ContextualFuture<>(getContext());
     if (channel != null) {
       long requestId = ++this.requestId;
       ByteBufBuffer buffer = BUFFER.get();
@@ -109,11 +109,15 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
         if (channelFuture.isSuccess()) {
           responseFutures.put(requestId, future);
         } else {
-          future.completeExceptionally(new ClusterException(channelFuture.cause()));
+          future.context.execute(() -> {
+            future.completeExceptionally(new ClusterException(channelFuture.cause()));
+          });
         }
       });
     } else {
-      future.completeExceptionally(new ClusterException("Client not connected"));
+      future.context.execute(() -> {
+        future.completeExceptionally(new ClusterException("Client not connected"));
+      });
     }
     return future;
   }
@@ -125,7 +129,7 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
 
   @Override
   public <T> CompletableFuture<T> submit(Task<T> task) {
-    final CompletableFuture<T> future = new CompletableFuture<>();
+    final ContextualFuture<T> future = new ContextualFuture<>(getContext());
     if (channel != null) {
       long requestId = ++this.requestId;
       ByteBufBuffer buffer = BUFFER.get();
@@ -139,11 +143,15 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
         if (channelFuture.isSuccess()) {
           responseFutures.put(requestId, future);
         } else {
-          future.completeExceptionally(new ClusterException(channelFuture.cause()));
+          future.context.execute(() -> {
+            future.completeExceptionally(new ClusterException(channelFuture.cause()));
+          });
         }
       });
     } else {
-      future.completeExceptionally(new ClusterException("Client not connected"));
+      future.context.execute(() -> {
+        future.completeExceptionally(new ClusterException("Client not connected"));
+      });
     }
     return future;
   }
@@ -242,6 +250,17 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
   }
 
   /**
+   * Contextual future.
+   */
+  private static class ContextualFuture<T> extends CompletableFuture<T> {
+    private final ExecutionContext context;
+
+    private ContextualFuture(ExecutionContext context) {
+      this.context = context;
+    }
+  }
+
+  /**
    * Client channel handler.
    */
   private class ClientHandler extends ChannelInboundHandlerAdapter {
@@ -255,12 +274,14 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
     public void channelRead(ChannelHandlerContext context, Object message) {
       ByteBuf response = (ByteBuf) message;
       long responseId = response.readLong();
-      CompletableFuture responseFuture = responseFutures.remove(responseId);
+      ContextualFuture responseFuture = responseFutures.remove(responseId);
       if (responseFuture != null) {
         ByteBufBuffer buffer = BUFFER.get();
         buffer.setByteBuf(response.slice());
         Object result = serializer.readObject(buffer);
-        responseFuture.complete(result);
+        responseFuture.context.execute(() -> {
+          responseFuture.complete(result);
+        });
       }
       response.release();
     }
