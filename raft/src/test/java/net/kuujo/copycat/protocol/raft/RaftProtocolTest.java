@@ -82,7 +82,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Tests leader elect events.
    */
-  public void testLeaderElectEvent() throws Throwable {
+  public void testLeaderElectEventOnAll() throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
 
     RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
@@ -92,8 +92,6 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     RaftProtocol protocol1 = buildProtocol(1, cluster1);
     RaftProtocol protocol2 = buildProtocol(2, cluster2);
     RaftProtocol protocol3 = buildProtocol(3, cluster3);
-
-    expectResumes(6);
 
     EventListener<Event> listener = event -> {
       if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
@@ -105,9 +103,31 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     protocol2.addListener(listener);
     protocol3.addListener(listener);
 
+    expectResumes(3 + 3);
+
     protocol1.open().thenRun(this::resume);
     protocol2.open().thenRun(this::resume);
     protocol3.open().thenRun(this::resume);
+
+    await();
+
+    RaftTestCluster cluster4 = buildCluster(4, Member.Type.PASSIVE, 4, registry);
+    RaftTestCluster cluster5 = buildCluster(5, Member.Type.PASSIVE, 4, registry);
+    RaftTestCluster cluster6 = buildCluster(6, Member.Type.REMOTE, 4, registry);
+
+    RaftProtocol protocol4 = buildProtocol(4, cluster4);
+    RaftProtocol protocol5 = buildProtocol(5, cluster5);
+    RaftProtocol protocol6 = buildProtocol(6, cluster6);
+
+    protocol4.addListener(listener);
+    protocol5.addListener(listener);
+    protocol6.addListener(listener);
+
+    expectResumes(3 + 3);
+
+    protocol4.open().thenRun(this::resume);
+    protocol5.open().thenRun(this::resume);
+    protocol6.open().thenRun(this::resume);
 
     await();
   }
@@ -544,7 +564,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
-      threadAssertEquals(key.readLong(), Long.valueOf(4321));
+      threadAssertEquals(entry.readLong(), Long.valueOf(4321));
       return result.writeLong(5678);
     };
 
@@ -573,6 +593,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     RaftTestCluster cluster4 = buildCluster(4, Member.Type.PASSIVE, 4, registry);
     RaftProtocol protocol4 = buildProtocol(4, cluster4);
+    protocol4.commit(commitHandler);
 
     expectResume();
 
@@ -599,20 +620,42 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
     RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
     RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster4 = buildCluster(4, Member.Type.REMOTE, 4, registry);
 
     RaftProtocol protocol1 = buildProtocol(1, cluster1);
     RaftProtocol protocol2 = buildProtocol(2, cluster2);
     RaftProtocol protocol3 = buildProtocol(3, cluster3);
-    RaftProtocol protocol4 = buildProtocol(4, cluster4);
 
-    expectResumes(3);
+    CommitHandler commitHandler = (key, entry, result) -> {
+      threadAssertEquals(key.readLong(), Long.valueOf(1234));
+      threadAssertEquals(entry.readLong(), Long.valueOf(4321));
+      return result.writeLong(5678);
+    };
+
+    protocol1.commit(commitHandler);
+    protocol2.commit(commitHandler);
+    protocol3.commit(commitHandler);
+
+    expectResumes(4);
+
+    AtomicInteger electionCount = new AtomicInteger();
+    EventListener<Event> listener = event -> {
+      if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null && electionCount.incrementAndGet() == 3) {
+        resume();
+      }
+    };
+
+    protocol1.addListener(listener);
+    protocol2.addListener(listener);
+    protocol3.addListener(listener);
 
     protocol1.open().thenRun(this::resume);
     protocol2.open().thenRun(this::resume);
     protocol3.open().thenRun(this::resume);
 
     await();
+
+    RaftTestCluster cluster4 = buildCluster(4, Member.Type.REMOTE, 4, registry);
+    RaftProtocol protocol4 = buildProtocol(4, cluster4);
 
     expectResume();
 
