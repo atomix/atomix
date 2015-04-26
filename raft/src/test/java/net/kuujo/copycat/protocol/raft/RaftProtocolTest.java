@@ -200,21 +200,8 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Tests performing a command on a leader node.
    */
-  private void testCommandOnLeader(Persistence persistence, Consistency consistency) throws Throwable {
+  private void testCommandOnLeader(int nodes, Persistence persistence, Consistency consistency) throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
-
-    RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
-
-    RaftProtocol protocol1 = buildProtocol(1, cluster1);
-    RaftProtocol protocol2 = buildProtocol(2, cluster2);
-    RaftProtocol protocol3 = buildProtocol(3, cluster3);
-
-    Map<Integer, RaftProtocol> protocols = new HashMap<>();
-    protocols.put(1, protocol1);
-    protocols.put(2, protocol2);
-    protocols.put(3, protocol3);
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
@@ -223,112 +210,282 @@ public class RaftProtocolTest extends ConcurrentTestCase {
       return result.writeLong(5678);
     };
 
-    protocol1.commitHandler(commitHandler);
-    protocol2.commitHandler(commitHandler);
-    protocol3.commitHandler(commitHandler);
+    Map<Integer, RaftProtocol> protocols = new HashMap<>();
+    for (int i = 1; i <= nodes; i++) {
+      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
+      RaftProtocol protocol = buildProtocol(i, cluster);
+      protocol.commitHandler(commitHandler);
+      protocols.put(i, protocol);
+    }
 
-    expectResumes(7);
+    expectResumes(nodes * 2 + 1);
 
-    protocol1.addListener(new EventListener<Event>() {
-      @Override
-      public void accept(Event event) {
-        if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-          protocol1.removeListener(this);
+    final AtomicInteger electionCount = new AtomicInteger();
+    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
+      return new EventListener<Event>() {
+        @Override
+        public void accept(Event event) {
+          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
+            protocol.removeListener(this);
 
-          RaftProtocol protocol = protocols.get(((LeaderChangeEvent) event).newLeader().id());
-          protocol.submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
-            threadAssertEquals(result.readLong(), Long.valueOf(5678));
-            resume();
-          });
+            if (electionCount.incrementAndGet() == nodes) {
+              RaftProtocol leader = protocols.get(((LeaderChangeEvent) event).newLeader().id());
+              leader.submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
+                threadAssertEquals(result.readLong(), Long.valueOf(5678));
+                resume();
+              });
+            }
+          }
         }
-      }
-    });
+      };
+    };
 
-    protocol1.open().thenRun(this::resume);
-    protocol2.open().thenRun(this::resume);
-    protocol3.open().thenRun(this::resume);
+    for (RaftProtocol protocol : protocols.values()) {
+      protocol.addListener(createListener.apply(protocol));
+      protocol.open().thenRun(this::resume);
+    }
 
     await();
   }
 
-  public void testPersistentConsistentCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.PERSISTENT, Consistency.STRICT);
+  public void testSingleNodePersistentConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testDurableConsistentCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DURABLE, Consistency.STRICT);
+  public void testTwoNodePersistentConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testEphemeralConsistentCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.EPHEMERAL, Consistency.STRICT);
+  public void testThreeNodePersistentConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testTransientConsistentCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.NONE, Consistency.STRICT);
+  public void testSingleNodeDurableConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testDefaultConsistentCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DEFAULT, Consistency.STRICT);
+  public void testTwoNodeDurableConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testPersistentLeaseCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.PERSISTENT, Consistency.LEASE);
+  public void testThreeNodeDurableConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testDurableLeaseCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DURABLE, Consistency.LEASE);
+  public void testSingleNodeEphemeralConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testEphemeralLeaseCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.EPHEMERAL, Consistency.LEASE);
+  public void testTwoNodeEphemeralConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testTransientLeaseCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.NONE, Consistency.LEASE);
+  public void testThreeNodeEphemeralConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testDefaultLeaseCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DEFAULT, Consistency.LEASE);
+  public void testSingleNodeTransientConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testPersistentEventualCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.PERSISTENT, Consistency.EVENTUAL);
+  public void testTwoNodeTransientConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testDurableEventualCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DURABLE, Consistency.EVENTUAL);
+  public void testThreeNodeTransientConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testEphemeralEventualCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  public void testSingleNodeDefaultConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DEFAULT, Consistency.STRICT);
   }
 
-  public void testTransientEventualCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.NONE, Consistency.EVENTUAL);
+  public void testTwoNodeDefaultConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DEFAULT, Consistency.STRICT);
   }
 
-  public void testDefaultEventualCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DEFAULT, Consistency.EVENTUAL);
+  public void testThreeNodeDefaultConsistentCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DEFAULT, Consistency.STRICT);
   }
 
-  public void testPersistentDefaultCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.PERSISTENT, Consistency.DEFAULT);
+  public void testSingleNodePersistentLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.PERSISTENT, Consistency.LEASE);
   }
 
-  public void testDurableDefaultCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DURABLE, Consistency.DEFAULT);
+  public void testTwoNodePersistentLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.PERSISTENT, Consistency.LEASE);
   }
 
-  public void testEphemeralDefaultCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.EPHEMERAL, Consistency.DEFAULT);
+  public void testThreeNodePersistentLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.PERSISTENT, Consistency.LEASE);
   }
 
-  public void testTransientDefaultCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.NONE, Consistency.DEFAULT);
+  public void testSingleNodeDurableLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DURABLE, Consistency.LEASE);
   }
 
-  public void testDefaultDefaultCommandOnLeader() throws Throwable {
-    testCommandOnLeader(Persistence.DEFAULT, Consistency.DEFAULT);
+  public void testTwoNodeDurableLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DURABLE, Consistency.LEASE);
+  }
+
+  public void testThreeNodeDurableLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DURABLE, Consistency.LEASE);
+  }
+
+  public void testSingleNodeEphemeralLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testTwoNodeEphemeralLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testThreeNodeEphemeralLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testSingleNodeTransientLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testTwoNodeTransientLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testThreeNodeTransientLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testSingleNodeDefaultLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testTwoNodeDefaultLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testThreeNodeDefaultLeaseCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testSingleNodePersistentEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodePersistentEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodePersistentEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testSingleNodeDurableEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeDurableEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeDurableEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testSingleNodeEphemeralEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeEphemeralEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeEphemeralEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testSingleNodeTransientEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeTransientEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeTransientEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testSingleNodeDefaultEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeDefaultEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeDefaultEventualCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testSingleNodePersistentDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodePersistentDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodePersistentDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testSingleNodeDurableDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeDurableDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeDurableDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testSingleNodeEphemeralDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeEphemeralDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeEphemeralDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testSingleNodeTransientDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeTransientDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeTransientDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testSingleNodeDefaultDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(1, Persistence.DEFAULT, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeDefaultDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(2, Persistence.DEFAULT, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeDefaultDefaultCommandOnLeader() throws Throwable {
+    testCommandOnLeader(3, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
   /**

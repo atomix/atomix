@@ -409,6 +409,8 @@ class LeaderState extends ActiveState {
      * @return A completable future to be completed the next time entries are committed to a majority of the cluster.
      */
     private CompletableFuture<Long> commit() {
+      if (replicas.isEmpty())
+        return CompletableFuture.completedFuture(null);
       if (commitFuture == null) {
         commitFuture = new CompletableFuture<>();
         commitTime = System.currentTimeMillis();
@@ -431,6 +433,8 @@ class LeaderState extends ActiveState {
     private CompletableFuture<Long> commit(long index) {
       if (index == 0)
         return commit();
+      if (replicas.isEmpty())
+        return CompletableFuture.completedFuture(index);
       return commitFutures.computeIfAbsent(index, i -> {
         replicas.forEach(Replica::commit);
         return new CompletableFuture<>();
