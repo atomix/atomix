@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,8 +33,13 @@ import java.lang.annotation.Target;
 public @interface Read {
 
   /**
+   * The delete persistence level.
+   */
+  Persistence persistence() default Persistence.NONE;
+
+  /**
    * The read consistency.
    */
-  Consistency consistency() default Consistency.DEFAULT;
+  Consistency consistency() default Consistency.LEASE;
 
 }

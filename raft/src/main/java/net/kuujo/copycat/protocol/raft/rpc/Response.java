@@ -52,19 +52,9 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
     VOTE,
 
     /**
-     * Write response.
+     * Submit response.
      */
-    WRITE,
-
-    /**
-     * Read response.
-     */
-    READ,
-
-    /**
-     * Delete response.
-     */
-    DELETE,
+    SUBMIT,
 
     /**
      * Status response.

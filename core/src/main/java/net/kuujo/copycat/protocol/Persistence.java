@@ -16,29 +16,34 @@
 package net.kuujo.copycat.protocol;
 
 /**
- * Protocol consistency.
+ * Protocol command persistence.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum Consistency {
+public enum Persistence {
 
   /**
-   * Weak consistency level.
+   * Indicates a command that will not be persisted.
    */
-  EVENTUAL,
+  NONE,
 
   /**
-   * Lease consistency level.
+   * Indicates a command that will persist until a restart.
    */
-  LEASE,
+  EPHEMERAL,
 
   /**
-   * Strong consistency level.
+   * Indicates a command that will persist until it has been received by all nodes.
    */
-  STRICT,
+  DURABLE,
 
   /**
-   * Default consistency level.
+   * Indicates a command that will persist for eternity.
+   */
+  PERSISTENT,
+
+  /**
+   * Indicates a command that will be persisted according to the default persistence level.
    */
   DEFAULT
 

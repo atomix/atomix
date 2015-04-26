@@ -56,7 +56,7 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
   @Override
   @SuppressWarnings("unchecked")
   public CompletableFuture<U> open() {
-    protocol.commit(this::commit);
+    protocol.commitHandler(this::commit);
     return super.open().thenCompose(v -> protocol.open()).thenApply(v -> (U) this);
   }
 

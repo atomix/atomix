@@ -17,7 +17,7 @@ package net.kuujo.copycat.protocol.raft;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.protocol.raft.rpc.*;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
 
@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class LeaderState extends ActiveState {
-  private static final Buffer EMPTY_BUFFER = HeapBuffer.allocate(0);
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
@@ -80,7 +79,7 @@ class LeaderState extends ActiveState {
     final long term = context.getTerm();
     final long index;
     try (RaftEntry logEntry = context.log().createEntry()) {
-      logEntry.writeType(RaftEntry.Type.NOOP).writeTerm(term);
+      logEntry.writeType(RaftEntry.Type.NOOP).writeMode(RaftEntry.Mode.PERSISTENT).writeTerm(term);
       index = logEntry.index();
     }
 
@@ -178,176 +177,168 @@ class LeaderState extends ActiveState {
   }
 
   @Override
-  public CompletableFuture<ReadResponse> read(ReadRequest request) {
+  protected CompletableFuture<SubmitResponse> submit(final SubmitRequest request) {
     context.checkThread();
     logRequest(request);
 
-    CompletableFuture<ReadResponse> future = new CompletableFuture<>();
+    final long term = context.getTerm();
 
-    switch (request.consistency()) {
-      // Consistency mode WEAK or DEFAULT is immediately evaluated and returned.
-      case WEAK:
-      case DEFAULT:
-        RESULT.clear();
-        context.commit(request.key(), request.entry(), RESULT);
-        future.complete(logResponse(ReadResponse.builder()
-          .withStatus(Response.Status.OK)
-          .withResult(RESULT.flip())
-          .build()));
-        break;
-      // Consistency mode STRONG requires synchronous consistency check prior to applying the read.
-      case STRONG:
-        LOGGER.debug("{} - Synchronizing logs to index {} for read", context.getCluster().member().id(), context.log().lastIndex());
-        request.acquire();
-        replicator.commit().whenComplete((index, error) -> {
-          context.checkThread();
-          if (isOpen()) {
-            if (error == null) {
-              try {
-                RESULT.clear();
-                context.commit(request.key(), request.entry(), RESULT);
-                future.complete(logResponse(ReadResponse.builder()
-                  .withStatus(Response.Status.OK)
-                  .withResult(RESULT.flip())
-                  .build()));
-              } catch (Exception e) {
-                future.complete(logResponse(ReadResponse.builder()
-                  .withStatus(Response.Status.ERROR)
-                  .withError(RaftError.Type.APPLICATION_ERROR)
-                  .build()));
-              } finally {
-                request.release();
-              }
-            } else {
-              future.complete(logResponse(ReadResponse.builder()
-                .withStatus(Response.Status.ERROR)
-                .withError(RaftError.Type.READ_ERROR)
-                .build()));
-              request.release();
-            }
-          } else {
-            request.release();
-          }
-        });
-        break;
-    }
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<WriteResponse> write(final WriteRequest request) {
-    context.checkThread();
-    logRequest(request);
-
-    CompletableFuture<WriteResponse> future = new CompletableFuture<>();
     final Buffer key = request.key();
     final Buffer entry = request.entry();
-    final long term = context.getTerm();
-    final long index;
-    try (RaftEntry logEntry = context.log().createEntry()) {
-      logEntry.writeType(RaftEntry.Type.COMMAND)
-        .writeTerm(term)
-        .writeEntry(entry.mark());
-      entry.reset();
-      if (key != null) {
-        logEntry.writeKey(key.mark());
-        key.reset();
+
+    final long index = writeSubmitEntry(term, key, entry, request.persistence());
+
+    // If the entry was stored to the log then the index will be greater than 0. Entries stored to the log must be
+    // replicated via the Raft protocol.
+    if (index != 0) {
+      return replicateSubmitEntry(index, key, entry);
+    } else {
+      // Perform synchronous or asynchronous replication based on the request's consistency level. EVENTUAL(ly) consistent
+      // requests are always applied directly to the state machine without performing any additional work. LEASE requests
+      // are handled in the same way as EVENTUAL requests since the leader already has a lease on its own election. Note
+      // that EVENTUAL commands executed on followers will be forwarded to the leader. STRICT consistency requests are
+      // handled by synchronously replicating the entry to a majority of the cluster.
+      switch (request.consistency()) {
+        case EVENTUAL:
+        case LEASE:
+          return commitSubmitEntry(key, entry, new CompletableFuture<>());
+        case STRICT:
+        case DEFAULT:
+          return replicateSubmitEntry(0, key, entry);
       }
-      index = logEntry.index();
     }
 
-    LOGGER.debug("{} - Appended entry to log at index {}", context.getCluster().member().id(), index);
-    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getCluster().member().id(), index);
+    throw new UnsupportedOperationException();
+  }
 
-    // Attempt to replicate the entry to a quorum of the cluster.
-    request.acquire();
+  /**
+   * Writes a submit entry to the log.
+   */
+  private long writeSubmitEntry(long term, Buffer key, Buffer entry, Persistence persistence) {
+    // Only if the entry is persistent do we store it to the log.
+    if (persistence != Persistence.NONE) {
+
+      // Create a new entry and store the index. We may need the index for replication.
+      try (RaftEntry logEntry = context.log().createEntry()) {
+
+        // Write the type and term to the entry.
+        logEntry.writeType(RaftEntry.Type.COMMAND).writeTerm(term);
+
+        // It's possible that either the entry key or value could be null, so account for that case.
+        // Also, ensure buffers are reset to their original positions.
+        if (key != null) {
+          logEntry.writeKey(key.mark());
+          key.reset();
+        }
+
+        if (entry != null) {
+          logEntry.writeEntry(entry.mark());
+          entry.reset();
+        }
+
+        // Indicate the persistence level to the log. The log will use this information to decide which entries to
+        // evict during compaction. Entries logged in EPHEMERAL mode will not persist through a crash. Entries logged
+        // in DURABLE mode will persist until the recycleIndex is equal to or greater than the entry's index. The
+        // PERSISTENT mode will persist entries until a duplicate key is found.
+        switch (persistence) {
+          case EPHEMERAL:
+            logEntry.writeMode(RaftEntry.Mode.EPHEMERAL);
+            break;
+          case DURABLE:
+            logEntry.writeMode(RaftEntry.Mode.DURABLE);
+            break;
+          case PERSISTENT:
+          case DEFAULT:
+            logEntry.writeMode(RaftEntry.Mode.PERSISTENT);
+            break;
+        }
+
+        long index = logEntry.index();
+        LOGGER.debug("{} - Appended entry to log at index {}", context.getCluster().member().id(), index);
+        return index;
+      }
+    }
+    return 0;
+  }
+
+  /**
+   * Replicates a submit entry.
+   */
+  private CompletableFuture<SubmitResponse> replicateSubmitEntry(long index, Buffer key, Buffer entry) {
+    LOGGER.debug("{} - Replicating logs up to index {}", context.getCluster().member().id(), index);
+
+    CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
+
+    // Acquire references to the key and entry.
+    acquireEntry(key, entry);
+
+    // Commit the given index. If the index is 0 then the entry will be committed as a non-persistent entry.
     replicator.commit(index).whenComplete((resultIndex, error) -> {
       context.checkThread();
       if (isOpen()) {
         if (error == null) {
           try {
-            context.commit(key, entry, RESULT.clear());
-            future.complete(logResponse(WriteResponse.builder()
-              .withStatus(Response.Status.OK)
-              .withResult(RESULT.flip())
-              .build()));
-          } catch (Exception e) {
-            future.complete(logResponse(WriteResponse.builder()
-              .withStatus(Response.Status.ERROR)
-              .withError(RaftError.Type.APPLICATION_ERROR)
-              .build()));
+            commitSubmitEntry(key, entry, future);
           } finally {
-            context.setLastApplied(index);
-            request.release();
+            if (index > 0) {
+              context.setLastApplied(index);
+            }
+            releaseEntry(key, entry);
           }
         } else {
-          future.complete(logResponse(WriteResponse.builder()
+          future.complete(logResponse(SubmitResponse.builder()
             .withStatus(Response.Status.ERROR)
             .withError(RaftError.Type.WRITE_ERROR)
             .build()));
-          request.release();
+          releaseEntry(key, entry);
         }
       } else {
-        request.release();
+        releaseEntry(key, entry);
       }
     });
     return future;
   }
 
-  @Override
-  public CompletableFuture<DeleteResponse> delete(final DeleteRequest request) {
-    context.checkThread();
-    logRequest(request);
-
-    CompletableFuture<DeleteResponse> future = new CompletableFuture<>();
-    final Buffer key = request.key();
-    final long term = context.getTerm();
-    final long index;
-    try (RaftEntry logEntry = context.log().createEntry()) {
-      logEntry.writeType(RaftEntry.Type.TOMBSTONE)
-        .writeTerm(term)
-        .writeKey(key)
-        .writeEntry(EMPTY_BUFFER);
-      index = logEntry.index();
+  /**
+   * Commits a submit entry to the commit handler.
+   */
+  private CompletableFuture<SubmitResponse> commitSubmitEntry(Buffer key, Buffer entry, CompletableFuture<SubmitResponse> future) {
+    Buffer buffer = BUFFER_POOL.get().acquire();
+    try {
+      context.commit(key, entry, buffer);
+      future.complete(logResponse(SubmitResponse.builder()
+        .withStatus(Response.Status.OK)
+        .withResult(buffer.flip())
+        .build()));
+      buffer.release();
+    } catch (Exception e) {
+      future.complete(logResponse(SubmitResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.APPLICATION_ERROR)
+        .build()));
+      buffer.close();
     }
-
-    LOGGER.debug("{} - Appended entry to log at index {}", context.getCluster().member().id(), index);
-    LOGGER.debug("{} - Replicating logs up to index {} for write", context.getCluster().member().id(), index);
-
-    // Attempt to replicate the entry to a quorum of the cluster.
-    request.acquire();
-    replicator.commit(index).whenComplete((resultIndex, error) -> {
-      context.checkThread();
-      if (isOpen()) {
-        if (error == null) {
-          try {
-            RESULT.clear();
-            context.commit(key, EMPTY_BUFFER, RESULT);
-            future.complete(logResponse(DeleteResponse.builder()
-              .withStatus(Response.Status.OK)
-              .withResult(RESULT.flip())
-              .build()));
-          } catch (Exception e) {
-            future.complete(logResponse(DeleteResponse.builder()
-              .withStatus(Response.Status.ERROR)
-              .withError(RaftError.Type.APPLICATION_ERROR)
-              .build()));
-          } finally {
-            context.setLastApplied(index);
-            request.release();
-          }
-        } else {
-          future.complete(logResponse(DeleteResponse.builder()
-            .withStatus(Response.Status.ERROR)
-            .withError(RaftError.Type.DELETE_ERROR)
-            .build()));
-          request.release();
-        }
-      } else {
-        request.release();
-      }
-    });
     return future;
+  }
+
+  /**
+   * Acquires a reference to a key and entry.
+   */
+  private static void acquireEntry(Buffer key, Buffer entry) {
+    if (key != null)
+      key.acquire();
+    if (entry != null)
+      entry.acquire();
+  }
+
+  /**
+   * Releases a reference to a key and entry.
+   */
+  private static void releaseEntry(Buffer key, Buffer entry) {
+    if (key != null)
+      key.release();
+    if (entry != null)
+      entry.release();
   }
 
   /**
@@ -372,8 +363,8 @@ class LeaderState extends ActiveState {
     private final List<Replica> replicas = new ArrayList<>();
     private final List<Long> commitTimes = new ArrayList<>();
     private long commitTime;
-    private CompletableFuture<Void> commitFuture;
-    private CompletableFuture<Void> nextCommitFuture;
+    private CompletableFuture<Long> commitFuture;
+    private CompletableFuture<Long> nextCommitFuture;
     private final TreeMap<Long, CompletableFuture<Long>> commitFutures = new TreeMap<>();
     private int quorum;
     private int quorumIndex;
@@ -417,7 +408,7 @@ class LeaderState extends ActiveState {
      *
      * @return A completable future to be completed the next time entries are committed to a majority of the cluster.
      */
-    private CompletableFuture<Void> commit() {
+    private CompletableFuture<Long> commit() {
       if (commitFuture == null) {
         commitFuture = new CompletableFuture<>();
         commitTime = System.currentTimeMillis();
@@ -438,6 +429,8 @@ class LeaderState extends ActiveState {
      * @return A completable future to be completed once the given log index has been committed.
      */
     private CompletableFuture<Long> commit(long index) {
+      if (index == 0)
+        return commit();
       return commitFutures.computeIfAbsent(index, i -> {
         replicas.forEach(Replica::commit);
         return new CompletableFuture<>();

@@ -17,7 +17,11 @@ package net.kuujo.copycat.protocol.raft;
 
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.BufferPool;
 import net.kuujo.copycat.io.HeapBuffer;
+import net.kuujo.copycat.io.HeapBufferPool;
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.protocol.raft.rpc.*;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
 
@@ -32,6 +36,13 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 class PassiveState extends RaftState {
+  protected static final ThreadLocal<BufferPool> BUFFER_POOL = new ThreadLocal<BufferPool>() {
+    @Override
+    protected BufferPool initialValue() {
+      return new HeapBufferPool();
+    }
+  };
+
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
   protected final Buffer KEY = HeapBuffer.allocate(1024, 1024 * 1024);
@@ -255,39 +266,26 @@ class PassiveState extends RaftState {
   }
 
   @Override
-  public CompletableFuture<ReadResponse> read(ReadRequest request) {
+  protected CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     context.checkThread();
     logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(ReadResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
 
-  @Override
-  public CompletableFuture<WriteResponse> write(WriteRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(WriteResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  public CompletableFuture<DeleteResponse> delete(DeleteRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(DeleteResponse.builder()
+    if (request.persistence() == Persistence.NONE && request.consistency() == Consistency.EVENTUAL) {
+      Buffer result = BUFFER_POOL.get().acquire();
+      try {
+        context.commit(request.key(), request.entry(), result);
+        return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
+          .withStatus(Response.Status.OK)
+          .withResult(result.flip())
+          .build()));
+      } catch (Exception e) {
+        return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
+          .withStatus(Response.Status.ERROR)
+          .withError(RaftError.Type.APPLICATION_ERROR)
+          .build()));
+      }
+    } else if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));

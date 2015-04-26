@@ -43,12 +43,7 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     /**
      * Command entry.
      */
-    COMMAND(1),
-
-    /**
-     * Tomb stone entry.
-     */
-    TOMBSTONE(-1);
+    COMMAND(1);
 
     /**
      * Returns the entry type for the given identifier.
@@ -63,8 +58,6 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
           return NOOP;
         case 1:
           return COMMAND;
-        case -1:
-          return TOMBSTONE;
       }
       throw new IllegalArgumentException("invalid entry type identifier");
     }
@@ -85,10 +78,66 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     }
   }
 
+  /**
+   * Raft entry mode.
+   */
+  public static enum Mode {
+
+    /**
+     * Ephemeral mode.
+     */
+    EPHEMERAL(-1),
+
+    /**
+     * Durable mode.
+     */
+    DURABLE(0),
+
+    /**
+     * Persistent mode.
+     */
+    PERSISTENT(1);
+
+    /**
+     * Returns the entry mode for the given identifier.
+     *
+     * @param id The entry mode identifier.
+     * @return The entry mode.
+     * @throws IllegalArgumentException If the entry mode identifier is invalid.
+     */
+    public static Mode forId(int id) {
+      switch (id) {
+        case -1:
+          return EPHEMERAL;
+        case 0:
+          return DURABLE;
+        case 1:
+          return PERSISTENT;
+      }
+      throw new IllegalArgumentException("invalid entry type identifier");
+    }
+
+    private final byte id;
+
+    private Mode(int id) {
+      this.id = (byte) id;
+    }
+
+    /**
+     * Returns the entry mode identifier.
+     *
+     * @return The 1-byte entry mode identifier.
+     */
+    public byte id() {
+      return id;
+    }
+  }
+
   private final ReferenceManager<RaftEntry> referenceManager;
   private final AtomicInteger references = new AtomicInteger();
   private boolean readOnly;
   private Type type;
+  private Mode mode;
   private long index;
   private long term;
   private final Buffer key = HeapBuffer.allocate(1024, 1024 * 1024);
@@ -166,6 +215,28 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
   }
 
   /**
+   * Reads the entry persistence mode.
+   *
+   * @return The entry mode.
+   */
+  public Mode readMode() {
+    return mode;
+  }
+
+  /**
+   * Writes the entry persistence mode.
+   *
+   * @param mode The entry persistence mode.
+   * @return The Raft entry.
+   */
+  public RaftEntry writeMode(Mode mode) {
+    if (readOnly)
+      throw new IllegalStateException("entry is read-only");
+    this.mode = mode;
+    return this;
+  }
+
+  /**
    * Reads the entry term.
    *
    * @return The entry term.
@@ -194,7 +265,8 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
    * @return The entry.
    */
   public RaftEntry readKey(Buffer buffer) {
-    key.mark().read(buffer).reset();
+    if (buffer != null)
+      key.mark().read(buffer).reset();
     return this;
   }
 
@@ -207,7 +279,8 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
   public RaftEntry writeKey(Buffer buffer) {
     if (readOnly)
       throw new IllegalStateException("entry is read-only");
-    key.write(buffer);
+    if (buffer != null)
+      key.write(buffer);
     return this;
   }
 
@@ -218,7 +291,8 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
    * @return The entry.
    */
   public RaftEntry readEntry(Buffer buffer) {
-    entry.mark().read(buffer).reset();
+    if (buffer != null)
+      entry.mark().read(buffer).reset();
     return this;
   }
 
@@ -231,7 +305,8 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
   public RaftEntry writeEntry(Buffer buffer) {
     if (readOnly)
       throw new IllegalStateException("entry is read-only");
-    entry.write(buffer);
+    if (buffer != null)
+      entry.write(buffer);
     return this;
   }
 
@@ -243,6 +318,7 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
    */
   public RaftEntry read(RaftEntry entry) {
     entry.type = type;
+    entry.mode = mode;
     entry.term = term;
     entry.key.write(key);
     entry.entry.write(key);
@@ -259,6 +335,7 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     if (readOnly)
       throw new IllegalStateException("entry is read-only");
     type = entry.type;
+    mode = entry.mode;
     term = entry.term;
     key.write(entry.key);
     this.entry.write(entry.entry);
@@ -291,6 +368,7 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     if (!readOnly)
       throw new IllegalStateException("entry must be read-only");
     buffer.writeByte(type.id)
+      .writeByte(mode.id)
       .writeLong(term)
       .writeInt((int) key.remaining())
       .write(key)
@@ -301,6 +379,7 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
   @Override
   public void readObject(Buffer buffer) {
     type = Type.forId(buffer.readByte());
+    mode = Mode.forId(buffer.readByte());
     term = buffer.readLong();
     int keySize = buffer.readInt();
     buffer.read(key.limit(keySize));

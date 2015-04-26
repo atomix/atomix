@@ -17,21 +17,55 @@ package net.kuujo.copycat.protocol.raft.rpc;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.util.ReferenceManager;
+import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * Protocol command request.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class CommandRequest<REQUEST extends CommandRequest<REQUEST>> extends AbstractRequest<REQUEST> {
-  protected Buffer key;
-  protected Buffer entry;
+public class SubmitRequest extends AbstractRequest<SubmitRequest> {
+  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
+    @Override
+    protected Builder initialValue() {
+      return new Builder();
+    }
+  };
 
-  public CommandRequest(ReferenceManager<REQUEST> referenceManager) {
+  /**
+   * Returns a new submit request builder.
+   *
+   * @return A new submit request builder.
+   */
+  public static Builder builder() {
+    return builder.get().reset();
+  }
+
+  /**
+   * Returns a submit request builder for an existing request.
+   *
+   * @param request The request to build.
+   * @return The submit request builder.
+   */
+  public static Builder builder(SubmitRequest request) {
+    return builder.get().reset(request);
+  }
+
+  private Buffer key;
+  private Buffer entry;
+  private Persistence persistence = Persistence.DEFAULT;
+  private Consistency consistency = Consistency.DEFAULT;
+
+  public SubmitRequest(ReferenceManager<SubmitRequest> referenceManager) {
     super(referenceManager);
+  }
+
+  @Override
+  public Type type() {
+    return Type.SUBMIT;
   }
 
   /**
@@ -52,8 +86,28 @@ public abstract class CommandRequest<REQUEST extends CommandRequest<REQUEST>> ex
     return entry;
   }
 
+  /**
+   * Returns the command persistence level.
+   *
+   * @return The command persistence level.
+   */
+  public Persistence persistence() {
+    return persistence;
+  }
+
+  /**
+   * Returns the command consistency level.
+   *
+   * @return The command consistency level.
+   */
+  public Consistency consistency() {
+    return consistency;
+  }
+
   @Override
   public void readObject(Buffer buffer) {
+    persistence = Persistence.values()[buffer.readByte()];
+    consistency = Consistency.values()[buffer.readByte()];
     int keySize = buffer.readInt();
     if (keySize > -1) {
       key = buffer.slice(keySize);
@@ -65,6 +119,8 @@ public abstract class CommandRequest<REQUEST extends CommandRequest<REQUEST>> ex
 
   @Override
   public void writeObject(Buffer buffer) {
+    buffer.writeByte(persistence.ordinal());
+    buffer.writeByte(consistency.ordinal());
     if (key != null) {
       buffer.writeInt((int) key.limit()).write(key);
     } else {
@@ -84,13 +140,13 @@ public abstract class CommandRequest<REQUEST extends CommandRequest<REQUEST>> ex
 
   @Override
   public int hashCode() {
-    return Objects.hash(entry);
+    return Objects.hash(key, entry, persistence, consistency);
   }
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof CommandRequest) {
-      CommandRequest request = (CommandRequest) object;
+    if (object instanceof SubmitRequest) {
+      SubmitRequest request = (SubmitRequest) object;
       return ((request.key == null && key == null) || (request.key != null && key != null && request.key.equals(key)))
         && request.entry.equals(entry);
     }
@@ -99,16 +155,16 @@ public abstract class CommandRequest<REQUEST extends CommandRequest<REQUEST>> ex
 
   @Override
   public String toString() {
-    return String.format("%s[entry=%s]", getClass().getSimpleName(), entry.toString());
+    return String.format("%s[key=%s, entry=%s, persistence=%s, consistency=%s]", getClass().getSimpleName(), key, entry, persistence, consistency);
   }
 
   /**
    * Write request builder.
    */
-  public static abstract class Builder<BUILDER extends Builder<BUILDER, REQUEST>, REQUEST extends CommandRequest<REQUEST>> extends AbstractRequest.Builder<BUILDER, REQUEST> {
+  public static class Builder extends AbstractRequest.Builder<Builder, SubmitRequest> {
 
-    protected Builder(Function<ReferenceManager<REQUEST>, REQUEST> factory) {
-      super(factory);
+    protected Builder() {
+      super(SubmitRequest::new);
     }
 
     /**
@@ -118,9 +174,9 @@ public abstract class CommandRequest<REQUEST extends CommandRequest<REQUEST>> ex
      * @return The request builder.
      */
     @SuppressWarnings("unchecked")
-    public BUILDER withKey(Buffer key) {
+    public Builder withKey(Buffer key) {
       request.key = key;
-      return (BUILDER) this;
+      return this;
     }
 
     /**
@@ -130,15 +186,41 @@ public abstract class CommandRequest<REQUEST extends CommandRequest<REQUEST>> ex
      * @return The request builder.
      */
     @SuppressWarnings("unchecked")
-    public BUILDER withEntry(Buffer entry) {
+    public Builder withEntry(Buffer entry) {
       if (entry == null)
         throw new NullPointerException("entry cannot be null");
       request.entry = entry;
-      return (BUILDER) this;
+      return this;
+    }
+
+    /**
+     * Sets the request persistence level.
+     *
+     * @param persistence The request persistence level.
+     * @return The request builder.
+     */
+    public Builder withPersistence(Persistence persistence) {
+      if (persistence == null)
+        throw new NullPointerException("persistence cannot be null");
+      request.persistence = persistence;
+      return this;
+    }
+
+    /**
+     * Sets the request consistency level.
+     *
+     * @param consistency The request consistency level.
+     * @return The request builder.
+     */
+    public Builder withConsistency(Consistency consistency) {
+      if (consistency == null)
+        throw new NullPointerException("consistency cannot be null");
+      request.consistency = consistency;
+      return this;
     }
 
     @Override
-    public REQUEST build() {
+    public SubmitRequest build() {
       super.build();
       if (request.key != null)
         request.key.acquire();

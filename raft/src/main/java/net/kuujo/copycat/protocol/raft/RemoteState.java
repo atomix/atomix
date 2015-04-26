@@ -133,39 +133,11 @@ public class RemoteState extends RaftState {
   }
 
   @Override
-  public CompletableFuture<ReadResponse> read(ReadRequest request) {
+  public CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     context.checkThread();
     logRequest(request);
     if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(ReadResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  public CompletableFuture<WriteResponse> write(WriteRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(WriteResponse.builder()
-        .withStatus(Response.Status.ERROR)
-        .withError(RaftError.Type.NO_LEADER_ERROR)
-        .build()));
-    } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
-    }
-  }
-
-  @Override
-  public CompletableFuture<DeleteResponse> delete(DeleteRequest request) {
-    context.checkThread();
-    logRequest(request);
-    if (context.getLeader() == 0) {
-      return CompletableFuture.completedFuture(logResponse(DeleteResponse.builder()
+      return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
         .withStatus(Response.Status.ERROR)
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));

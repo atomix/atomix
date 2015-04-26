@@ -39,6 +39,7 @@ import java.util.ConcurrentModificationException;
  */
 public class Segment implements AutoCloseable {
   private static final int ENTRY_TYPE_SIZE = 1;
+  private static final int ENTRY_MODE_SIZE = 1;
   private static final int ENTRY_TERM_SIZE = 8;
   private static final int KEY_LENGTH_SIZE = 2;
 
@@ -62,6 +63,7 @@ public class Segment implements AutoCloseable {
   private final RaftEntryPool entryPool = new CommittingRaftEntryPool();
   private long commitIndex = 0;
   private long recycleIndex = 0;
+  private int firstLastOffset;
   private long skip = 0;
   private boolean open = true;
   private boolean entryLock;
@@ -80,7 +82,8 @@ public class Segment implements AutoCloseable {
     this.descriptor = descriptor;
     this.offsetIndex = offsetIndex;
     if (offsetIndex.size() > 0) {
-      writeBuffer.position(offsetIndex.position(offsetIndex.lastOffset()));
+      firstLastOffset = offsetIndex.lastOffset();
+      writeBuffer.position(offsetIndex.position(firstLastOffset));
     }
   }
 
@@ -232,31 +235,38 @@ public class Segment implements AutoCloseable {
   }
 
   /**
+   * Returns the absolute entry mode position for the entry at the given position.
+   */
+  private long entryModePosition(long position) {
+    return position + ENTRY_TYPE_SIZE;
+  }
+
+  /**
    * Returns the absolute entry term position for the entry at the given position.
    */
   private long entryTermPosition(long position) {
-    return position + ENTRY_TYPE_SIZE;
+    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE;
   }
 
   /**
    * Returns the absolute key length position for the entry at the given position.
    */
   private long keyLengthPosition(long position) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_TERM_SIZE;
+    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE;
   }
 
   /**
    * Returns the absolute key position for the entry at the given position.
    */
   private long keyPosition(long position) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_TERM_SIZE + KEY_LENGTH_SIZE;
+    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE + KEY_LENGTH_SIZE;
   }
 
   /**
    * Returns the absolute entry position for the entry at the given position.
    */
   private long entryPosition(long position, int keyLength) {
-    return position + ENTRY_TYPE_SIZE + ENTRY_TERM_SIZE + KEY_LENGTH_SIZE + Math.max(keyLength, 0);
+    return position + ENTRY_TYPE_SIZE + ENTRY_MODE_SIZE + ENTRY_TERM_SIZE + KEY_LENGTH_SIZE + Math.max(keyLength, 0);
   }
 
   /**
@@ -284,7 +294,10 @@ public class Segment implements AutoCloseable {
     long position = writeBuffer.position();
 
     // Write the entry type identifier and 16-bit signed key size.
-    writeBuffer.limit(-1).writeByte(entry.readType().id()).writeLong(entry.readTerm());
+    writeBuffer.limit(-1)
+      .writeByte(entry.readType().id())
+      .writeByte(entry.readMode().id())
+      .writeLong(entry.readTerm());
 
     long keyLengthPosition = writeBuffer.position();
     writeBuffer.skip(2);
@@ -343,9 +356,20 @@ public class Segment implements AutoCloseable {
       // position of the next offset in the index and subtracting this position from the next position.
       int length = offsetIndex.length(offset);
 
+      // Read the entry type and mode from the buffer.
+      RaftEntry.Type type = RaftEntry.Type.forId(readBuffer.readByte(entryTypePosition(position)));
+      RaftEntry.Mode mode = RaftEntry.Mode.forId(readBuffer.readByte(entryModePosition(position)));
+
+      // If the entry is ephemeral and its offset is less than or equal to the starting last offset then pretend the
+      // entry doesn't exist. The entry should be removed during log compaction.
+      if (mode == RaftEntry.Mode.EPHEMERAL && firstLastOffset >= offset) {
+        return null;
+      }
+
       // Acquire an entry from the entry pool. This will create an entry if all entries in the pool are currently referenced.
       RaftEntry entry = entryPool.acquire(index);
-      entry.writeType(RaftEntry.Type.forId(readBuffer.readByte(entryTypePosition(position))));
+      entry.writeType(type);
+      entry.writeMode(mode);
       entry.writeTerm(readBuffer.readLong(entryTermPosition(position)));
 
       // Reset the pooled entry with a slice of the underlying buffer using the entry position and length.

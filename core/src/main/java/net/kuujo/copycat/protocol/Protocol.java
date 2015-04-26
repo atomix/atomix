@@ -95,97 +95,82 @@ public abstract class Protocol implements Managed<Protocol> {
   }
 
   /**
-   * Submits a read to the protocol.
+   * Submits a keyless command to the protocol.
    *
-   * @param entry The read entry.
-   * @return A completable future to be completed with the read result.
+   * @param entry The command entry.
+   * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> read(Buffer entry) {
-    return read(null, entry, Consistency.DEFAULT);
+  public CompletableFuture<Buffer> submit(Buffer entry) {
+    return submit(null, entry, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
   /**
-   * Submits a read to the protocol.
+   * Submits a keyless command to the protocol with the default consistency level.
    *
-   * @param key The read key.
-   * @param entry The read entry.
-   * @return A completable future to be completed with the read result.
+   * @param entry The command entry.
+   * @param persistence The command persistence level.
+   * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> read(Buffer key, Buffer entry) {
-    return read(key, entry, Consistency.DEFAULT);
+  public CompletableFuture<Buffer> submit(Buffer entry, Persistence persistence) {
+    return submit(null, entry, persistence, Consistency.DEFAULT);
   }
 
   /**
-   * Submits a read to the protocol.
+   * Submits a keyless command to the protocol with the default persistence level.
    *
-   * @param key The read key.
-   * @param entry The read entry.
-   * @param consistency The read consistency.
-   * @return A completable future to be completed with the read result.
+   * @param entry The command entry.
+   * @param consistency The command consistency requirement.
+   * @return A completable future to be completed with the command result.
    */
-  public abstract CompletableFuture<Buffer> read(Buffer key, Buffer entry, Consistency consistency);
-
-  /**
-   * Submits a write to the protocol.
-   *
-   * @param entry The write entry.
-   * @return A completable future to be completed with the write result.
-   */
-  public CompletableFuture<Buffer> write(Buffer entry) {
-    return write(null, entry, Consistency.DEFAULT);
+  public CompletableFuture<Buffer> submit(Buffer entry, Consistency consistency) {
+    return submit(null, entry, Persistence.DEFAULT, consistency);
   }
 
   /**
-   * Submits a write to the protocol.
+   * Submits a command to the protocol with the default persistence and consistency levels.
    *
-   * @param key The write key.
-   * @param entry The write entry.
-   * @return A completable future to be completed with the write result.
+   * @param key The command key.
+   * @param entry The command entry.
+   * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> write(Buffer key, Buffer entry) {
-    return write(key, entry, Consistency.DEFAULT);
+  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry) {
+    return submit(key, entry, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
   /**
-   * Submits a write to the protocol.
+   * Submits a command to the protocol with the default consistency level.
    *
-   * @param key The write key.
-   * @param entry The write entry.
-   * @param consistency The write consistency.
-   * @return A completable future to be completed with the write result.
+   * @param key The command key.
+   * @param entry The command entry.
+   * @param persistence The command persistence level.
+   * @return A completable future to be completed with the command result.
    */
-  public abstract CompletableFuture<Buffer> write(Buffer key, Buffer entry, Consistency consistency);
-
-  /**
-   * Submits a delete to the protocol.
-   *
-   * @param entry The delete entry.
-   * @return A completable future to be completed with the delete result.
-   */
-  public CompletableFuture<Buffer> delete(Buffer entry) {
-    return delete(null, entry, Consistency.DEFAULT);
+  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence) {
+    return submit(key, entry, persistence, Consistency.DEFAULT);
   }
 
   /**
-   * Submits a delete to the protocol.
+   * Submits a command to the protocol with the default persistence level.
    *
-   * @param key The delete key.
-   * @param entry The delete entry.
-   * @return A completable future to be completed with the delete result.
+   * @param key The command key.
+   * @param entry The command entry.
+   * @param consistency The command consistency requirement.
+   * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> delete(Buffer key, Buffer entry) {
-    return delete(key, entry, Consistency.DEFAULT);
+  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Consistency consistency) {
+    return submit(key, entry, Persistence.DEFAULT, consistency);
   }
 
   /**
-   * Submits a delete to the protocol.
+   * Submits a command to the protocol.
    *
-   * @param key The delete key.
-   * @param entry The delete entry.
-   * @param consistency The delete consistency.
-   * @return A completable future to be completed with the delete result.
+   * @param key The command key.
+   * @param entry The command entry.
+   * @param persistence The command persistence level.
+   * @param consistency The command consistency requirement.
+   * @return A completable future to be completed with the command result.
    */
-  public abstract CompletableFuture<Buffer> delete(Buffer key, Buffer entry, Consistency consistency);
+  public abstract CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence, Consistency consistency);
 
   /**
    * Registers a protocol commit handler.
@@ -193,7 +178,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param handler The protocol commit handler.
    * @return The protocol.
    */
-  public abstract Protocol commit(CommitHandler handler);
+  public abstract Protocol commitHandler(CommitHandler handler);
 
   /**
    * Protocol builder.

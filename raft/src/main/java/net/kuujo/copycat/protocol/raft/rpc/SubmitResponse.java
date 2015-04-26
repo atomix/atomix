@@ -20,18 +20,48 @@ import net.kuujo.copycat.io.util.ReferenceManager;
 import net.kuujo.copycat.protocol.raft.RaftError;
 
 import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * Protocol command response.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class CommandResponse<RESPONSE extends CommandResponse<RESPONSE>> extends AbstractResponse<RESPONSE> {
-  protected Buffer result;
+public class SubmitResponse extends AbstractResponse<SubmitResponse> {
+  private static final ThreadLocal<Builder> builder = new ThreadLocal<Builder>() {
+    @Override
+    protected Builder initialValue() {
+      return new Builder();
+    }
+  };
 
-  public CommandResponse(ReferenceManager<RESPONSE> referenceManager) {
+  /**
+   * Returns a new submit response builder.
+   *
+   * @return A new submit response builder.
+   */
+  public static Builder builder() {
+    return builder.get().reset();
+  }
+
+  /**
+   * Returns a submit response builder for an existing request.
+   *
+   * @param request The response to build.
+   * @return The submit response builder.
+   */
+  public static Builder builder(SubmitResponse request) {
+    return builder.get().reset(request);
+  }
+
+  private Buffer result;
+
+  public SubmitResponse(ReferenceManager<SubmitResponse> referenceManager) {
     super(referenceManager);
+  }
+
+  @Override
+  public Type type() {
+    return Type.SUBMIT;
   }
 
   /**
@@ -78,8 +108,8 @@ public abstract class CommandResponse<RESPONSE extends CommandResponse<RESPONSE>
 
   @Override
   public boolean equals(Object object) {
-    if (object instanceof CommandResponse) {
-      CommandResponse response = (CommandResponse) object;
+    if (object instanceof SubmitResponse) {
+      SubmitResponse response = (SubmitResponse) object;
       return response.status == status
         && ((response.result == null && result == null)
         || response.result != null && result != null && response.result.equals(result));
@@ -95,10 +125,10 @@ public abstract class CommandResponse<RESPONSE extends CommandResponse<RESPONSE>
   /**
    * Command response builder.
    */
-  public static class Builder<BUILDER extends Builder<BUILDER, RESPONSE>, RESPONSE extends CommandResponse<RESPONSE>> extends AbstractResponse.Builder<BUILDER, RESPONSE> {
+  public static class Builder extends AbstractResponse.Builder<Builder, SubmitResponse> {
 
-    protected Builder(Function<ReferenceManager<RESPONSE>, RESPONSE> factory) {
-      super(factory);
+    private Builder() {
+      super(SubmitResponse::new);
     }
 
     /**
@@ -108,13 +138,13 @@ public abstract class CommandResponse<RESPONSE extends CommandResponse<RESPONSE>
      * @return The response builder.
      */
     @SuppressWarnings("unchecked")
-    public BUILDER withResult(Buffer result) {
+    public Builder withResult(Buffer result) {
       response.result = result;
-      return (BUILDER) this;
+      return this;
     }
 
     @Override
-    public RESPONSE build() {
+    public SubmitResponse build() {
       super.build();
       if (response.result != null)
         response.result.acquire();

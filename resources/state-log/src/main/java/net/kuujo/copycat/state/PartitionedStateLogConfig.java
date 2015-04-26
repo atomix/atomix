@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
 import java.util.HashMap;
@@ -56,21 +57,10 @@ public class PartitionedStateLogConfig extends PartitionedResourceConfig {
    * @param name The command name.
    * @param type The command type.
    * @param command The command.
-   */
-  protected void addCommand(String name, Command.Type type, Command command) {
-    commands.put(name, new CommandInfo(name, type, command, null));
-  }
-
-  /**
-   * Adds a command to the state log.
-   *
-   * @param name The command name.
-   * @param type The command type.
-   * @param command The command.
    * @param consistency The command consistency.
    */
-  protected void addCommand(String name, Command.Type type, Command command, Consistency consistency) {
-    commands.put(name, new CommandInfo(name, type, command, consistency));
+  protected void addCommand(String name, Command.Type type, Command command, Persistence persistence, Consistency consistency) {
+    commands.put(name, new CommandInfo(name, type, command, persistence, consistency));
   }
 
   /**

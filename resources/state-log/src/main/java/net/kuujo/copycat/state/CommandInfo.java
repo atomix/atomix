@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 
 /**
  * Command info.
@@ -26,12 +27,14 @@ public class CommandInfo {
   private final String name;
   private final Command.Type type;
   private final Command command;
+  private final Persistence persistence;
   private final Consistency consistency;
 
-  CommandInfo(String name, Command.Type type, Command command, Consistency consistency) {
+  CommandInfo(String name, Command.Type type, Command command, Persistence persistence, Consistency consistency) {
     this.name = name;
     this.type = type;
     this.command = command;
+    this.persistence = persistence;
     this.consistency = consistency;
   }
 
@@ -60,6 +63,15 @@ public class CommandInfo {
    */
   public Command command() {
     return command;
+  }
+
+  /**
+   * Returns the command persistence level.
+   *
+   * @return The command persistence level.
+   */
+  public Persistence persistence() {
+    return persistence;
   }
 
   /**

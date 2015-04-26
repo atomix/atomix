@@ -56,17 +56,7 @@ class StartState extends RaftState {
   }
 
   @Override
-  protected CompletableFuture<WriteResponse> write(WriteRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<ReadResponse> read(ReadRequest request) {
-    return exceptionalFuture(new IllegalStateException("inactive state"));
-  }
-
-  @Override
-  protected CompletableFuture<DeleteResponse> delete(DeleteRequest request) {
+  protected CompletableFuture<SubmitResponse> submit(SubmitRequest request) {
     return exceptionalFuture(new IllegalStateException("inactive state"));
   }
 

@@ -17,6 +17,7 @@ package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.Partition;
 import net.kuujo.copycat.resource.PartitionedResourceConfig;
 
@@ -91,8 +92,8 @@ public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implement
    * @return The state log.
    */
   @SuppressWarnings("unchecked")
-  protected StateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command, Consistency consistency) {
-    stateLog.register(name, type, command, consistency);
+  protected StateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command, Persistence persistence, Consistency consistency) {
+    stateLog.register(name, type, command, persistence, consistency);
     return this;
   }
 

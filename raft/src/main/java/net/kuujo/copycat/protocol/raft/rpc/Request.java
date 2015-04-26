@@ -51,19 +51,9 @@ public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCoun
     VOTE,
 
     /**
-     * Write request.
+     * Submit request.
      */
-    WRITE,
-
-    /**
-     * Read request.
-     */
-    READ,
-
-    /**
-     * Delete request.
-     */
-    DELETE,
+    SUBMIT,
 
     /**
      * Status request.

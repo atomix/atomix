@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.PartitionedResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,10 +73,10 @@ public class PartitionedStateLog<K, V> extends PartitionedResource<PartitionedSt
    * @return The state log.
    */
   @SuppressWarnings("unchecked")
-  protected StateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command, Consistency consistency) {
+  protected StateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command, Persistence persistence, Consistency consistency) {
     if (!isClosed())
       throw new IllegalStateException("cannot register command on open state log");
-    partitions.forEach(p -> p.register(name, type, command, consistency));
+    partitions.forEach(p -> p.register(name, type, command, persistence, consistency));
     LOGGER.debug("{} - Registered state log command {}", this.name, name);
     return this;
   }
@@ -139,7 +140,21 @@ public class PartitionedStateLog<K, V> extends PartitionedResource<PartitionedSt
      * @return The state log builder.
      */
     public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command) {
-      config.addCommand(name, type, command);
+      config.addCommand(name, type, command, null, null);
+      return this;
+    }
+
+    /**
+     * Adds a command to the state log.
+     *
+     * @param name The command name.
+     * @param type The command type.
+     * @param command The command to add.
+     * @param persistence The command persistence level.
+     * @return The state log builder.
+     */
+    public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command, Persistence persistence) {
+      config.addCommand(name, type, command, persistence, null);
       return this;
     }
 
@@ -153,7 +168,22 @@ public class PartitionedStateLog<K, V> extends PartitionedResource<PartitionedSt
      * @return The state log builder.
      */
     public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command, Consistency consistency) {
-      config.addCommand(name, type, command, consistency);
+      config.addCommand(name, type, command, null, consistency);
+      return this;
+    }
+
+    /**
+     * Adds a command to the state log.
+     *
+     * @param name The command name.
+     * @param type The command type.
+     * @param command The command to add.
+     * @param persistence The command persistence level.
+     * @param consistency The command consistency.
+     * @return The state log builder.
+     */
+    public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command, Persistence persistence, Consistency consistency) {
+      config.addCommand(name, type, command, persistence, consistency);
       return this;
     }
 

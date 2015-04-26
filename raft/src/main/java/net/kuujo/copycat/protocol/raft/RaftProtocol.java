@@ -18,7 +18,8 @@ package net.kuujo.copycat.protocol.raft;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.protocol.*;
-import net.kuujo.copycat.protocol.raft.rpc.*;
+import net.kuujo.copycat.protocol.raft.rpc.Response;
+import net.kuujo.copycat.protocol.raft.rpc.SubmitRequest;
 import net.kuujo.copycat.protocol.raft.storage.RaftStorage;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.ThreadChecker;
@@ -260,8 +261,13 @@ public class RaftProtocol extends Protocol {
       throw new IllegalArgumentException("commit index must be positive");
     if (commitIndex < this.commitIndex)
       throw new IllegalArgumentException("cannot decrease commit index");
-    if (firstCommitIndex == 0)
-      firstCommitIndex = commitIndex;
+    if (firstCommitIndex == 0) {
+      if (commitIndex == 0) {
+        recovering = false;
+      } else {
+        firstCommitIndex = commitIndex;
+      }
+    }
     this.commitIndex = commitIndex;
     return this;
   }
@@ -356,7 +362,7 @@ public class RaftProtocol extends Protocol {
   }
 
   @Override
-  public Protocol commit(CommitHandler handler) {
+  public Protocol commitHandler(CommitHandler handler) {
     this.commitHandler = handler;
     return this;
   }
@@ -393,98 +399,33 @@ public class RaftProtocol extends Protocol {
   }
 
   @Override
-  public CompletableFuture<Buffer> read(Buffer key, Buffer entry, Consistency consistency) {
+  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence, Consistency consistency) {
     if (!open)
       throw new IllegalStateException("protocol not open");
 
     CompletableFuture<Buffer> future = new CompletableFuture<>();
-    ReadRequest request = ReadRequest.builder()
+    SubmitRequest request = SubmitRequest.builder()
       .withKey(key)
       .withEntry(entry)
+      .withPersistence(persistence)
       .withConsistency(consistency)
       .build();
-    this.<ReadRequest, ReadResponse>runOnContext(request, state).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
-        } else {
-          future.completeExceptionally(response.error().createException());
-        }
-      } else {
-        future.completeExceptionally(error);
-      }
-      request.close();
-    });
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<Buffer> write(Buffer key, Buffer entry, Consistency consistency) {
-    if (!open)
-      throw new IllegalStateException("protocol not open");
-
-    CompletableFuture<Buffer> future = new CompletableFuture<>();
-    WriteRequest request = WriteRequest.builder()
-      .withKey(key)
-      .withEntry(entry)
-      .build();
-    this.<WriteRequest, WriteResponse>runOnContext(request, state).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
-        } else {
-          future.completeExceptionally(response.error().createException());
-        }
-      } else {
-        future.completeExceptionally(error);
-      }
-      request.close();
-    });
-    return future;
-  }
-
-  @Override
-  public CompletableFuture<Buffer> delete(Buffer key, Buffer entry, Consistency consistency) {
-    if (!open)
-      throw new IllegalStateException("protocol not open");
-
-    CompletableFuture<Buffer> future = new CompletableFuture<>();
-    DeleteRequest request = DeleteRequest.builder()
-      .withKey(key)
-      .build();
-    this.<DeleteRequest, DeleteResponse>runOnContext(request, state).whenComplete((response, error) -> {
-      if (error == null) {
-        if (response.status() == Response.Status.OK) {
-          future.complete(response.result());
-        } else {
-          future.completeExceptionally(response.error().createException());
-        }
-      } else {
-        future.completeExceptionally(error);
-      }
-      request.close();
-    });
-    return future;
-  }
-
-  /**
-   * Wraps a call to the state context in the context executor.
-   */
-  @SuppressWarnings("unchecked")
-  private <T extends Request, U extends Response> CompletableFuture<U> runOnContext(T request, RaftState state) {
-    CompletableFuture<U> future = new CompletableFuture<>();
     context.execute(() -> {
-      state.handle(request).whenComplete((response, error) -> {
+      state.submit(request).whenComplete((response, error) -> {
         if (error == null) {
-          future.complete((U) response);
+          if (response.status() == Response.Status.OK) {
+            future.complete(response.result());
+          } else {
+            future.completeExceptionally(response.error().createException());
+          }
         } else {
           future.completeExceptionally(error);
         }
+        request.close();
       });
     });
     return future;
   }
-
 
   /**
    * Transition handler.

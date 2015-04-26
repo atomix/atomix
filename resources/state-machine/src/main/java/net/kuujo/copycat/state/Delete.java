@@ -16,6 +16,7 @@
 package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -32,8 +33,13 @@ import java.lang.annotation.Target;
 public @interface Delete {
 
   /**
+   * The delete persistence level.
+   */
+  Persistence persistence() default Persistence.DURABLE;
+
+  /**
    * The delete consistency.
    */
-  Consistency consistency() default Consistency.STRONG;
+  Consistency consistency() default Consistency.STRICT;
 
 }

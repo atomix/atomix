@@ -211,6 +211,8 @@ abstract class ActiveState extends PassiveState {
           }
         }
       }
+    } else {
+      context.setCommitIndex(commitIndex);
     }
   }
 
@@ -221,8 +223,7 @@ abstract class ActiveState extends PassiveState {
     if ((context.getLastApplied() == 0 && index == context.log().firstIndex()) || (context.getLastApplied() != 0 && context.getLastApplied() == index - 1)) {
       RaftEntry entry = context.log().getEntry(index);
       if (entry != null) {
-        RaftEntry.Type type = entry.readType();
-        if (type == RaftEntry.Type.COMMAND || type == RaftEntry.Type.TOMBSTONE) {
+        if (entry.readType() == RaftEntry.Type.COMMAND) {
           entry.readKey(KEY.clear());
           entry.readEntry(ENTRY.clear());
           try {

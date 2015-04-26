@@ -90,9 +90,12 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
       try (Buffer key = NativeBuffer.allocate(1024, temp.descriptor().maxKeySize())) {
         for (long i = temp.firstIndex(); i <= temp.lastIndex(); i++) {
           try (RaftEntry entry = temp.getEntry(i)) {
-            if (entry != null && (entry.readType() != RaftEntry.Type.TOMBSTONE || segment.recycleIndex() < i)) {
-              entry.readKey(key);
-              keyTable.update(key.flip(), (int) (i - temp.firstIndex()));
+            if (entry != null) {
+              RaftEntry.Mode mode = entry.readMode();
+              if (mode == RaftEntry.Mode.PERSISTENT || (mode == RaftEntry.Mode.DURABLE && segment.recycleIndex() < i)) {
+                entry.readKey(key);
+                keyTable.update(key.flip(), (int) (i = temp.firstIndex()));
+              }
             }
           }
         }

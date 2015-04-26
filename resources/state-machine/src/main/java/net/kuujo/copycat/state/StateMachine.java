@@ -17,6 +17,7 @@ package net.kuujo.copycat.state;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.Resource;
 
 import java.lang.reflect.*;
@@ -79,17 +80,19 @@ public class StateMachine<T> implements Resource<StateMachine<T>> {
    */
   private void registerCommands() {
     for (Method method : state.getClass().getMethods()) {
-      Read query = method.getAnnotation(Read.class);
-      if (query != null) {
-        registerCommand(getCommandName(method), Command.Type.READ, wrapCommand(method), query.consistency());
+      Read read = method.getAnnotation(Read.class);
+      if (read != null) {
+        registerCommand(getCommandName(method), Command.Type.READ, wrapCommand(method), read.persistence(), read.consistency());
       } else {
         Delete delete = method.getAnnotation(Delete.class);
         if (delete != null) {
-          registerCommand(getCommandName(method), Command.Type.DELETE, wrapCommand(method), Consistency.STRONG);
+          registerCommand(getCommandName(method), Command.Type.DELETE, wrapCommand(method), delete.persistence(), delete.consistency());
         } else {
-          Write command = method.getAnnotation(Write.class);
-          if (command != null || Modifier.isPublic(method.getModifiers())) {
-            registerCommand(getCommandName(method), Command.Type.WRITE, wrapCommand(method), Consistency.STRONG);
+          Write write = method.getAnnotation(Write.class);
+          if (write != null) {
+            registerCommand(getCommandName(method), Command.Type.WRITE, wrapCommand(method), write.persistence(), write.consistency());
+          } else if (Modifier.isPublic(method.getModifiers())) {
+            registerCommand(getCommandName(method), Command.Type.WRITE, wrapCommand(method), Persistence.PERSISTENT, Consistency.STRICT);
           }
         }
       }
@@ -100,11 +103,11 @@ public class StateMachine<T> implements Resource<StateMachine<T>> {
    * Registers a state log command.
    */
   @SuppressWarnings("unchecked")
-  private void registerCommand(String name, Command.Type type, Command command, Consistency consistency) {
+  private void registerCommand(String name, Command.Type type, Command command, Persistence persistence, Consistency consistency) {
     if (log instanceof DiscreteStateLog) {
-      ((DiscreteStateLog) log).register(name, type, command, consistency);
+      ((DiscreteStateLog) log).register(name, type, command, persistence, consistency);
     } else if (log instanceof PartitionedStateLog) {
-      ((PartitionedStateLog) log).register(name, type, command, consistency);
+      ((PartitionedStateLog) log).register(name, type, command, persistence, consistency);
     }
   }
 

@@ -140,19 +140,15 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
       case STATUS:
         return status((StatusRequest) request).thenApply(RaftState::castResponse);
       case APPEND:
-        return append((AppendRequest) request).thenApply(response -> response);
+        return append((AppendRequest) request).thenApply(RaftState::castResponse);
       case SYNC:
-        return sync((SyncRequest) request).thenApply(response -> response);
+        return sync((SyncRequest) request).thenApply(RaftState::castResponse);
       case POLL:
-        return poll((PollRequest) request).thenApply(response -> response);
+        return poll((PollRequest) request).thenApply(RaftState::castResponse);
       case VOTE:
-        return vote((VoteRequest) request).thenApply(response -> response);
-      case WRITE:
-        return write((WriteRequest) request).thenApply(response -> response);
-      case READ:
-        return read((ReadRequest) request).thenApply(response -> response);
-      case DELETE:
-        return delete((DeleteRequest) request).thenApply(response -> response);
+        return vote((VoteRequest) request).thenApply(RaftState::castResponse);
+      case SUBMIT:
+        return submit((SubmitRequest) request).thenApply(RaftState::castResponse);
     }
     throw new IllegalArgumentException("invalid request type");
   }
@@ -196,19 +192,9 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
   protected abstract CompletableFuture<VoteResponse> vote(VoteRequest request);
 
   /**
-   * Handles a write request.
+   * Handles a submit request.
    */
-  protected abstract CompletableFuture<WriteResponse> write(WriteRequest request);
-
-  /**
-   * Handles a read request.
-   */
-  protected abstract CompletableFuture<ReadResponse> read(ReadRequest request);
-
-  /**
-   * Handles a delete request.
-   */
-  protected abstract CompletableFuture<DeleteResponse> delete(DeleteRequest request);
+  protected abstract CompletableFuture<SubmitResponse> submit(SubmitRequest request);
 
   @Override
   public CompletableFuture<Void> close() {

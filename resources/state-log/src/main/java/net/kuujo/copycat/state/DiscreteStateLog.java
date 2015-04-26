@@ -21,6 +21,7 @@ import net.kuujo.copycat.io.HeapBufferPool;
 import net.kuujo.copycat.io.util.HashFunctions;
 import net.kuujo.copycat.io.util.ReferencePool;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.DiscreteResource;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.slf4j.Logger;
@@ -68,15 +69,7 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
    */
   @SuppressWarnings("unchecked")
   protected DiscreteStateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command) {
-    if (!isClosed())
-      throw new IllegalStateException("cannot register command on open state log");
-    if (type == Command.Type.READ) {
-      commands.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new CommandInfo(name, type, (Command) command, defaultConsistency));
-    } else {
-      commands.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new CommandInfo(name, type, (Command) command, Consistency.STRONG));
-    }
-    LOGGER.debug("{} - Registered state log command {}", name(), name);
-    return this;
+    return register(name, type, command, null, null);
   }
 
   /**
@@ -85,20 +78,33 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
    * @param name The command name.
    * @param type The command type.
    * @param command The command function.
-   * @param consistency The operation consistency.
+   * @param persistence The command persistence.
+   * @param consistency The command consistency.
    * @return The state log.
    */
   @SuppressWarnings("unchecked")
-  protected DiscreteStateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command, Consistency consistency) {
+  protected DiscreteStateLog<K, V> register(String name, Command.Type type, Command<? extends K, ? extends V, ?> command, Persistence persistence, Consistency consistency) {
     if (!isClosed())
       throw new IllegalStateException("cannot register command on open state log");
-    if (type == Command.Type.READ) {
-      commands.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new CommandInfo(name, type, (Command) command, consistency));
-    } else {
-      if (consistency != null && consistency != Consistency.STRONG)
-        throw new IllegalArgumentException("consistency level STRONG is required for write and delete commands");
-      commands.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new CommandInfo(name, type, (Command) command, Consistency.STRONG));
+    if (name == null)
+      throw new IllegalArgumentException("name cannot be null");
+    if (type == null)
+      throw new IllegalArgumentException("type cannot be null");
+    if (command == null)
+      throw new IllegalArgumentException("command cannot be null");
+
+    switch (type) {
+      case READ:
+        commands.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new CommandInfo(name, type, (Command) command, persistence != null ? persistence : Persistence.NONE, consistency != null ? consistency : Consistency.LEASE));
+        break;
+      case WRITE:
+        commands.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new CommandInfo(name, type, (Command) command, persistence != null ? persistence : Persistence.PERSISTENT, consistency != null ? consistency : Consistency.STRICT));
+        break;
+      case DELETE:
+        commands.put(HashFunctions.CITYHASH.hash64(name.getBytes()), new CommandInfo(name, type, (Command) command, persistence != null ? persistence : Persistence.DURABLE, consistency != null ? consistency : Consistency.STRICT));
+        break;
     }
+
     LOGGER.debug("{} - Registered state log command {}", name(), name);
     return this;
   }
@@ -159,20 +165,7 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
     if (commandInfo == null) {
       return Futures.exceptionalFuture(new CopycatException(String.format("Invalid state log command %s", command)));
     }
-
-    Consistency consistency = commandInfo.consistency();
-    switch (commandInfo.type()) {
-      case READ:
-        LOGGER.debug("{} - Submitting read command {} with entry {}", name(), command, entry);
-        return protocol.read(key, entry, consistency != null ? consistency : defaultConsistency);
-      case WRITE:
-        LOGGER.debug("{} - Submitting write command {} with entry {}", name(), command, entry);
-        return protocol.write(key, entry, consistency != null ? consistency : defaultConsistency);
-      case DELETE:
-        LOGGER.debug("{} - Submitting delete command {} with entry {}", name(), command, entry);
-        return protocol.delete(key, null, consistency != null ? consistency : defaultConsistency);
-    }
-    return Futures.exceptionalFuture(new CopycatException(String.format("Invalid state log command %s", command)));
+    return protocol.submit(key, entry, commandInfo.persistence(), commandInfo.consistency());
   }
 
   @Override
@@ -220,7 +213,21 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
      * @return The state log builder.
      */
     public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command) {
-      config.addCommand(name, type, command);
+      config.addCommand(name, type, command, null, null);
+      return this;
+    }
+
+    /**
+     * Adds a command to the state log.
+     *
+     * @param name The command name.
+     * @param type The command type.
+     * @param command The command to add.
+     * @param persistence The command persistence level.
+     * @return The state log builder.
+     */
+    public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command, Persistence persistence) {
+      config.addCommand(name, type, command, persistence, null);
       return this;
     }
 
@@ -234,7 +241,22 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
      * @return The state log builder.
      */
     public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command, Consistency consistency) {
-      config.addCommand(name, type, command, consistency);
+      config.addCommand(name, type, command, null, consistency);
+      return this;
+    }
+
+    /**
+     * Adds a command to the state log.
+     *
+     * @param name The command name.
+     * @param type The command type.
+     * @param command The command to add.
+     * @param persistence The command persistence level.
+     * @param consistency The command consistency.
+     * @return The state log builder.
+     */
+    public Builder<K, V> addCommand(String name, Command.Type type, Command<K, V, ?> command, Persistence persistence, Consistency consistency) {
+      config.addCommand(name, type, command, persistence, consistency);
       return this;
     }
 
