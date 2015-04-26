@@ -17,6 +17,7 @@ package net.kuujo.copycat.resource;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Partitioned resource.
@@ -44,6 +45,29 @@ public abstract class PartitionedResource<T extends PartitionedResource<T, U, V>
    */
   protected U partition(Object key) {
     return partitions.get(partitioner.partition(key, partitions.size()));
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<V> open() {
+    return super.open().thenCompose(v -> {
+      CompletableFuture[] futures = new CompletableFuture[partitions.size()];
+      for (int i = 0; i < partitions.size(); i++) {
+        futures[i] = partitions.get(i).open();
+      }
+      return CompletableFuture.allOf(futures);
+    }).thenApply(v -> (V) this);
+  }
+
+  @Override
+  @SuppressWarnings("unchecked")
+  public CompletableFuture<Void> close() {
+    CompletableFuture[] futures = new CompletableFuture[partitions.size()];
+    for (int i = 0; i < partitions.size(); i++) {
+      futures[i] = partitions.get(i).open();
+    }
+    return CompletableFuture.allOf(futures)
+      .thenCompose(v -> super.close());
   }
 
   /**

@@ -19,6 +19,7 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.protocol.Protocol;
+import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -41,6 +42,7 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
     this.partitionedCluster = new PartitionedCluster(config.getCluster(), config.getReplicationStrategy(), config.getPartitions());
     protocol.setTopic(config.getName());
     protocol.setCluster(partitionedCluster);
+    protocol.setContext(new ExecutionContext("copycat-protocol-" + config.getName()));
   }
 
   /**

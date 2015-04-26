@@ -1349,7 +1349,6 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    */
   private RaftProtocol buildProtocol(int id, ManagedCluster cluster) throws Exception {
     RaftProtocol protocol = (RaftProtocol) RaftProtocol.builder()
-      .withContext(new ExecutionContext("test-" + id))
       .withStorage(BufferedStorage.builder()
         .withName(String.format("test-%d", id))
         .withDirectory(String.format("%s/test-%d", testDirectory, id))
@@ -1358,6 +1357,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     protocol.setCluster(cluster.open().get());
     protocol.setTopic("test");
+    protocol.setContext(new ExecutionContext("test-" + id));
     return protocol;
   }
 

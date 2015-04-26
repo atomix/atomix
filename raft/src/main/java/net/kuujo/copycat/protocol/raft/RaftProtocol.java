@@ -51,8 +51,7 @@ public class RaftProtocol extends Protocol {
   }
 
   private final Logger LOGGER = LoggerFactory.getLogger(RaftProtocol.class);
-  private final ExecutionContext context;
-  private final ThreadChecker threadChecker;
+  private ThreadChecker threadChecker;
   private final RaftConfig config;
   private RaftStorage storage;
   private RaftState state;
@@ -70,10 +69,14 @@ public class RaftProtocol extends Protocol {
   private long lastApplied = 0;
   private volatile boolean open;
 
-  protected RaftProtocol(RaftStorage storage, RaftConfig config, ExecutionContext context) {
+  protected RaftProtocol(RaftStorage storage, RaftConfig config) {
     this.storage = storage;
     this.config = config;
-    this.context = context;
+  }
+
+  @Override
+  public void setContext(ExecutionContext context) {
+    super.setContext(context);
     threadChecker = new ThreadChecker(context);
   }
 
@@ -350,15 +353,6 @@ public class RaftProtocol extends Protocol {
     return config.getHeartbeatInterval();
   }
 
-  /**
-   * Returns the context executor.
-   *
-   * @return The context executor.
-   */
-  ExecutionContext getContext() {
-    return context;
-  }
-
   @Override
   public Protocol commitHandler(CommitHandler handler) {
     this.commitHandler = handler;
@@ -547,7 +541,6 @@ public class RaftProtocol extends Protocol {
   public static class Builder extends Protocol.Builder {
     private RaftStorage storage;
     private RaftConfig config = new RaftConfig();
-    private ExecutionContext context;
 
     /**
      * Sets the Raft storage.
@@ -610,20 +603,9 @@ public class RaftProtocol extends Protocol {
       return this;
     }
 
-    /**
-     * Sets the Raft execution context.
-     *
-     * @param context The Raft execution context.
-     * @return The Raft protocol builder.
-     */
-    public Builder withContext(ExecutionContext context) {
-      this.context = context;
-      return this;
-    }
-
     @Override
     public Protocol build() {
-      return new RaftProtocol(storage, config, context);
+      return new RaftProtocol(storage, config);
     }
   }
 

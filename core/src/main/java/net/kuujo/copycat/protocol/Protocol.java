@@ -19,6 +19,7 @@ import net.kuujo.copycat.Event;
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 
 import java.util.Set;
@@ -34,6 +35,7 @@ public abstract class Protocol implements Managed<Protocol> {
   protected final Set<EventListener<Event>> listeners = new CopyOnWriteArraySet<>();
   protected String topic;
   protected Cluster cluster;
+  protected ExecutionContext context;
 
   /**
    * Sets the protocol cluster.
@@ -69,6 +71,24 @@ public abstract class Protocol implements Managed<Protocol> {
    */
   public String getTopic() {
     return topic;
+  }
+
+  /**
+   * Sets the protocol execution context.
+   *
+   * @param context The protocol execution context.
+   */
+  public void setContext(ExecutionContext context) {
+    this.context = context;
+  }
+
+  /**
+   * Returns the protocol execution context.
+   *
+   * @return The protocol execution context.
+   */
+  public ExecutionContext getContext() {
+    return context;
   }
 
   /**
