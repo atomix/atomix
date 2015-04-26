@@ -55,7 +55,7 @@ public class PartitionedReplicationStrategy implements ReplicationStrategy {
     Collections.sort(filteredMembers, (m1, m2) -> m2.id() - m1.id());
     List<Member> members = new ArrayList<>(replicationFactor);
     int i = filteredMembers.size() % partitions;
-    for (int j = 0; j < replicationFactor; j++) {
+    for (int j = 0; j < replicationFactor && j < filteredMembers.size(); j++) {
       members.add(filteredMembers.get(i + j % filteredMembers.size()));
     }
     return members;
