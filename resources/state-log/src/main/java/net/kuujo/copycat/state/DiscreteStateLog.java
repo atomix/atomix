@@ -43,8 +43,8 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
    *
    * @return A new state log builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static <K, V> Builder<K, V> builder() {
+    return new Builder<>();
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscreteStateLog.class);

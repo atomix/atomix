@@ -36,8 +36,8 @@ public class PartitionedStateLog<K, V> extends PartitionedResource<PartitionedSt
    *
    * @return A new partitioned state log builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static <K, V> Builder<K, V> builder() {
+    return new Builder<>();
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(PartitionedStateLog.class);
@@ -189,7 +189,7 @@ public class PartitionedStateLog<K, V> extends PartitionedResource<PartitionedSt
 
     @Override
     public PartitionedStateLog<K, V> build() {
-      return null;
+      return new PartitionedStateLog<>(config, config.getPartitions());
     }
   }
 
