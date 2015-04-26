@@ -19,6 +19,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.HeapBufferPool;
 import net.kuujo.copycat.io.util.ReferencePool;
 import net.kuujo.copycat.protocol.Consistency;
+import net.kuujo.copycat.protocol.Persistence;
 import net.kuujo.copycat.resource.DiscreteResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,8 +38,8 @@ public class DiscreteEventLog<K, V> extends DiscreteResource<DiscreteEventLog<K,
    *
    * @return A new state log builder.
    */
-  public static Builder builder() {
-    return new Builder();
+  public static <K, V> Builder<K, V> builder() {
+    return new Builder<>();
   }
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DiscreteEventLog.class);
@@ -69,7 +70,7 @@ public class DiscreteEventLog<K, V> extends DiscreteResource<DiscreteEventLog<K,
     serializer.writeObject(value, entryBuffer);
     entryBuffer.flip();
 
-    return protocol.write(keyBuffer, entryBuffer, Consistency.DEFAULT).thenApply(result -> {
+    return protocol.submit(keyBuffer, entryBuffer, Persistence.DURABLE, Consistency.LEASE).thenApply(result -> {
       if (keyBuffer != null)
         keyBuffer.close();
       entryBuffer.close();
