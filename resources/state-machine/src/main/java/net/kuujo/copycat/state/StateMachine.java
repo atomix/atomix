@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.state;
 
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.protocol.Persistence;
@@ -34,6 +35,59 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StateMachine<T> implements Resource<StateMachine<T>> {
+
+  /**
+   * Returns a new state log builder.
+   *
+   * @param <T> The state type.
+   * @return The state log builder.
+   */
+  public static <T> Builder<T> builder() {
+    return new Builder<>();
+  }
+
+  /**
+   * State machine builder.
+   */
+  public static class Builder<T> implements net.kuujo.copycat.Builder<StateMachine<T>> {
+    private T state;
+    private StateLog stateLog;
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the state machine state class.
+     *
+     * @param state The state machine state class.
+     * @return The state machine builder.
+     */
+    public Builder<T> withState(T state) {
+      this.state = state;
+      return this;
+    }
+
+    /**
+     * Sets the state machine state log.
+     *
+     * @param stateLog The state machine state log.
+     * @return The state machine builder.
+     */
+    public Builder<T> withLog(StateLog stateLog) {
+      this.stateLog = stateLog;
+      return this;
+    }
+
+    @Override
+    public StateMachine<T> build() {
+      if (state == null)
+        throw new ConfigurationException("state cannot be null");
+      if (stateLog == null)
+        throw new ConfigurationException("log cannot be null");
+      return new StateMachine<>(state, stateLog);
+    }
+  }
+
   private final T state;
   private final StateLog log;
   private final InvocationHandler handler = new StateProxyInvocationHandler();
