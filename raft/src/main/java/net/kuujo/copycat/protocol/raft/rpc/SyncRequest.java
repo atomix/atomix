@@ -299,10 +299,6 @@ public class SyncRequest extends AbstractRequest<SyncRequest> {
         throw new IllegalArgumentException("term must be positive");
       if (request.logIndex < 0)
         throw new IllegalArgumentException("log index must be positive");
-      if (request.entries == null)
-        throw new NullPointerException("entries cannot be null");
-      if (request.members == null)
-        throw new NullPointerException("members cannot be null");
 
       buffer.clear();
       request.writeObject(buffer);

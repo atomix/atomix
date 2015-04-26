@@ -388,6 +388,15 @@ public class RaftEntry implements ReferenceCounted<RaftEntry>, Writable {
     asReadOnlyEntry();
   }
 
+  /**
+   * Resets the key and entry by flipping the buffers.
+   */
+  public RaftEntry reset() {
+    key.flip();
+    entry.flip();
+    return this;
+  }
+
   @Override
   public void close() {
     key.close();

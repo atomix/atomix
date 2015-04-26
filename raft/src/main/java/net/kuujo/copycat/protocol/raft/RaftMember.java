@@ -130,34 +130,12 @@ public class RaftMember implements ReferenceCounted<RaftMember>, Writable {
   }
 
   /**
-   * Sets the member index.
-   *
-   * @param index The member's commit index.
-   * @return The member info.
-   */
-  RaftMember commitIndex(long index) {
-    this.commitIndex = index;
-    return this;
-  }
-
-  /**
    * Returns the member's recycle index.
    *
    * @return The member's recycle index.
    */
   public long recycleIndex() {
     return recycleIndex;
-  }
-
-  /**
-   * Sets the member's recycle index.
-   *
-   * @param index The member's recycle index.
-   * @return The member info.
-   */
-  RaftMember recycleIndex(long index) {
-    this.recycleIndex = index;
-    return this;
   }
 
   /**

@@ -123,15 +123,15 @@ class PassiveState extends RaftState {
 
     // Get a list of entries up to 1MB in size.
     List<RaftEntry> entries = new ArrayList<>(1024);
-    long firstIndex = 0;
     if (!context.log().isEmpty() && context.getCommitIndex() != 0) {
-      firstIndex = raftMember.commitIndex();
-      long index = firstIndex;
+      long index = raftMember.commitIndex() + 1;
       int size = 0;
       while (size < MAX_BATCH_SIZE && index > 0 && index <= context.getCommitIndex()) {
         RaftEntry entry = context.log().getEntry(index);
-        size += entry.size();
-        entries.add(entry);
+        if (entry != null) {
+          size += entry.size();
+          entries.add(entry);
+        }
         index++;
       }
     }
@@ -146,7 +146,7 @@ class PassiveState extends RaftState {
         .withEntries(entries)
         .build();
 
-      LOGGER.debug("{} - Sending sync request to {}", context.getCluster().member().id(), member.id());
+      LOGGER.debug("{} - Sending {} to {}", context.getCluster().member().id(), request, member.id());
       member.<SyncRequest, SyncResponse>send(context.getTopic(), request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         // Always check if the context is still open in order to prevent race conditions in asynchronous callbacks.
@@ -190,7 +190,7 @@ class PassiveState extends RaftState {
 
     // If the local log doesn't contain the previous index and the given index is not the first index in the
     // requestor's log then reply immediately.
-    if (!context.log().containsIndex(request.logIndex())) {
+    if (request.logIndex() != 0 && !context.log().containsIndex(request.logIndex())) {
       return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
         .withStatus(Response.Status.OK)
         .withMembers(context.getRaftMembers())
@@ -200,33 +200,42 @@ class PassiveState extends RaftState {
     // Iterate through provided entries and append any that are missing from the log. Only committed entries are
     // replicated via gossip, so we don't have to worry about consistency checks here.
     for (RaftEntry entry : request.entries()) {
-      if (!context.log().containsIndex(entry.index())) {
-        try (RaftEntry transfer = context.log().skip(entry.index() - context.log().lastIndex()).createEntry()) {
-          assert entry.index() == transfer.index();
+      long index = entry.index();
+      if (!context.log().containsIndex(index)) {
+        try (RaftEntry transfer = context.log().skip(index - 1 - context.log().lastIndex()).createEntry()) {
+          assert transfer.index() == index;
           transfer.write(entry);
+          entry.reset();
         }
 
-        context.log().commit(entry.index());
-        context.setCommitIndex(entry.index());
+        LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.index());
 
-        try {
-          RESULT.clear();
-          KEY.clear();
-          ENTRY.clear();
-          entry.readKey(KEY);
-          entry.readEntry(ENTRY);
-          context.commit(KEY.flip(), ENTRY.flip(), RESULT);
-        } catch (Exception e) {
-          LOGGER.warn("failed to apply command", e);
-        } finally {
-          context.setLastApplied(entry.index());
+        context.log().commit(index);
+        context.setCommitIndex(index);
+
+        if (entry.readType() == RaftEntry.Type.COMMAND) {
+          try {
+            KEY.clear();
+            ENTRY.clear();
+            RESULT.clear();
+            entry.readKey(KEY);
+            entry.readEntry(ENTRY);
+            context.commit(KEY.flip(), ENTRY.flip(), RESULT);
+          } catch (Exception e) {
+            LOGGER.warn("failed to apply command", e);
+          } finally {
+            context.setLastApplied(index);
+          }
+        } else {
+          context.setLastApplied(index);
         }
       }
     }
 
     // Update the recycle index using the highest member's recycle index.
-    request.members().stream().mapToLong(RaftMember::recycleIndex).max()
-      .ifPresent(compactIndex -> context.setRecycleIndex(Math.max(context.getRecycleIndex(), compactIndex)));
+    request.members().stream()
+      .mapToLong(RaftMember::recycleIndex).max()
+      .ifPresent(recycleIndex -> context.setRecycleIndex(Math.max(context.getRecycleIndex(), recycleIndex)));
 
     // Reply with the updated vector clock.
     return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
