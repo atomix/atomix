@@ -23,12 +23,12 @@ import net.kuujo.copycat.Event;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class StatusChangeEvent implements Event {
-  private final Status oldState;
-  private final Status newState;
+  private final Status oldStatus;
+  private final Status newStatus;
 
-  public StatusChangeEvent(Status oldState, Status newState) {
-    this.oldState = oldState;
-    this.newState = newState;
+  public StatusChangeEvent(Status oldStatus, Status newStatus) {
+    this.oldStatus = oldStatus;
+    this.newStatus = newStatus;
   }
 
   /**
@@ -36,8 +36,8 @@ public class StatusChangeEvent implements Event {
    *
    * @return The old status.
    */
-  public Status oldState() {
-    return oldState;
+  public Status oldStatus() {
+    return oldStatus;
   }
 
   /**
@@ -45,8 +45,8 @@ public class StatusChangeEvent implements Event {
    *
    * @return The new status.
    */
-  public Status newState() {
-    return newState;
+  public Status newStatus() {
+    return newStatus;
   }
 
 }

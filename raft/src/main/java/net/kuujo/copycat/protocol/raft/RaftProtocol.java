@@ -263,7 +263,10 @@ public class RaftProtocol extends Protocol {
       throw new IllegalArgumentException("cannot decrease commit index");
     if (firstCommitIndex == 0) {
       if (commitIndex == 0) {
-        recovering = false;
+        if (recovering) {
+          recovering = false;
+          listeners.forEach(l -> l.accept(new StatusChangeEvent(Status.RECOVERING, Status.HEALTHY)));
+        }
       } else {
         firstCommitIndex = commitIndex;
       }
@@ -321,6 +324,7 @@ public class RaftProtocol extends Protocol {
     this.lastApplied = lastApplied;
     if (recovering && this.lastApplied != 0 && firstCommitIndex != 0 && this.lastApplied >= firstCommitIndex) {
       recovering = false;
+      listeners.forEach(l -> l.accept(new StatusChangeEvent(Status.RECOVERING, Status.HEALTHY)));
     }
     return this;
   }
@@ -485,6 +489,7 @@ public class RaftProtocol extends Protocol {
             transition(RaftState.Type.FOLLOWER);
             break;
         }
+        listeners.forEach(l -> l.accept(new StatusChangeEvent(null, Status.RECOVERING)));
       } catch (Exception e) {
         openFuture.completeExceptionally(e);
         openFuture = null;
