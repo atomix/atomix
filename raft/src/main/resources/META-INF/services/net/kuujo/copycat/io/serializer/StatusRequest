@@ -1,0 +1,2 @@
+id=145
+class=net.kuujo.copycat.protocol.raft.rpc.StatusRequest

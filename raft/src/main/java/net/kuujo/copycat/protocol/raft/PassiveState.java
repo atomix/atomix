@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-class PassiveState extends RemoteState {
+class PassiveState extends RaftState {
   private static final int MAX_BATCH_SIZE = 1024 * 1024;
   private ScheduledFuture<?> currentTimer;
   protected final Buffer KEY = HeapBuffer.allocate(1024, 1024 * 1024);
@@ -252,6 +252,48 @@ class PassiveState extends RemoteState {
       .withStatus(Response.Status.ERROR)
       .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
       .build()));
+  }
+
+  @Override
+  public CompletableFuture<ReadResponse> read(ReadRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(ReadResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  public CompletableFuture<WriteResponse> write(WriteRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(WriteResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
+  }
+
+  @Override
+  public CompletableFuture<DeleteResponse> delete(DeleteRequest request) {
+    context.checkThread();
+    logRequest(request);
+    if (context.getLeader() == 0) {
+      return CompletableFuture.completedFuture(logResponse(DeleteResponse.builder()
+        .withStatus(Response.Status.ERROR)
+        .withError(RaftError.Type.NO_LEADER_ERROR)
+        .build()));
+    } else {
+      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+    }
   }
 
   /**

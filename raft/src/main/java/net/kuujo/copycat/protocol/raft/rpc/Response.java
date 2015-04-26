@@ -64,7 +64,12 @@ public interface Response<RESPONSE extends Response<RESPONSE>> extends Reference
     /**
      * Delete response.
      */
-    DELETE
+    DELETE,
+
+    /**
+     * Status response.
+     */
+    STATUS
   }
 
   /**

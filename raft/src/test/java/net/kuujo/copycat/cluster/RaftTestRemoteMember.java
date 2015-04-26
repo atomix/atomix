@@ -74,10 +74,23 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
   public <T, U> CompletableFuture<U> send(String topic, T message) {
     if (partitioned)
       return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
+
     RaftTestLocalMember member = registry.get(info.address);
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
-    return member.send(topic, message);
+
+    ExecutionContext context = getContext();
+    CompletableFuture<U> future = new CompletableFuture<>();
+    member.<T, U>send(topic, message).whenComplete((reply, error) -> {
+      context.execute(() -> {
+        if (error == null) {
+          future.complete(reply);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
+    return future;
   }
 
   @Override
@@ -89,9 +102,22 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
   public <T> CompletableFuture<T> submit(Task<T> task) {
     if (partitioned)
       return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
+
     RaftTestLocalMember member = registry.get(info.address);
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
+
+    ExecutionContext context = getContext();
+    CompletableFuture<T> future = new CompletableFuture<>();
+    member.submit(task).whenComplete((result, error) -> {
+      context.execute(() -> {
+        if (error == null) {
+          future.complete(result);
+        } else {
+          future.completeExceptionally(error);
+        }
+      });
+    });
     return member.submit(task);
   }
 

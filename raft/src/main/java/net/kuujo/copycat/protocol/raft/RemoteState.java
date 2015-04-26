@@ -15,9 +15,16 @@
  */
 package net.kuujo.copycat.protocol.raft;
 
+import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.protocol.raft.rpc.*;
 
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 /**
  * Remote state.
@@ -25,6 +32,9 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class RemoteState extends RaftState {
+  private final AtomicBoolean statusCheck = new AtomicBoolean();
+  private final Random random = new Random();
+  private ScheduledFuture<?> currentTimer;
 
   public RemoteState(RaftProtocol context) {
     super(context);
@@ -36,23 +46,90 @@ public class RemoteState extends RaftState {
   }
 
   @Override
+  public synchronized CompletableFuture<RaftState> open() {
+    return super.open().thenRun(this::startStatusTimer).thenApply(v -> this);
+  }
+
+  /**
+   * Starts the status timer.
+   */
+  private void startStatusTimer() {
+    LOGGER.debug("{} - Setting status timer", context.getCluster().member().id());
+    currentTimer = context.getContext().scheduleAtFixedRate(this::status, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+  }
+
+  /**
+   * Sends a status request to a random member.
+   */
+  private void status() {
+    if (statusCheck.compareAndSet(false, true)) {
+      Member member;
+      if (context.getLeader() != 0) {
+        member = context.getCluster().member(context.getLeader());
+      } else {
+        List<Member> members = context.getCluster().members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
+        member = members.get(random.nextInt(members.size()));
+      }
+
+      StatusRequest request = StatusRequest.builder()
+        .withId(context.getCluster().member().id())
+        .build();
+      member.<StatusRequest, StatusResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
+        context.checkThread();
+
+        if (isOpen()) {
+          if (error == null) {
+            if (response.term() > context.getTerm()) {
+              context.setTerm(response.term());
+              context.setLeader(response.leader());
+            } else if (context.getLeader() == 0) {
+              context.setLeader(response.leader());
+            }
+          }
+        }
+        statusCheck.set(false);
+      });
+    }
+  }
+
+  @Override
   protected CompletableFuture<AppendResponse> append(AppendRequest request) {
-    return exceptionalFuture(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR.createException());
+    context.checkThread();
+    logRequest(request);
+    return CompletableFuture.completedFuture(logResponse(AppendResponse.builder()
+      .withStatus(Response.Status.ERROR)
+      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+      .build()));
   }
 
   @Override
   protected CompletableFuture<SyncResponse> sync(SyncRequest request) {
-    return exceptionalFuture(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR.createException());
+    context.checkThread();
+    logRequest(request);
+    return CompletableFuture.completedFuture(logResponse(SyncResponse.builder()
+      .withStatus(Response.Status.ERROR)
+      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+      .build()));
   }
 
   @Override
   protected CompletableFuture<PollResponse> poll(PollRequest request) {
-    return exceptionalFuture(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR.createException());
+    context.checkThread();
+    logRequest(request);
+    return CompletableFuture.completedFuture(logResponse(PollResponse.builder()
+      .withStatus(Response.Status.ERROR)
+      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+      .build()));
   }
 
   @Override
   protected CompletableFuture<VoteResponse> vote(VoteRequest request) {
-    return exceptionalFuture(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR.createException());
+    context.checkThread();
+    logRequest(request);
+    return CompletableFuture.completedFuture(logResponse(VoteResponse.builder()
+      .withStatus(Response.Status.ERROR)
+      .withError(RaftError.Type.ILLEGAL_MEMBER_STATE_ERROR)
+      .build()));
   }
 
   @Override

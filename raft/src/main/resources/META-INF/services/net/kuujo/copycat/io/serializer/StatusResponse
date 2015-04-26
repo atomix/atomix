@@ -1,0 +1,2 @@
+id=146
+class=net.kuujo.copycat.protocol.raft.rpc.StatusResponse

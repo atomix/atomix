@@ -63,7 +63,12 @@ public interface Request<REQUEST extends Request<REQUEST>> extends ReferenceCoun
     /**
      * Delete request.
      */
-    DELETE
+    DELETE,
+
+    /**
+     * Status request.
+     */
+    STATUS
   }
 
   /**

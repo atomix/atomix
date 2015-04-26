@@ -137,6 +137,8 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
   public CompletableFuture<Response> handle(Request request) {
     context.checkThread();
     switch (request.type()) {
+      case STATUS:
+        return status((StatusRequest) request).thenApply(RaftState::castResponse);
       case APPEND:
         return append((AppendRequest) request).thenApply(response -> response);
       case SYNC:
@@ -153,6 +155,24 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
         return delete((DeleteRequest) request).thenApply(response -> response);
     }
     throw new IllegalArgumentException("invalid request type");
+  }
+
+  /**
+   * Utility method for casting a response.
+   */
+  private static <T extends Response> T castResponse(T response) {
+    return response;
+  }
+
+  /**
+   * Handles a status request.
+   */
+  protected CompletableFuture<StatusResponse> status(StatusRequest request) {
+    return CompletableFuture.completedFuture(StatusResponse.builder()
+      .withStatus(Response.Status.OK)
+      .withTerm(context.getTerm())
+      .withLeader(context.getLeader())
+      .build());
   }
 
   /**
