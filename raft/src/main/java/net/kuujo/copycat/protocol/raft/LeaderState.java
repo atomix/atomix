@@ -433,8 +433,10 @@ class LeaderState extends ActiveState {
     private CompletableFuture<Long> commit(long index) {
       if (index == 0)
         return commit();
-      if (replicas.isEmpty())
+      if (replicas.isEmpty()) {
+        context.setCommitIndex(index);
         return CompletableFuture.completedFuture(index);
+      }
       return commitFutures.computeIfAbsent(index, i -> {
         replicas.forEach(Replica::commit);
         return new CompletableFuture<>();

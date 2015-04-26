@@ -707,59 +707,65 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Tests a command on a passive node.
    */
-  public void testCommandOnPassive(Persistence persistence, Consistency consistency) throws Throwable {
+  public void testCommandOnPassive(int activeNodes, int passiveNodes, Persistence persistence, Consistency consistency) throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
-
-    RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
-
-    RaftProtocol protocol1 = buildProtocol(1, cluster1);
-    RaftProtocol protocol2 = buildProtocol(2, cluster2);
-    RaftProtocol protocol3 = buildProtocol(3, cluster3);
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
       threadAssertEquals(entry.readLong(), Long.valueOf(4321));
+      resume();
       return result.writeLong(5678);
     };
 
-    protocol1.commitHandler(commitHandler);
-    protocol2.commitHandler(commitHandler);
-    protocol3.commitHandler(commitHandler);
+    Map<Integer, RaftProtocol> activeProtocols = new HashMap<>();
+    for (int i = 1; i <= activeNodes; i++) {
+      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
+      RaftProtocol protocol = buildProtocol(i, cluster);
+      protocol.commitHandler(commitHandler);
+      activeProtocols.put(i, protocol);
+    }
 
-    expectResumes(4);
+    expectResumes(activeNodes * 2);
 
-    AtomicInteger electionCount = new AtomicInteger();
-    EventListener<Event> listener = event -> {
-      if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null && electionCount.incrementAndGet() == 3) {
-        resume();
-      }
+    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
+      return new EventListener<Event>() {
+        @Override
+        public void accept(Event event) {
+          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
+            protocol.removeListener(this);
+            resume();
+          }
+        }
+      };
     };
 
-    protocol1.addListener(listener);
-    protocol2.addListener(listener);
-    protocol3.addListener(listener);
-
-    protocol1.open().thenRun(this::resume);
-    protocol2.open().thenRun(this::resume);
-    protocol3.open().thenRun(this::resume);
+    for (RaftProtocol protocol : activeProtocols.values()) {
+      protocol.addListener(createListener.apply(protocol));
+      protocol.open().thenRun(this::resume);
+    }
 
     await();
 
-    RaftTestCluster cluster4 = buildCluster(4, Member.Type.PASSIVE, 4, registry);
-    RaftProtocol protocol4 = buildProtocol(4, cluster4);
-    protocol4.commitHandler(commitHandler);
+    Map<Integer, RaftProtocol> passiveProtocols = new HashMap<>();
+    for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
+      RaftTestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
+      RaftProtocol protocol = buildProtocol(i, cluster);
+      protocol.commitHandler(commitHandler);
+      passiveProtocols.put(i, protocol);
+    }
 
-    expectResume();
+    expectResumes(passiveNodes * 2);
 
-    protocol4.open().thenRun(this::resume);
+    for (RaftProtocol protocol : passiveProtocols.values()) {
+      protocol.addListener(createListener.apply(protocol));
+      protocol.open().thenRun(this::resume);
+    }
 
     await();
 
-    expectResume();
+    expectResumes(activeNodes + passiveNodes + 1);
 
-    protocol4.submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
+    passiveProtocols.values().iterator().next().submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
       threadAssertEquals(result.readLong(), Long.valueOf(5678));
       resume();
     });
@@ -767,84 +773,404 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     await();
   }
 
-  public void testPersistentConsistentCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.PERSISTENT, Consistency.STRICT);
+  public void testSingleActiveSinglePassivePersistentConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testDurableConsistentCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DURABLE, Consistency.STRICT);
+  public void testSingleActiveMultiPassivePersistentConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testEphemeralConsistentCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.EPHEMERAL, Consistency.STRICT);
+  public void testMultiActiveSinglePassivePersistentConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testTransientConsistentCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.NONE, Consistency.STRICT);
+  public void testMultiActiveMultiPassivePersistentConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testDefaultConsistentCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DEFAULT, Consistency.STRICT);
+  public void testPartialActivePartialPassivePersistentConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testPersistentLeaseCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.PERSISTENT, Consistency.LEASE);
+  public void testSingleActiveSinglePassiveDurableConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testDurableLeaseCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DURABLE, Consistency.LEASE);
+  public void testSingleActiveMultiPassiveDurableConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testEphemeralLeaseCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.EPHEMERAL, Consistency.LEASE);
+  public void testMultiActiveSinglePassiveDurableConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testTransientLeaseCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.NONE, Consistency.LEASE);
+  public void testMultiActiveMultiPassiveDurableConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testDefaultLeaseCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DEFAULT, Consistency.LEASE);
+  public void testPartialActivePartialPassiveDurableConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testPersistentEventualCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.PERSISTENT, Consistency.EVENTUAL);
+  public void testSingleActiveSinglePassiveEphemeralConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testDurableEventualCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DURABLE, Consistency.EVENTUAL);
+  public void testSingleActiveMultiPassiveEphemeralConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testEphemeralEventualCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  public void testMultiActiveSinglePassiveEphemeralConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testTransientEventualCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.NONE, Consistency.EVENTUAL);
+  public void testMultiActiveMultiPassiveEphemeralConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testDefaultEventualCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DEFAULT, Consistency.EVENTUAL);
+  public void testPartialActivePartialPassiveEphemeralConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testPersistentDefaultCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.PERSISTENT, Consistency.DEFAULT);
+  public void testSingleActiveSinglePassiveTransientConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testDurableDefaultCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DURABLE, Consistency.DEFAULT);
+  public void testSingleActiveMultiPassiveTransientConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testEphemeralDefaultCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.EPHEMERAL, Consistency.DEFAULT);
+  public void testMultiActiveSinglePassiveTransientConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testTransientDefaultCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.NONE, Consistency.DEFAULT);
+  public void testMultiActiveMultiPassiveTransientConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testDefaultDefaultCommandOnPassive() throws Throwable {
-    testCommandOnPassive(Persistence.DEFAULT, Consistency.DEFAULT);
+  public void testPartialActivePartialPassiveTransientConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.NONE, Consistency.STRICT);
+  }
+
+  public void testSingleActiveSinglePassiveDefaultConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DEFAULT, Consistency.STRICT);
+  }
+
+  public void testSingleActiveMultiPassiveDefaultConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DEFAULT, Consistency.STRICT);
+  }
+
+  public void testMultiActiveSinglePassiveDefaultConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DEFAULT, Consistency.STRICT);
+  }
+
+  public void testMultiActiveMultiPassiveDefaultConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DEFAULT, Consistency.STRICT);
+  }
+
+  public void testPartialActivePartialPassiveDefaultConsistentCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DEFAULT, Consistency.STRICT);
+  }
+
+  public void testSingleActiveSinglePassivePersistentLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.PERSISTENT, Consistency.LEASE);
+  }
+
+  public void testSingleActiveMultiPassivePersistentLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.PERSISTENT, Consistency.LEASE);
+  }
+
+  public void testMultiActiveSinglePassivePersistentLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.PERSISTENT, Consistency.LEASE);
+  }
+
+  public void testMultiActiveMultiPassivePersistentLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.PERSISTENT, Consistency.LEASE);
+  }
+
+  public void testPartialActivePartialPassivePersistentLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.PERSISTENT, Consistency.LEASE);
+  }
+
+  public void testSingleActiveSinglePassiveDurableLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DURABLE, Consistency.LEASE);
+  }
+
+  public void testSingleActiveMultiPassiveDurableLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DURABLE, Consistency.LEASE);
+  }
+
+  public void testMultiActiveSinglePassiveDurableLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DURABLE, Consistency.LEASE);
+  }
+
+  public void testMultiActiveMultiPassiveDurableLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DURABLE, Consistency.LEASE);
+  }
+
+  public void testPartialActivePartialPassiveDurableLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DURABLE, Consistency.LEASE);
+  }
+
+  public void testSingleActiveSinglePassiveEphemeralLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testSingleActiveMultiPassiveEphemeralLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testMultiActiveSinglePassiveEphemeralLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testMultiActiveMultiPassiveEphemeralLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testPartialActivePartialPassiveEphemeralLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.EPHEMERAL, Consistency.LEASE);
+  }
+
+  public void testSingleActiveSinglePassiveTransientLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testSingleActiveMultiPassiveTransientLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testMultiActiveSinglePassiveTransientLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testMultiActiveMultiPassiveTransientLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testPartialActivePartialPassiveTransientLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.NONE, Consistency.LEASE);
+  }
+
+  public void testSingleActiveSinglePassiveDefaultLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testSingleActiveMultiPassiveDefaultLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testMultiActiveSinglePassiveDefaultLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testMultiActiveMultiPassiveDefaultLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testPartialActivePartialPassiveDefaultLeaseCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testSingleActiveSinglePassivePersistentEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveMultiPassivePersistentEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveSinglePassivePersistentEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveMultiPassivePersistentEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testPartialActivePartialPassivePersistentEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveSinglePassiveDurableEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveMultiPassiveDurableEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveSinglePassiveDurableEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveMultiPassiveDurableEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testPartialActivePartialPassiveDurableEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveSinglePassiveEphemeralEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveMultiPassiveEphemeralEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveSinglePassiveEphemeralEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveMultiPassiveEphemeralEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testPartialActivePartialPassiveEphemeralEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveSinglePassiveTransientEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveMultiPassiveTransientEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveSinglePassiveTransientEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveMultiPassiveTransientEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testPartialActivePartialPassiveTransientEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveSinglePassiveDefaultEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveMultiPassiveDefaultEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveSinglePassiveDefaultEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testMultiActiveMultiPassiveDefaultEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testPartialActivePartialPassiveDefaultEventualCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testSingleActiveSinglePassivePersistentDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveMultiPassivePersistentDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveSinglePassivePersistentDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveMultiPassivePersistentDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testPartialActivePartialPassivePersistentDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveSinglePassiveDurableDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveMultiPassiveDurableDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveSinglePassiveDurableDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveMultiPassiveDurableDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testPartialActivePartialPassiveDurableDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveSinglePassiveEphemeralDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveMultiPassiveEphemeralDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveSinglePassiveEphemeralDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveMultiPassiveEphemeralDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testPartialActivePartialPassiveEphemeralDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveSinglePassiveTransientDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveMultiPassiveTransientDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveSinglePassiveTransientDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveMultiPassiveTransientDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testPartialActivePartialPassiveTransientDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveSinglePassiveDefaultDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 1, Persistence.DEFAULT, Consistency.DEFAULT);
+  }
+
+  public void testSingleActiveMultiPassiveDefaultDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(1, 3, Persistence.DEFAULT, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveSinglePassiveDefaultDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 1, Persistence.DEFAULT, Consistency.DEFAULT);
+  }
+
+  public void testMultiActiveMultiPassiveDefaultDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(3, 3, Persistence.DEFAULT, Consistency.DEFAULT);
+  }
+
+  public void testPartialActivePartialPassiveDefaultDefaultCommandOnPassive() throws Throwable {
+    testCommandOnPassive(2, 2, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
   /**
