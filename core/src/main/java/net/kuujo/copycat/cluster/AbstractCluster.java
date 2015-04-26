@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -40,6 +41,7 @@ public abstract class AbstractCluster implements ManagedCluster {
   private MembershipDetector membershipDetector;
   private CompletableFuture<Cluster> openFuture;
   private CompletableFuture<Void> closeFuture;
+  private AtomicBoolean open = new AtomicBoolean();
 
   protected AbstractCluster(AbstractLocalMember localMember, Collection<? extends AbstractRemoteMember> remoteMembers) {
     this.localMember = localMember;
@@ -119,6 +121,10 @@ public abstract class AbstractCluster implements ManagedCluster {
             return CompletableFuture.allOf(futures);
           }).thenApply(v -> {
             membershipDetector = new MembershipDetector(this, new ExecutionContext(String.format("copycat-membership-detector-%d", localMember.id())));
+            openFuture = null;
+            if (permits.get() > 0) {
+              open.set(true);
+            }
             return this;
           });
         }
@@ -134,7 +140,7 @@ public abstract class AbstractCluster implements ManagedCluster {
    * @return Indicates whether the cluster is open.
    */
   public boolean isOpen() {
-    return permits.get() > 0 && openFuture == null;
+    return permits.get() > 0 && open.get();
   }
 
   /**
@@ -158,6 +164,10 @@ public abstract class AbstractCluster implements ManagedCluster {
               if (membershipDetector != null) {
                 membershipDetector.close();
                 membershipDetector = null;
+                closeFuture = null;
+                if (permits.get() == 0) {
+                  open.set(false);
+                }
               }
             });
         }
@@ -172,7 +182,7 @@ public abstract class AbstractCluster implements ManagedCluster {
    * @return Indicates whether the cluster is closed.
    */
   public boolean isClosed() {
-    return permits.get() == 0 && closeFuture == null;
+    return !isOpen();
   }
 
   /**
