@@ -491,142 +491,217 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Tests performing a command on a follower node.
    */
-  public void testCommandOnFollower(Persistence persistence, Consistency consistency) throws Throwable {
+  public void testCommandOnFollower(int nodes, Persistence persistence, Consistency consistency) throws Throwable {
     RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
-
-    RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
-
-    RaftProtocol protocol1 = buildProtocol(1, cluster1);
-    RaftProtocol protocol2 = buildProtocol(2, cluster2);
-    RaftProtocol protocol3 = buildProtocol(3, cluster3);
-
-    Map<Integer, RaftProtocol> protocols = new HashMap<>();
-    protocols.put(1, protocol1);
-    protocols.put(2, protocol2);
-    protocols.put(3, protocol3);
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
       threadAssertEquals(entry.readLong(), Long.valueOf(4321));
+      resume();
       return result.writeLong(5678);
     };
 
-    protocol1.commitHandler(commitHandler);
-    protocol2.commitHandler(commitHandler);
-    protocol3.commitHandler(commitHandler);
+    Map<Integer, RaftProtocol> protocols = new HashMap<>();
+    for (int i = 1; i <= nodes; i++) {
+      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
+      RaftProtocol protocol = buildProtocol(i, cluster);
+      protocol.commitHandler(commitHandler);
+      protocols.put(i, protocol);
+    }
 
-    expectResumes(4);
+    expectResumes(nodes * 2 + 1);
 
-    AtomicInteger electionCount = new AtomicInteger();
-    EventListener<Event> listener = new EventListener<Event>() {
-      @Override
-      public void accept(Event event) {
-        if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null && electionCount.incrementAndGet() == 3) {
-          int id = ((LeaderChangeEvent) event).newLeader().id();
-          for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
-            if (entry.getKey() != id) {
-              entry.getValue().submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
-                threadAssertEquals(result.readLong(), Long.valueOf(5678));
-                resume();
-              });
-              break;
+    final AtomicInteger electionCount = new AtomicInteger();
+    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
+      return new EventListener<Event>() {
+        @Override
+        public void accept(Event event) {
+          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
+            protocol.removeListener(this);
+
+            if (electionCount.incrementAndGet() == nodes) {
+              int id = ((LeaderChangeEvent) event).newLeader().id();
+              for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
+                if (entry.getKey() != id) {
+                  entry.getValue().submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
+                    threadAssertEquals(result.readLong(), Long.valueOf(5678));
+                    resume();
+                  });
+                  break;
+                }
+              }
             }
           }
         }
-      }
+      };
     };
 
-    protocol1.addListener(listener);
-    protocol2.addListener(listener);
-    protocol3.addListener(listener);
-
-    protocol1.open().thenRun(this::resume);
-    protocol2.open().thenRun(this::resume);
-    protocol3.open().thenRun(this::resume);
+    for (RaftProtocol protocol : protocols.values()) {
+      protocol.addListener(createListener.apply(protocol));
+      protocol.open().thenRun(this::resume);
+    }
 
     await();
   }
 
-  public void testPersistentConsistentCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.PERSISTENT, Consistency.STRICT);
+  public void testTwoNodePersistentConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testDurableConsistentCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DURABLE, Consistency.STRICT);
+  public void testThreeNodePersistentConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.PERSISTENT, Consistency.STRICT);
   }
 
-  public void testEphemeralConsistentCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.EPHEMERAL, Consistency.STRICT);
+  public void testTwoNodeDurableConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testTransientConsistentCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.NONE, Consistency.STRICT);
+  public void testThreeNodeDurableConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DURABLE, Consistency.STRICT);
   }
 
-  public void testDefaultConsistentCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DEFAULT, Consistency.STRICT);
+  public void testTwoNodeEphemeralConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testPersistentLeaseCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.PERSISTENT, Consistency.LEASE);
+  public void testThreeNodeEphemeralConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.EPHEMERAL, Consistency.STRICT);
   }
 
-  public void testDurableLeaseCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DURABLE, Consistency.LEASE);
+  public void testTwoNodeTransientConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testEphemeralLeaseCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.EPHEMERAL, Consistency.LEASE);
+  public void testThreeNodeTransientConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.NONE, Consistency.STRICT);
   }
 
-  public void testTransientLeaseCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.NONE, Consistency.LEASE);
+  public void testTwoNodeDefaultConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DEFAULT, Consistency.STRICT);
   }
 
-  public void testDefaultLeaseCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DEFAULT, Consistency.LEASE);
+  public void testThreeNodeDefaultConsistentCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DEFAULT, Consistency.STRICT);
   }
 
-  public void testPersistentEventualCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.PERSISTENT, Consistency.EVENTUAL);
+  public void testTwoNodePersistentLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.PERSISTENT, Consistency.LEASE);
   }
 
-  public void testDurableEventualCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DURABLE, Consistency.EVENTUAL);
+  public void testThreeNodePersistentLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.PERSISTENT, Consistency.LEASE);
   }
 
-  public void testEphemeralEventualCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  public void testTwoNodeDurableLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DURABLE, Consistency.LEASE);
   }
 
-  public void testTransientEventualCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.NONE, Consistency.EVENTUAL);
+  public void testThreeNodeDurableLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DURABLE, Consistency.LEASE);
   }
 
-  public void testDefaultEventualCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DEFAULT, Consistency.EVENTUAL);
+  public void testTwoNodeEphemeralLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.EPHEMERAL, Consistency.LEASE);
   }
 
-  public void testPersistentDefaultCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.PERSISTENT, Consistency.DEFAULT);
+  public void testThreeNodeEphemeralLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.EPHEMERAL, Consistency.LEASE);
   }
 
-  public void testDurableDefaultCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DURABLE, Consistency.DEFAULT);
+  public void testTwoNodeTransientLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.NONE, Consistency.LEASE);
   }
 
-  public void testEphemeralDefaultCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.EPHEMERAL, Consistency.DEFAULT);
+  public void testThreeNodeTransientLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.NONE, Consistency.LEASE);
   }
 
-  public void testTransientDefaultCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.NONE, Consistency.DEFAULT);
+  public void testTwoNodeDefaultLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DEFAULT, Consistency.LEASE);
   }
 
-  public void testDefaultDefaultCommandOnFollower() throws Throwable {
-    testCommandOnFollower(Persistence.DEFAULT, Consistency.DEFAULT);
+  public void testThreeNodeDefaultLeaseCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DEFAULT, Consistency.LEASE);
+  }
+
+  public void testTwoNodePersistentEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodePersistentEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.PERSISTENT, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeDurableEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeDurableEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DURABLE, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeEphemeralEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeEphemeralEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.EPHEMERAL, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeTransientEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeTransientEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.NONE, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodeDefaultEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testThreeNodeDefaultEventualCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DEFAULT, Consistency.EVENTUAL);
+  }
+
+  public void testTwoNodePersistentDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodePersistentDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.PERSISTENT, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeDurableDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeDurableDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DURABLE, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeEphemeralDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeEphemeralDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.EPHEMERAL, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeTransientDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeTransientDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.NONE, Consistency.DEFAULT);
+  }
+
+  public void testTwoNodeDefaultDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(2, Persistence.DEFAULT, Consistency.DEFAULT);
+  }
+
+  public void testThreeNodeDefaultDefaultCommandOnFollower() throws Throwable {
+    testCommandOnFollower(3, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
   /**
