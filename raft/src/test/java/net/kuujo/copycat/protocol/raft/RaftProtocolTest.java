@@ -62,11 +62,11 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    * Tests opening protocols.
    */
   public void testOpen() throws Throwable {
-    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+    TestMemberRegistry registry = new TestMemberRegistry();
 
-    RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
 
     RaftProtocol protocol1 = buildProtocol(1, cluster1);
     RaftProtocol protocol2 = buildProtocol(2, cluster2);
@@ -85,11 +85,11 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    * Tests leader elect events.
    */
   public void testLeaderElectEventOnAll() throws Throwable {
-    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+    TestMemberRegistry registry = new TestMemberRegistry();
 
-    RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
 
     RaftProtocol protocol1 = buildProtocol(1, cluster1);
     RaftProtocol protocol2 = buildProtocol(2, cluster2);
@@ -113,9 +113,9 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     await();
 
-    RaftTestCluster cluster4 = buildCluster(4, Member.Type.PASSIVE, 4, registry);
-    RaftTestCluster cluster5 = buildCluster(5, Member.Type.PASSIVE, 4, registry);
-    RaftTestCluster cluster6 = buildCluster(6, Member.Type.REMOTE, 4, registry);
+    TestCluster cluster4 = buildCluster(4, Member.Type.PASSIVE, 4, registry);
+    TestCluster cluster5 = buildCluster(5, Member.Type.PASSIVE, 4, registry);
+    TestCluster cluster6 = buildCluster(6, Member.Type.REMOTE, 4, registry);
 
     RaftProtocol protocol4 = buildProtocol(4, cluster4);
     RaftProtocol protocol5 = buildProtocol(5, cluster5);
@@ -138,11 +138,11 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    * Tests electing a new leader after a network partition.
    */
   public void testElectNewLeaderAfterPartition() throws Throwable {
-    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+    TestMemberRegistry registry = new TestMemberRegistry();
 
-    RaftTestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
-    RaftTestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster1 = buildCluster(1, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
+    TestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
 
     RaftProtocol protocol1 = buildProtocol(1, cluster1);
     RaftProtocol protocol2 = buildProtocol(2, cluster2);
@@ -201,7 +201,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    * Tests performing a command on a leader node.
    */
   private void testCommandOnLeader(int nodes, Persistence persistence, Consistency consistency) throws Throwable {
-    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+    TestMemberRegistry registry = new TestMemberRegistry();
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
@@ -212,7 +212,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     Map<Integer, RaftProtocol> protocols = new HashMap<>();
     for (int i = 1; i <= nodes; i++) {
-      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
+      TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
       protocol.commitHandler(commitHandler);
       protocols.put(i, protocol);
@@ -492,7 +492,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    * Tests performing a command on a follower node.
    */
   public void testCommandOnFollower(int nodes, Persistence persistence, Consistency consistency) throws Throwable {
-    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+    TestMemberRegistry registry = new TestMemberRegistry();
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
@@ -503,7 +503,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     Map<Integer, RaftProtocol> protocols = new HashMap<>();
     for (int i = 1; i <= nodes; i++) {
-      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
+      TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
       protocol.commitHandler(commitHandler);
       protocols.put(i, protocol);
@@ -708,7 +708,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    * Tests a command on a passive node.
    */
   public void testCommandOnPassive(int activeNodes, int passiveNodes, Persistence persistence, Consistency consistency) throws Throwable {
-    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+    TestMemberRegistry registry = new TestMemberRegistry();
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
@@ -719,7 +719,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     Map<Integer, RaftProtocol> activeProtocols = new HashMap<>();
     for (int i = 1; i <= activeNodes; i++) {
-      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
+      TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
       protocol.commitHandler(commitHandler);
       activeProtocols.put(i, protocol);
@@ -748,7 +748,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     Map<Integer, RaftProtocol> passiveProtocols = new HashMap<>();
     for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
-      RaftTestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
+      TestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
       protocol.commitHandler(commitHandler);
       passiveProtocols.put(i, protocol);
@@ -1177,7 +1177,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
    * Tests a command on a remote node.
    */
   public void testCommandOnRemote(int activeNodes, int passiveNodes, Persistence persistence, Consistency consistency) throws Throwable {
-    RaftTestMemberRegistry registry = new RaftTestMemberRegistry();
+    TestMemberRegistry registry = new TestMemberRegistry();
 
     CommitHandler commitHandler = (key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
@@ -1201,7 +1201,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     expectResumes(activeNodes * 2);
 
     for (int i = 1; i <= activeNodes; i++) {
-      RaftTestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
+      TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
       protocol.commitHandler(commitHandler).addListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
@@ -1212,7 +1212,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     expectResumes(passiveNodes * 2);
 
     for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
-      RaftTestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
+      TestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
       protocol.commitHandler(commitHandler).addListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
@@ -1220,7 +1220,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     await();
 
-    RaftTestCluster cluster = buildCluster(activeNodes + passiveNodes + 1, Member.Type.REMOTE, 4, registry);
+    TestCluster cluster = buildCluster(activeNodes + passiveNodes + 1, Member.Type.REMOTE, 4, registry);
     RaftProtocol protocol = buildProtocol(activeNodes + passiveNodes + 1, cluster);
 
     expectResume();
@@ -1322,10 +1322,10 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Builds a Raft test cluster.
    */
-  private RaftTestCluster buildCluster(int id, Member.Type type, int nodes, RaftTestMemberRegistry registry) {
-    RaftTestCluster.Builder builder = RaftTestCluster.builder()
+  private TestCluster buildCluster(int id, Member.Type type, int nodes, TestMemberRegistry registry) {
+    TestCluster.Builder builder = TestCluster.builder()
       .withRegistry(registry)
-      .withLocalMember(RaftTestLocalMember.builder()
+      .withLocalMember(TestLocalMember.builder()
         .withId(id)
         .withType(type)
         .withAddress(String.format("test-%d", id))
@@ -1333,7 +1333,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     for (int i = 1; i <= nodes; i++) {
       if (i != id) {
-        builder.addRemoteMember(RaftTestRemoteMember.builder()
+        builder.addRemoteMember(TestRemoteMember.builder()
           .withId(i)
           .withType(Member.Type.ACTIVE)
           .withAddress(String.format("test-%d", i))

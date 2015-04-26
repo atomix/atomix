@@ -14,7 +14,7 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -23,8 +23,8 @@
     <version>0.5.0-SNAPSHOT</version>
   </parent>
 
-  <artifactId>copycat-raft</artifactId>
-  <name>Copycat Raft</name>
+  <artifactId>copycat-test</artifactId>
+  <name>Copycat Test Tools</name>
 
   <dependencies>
     <dependency>
@@ -32,21 +32,15 @@
       <artifactId>copycat-core</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-test</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>
     <plugins>
-      <!-- This plugin forces the generation of jar containing streaming test classes, so that the tests 
-        classes of external modules can use them. The two execution profiles are necessary - first one for 'mvn 
-        package', second one for 'mvn test-compile'. Ideally, 'mvn compile' should not compile test classes and 
-        therefore should not need this. However, an open Maven bug (http://jira.codehaus.org/browse/MNG-3559) 
-        causes the compilation to fail if streaming test-jar is not generated. Hence, the second execution profile 
+      <!-- This plugin forces the generation of jar containing streaming test classes, so that the tests
+        classes of external modules can use them. The two execution profiles are necessary - first one for 'mvn
+        package', second one for 'mvn test-compile'. Ideally, 'mvn compile' should not compile test classes and
+        therefore should not need this. However, an open Maven bug (http://jira.codehaus.org/browse/MNG-3559)
+        causes the compilation to fail if streaming test-jar is not generated. Hence, the second execution profile
         for 'mvn test-compile'. -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

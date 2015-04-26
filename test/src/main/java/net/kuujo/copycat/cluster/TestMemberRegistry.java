@@ -23,10 +23,10 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftTestMemberRegistry {
-  private final Map<String, RaftTestLocalMember> registry = new ConcurrentHashMap<>();
+public class TestMemberRegistry {
+  private final Map<String, TestLocalMember> registry = new ConcurrentHashMap<>();
 
-  void register(String address, RaftTestLocalMember member) {
+  void register(String address, TestLocalMember member) {
     registry.put(address, member);
   }
 
@@ -34,7 +34,7 @@ public class RaftTestMemberRegistry {
     registry.remove(address);
   }
 
-  RaftTestLocalMember get(String address) {
+  TestLocalMember get(String address) {
     return registry.get(address);
   }
 

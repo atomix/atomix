@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftTestLocalMember extends AbstractLocalMember implements RaftTestMember {
+public class TestLocalMember extends AbstractLocalMember implements TestMember {
 
   /**
    * Returns a new builder.
@@ -39,16 +39,16 @@ public class RaftTestLocalMember extends AbstractLocalMember implements RaftTest
     return new Builder();
   }
 
-  private final RaftTestMember.Info info;
+  private final TestMember.Info info;
   private final Map<String, HandlerHolder> handlers = new HashMap<>();
-  private RaftTestMemberRegistry registry;
+  private TestMemberRegistry registry;
 
-  public RaftTestLocalMember(RaftTestMember.Info info, Serializer serializer, ExecutionContext context) {
+  public TestLocalMember(TestMember.Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
     this.info = info;
   }
 
-  RaftTestLocalMember init(RaftTestMemberRegistry registry) {
+  TestLocalMember init(TestMemberRegistry registry) {
     this.registry = registry;
     return this;
   }
@@ -136,7 +136,7 @@ public class RaftTestLocalMember extends AbstractLocalMember implements RaftTest
   /**
    * Raft test local member builder.
    */
-  public static class Builder extends AbstractLocalMember.Builder<Builder, RaftTestLocalMember> {
+  public static class Builder extends AbstractLocalMember.Builder<Builder, TestLocalMember> {
     private String address;
 
     /**
@@ -151,14 +151,14 @@ public class RaftTestLocalMember extends AbstractLocalMember implements RaftTest
     }
 
     @Override
-    public RaftTestLocalMember build() {
+    public TestLocalMember build() {
       if (id <= 0)
         throw new ConfigurationException("member id must be greater than 0");
       if (type == null)
         throw new ConfigurationException("must specify member type");
       if (address == null)
         throw new ConfigurationException("address cannot be null");
-      return new RaftTestLocalMember(new RaftTestMember.Info(id, type, address), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new TestLocalMember(new TestMember.Info(id, type, address), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

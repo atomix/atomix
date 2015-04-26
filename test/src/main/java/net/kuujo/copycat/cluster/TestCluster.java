@@ -25,7 +25,7 @@ import java.util.Collection;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftTestCluster extends AbstractCluster {
+public class TestCluster extends AbstractCluster {
 
   /**
    * Returns a new builder.
@@ -34,9 +34,9 @@ public class RaftTestCluster extends AbstractCluster {
     return new Builder();
   }
 
-  private final RaftTestMemberRegistry registry;
+  private final TestMemberRegistry registry;
 
-  public RaftTestCluster(RaftTestLocalMember localMember, Collection<? extends RaftTestRemoteMember> remoteMembers, RaftTestMemberRegistry registry) {
+  public TestCluster(TestLocalMember localMember, Collection<? extends TestRemoteMember> remoteMembers, TestMemberRegistry registry) {
     super(localMember, remoteMembers);
     this.registry = registry;
     localMember.init(registry);
@@ -45,12 +45,12 @@ public class RaftTestCluster extends AbstractCluster {
 
   @Override
   protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
-    return new RaftTestRemoteMember((RaftTestMember.Info) info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(registry);
+    return new TestRemoteMember((TestMember.Info) info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(registry);
   }
 
   @Override
-  public RaftTestMember member(int id) {
-    return (RaftTestMember) super.member(id);
+  public TestMember member(int id) {
+    return (TestMember) super.member(id);
   }
 
   /**
@@ -58,9 +58,9 @@ public class RaftTestCluster extends AbstractCluster {
    */
   public void partition(int id) {
     if (localMember.id() == id) {
-      remoteMembers.values().forEach(m -> ((RaftTestRemoteMember) m).partition());
+      remoteMembers.values().forEach(m -> ((TestRemoteMember) m).partition());
     } else {
-      RaftTestRemoteMember member = (RaftTestRemoteMember) remoteMembers.get(id);
+      TestRemoteMember member = (TestRemoteMember) remoteMembers.get(id);
       if (member != null) {
         member.partition();
       }
@@ -72,9 +72,9 @@ public class RaftTestCluster extends AbstractCluster {
    */
   public void heal(int id) {
     if (localMember.id() == id) {
-      remoteMembers.values().forEach(m -> ((RaftTestRemoteMember) m).heal());
+      remoteMembers.values().forEach(m -> ((TestRemoteMember) m).heal());
     } else {
-      RaftTestRemoteMember member = (RaftTestRemoteMember) remoteMembers.get(id);
+      TestRemoteMember member = (TestRemoteMember) remoteMembers.get(id);
       if (member != null) {
         member.heal();
       }
@@ -84,8 +84,8 @@ public class RaftTestCluster extends AbstractCluster {
   /**
    * Raft test cluster builder.
    */
-  public static class Builder extends AbstractCluster.Builder<Builder, RaftTestLocalMember, RaftTestRemoteMember> {
-    private RaftTestMemberRegistry registry;
+  public static class Builder extends AbstractCluster.Builder<Builder, TestLocalMember, TestRemoteMember> {
+    private TestMemberRegistry registry;
 
     private Builder() {
     }
@@ -96,16 +96,16 @@ public class RaftTestCluster extends AbstractCluster {
      * @param registry The test member registry.
      * @return The test cluster builder.
      */
-    public Builder withRegistry(RaftTestMemberRegistry registry) {
+    public Builder withRegistry(TestMemberRegistry registry) {
       this.registry = registry;
       return this;
     }
 
     @Override
-    public RaftTestCluster build() {
+    public TestCluster build() {
       if (registry == null)
         throw new ConfigurationException("member registry must be provided");
-      return new RaftTestCluster(localMember, remoteMembers, registry);
+      return new TestCluster(localMember, remoteMembers, registry);
     }
   }
 

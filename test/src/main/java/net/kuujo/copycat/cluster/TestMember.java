@@ -22,7 +22,7 @@ import net.kuujo.copycat.io.Buffer;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface RaftTestMember extends Member {
+public interface TestMember extends Member {
 
   /**
    * Returns the member address.

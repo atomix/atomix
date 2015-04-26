@@ -74,6 +74,7 @@
     <module>netty</module>
     <module>resources</module>
     <module>all</module>
+    <module>test</module>
   </modules>
 
   <dependencies>

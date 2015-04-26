@@ -28,7 +28,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTestMember {
+public class TestRemoteMember extends AbstractRemoteMember implements TestMember {
 
   /**
    * Returns a new builder.
@@ -37,16 +37,16 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
     return new Builder();
   }
 
-  private final RaftTestMember.Info info;
-  private RaftTestMemberRegistry registry;
+  private final TestMember.Info info;
+  private TestMemberRegistry registry;
   private boolean partitioned;
 
-  public RaftTestRemoteMember(RaftTestMember.Info info, Serializer serializer, ExecutionContext context) {
+  public TestRemoteMember(TestMember.Info info, Serializer serializer, ExecutionContext context) {
     super(info, serializer, context);
     this.info = info;
   }
 
-  RaftTestRemoteMember init(RaftTestMemberRegistry registry) {
+  TestRemoteMember init(TestMemberRegistry registry) {
     this.registry = registry;
     return this;
   }
@@ -75,7 +75,7 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
     if (partitioned)
       return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
 
-    RaftTestLocalMember member = registry.get(info.address);
+    TestLocalMember member = registry.get(info.address);
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
 
@@ -103,7 +103,7 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
     if (partitioned)
       return Futures.exceptionalFuture(new ClusterException("failed to communicate"));
 
-    RaftTestLocalMember member = registry.get(info.address);
+    TestLocalMember member = registry.get(info.address);
     if (member == null)
       return Futures.exceptionalFuture(new ClusterException("invalid member"));
 
@@ -136,7 +136,7 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
   /**
    * Raft test remote member builder.
    */
-  public static class Builder extends AbstractRemoteMember.Builder<Builder, RaftTestRemoteMember> {
+  public static class Builder extends AbstractRemoteMember.Builder<Builder, TestRemoteMember> {
     private String address;
 
     /**
@@ -151,14 +151,14 @@ public class RaftTestRemoteMember extends AbstractRemoteMember implements RaftTe
     }
 
     @Override
-    public RaftTestRemoteMember build() {
+    public TestRemoteMember build() {
       if (id <= 0)
         throw new ConfigurationException("member id must be greater than 0");
       if (type == null)
         throw new ConfigurationException("must specify member type");
       if (address == null)
         throw new ConfigurationException("address cannot be null");
-      return new RaftTestRemoteMember(new RaftTestMember.Info(id, type, address), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
+      return new TestRemoteMember(new TestMember.Info(id, type, address), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 
