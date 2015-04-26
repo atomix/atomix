@@ -1,2 +1,2 @@
-id=136
+id=204
 class=net.kuujo.copycat.protocol.raft.rpc.VoteResponse

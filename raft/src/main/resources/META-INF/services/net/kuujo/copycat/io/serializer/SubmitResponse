@@ -1,2 +1,2 @@
-id=140
+id=210
 class=net.kuujo.copycat.protocol.raft.rpc.SubmitResponse
