@@ -36,9 +36,9 @@ import java.util.function.Supplier;
 public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, AsyncMultiMapProxy<K, V> {
 
   /**
-   * Returns a new asynchronous map builder.
+   * Returns a new asynchronous multi-map builder.
    *
-   * @return A new asynchronous map builder.
+   * @return A new asynchronous multi-map builder.
    */
   public static <K, V> Builder<K, V> builder() {
     return new Builder<>();
@@ -316,7 +316,7 @@ public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, Async
   }
 
   /**
-   * Asynchronous map builder.
+   * Asynchronous multi-map builder.
    */
   public static class Builder<K, V> implements net.kuujo.copycat.Builder<AsyncMultiMap<K, V>> {
     private final StateMachine.Builder<State<K, V>> builder = StateMachine.<State<K, V>>builder().withState(new State<>());
@@ -325,7 +325,7 @@ public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, Async
     }
 
     /**
-     * Sets the map state log.
+     * Sets the multi-map state log.
      *
      * @param stateLog The map state log.
      * @return The map builder.

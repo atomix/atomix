@@ -16,10 +16,7 @@
 package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.state.Delete;
-import net.kuujo.copycat.state.Read;
-import net.kuujo.copycat.state.StateMachine;
-import net.kuujo.copycat.state.Write;
+import net.kuujo.copycat.state.*;
 import net.kuujo.copycat.util.concurrent.Futures;
 import org.jetbrains.annotations.NotNull;
 
@@ -38,6 +35,16 @@ import java.util.function.Supplier;
  * @param <T> The set data type.
  */
 public class AsyncSet<T> implements AsyncCollection<AsyncSet<T>, T>, AsyncSetProxy<T> {
+
+  /**
+   * Returns a new asynchronous set builder.
+   *
+   * @return A new asynchronous set builder.
+   */
+  public static <T> Builder<T> builder() {
+    return new Builder<>();
+  }
+
   private final StateMachine<State<T>> stateMachine;
   private final AsyncSetProxy<T> proxy;
 
@@ -226,6 +233,32 @@ public class AsyncSet<T> implements AsyncCollection<AsyncSet<T>, T>, AsyncSetPro
     @Override
     public void clear() {
       state.clear();
+    }
+  }
+
+  /**
+   * Asynchronous set builder.
+   */
+  public static class Builder<T> implements net.kuujo.copycat.Builder<AsyncSet<T>> {
+    private final StateMachine.Builder<State<T>> builder = StateMachine.<State<T>>builder().withState(new State<>());
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the set state log.
+     *
+     * @param stateLog The map state log.
+     * @return The map builder.
+     */
+    public Builder<T> withLog(StateLog stateLog) {
+      builder.withLog(stateLog);
+      return this;
+    }
+
+    @Override
+    public AsyncSet<T> build() {
+      return new AsyncSet<>(builder.build());
     }
   }
 
