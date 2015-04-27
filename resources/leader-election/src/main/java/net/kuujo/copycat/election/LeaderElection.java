@@ -30,6 +30,16 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class LeaderElection extends DiscreteResource<LeaderElection, LeaderElection> {
+
+  /**
+   * Returns a new leader election builder.
+   *
+   * @return A new leader election builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private final Map<EventListener<LeaderElectionEvent>, EventListener<LeaderChangeEvent>> listeners = new ConcurrentHashMap<>();
 
   public LeaderElection(DiscreteResourceConfig config) {
