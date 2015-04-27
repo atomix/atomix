@@ -183,12 +183,7 @@ public class StateMachine<T> implements Resource<StateMachine<T>> {
   private Command<Object, List<Object>, Object> wrapCommand(Method method) {
     return (key, values) -> {
       try {
-        Object[] args = new Object[values.size() + 1];
-        args[0] = key;
-        for (int i = 0; i < values.size(); i++) {
-          args[i+1] = values.get(i);
-        }
-        return method.invoke(state, args);
+        return method.invoke(state, values.toArray());
       } catch (IllegalAccessException | InvocationTargetException e) {
         throw new IllegalStateException(e);
       }
