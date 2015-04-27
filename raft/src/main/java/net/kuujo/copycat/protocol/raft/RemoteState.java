@@ -146,4 +146,19 @@ public class RemoteState extends RaftState {
     }
   }
 
+  /**
+   * Cancels the status timer.
+   */
+  private void cancelStatusTimer() {
+    if (currentTimer != null) {
+      LOGGER.debug("{} - Cancelling status timer", context.getCluster().member().id());
+      currentTimer.cancel(false);
+    }
+  }
+
+  @Override
+  public synchronized CompletableFuture<Void> close() {
+    return super.close().thenRun(this::cancelStatusTimer);
+  }
+
 }
