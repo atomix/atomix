@@ -120,6 +120,11 @@ public class TestLocalMember extends AbstractLocalMember implements TestMember {
     return CompletableFuture.completedFuture(null);
   }
 
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof TestLocalMember && ((TestLocalMember) object).id() == id();
+  }
+
   /**
    * Holds message handler and thread context.
    */

@@ -133,6 +133,11 @@ public class TestRemoteMember extends AbstractRemoteMember implements TestMember
     return CompletableFuture.completedFuture(null);
   }
 
+  @Override
+  public boolean equals(Object object) {
+    return object instanceof TestRemoteMember && ((TestRemoteMember) object).id() == id();
+  }
+
   /**
    * Raft test remote member builder.
    */
