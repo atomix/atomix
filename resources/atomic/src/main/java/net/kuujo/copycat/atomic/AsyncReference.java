@@ -18,6 +18,7 @@ package net.kuujo.copycat.atomic;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
 import net.kuujo.copycat.state.Read;
+import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.Write;
 
@@ -30,11 +31,21 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncReference<T> implements Resource<AsyncReference<T>>, AsyncReferenceProxy<T> {
-  private final StateMachine<State> stateMachine;
+
+  /**
+   * Returns a new asynchronous reference builder.
+   *
+   * @return A new asynchronous reference builder.
+   */
+  public static <T> Builder<T> builder() {
+    return new Builder<>();
+  }
+
+  private final StateMachine<State<T>> stateMachine;
   private final AsyncReferenceProxy<T> proxy;
 
   @SuppressWarnings("unchecked")
-  public AsyncReference(StateMachine<State> stateMachine) {
+  public AsyncReference(StateMachine<State<T>> stateMachine) {
     this.stateMachine = stateMachine;
     this.proxy = stateMachine.createProxy(AsyncReferenceProxy.class);
   }
@@ -113,6 +124,32 @@ public class AsyncReference<T> implements Resource<AsyncReference<T>>, AsyncRefe
     @Write
     public boolean compareAndSet(T expect, T update) {
       return this.value.compareAndSet(expect, update);
+    }
+  }
+
+  /**
+   * Asynchronous set builder.
+   */
+  public static class Builder<T> implements net.kuujo.copycat.Builder<AsyncReference<T>> {
+    private final StateMachine.Builder<State<T>> builder = StateMachine.<State<T>>builder().withState(new State<>());
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the reference state log.
+     *
+     * @param stateLog The reference state log.
+     * @return The reference builder.
+     */
+    public Builder<T> withLog(StateLog stateLog) {
+      builder.withLog(stateLog);
+      return this;
+    }
+
+    @Override
+    public AsyncReference<T> build() {
+      return new AsyncReference<>(builder.build());
     }
   }
 
