@@ -17,15 +17,17 @@ import java.util.concurrent.ConcurrentHashMap;
 class PartitionedCluster implements Cluster {
   private final Cluster cluster;
   private final ReplicationStrategy replicationStrategy;
+  private final int partitionId;
   private final int partitions;
   private final Map<EventListener<MembershipChangeEvent>, EventListener<MembershipChangeEvent>> listeners = new ConcurrentHashMap<>();
   private LocalMember localMember;
   private Map<Integer, Member> members = new ConcurrentHashMap<>();
   private Map<Integer, Member> remoteMembers = new ConcurrentHashMap<>();
 
-  PartitionedCluster(Cluster cluster, ReplicationStrategy replicationStrategy, int partitions) {
+  PartitionedCluster(Cluster cluster, ReplicationStrategy replicationStrategy, int partitionId, int partitions) {
     this.cluster = cluster;
     this.replicationStrategy = replicationStrategy;
+    this.partitionId = partitionId;
     this.partitions = partitions;
     cluster.addMembershipListener(event -> {
       resetMembers();
@@ -39,7 +41,7 @@ class PartitionedCluster implements Cluster {
   private void resetMembers() {
     LocalMember localMember = null;
     Map<Integer, Member> members = new ConcurrentHashMap<>();
-    for (Member member : replicationStrategy.selectPrimaries(cluster, partitions)) {
+    for (Member member : replicationStrategy.selectPrimaries(cluster, partitionId, partitions)) {
       if (member instanceof LocalMember) {
         localMember = new PartitionedLocalMember((LocalMember) member, Member.Type.ACTIVE);
       } else if (member.type() != Member.Type.REMOTE) {
@@ -47,11 +49,11 @@ class PartitionedCluster implements Cluster {
       }
     }
 
-    for (Member member : replicationStrategy.selectSecondaries(cluster, partitions)) {
+    for (Member member : replicationStrategy.selectSecondaries(cluster, partitionId, partitions)) {
       if (member instanceof LocalMember) {
         localMember = new PartitionedLocalMember((LocalMember) member, Member.Type.PASSIVE);
       } else if (member.type() != Member.Type.REMOTE) {
-        members.put(member.id(), new PartitionedRemoteMember((RemoteMember) member, Member.Type.PASSIVE));
+        members.put(member.id(), new PartitionedRemoteMember(member, Member.Type.PASSIVE));
       }
     }
 
@@ -118,6 +120,11 @@ class PartitionedCluster implements Cluster {
     return this;
   }
 
+  @Override
+  public String toString() {
+    return String.format("%s[%s]", getClass().getSimpleName(), members.values());
+  }
+
   /**
    * Partitioned local member.
    */
@@ -171,6 +178,11 @@ class PartitionedCluster implements Cluster {
     public <T> CompletableFuture<T> submit(Task<T> task) {
       return member.submit(task);
     }
+
+    @Override
+    public String toString() {
+      return String.format("%s[id=%s, type=%s, status=%s]", getClass().getSimpleName(), member.id(), member.type(), member.status());
+    }
   }
 
   /**
@@ -213,6 +225,11 @@ class PartitionedCluster implements Cluster {
     @Override
     public <T> CompletableFuture<T> submit(Task<T> task) {
       return member.submit(task);
+    }
+
+    @Override
+    public String toString() {
+      return String.format("%s[id=%s, type=%s, status=%s]", getClass().getSimpleName(), member.id(), member.type(), member.status());
     }
   }
 

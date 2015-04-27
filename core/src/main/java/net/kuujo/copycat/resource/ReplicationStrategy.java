@@ -31,18 +31,20 @@ public interface ReplicationStrategy {
    * Selects the set of primary nodes for the given cluster.
    *
    * @param cluster The cluster from which to select the nodes.
+   * @param partitionId The partition for which to select nodes.
    * @param partitions The total number of partitions for the resource being replicated.
    * @return A collection of primary nodes.
    */
-  Collection<Member> selectPrimaries(Cluster cluster, int partitions);
+  Collection<Member> selectPrimaries(Cluster cluster, int partitionId, int partitions);
 
   /**
    * Selects the set of secondary nodes for the given cluster.
    *
    * @param cluster The cluster from which to select the nodes.
+   * @param partitionId The partition for which to select nodes.
    * @param partitions The total number of partitions for the resource being replicated.
    * @return A collection of secondary nodes.
    */
-  Collection<Member> selectSecondaries(Cluster cluster, int partitions);
+  Collection<Member> selectSecondaries(Cluster cluster, int partitionId, int partitions);
 
 }

@@ -45,6 +45,11 @@ public class StateLogConfig extends DiscreteResourceConfig {
   }
 
   @Override
+  protected void setPartitionId(int partitionId) {
+    super.setPartitionId(partitionId);
+  }
+
+  @Override
   protected void setPartitions(int partitions) {
     super.setPartitions(partitions);
   }

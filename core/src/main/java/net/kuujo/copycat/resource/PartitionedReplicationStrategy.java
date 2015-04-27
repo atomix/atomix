@@ -38,25 +38,33 @@ public class PartitionedReplicationStrategy implements ReplicationStrategy {
   }
 
   @Override
-  public Collection<Member> selectPrimaries(Cluster cluster, int partitions) {
-    return selectMembers(cluster, partitions, m -> m.type() == Member.Type.ACTIVE);
+  public Collection<Member> selectPrimaries(Cluster cluster, int partitionId, int partitions) {
+    return selectMembers(cluster, partitionId, partitions, m -> m.type() == Member.Type.ACTIVE);
   }
 
   @Override
-  public Collection<Member> selectSecondaries(Cluster cluster, int partitions) {
-    return selectMembers(cluster, partitions, m -> m.type() == Member.Type.PASSIVE);
+  public Collection<Member> selectSecondaries(Cluster cluster, int partitionId, int partitions) {
+    return selectMembers(cluster, partitionId, partitions, m -> m.type() == Member.Type.PASSIVE);
   }
 
   /**
    * Selects a set of members for the given filter.
    */
-  private Collection<Member> selectMembers(Cluster cluster, int partitions, Predicate<Member> filter) {
-    List<Member> filteredMembers = cluster.members().stream().filter(filter).collect(Collectors.toList());
-    Collections.sort(filteredMembers, (m1, m2) -> m2.id() - m1.id());
+  private Collection<Member> selectMembers(Cluster cluster, int partitionId, int partitions, Predicate<Member> filter) {
+    // In order to ensure even distribution across a cluster, the members list is calculated via the following equation:
+    // p = number of partitions
+    // m = number of members
+    // i = the partition ID
+    // ((p % m) * i) % m
+    // Note that this assumes that partition IDs are assigned in monotonically increasing order.
     List<Member> members = new ArrayList<>(replicationFactor);
-    int i = filteredMembers.size() % partitions;
-    for (int j = 0; j < replicationFactor && j < filteredMembers.size(); j++) {
-      members.add(filteredMembers.get(i + j % filteredMembers.size()));
+    List<Member> filteredMembers = cluster.members().stream().filter(filter).collect(Collectors.toList());
+    if (!filteredMembers.isEmpty()) {
+      Collections.sort(filteredMembers, (m1, m2) -> m2.id() - m1.id());
+      int i = ((partitions % filteredMembers.size()) * partitionId) % filteredMembers.size();
+      for (int j = 0; j < replicationFactor; j++) {
+        members.add(filteredMembers.get((i + j) % filteredMembers.size()));
+      }
     }
     return members;
   }

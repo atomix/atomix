@@ -30,8 +30,9 @@ public abstract class Partition<T> implements Managed<T> {
    * Initializes the partition.
    *
    * @param config The partition's resource configuration.
+   * @param partitionId The unique partition ID.
    */
-  protected abstract void init(PartitionedResourceConfig config);
+  protected abstract void init(PartitionedResourceConfig config, int partitionId);
 
   /**
    * Partition builder.
@@ -41,22 +42,9 @@ public abstract class Partition<T> implements Managed<T> {
    */
   public static abstract class Builder<T extends Builder<T, U>, U extends Partition<? super U>> {
     protected final DiscreteResourceConfig config;
-    protected int partitionId;
 
     protected Builder(DiscreteResourceConfig config) {
       this.config = config;
-    }
-
-    /**
-     * Sets the partition identifier.
-     *
-     * @param partitionId The unique partition ID.
-     * @return The partition builder.
-     */
-    @SuppressWarnings("unchecked")
-    public T withPartitionId(int partitionId) {
-      this.partitionId = partitionId;
-      return (T) this;
     }
 
     /**

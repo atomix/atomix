@@ -39,10 +39,10 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
     this.protocol = config.getProtocol();
     this.replicationStrategy = config.getReplicationStrategy();
     this.serializer = config.getSerializer();
-    this.partitionedCluster = new PartitionedCluster(config.getCluster(), config.getReplicationStrategy(), config.getPartitions());
-    protocol.setTopic(config.getName());
+    this.partitionedCluster = new PartitionedCluster(config.getCluster(), config.getReplicationStrategy(), config.getPartitionId(), config.getPartitions());
+    protocol.setTopic(String.format("%s-%d", config.getName(), config.getPartitionId()));
     protocol.setCluster(partitionedCluster);
-    protocol.setContext(new ExecutionContext("copycat-protocol-" + config.getName()));
+    protocol.setContext(new ExecutionContext(String.format("copycat-protocol-%s-%d", config.getName(), config.getPartitionId())));
   }
 
   /**

@@ -34,7 +34,9 @@ public abstract class PartitionedResource<T extends PartitionedResource<T, U, V>
       throw new NullPointerException("partitions cannot be null");
     this.partitioner = config.resolve().getPartitioner();
     this.partitions = partitions;
-    partitions.forEach(p -> p.init(config));
+    for (int i = 0; i < partitions.size(); i++) {
+      partitions.get(i).init(config, i);
+    }
   }
 
   /**

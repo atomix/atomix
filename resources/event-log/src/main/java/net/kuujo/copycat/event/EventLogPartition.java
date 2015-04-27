@@ -28,18 +28,17 @@ import java.util.concurrent.CompletableFuture;
  */
 public class EventLogPartition<K, V> extends Partition<EventLog<K, V>> implements EventLog<K, V> {
   private final EventLogConfig config;
-  private final int partitionId;
   private DiscreteEventLog<K, V> eventLog;
 
-  private EventLogPartition(EventLogConfig config, int partitionId) {
+  private EventLogPartition(EventLogConfig config) {
     this.config = config;
-    this.partitionId = partitionId;
   }
 
   @Override
-  protected void init(PartitionedResourceConfig config) {
-    this.config.setName(String.format("%s-%d", config.getName(), partitionId));
+  protected void init(PartitionedResourceConfig config, int partitionId) {
+    this.config.setName(config.getName());
     this.config.setCluster(config.getCluster());
+    this.config.setPartitionId(partitionId);
     this.config.setPartitions(config.getPartitions().size());
     this.eventLog = new DiscreteEventLog<>(this.config);
   }
@@ -102,7 +101,7 @@ public class EventLogPartition<K, V> extends Partition<EventLog<K, V>> implement
 
     @Override
     public EventLogPartition<K, V> build() {
-      return new EventLogPartition<>(config, partitionId);
+      return new EventLogPartition<>(config);
     }
   }
 

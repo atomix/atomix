@@ -26,6 +26,7 @@ import net.kuujo.copycat.protocol.Protocol;
  */
 public abstract class DiscreteResourceConfig extends ResourceConfig {
   private Protocol protocol;
+  private int partitionId = 0;
   private int partitions = 1;
   private ReplicationStrategy replicationStrategy;
   private Serializer serializer;
@@ -46,6 +47,24 @@ public abstract class DiscreteResourceConfig extends ResourceConfig {
    */
   public Protocol getProtocol() {
     return protocol;
+  }
+
+  /**
+   * Sets the partition ID.
+   *
+   * @param partitionId The partition ID.
+   */
+  protected void setPartitionId(int partitionId) {
+    this.partitionId = partitionId;
+  }
+
+  /**
+   * Returns the partition ID.
+   *
+   * @return The partition ID.
+   */
+  public int getPartitionId() {
+    return partitionId;
   }
 
   /**

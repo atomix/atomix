@@ -40,18 +40,17 @@ public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implement
   }
 
   private final StateLogConfig config;
-  private final int partitionId;
   private DiscreteStateLog<K, V> stateLog;
 
-  private StateLogPartition(StateLogConfig config, int partitionId) {
+  private StateLogPartition(StateLogConfig config) {
     this.config = config;
-    this.partitionId = partitionId;
   }
 
   @Override
-  protected void init(PartitionedResourceConfig config) {
-    this.config.setName(String.format("%s-%d", config.getName(), partitionId));
+  protected void init(PartitionedResourceConfig config, int partitionId) {
+    this.config.setName(config.getName());
     this.config.setCluster(config.getCluster());
+    this.config.setPartitionId(partitionId);
     this.config.setPartitions(config.getPartitions().size());
     this.config.setDefaultConsistency(((PartitionedStateLogConfig) config).getDefaultConsistency());
     this.config.setCommands(((PartitionedStateLogConfig) config).getCommands());
@@ -150,7 +149,7 @@ public class StateLogPartition<K, V> extends Partition<StateLog<K, V>> implement
 
     @Override
     public StateLogPartition<K, V> build() {
-      return new StateLogPartition<>(config, partitionId);
+      return new StateLogPartition<>(config);
     }
   }
 
