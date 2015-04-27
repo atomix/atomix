@@ -16,9 +16,11 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.ConfigurationException;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 import java.util.Collection;
+import java.util.stream.Collectors;
 
 /**
  * Raft test cluster.
@@ -40,12 +42,12 @@ public class TestCluster extends AbstractCluster {
     super(localMember, remoteMembers);
     this.registry = registry;
     localMember.init(registry);
-    remoteMembers.forEach(m -> m.init(registry));
+    remoteMembers.forEach(m -> m.init(localMember.serializer, registry));
   }
 
   @Override
   protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
-    return new TestRemoteMember((TestMember.Info) info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(registry);
+    return new TestRemoteMember((TestMember.Info) info, new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).init(((TestLocalMember) localMember).serializer, registry);
   }
 
   @Override
@@ -84,10 +86,22 @@ public class TestCluster extends AbstractCluster {
   /**
    * Raft test cluster builder.
    */
-  public static class Builder extends AbstractCluster.Builder<Builder, TestLocalMember, TestRemoteMember> {
+  public static class Builder extends AbstractCluster.Builder<Builder, TestMember> {
     private TestMemberRegistry registry;
+    private String address;
 
     private Builder() {
+    }
+
+    /**
+     * Sets the local member address.
+     *
+     * @param address The local member address.
+     * @return The local member builder.
+     */
+    public Builder withAddress(String address) {
+      this.address = address;
+      return this;
     }
 
     /**
@@ -105,7 +119,17 @@ public class TestCluster extends AbstractCluster {
     public TestCluster build() {
       if (registry == null)
         throw new ConfigurationException("member registry must be provided");
-      return new TestCluster(localMember, remoteMembers, registry);
+
+      TestMember member = members.remove(memberId);
+      TestMember.Info info;
+      if (member != null) {
+        info = new TestMember.Info(memberId, Member.Type.ACTIVE, member.address());
+      } else {
+        info = new TestMember.Info(memberId, memberType != null ? memberType : Member.Type.REMOTE, address);
+      }
+
+      TestLocalMember localMember = new TestLocalMember(info, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+      return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry);
     }
   }
 

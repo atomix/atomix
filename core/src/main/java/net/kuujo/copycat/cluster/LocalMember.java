@@ -50,10 +50,4 @@ public interface LocalMember extends Member {
    */
   LocalMember unregisterHandler(String topic);
 
-  /**
-   * Local member builder.
-   */
-  public static interface Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends ManagedLocalMember> extends Member.Builder<BUILDER, TYPE> {
-  }
-
 }

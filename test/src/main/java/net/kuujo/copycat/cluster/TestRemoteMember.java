@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -29,24 +28,21 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestRemoteMember extends AbstractRemoteMember implements TestMember {
-
-  /**
-   * Returns a new builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
+  private Serializer serializer;
   private final TestMember.Info info;
   private TestMemberRegistry registry;
   private boolean partitioned;
 
-  public TestRemoteMember(TestMember.Info info, Serializer serializer, ExecutionContext context) {
-    super(info, serializer, context);
+  TestRemoteMember(TestMember.Info info, ExecutionContext context) {
+    super(info, context);
     this.info = info;
   }
 
-  TestRemoteMember init(TestMemberRegistry registry) {
+  /**
+   * Initializes the member.
+   */
+  TestRemoteMember init(Serializer serializer, TestMemberRegistry registry) {
+    this.serializer = serializer;
     this.registry = registry;
     return this;
   }
@@ -136,35 +132,6 @@ public class TestRemoteMember extends AbstractRemoteMember implements TestMember
   @Override
   public boolean equals(Object object) {
     return object instanceof TestRemoteMember && ((TestRemoteMember) object).id() == id();
-  }
-
-  /**
-   * Raft test remote member builder.
-   */
-  public static class Builder extends AbstractRemoteMember.Builder<Builder, TestRemoteMember> {
-    private String address;
-
-    /**
-     * Sets the member address.
-     *
-     * @param address The member address.
-     * @return The member builder.
-     */
-    public Builder withAddress(String address) {
-      this.address = address;
-      return this;
-    }
-
-    @Override
-    public TestRemoteMember build() {
-      if (id <= 0)
-        throw new ConfigurationException("member id must be greater than 0");
-      if (type == null)
-        throw new ConfigurationException("must specify member type");
-      if (address == null)
-        throw new ConfigurationException("address cannot be null");
-      return new TestRemoteMember(new TestMember.Info(id, type, address), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
-    }
   }
 
 }

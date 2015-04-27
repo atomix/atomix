@@ -24,7 +24,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.HashFunctions;
@@ -43,16 +42,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyLocalMember extends AbstractLocalMember implements NettyMember{
-
-  /**
-   * Returns a new Netty local member builder.
-   *
-   * @return A new Netty local member builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
   private static final ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
@@ -63,6 +52,7 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
   };
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
+  final Serializer serializer;
   private final NettyMember.Info info;
   private final EventLoopGroup workerGroup;
   private Channel channel;
@@ -71,8 +61,9 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
-  protected NettyLocalMember(NettyMember.Info info, Serializer serializer, ExecutionContext context) {
-    super(info, serializer, context);
+  NettyLocalMember(NettyMember.Info info, Serializer serializer, ExecutionContext context) {
+    super(info, context);
+    this.serializer = serializer;
     this.info = info;
     this.workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
   }
@@ -311,45 +302,6 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
     private HandlerHolder(MessageHandler handler, ExecutionContext context) {
       this.handler = handler;
       this.context = context;
-    }
-  }
-
-  /**
-   * Local Netty member builder.
-   */
-  public static class Builder extends AbstractLocalMember.Builder<Builder, NettyLocalMember> {
-    private String host;
-    private int port;
-
-    /**
-     * Sets the member host.
-     *
-     * @param host The member host.
-     * @return The member builder.
-     */
-    public Builder withHost(String host) {
-      this.host = host;
-      return this;
-    }
-
-    /**
-     * Sets the member port.
-     *
-     * @param port The member port.
-     * @return The member builder.
-     */
-    public Builder withPort(int port) {
-      this.port = port;
-      return this;
-    }
-
-    @Override
-    public NettyLocalMember build() {
-      if (id <= 0)
-        throw new ConfigurationException("member id must be greater than 0");
-      if (type == null)
-        throw new ConfigurationException("must specify member type");
-      return new NettyLocalMember(new NettyMember.Info(id, type, new InetSocketAddress(host, port)), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

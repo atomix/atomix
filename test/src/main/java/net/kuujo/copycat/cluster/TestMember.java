@@ -15,14 +15,25 @@
  */
 package net.kuujo.copycat.cluster;
 
+import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.util.ExecutionContext;
 
 /**
  * Raft test member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface TestMember extends Member {
+public interface TestMember extends ManagedMember {
+
+  /**
+   * Returns a new test member builder.
+   *
+   * @return A new test member builder.
+   */
+  static Builder builder() {
+    return new Builder();
+  }
 
   /**
    * Returns the member address.
@@ -57,6 +68,33 @@ public interface TestMember extends Member {
       byte[] bytes = new byte[buffer.readInt()];
       buffer.read(bytes);
       address = new String(bytes);
+    }
+  }
+
+  /**
+   * Raft test remote member builder.
+   */
+  public static class Builder extends AbstractMember.Builder<Builder, TestMember> {
+    private String address;
+
+    /**
+     * Sets the member address.
+     *
+     * @param address The member address.
+     * @return The member builder.
+     */
+    public Builder withAddress(String address) {
+      this.address = address;
+      return this;
+    }
+
+    @Override
+    public TestMember build() {
+      if (id <= 0)
+        throw new ConfigurationException("member id must be greater than 0");
+      if (address == null)
+        throw new ConfigurationException("address cannot be null");
+      return new TestRemoteMember(new TestMember.Info(id, Type.ACTIVE, address), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

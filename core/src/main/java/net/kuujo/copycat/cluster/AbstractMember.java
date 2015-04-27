@@ -16,7 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.io.Buffer;
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.util.ExecutionContext;
 
@@ -241,12 +240,10 @@ public abstract class AbstractMember implements Member {
   }
 
   protected final Info info;
-  protected final Serializer serializer;
   protected final ExecutionContext context;
 
-  protected AbstractMember(Info info, Serializer serializer, ExecutionContext context) {
+  protected AbstractMember(Info info, ExecutionContext context) {
     this.info = info;
-    this.serializer = serializer;
     this.context = context;
   }
 
@@ -302,33 +299,13 @@ public abstract class AbstractMember implements Member {
   /**
    * Member builder.
    */
-  public static abstract class Builder<T extends Builder<T, U>, U extends AbstractMember> implements Member.Builder<T, U> {
+  public static abstract class Builder<T extends Builder<T, U>, U extends ManagedMember> implements Member.Builder<T, U> {
     protected int id;
-    protected Type type = Type.ACTIVE;
-    protected Serializer serializer;
 
     @Override
     @SuppressWarnings("unchecked")
     public T withId(int id) {
       this.id = id;
-      return (T) this;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T withType(Type type) {
-      if (type == null)
-        throw new NullPointerException("type cannot be null");
-      this.type = type;
-      return (T) this;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public T withSerializer(Serializer serializer) {
-      if (serializer == null)
-        throw new NullPointerException("serializer cannot be null");
-      this.serializer = serializer;
       return (T) this;
     }
   }

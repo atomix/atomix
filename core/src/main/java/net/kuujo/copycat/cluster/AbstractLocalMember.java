@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
 /**
@@ -25,14 +24,8 @@ import net.kuujo.copycat.util.ExecutionContext;
  */
 public abstract class AbstractLocalMember extends AbstractMember implements ManagedLocalMember {
 
-  protected AbstractLocalMember(Info info, Serializer serializer, ExecutionContext context) {
-    super(info, serializer, context);
-  }
-
-  /**
-   * Abstract local member builder.
-   */
-  public static abstract class Builder<BUILDER extends Builder<BUILDER, TYPE>, TYPE extends AbstractLocalMember> extends AbstractMember.Builder<BUILDER, TYPE> {
+  protected AbstractLocalMember(Info info, ExecutionContext context) {
+    super(info, context);
   }
 
 }

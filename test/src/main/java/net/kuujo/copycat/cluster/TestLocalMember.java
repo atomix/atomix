@@ -15,7 +15,6 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -31,20 +30,14 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class TestLocalMember extends AbstractLocalMember implements TestMember {
-
-  /**
-   * Returns a new builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
+  final Serializer serializer;
   private final TestMember.Info info;
   private final Map<String, HandlerHolder> handlers = new HashMap<>();
   private TestMemberRegistry registry;
 
-  public TestLocalMember(TestMember.Info info, Serializer serializer, ExecutionContext context) {
-    super(info, serializer, context);
+  TestLocalMember(TestMember.Info info, Serializer serializer, ExecutionContext context) {
+    super(info, context);
+    this.serializer = serializer;
     this.info = info;
   }
 
@@ -135,35 +128,6 @@ public class TestLocalMember extends AbstractLocalMember implements TestMember {
     private HandlerHolder(MessageHandler handler, ExecutionContext context) {
       this.handler = handler;
       this.context = context;
-    }
-  }
-
-  /**
-   * Raft test local member builder.
-   */
-  public static class Builder extends AbstractLocalMember.Builder<Builder, TestLocalMember> {
-    private String address;
-
-    /**
-     * Sets the member address.
-     *
-     * @param address The member address.
-     * @return The member builder.
-     */
-    public Builder withAddress(String address) {
-      this.address = address;
-      return this;
-    }
-
-    @Override
-    public TestLocalMember build() {
-      if (id <= 0)
-        throw new ConfigurationException("member id must be greater than 0");
-      if (type == null)
-        throw new ConfigurationException("must specify member type");
-      if (address == null)
-        throw new ConfigurationException("address cannot be null");
-      return new TestLocalMember(new TestMember.Info(id, type, address), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

@@ -21,7 +21,6 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.util.HashFunctions;
@@ -40,16 +39,6 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class NettyRemoteMember extends AbstractRemoteMember implements NettyMember {
-
-  /**
-   * Returns a new Netty remote member builder.
-   *
-   * @return A new Netty remote member builder.
-   */
-  public static Builder builder() {
-    return new Builder();
-  }
-
   private static final int RETRY_ATTEMPTS = 3;
   private static final long RECONNECT_INTERVAL = 1000;
   private static final int MESSAGE = 0;
@@ -60,7 +49,8 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
       return new ByteBufBuffer();
     }
   };
-  private final NettyMember.Info info;
+  final NettyMember.Info info;
+  private Serializer serializer;
   private EventLoopGroup eventLoopGroup;
   private boolean eventLoopInitialized;
   private Channel channel;
@@ -73,15 +63,23 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
   private CompletableFuture<Void> closeFuture;
   private ScheduledFuture<?> reconnectFuture;
 
-  protected NettyRemoteMember(NettyMember.Info info, Serializer serializer, ExecutionContext context) {
-    super(info, serializer, context);
+  NettyRemoteMember(NettyMember.Info info, ExecutionContext context) {
+    super(info, context);
     this.info = info;
+  }
+
+  /**
+   * Sets the remote serializer.
+   */
+  NettyRemoteMember setSerializer(Serializer serializer) {
+    this.serializer = serializer;
+    return this;
   }
 
   /**
    * Sets the Netty event loop group.
    */
-  protected NettyRemoteMember setEventLoopGroup(EventLoopGroup eventLoopGroup) {
+  NettyRemoteMember setEventLoopGroup(EventLoopGroup eventLoopGroup) {
     this.eventLoopGroup = eventLoopGroup;
     eventLoopInitialized = true;
     return this;
@@ -284,45 +282,6 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
         });
       }
       response.release();
-    }
-  }
-
-  /**
-   * Netty remote member builder.
-   */
-  public static class Builder extends AbstractRemoteMember.Builder<Builder, NettyRemoteMember> {
-    private String host;
-    private int port;
-
-    /**
-     * Sets the member host.
-     *
-     * @param host The member host.
-     * @return The member builder.
-     */
-    public Builder withHost(String host) {
-      this.host = host;
-      return this;
-    }
-
-    /**
-     * Sets the member port.
-     *
-     * @param port The member port.
-     * @return The member builder.
-     */
-    public Builder withPort(int port) {
-      this.port = port;
-      return this;
-    }
-
-    @Override
-    public NettyRemoteMember build() {
-      if (id <= 0)
-        throw new ConfigurationException("member id must be greater than 0");
-      if (type == null)
-        throw new ConfigurationException("must specify member type");
-      return new NettyRemoteMember(new NettyMember.Info(id, type, new InetSocketAddress(host != null ? host : "localhost", port)), serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", id)));
     }
   }
 

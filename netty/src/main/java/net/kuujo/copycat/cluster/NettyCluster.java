@@ -16,8 +16,11 @@
 package net.kuujo.copycat.cluster;
 
 import io.netty.channel.EventLoopGroup;
+import net.kuujo.copycat.ConfigurationException;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
 
+import java.net.InetSocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -43,12 +46,14 @@ public class NettyCluster extends AbstractCluster {
   public NettyCluster(EventLoopGroup eventLoopGroup, NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers) {
     super(localMember, remoteMembers);
     this.eventLoopGroup = eventLoopGroup;
-    remoteMembers.forEach(m -> m.setEventLoopGroup(eventLoopGroup));
+    remoteMembers.forEach(m -> m.setSerializer(localMember.serializer.copy()).setEventLoopGroup(eventLoopGroup));
   }
 
   @Override
   protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
-    return new NettyRemoteMember((NettyMember.Info) info, localMember.serializer.copy(), new ExecutionContext(String.format("copycat-cluster-%d", info.id()))).setEventLoopGroup(eventLoopGroup);
+    return new NettyRemoteMember((NettyMember.Info) info, new ExecutionContext(String.format("copycat-cluster-%d", info.id())))
+      .setSerializer(((NettyLocalMember) localMember).serializer.copy())
+      .setEventLoopGroup(eventLoopGroup);
   }
 
   @Override
@@ -64,10 +69,34 @@ public class NettyCluster extends AbstractCluster {
   /**
    * Netty cluster builder.
    */
-  public static class Builder extends AbstractCluster.Builder<Builder, NettyLocalMember, NettyRemoteMember> {
+  public static class Builder extends AbstractCluster.Builder<Builder, NettyMember> {
+    private String host;
+    private int port;
     private EventLoopGroup eventLoopGroup;
 
     private Builder() {
+    }
+
+    /**
+     * Sets the server host.
+     *
+     * @param host The server host.
+     * @return The Netty cluster builder.
+     */
+    public Builder withHost(String host) {
+      this.host = host;
+      return this;
+    }
+
+    /**
+     * Sets the server port.
+     *
+     * @param port The server port.
+     * @return The Netty cluster builder.
+     */
+    public Builder withPort(int port) {
+      this.port = port;
+      return this;
     }
 
     /**
@@ -83,7 +112,18 @@ public class NettyCluster extends AbstractCluster {
 
     @Override
     public ManagedCluster build() {
-      return new NettyCluster(eventLoopGroup, localMember, remoteMembers);
+      NettyMember member = members.remove(memberId);
+      NettyMember.Info info;
+      if (member != null) {
+        info = new NettyMember.Info(memberId, Member.Type.ACTIVE, member.address());
+      } else {
+        if (host == null)
+          throw new ConfigurationException("member host must be configured");
+        info = new NettyMember.Info(memberId, memberType != null ? memberType : Member.Type.REMOTE, new InetSocketAddress(host, port));
+      }
+
+      NettyLocalMember localMember = new NettyLocalMember(info, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+      return new NettyCluster(eventLoopGroup, localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()));
     }
   }
 

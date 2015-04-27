@@ -16,10 +16,10 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.EventListener;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Copycat cluster.
@@ -99,129 +99,61 @@ public interface Cluster {
   /**
    * Cluster builder.
    */
-  public static interface Builder<BUILDER extends Builder<BUILDER, LOCAL, REMOTE>, LOCAL extends ManagedLocalMember, REMOTE extends ManagedRemoteMember> extends net.kuujo.copycat.Builder<ManagedCluster> {
+  public static interface Builder<BUILDER extends Builder<BUILDER, MEMBER>, MEMBER extends ManagedMember> extends net.kuujo.copycat.Builder<ManagedCluster> {
 
     /**
-     * Sets the local cluster member.
+     * Sets the local member ID.
      *
-     * @param member The local cluster member.
+     * @param id The local member ID.
      * @return The cluster builder.
      */
-    BUILDER withLocalMember(LOCAL member);
+    BUILDER withMemberId(int id);
 
     /**
-     * Sets the set of remote cluster members.
+     * Sets the local member type.
      *
-     * @param members The set of remote cluster members.
+     * @param type The local member address.
      * @return The cluster builder.
      */
-    default BUILDER withRemoteMembers(REMOTE... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return withRemoteMembers(Arrays.asList(members));
-    }
+    BUILDER withMemberType(Member.Type type);
 
     /**
-     * Sets the set of remote cluster members.
+     * Sets the cluster serializer.
      *
-     * @param members The set of remote cluster members.
+     * @param serializer The cluster serializer.
      * @return The cluster builder.
      */
-    BUILDER withRemoteMembers(Collection<REMOTE> members);
+    BUILDER withSerializer(Serializer serializer);
 
     /**
-     * Adds a remote member to the cluster.
+     * Sets the cluster seed members.
      *
-     * @param member The remote member to add.
-     * @return The cluster builder.
-     */
-    default BUILDER addRemoteMember(REMOTE member) {
-      return addRemoteMembers(Collections.singleton(member));
-    }
-
-    /**
-     * Adds a set of remote members to the cluster.
-     *
-     * @param members The set of remote members to add.
-     * @return The cluster builder.
-     */
-    default BUILDER addRemoteMembers(REMOTE... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return addRemoteMembers(Arrays.asList(members));
-    }
-
-    /**
-     * Adds a set of remote members to the cluster.
-     *
-     * @param members The set of remote members to add.
-     * @return The cluster builder.
-     */
-    BUILDER addRemoteMembers(Collection<REMOTE> members);
-
-    /**
-     * Sets the set of cluster members.
-     *
-     * @param members The set of cluster members.
-     * @return The cluster builder.
-     */
-    default BUILDER withMembers(Member... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return withMembers(Arrays.asList(members));
-    }
-
-    /**
-     * Sets the set of cluster members.
-     *
-     * @param members The set of cluster members.
-     * @return The cluster builder.
-     */
-    BUILDER withMembers(Collection<Member> members);
-
-    /**
-     * Adds a member to the cluster.
-     *
-     * @param member The member to add.
-     * @return The cluster builder.
-     */
-    default BUILDER addMember(Member member) {
-      if (member == null)
-        throw new NullPointerException("member cannot be null");
-      return addMembers(Collections.singleton(member));
-    }
-
-    /**
-     * Adds a set of members to the cluster.
-     *
-     * @param members The set of members to add.
-     * @return The cluster builder.
-     */
-    default BUILDER addMembers(Member... members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      return addMembers(Arrays.asList(members));
-    }
-
-    /**
-     * Adds a set of members to the cluster.
-     *
-     * @param members The set of members to add.
+     * @param seeds The set of cluster seed members.
      * @return The cluster builder.
      */
     @SuppressWarnings("unchecked")
-    default BUILDER addMembers(Collection<Member> members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      members.forEach(m -> {
-        if (m instanceof LocalMember) {
-          withLocalMember((LOCAL) m);
-        } else if (m instanceof RemoteMember) {
-          addRemoteMember((REMOTE) m);
-        }
-      });
+    default BUILDER withSeeds(MEMBER... seeds) {
+      if (seeds != null) {
+        return withSeeds(Arrays.asList(seeds));
+      }
       return (BUILDER) this;
     }
+
+    /**
+     * Sets the cluster seed members.
+     *
+     * @param seeds The set of cluster seed members.
+     * @return The cluster builder.
+     */
+    BUILDER withSeeds(Collection<MEMBER> seeds);
+
+    /**
+     * Adds a cluster seed member.
+     *
+     * @param member The cluster seed member to add.
+     * @return The cluster builder.
+     */
+    BUILDER addSeed(MEMBER member);
   }
 
 }

@@ -16,9 +16,9 @@
 package net.kuujo.copycat.cluster;
 
 /**
- * Default remote member implementation.
+ * Managed cluster member.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface RemoteMember extends Member {
+public interface ManagedMember extends Member {
 }

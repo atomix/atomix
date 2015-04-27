@@ -188,42 +188,50 @@ public abstract class AbstractCluster implements ManagedCluster {
   /**
    * Cluster builder.
    */
-  public static abstract class Builder<BUILDER extends Builder<BUILDER, LOCAL, REMOTE>, LOCAL extends ManagedLocalMember, REMOTE extends ManagedRemoteMember> implements Cluster.Builder<BUILDER, LOCAL, REMOTE> {
-    protected LOCAL localMember;
-    protected Collection<REMOTE> remoteMembers = new HashSet<>();
+  public static abstract class Builder<BUILDER extends Builder<BUILDER, MEMBER>, MEMBER extends ManagedMember> implements Cluster.Builder<BUILDER, MEMBER> {
+    protected int memberId;
+    protected Member.Type memberType;
+    protected final Map<Integer, MEMBER> members = new HashMap<>();
+    protected Serializer serializer;
 
     @Override
     @SuppressWarnings("unchecked")
-    public BUILDER withLocalMember(LOCAL member) {
+    public BUILDER withMemberId(int id) {
+      if (id < 0)
+        throw new IllegalArgumentException("member ID cannot be negative");
+      this.memberId = id;
+      return (BUILDER) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public BUILDER withMemberType(Member.Type type) {
+      this.memberType = type;
+      return (BUILDER) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public BUILDER withSeeds(Collection<MEMBER> members) {
+      this.members.clear();
+      members.forEach(m -> this.members.put(m.id(), m));
+      return (BUILDER) this;
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public BUILDER addSeed(MEMBER member) {
       if (member == null)
         throw new NullPointerException("member cannot be null");
-      localMember = member;
+      members.put(member.id(), member);
       return (BUILDER) this;
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public BUILDER withRemoteMembers(Collection<REMOTE> members) {
-      remoteMembers.clear();
-      remoteMembers.addAll(members);
+    public BUILDER withSerializer(Serializer serializer) {
+      this.serializer = serializer;
       return (BUILDER) this;
-    }
-
-    @Override
-    @SuppressWarnings("unchecked")
-    public BUILDER addRemoteMembers(Collection<REMOTE> members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      remoteMembers.addAll(members);
-      return (BUILDER) this;
-    }
-
-    @Override
-    public BUILDER withMembers(Collection<Member> members) {
-      if (members == null)
-        throw new NullPointerException("members cannot be null");
-      remoteMembers.clear();
-      return addMembers(members);
     }
   }
 

@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface ManagedRemoteMember extends RemoteMember {
+public interface ManagedRemoteMember extends ManagedMember, RemoteMember {
 
   /**
    * Connects the remote client.

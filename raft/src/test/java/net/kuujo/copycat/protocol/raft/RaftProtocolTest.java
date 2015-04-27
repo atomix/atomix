@@ -1325,20 +1325,15 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   private TestCluster buildCluster(int id, Member.Type type, int nodes, TestMemberRegistry registry) {
     TestCluster.Builder builder = TestCluster.builder()
       .withRegistry(registry)
-      .withLocalMember(TestLocalMember.builder()
-        .withId(id)
-        .withType(type)
-        .withAddress(String.format("test-%d", id))
-        .build());
+      .withMemberId(id)
+      .withMemberType(type)
+      .withAddress(String.format("test-%d", id));
 
     for (int i = 1; i <= nodes; i++) {
-      if (i != id) {
-        builder.addRemoteMember(TestRemoteMember.builder()
-          .withId(i)
-          .withType(Member.Type.ACTIVE)
-          .withAddress(String.format("test-%d", i))
-          .build());
-      }
+      builder.addSeed(TestMember.builder()
+        .withId(i)
+        .withAddress(String.format("test-%d", i))
+        .build());
     }
 
     return builder.build();

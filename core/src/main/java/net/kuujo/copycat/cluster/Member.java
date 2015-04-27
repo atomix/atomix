@@ -16,7 +16,6 @@
 package net.kuujo.copycat.cluster;
 
 import net.kuujo.copycat.Task;
-import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -148,22 +147,6 @@ public interface Member {
      * @return The member builder.
      */
     BUILDER withId(int id);
-
-    /**
-     * Sets the member type.
-     *
-     * @param type The member type.
-     * @return The member builder.
-     */
-    BUILDER withType(Type type);
-
-    /**
-     * Sets the cluster serializer.
-     *
-     * @param serializer The cluster serializer.
-     * @return The cluster builder.
-     */
-    BUILDER withSerializer(Serializer serializer);
 
   }
 
