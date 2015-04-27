@@ -146,11 +146,7 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
       if (keyBuffer != null)
         keyBuffer.close();
       entryBuffer.close();
-      int isnull = result.readByte();
-      if (isnull == 1) {
-        return serializer.readObject(result);
-      }
-      return null;
+      return serializer.readObject(result);
     });
   }
 
@@ -178,14 +174,7 @@ public class DiscreteStateLog<K, V> extends DiscreteResource<DiscreteStateLog<K,
     long commandCode = entry.readLong();
     CommandInfo commandInfo = commands.get(commandCode);
     if (commandInfo != null) {
-      Object output = commandInfo.command().apply(serializer.readObject(key), serializer.readObject(entry.slice()));
-      if (output == null) {
-        result.writeByte(0);
-        return result;
-      } else {
-        result.writeByte(1);
-        return serializer.writeObject(output, result);
-      }
+      return serializer.writeObject(commandInfo.command().apply(serializer.readObject(key), serializer.readObject(entry.slice())), result);
     }
     throw new IllegalStateException("Invalid state log operation");
   }

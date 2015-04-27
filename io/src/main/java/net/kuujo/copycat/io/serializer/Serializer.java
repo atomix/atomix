@@ -167,13 +167,19 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   public <T> Buffer writeObject(T object, Buffer buffer) {
-    if (object == null)
-      return null;
+    if (object == null) {
+      buffer.writeByte(0);
+      return buffer;
+    } else {
+      buffer.writeByte(1);
+    }
+
     Class<?> type = object.getClass();
     int id = registry.id(type);
     ObjectWriter serializer = registry.getSerializer(type);
     if (serializer == null)
       throw new SerializationException("cannot serialize unregistered type: " + type);
+
     serializer.write(object, buffer.writeUnsignedByte(id), this);
     return buffer;
   }
@@ -191,10 +197,16 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   public <T> T readObject(Buffer buffer) {
+    int isnull = buffer.readByte();
+    if (isnull == 0) {
+      return null;
+    }
+
     int id = buffer.readUnsignedByte();
     Class<?> type = registry.type(id);
     if (type == null)
       throw new SerializationException("cannot deserialize: unknown type");
+
     ObjectWriter serializer = registry.getSerializer(type);
     return (T) serializer.read(type, buffer, this);
   }
