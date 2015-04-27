@@ -42,7 +42,7 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
     this.partitionedCluster = new PartitionedCluster(config.getCluster(), config.getReplicationStrategy(), config.getPartitionId(), config.getPartitions());
     protocol.setTopic(String.format("%s-%d", config.getName(), config.getPartitionId()));
     protocol.setCluster(partitionedCluster);
-    protocol.setContext(new ExecutionContext(String.format("copycat-protocol-%s-%d", config.getName(), config.getPartitionId())));
+    protocol.setContext(new ExecutionContext(String.format("copycat-protocol-%s-%d-%d", config.getName(), config.getPartitionId(), partitionedCluster.member().id())));
   }
 
   /**

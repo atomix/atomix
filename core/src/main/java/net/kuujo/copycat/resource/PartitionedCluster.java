@@ -59,7 +59,7 @@ class PartitionedCluster implements Cluster {
 
     for (Member member : cluster.members()) {
       if (member instanceof RemoteMember && member.type() == Member.Type.REMOTE) {
-        members.put(member.id(), member);
+        members.put(member.id(), new PartitionedRemoteMember(member, Member.Type.REMOTE));
       }
     }
 
@@ -69,7 +69,7 @@ class PartitionedCluster implements Cluster {
       this.localMember = localMember;
       this.members.put(localMember.id(), localMember);
     } else {
-      this.localMember = cluster.member();
+      this.localMember = new PartitionedLocalMember(cluster.member(), Member.Type.REMOTE);
       this.members.put(this.localMember.id(), this.localMember);
     }
   }
