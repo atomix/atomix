@@ -465,15 +465,16 @@ public class RaftProtocol extends Protocol {
     context.execute(() -> {
       try {
         open = true;
-        storage.open();
         switch (cluster.member().type()) {
           case REMOTE:
             transition(RaftState.Type.REMOTE);
             break;
           case PASSIVE:
+            storage.open();
             transition(RaftState.Type.PASSIVE);
             break;
           case ACTIVE:
+            storage.open();
             transition(RaftState.Type.FOLLOWER);
             break;
         }
