@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.election;
 
+import net.kuujo.copycat.Event;
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.protocol.LeaderChangeEvent;
@@ -40,7 +41,7 @@ public class LeaderElection extends DiscreteResource<LeaderElection, LeaderElect
     return new Builder();
   }
 
-  private final Map<EventListener<LeaderElectionEvent>, EventListener<LeaderChangeEvent>> listeners = new ConcurrentHashMap<>();
+  private final Map<EventListener<LeaderElectionEvent>, EventListener<Event>> listeners = new ConcurrentHashMap<>();
 
   public LeaderElection(DiscreteResourceConfig config) {
     super(config);
@@ -53,9 +54,12 @@ public class LeaderElection extends DiscreteResource<LeaderElection, LeaderElect
    * @return The leader election.
    */
   public LeaderElection addElectionListener(EventListener<LeaderElectionEvent> listener) {
-    EventListener<LeaderChangeEvent> wrappedListener = event -> {
-      if (event.newLeader() != null && event.newLeader().equals(cluster.member())) {
-        listener.accept(new LeaderElectionEvent(cluster));
+    EventListener<Event> wrappedListener = event -> {
+      if (event instanceof LeaderChangeEvent) {
+        LeaderChangeEvent leaderEvent = (LeaderChangeEvent) event;
+        if (leaderEvent.newLeader() != null && leaderEvent.newLeader().equals(cluster.member())) {
+          listener.accept(new LeaderElectionEvent(cluster));
+        }
       }
     };
     listeners.put(listener, wrappedListener);
@@ -70,7 +74,7 @@ public class LeaderElection extends DiscreteResource<LeaderElection, LeaderElect
    * @return The leader election.
    */
   public LeaderElection removeElectionListener(EventListener<LeaderElectionEvent> listener) {
-    EventListener<LeaderChangeEvent> wrappedListener = listeners.remove(listener);
+    EventListener<Event> wrappedListener = listeners.remove(listener);
     if (wrappedListener != null) {
       protocol.removeListener(wrappedListener);
     }
