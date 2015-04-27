@@ -180,6 +180,15 @@ class PartitionedCluster implements Cluster {
     }
 
     @Override
+    public boolean equals(Object object) {
+      if (object instanceof PartitionedLocalMember) {
+        PartitionedLocalMember member = (PartitionedLocalMember) object;
+        return member.id() == id() && member.type == type && member.status() == status();
+      }
+      return false;
+    }
+
+    @Override
     public String toString() {
       return String.format("%s[id=%s, type=%s, status=%s]", getClass().getSimpleName(), member.id(), member.type(), member.status());
     }
@@ -225,6 +234,15 @@ class PartitionedCluster implements Cluster {
     @Override
     public <T> CompletableFuture<T> submit(Task<T> task) {
       return member.submit(task);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+      if (object instanceof PartitionedRemoteMember) {
+        PartitionedRemoteMember member = (PartitionedRemoteMember) object;
+        return member.id() == id() && member.type == type && member.status() == status();
+      }
+      return false;
     }
 
     @Override
