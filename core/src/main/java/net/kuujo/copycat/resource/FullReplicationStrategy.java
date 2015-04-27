@@ -29,12 +29,12 @@ import java.util.stream.Collectors;
 public class FullReplicationStrategy implements ReplicationStrategy {
 
   @Override
-  public Collection<Member> selectPrimaries(Cluster cluster, int partitions) {
+  public Collection<Member> selectPrimaries(Cluster cluster, int partitionId, int partitions) {
     return cluster.members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
   }
 
   @Override
-  public Collection<Member> selectSecondaries(Cluster cluster, int partitions) {
+  public Collection<Member> selectSecondaries(Cluster cluster, int partitionId, int partitions) {
     return cluster.members().stream().filter(m -> m.type() == Member.Type.PASSIVE).collect(Collectors.toList());
   }
 

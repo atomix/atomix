@@ -28,7 +28,7 @@ public abstract class DiscreteResourceConfig extends ResourceConfig {
   private Protocol protocol;
   private int partitionId = 0;
   private int partitions = 1;
-  private ReplicationStrategy replicationStrategy;
+  private ReplicationStrategy replicationStrategy = new FullReplicationStrategy();
   private Serializer serializer;
 
   /**
