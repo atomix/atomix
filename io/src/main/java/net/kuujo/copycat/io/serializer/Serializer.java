@@ -167,6 +167,8 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   public <T> Buffer writeObject(T object, Buffer buffer) {
+    if (object == null)
+      return null;
     Class<?> type = object.getClass();
     int id = registry.id(type);
     ObjectWriter serializer = registry.getSerializer(type);
