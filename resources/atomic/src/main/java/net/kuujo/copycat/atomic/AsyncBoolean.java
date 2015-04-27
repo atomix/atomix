@@ -17,6 +17,7 @@ package net.kuujo.copycat.atomic;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.state.DiscreteStateLog;
 import net.kuujo.copycat.state.Read;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.Write;
@@ -30,6 +31,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncBoolean implements Resource<AsyncBoolean>, AsyncBooleanProxy {
+
+  /**
+   * Returns a new asynchronous boolean builder.
+   *
+   * @return A new asynchronous boolean builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private final StateMachine<State> stateMachine;
   private final AsyncBooleanProxy proxy;
 
@@ -115,6 +126,32 @@ public class AsyncBoolean implements Resource<AsyncBoolean>, AsyncBooleanProxy {
       return this.value.compareAndSet(expect, update);
     }
 
+  }
+
+  /**
+   * Asynchronous boolean builder.
+   */
+  public static class Builder<T> implements net.kuujo.copycat.Builder<AsyncBoolean> {
+    private final StateMachine.Builder<State> builder = StateMachine.<State>builder().withState(new State());
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the boolean state log.
+     *
+     * @param stateLog The boolean state log.
+     * @return The boolean builder.
+     */
+    public Builder<T> withLog(DiscreteStateLog stateLog) {
+      builder.withLog(stateLog);
+      return this;
+    }
+
+    @Override
+    public AsyncBoolean build() {
+      return new AsyncBoolean(builder.build());
+    }
   }
 
 }

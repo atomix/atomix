@@ -17,8 +17,8 @@ package net.kuujo.copycat.atomic;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.state.DiscreteStateLog;
 import net.kuujo.copycat.state.Read;
-import net.kuujo.copycat.state.StateLog;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.Write;
 
@@ -142,7 +142,7 @@ public class AsyncReference<T> implements Resource<AsyncReference<T>>, AsyncRefe
      * @param stateLog The reference state log.
      * @return The reference builder.
      */
-    public Builder<T> withLog(StateLog stateLog) {
+    public Builder<T> withLog(DiscreteStateLog stateLog) {
       builder.withLog(stateLog);
       return this;
     }
