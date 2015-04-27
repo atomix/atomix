@@ -17,6 +17,7 @@ package net.kuujo.copycat.atomic;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
+import net.kuujo.copycat.state.DiscreteStateLog;
 import net.kuujo.copycat.state.Read;
 import net.kuujo.copycat.state.StateMachine;
 import net.kuujo.copycat.state.Write;
@@ -30,6 +31,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class AsyncLong implements Resource<AsyncLong>, AsyncLongProxy {
+
+  /**
+   * Returns a new asynchronous long builder.
+   *
+   * @return A new asynchronous long builder.
+   */
+  public static Builder builder() {
+    return new Builder();
+  }
+
   private final StateMachine<State> stateMachine;
   private final AsyncLongProxy proxy;
 
@@ -173,6 +184,32 @@ public class AsyncLong implements Resource<AsyncLong>, AsyncLongProxy {
     @Write
     public boolean compareAndSet(long expect, long update) {
       return this.value.compareAndSet(expect, update);
+    }
+  }
+
+  /**
+   * Asynchronous long builder.
+   */
+  public static class Builder<T> implements net.kuujo.copycat.Builder<AsyncLong> {
+    private final StateMachine.Builder<State> builder = StateMachine.<State>builder().withState(new State());
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the long state log.
+     *
+     * @param stateLog The long state log.
+     * @return The long builder.
+     */
+    public Builder<T> withLog(DiscreteStateLog stateLog) {
+      builder.withLog(stateLog);
+      return this;
+    }
+
+    @Override
+    public AsyncLong build() {
+      return new AsyncLong(builder.build());
     }
   }
 
