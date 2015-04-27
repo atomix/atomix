@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class AbstractResource<T extends Resource<?>> implements Resource<T> {
   protected final String name;
-  protected final ManagedCluster cluster;
+  private final ManagedCluster cluster;
 
   protected AbstractResource(ResourceConfig config) {
     this.name = config.getName();

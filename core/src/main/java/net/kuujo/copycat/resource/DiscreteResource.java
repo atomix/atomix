@@ -30,7 +30,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U extends Resource<?>> extends AbstractResource<U> {
   protected final Protocol protocol;
-  protected final Cluster partitionedCluster;
+  protected final Cluster cluster;
   protected final ReplicationStrategy replicationStrategy;
   protected final Serializer serializer;
 
@@ -39,10 +39,10 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
     this.protocol = config.getProtocol();
     this.replicationStrategy = config.getReplicationStrategy();
     this.serializer = config.getSerializer();
-    this.partitionedCluster = new PartitionedCluster(config.getCluster(), config.getReplicationStrategy(), config.getPartitionId(), config.getPartitions());
+    this.cluster = new PartitionedCluster(config.getCluster(), config.getReplicationStrategy(), config.getPartitionId(), config.getPartitions());
     protocol.setTopic(String.format("%s-%d", config.getName(), config.getPartitionId()));
-    protocol.setCluster(partitionedCluster);
-    protocol.setContext(new ExecutionContext(String.format("copycat-protocol-%s-%d-%d", config.getName(), config.getPartitionId(), partitionedCluster.member().id())));
+    protocol.setCluster(cluster);
+    protocol.setContext(new ExecutionContext(String.format("copycat-protocol-%s-%d-%d", config.getName(), config.getPartitionId(), cluster.member().id())));
   }
 
   /**
@@ -52,7 +52,7 @@ public abstract class DiscreteResource<T extends DiscreteResource<?, U>, U exten
 
   @Override
   public Cluster cluster() {
-    return partitionedCluster;
+    return cluster;
   }
 
   @Override
