@@ -17,10 +17,7 @@ package net.kuujo.copycat.collections;
 
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.resource.Resource;
-import net.kuujo.copycat.state.Delete;
-import net.kuujo.copycat.state.Read;
-import net.kuujo.copycat.state.StateMachine;
-import net.kuujo.copycat.state.Write;
+import net.kuujo.copycat.state.*;
 import net.kuujo.copycat.util.concurrent.Futures;
 
 import java.util.*;
@@ -37,6 +34,16 @@ import java.util.function.Supplier;
  * @param <V> The map entry type.
  */
 public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, AsyncMultiMapProxy<K, V> {
+
+  /**
+   * Returns a new asynchronous map builder.
+   *
+   * @return A new asynchronous map builder.
+   */
+  public static <K, V> Builder<K, V> builder() {
+    return new Builder<>();
+  }
+
   private final StateMachine<State<K, V>> stateMachine;
   private AsyncMultiMapProxy<K, V> proxy;
 
@@ -305,6 +312,32 @@ public class AsyncMultiMap<K, V> implements Resource<AsyncMultiMap<K, V>>, Async
     @Write
     public Collection<V> replace(K key, Collection<V> value) {
       return map.replace(key, value);
+    }
+  }
+
+  /**
+   * Asynchronous map builder.
+   */
+  public static class Builder<K, V> implements net.kuujo.copycat.Builder<AsyncMultiMap<K, V>> {
+    private final StateMachine.Builder<State<K, V>> builder = StateMachine.<State<K, V>>builder().withState(new State<>());
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the map state log.
+     *
+     * @param stateLog The map state log.
+     * @return The map builder.
+     */
+    public Builder<K, V> withLog(StateLog stateLog) {
+      builder.withLog(stateLog);
+      return this;
+    }
+
+    @Override
+    public AsyncMultiMap<K, V> build() {
+      return new AsyncMultiMap<>(builder.build());
     }
   }
 

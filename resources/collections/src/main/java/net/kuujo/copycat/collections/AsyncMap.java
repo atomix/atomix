@@ -49,32 +49,6 @@ public class AsyncMap<K, V> implements Resource<AsyncMap<K, V>>, AsyncMapProxy<K
     return new Builder<>();
   }
 
-  /**
-   * Asynchronous map builder.
-   */
-  public static class Builder<K, V> implements net.kuujo.copycat.Builder<AsyncMap<K, V>> {
-    private final StateMachine.Builder<State<K, V>> builder = StateMachine.<State<K, V>>builder().withState(new State<>());
-
-    private Builder() {
-    }
-
-    /**
-     * Sets the map state log.
-     *
-     * @param stateLog The map state log.
-     * @return The map builder.
-     */
-    public Builder<K, V> withLog(StateLog stateLog) {
-      builder.withLog(stateLog);
-      return this;
-    }
-
-    @Override
-    public AsyncMap<K, V> build() {
-      return new AsyncMap<>(builder.build());
-    }
-  }
-
   private final StateMachine<State<K, V>> stateMachine;
   private AsyncMapProxy<K, V> proxy;
 
@@ -318,6 +292,32 @@ public class AsyncMap<K, V> implements Resource<AsyncMap<K, V>>, AsyncMapProxy<K
     @Override
     public Set<Entry<K, V>> entrySet() {
       return state.entrySet();
+    }
+  }
+
+  /**
+   * Asynchronous map builder.
+   */
+  public static class Builder<K, V> implements net.kuujo.copycat.Builder<AsyncMap<K, V>> {
+    private final StateMachine.Builder<State<K, V>> builder = StateMachine.<State<K, V>>builder().withState(new State<>());
+
+    private Builder() {
+    }
+
+    /**
+     * Sets the map state log.
+     *
+     * @param stateLog The map state log.
+     * @return The map builder.
+     */
+    public Builder<K, V> withLog(StateLog stateLog) {
+      builder.withLog(stateLog);
+      return this;
+    }
+
+    @Override
+    public AsyncMap<K, V> build() {
+      return new AsyncMap<>(builder.build());
     }
   }
 
