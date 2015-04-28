@@ -54,9 +54,9 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
   private final Map<String, Integer> hashMap = new HashMap<>();
   final Serializer serializer;
   private final NettyMember.Info info;
-  private final EventLoopGroup workerGroup;
   private Channel channel;
   private ChannelGroup channelGroup;
+  private EventLoopGroup workerGroup;
   private boolean listening;
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
@@ -65,7 +65,6 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
     super(info, context);
     this.serializer = serializer;
     this.info = info;
-    this.workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
   }
 
   @Override
@@ -141,6 +140,7 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
           listenFuture = new CompletableFuture<>();
 
           channelGroup = new DefaultChannelGroup("copycat-acceptor-channels", GlobalEventExecutor.INSTANCE);
+          workerGroup = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors());
 
           final ServerBootstrap bootstrap = new ServerBootstrap();
           bootstrap.group(workerGroup)
@@ -198,6 +198,7 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
               if (channelGroup != null) {
                 channelGroup.close();
               }
+              workerGroup.shutdownGracefully();
               if (channelFuture.isSuccess()) {
                 closeFuture.complete(null);
               } else {
@@ -208,6 +209,7 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
             if (channelGroup != null) {
               channelGroup.close();
             }
+            workerGroup.shutdownGracefully();
             closeFuture.complete(null);
           }
         }

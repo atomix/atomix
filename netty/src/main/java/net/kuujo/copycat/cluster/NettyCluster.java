@@ -16,6 +16,7 @@
 package net.kuujo.copycat.cluster;
 
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import net.kuujo.copycat.ConfigurationException;
 import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.util.ExecutionContext;
@@ -123,7 +124,7 @@ public class NettyCluster extends AbstractCluster {
       }
 
       NettyLocalMember localMember = new NettyLocalMember(info, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
-      return new NettyCluster(eventLoopGroup, localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()));
+      return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()));
     }
   }
 

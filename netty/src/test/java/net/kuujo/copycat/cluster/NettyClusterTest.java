@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.cluster;
 
+import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import net.jodah.concurrentunit.ConcurrentTestCase;
 import net.kuujo.copycat.Task;
@@ -47,45 +48,66 @@ public class NettyClusterTest extends ConcurrentTestCase {
     localMember.listen().thenRun(this::resume);
     await();
 
+    EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new ExecutionContext("test-client"));
     remoteMember.setSerializer(new Serializer());
-    remoteMember.setEventLoopGroup(new NioEventLoopGroup());
+    remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
     remoteMember.connect().thenRun(this::resume);
     await();
+
+    expectResumes(2);
+
+    localMember.close().thenRun(this::resume);
+    remoteMember.close().thenRun(this::resume);
+
+    await();
+
+    eventLoopGroup.shutdownGracefully();
   }
 
   /**
    * Tests connecting a remote member to a local member.
    */
   public void testConnectRemoteBeforeLocal() throws Throwable {
-    NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new ExecutionContext("test-client"));
+    EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8081)), new ExecutionContext("test-client"));
     remoteMember.setSerializer(new Serializer());
-    remoteMember.setEventLoopGroup(new NioEventLoopGroup());
+    remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResumes(2);
     remoteMember.connect().thenRun(this::resume);
 
-    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new Serializer(), new ExecutionContext("test-server"));
+    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8081)), new Serializer(), new ExecutionContext("test-server"));
 
     localMember.listen().thenRun(this::resume);
     await();
+
+    expectResumes(2);
+
+    localMember.close().thenRun(this::resume);
+    remoteMember.close().thenRun(this::resume);
+
+    await();
+
+    eventLoopGroup.shutdownGracefully();
   }
 
   /**
    * Tests sending a message between remote and local members.
    */
   public void testMessageRemoteToLocal() throws Throwable {
-    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new Serializer(), new ExecutionContext("test-server"));
+    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8082)), new Serializer(), new ExecutionContext("test-server"));
 
     expectResume();
     localMember.listen().thenRun(this::resume);
     await();
 
-    NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new ExecutionContext("test-client"));
+    EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8082)), new ExecutionContext("test-client"));
     remoteMember.setSerializer(new Serializer());
-    remoteMember.setEventLoopGroup(new NioEventLoopGroup());
+    remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
     remoteMember.connect().thenRun(this::resume);
@@ -99,21 +121,31 @@ public class NettyClusterTest extends ConcurrentTestCase {
       resume();
     });
     await();
+
+    expectResumes(2);
+
+    localMember.close().thenRun(this::resume);
+    remoteMember.close().thenRun(this::resume);
+
+    await();
+
+    eventLoopGroup.shutdownGracefully();
   }
 
   /**
    * Tests executing a task between remote and local members.
    */
   public void testTaskRemoteToLocal() throws Throwable {
-    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new Serializer().register(TestTask.class, 1), new ExecutionContext("test-server"));
+    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8083)), new Serializer().register(TestTask.class, 1), new ExecutionContext("test-server"));
 
     expectResume();
     localMember.listen().thenRun(this::resume);
     await();
 
-    NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new ExecutionContext("test-client"));
+    EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
+    NettyRemoteMember remoteMember = new NettyRemoteMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8083)), new ExecutionContext("test-client"));
     remoteMember.setSerializer(new Serializer().register(TestTask.class, 1));
-    remoteMember.setEventLoopGroup(new NioEventLoopGroup());
+    remoteMember.setEventLoopGroup(eventLoopGroup);
 
     expectResume();
     remoteMember.connect().thenRun(this::resume);
@@ -127,6 +159,15 @@ public class NettyClusterTest extends ConcurrentTestCase {
       resume();
     });
     await();
+
+    expectResumes(2);
+
+    remoteMember.close().thenRun(this::resume);
+    localMember.close().thenRun(this::resume);
+
+    await();
+
+    eventLoopGroup.shutdownGracefully();
   }
 
   /**
@@ -167,6 +208,14 @@ public class NettyClusterTest extends ConcurrentTestCase {
     });
 
     await();
+
+    expectResumes(3);
+
+    cluster1.close().thenRun(this::resume);
+    cluster2.close().thenRun(this::resume);
+    cluster3.close().thenRun(this::resume);
+
+    await();
   }
 
   /**
@@ -195,27 +244,36 @@ public class NettyClusterTest extends ConcurrentTestCase {
       .withMemberId(4)
       .withMemberType(Member.Type.PASSIVE)
       .withHost("localhost")
-      .withPort(8080 + 4)
+      .withPort(8090 + 4)
       .addSeed(NettyMember.builder()
         .withId(1)
         .withHost("localhost")
-        .withPort(8081)
+        .withPort(8091)
         .build())
       .addSeed(NettyMember.builder()
         .withId(2)
         .withHost("localhost")
-        .withPort(8082)
+        .withPort(8092)
         .build())
       .addSeed(NettyMember.builder()
         .withId(3)
         .withHost("localhost")
-        .withPort(8083)
+        .withPort(8093)
         .build())
       .build();
 
     expectResumes(2);
 
     cluster4.open().thenRun(this::resume);
+
+    await();
+
+    expectResumes(4);
+
+    cluster1.close().thenRun(this::resume);
+    cluster2.close().thenRun(this::resume);
+    cluster3.close().thenRun(this::resume);
+    cluster4.close().thenRun(this::resume);
 
     await();
   }
@@ -227,16 +285,14 @@ public class NettyClusterTest extends ConcurrentTestCase {
     NettyCluster.Builder builder = NettyCluster.builder()
       .withMemberId(localMember)
       .withHost("localhost")
-      .withPort(8080 + localMember);
+      .withPort(8090 + localMember);
 
     for (int i = 1; i <= members; i++) {
-      if (i != localMember) {
-        builder.addSeed(NettyMember.builder()
-          .withId(i)
-          .withHost("localhost")
-          .withPort(8080 + i)
-          .build());
-      }
+      builder.addSeed(NettyMember.builder()
+        .withId(i)
+        .withHost("localhost")
+        .withPort(8090 + i)
+        .build());
     }
     return builder.build();
   }
