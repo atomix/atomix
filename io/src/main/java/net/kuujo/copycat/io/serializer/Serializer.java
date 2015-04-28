@@ -22,6 +22,8 @@ import net.kuujo.copycat.util.ServiceConfigurationException;
 import net.kuujo.copycat.util.ServiceInfo;
 import net.kuujo.copycat.util.ServiceLoader;
 
+import java.io.*;
+
 /**
  * Copycat serializer.
  * <p>
@@ -39,6 +41,9 @@ import net.kuujo.copycat.util.ServiceLoader;
  */
 public class Serializer {
   private static final String SERIALIZER_SERVICE = "net.kuujo.copycat.io.serializer";
+  private static final byte TYPE_NULL = 0;
+  private static final byte TYPE_WRITABLE = 1;
+  private static final byte TYPE_SERIALIZABLE = 2;
   private final SerializerRegistry registry;
   private final ReferencePool<Buffer> bufferPool;
 
@@ -168,19 +173,64 @@ public class Serializer {
   @SuppressWarnings("unchecked")
   public <T> Buffer writeObject(T object, Buffer buffer) {
     if (object == null) {
-      buffer.writeByte(0);
-      return buffer;
-    } else {
-      buffer.writeByte(1);
+      return writeNull(buffer);
     }
 
     Class<?> type = object.getClass();
     int id = registry.id(type);
     ObjectWriter serializer = registry.getSerializer(type);
-    if (serializer == null)
+    if (serializer == null) {
+      if (object instanceof Serializable) {
+        return writeSerializable(object, buffer);
+      }
       throw new SerializationException("cannot serialize unregistered type: " + type);
+    }
+    return writeWritable(id, object, buffer, serializer);
+  }
 
-    serializer.write(object, buffer.writeUnsignedByte(id), this);
+  /**
+   * Writes a null value to the given buffer.
+   *
+   * @param buffer The buffer to which to write the null value.
+   * @return The written buffer.
+   */
+  private Buffer writeNull(Buffer buffer) {
+    return buffer.writeByte(TYPE_NULL);
+  }
+
+  /**
+   * Writes a writable object to the given buffer.
+   *
+   * @param id The writable ID.
+   * @param writable The object to write to the buffer.
+   * @param buffer The buffer to which to write the object.
+   * @param <T> The object type.
+   * @return The written buffer.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> Buffer writeWritable(int id, T writable, Buffer buffer, ObjectWriter writer) {
+    writer.write(writable, buffer.writeByte(TYPE_WRITABLE).writeUnsignedByte(id), this);
+    return buffer;
+  }
+
+  /**
+   * Writes a serializable object to the given buffer.
+   *
+   * @param serializable The object to write to the buffer.
+   * @param buffer The buffer to which to write the object.
+   * @param <T> The object type.
+   * @return The written buffer.
+   */
+  private <T> Buffer writeSerializable(T serializable, Buffer buffer) {
+    buffer.writeByte(TYPE_SERIALIZABLE);
+    try (ByteArrayOutputStream os = new ByteArrayOutputStream(); ObjectOutputStream out = new ObjectOutputStream(os)) {
+      out.writeObject(serializable);
+      out.flush();
+      byte[] bytes = os.toByteArray();
+      buffer.writeInt(bytes.length).write(bytes);
+    } catch (IOException e) {
+      throw new SerializationException("failed to serialize Java object", e);
+    }
     return buffer;
   }
 
@@ -197,11 +247,28 @@ public class Serializer {
    */
   @SuppressWarnings("unchecked")
   public <T> T readObject(Buffer buffer) {
-    int isnull = buffer.readByte();
-    if (isnull == 0) {
-      return null;
+    int type = buffer.readByte();
+    switch (type) {
+      case TYPE_NULL:
+        return null;
+      case TYPE_WRITABLE:
+        return readWritable(buffer);
+      case TYPE_SERIALIZABLE:
+        return readSerializable(buffer);
+      default:
+        throw new SerializationException("unknown serializable type");
     }
+  }
 
+  /**
+   * Reads a writable object.
+   *
+   * @param buffer The buffer from which to read the object.
+   * @param <T> The object type.
+   * @return The read object.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> T readWritable(Buffer buffer) {
     int id = buffer.readUnsignedByte();
     Class<?> type = registry.type(id);
     if (type == null)
@@ -209,6 +276,27 @@ public class Serializer {
 
     ObjectWriter serializer = registry.getSerializer(type);
     return (T) serializer.read(type, buffer, this);
+  }
+
+  /**
+   * Reads a Java serializable object.
+   *
+   * @param buffer The buffer from which to read the object.
+   * @param <T> The object type.
+   * @return The read object.
+   */
+  @SuppressWarnings("unchecked")
+  private <T> T readSerializable(Buffer buffer) {
+    byte[] bytes = new byte[buffer.readInt()];
+    try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes))) {
+      try {
+        return (T) in.readObject();
+      } catch (ClassNotFoundException e) {
+        throw new SerializationException("failed to deserialize Java object", e);
+      }
+    } catch (IOException e) {
+      throw new SerializationException("failed to deserialize Java object", e);
+    }
   }
 
 }
