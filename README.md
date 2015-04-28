@@ -484,35 +484,100 @@ a resource, use the `RaftProtocol.Builder`:
 
 ```java
 AsyncMap.Builder builder = AsyncMap.builder()
-  .withCluster(NettyCluster.builder()
-    .withMemberId(1)
-    .addSeed(NettyMember.builder()
-      .withId(1)
-      .withHost("localhost")
-      .withPort(8080)
+  .withLog(DiscreteStateLog.builder()
+    .withCluster(NettyCluster.builder()
+      .withMemberId(1)
+      .addSeed(NettyMember.builder()
+        .withId(1)
+        .withHost("localhost")
+        .withPort(8080)
+        .build())
+      .addSeed(NettyMember.builder()
+        .withId(2)
+        .withHost("localhost")
+        .withPort(8081)
+        .build())
+      .addSeed(NettyMember.builder()
+        .withId(3)
+        .withHost("localhost")
+        .withPort(8082)
+        .build())
       .build())
-    .addSeed(NettyMember.builder()
-      .withId(2)
-      .withHost("localhost")
-      .withPort(8081)
-      .build())
-    .addSeed(NettyMember.builder()
-      .withId(3)
-      .withHost("localhost")
-      .withPort(8082)
-      .build())
-    .build())
-  .withProtocol(RaftProtocol.builder()
-    .withStorage(BufferedStorage.builder()
-      .withName("my-resource")
-      .withDirectory("logs/my-resource")
-      .build())
+    .withProtocol(RaftProtocol.builder()
+      .withStorage(BufferedStorage.builder()
+        .withName("my-resource")
+        .withDirectory("logs/my-resource")
+        .build())
+      .build());
     .build());
 ```
 
+This example demonstrates the relationship between resources and logs. As with other collections and atomic variables,
+the `AsyncMap` resource is a thin layer over Copycat's distributed [state log](#state-logs). The state log communicates
+with other resources of the same type via the provided `Cluster`.
+
 ### Partitions
 
-Up until now we've seen the construction of single resources.
+In addition to single resource clusters, Copycat supports partitioned (or sharded) resources for higher throughput.
+Both of Copycat's low-level logs ([event log](#event-logs) and [state log](#state-logs)) support partitioning via
+`PartitionedEventLog` and `PartitionedStateLog` respectively.
+
+Partitioned resources are constructed using the builder pattern; the only difference is that partitioned resources
+consist of one or many `Partition` instances.
+
+```java
+AsyncMap<String, String> map = AsyncMap.<String, String>builder()
+  .withLog(PartitionedStateLog.builder()
+    .withName("my-map")
+    .withCluster(TestCluster.builder()
+      .withMemberId(1)
+      .addSeed(TestMember.builder()
+        .withId(1)
+        .withAddress("map-1")
+        .build())
+      .addSeed(TestMember.builder()
+        .withId(2)
+        .withAddress("map-2")
+        .build())
+      .addSeed(TestMember.builder()
+        .withId(3)
+        .withAddress("map-3")
+        .build())
+      .withRegistry(registry)
+      .build())
+    .withPartitioner(new HashPartitioner())
+    .addPartition(StateLogPartition.builder()
+      .withProtocol(RaftProtocol.builder()
+        .withStorage(BufferedStorage.builder()
+          .withName("map-partition-0")
+          .withDirectory("logs/map/partition-0")
+          .build())
+        .build())
+      .withReplicationStrategy(new PartitionedReplicationStrategy(3))
+      .build())
+    .addPartition(StateLogPartition.builder()
+      .withProtocol(RaftProtocol.builder()
+        .withStorage(BufferedStorage.builder()
+          .withName("map-partition-1")
+          .withDirectory("logs/map/partition-1"))
+          .build())
+        .build())
+      .withReplicationStrategy(new PartitionedReplicationStrategy(3))
+      .build())
+    .addPartition(StateLogPartition.builder()
+      .withProtocol(RaftProtocol.builder()
+        .withStorage(BufferedStorage.builder()
+          .withName("map-partition-2")
+          .withDirectory("logs/map/partition-2")
+          .build())
+        .build())
+      .withReplicationStrategy(new PartitionedReplicationStrategy(3))
+      .build())
+    .build())
+  .build();
+```
+
+When a log resource is partitioned, Copycat will replicate the log *on a subset of the cluster* according to the provided
 
 ### Replication strategies
 
@@ -780,10 +845,13 @@ eventLog.open().thenRun(() -> {
 
 ### Writing events to the event log
 
-To write events to an event log, simply call the `commit(T entry)` method:
+All Copycat logs are key-based. It's important to note that entries with the same key will eventually be compacted from
+the log. This means that *only the last entry with a given key will remain in the log*.
+
+To write events to an event log, simply call the `commit(K key, T entry)` method:
 
 ```java
-eventLog.commit("Hello world!");
+eventLog.commit("foo", "Hello world!");
 ```
 
 The `CompletableFuture` returned by the `commit` method will be completed once the entry has been logged and replicated
@@ -800,9 +868,7 @@ eventLog.consumer(entry -> System.out.println(entry));
 ## State logs
 
 State logs are strongly consistent Raft replicated logs designed for persisting state. These logs are the basis of
-Copycat's state machine and the data structures built on top of it. Whereas event logs are designed for time/size based
-compaction, state logs support log compaction via snapshotting, allowing state to be persisted to the log and
-replicated to other nodes in the cluster whenever necessary.
+Copycat's state machine and the data structures built on top of it.
 
 ### Creating a state log
 
@@ -877,15 +943,18 @@ builder.addCommand("put", (key, entry) -> data.put(key, entry));
 
 ### Submitting commands to the state log
 
-Once [commands](#state-commands) and [queries](#state-queries) have been registered on the log, commands and queries
-can be submitted to the log. To submit a named operation to the log, call the `submit` method.
+Once [commands](#state-commands) have been registered on the log, commands can be submitted to the log. To submit a
+named command to the log, call the `submit` method.
 
 ```java
 stateLog.submit("put", "foo", "Hello world!");
 ```
 
+All Copycat logs are key-based. It's important to note that entries with the same key will eventually be compacted from
+the log. This means that *only the last entry with a given key will remain in the log*.
+
 The `CompletableFuture` returned by the `submit` method will be completed once the entry has been logged and replicated
-on a majority of the resource's [active member](#active-members) replicas.
+on a majority of the replicas for the partition for the given key.
 
 ## Leader elections
 
@@ -1087,11 +1156,32 @@ trade-offs. Copycat provides three different `Consistency` modes:
   also applies for [passive members](#passive-members).
 
 While this functionality is not exposed by all resource APIs externally, Copycat allows read consistency to be specified
-on a per-request basis via the `QueryRequest`.
+on a per-request basis via the `CommandRequest`.
 
 #### Log compaction
 
-TODO: Copycat's log compaction algorithm has recently been refactored.
+One of the issues with commit logs is their every-growing nature. In the event of a failure, in order to rebuild state
+for in-memory state machines, Copycat must replay the entire log in order. This means that Copycat effectively must
+persist the entire history of the log for failure recovery.
+
+However, there are still ways to guard against an ever increasing log. Copycat uses a custom log compaction algorithm
+in order to ensure that disk space is not completely consumed by commit logs.
+
+Copycat's Raft implementation uses a key-based log to aid in reducing the size of the log. By assuming that only the last
+instance of any given key needs to be retained (for instance, if a log key represents a may key state update), Copycat
+can periodically evaluate the log for duplicate keys and remove old instances of any given key. This is accomplished by
+writing the logs in segments. Periodically, a background thread will read a segment's keys into a memory efficient lookup
+table. Once all the keys for a segment have been read in to memory, Copycat rewrites the segment with only the most recent
+entries for each key, thus reducing the log size. This algorithm favors more recent segments over older segments under the
+assumption that entries still active in older segments are less likely to be duplicated.
+
+However, one issue arises in the case of tombstone entries. For instance, consider the scenario where a `remove` operation
+stores an entry in Copycat's commit logs but effectively results in a lack of state. If the removed key is never written
+to again, the entry will persist in the log for all of eternity even though it effectively results in no state. Copycat
+guards against this scenario via its `Persistence` levels - specifically the `DURABLE` persistence level. Entries
+persisted with the `DURABLE` persistence level are effectively treated as tombstones. Once a tombstone entry has been
+replicated to *all active members of the cluster*, it is marked for deletion from the log. This ensures that all dependent
+state machines have the opportunity to apply the tombstone, and eventually all tombstones will be removed from the log.
 
 ### Eventual consistency and Copycat's gossip protocol
 
