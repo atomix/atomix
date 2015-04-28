@@ -44,6 +44,8 @@ import java.util.concurrent.ConcurrentHashMap;
 public class NettyLocalMember extends AbstractLocalMember implements NettyMember{
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
+  private static final int STATUS_FAILURE = 0;
+  private static final int STATUS_SUCCESS = 1;
   private static final ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
     @Override
     protected ByteBufBuffer initialValue() {
@@ -249,11 +251,23 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
           handler.handler.handle(deserializedRequest).whenComplete((result, error) -> {
             if (error == null) {
               context.channel().eventLoop().execute(() -> {
-                ByteBuf response = context.alloc().buffer(9, 1024 * 8);
+                ByteBuf response = context.alloc().buffer(10, 1024 * 8);
                 response.writeLong(requestId);
+                response.writeByte(STATUS_SUCCESS);
                 ByteBufBuffer responseBuffer = BUFFER.get();
                 responseBuffer.setByteBuf(response);
                 serializer.writeObject(result, responseBuffer);
+                context.writeAndFlush(response);
+                request.release();
+              });
+            } else {
+              context.channel().eventLoop().execute(() -> {
+                ByteBuf response = context.alloc().buffer(10, 1024 * 8);
+                response.writeLong(requestId);
+                response.writeByte(STATUS_FAILURE);
+                ByteBufBuffer responseBuffer = BUFFER.get();
+                responseBuffer.setByteBuf(response);
+                serializer.writeObject(error, responseBuffer);
                 context.writeAndFlush(response);
                 request.release();
               });

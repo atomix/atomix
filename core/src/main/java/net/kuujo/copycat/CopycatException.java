@@ -22,6 +22,9 @@ package net.kuujo.copycat;
  */
 public class CopycatException extends RuntimeException {
 
+  public CopycatException() {
+  }
+
   public CopycatException(String message, Object... args) {
     super(String.format(message, args));
   }

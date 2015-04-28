@@ -43,6 +43,8 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
   private static final long RECONNECT_INTERVAL = 1000;
   private static final int MESSAGE = 0;
   private static final int TASK = 1;
+  private static final int STATUS_FAILURE = 0;
+  private static final int STATUS_SUCCESS = 1;
   private static ThreadLocal<ByteBufBuffer> BUFFER = new ThreadLocal<ByteBufBuffer>() {
     @Override
     protected ByteBufBuffer initialValue() {
@@ -274,11 +276,16 @@ public class NettyRemoteMember extends AbstractRemoteMember implements NettyMemb
       long responseId = response.readLong();
       ContextualFuture responseFuture = responseFutures.remove(responseId);
       if (responseFuture != null) {
+        int status = response.readByte();
         ByteBufBuffer buffer = BUFFER.get();
         buffer.setByteBuf(response.slice());
         Object result = serializer.readObject(buffer);
         responseFuture.context.execute(() -> {
-          responseFuture.complete(result);
+          if (status == STATUS_FAILURE) {
+            responseFuture.completeExceptionally((Exception) result);
+          } else {
+            responseFuture.complete(result);
+          }
         });
       }
       response.release();

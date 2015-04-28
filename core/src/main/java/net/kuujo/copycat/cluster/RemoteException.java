@@ -15,27 +15,26 @@
  */
 package net.kuujo.copycat.cluster;
 
-import net.kuujo.copycat.CopycatException;
-
 /**
- * Copycat cluster exception.
+ * Remote exception.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class ClusterException extends CopycatException {
+public class RemoteException extends ClusterException {
 
-  public ClusterException() {
+  public RemoteException() {
   }
 
-  public ClusterException(String message, Object... args) {
-    super(String.format(message, args));
-  }
-
-  public ClusterException(Throwable cause, String message, Object... args) {
-    super(String.format(message, args), cause);
-  }
-
-  public ClusterException(Throwable cause) {
+  public RemoteException(Throwable cause) {
     super(cause);
   }
+
+  public RemoteException(String message, Object... args) {
+    super(message, args);
+  }
+
+  public RemoteException(Throwable cause, String message, Object... args) {
+    super(cause, message, args);
+  }
+
 }
