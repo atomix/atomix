@@ -44,16 +44,17 @@ public class NettyCluster extends AbstractCluster {
 
   private final EventLoopGroup eventLoopGroup;
 
-  public NettyCluster(EventLoopGroup eventLoopGroup, NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers) {
-    super(localMember, remoteMembers);
+  public NettyCluster(EventLoopGroup eventLoopGroup, NettyLocalMember localMember, Collection<NettyRemoteMember> remoteMembers, Serializer serializer) {
+    super(localMember, remoteMembers, serializer);
     this.eventLoopGroup = eventLoopGroup;
-    remoteMembers.forEach(m -> m.setSerializer(localMember.serializer.copy()).setEventLoopGroup(eventLoopGroup));
+    localMember.setSerializer(serializer.copy());
+    remoteMembers.forEach(m -> m.setSerializer(serializer.copy()).setEventLoopGroup(eventLoopGroup));
   }
 
   @Override
   protected AbstractRemoteMember createRemoteMember(AbstractMember.Info info) {
     return new NettyRemoteMember((NettyMember.Info) info, new ExecutionContext(String.format("copycat-cluster-%d", info.id())))
-      .setSerializer(((NettyLocalMember) localMember).serializer.copy())
+      .setSerializer(serializer.copy())
       .setEventLoopGroup(eventLoopGroup);
   }
 
@@ -123,8 +124,8 @@ public class NettyCluster extends AbstractCluster {
         info = new NettyMember.Info(memberId, memberType != null ? memberType : Member.Type.REMOTE, new InetSocketAddress(host, port));
       }
 
-      NettyLocalMember localMember = new NettyLocalMember(info, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
-      return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()));
+      NettyLocalMember localMember = new NettyLocalMember(info, new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
+      return new NettyCluster(eventLoopGroup != null ? eventLoopGroup : new NioEventLoopGroup(), localMember, members.values().stream().map(m -> (NettyRemoteMember) m).collect(Collectors.toList()), serializer != null ? serializer : new Serializer());
     }
   }
 

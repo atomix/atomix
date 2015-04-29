@@ -53,6 +53,13 @@ public interface Cluster {
   Collection<Member> members();
 
   /**
+   * Returns the cluster serializer.
+   *
+   * @return The cluster serializer.
+   */
+  Serializer serializer();
+
+  /**
    * Broadcasts a message to the cluster.<p>
    *
    * Message broadcasting to the Copycat cluster should not be considered reliable. Copycat sends broadcast messages to

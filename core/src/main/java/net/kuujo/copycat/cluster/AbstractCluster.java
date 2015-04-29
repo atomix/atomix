@@ -35,19 +35,20 @@ public abstract class AbstractCluster implements ManagedCluster {
   protected final AbstractLocalMember localMember;
   protected final Map<Integer, AbstractRemoteMember> remoteMembers = new ConcurrentHashMap<>();
   protected final Map<Integer, AbstractMember> members = new ConcurrentHashMap<>();
-  protected final Serializer serializer = new Serializer();
   protected final Set<EventListener<MembershipChangeEvent>> membershipListeners = new CopyOnWriteArraySet<>();
+  protected final Serializer serializer;
   private final AtomicInteger permits = new AtomicInteger();
   private MembershipDetector membershipDetector;
   private CompletableFuture<Cluster> openFuture;
   private CompletableFuture<Void> closeFuture;
   private AtomicBoolean open = new AtomicBoolean();
 
-  protected AbstractCluster(AbstractLocalMember localMember, Collection<? extends AbstractRemoteMember> remoteMembers) {
+  protected AbstractCluster(AbstractLocalMember localMember, Collection<? extends AbstractRemoteMember> remoteMembers, Serializer serializer) {
     this.localMember = localMember;
     remoteMembers.forEach(m -> this.remoteMembers.put(m.id(), m));
     this.members.putAll(this.remoteMembers);
     this.members.put(localMember.id(), localMember);
+    this.serializer = serializer;
   }
 
   /**
@@ -74,6 +75,11 @@ public abstract class AbstractCluster implements ManagedCluster {
   @SuppressWarnings("unchecked")
   public Collection<Member> members() {
     return (Collection) members.values();
+  }
+
+  @Override
+  public Serializer serializer() {
+    return serializer;
   }
 
   @Override

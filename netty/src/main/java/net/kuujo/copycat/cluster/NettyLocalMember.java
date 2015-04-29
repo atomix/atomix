@@ -54,8 +54,8 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
   };
   private final Map<Integer, HandlerHolder> handlers = new ConcurrentHashMap<>();
   private final Map<String, Integer> hashMap = new HashMap<>();
-  final Serializer serializer;
   private final NettyMember.Info info;
+  private Serializer serializer;
   private Channel channel;
   private ChannelGroup channelGroup;
   private EventLoopGroup workerGroup;
@@ -63,10 +63,17 @@ public class NettyLocalMember extends AbstractLocalMember implements NettyMember
   private CompletableFuture<LocalMember> listenFuture;
   private CompletableFuture<Void> closeFuture;
 
-  NettyLocalMember(NettyMember.Info info, Serializer serializer, ExecutionContext context) {
+  NettyLocalMember(NettyMember.Info info, ExecutionContext context) {
     super(info, context);
-    this.serializer = serializer;
     this.info = info;
+  }
+
+  /**
+   * Sets the member serializer.
+   */
+  NettyLocalMember setSerializer(Serializer serializer) {
+    this.serializer = serializer;
+    return this;
   }
 
   @Override
