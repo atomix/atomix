@@ -38,6 +38,7 @@ import java.util.Map;
  */
 class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
   private final Map<Class, ReferencePool> pools = new HashMap<>();
+  private final Map<Class, Constructor> constructorMap = new HashMap<>();
 
   @Override
   public void write(T object, Buffer buffer, Serializer serializer) {
@@ -64,19 +65,24 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
   private T readReference(Class<T> type, Buffer buffer) {
     ReferencePool pool = pools.get(type);
     if (pool == null) {
-      try {
-        Constructor constructor = type.getConstructor(ReferenceManager.class);
-        pool = new ReferencePool(r -> {
-          try {
-            return constructor.newInstance(r);
-          } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new SerializationException("failed to instantiate reference", e);
-          }
-        });
-        pools.put(type, pool);
-      } catch (NoSuchMethodException e) {
-        throw new SerializationException("no valid reference constructor found", e);
-      }
+      Constructor constructor = constructorMap.computeIfAbsent(type, t -> {
+        try {
+          Constructor c = type.getConstructor(ReferenceManager.class);
+          c.setAccessible(true);
+          return c;
+        } catch (NoSuchMethodException e) {
+          throw new SerializationException("failed to instantiate reference: must provide a single argument constructor", e);
+        }
+      });
+
+      pool = new ReferencePool(r -> {
+        try {
+          return constructor.newInstance(r);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+          throw new SerializationException("failed to instantiate reference", e);
+        }
+      });
+      pools.put(type, pool);
     }
     T object = (T) pool.acquire();
     object.readObject(buffer);
@@ -90,12 +96,23 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
    * @param buffer The object buffer.
    * @return The object.
    */
+  @SuppressWarnings("unchecked")
   private T readObject(Class<T> type, Buffer buffer) {
     try {
-      T object = type.newInstance();
+      Constructor constructor = constructorMap.computeIfAbsent(type, t -> {
+        try {
+          Constructor c = t.getConstructor();
+          c.setAccessible(true);
+          return c;
+        } catch (NoSuchMethodException e) {
+          throw new SerializationException("failed to instantiate object: must provide a no argument constructor", e);
+        }
+      });
+
+      T object = (T) constructor.newInstance();
       object.readObject(buffer);
       return object;
-    } catch (InstantiationException | IllegalAccessException e) {
+    } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new SerializationException("failed to instantiate object: must provide a no argument constructor", e);
     }
   }
