@@ -41,7 +41,8 @@ import java.io.*;
  */
 public class Serializer {
   private static final String SERIALIZER_SERVICE = "net.kuujo.copycat.io.serializer";
-  private static final byte TYPE_NULL = 0;
+  private static final byte TYPE_NULL = -1;
+  private static final byte TYPE_BUFFER = 0;
   private static final byte TYPE_WRITABLE = 1;
   private static final byte TYPE_SERIALIZABLE = 2;
   private final SerializerRegistry registry;
@@ -176,6 +177,10 @@ public class Serializer {
       return writeNull(buffer);
     }
 
+    if (object instanceof Buffer) {
+      return writeBuffer((Buffer) object, buffer);
+    }
+
     Class<?> type = object.getClass();
     int id = registry.id(type);
     ObjectWriter serializer = registry.getSerializer(type);
@@ -196,6 +201,17 @@ public class Serializer {
    */
   private Buffer writeNull(Buffer buffer) {
     return buffer.writeByte(TYPE_NULL);
+  }
+
+  /**
+   * Writes a buffer value to the given buffer.
+   *
+   * @param object The buffer to write.
+   * @param buffer The buffer to which to write the buffer.
+   * @return The written buffer.
+   */
+  private Buffer writeBuffer(Buffer object, Buffer buffer) {
+    return buffer.writeByte(TYPE_BUFFER).write(object);
   }
 
   /**
@@ -251,6 +267,8 @@ public class Serializer {
     switch (type) {
       case TYPE_NULL:
         return null;
+      case TYPE_BUFFER:
+        return (T) readBuffer(buffer);
       case TYPE_WRITABLE:
         return readWritable(buffer);
       case TYPE_SERIALIZABLE:
@@ -258,6 +276,18 @@ public class Serializer {
       default:
         throw new SerializationException("unknown serializable type");
     }
+  }
+
+  /**
+   * Reads a buffer from the given buffer.
+   *
+   * @param buffer The buffer from which to read the buffer.
+   * @return The read buffer.
+   */
+  private Buffer readBuffer(Buffer buffer) {
+    Buffer object = bufferPool.acquire();
+    buffer.read(object);
+    return object;
   }
 
   /**
