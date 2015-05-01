@@ -1034,21 +1034,21 @@ will detail precisely how Copycat performs tasks like leader election and log re
 
 ### Logs
 
-Logs are the center of the universe in the Copycat world. The global Copycat cluster and each of the resources contained
-within it are all ultimately built on a consistent, Raft replicated log. Because logs are such a central component to
-Copycat, much development effort has gone into the design and implementation of each of Copycat's logs.
+Logs are the center of the universe in Copycat's world. By default, Copycat's replication and all the consistency
+guarantees are built on an efficient, Raft replicated log.
 
 Copycat's logs are designed with three features in mind:
-* Fast writes
-* Fast reads
-* Fast compaction
+* Fast sequential writes
+* Fast sequential reads
+* Efficient compaction
 
-In order to support these three vital functions, Copycat's logs are broken into segments. Each log may consist of
-several segments of a configurable size, and each segment typically has a related index. The index is a simple list
-of 8-bit pairs of integers indicating the entry index and position within a given segment. This allows Copycat to
-quickly locate and read entries from the log.
-
-Additionally, each log implementation supports [log compaction](#log-compaction) on an arbitrary index.
+Copycat achieves fast sequential reads and writes by operating on logs in segments. When a new Copycat log is created,
+a segment to contain a predetermined number of entries is allocated. Each segment of the log consists of a header, an
+index, and a set of entries. The index is a simple list of 8-byte pairs of 32-bit integers consisting of an offset
+and position within a given index. As entries are written to a segment, offsets and positions are appended to the index
+in log order. Additionally, the index portion of each segment is mapped in to memory, allowing for fast binary searches
+of the index, and uses a [bloom filter](http://en.wikipedia.org/wiki/Bloom_filter) to perform simple membership checks
+prior to searches.
 
 ### Strong consistency and Copycat's Raft consensus protocol
 
@@ -1164,24 +1164,44 @@ One of the issues with commit logs is their every-growing nature. In the event o
 for in-memory state machines, Copycat must replay the entire log in order. This means that Copycat effectively must
 persist the entire history of the log for failure recovery.
 
-However, there are still ways to guard against an ever increasing log. Copycat uses a custom log compaction algorithm
-in order to ensure that disk space is not completely consumed by commit logs.
+However, there are still ways to guard against an ever increasing log size. Originally, Copycat used Raft's recommended
+approach to log compaction: snapshots. But while snapshots were efficient and reliable with regard to consistent state
+machines, the model did not fit as well with event-only logs and Copycat's gossip protocol. So, Copycat's log was instead
+rewritten to facilitate a more flexible key-based compaction algorithm that fits well with a variety of logging models.
 
-Copycat's Raft implementation uses a key-based log to aid in reducing the size of the log. By assuming that only the last
-instance of any given key needs to be retained (for instance, if a log key represents a may key state update), Copycat
-can periodically evaluate the log for duplicate keys and remove old instances of any given key. This is accomplished by
-writing the logs in segments. Periodically, a background thread will read a segment's keys into a memory efficient lookup
-table. Once all the keys for a segment have been read in to memory, Copycat rewrites the segment with only the most recent
-entries for each key, thus reducing the log size. This algorithm favors more recent segments over older segments under the
-assumption that entries still active in older segments are less likely to be duplicated.
+Copycat's Raft implementation and its log uses keys to make assumptions about the relationships between entries in the log.
+Essentially, Copycat treats two entries with the same key as being representative of actions operating on the same resource.
+For instance, a key in Copycat's log could represent a key in a distributed map or an index in a list or an item in a set.
+Given this assumption, Copycat will eventually retain only the last *committed* instance of a given key in the log. The
+process of removing older entries for a given key is called *log compaction*.
 
-However, one issue arises in the case of tombstone entries. For instance, consider the scenario where a `remove` operation
-stores an entry in Copycat's commit logs but effectively results in a lack of state. If the removed key is never written
-to again, the entry will persist in the log for all of eternity even though it effectively results in no state. Copycat
-guards against this scenario via its `Persistence` levels - specifically the `DURABLE` persistence level. Entries
-persisted with the `DURABLE` persistence level are effectively treated as tombstones. Once a tombstone entry has been
-replicated to *all active members of the cluster*, it is marked for deletion from the log. This ensures that all dependent
-state machines have the opportunity to apply the tombstone, and eventually all tombstones will be removed from the log.
+Copycat implements a custom log compaction algorithm designed to optimize the amount of memory and disk I/O consumed by
+the compaction process. As segments age and are periodically compacted, their version numbers increase. Copycat favors
+compacting segments with lower version numbers (more recent segments) over those with higher version numbers (older
+segments). This behavior is achieved by setting disk space thresholds that increase exponentially with version numbers.
+
+But segments are not compacted strictly based on disk usage. Although Copycat may have some idea of the disk space a
+given segment consumes prior to compaction, it doesn't inherently know how much disk space will be freed by removing
+duplicate keys from a segment. This would require some knowledge of the unique keys stored in a given segment. One option
+for determining the number of duplicate keys in a segment would be to simply store some hash of each unique key in memory,
+but that may severely limit configurations with large numbers of large resources. Instead, Copycat uses a more efficient
+cardinality estimation algorithm - [HyperLogLog](http://en.wikipedia.org/wiki/HyperLogLog) - to estimate the number of
+unique keys in a given segment. During log compaction, when a set of segments of a given version have reached their
+respective disk space threshold, cardinality estimates are used to locate the segment or set of segments within that
+version that would benefit most from compaction. The log compactor then reads unique keys from all of the combined
+segments into memory, storing the highest index for each unique key in a compact in-memory lookup table. The lookup table
+(which uses 12 bytes of memory per unique key) is then used to rewrite the set of segments into a single compact segment
+with only the last instance for each key within the set of segments being compacted.
+
+This log compaction algorithm works well for persisting only the last instance of an entry for a given resource. But in
+some cases, entries written to Copycat's log may represent a delete (i.e. a tombstone). For instance, consider the scenario
+where a `remove` operation stores an entry in Copycat's commit logs but effectively results in a lack of state. If the
+removed key is never written to again, the entry will persist in the log for all of eternity even though it effectively
+results in no state. Copycat guards against this scenario via its `Persistence` levels - specifically the `DURABLE`
+persistence level. Entries persisted with the `DURABLE` persistence level are effectively treated as tombstones. Once a
+tombstone entry has been replicated to *all active members of the cluster*, it is marked for deletion from the log. This
+ensures that all dependent state machines have the opportunity to apply the tombstone, and eventually all tombstones will
+be removed from the log during normal log compaction.
 
 ### Eventual consistency and Copycat's gossip protocol
 
