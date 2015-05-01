@@ -42,7 +42,8 @@ public class NettyClusterTest extends ConcurrentTestCase {
    * Tests connecting a remote member to a local member.
    */
   public void testConnectRemoteToLocal() throws Throwable {
-    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new Serializer(), new ExecutionContext("test-server"));
+    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8080)), new ExecutionContext("test-server"));
+    localMember.setSerializer(new Serializer());
 
     expectResume();
     localMember.listen().thenRun(this::resume);
@@ -79,7 +80,8 @@ public class NettyClusterTest extends ConcurrentTestCase {
     expectResumes(2);
     remoteMember.connect().thenRun(this::resume);
 
-    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8081)), new Serializer(), new ExecutionContext("test-server"));
+    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8081)), new ExecutionContext("test-server"));
+    localMember.setSerializer(new Serializer());
 
     localMember.listen().thenRun(this::resume);
     await();
@@ -98,7 +100,8 @@ public class NettyClusterTest extends ConcurrentTestCase {
    * Tests sending a message between remote and local members.
    */
   public void testMessageRemoteToLocal() throws Throwable {
-    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8082)), new Serializer(), new ExecutionContext("test-server"));
+    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8082)), new ExecutionContext("test-server"));
+    localMember.setSerializer(new Serializer());
 
     expectResume();
     localMember.listen().thenRun(this::resume);
@@ -136,7 +139,8 @@ public class NettyClusterTest extends ConcurrentTestCase {
    * Tests executing a task between remote and local members.
    */
   public void testTaskRemoteToLocal() throws Throwable {
-    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8083)), new Serializer().register(TestTask.class, 1), new ExecutionContext("test-server"));
+    NettyLocalMember localMember = new NettyLocalMember(new NettyMember.Info(1, Member.Type.ACTIVE, new InetSocketAddress("localhost", 8083)), new ExecutionContext("test-server"));
+    localMember.setSerializer(new Serializer().register(TestTask.class, 1));
 
     expectResume();
     localMember.listen().thenRun(this::resume);

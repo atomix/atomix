@@ -38,8 +38,8 @@ public class TestCluster extends AbstractCluster {
 
   private final TestMemberRegistry registry;
 
-  public TestCluster(TestLocalMember localMember, Collection<? extends TestRemoteMember> remoteMembers, TestMemberRegistry registry) {
-    super(localMember, remoteMembers);
+  public TestCluster(TestLocalMember localMember, Collection<? extends TestRemoteMember> remoteMembers, TestMemberRegistry registry, Serializer serializer) {
+    super(localMember, remoteMembers, serializer);
     this.registry = registry;
     localMember.init(registry);
     remoteMembers.forEach(m -> m.init(localMember.serializer, registry));
@@ -129,7 +129,7 @@ public class TestCluster extends AbstractCluster {
       }
 
       TestLocalMember localMember = new TestLocalMember(info, serializer != null ? serializer : new Serializer(), new ExecutionContext(String.format("copycat-cluster-%d", memberId)));
-      return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry);
+      return new TestCluster(localMember, members.values().stream().map(m -> (TestRemoteMember) m).collect(Collectors.toList()), registry, serializer);
     }
   }
 
