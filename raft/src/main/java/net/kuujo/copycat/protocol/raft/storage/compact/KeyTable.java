@@ -19,7 +19,7 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.Bytes;
 import net.kuujo.copycat.io.NativeBytes;
 import net.kuujo.copycat.io.util.HashFunction;
-import net.kuujo.copycat.io.util.HashFunctions;
+import net.kuujo.copycat.io.util.Murmur3HashFunction;
 
 /**
  * Log key lookup table.
@@ -45,7 +45,7 @@ public class KeyTable implements AutoCloseable {
   private int size;
 
   public KeyTable(int entries) {
-    this(entries, HashFunctions.CITYHASH);
+    this(entries, new Murmur3HashFunction());
   }
 
   public KeyTable(int entries, HashFunction hashFunction) {

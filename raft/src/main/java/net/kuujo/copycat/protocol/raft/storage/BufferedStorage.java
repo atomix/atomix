@@ -434,14 +434,17 @@ public class BufferedStorage implements RaftStorage {
   }
 
   /**
-   * Compacts the log.
-   * <p>
-   * This method will force compaction to take place <em>in the current thread</em>. Therefore, it may block the calling
-   * thread for some period of time while compaction takes place.
-   *
+   * Compacts the log in a background thread.
    */
   public void compact() {
     segments.compact();
+  }
+
+  /**
+   * Compacts the log in the current thread.
+   */
+  void compactNow() {
+    segments.compactNow();
   }
 
   @Override

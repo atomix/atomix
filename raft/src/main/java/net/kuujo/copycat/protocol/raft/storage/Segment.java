@@ -60,6 +60,7 @@ public class Segment implements AutoCloseable {
   private final Buffer writeBuffer;
   private final Buffer readBuffer;
   private final OffsetIndex offsetIndex;
+  private KeySet keys;
   private final RaftEntryPool entryPool = new CommittingRaftEntryPool();
   private long commitIndex = 0;
   private long recycleIndex = 0;
@@ -83,7 +84,15 @@ public class Segment implements AutoCloseable {
     this.offsetIndex = offsetIndex;
     if (offsetIndex.size() > 0) {
       firstLastOffset = offsetIndex.lastOffset();
-      writeBuffer.position(offsetIndex.position(firstLastOffset));
+      writeBuffer.position(offsetIndex.position(firstLastOffset) + offsetIndex.length(firstLastOffset));
+    }
+
+    // If the descriptor is locked then that indicates that this segment is immutable. Set the commit index to the last
+    // index in the segment.
+    if (descriptor.locked()) {
+      commitIndex = lastIndex();
+    } else {
+      keys = new KeySet();
     }
   }
 
@@ -94,6 +103,27 @@ public class Segment implements AutoCloseable {
    */
   public SegmentDescriptor descriptor() {
     return descriptor;
+  }
+
+  /**
+   * Returns the cardinality of the keys in the segment.
+   *
+   * @return The cardinality of the keys in the segment.
+   */
+  public KeySet keys() {
+    if (keys != null) {
+      return keys;
+    } else if (!descriptor.locked()) {
+      throw new IllegalStateException("unlocked segment contains no key set");
+    }
+
+    int lastOffset = offsetIndex.lastOffset();
+    long lastPosition = offsetIndex.position(lastOffset);
+    int lastLength = offsetIndex.length(lastOffset);
+    long keysPosition = lastPosition + lastLength;
+    byte[] bytes = new byte[readBuffer.readInt(keysPosition)];
+    readBuffer.read(keysPosition + 4, bytes, 0, bytes.length);
+    return new KeySet(bytes);
   }
 
   /**
@@ -454,11 +484,31 @@ public class Segment implements AutoCloseable {
   public Segment commit(long index) {
     checkRange(index);
 
-    if (index > commitIndex) {
+    if (!descriptor.locked() && index > commitIndex) {
       writeBuffer.flush();
       offsetIndex.flush();
-      commitIndex = index;
+
+      for (long i = Math.max(commitIndex + 1, descriptor.index()); i <= index; i++) {
+        int offset = offset(i);
+        long position = offsetIndex.position(offset);
+        if (position != -1) {
+          int keySize = readBuffer.readShort(keyLengthPosition(position));
+          try (Buffer key = readBuffer.slice(keyPosition(position), keySize)) {
+            keys.add(key);
+          }
+        }
+        commitIndex = index;
+      }
+
       if (offset(commitIndex) == descriptor.range() - 1) {
+        try {
+          byte[] bytes = keys.getBytes();
+          writeBuffer.writeInt(bytes.length).write(bytes);
+        } finally {
+          writeBuffer.flush();
+          keys = null;
+        }
+
         descriptor.update(System.currentTimeMillis());
         descriptor.lock();
       }

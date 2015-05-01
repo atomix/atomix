@@ -20,6 +20,7 @@ import net.kuujo.copycat.io.NativeBuffer;
 import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
 import net.kuujo.copycat.protocol.raft.storage.Segment;
 import net.kuujo.copycat.protocol.raft.storage.SegmentManager;
+import net.kuujo.copycat.protocol.raft.storage.StorageConfig;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractCompactionStrategy implements CompactionStrategy {
+  protected StorageConfig config;
 
   /**
    * Returns the compaction strategy logger.
@@ -54,6 +56,8 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
 
   @Override
   public void compact(SegmentManager manager) {
+    config = manager.config();
+
     // Select a list of segments to compact.
     List<List<Segment>> allSegments = selectSegments(manager.segments().stream().filter(Segment::isLocked).collect(Collectors.toList()));
 
@@ -82,8 +86,9 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
     for (Segment segment : segments) {
 
       // Because segments are not thread safe, we need to create a temporary segment with a new file descriptor in
-      // order to read entries from the segment. There's no risk of a race condition here since we're only compacting
-      // segments in which all entries have been committed.
+      // order to read entries from the segment. There's no risk of a race condition here as long as the compaction
+      // process remains single-threaded since we're only compacting immutable segments in which all entries have been
+      // committed.
       Segment temp = manager.loadSegment(segment.descriptor().id(), segment.descriptor().version());
 
       KeyTable keyTable = new KeyTable(temp.descriptor().entries());

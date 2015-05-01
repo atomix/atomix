@@ -227,7 +227,7 @@ public class SegmentManager implements AutoCloseable {
       int indexBytes = OffsetIndex.bytes(descriptor.entries());
       OffsetIndex index = new OffsetIndex(((FileBuffer) buffer.skip(SegmentDescriptor.BYTES)).map(indexBytes), descriptor.entries());
       Segment segment = Segment.open(buffer.position(SegmentDescriptor.BYTES + indexBytes).slice(), descriptor, index);
-      LOGGER.debug("Created persistent segment: {} ({})", descriptor.id(), file.getName());
+      LOGGER.debug("Created segment: {} ({})", descriptor.id(), file.getName());
       return segment;
     }
   }
@@ -413,6 +413,13 @@ public class SegmentManager implements AutoCloseable {
    */
   public void compact() {
     compactor.execute();
+  }
+
+  /**
+   * Compacts the segments in the foreground thread.
+   */
+  void compactNow() {
+    compactor.run();
   }
 
   @Override

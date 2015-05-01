@@ -26,6 +26,10 @@
   <artifactId>copycat-raft</artifactId>
   <name>Copycat Raft</name>
 
+  <properties>
+    <stream.version>2.8.0</stream.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
@@ -37,6 +41,11 @@
       <artifactId>copycat-test</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.clearspring.analytics</groupId>
+      <artifactId>stream</artifactId>
+      <version>${stream.version}</version>
     </dependency>
   </dependencies>
 

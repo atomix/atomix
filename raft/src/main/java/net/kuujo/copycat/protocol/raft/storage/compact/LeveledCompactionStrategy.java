@@ -68,27 +68,11 @@ public class LeveledCompactionStrategy extends AbstractCompactionStrategy {
   }
 
   @Override
-  @SuppressWarnings("unchecked")
   protected List<List<Segment>> selectSegments(List<Segment> segments) {
     List<List<Segment>> allSegments = new ArrayList<>();
     if (!segments.isEmpty()) {
-
-      // Sort all segments in reverse order. This ensures that we favor compacting higher indexes over lower indexes.
-      Collections.sort(segments, (s1, s2) -> (int) (s2.descriptor().index() - s1.descriptor().index()));
-
       // Create a sorted map of levels. Levels are identified by segment versions.
-      SortedMap<Long, List<Segment>> levels = new TreeMap<>();
-      for (Segment segment : segments) {
-        // Only compact segments where all entries have been committed (segments are locked).
-        if (segment.isLocked()) {
-          List<Segment> level = levels.get(segment.descriptor().version());
-          if (level == null) {
-            level = new ArrayList<>(segments.size());
-            levels.put(segment.descriptor().version(), level);
-          }
-          level.add(segment);
-        }
-      }
+      SortedMap<Long, List<Segment>> levels = createLevels(segments);
 
       // Given a sorted list of segment levels, iterate through segments to find a level that should be compacted.
       // Compaction eligibility is determined based on the level and compaction factor.
@@ -101,6 +85,26 @@ public class LeveledCompactionStrategy extends AbstractCompactionStrategy {
       }
     }
     return allSegments;
+  }
+
+  /**
+   * Creates a map of level numbers to segments.
+   */
+  private SortedMap<Long, List<Segment>> createLevels(List<Segment> segments) {
+    // Iterate through segments from oldest to newest and create a map of levels based on segment versions. Because of
+    // the nature of this compaction strategy, segments of the same level should always be next to one another.
+    TreeMap<Long, List<Segment>> levels = new TreeMap<>();
+    for (Segment segment : segments) {
+      if (segment.isLocked()) {
+        List<Segment> level = levels.get(segment.descriptor().version());
+        if (level == null) {
+          level = new ArrayList<>();
+          levels.put(segment.descriptor().version(), level);
+        }
+        level.add(segment);
+      }
+    }
+    return levels;
   }
 
 }

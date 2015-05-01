@@ -69,6 +69,7 @@ public class BufferedStorageTest {
     try (RaftEntry writer = log.createEntry()) {
       assertEquals(writer.index(), index);
       writer.writeType(RaftEntry.Type.COMMAND);
+      writer.writeMode(RaftEntry.Mode.PERSISTENT);
       writer.writeTerm(1);
       writer.writeKey(KEY.clear().writeLong(1234).flip());
       writer.writeEntry(ENTRY.clear().writeLong(4321).flip());
@@ -81,6 +82,7 @@ public class BufferedStorageTest {
   private void readUncommittedKeyedTestEntry(BufferedStorage log, long index) {
     try (RaftEntry reader = log.getEntry(index)) {
       assertEquals(reader.index(), index);
+      assertEquals(reader.readMode(), RaftEntry.Mode.PERSISTENT);
       assertEquals(reader.readType(), RaftEntry.Type.COMMAND);
       assertEquals(reader.readTerm(), 1);
       reader.readKey(KEY.clear());
@@ -98,6 +100,7 @@ public class BufferedStorageTest {
     assertTrue(log.commitIndex() >= index);
     try (RaftEntry reader = log.getEntry(index)) {
       assertEquals(reader.index(), index);
+      assertEquals(reader.readMode(), RaftEntry.Mode.PERSISTENT);
       assertEquals(reader.readType(), RaftEntry.Type.COMMAND);
       assertEquals(reader.readTerm(), 1);
       reader.readKey(KEY.clear());
@@ -263,7 +266,7 @@ public class BufferedStorageTest {
       checkLength(log, 16);
       log.commit(12);
       assertEquals(log.commitIndex(), 12);
-      log.compact();
+      log.compactNow();
       readCommittedKeyedTestEntry(log, 8);
     }
     assertFalse(openLog.isOpen());
