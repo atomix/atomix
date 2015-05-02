@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.protocol;
 
+import net.kuujo.copycat.Builder;
 import net.kuujo.copycat.Event;
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.Cluster;
@@ -22,74 +23,56 @@ import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.util.ExecutionContext;
 import net.kuujo.copycat.util.Managed;
 
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
- * Copycat protocol.
+ * Raft protocol.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public abstract class Protocol implements Managed<Protocol> {
-  protected final Set<EventListener<Event>> listeners = new CopyOnWriteArraySet<>();
-  protected String topic;
-  protected Cluster cluster;
-  protected ExecutionContext context;
+public interface Protocol extends Managed<Protocol> {
 
   /**
    * Sets the protocol cluster.
    *
    * @param cluster The protocol cluster.
    */
-  public void setCluster(Cluster cluster) {
-    this.cluster = cluster;
-  }
+  void setCluster(Cluster cluster);
 
   /**
    * Returns the protocol cluster.
    *
    * @return The protocol cluster.
    */
-  public Cluster getCluster() {
-    return cluster;
-  }
+  Cluster getCluster();
 
   /**
    * Sets the protocol topic.
    *
    * @param topic The protocol topic.
    */
-  public void setTopic(String topic) {
-    this.topic = topic;
-  }
+  void setTopic(String topic);
 
   /**
    * Returns the protocol topic.
    *
    * @return The protocol topic.
    */
-  public String getTopic() {
-    return topic;
-  }
+  String getTopic();
 
   /**
    * Sets the protocol execution context.
    *
    * @param context The protocol execution context.
    */
-  public void setContext(ExecutionContext context) {
-    this.context = context;
-  }
+  void setContext(ExecutionContext context);
 
   /**
    * Returns the protocol execution context.
    *
    * @return The protocol execution context.
    */
-  public ExecutionContext getContext() {
-    return context;
-  }
+  ExecutionContext getContext();
 
   /**
    * Adds an event listener to the protocol.
@@ -97,11 +80,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param listener The event listener to add.
    * @return The protocol.
    */
-  @SuppressWarnings("unchecked")
-  public Protocol addListener(EventListener<? extends Event> listener) {
-    listeners.add((EventListener<Event>) listener);
-    return this;
-  }
+  Protocol addListener(EventListener<? extends Event> listener);
 
   /**
    * Removes an event listener from the protocol.
@@ -109,10 +88,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param listener The event listener to remove.
    * @return The protocol.
    */
-  public Protocol removeListener(EventListener<? extends Event> listener) {
-    listeners.remove(listener);
-    return this;
-  }
+  Protocol removeListener(EventListener<? extends Event> listener);
 
   /**
    * Submits a keyless command to the protocol.
@@ -120,7 +96,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param entry The command entry.
    * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> submit(Buffer entry) {
+  default CompletableFuture<Buffer> submit(Buffer entry) {
     return submit(null, entry, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
@@ -131,7 +107,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param persistence The command persistence level.
    * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> submit(Buffer entry, Persistence persistence) {
+  default CompletableFuture<Buffer> submit(Buffer entry, Persistence persistence) {
     return submit(null, entry, persistence, Consistency.DEFAULT);
   }
 
@@ -142,7 +118,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param consistency The command consistency requirement.
    * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> submit(Buffer entry, Consistency consistency) {
+  default CompletableFuture<Buffer> submit(Buffer entry, Consistency consistency) {
     return submit(null, entry, Persistence.DEFAULT, consistency);
   }
 
@@ -153,7 +129,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param entry The command entry.
    * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry) {
+  default CompletableFuture<Buffer> submit(Buffer key, Buffer entry) {
     return submit(key, entry, Persistence.DEFAULT, Consistency.DEFAULT);
   }
 
@@ -165,7 +141,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param persistence The command persistence level.
    * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence) {
+  default CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence) {
     return submit(key, entry, persistence, Consistency.DEFAULT);
   }
 
@@ -177,7 +153,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param consistency The command consistency requirement.
    * @return A completable future to be completed with the command result.
    */
-  public CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Consistency consistency) {
+  default CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Consistency consistency) {
     return submit(key, entry, Persistence.DEFAULT, consistency);
   }
 
@@ -190,7 +166,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param consistency The command consistency requirement.
    * @return A completable future to be completed with the command result.
    */
-  public abstract CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence, Consistency consistency);
+  CompletableFuture<Buffer> submit(Buffer key, Buffer entry, Persistence persistence, Consistency consistency);
 
   /**
    * Registers a protocol commit handler.
@@ -198,12 +174,12 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param handler The protocol commit handler.
    * @return The protocol.
    */
-  public abstract Protocol handler(CommitHandler handler);
+  Protocol handler(CommitHandler handler);
 
   /**
    * Protocol builder.
    */
-  public static abstract class Builder implements net.kuujo.copycat.Builder<Protocol> {
+  static interface Builder extends net.kuujo.copycat.Builder<Protocol> {
   }
 
 }

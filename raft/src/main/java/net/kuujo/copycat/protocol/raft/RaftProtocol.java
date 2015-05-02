@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class RaftProtocol extends Protocol {
+public class RaftProtocol extends AbstractProtocol {
 
   /**
    * Returns a new Raft protocol builder.
@@ -539,7 +539,7 @@ public class RaftProtocol extends Protocol {
   /**
    * Raft protocol builder.
    */
-  public static class Builder extends Protocol.Builder {
+  public static class Builder extends AbstractProtocol.Builder {
     private RaftStorage storage;
     private RaftConfig config = new RaftConfig();
 
