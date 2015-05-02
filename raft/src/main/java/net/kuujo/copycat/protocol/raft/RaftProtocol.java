@@ -354,7 +354,7 @@ public class RaftProtocol extends Protocol {
   }
 
   @Override
-  public Protocol commitHandler(CommitHandler handler) {
+  public Protocol handler(CommitHandler handler) {
     this.commitHandler = handler;
     return this;
   }

@@ -214,7 +214,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     for (int i = 1; i <= nodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.commitHandler(commitHandler);
+      protocol.handler(commitHandler);
       protocols.put(i, protocol);
     }
 
@@ -505,7 +505,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     for (int i = 1; i <= nodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.commitHandler(commitHandler);
+      protocol.handler(commitHandler);
       protocols.put(i, protocol);
     }
 
@@ -721,7 +721,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     for (int i = 1; i <= activeNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.commitHandler(commitHandler);
+      protocol.handler(commitHandler);
       activeProtocols.put(i, protocol);
     }
 
@@ -750,7 +750,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.commitHandler(commitHandler);
+      protocol.handler(commitHandler);
       passiveProtocols.put(i, protocol);
     }
 
@@ -1203,7 +1203,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     for (int i = 1; i <= activeNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.commitHandler(commitHandler).addListener(createListener.apply(protocol));
+      protocol.handler(commitHandler).addListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 
@@ -1214,7 +1214,7 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
       RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.commitHandler(commitHandler).addListener(createListener.apply(protocol));
+      protocol.handler(commitHandler).addListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 

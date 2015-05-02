@@ -198,7 +198,7 @@ public abstract class Protocol implements Managed<Protocol> {
    * @param handler The protocol commit handler.
    * @return The protocol.
    */
-  public abstract Protocol commitHandler(CommitHandler handler);
+  public abstract Protocol handler(CommitHandler handler);
 
   /**
    * Protocol builder.
