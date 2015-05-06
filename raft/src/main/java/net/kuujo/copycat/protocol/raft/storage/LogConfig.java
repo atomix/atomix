@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StorageConfig {
+public class LogConfig {
   private static final String DEFAULT_NAME = "log";
   private static final String DEFAULT_DIRECTORY = System.getProperty("user.dir");
   private static final int DEFAULT_MAX_KEY_SIZE = 1024;
@@ -58,6 +58,27 @@ public class StorageConfig {
   private RetentionPolicy retentionPolicy = DEFAULT_RETENTION_POLICY;
   private CompactionStrategy compactionStrategy = DEFAULT_COMPACTION_STRATEGY;
   private long compactInterval = DEFAULT_COMPACT_INTERVAL;
+
+  public LogConfig() {
+  }
+
+  private LogConfig(LogConfig config) {
+    name = config.name;
+    directory = config.directory;
+    maxKeySize = config.maxKeySize;
+    maxEntrySize = config.maxEntrySize;
+    entriesPerSegment = config.entriesPerSegment;
+    retentionPolicy = config.retentionPolicy;
+    compactionStrategy = config.compactionStrategy;
+    compactInterval = config.compactInterval;
+  }
+
+  /**
+   * Copies the log configuration.
+   */
+  LogConfig copy() {
+    return new LogConfig(this);
+  }
 
   /**
    * Sets the log name.
@@ -91,7 +112,7 @@ public class StorageConfig {
    * @return The log configuration.
    * @throws NullPointerException If the {@code name} is {@code null}
    */
-  public StorageConfig withName(String name) {
+  public LogConfig withName(String name) {
     setName(name);
     return this;
   }
@@ -145,7 +166,7 @@ public class StorageConfig {
    * @return The log configuration.
    * @throws NullPointerException If the {@code directory} is {@code null}
    */
-  public StorageConfig withDirectory(String directory) {
+  public LogConfig withDirectory(String directory) {
     setDirectory(directory);
     return this;
   }
@@ -160,7 +181,7 @@ public class StorageConfig {
    * @return The log configuration.
    * @throws NullPointerException If the {@code directory} is {@code null}
    */
-  public StorageConfig withDirectory(File directory) {
+  public LogConfig withDirectory(File directory) {
     setDirectory(directory);
     return this;
   }
@@ -206,7 +227,7 @@ public class StorageConfig {
    * @throws IllegalArgumentException If the {@code maxKeySize} is not positive or is greater than
    * {@code Short.MAX_VALUE * 2}
    */
-  public StorageConfig withMaxKeySize(int maxKeySize) {
+  public LogConfig withMaxKeySize(int maxKeySize) {
     setMaxKeySize(maxKeySize);
     return this;
   }
@@ -246,7 +267,7 @@ public class StorageConfig {
    * @return The log configuration.
    * @throws IllegalArgumentException If the {@code maxEntrySize} is not positive
    */
-  public StorageConfig withMaxEntrySize(int maxEntrySize) {
+  public LogConfig withMaxEntrySize(int maxEntrySize) {
     setMaxEntrySize(maxEntrySize);
     return this;
   }
@@ -295,7 +316,7 @@ public class StorageConfig {
    * @throws IllegalArgumentException If the number of entries per segment does not adhere to the formula
    *         {@code entriesPerSegment * (maxKeySize + maxEntrySize + Short.BYTES) < Integer.MAX_VALUE * 2}
    */
-  public StorageConfig withEntriesPerSegment(int entriesPerSegment) {
+  public LogConfig withEntriesPerSegment(int entriesPerSegment) {
     setEntriesPerSegment(entriesPerSegment);
     return this;
   }
@@ -341,7 +362,7 @@ public class StorageConfig {
    * @return The log configuration.
    * @throws NullPointerException If the {@code retentionPolicy} is {@code null}
    */
-  public StorageConfig withRetentionPolicy(RetentionPolicy retentionPolicy) {
+  public LogConfig withRetentionPolicy(RetentionPolicy retentionPolicy) {
     setRetentionPolicy(retentionPolicy);
     return this;
   }
@@ -390,7 +411,7 @@ public class StorageConfig {
    * @param compactionStrategy The log compaction strategy.
    * @return The log configuration.
    */
-  public StorageConfig withCompactionStrategy(CompactionStrategy compactionStrategy) {
+  public LogConfig withCompactionStrategy(CompactionStrategy compactionStrategy) {
     setCompactionStrategy(compactionStrategy);
     return this;
   }
@@ -446,7 +467,7 @@ public class StorageConfig {
    * @return The log configuration.
    * @throws IllegalArgumentException If the {@code compactInterval} is negative
    */
-  public StorageConfig withCompactInterval(long interval, TimeUnit unit) {
+  public LogConfig withCompactInterval(long interval, TimeUnit unit) {
     return withCompactInterval(unit.toMillis(interval));
   }
 
@@ -460,7 +481,7 @@ public class StorageConfig {
    * @return The log configuration.
    * @throws IllegalArgumentException If the {@code compactInterval} is negative
    */
-  public StorageConfig withCompactInterval(long compactInterval) {
+  public LogConfig withCompactInterval(long compactInterval) {
     setCompactInterval(compactInterval);
     return this;
   }

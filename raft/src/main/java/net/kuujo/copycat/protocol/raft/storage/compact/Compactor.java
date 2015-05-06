@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.protocol.raft.storage.compact;
 
+import net.kuujo.copycat.protocol.raft.storage.RaftEntryFilter;
 import net.kuujo.copycat.protocol.raft.storage.Segment;
 import net.kuujo.copycat.protocol.raft.storage.SegmentManager;
 import org.slf4j.Logger;
@@ -32,21 +33,34 @@ import java.util.concurrent.atomic.AtomicInteger;
  * The log compactor is responsible for periodic and on-demand execution of log compaction tasks. The log compaction
  * process is a two stage process. When the compactor is {@link Compactor#run() run} it will first use the configured
  * {@link RetentionPolicy} to determine whether any segments can be permanently deleted from the log. Once segments
- * have been deleted, {@link CompactionStrategy#compact(net.kuujo.copycat.protocol.raft.storage.SegmentManager)} is called on the configured {@link CompactionStrategy}.
+ * have been deleted, {@link CompactionStrategy#compact(RaftEntryFilter, SegmentManager)}
+ * is called on the configured {@link CompactionStrategy}.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Compactor implements Runnable, AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(Compactor.class);
   private final SegmentManager manager;
+  private RaftEntryFilter filter = entry -> true;
   private CompactionStrategy compactionStrategy;
   private RetentionPolicy retentionPolicy;
-  private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("log-compactor-%d"));
+  private ScheduledExecutorService executor;
   private ScheduledFuture<?> scheduledFuture;
   private final AtomicBoolean running = new AtomicBoolean();
 
   public Compactor(SegmentManager manager) {
     this.manager = manager;
+  }
+
+  /**
+   * Sets the entry filter.
+   *
+   * @param filter The entry filter.
+   * @return The log compactor.
+   */
+  public Compactor withEntryFilter(RaftEntryFilter filter) {
+    this.filter = filter != null ? filter : entry -> true;
+    return this;
   }
 
   /**
@@ -88,6 +102,8 @@ public class Compactor implements Runnable, AutoCloseable {
     if (scheduledFuture != null)
       scheduledFuture.cancel(true);
     LOGGER.debug("Scheduling compaction: {} {}", interval, unit);
+    if (executor == null)
+      executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("log-compactor-%d"));
     scheduledFuture = executor.scheduleAtFixedRate(this, interval, interval, unit);
   }
 
@@ -95,6 +111,8 @@ public class Compactor implements Runnable, AutoCloseable {
    * Executes the compactor.
    */
   public void execute() {
+    if (executor == null)
+      executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("log-compactor-%d"));
     executor.execute(this);
   }
 
@@ -135,12 +153,13 @@ public class Compactor implements Runnable, AutoCloseable {
   private void compact() {
     LOGGER.info("Starting log compaction...");
     if (compactionStrategy != null)
-      compactionStrategy.compact(manager);
+      compactionStrategy.compact(filter, manager);
   }
 
   @Override
   public void close() {
     executor.shutdown();
+    executor = null;
   }
 
   /**

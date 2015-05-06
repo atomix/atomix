@@ -37,7 +37,7 @@ class LeaderState extends ActiveState {
   private ScheduledFuture<?> currentTimer;
   private final Replicator replicator = new Replicator();
 
-  public LeaderState(RaftProtocol context) {
+  public LeaderState(Raft context) {
     super(context);
   }
 
@@ -51,7 +51,7 @@ class LeaderState extends ActiveState {
     // Schedule the initial entries commit to occur after the state is opened. Attempting any communication
     // within the open() method will result in a deadlock since RaftProtocol calls this method synchronously.
     // What is critical about this logic is that the heartbeat timer not be started until a NOOP entry has been committed.
-    context.getContext().execute(() -> {
+    context.context().execute(() -> {
       commitEntries().whenComplete((result, error) -> {
         if (error == null) {
           applyEntries();
@@ -69,7 +69,7 @@ class LeaderState extends ActiveState {
    * Sets the current node as the cluster leader.
    */
   private void takeLeadership() {
-    context.setLeader(context.getCluster().member().id());
+    context.setLeader(context.cluster().member().id());
   }
 
   /**
@@ -109,7 +109,7 @@ class LeaderState extends ActiveState {
         applyEntry(commitIndex);
         count++;
       }
-      LOGGER.debug("{} - Applied {} entries to log", context.getCluster().member().id(), count);
+      LOGGER.debug("{} - Applied {} entries to log", context.cluster().member().id(), count);
     }
   }
 
@@ -120,8 +120,8 @@ class LeaderState extends ActiveState {
     // Set a timer that will be used to periodically synchronize with other nodes
     // in the cluster. This timer acts as a heartbeat to ensure this node remains
     // the leader.
-    LOGGER.debug("{} - Setting heartbeat timer", context.getCluster().member().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::heartbeatMembers, 0, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    LOGGER.debug("{} - Setting heartbeat timer", context.cluster().member().id());
+    currentTimer = context.context().scheduleAtFixedRate(this::heartbeatMembers, 0, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -146,7 +146,7 @@ class LeaderState extends ActiveState {
   @Override
   public CompletableFuture<VoteResponse> vote(final VoteRequest request) {
     if (request.term() > context.getTerm()) {
-      LOGGER.debug("{} - Received greater term", context.getCluster().member().id());
+      LOGGER.debug("{} - Received greater term", context.cluster().member().id());
       transition(RaftState.Type.FOLLOWER);
       return super.vote(request);
     } else {
@@ -191,7 +191,7 @@ class LeaderState extends ActiveState {
     // If the entry was stored to the log then the index will be greater than 0. Entries stored to the log must be
     // replicated via the Raft protocol.
     if (index != 0) {
-      return replicateSubmitEntry(index, key, entry);
+      return replicateSubmitEntry(index, key, entry, false);
     } else {
       // Perform synchronous or asynchronous replication based on the request's consistency level. EVENTUAL(ly) consistent
       // requests are always applied directly to the state machine without performing any additional work. LEASE requests
@@ -201,10 +201,10 @@ class LeaderState extends ActiveState {
       switch (request.consistency()) {
         case EVENTUAL:
         case LEASE:
-          return commitSubmitEntry(key, entry, new CompletableFuture<>());
+          return commitSubmitEntry(context.getLastApplied(), key, entry, new CompletableFuture<>());
         case STRICT:
         case DEFAULT:
-          return replicateSubmitEntry(0, key, entry);
+          return replicateSubmitEntry(0, key, entry, true);
       }
     }
 
@@ -254,7 +254,7 @@ class LeaderState extends ActiveState {
         }
 
         long index = logEntry.index();
-        LOGGER.debug("{} - Appended entry to log at index {}", context.getCluster().member().id(), index);
+        LOGGER.debug("{} - Appended entry to log at index {}", context.cluster().member().id(), index);
         return index;
       }
     }
@@ -264,8 +264,8 @@ class LeaderState extends ActiveState {
   /**
    * Replicates a submit entry.
    */
-  private CompletableFuture<SubmitResponse> replicateSubmitEntry(long index, Buffer key, Buffer entry) {
-    LOGGER.debug("{} - Replicating logs up to index {}", context.getCluster().member().id(), index);
+  private CompletableFuture<SubmitResponse> replicateSubmitEntry(long index, Buffer key, Buffer entry, boolean read) {
+    LOGGER.debug("{} - Replicating logs up to index {}", context.cluster().member().id(), index);
 
     CompletableFuture<SubmitResponse> future = new CompletableFuture<>();
 
@@ -278,7 +278,7 @@ class LeaderState extends ActiveState {
       if (isOpen()) {
         if (error == null) {
           try {
-            commitSubmitEntry(key, entry, future);
+            commitSubmitEntry(read ? context.getLastApplied() : index, key, entry, future);
           } finally {
             if (index > 0) {
               context.setLastApplied(index);
@@ -302,10 +302,10 @@ class LeaderState extends ActiveState {
   /**
    * Commits a submit entry to the commit handler.
    */
-  private CompletableFuture<SubmitResponse> commitSubmitEntry(Buffer key, Buffer entry, CompletableFuture<SubmitResponse> future) {
+  private CompletableFuture<SubmitResponse> commitSubmitEntry(long index, Buffer key, Buffer entry, CompletableFuture<SubmitResponse> future) {
     Buffer buffer = BUFFER_POOL.get().acquire();
     try {
-      context.commit(key, entry, buffer);
+      context.commit(index, key, entry, buffer);
       future.complete(logResponse(SubmitResponse.builder()
         .withStatus(Response.Status.OK)
         .withResult(buffer.flip())
@@ -346,7 +346,7 @@ class LeaderState extends ActiveState {
    */
   private void cancelPingTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling ping timer", context.getCluster().member().id());
+      LOGGER.debug("{} - Cancelling ping timer", context.cluster().member().id());
       currentTimer.cancel(false);
     }
   }
@@ -377,8 +377,8 @@ class LeaderState extends ActiveState {
      * Updates the replicator's cluster configuration.
      */
     private void update() {
-      Set<Member> members = context.getCluster().members().stream()
-        .filter(m -> m.id() != context.getCluster().member().id() && m.type() == Member.Type.ACTIVE)
+      Set<Member> members = context.cluster().members().stream()
+        .filter(m -> m.id() != context.cluster().member().id() && m.type() == Member.Type.ACTIVE)
         .collect(Collectors.toSet());
       Set<Integer> ids = members.stream().map(Member::id).collect(Collectors.toSet());
 
@@ -597,7 +597,7 @@ class LeaderState extends ActiveState {
       private void commit(long prevIndex, RaftEntry prevEntry, List<RaftEntry> entries) {
         AppendRequest request = AppendRequest.builder()
           .withTerm(context.getTerm())
-          .withLeader(context.getCluster().member().id())
+          .withLeader(context.cluster().member().id())
           .withLogIndex(prevIndex)
           .withLogTerm(prevEntry != null ? prevEntry.readTerm() : 0)
           .withEntries(entries)
@@ -606,14 +606,14 @@ class LeaderState extends ActiveState {
           .build();
 
         committing = true;
-        LOGGER.debug("{} - Sent {} to {}", context.getCluster().member().id(), request, member);
-        member.<AppendRequest, AppendResponse>send(context.getTopic(), request).whenCompleteAsync((response, error) -> {
+        LOGGER.debug("{} - Sent {} to {}", context.cluster().member().id(), request, member);
+        member.<AppendRequest, AppendResponse>send(context.topic(), request).whenCompleteAsync((response, error) -> {
           committing = false;
           context.checkThread();
 
           if (isOpen()) {
             if (error == null) {
-              LOGGER.debug("{} - Received {} from {}", context.getCluster().member().id(), response, member);
+              LOGGER.debug("{} - Received {} from {}", context.cluster().member().id(), response, member);
               if (response.status() == Response.Status.OK) {
                 // Update the commit time for the replica. This will cause heartbeat futures to be triggered.
                 commitTime(id);
@@ -644,19 +644,19 @@ class LeaderState extends ActiveState {
                   }
                 }
               } else if (response.term() > context.getTerm()) {
-                LOGGER.debug("{} - Received higher term from {}", context.getCluster().member().id(), member);
+                LOGGER.debug("{} - Received higher term from {}", context.cluster().member().id(), member);
                 transition(RaftState.Type.FOLLOWER);
               } else {
-                LOGGER.warn("{} - {}", context.getCluster()
+                LOGGER.warn("{} - {}", context.cluster()
                   .member()
                   .id(), response.error() != null ? response.error() : "");
               }
             } else {
-              LOGGER.warn("{} - {}", context.getCluster().member().id(), error.getMessage());
+              LOGGER.warn("{} - {}", context.cluster().member().id(), error.getMessage());
             }
           }
           request.release();
-        }, context.getContext());
+        }, context.context());
       }
 
       /**
@@ -694,7 +694,7 @@ class LeaderState extends ActiveState {
         } else if (response.logIndex() != 0) {
           matchIndex = Math.max(matchIndex, response.logIndex());
         }
-        LOGGER.debug("{} - Reset match index for {} to {}", context.getCluster().member().id(), member, matchIndex);
+        LOGGER.debug("{} - Reset match index for {} to {}", context.cluster().member().id(), member, matchIndex);
       }
 
       /**
@@ -706,7 +706,7 @@ class LeaderState extends ActiveState {
         } else {
           nextIndex = context.log().firstIndex();
         }
-        LOGGER.debug("{} - Reset next index for {} to {}", context.getCluster().member().id(), member, nextIndex);
+        LOGGER.debug("{} - Reset next index for {} to {}", context.cluster().member().id(), member, nextIndex);
       }
 
     }

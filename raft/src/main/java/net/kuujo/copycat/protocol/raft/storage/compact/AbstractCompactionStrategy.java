@@ -17,10 +17,7 @@ package net.kuujo.copycat.protocol.raft.storage.compact;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.NativeBuffer;
-import net.kuujo.copycat.protocol.raft.storage.RaftEntry;
-import net.kuujo.copycat.protocol.raft.storage.Segment;
-import net.kuujo.copycat.protocol.raft.storage.SegmentManager;
-import net.kuujo.copycat.protocol.raft.storage.StorageConfig;
+import net.kuujo.copycat.protocol.raft.storage.*;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -34,7 +31,7 @@ import java.util.stream.Collectors;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public abstract class AbstractCompactionStrategy implements CompactionStrategy {
-  protected StorageConfig config;
+  protected LogConfig config;
 
   /**
    * Returns the compaction strategy logger.
@@ -55,7 +52,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
   }
 
   @Override
-  public void compact(SegmentManager manager) {
+  public void compact(RaftEntryFilter filter, SegmentManager manager) {
     config = manager.config();
 
     // Select a list of segments to compact.
@@ -67,7 +64,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
       logger().debug("Compacting {} segment(s)", allSegments.stream().mapToInt(List::size).sum());
       for (List<Segment> segments : allSegments) {
         sortSegments(segments);
-        compactSegments(segments, manager);
+        compactSegments(filter, segments, manager);
       }
     } else {
       logger().debug("No segments to compact");
@@ -77,7 +74,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
   /**
    * Compacts a set of segments.
    */
-  private void compactSegments(List<Segment> segments, SegmentManager manager) {
+  private void compactSegments(RaftEntryFilter filter, List<Segment> segments, SegmentManager manager) {
     // In order to determine the segments to compact, we iterate through each segment and build a key table of segment keys.
     // If the total number of keys in two adjacent segments are less than the total number of entries allowed in a segment
     // then we can compact the segments together, otherwise the segment will be rewritten by itself.
@@ -95,7 +92,7 @@ public abstract class AbstractCompactionStrategy implements CompactionStrategy {
       try (Buffer key = NativeBuffer.allocate(1024, temp.descriptor().maxKeySize())) {
         for (long i = temp.firstIndex(); i <= temp.lastIndex(); i++) {
           try (RaftEntry entry = temp.getEntry(i)) {
-            if (entry != null) {
+            if (entry != null && filter.accept(entry)) {
               RaftEntry.Mode mode = entry.readMode();
               if (mode == RaftEntry.Mode.PERSISTENT || (mode == RaftEntry.Mode.DURABLE && segment.recycleIndex() < i)) {
                 entry.readKey(key);

@@ -15,6 +15,7 @@
  */
 package net.kuujo.copycat.protocol.raft.storage.compact;
 
+import net.kuujo.copycat.protocol.raft.storage.RaftEntryFilter;
 import net.kuujo.copycat.protocol.raft.storage.SegmentManager;
 
 /**
@@ -29,8 +30,9 @@ public interface CompactionStrategy {
   /**
    * Compacts the given segments.
    *
+   * @param filter The filter with which to compact segments.
    * @param segments The segments to compact.
    */
-  void compact(SegmentManager segments);
+  void compact(RaftEntryFilter filter, SegmentManager segments);
 
 }

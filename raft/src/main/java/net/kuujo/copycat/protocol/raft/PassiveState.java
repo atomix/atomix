@@ -49,7 +49,7 @@ class PassiveState extends RaftState {
   protected final Buffer ENTRY = HeapBuffer.allocate(1024, 1024 * 1024);
   protected final Buffer RESULT = HeapBuffer.allocate(1024, 1024 * 1024);
 
-  public PassiveState(RaftProtocol context) {
+  public PassiveState(Raft context) {
     super(context);
   }
 
@@ -67,8 +67,8 @@ class PassiveState extends RaftState {
    * Starts the sync timer.
    */
   private void startSyncTimer() {
-    LOGGER.debug("{} - Setting sync timer", context.getCluster().member().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::sync, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    LOGGER.debug("{} - Setting sync timer", context.cluster().member().id());
+    currentTimer = context.context().scheduleAtFixedRate(this::sync, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -80,9 +80,9 @@ class PassiveState extends RaftState {
 
     // Create a list of passive members. Construct a new array list since the Java 8 collectors API makes no guarantees
     // about the serializability of the returned list.
-    List<Member> passiveMembers = new ArrayList<>(context.getCluster().members().size());
-    context.getCluster().members().stream()
-      .filter(m -> m.type() == Member.Type.PASSIVE && m.id() != context.getCluster().member().id())
+    List<Member> passiveMembers = new ArrayList<>(context.cluster().members().size());
+    context.cluster().members().stream()
+      .filter(m -> m.type() == Member.Type.PASSIVE && m.id() != context.cluster().member().id())
       .forEach(passiveMembers::add);
 
     // Create a random list of three active members.
@@ -146,8 +146,8 @@ class PassiveState extends RaftState {
         .withEntries(entries)
         .build();
 
-      LOGGER.debug("{} - Sending {} to {}", context.getCluster().member().id(), request, member.id());
-      member.<SyncRequest, SyncResponse>send(context.getTopic(), request).whenCompleteAsync((response, error) -> {
+      LOGGER.debug("{} - Sending {} to {}", context.cluster().member().id(), request, member.id());
+      member.<SyncRequest, SyncResponse>send(context.topic(), request).whenCompleteAsync((response, error) -> {
         context.checkThread();
         // Always check if the context is still open in order to prevent race conditions in asynchronous callbacks.
         if (isOpen()) {
@@ -157,16 +157,16 @@ class PassiveState extends RaftState {
               context.updateMembers(response.members());
               recursiveSync(member, true, future);
             } else {
-              LOGGER.warn("{} - Received error response from {}", context.getCluster().member().id(), member.id());
+              LOGGER.warn("{} - Received error response from {}", context.cluster().member().id(), member.id());
               future.completeExceptionally(response.error().createException());
             }
           } else {
             // If the request failed then record the member as INACTIVE.
-            LOGGER.warn("{} - Sync to {} failed: {}", context.getCluster().member().id(), member, error.getMessage());
+            LOGGER.warn("{} - Sync to {} failed: {}", context.cluster().member().id(), member, error.getMessage());
             future.completeExceptionally(error);
           }
         }
-      }, context.getContext());
+      }, context.context());
     } else {
       future.complete(null);
     }
@@ -208,7 +208,7 @@ class PassiveState extends RaftState {
           entry.reset();
         }
 
-        LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.index());
+        LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
 
         context.log().commit(index);
         context.setCommitIndex(index);
@@ -220,7 +220,7 @@ class PassiveState extends RaftState {
             RESULT.clear();
             entry.readKey(KEY);
             entry.readEntry(ENTRY);
-            context.commit(KEY.flip(), ENTRY.flip(), RESULT);
+            context.commit(index, KEY.flip(), ENTRY.flip(), RESULT);
           } catch (Exception e) {
             LOGGER.warn("failed to apply command", e);
           } finally {
@@ -282,7 +282,7 @@ class PassiveState extends RaftState {
     if (request.persistence() == Persistence.NONE && request.consistency() == Consistency.EVENTUAL) {
       Buffer result = BUFFER_POOL.get().acquire();
       try {
-        context.commit(request.key(), request.entry(), result);
+        context.commit(context.getLastApplied(), request.key(), request.entry(), result);
         return CompletableFuture.completedFuture(logResponse(SubmitResponse.builder()
           .withStatus(Response.Status.OK)
           .withResult(result.flip())
@@ -299,7 +299,7 @@ class PassiveState extends RaftState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+      return context.cluster().member(context.getLeader()).send(context.topic(), request);
     }
   }
 
@@ -308,7 +308,7 @@ class PassiveState extends RaftState {
    */
   private void cancelSyncTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling sync timer", context.getCluster().member().id());
+      LOGGER.debug("{} - Cancelling sync timer", context.cluster().member().id());
       currentTimer.cancel(false);
     }
   }

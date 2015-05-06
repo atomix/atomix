@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 abstract class ActiveState extends PassiveState {
   protected boolean transition;
 
-  protected ActiveState(RaftProtocol context) {
+  protected ActiveState(Raft context) {
     super(context);
   }
 
@@ -70,7 +70,7 @@ abstract class ActiveState extends PassiveState {
     // reply false and return our current term. The leader will receive
     // the updated term and step down.
     if (request.term() < context.getTerm()) {
-      LOGGER.warn("{} - Rejected {}: request term is less than the current term ({})", context.getCluster().member().id(), request, context.getTerm());
+      LOGGER.warn("{} - Rejected {}: request term is less than the current term ({})", context.cluster().member().id(), request, context.getTerm());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -89,7 +89,7 @@ abstract class ActiveState extends PassiveState {
    */
   private AppendResponse doCheckPreviousEntry(AppendRequest request) {
     if (request.logIndex() != 0 && context.log().isEmpty()) {
-      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().member().id(), request, request.logIndex(), context.log().lastIndex());
+      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.cluster().member().id(), request, request.logIndex(), context.log().lastIndex());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -97,7 +97,7 @@ abstract class ActiveState extends PassiveState {
         .withLogIndex(context.log().lastIndex())
         .build();
     } else if (request.logIndex() != 0 && context.log().lastIndex() != 0 && request.logIndex() > context.log().lastIndex()) {
-      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.getCluster().member().id(), request, request.logIndex(), context.log().lastIndex());
+      LOGGER.warn("{} - Rejected {}: Previous index ({}) is greater than the local log's last index ({})", context.cluster().member().id(), request, request.logIndex(), context.log().lastIndex());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -109,7 +109,7 @@ abstract class ActiveState extends PassiveState {
     // If the previous entry term doesn't match the local previous term then reject the request.
     RaftEntry entry = context.log().getEntry(request.logIndex());
     if (entry.readTerm() != request.logTerm()) {
-      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.getCluster().member().id(), request, entry.readTerm());
+      LOGGER.warn("{} - Rejected {}: Request log term does not match local log term {} for the same entry", context.cluster().member().id(), request, entry.readTerm());
       return AppendResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -142,13 +142,13 @@ abstract class ActiveState extends PassiveState {
             if (entry.readTerm() != match.readTerm()) {
               // We found an invalid entry in the log. Remove the invalid entry and append the new entry.
               // If appending to the log fails, apply commits and reply false to the append request.
-              LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.getCluster().member().id());
+              LOGGER.warn("{} - Appended entry term does not match local log, removing incorrect entries", context.cluster().member().id());
               context.log().truncate(entry.index() - 1);
               try (RaftEntry transfer = context.log().createEntry()) {
                 assert entry.index() == transfer.index();
                 transfer.write(entry);
               }
-              LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.index());
+              LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
             }
           } else {
             context.log().truncate(entry.index() - 1);
@@ -156,7 +156,7 @@ abstract class ActiveState extends PassiveState {
               assert entry.index() == transfer.index();
               transfer.write(entry);
             }
-            LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.index());
+            LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
           }
         } else {
           // If appending to the log fails, apply commits and reply false to the append request.
@@ -164,7 +164,7 @@ abstract class ActiveState extends PassiveState {
             assert entry.index() == transfer.index();
             transfer.write(entry);
           }
-          LOGGER.debug("{} - Appended {} to log at index {}", context.getCluster().member().id(), entry, entry.index());
+          LOGGER.debug("{} - Appended {} to log at index {}", context.cluster().member().id(), entry, entry.index());
         }
       }
     }
@@ -192,7 +192,7 @@ abstract class ActiveState extends PassiveState {
     // commands have not yet been applied then we want to re-attempt to apply them.
     if (commitIndex != 0 && !context.log().isEmpty()) {
       if (context.getCommitIndex() == 0 || commitIndex > context.getCommitIndex() || context.getCommitIndex() > context.getLastApplied()) {
-        LOGGER.debug("{} - Applying {} commits", context.getCluster().member().id(), commitIndex - Math.max(context.getLastApplied(), context.log().firstIndex()));
+        LOGGER.debug("{} - Applying {} commits", context.cluster().member().id(), commitIndex - Math.max(context.getLastApplied(), context.log().firstIndex()));
 
         // Update the local commit index with min(request commit, last log // index)
         long lastIndex = context.log().lastIndex();
@@ -227,7 +227,7 @@ abstract class ActiveState extends PassiveState {
           entry.readKey(KEY.clear());
           entry.readEntry(ENTRY.clear());
           try {
-            context.commit(KEY.flip(), ENTRY.flip(), RESULT.clear());
+            context.commit(index, KEY.flip(), ENTRY.flip(), RESULT.clear());
           } catch (Exception e) {
             LOGGER.warn("failed to apply command", e);
           } finally {
@@ -294,7 +294,7 @@ abstract class ActiveState extends PassiveState {
     // vote for the candidate. We want to vote for candidates that are at least
     // as up to date as us.
     if (request.term() < context.getTerm()) {
-      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.getCluster().member().id(), request);
+      LOGGER.debug("{} - Rejected {}: candidate's term is less than the current term", context.cluster().member().id(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -304,9 +304,9 @@ abstract class ActiveState extends PassiveState {
     // If the requesting candidate is our self then always vote for our self. Votes
     // for self are done by calling the local node. Note that this obviously
     // doesn't make sense for a leader.
-    else if (request.candidate() == context.getCluster().member().id()) {
-      context.setLastVotedFor(context.getCluster().member().id());
-      LOGGER.debug("{} - Accepted {}: candidate is the local member", context.getCluster().member().id(), request);
+    else if (request.candidate() == context.cluster().member().id()) {
+      context.setLastVotedFor(context.cluster().member().id());
+      LOGGER.debug("{} - Accepted {}: candidate is the local member", context.cluster().member().id(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -315,8 +315,8 @@ abstract class ActiveState extends PassiveState {
     }
     // If the requesting candidate is not a known member of the cluster (to this
     // node) then don't vote for it. Only vote for candidates that we know about.
-    else if (!context.getCluster().members().stream().map(Member::id).collect(Collectors.toSet()).contains(request.candidate())) {
-      LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.getCluster().member().id(), request);
+    else if (!context.cluster().members().stream().map(Member::id).collect(Collectors.toSet()).contains(request.candidate())) {
+      LOGGER.debug("{} - Rejected {}: candidate is not known to the local member", context.cluster().member().id(), request);
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -342,7 +342,7 @@ abstract class ActiveState extends PassiveState {
     }
     // In this case, we've already voted for someone else.
     else {
-      LOGGER.debug("{} - Rejected {}: already voted for {}", context.getCluster().member().id(), request, context.getLastVotedFor());
+      LOGGER.debug("{} - Rejected {}: already voted for {}", context.cluster().member().id(), request, context.getLastVotedFor());
       return VoteResponse.builder()
         .withStatus(Response.Status.OK)
         .withTerm(context.getTerm())
@@ -357,7 +357,7 @@ abstract class ActiveState extends PassiveState {
   private boolean logUpToDate(long index, long term, Request request) {
     // If the log is empty then vote for the candidate.
     if (context.log().isEmpty()) {
-      LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
+      LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.cluster().member().id(), request);
       return true;
     } else {
       // Otherwise, load the last entry in the log. The last entry should be
@@ -366,24 +366,24 @@ abstract class ActiveState extends PassiveState {
         long lastIndex = context.log().lastIndex();
         RaftEntry entry = context.log().getEntry(lastIndex);
         if (entry == null) {
-          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
+          LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.cluster().member().id(), request);
           return true;
         }
 
         if (index != 0 && index >= lastIndex) {
           if (term >= entry.readTerm()) {
-            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
+            LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.cluster().member().id(), request);
             return true;
           } else {
-            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.getCluster().member().id(), request, term, entry.readTerm());
+            LOGGER.debug("{} - Rejected {}: candidate's last log term ({}) is in conflict with local log ({})", context.cluster().member().id(), request, term, entry.readTerm());
             return false;
           }
         } else {
-          LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.getCluster().member().id(), request, index, lastIndex);
+          LOGGER.debug("{} - Rejected {}: candidate's last log entry ({}) is at a lower index than the local log ({})", context.cluster().member().id(), request, index, lastIndex);
           return false;
         }
       } else {
-        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.getCluster().member().id(), request);
+        LOGGER.debug("{} - Accepted {}: candidate's log is up-to-date", context.cluster().member().id(), request);
         return true;
       }
     }

@@ -30,10 +30,10 @@ import java.util.concurrent.CompletableFuture;
  */
 abstract class RaftState implements MessageHandler<Request, Response>, Managed<RaftState> {
   protected final Logger LOGGER = LoggerFactory.getLogger(getClass());
-  protected final RaftProtocol context;
+  protected final Raft context;
   private volatile boolean open;
 
-  protected RaftState(RaftProtocol context) {
+  protected RaftState(Raft context) {
     this.context = context;
   }
 
@@ -108,7 +108,7 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
    * Logs a request.
    */
   protected final <R extends Request> R logRequest(R request) {
-    LOGGER.debug("{} - Received {}", context.getCluster().member().id(), request);
+    LOGGER.debug("{} - Received {}", context.cluster().member().id(), request);
     return request;
   }
 
@@ -116,14 +116,14 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
    * Logs a response.
    */
   protected final <R extends Response> R logResponse(R response) {
-    LOGGER.debug("{} - Sent {}", context.getCluster().member().id(), response);
+    LOGGER.debug("{} - Sent {}", context.cluster().member().id(), response);
     return response;
   }
 
   @Override
   public CompletableFuture<RaftState> open() {
     context.checkThread();
-    context.getCluster().member().registerHandler(context.getTopic(), this);
+    context.cluster().member().registerHandler(context.topic(), this);
     open = true;
     return CompletableFuture.completedFuture(null);
   }
@@ -199,7 +199,7 @@ abstract class RaftState implements MessageHandler<Request, Response>, Managed<R
   @Override
   public CompletableFuture<Void> close() {
     context.checkThread();
-    context.getCluster().member().unregisterHandler(context.getTopic());
+    context.cluster().member().unregisterHandler(context.topic());
     open = false;
     return CompletableFuture.completedFuture(null);
   }

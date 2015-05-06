@@ -36,7 +36,7 @@ public class RemoteState extends RaftState {
   private final Random random = new Random();
   private ScheduledFuture<?> currentTimer;
 
-  public RemoteState(RaftProtocol context) {
+  public RemoteState(Raft context) {
     super(context);
   }
 
@@ -54,8 +54,8 @@ public class RemoteState extends RaftState {
    * Starts the status timer.
    */
   private void startStatusTimer() {
-    LOGGER.debug("{} - Setting status timer", context.getCluster().member().id());
-    currentTimer = context.getContext().scheduleAtFixedRate(this::status, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
+    LOGGER.debug("{} - Setting status timer", context.cluster().member().id());
+    currentTimer = context.context().scheduleAtFixedRate(this::status, 1, context.getHeartbeatInterval(), TimeUnit.MILLISECONDS);
   }
 
   /**
@@ -65,16 +65,16 @@ public class RemoteState extends RaftState {
     if (statusCheck.compareAndSet(false, true)) {
       Member member;
       if (context.getLeader() != 0) {
-        member = context.getCluster().member(context.getLeader());
+        member = context.cluster().member(context.getLeader());
       } else {
-        List<Member> members = context.getCluster().members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
+        List<Member> members = context.cluster().members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
         member = members.get(random.nextInt(members.size()));
       }
 
       StatusRequest request = StatusRequest.builder()
-        .withId(context.getCluster().member().id())
+        .withId(context.cluster().member().id())
         .build();
-      member.<StatusRequest, StatusResponse>send(context.getTopic(), request).whenComplete((response, error) -> {
+      member.<StatusRequest, StatusResponse>send(context.topic(), request).whenComplete((response, error) -> {
         context.checkThread();
 
         if (isOpen()) {
@@ -142,7 +142,7 @@ public class RemoteState extends RaftState {
         .withError(RaftError.Type.NO_LEADER_ERROR)
         .build()));
     } else {
-      return context.getCluster().member(context.getLeader()).send(context.getTopic(), request);
+      return context.cluster().member(context.getLeader()).send(context.topic(), request);
     }
   }
 
@@ -151,7 +151,7 @@ public class RemoteState extends RaftState {
    */
   private void cancelStatusTimer() {
     if (currentTimer != null) {
-      LOGGER.debug("{} - Cancelling status timer", context.getCluster().member().id());
+      LOGGER.debug("{} - Cancelling status timer", context.cluster().member().id());
       currentTimer.cancel(false);
     }
   }

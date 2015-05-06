@@ -16,15 +16,13 @@
 package net.kuujo.copycat.protocol.raft;
 
 import net.jodah.concurrentunit.ConcurrentTestCase;
-import net.kuujo.copycat.Event;
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.*;
 import net.kuujo.copycat.io.HeapBuffer;
-import net.kuujo.copycat.protocol.CommitHandler;
 import net.kuujo.copycat.protocol.Consistency;
-import net.kuujo.copycat.protocol.LeaderChangeEvent;
 import net.kuujo.copycat.protocol.Persistence;
-import net.kuujo.copycat.protocol.raft.storage.BufferedStorage;
+import net.kuujo.copycat.protocol.ProtocolHandler;
+import net.kuujo.copycat.protocol.raft.storage.BufferedLog;
 import net.kuujo.copycat.util.ExecutionContext;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -43,7 +41,7 @@ import java.util.function.Function;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 @Test
-public class RaftProtocolTest extends ConcurrentTestCase {
+public class RaftTest extends ConcurrentTestCase {
   private String testDirectory;
 
   @BeforeMethod
@@ -68,9 +66,9 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     TestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
     TestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
 
-    RaftProtocol protocol1 = buildProtocol(1, cluster1);
-    RaftProtocol protocol2 = buildProtocol(2, cluster2);
-    RaftProtocol protocol3 = buildProtocol(3, cluster3);
+    Raft protocol1 = buildProtocol(1, cluster1);
+    Raft protocol2 = buildProtocol(2, cluster2);
+    Raft protocol3 = buildProtocol(3, cluster3);
 
     expectResumes(3);
 
@@ -91,19 +89,17 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     TestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
     TestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
 
-    RaftProtocol protocol1 = buildProtocol(1, cluster1);
-    RaftProtocol protocol2 = buildProtocol(2, cluster2);
-    RaftProtocol protocol3 = buildProtocol(3, cluster3);
+    Raft protocol1 = buildProtocol(1, cluster1);
+    Raft protocol2 = buildProtocol(2, cluster2);
+    Raft protocol3 = buildProtocol(3, cluster3);
 
-    EventListener<Event> listener = event -> {
-      if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-        resume();
-      }
+    EventListener<Member> listener = event -> {
+      resume();
     };
 
-    protocol1.addListener(listener);
-    protocol2.addListener(listener);
-    protocol3.addListener(listener);
+    protocol1.addElectionListener(listener);
+    protocol2.addElectionListener(listener);
+    protocol3.addElectionListener(listener);
 
     expectResumes(3 + 3);
 
@@ -117,13 +113,13 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     TestCluster cluster5 = buildCluster(5, Member.Type.PASSIVE, 4, registry);
     TestCluster cluster6 = buildCluster(6, Member.Type.REMOTE, 4, registry);
 
-    RaftProtocol protocol4 = buildProtocol(4, cluster4);
-    RaftProtocol protocol5 = buildProtocol(5, cluster5);
-    RaftProtocol protocol6 = buildProtocol(6, cluster6);
+    Raft protocol4 = buildProtocol(4, cluster4);
+    Raft protocol5 = buildProtocol(5, cluster5);
+    Raft protocol6 = buildProtocol(6, cluster6);
 
-    protocol4.addListener(listener);
-    protocol5.addListener(listener);
-    protocol6.addListener(listener);
+    protocol4.addElectionListener(listener);
+    protocol5.addElectionListener(listener);
+    protocol6.addElectionListener(listener);
 
     expectResumes(3 + 3);
 
@@ -144,11 +140,11 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     TestCluster cluster2 = buildCluster(2, Member.Type.ACTIVE, 3, registry);
     TestCluster cluster3 = buildCluster(3, Member.Type.ACTIVE, 3, registry);
 
-    RaftProtocol protocol1 = buildProtocol(1, cluster1);
-    RaftProtocol protocol2 = buildProtocol(2, cluster2);
-    RaftProtocol protocol3 = buildProtocol(3, cluster3);
+    Raft protocol1 = buildProtocol(1, cluster1);
+    Raft protocol2 = buildProtocol(2, cluster2);
+    Raft protocol3 = buildProtocol(3, cluster3);
 
-    Map<Integer, RaftProtocol> protocols = new HashMap<>();
+    Map<Integer, Raft> protocols = new HashMap<>();
     protocols.put(1, protocol1);
     protocols.put(2, protocol2);
     protocols.put(3, protocol3);
@@ -156,29 +152,24 @@ public class RaftProtocolTest extends ConcurrentTestCase {
     expectResumes(4);
 
     final AtomicInteger electionCount = new AtomicInteger();
-    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
-      return new EventListener<Event>() {
+    Function<Raft, EventListener<Member>> createListener = protocol -> {
+      return new EventListener<Member>() {
         @Override
-        public void accept(Event event) {
-          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-            protocol.removeListener(this);
+        public void accept(Member member) {
+          protocol.removeElectionListener(this);
 
-            if (electionCount.incrementAndGet() == 3) {
-              int id = ((LeaderChangeEvent) event).newLeader().id();
-              cluster1.partition(id);
-              cluster2.partition(id);
-              cluster3.partition(id);
+          if (electionCount.incrementAndGet() == 3) {
+            cluster1.partition(member.id());
+            cluster2.partition(member.id());
+            cluster3.partition(member.id());
 
-              for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
-                if (!entry.getKey().equals(id)) {
-                  entry.getValue().addListener(event2 -> {
-                    if (event2 instanceof LeaderChangeEvent) {
-                      threadAssertTrue(((LeaderChangeEvent) event2).newLeader().id() != ((LeaderChangeEvent) event).newLeader().id());
-                      resume();
-                    }
-                  });
-                  break;
-                }
+            for (Map.Entry<Integer, Raft> entry : protocols.entrySet()) {
+              if (!entry.getKey().equals(member.id())) {
+                entry.getValue().addElectionListener(event -> {
+                  threadAssertTrue(event.id() != member.id());
+                  resume();
+                });
+                break;
               }
             }
           }
@@ -186,9 +177,9 @@ public class RaftProtocolTest extends ConcurrentTestCase {
       };
     };
 
-    protocol1.addListener(createListener.apply(protocol1));
-    protocol2.addListener(createListener.apply(protocol2));
-    protocol3.addListener(createListener.apply(protocol3));
+    protocol1.addElectionListener(createListener.apply(protocol1));
+    protocol2.addElectionListener(createListener.apply(protocol2));
+    protocol3.addElectionListener(createListener.apply(protocol3));
 
     protocol1.open().thenRun(this::resume);
     protocol2.open().thenRun(this::resume);
@@ -203,45 +194,43 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   private void testCommandOnLeader(int nodes, Persistence persistence, Consistency consistency) throws Throwable {
     TestMemberRegistry registry = new TestMemberRegistry();
 
-    CommitHandler commitHandler = (key, entry, result) -> {
+    ProtocolHandler commitHandler = (index, key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
       threadAssertEquals(entry.readLong(), Long.valueOf(4321));
       resume();
       return result.writeLong(5678);
     };
 
-    Map<Integer, RaftProtocol> protocols = new HashMap<>();
+    Map<Integer, Raft> protocols = new HashMap<>();
     for (int i = 1; i <= nodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
-      RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.handler(commitHandler);
+      Raft protocol = buildProtocol(i, cluster);
+      protocol.setHandler(commitHandler);
       protocols.put(i, protocol);
     }
 
     expectResumes(nodes * 2 + 1);
 
     final AtomicInteger electionCount = new AtomicInteger();
-    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
-      return new EventListener<Event>() {
+    Function<Raft, EventListener<Member>> createListener = protocol -> {
+      return new EventListener<Member>() {
         @Override
-        public void accept(Event event) {
-          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-            protocol.removeListener(this);
+        public void accept(Member event) {
+          protocol.removeElectionListener(this);
 
-            if (electionCount.incrementAndGet() == nodes) {
-              RaftProtocol leader = protocols.get(((LeaderChangeEvent) event).newLeader().id());
-              leader.submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
-                threadAssertEquals(result.readLong(), Long.valueOf(5678));
-                resume();
-              });
-            }
+          if (electionCount.incrementAndGet() == nodes) {
+            Raft leader = protocols.get(event.id());
+            leader.submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
+              threadAssertEquals(result.readLong(), Long.valueOf(5678));
+              resume();
+            });
           }
         }
       };
     };
 
-    for (RaftProtocol protocol : protocols.values()) {
-      protocol.addListener(createListener.apply(protocol));
+    for (Raft protocol : protocols.values()) {
+      protocol.addElectionListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 
@@ -494,41 +483,40 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   public void testCommandOnFollower(int nodes, Persistence persistence, Consistency consistency) throws Throwable {
     TestMemberRegistry registry = new TestMemberRegistry();
 
-    CommitHandler commitHandler = (key, entry, result) -> {
+    ProtocolHandler commitHandler = (index, key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
       threadAssertEquals(entry.readLong(), Long.valueOf(4321));
       resume();
       return result.writeLong(5678);
     };
 
-    Map<Integer, RaftProtocol> protocols = new HashMap<>();
+    Map<Integer, Raft> protocols = new HashMap<>();
     for (int i = 1; i <= nodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, nodes, registry);
-      RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.handler(commitHandler);
+      Raft protocol = buildProtocol(i, cluster);
+      protocol.setHandler(commitHandler);
       protocols.put(i, protocol);
     }
 
     expectResumes(nodes * 2 + 1);
 
     final AtomicInteger electionCount = new AtomicInteger();
-    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
-      return new EventListener<Event>() {
+    Function<Raft, EventListener<Member>> createListener = protocol -> {
+      return new EventListener<Member>() {
         @Override
-        public void accept(Event event) {
-          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-            protocol.removeListener(this);
+        public void accept(Member event) {
+          protocol.removeElectionListener(this);
 
-            if (electionCount.incrementAndGet() == nodes) {
-              int id = ((LeaderChangeEvent) event).newLeader().id();
-              for (Map.Entry<Integer, RaftProtocol> entry : protocols.entrySet()) {
-                if (entry.getKey() != id) {
-                  entry.getValue().submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
+          if (electionCount.incrementAndGet() == nodes) {
+            int id = event.id();
+            for (Map.Entry<Integer, Raft> entry : protocols.entrySet()) {
+              if (entry.getKey() != id) {
+                entry.getValue()
+                  .submit(HeapBuffer.allocate(8).writeLong(1234).flip(), HeapBuffer.allocate(8).writeLong(4321).flip(), persistence, consistency).thenAccept(result -> {
                     threadAssertEquals(result.readLong(), Long.valueOf(5678));
                     resume();
                   });
-                  break;
-                }
+                break;
               }
             }
           }
@@ -536,8 +524,8 @@ public class RaftProtocolTest extends ConcurrentTestCase {
       };
     };
 
-    for (RaftProtocol protocol : protocols.values()) {
-      protocol.addListener(createListener.apply(protocol));
+    for (Raft protocol : protocols.values()) {
+      protocol.addElectionListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 
@@ -710,54 +698,52 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   public void testCommandOnPassive(int activeNodes, int passiveNodes, Persistence persistence, Consistency consistency) throws Throwable {
     TestMemberRegistry registry = new TestMemberRegistry();
 
-    CommitHandler commitHandler = (key, entry, result) -> {
+    ProtocolHandler commitHandler = (index, key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
       threadAssertEquals(entry.readLong(), Long.valueOf(4321));
       resume();
       return result.writeLong(5678);
     };
 
-    Map<Integer, RaftProtocol> activeProtocols = new HashMap<>();
+    Map<Integer, Raft> activeProtocols = new HashMap<>();
     for (int i = 1; i <= activeNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
-      RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.handler(commitHandler);
+      Raft protocol = buildProtocol(i, cluster);
+      protocol.setHandler(commitHandler);
       activeProtocols.put(i, protocol);
     }
 
     expectResumes(activeNodes * 2);
 
-    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
-      return new EventListener<Event>() {
+    Function<Raft, EventListener<Member>> createListener = protocol -> {
+      return new EventListener<Member>() {
         @Override
-        public void accept(Event event) {
-          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-            protocol.removeListener(this);
-            resume();
-          }
+        public void accept(Member event) {
+          protocol.removeElectionListener(this);
+          resume();
         }
       };
     };
 
-    for (RaftProtocol protocol : activeProtocols.values()) {
-      protocol.addListener(createListener.apply(protocol));
+    for (Raft protocol : activeProtocols.values()) {
+      protocol.addElectionListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 
     await();
 
-    Map<Integer, RaftProtocol> passiveProtocols = new HashMap<>();
+    Map<Integer, Raft> passiveProtocols = new HashMap<>();
     for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
-      RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.handler(commitHandler);
+      Raft protocol = buildProtocol(i, cluster);
+      protocol.setHandler(commitHandler);
       passiveProtocols.put(i, protocol);
     }
 
     expectResumes(passiveNodes * 2);
 
-    for (RaftProtocol protocol : passiveProtocols.values()) {
-      protocol.addListener(createListener.apply(protocol));
+    for (Raft protocol : passiveProtocols.values()) {
+      protocol.addElectionListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 
@@ -1179,21 +1165,19 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   public void testCommandOnRemote(int activeNodes, int passiveNodes, Persistence persistence, Consistency consistency) throws Throwable {
     TestMemberRegistry registry = new TestMemberRegistry();
 
-    CommitHandler commitHandler = (key, entry, result) -> {
+    ProtocolHandler commitHandler = (index, key, entry, result) -> {
       threadAssertEquals(key.readLong(), Long.valueOf(1234));
       threadAssertEquals(entry.readLong(), Long.valueOf(4321));
       resume();
       return result.writeLong(5678);
     };
 
-    Function<RaftProtocol, EventListener<Event>> createListener = protocol -> {
-      return new EventListener<Event>() {
+    Function<Raft, EventListener<Member>> createListener = protocol -> {
+      return new EventListener<Member>() {
         @Override
-        public void accept(Event event) {
-          if (event instanceof LeaderChangeEvent && ((LeaderChangeEvent) event).newLeader() != null) {
-            protocol.removeListener(this);
-            resume();
-          }
+        public void accept(Member event) {
+          protocol.removeElectionListener(this);
+          resume();
         }
       };
     };
@@ -1202,8 +1186,9 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     for (int i = 1; i <= activeNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.ACTIVE, activeNodes, registry);
-      RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.handler(commitHandler).addListener(createListener.apply(protocol));
+      Raft protocol = buildProtocol(i, cluster);
+      protocol.setHandler(commitHandler);
+      protocol.addElectionListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 
@@ -1213,15 +1198,16 @@ public class RaftProtocolTest extends ConcurrentTestCase {
 
     for (int i = activeNodes + 1; i <= activeNodes + passiveNodes; i++) {
       TestCluster cluster = buildCluster(i, Member.Type.PASSIVE, activeNodes + 1, registry);
-      RaftProtocol protocol = buildProtocol(i, cluster);
-      protocol.handler(commitHandler).addListener(createListener.apply(protocol));
+      Raft protocol = buildProtocol(i, cluster);
+      protocol.setHandler(commitHandler);
+      protocol.addElectionListener(createListener.apply(protocol));
       protocol.open().thenRun(this::resume);
     }
 
     await();
 
     TestCluster cluster = buildCluster(activeNodes + passiveNodes + 1, Member.Type.REMOTE, 4, registry);
-    RaftProtocol protocol = buildProtocol(activeNodes + passiveNodes + 1, cluster);
+    Raft protocol = buildProtocol(activeNodes + passiveNodes + 1, cluster);
 
     expectResume();
 
@@ -1342,18 +1328,16 @@ public class RaftProtocolTest extends ConcurrentTestCase {
   /**
    * Creates a Raft protocol for the given node.
    */
-  private RaftProtocol buildProtocol(int id, ManagedCluster cluster) throws Exception {
-    RaftProtocol protocol = (RaftProtocol) RaftProtocol.builder()
-      .withStorage(BufferedStorage.builder()
+  private Raft buildProtocol(int id, ManagedCluster cluster) throws Exception {
+    return Raft.builder()
+      .withLog(BufferedLog.builder()
         .withName(String.format("test-%d", id))
         .withDirectory(String.format("%s/test-%d", testDirectory, id))
         .build())
+      .withCluster(cluster)
+      .withTopic("test")
+      .withContext(new ExecutionContext("test-" + id))
       .build();
-
-    protocol.setCluster(cluster.open().get());
-    protocol.setTopic("test");
-    protocol.setContext(new ExecutionContext("test-" + id));
-    return protocol;
   }
 
   /**

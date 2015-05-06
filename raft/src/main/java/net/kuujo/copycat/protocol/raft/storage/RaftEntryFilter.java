@@ -13,30 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol.raft;
-
-import org.testng.annotations.Test;
-
-import static org.testng.Assert.assertEquals;
+package net.kuujo.copycat.protocol.raft.storage;
 
 /**
- * Raft protocol builder test.
+ * Raft entry filter.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-@Test
-public class RaftProtocolBuilderTest {
+@FunctionalInterface
+public interface RaftEntryFilter {
 
   /**
-   * Tests building a Raft protocol instance.
+   * Returns a boolean value indicating whether to keep the given entry.
+   *
+   * @param entry The entry to evaluate.
+   * @return Indicates whether to keep the given entry.
    */
-  public void testBuilder() {
-    Raft protocol = (Raft) Raft.builder()
-      .withHeartbeatInterval(100)
-      .withElectionTimeout(200)
-      .build();
-    assertEquals(protocol.getHeartbeatInterval(), 100);
-    assertEquals(protocol.getElectionTimeout(), 200);
-  }
+  boolean accept(RaftEntry entry);
 
 }

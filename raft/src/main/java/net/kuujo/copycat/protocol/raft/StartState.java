@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  */
 class StartState extends RaftState {
 
-  public StartState(RaftProtocol context) {
+  public StartState(Raft context) {
     super(context);
   }
 

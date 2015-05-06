@@ -17,7 +17,6 @@ package net.kuujo.copycat.protocol.raft.storage;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.FileBuffer;
-import net.kuujo.copycat.protocol.raft.storage.compact.Compactor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,21 +27,20 @@ import java.util.concurrent.ConcurrentSkipListMap;
 /**
  * Log segment manager.
  * <p>
- * The segment manager keeps track of segments in a given {@link BufferedStorage} and provides an interface to loading, retrieving,
+ * The segment manager keeps track of segments in a given {@link BufferedLog} and provides an interface to loading, retrieving,
  * and compacting those segments.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SegmentManager implements AutoCloseable {
   private static final Logger LOGGER = LoggerFactory.getLogger(SegmentManager.class);
-  private final StorageConfig config;
+  private final LogConfig config;
   private NavigableMap<Long, Segment> segments = new ConcurrentSkipListMap<>();
   private Segment currentSegment;
-  private Compactor compactor;
   private long commitIndex;
   private long recycleIndex;
 
-  public SegmentManager(StorageConfig config) {
+  public SegmentManager(LogConfig config) {
     if (config == null)
       throw new NullPointerException("config cannot be null");
     this.config = config;
@@ -65,11 +63,6 @@ public class SegmentManager implements AutoCloseable {
       currentSegment = createSegment(1, 1);
       segments.put(1l, currentSegment);
     }
-
-    this.compactor = new Compactor(this)
-      .withCompactionStrategy(config.getCompactionStrategy())
-      .withRetentionPolicy(config.getRetentionPolicy());
-    compactor.schedule(config.getCompactInterval());
   }
 
   /**
@@ -85,7 +78,7 @@ public class SegmentManager implements AutoCloseable {
    *
    * @return The log configuration.
    */
-  public StorageConfig config() {
+  public LogConfig config() {
     return config;
   }
 
@@ -366,22 +359,14 @@ public class SegmentManager implements AutoCloseable {
     // of entries from the prior segment as well. We need to iterate through segments to ensure all uncommitted entries
     // are committed.
     if (index > commitIndex) {
-      boolean compact = false;
       long nextIndex = index;
       Segment segment = segment(nextIndex);
       while (segment != null && segment.containsIndex(nextIndex) && segment.commitIndex() < nextIndex) {
         segment.commit(nextIndex);
         nextIndex = segment.firstIndex() - 1;
-        if (segment.isLocked()) {
-          compact = true;
-        }
         segment = segment(nextIndex);
       }
       commitIndex = index;
-
-      if (compact) {
-        compact();
-      }
     }
   }
 
@@ -408,20 +393,6 @@ public class SegmentManager implements AutoCloseable {
     }
   }
 
-  /**
-   * Compacts the segments.
-   */
-  public void compact() {
-    compactor.execute();
-  }
-
-  /**
-   * Compacts the segments in the foreground thread.
-   */
-  void compactNow() {
-    compactor.run();
-  }
-
   @Override
   public void close() {
     segments.values().forEach(s -> {
@@ -429,7 +400,6 @@ public class SegmentManager implements AutoCloseable {
       s.close();
     });
     segments.clear();
-    compactor.close();
     currentSegment = null;
   }
 
