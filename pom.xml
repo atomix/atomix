@@ -72,7 +72,8 @@
     <module>core</module>
     <module>raft</module>
     <module>netty</module>
-    <module>resources</module>
+    <module>collections</module>
+    <module>atomic</module>
     <module>all</module>
     <module>test</module>
   </modules>

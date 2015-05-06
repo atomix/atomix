@@ -49,21 +49,6 @@
     </dependency>
     <dependency>
       <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-event-log</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-state-log</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
-      <artifactId>copycat-state-machine</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>net.kuujo.copycat</groupId>
       <artifactId>copycat-collections</artifactId>
       <version>${project.version}</version>
     </dependency>
