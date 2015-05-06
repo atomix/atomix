@@ -15,27 +15,24 @@
  */
 package net.kuujo.copycat.resource;
 
-import net.kuujo.copycat.cluster.Cluster;
-import net.kuujo.copycat.cluster.Member;
+import net.kuujo.copycat.log.CommitLog;
 
-import java.util.Collection;
-import java.util.stream.Collectors;
+import java.io.Serializable;
 
 /**
- * Full replication strategy.
+ * Resource factory.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class FullReplicationStrategy implements ReplicationStrategy {
+@FunctionalInterface
+public interface ResourceFactory<RESOURCE extends Resource<?>> extends Serializable {
 
-  @Override
-  public Collection<Member> selectPrimaries(Cluster cluster, int partitionId, int partitions) {
-    return cluster.members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
-  }
-
-  @Override
-  public Collection<Member> selectSecondaries(Cluster cluster, int partitionId, int partitions) {
-    return cluster.members().stream().filter(m -> m.type() == Member.Type.PASSIVE).collect(Collectors.toList());
-  }
+  /**
+   * Creates an instance of the given resource.
+   *
+   * @param log The resource's commit log.
+   * @return The resource.
+   */
+  RESOURCE createResource(CommitLog log);
 
 }

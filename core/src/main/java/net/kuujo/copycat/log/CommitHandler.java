@@ -13,40 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
-
-import net.kuujo.copycat.Event;
+package net.kuujo.copycat.log;
 
 /**
- * Epoch change event.
+ * Commit log commit handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class EpochChangeEvent implements Event {
-  private final long oldEpoch;
-  private final long newEpoch;
-
-  public EpochChangeEvent(long oldEpoch, long newEpoch) {
-    this.oldEpoch = oldEpoch;
-    this.newEpoch = newEpoch;
-  }
+@FunctionalInterface
+public interface CommitHandler<KEY, VALUE, RESULT> {
 
   /**
-   * Returns the old epoch.
+   * Commits an entry to the log.
    *
-   * @return The old epoch.
+   * @param index The entry index.
+   * @param key The entry key.
+   * @param value The entry value.
+   * @return The commit result.
    */
-  public long oldEpoch() {
-    return oldEpoch;
-  }
-
-  /**
-   * Returns the new epoch.
-   *
-   * @return The new epoch.
-   */
-  public long getNewEpoch() {
-    return newEpoch;
-  }
+  RESULT commit(long index, KEY key, VALUE value);
 
 }

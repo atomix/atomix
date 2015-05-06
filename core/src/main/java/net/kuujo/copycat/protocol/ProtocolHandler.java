@@ -13,23 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat.protocol;
 
-import java.util.concurrent.atomic.AtomicLong;
+import net.kuujo.copycat.io.Buffer;
 
 /**
- * Hash based partitioner.
+ * Protocol commit handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class HashPartitioner implements Partitioner {
-  private final AtomicLong count = new AtomicLong();
+public interface ProtocolHandler {
 
-  @Override
-  public int partition(Object key, int partitions) {
-    if (key == null)
-      return (int) (count.incrementAndGet() % partitions);
-    return key.hashCode() % partitions;
-  }
+  /**
+   * Applies an entry.
+   *
+   * @param index The entry index.
+   * @param key The key to commit.
+   * @param entry The entry to commit.
+   * @param result The commit result buffer.
+   * @return The commit result.
+   */
+  Buffer apply(long index, Buffer key, Buffer entry, Buffer result);
 
 }

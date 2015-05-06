@@ -13,22 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat.log;
+
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Resource partitioner.
+ * Hash based partitioner.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface Partitioner {
+public class HashPartitioner implements Partitioner {
+  private final AtomicLong count = new AtomicLong();
 
-  /**
-   * Partitions the given key.
-   *
-   * @param key The key to partition.
-   * @param partitions The total number of available partitions.
-   * @return The partition number.
-   */
-  int partition(Object key, int partitions);
+  @Override
+  public int partition(Object key, int partitions) {
+    if (key == null)
+      return (int) (count.incrementAndGet() % partitions);
+    return key.hashCode() % partitions;
+  }
 
 }

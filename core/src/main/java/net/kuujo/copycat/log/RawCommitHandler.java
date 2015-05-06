@@ -13,23 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.resource;
+package net.kuujo.copycat.log;
+
+import net.kuujo.copycat.io.Buffer;
 
 /**
- * Resource status.
+ * Raw commit handler.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum PartitionState {
+@FunctionalInterface
+public interface RawCommitHandler {
 
   /**
-   * Indicates that the resource is still catching up.
+   * Handles a raw commit.
+   *
+   * @param index The entry index.
+   * @param key The raw commit key.
+   * @param entry The raw commit entry.
+   * @param result The raw result.
+   * @return The raw result buffer.
    */
-  RECOVER,
-
-  /**
-   * Indicates that the resource is caught up.
-   */
-  HEALTHY
+  Buffer commit(long index, Buffer key, Buffer entry, Buffer result);
 
 }

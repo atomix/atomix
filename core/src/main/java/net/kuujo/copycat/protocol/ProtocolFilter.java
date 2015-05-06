@@ -15,38 +15,23 @@
  */
 package net.kuujo.copycat.protocol;
 
-import net.kuujo.copycat.Event;
+import net.kuujo.copycat.io.Buffer;
 
 /**
- * Protocol status change event.
+ * Protocol entry filter.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class StatusChangeEvent implements Event {
-  private final Status oldStatus;
-  private final Status newStatus;
-
-  public StatusChangeEvent(Status oldStatus, Status newStatus) {
-    this.oldStatus = oldStatus;
-    this.newStatus = newStatus;
-  }
+public interface ProtocolFilter {
 
   /**
-   * Returns the old status.
+   * Returns a boolean value indicating whether to accept the given entry.
    *
-   * @return The old status.
+   * @param index The entry index.
+   * @param key The entry key.
+   * @param entry The entry value.
+   * @return Indicates whether to accept the given entry.
    */
-  public Status oldStatus() {
-    return oldStatus;
-  }
-
-  /**
-   * Returns the new status.
-   *
-   * @return The new status.
-   */
-  public Status newStatus() {
-    return newStatus;
-  }
+  boolean accept(long index, Buffer key, Buffer entry);
 
 }

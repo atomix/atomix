@@ -1,8 +1,24 @@
-package net.kuujo.copycat.resource;
+/*
+ * Copyright 2015 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package net.kuujo.copycat.log;
 
 import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.Task;
 import net.kuujo.copycat.cluster.*;
+import net.kuujo.copycat.io.serializer.Serializer;
 
 import java.util.Collection;
 import java.util.Map;
@@ -75,6 +91,11 @@ class PartitionedCluster implements Cluster {
   }
 
   @Override
+  public Serializer serializer() {
+    return cluster.serializer();
+  }
+
+  @Override
   public Cluster addMembershipListener(EventListener<MembershipChangeEvent> listener) {
     EventListener<MembershipChangeEvent> wrappedListener = event -> {
       if (members.containsKey(event.member().id())) {
@@ -130,9 +151,9 @@ class PartitionedCluster implements Cluster {
    */
   private static class PartitionedLocalMember implements LocalMember {
     private final LocalMember member;
-    private final Member.Type type;
+    private final Type type;
 
-    private PartitionedLocalMember(LocalMember member, Member.Type type) {
+    private PartitionedLocalMember(LocalMember member, Type type) {
       this.member = member;
       this.type = type;
     }
@@ -199,9 +220,9 @@ class PartitionedCluster implements Cluster {
    */
   private static class PartitionedRemoteMember implements RemoteMember {
     private final Member member;
-    private final Member.Type type;
+    private final Type type;
 
-    private PartitionedRemoteMember(Member member, Member.Type type) {
+    private PartitionedRemoteMember(Member member, Type type) {
       this.member = member;
       this.type = type;
     }

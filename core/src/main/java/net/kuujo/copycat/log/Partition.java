@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.log;
 
 /**
- * Protocol state.
+ * Partition constants.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface State {
+public enum Partition {
+
+  /**
+   * Indicates that a commit should be sent to all partitions.
+   */
+  ALL
+
 }

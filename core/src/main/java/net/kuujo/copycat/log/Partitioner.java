@@ -13,25 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
-
-import net.kuujo.copycat.io.Buffer;
+package net.kuujo.copycat.log;
 
 /**
- * Protocol commit handler.
+ * Resource partitioner.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public interface CommitHandler {
+public interface Partitioner {
 
   /**
-   * Applies an entry.
+   * Partitions the given key.
    *
-   * @param key The key to commit.
-   * @param entry The entry to commit.
-   * @param result The commit result buffer.
-   * @return The commit result.
+   * @param key The key to partition.
+   * @param partitions The total number of available partitions.
+   * @return The partition number.
    */
-  Buffer apply(Buffer key, Buffer entry, Buffer result);
+  int partition(Object key, int partitions);
 
 }

@@ -13,41 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.log;
 
-import net.kuujo.copycat.Event;
+import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 
+import java.util.Collection;
+import java.util.stream.Collectors;
+
 /**
- * Leader change event.
+ * Full replication strategy.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public class LeaderChangeEvent implements Event {
-  private final Member oldLeader;
-  private final Member newLeader;
+public class FullReplicationStrategy implements ReplicationStrategy {
 
-  public LeaderChangeEvent(Member oldLeader, Member newLeader) {
-    this.oldLeader = oldLeader;
-    this.newLeader = newLeader;
+  @Override
+  public Collection<Member> selectPrimaries(Cluster cluster, int partitionId, int partitions) {
+    return cluster.members().stream().filter(m -> m.type() == Member.Type.ACTIVE).collect(Collectors.toList());
   }
 
-  /**
-   * Returns the old leader.
-   *
-   * @return The old leader or {@code null} if no old leader existed.
-   */
-  public Member oldLeader() {
-    return oldLeader;
-  }
-
-  /**
-   * Returns the new leader.
-   *
-   * @return The new leader or {@code null} if no leader existed.
-   */
-  public Member newLeader() {
-    return newLeader;
+  @Override
+  public Collection<Member> selectSecondaries(Cluster cluster, int partitionId, int partitions) {
+    return cluster.members().stream().filter(m -> m.type() == Member.Type.PASSIVE).collect(Collectors.toList());
   }
 
 }

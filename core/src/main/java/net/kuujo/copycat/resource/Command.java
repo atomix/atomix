@@ -13,23 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package net.kuujo.copycat.protocol;
+package net.kuujo.copycat.resource;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Protocol status.
+ * Resource command.
  *
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
-public enum Status {
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Command {
 
   /**
-   * Recovering status.
+   * Command type.
    */
-  RECOVERING,
+  public static enum Type {
+    READ,
+    WRITE,
+    DELETE
+  }
 
   /**
-   * Healthy status.
+   * The command name.
    */
-  HEALTHY
+  String value() default "";
+
+  /**
+   * The command type.
+   */
+  Type type() default Type.WRITE;
 
 }
