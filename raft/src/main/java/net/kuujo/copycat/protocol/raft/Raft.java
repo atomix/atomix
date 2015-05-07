@@ -59,6 +59,7 @@ public class Raft implements ProtocolInstance {
   private final Logger LOGGER = LoggerFactory.getLogger(Raft.class);
   private final Buffer KEY = HeapBuffer.allocate(1024, 1024 * 1024);
   private final Buffer ENTRY = HeapBuffer.allocate(1024, 1024 * 1024);
+  private final Set<EventListener<Long>> termListeners = new CopyOnWriteArraySet<>();
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final RaftConfig config;
   private final RaftLog log;
@@ -115,6 +116,28 @@ public class Raft implements ProtocolInstance {
    */
   public ExecutionContext context() {
     return context;
+  }
+
+  /**
+   * Adds a term change listener.
+   *
+   * @param listener The term change listener.
+   * @return The Raft protocol.
+   */
+  public Raft addTermListener(EventListener<Long> listener) {
+    termListeners.add(listener);
+    return this;
+  }
+
+  /**
+   * Removes a term change listener.
+   *
+   * @param listener The term change listener.
+   * @return The Raft protocol.
+   */
+  public Raft removeTermListener(EventListener<Long> listener) {
+    termListeners.remove(listener);
+    return this;
   }
 
   /**
@@ -245,11 +268,11 @@ public class Raft implements ProtocolInstance {
    */
   Raft setTerm(long term) {
     if (term > this.term) {
-      long oldTerm = this.term;
       this.term = term;
       this.leader = 0;
       this.lastVotedFor = 0;
       LOGGER.debug("{} - Incremented term {}", cluster.member().id(), term);
+      termListeners.forEach(l -> l.accept(this.term));
     }
     return this;
   }
