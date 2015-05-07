@@ -20,6 +20,7 @@ import net.kuujo.copycat.EventListener;
 import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.cluster.Member;
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.HeapBuffer;
 import net.kuujo.copycat.protocol.*;
 import net.kuujo.copycat.protocol.raft.rpc.Response;
 import net.kuujo.copycat.protocol.raft.rpc.SubmitRequest;
@@ -56,6 +57,8 @@ public class Raft implements ProtocolInstance {
   }
 
   private final Logger LOGGER = LoggerFactory.getLogger(Raft.class);
+  private final Buffer KEY = HeapBuffer.allocate(1024, 1024 * 1024);
+  private final Buffer ENTRY = HeapBuffer.allocate(1024, 1024 * 1024);
   private final Set<EventListener<Member>> electionListeners = new CopyOnWriteArraySet<>();
   private final RaftConfig config;
   private final RaftLog log;
@@ -63,7 +66,6 @@ public class Raft implements ProtocolInstance {
   private final String topic;
   private final ExecutionContext context;
   private final ThreadChecker threadChecker;
-  private ProtocolFilter filter;
   private ProtocolHandler handler;
   private RaftState state;
   private final Map<Integer, RaftMember> members = new HashMap<>();
@@ -139,7 +141,11 @@ public class Raft implements ProtocolInstance {
 
   @Override
   public Raft setFilter(ProtocolFilter filter) {
-    this.filter = filter;
+    log.filter(entry -> {
+      entry.readKey(KEY);
+      entry.readEntry(ENTRY);
+      return filter.accept(entry.index(), KEY.flip(), ENTRY.flip());
+    });
     return this;
   }
 
@@ -211,7 +217,6 @@ public class Raft implements ProtocolInstance {
       }
     } else if (leader != 0) {
       if (this.leader != leader) {
-        Member oldLeader = cluster.member(this.leader);
         this.leader = leader;
         this.lastVotedFor = 0;
         LOGGER.debug("{} - Found leader {}", cluster.member().id(), leader);
