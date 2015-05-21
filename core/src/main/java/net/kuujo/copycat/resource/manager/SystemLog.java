@@ -19,8 +19,6 @@ import net.kuujo.copycat.cluster.Cluster;
 import net.kuujo.copycat.protocol.Protocol;
 import net.kuujo.copycat.resource.*;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -29,14 +27,6 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class SystemLog implements CommitLog {
-  private final CommitFactory commits = new CommitFactory();
-  private final ThreadLocal<Map<Class, Command>> commands = new ThreadLocal<Map<Class, Command>>() {
-    @Override
-    protected Map<Class, Command> initialValue() {
-      return new HashMap<>();
-    }
-  };
-
   private final StateMachineProxy stateMachine;
   private final Protocol protocol;
 
@@ -60,7 +50,7 @@ public class SystemLog implements CommitLog {
    */
   @SuppressWarnings("unchecked")
   private boolean filter(long index, long timestamp, Object entry) {
-    return stateMachine.filter(commits.createCommit(index, timestamp, (Command) entry));
+    return stateMachine.filter(new Commit(index, timestamp, (Command) entry));
   }
 
   /**
@@ -73,7 +63,7 @@ public class SystemLog implements CommitLog {
    */
   @SuppressWarnings("unchecked")
   private Object handle(long index, long timestamp, Object entry) {
-    return stateMachine.apply(commits.createCommit(index, timestamp, (Command) entry));
+    return stateMachine.apply(new Commit(index, timestamp, (Command) entry));
   }
 
   @Override

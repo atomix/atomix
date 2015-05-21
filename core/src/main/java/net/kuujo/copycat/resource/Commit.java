@@ -21,16 +21,14 @@ package net.kuujo.copycat.resource;
  * @author <a href="http://github.com/kuujo">Jordan Halterman</a>
  */
 public class Commit<T extends Command> {
-  private long index;
-  private long timestamp;
-  private T command;
+  private final long index;
+  private final long timestamp;
+  private final T command;
 
-  /**
-   * Sets the index.
-   */
-  Commit withIndex(long index) {
+  public Commit(long index, long timestamp, T command) {
     this.index = index;
-    return this;
+    this.timestamp = timestamp;
+    this.command = command;
   }
 
   /**
@@ -43,28 +41,12 @@ public class Commit<T extends Command> {
   }
 
   /**
-   * Sets the timestamp.
-   */
-  Commit withTimestamp(long timestamp) {
-    this.timestamp = timestamp;
-    return this;
-  }
-
-  /**
    * Returns the commit timestamp.
    *
    * @return the commit timestamp.
    */
   public long timestamp() {
     return timestamp;
-  }
-
-  /**
-   * Sets the command.
-   */
-  Commit withCommand(T command) {
-    this.command = command;
-    return this;
   }
 
   /**
