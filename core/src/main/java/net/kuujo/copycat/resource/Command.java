@@ -16,6 +16,7 @@
 package net.kuujo.copycat.resource;
 
 import net.kuujo.copycat.io.Buffer;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.io.serializer.Writable;
 import net.kuujo.copycat.protocol.Consistency;
 import net.kuujo.copycat.protocol.Persistence;
@@ -98,14 +99,14 @@ public abstract class Command<T> implements Writable {
   }
 
   @Override
-  public void writeObject(Buffer buffer) {
+  public void writeObject(Buffer buffer, Serializer serializer) {
     buffer.writeByte(getPersistence().ordinal())
       .writeByte(getConsistency().ordinal())
       .writeLong(resourceId);
   }
 
   @Override
-  public void readObject(Buffer buffer) {
+  public void readObject(Buffer buffer, Serializer serializer) {
     persistence = Persistence.values()[buffer.readByte()];
     consistency = Consistency.values()[buffer.readByte()];
     resourceId = buffer.readLong();

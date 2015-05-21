@@ -31,14 +31,16 @@ public interface Writable {
    * Writes the object to the given buffer.
    *
    * @param buffer The buffer to which to write the object.
+   * @param serializer The serializer with which the object is being serialized.
    */
-  void writeObject(Buffer buffer);
+  void writeObject(Buffer buffer, Serializer serializer);
 
   /**
    * Reads the object from the given buffer.
    *
    * @param buffer The buffer from which to read the object.
+   * @param serializer The serializer with which the object is being serialized.
    */
-  void readObject(Buffer buffer);
+  void readObject(Buffer buffer, Serializer serializer);
 
 }

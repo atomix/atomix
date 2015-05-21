@@ -17,6 +17,7 @@ package net.kuujo.copycat.resource.manager;
 
 import net.kuujo.copycat.io.Buffer;
 import net.kuujo.copycat.io.serializer.SerializationException;
+import net.kuujo.copycat.io.serializer.Serializer;
 import net.kuujo.copycat.resource.StateMachine;
 
 /**
@@ -56,15 +57,15 @@ public class CreateResource extends PathCommand<Long> {
   }
 
   @Override
-  public void writeObject(Buffer buffer) {
-    super.writeObject(buffer);
+  public void writeObject(Buffer buffer, Serializer serializer) {
+    super.writeObject(buffer, serializer);
     buffer.writeInt(type.getName().getBytes().length).write(type.getName().getBytes());
   }
 
   @Override
   @SuppressWarnings("unchecked")
-  public void readObject(Buffer buffer) {
-    super.readObject(buffer);
+  public void readObject(Buffer buffer, Serializer serializer) {
+    super.readObject(buffer, serializer);
     byte[] bytes = new byte[buffer.readInt()];
     buffer.read(bytes);
     String typeName = new String(bytes);

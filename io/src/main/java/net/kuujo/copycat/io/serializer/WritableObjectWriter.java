@@ -42,15 +42,15 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
 
   @Override
   public void write(T object, Buffer buffer, Serializer serializer) {
-    object.writeObject(buffer);
+    object.writeObject(buffer, serializer);
   }
 
   @Override
   public T read(Class<T> type, Buffer buffer, Serializer serializer) {
     if (ReferenceCounted.class.isAssignableFrom(type)) {
-      return readReference(type, buffer);
+      return readReference(type, buffer, serializer);
     } else {
-      return readObject(type, buffer);
+      return readObject(type, buffer, serializer);
     }
   }
 
@@ -59,10 +59,11 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
    *
    * @param type The reference type.
    * @param buffer The reference buffer.
+   * @param serializer The serializer with which the object is being read.
    * @return The reference to read.
    */
   @SuppressWarnings("unchecked")
-  private T readReference(Class<T> type, Buffer buffer) {
+  private T readReference(Class<T> type, Buffer buffer, Serializer serializer) {
     ReferencePool pool = pools.get(type);
     if (pool == null) {
       Constructor constructor = constructorMap.computeIfAbsent(type, t -> {
@@ -85,7 +86,7 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
       pools.put(type, pool);
     }
     T object = (T) pool.acquire();
-    object.readObject(buffer);
+    object.readObject(buffer, serializer);
     return object;
   }
 
@@ -94,10 +95,11 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
    *
    * @param type The object type.
    * @param buffer The object buffer.
+   * @param serializer The serializer with which the object is being read.
    * @return The object.
    */
   @SuppressWarnings("unchecked")
-  private T readObject(Class<T> type, Buffer buffer) {
+  private T readObject(Class<T> type, Buffer buffer, Serializer serializer) {
     try {
       Constructor constructor = constructorMap.computeIfAbsent(type, t -> {
         try {
@@ -110,7 +112,7 @@ class WritableObjectWriter<T extends Writable> implements ObjectWriter<T> {
       });
 
       T object = (T) constructor.newInstance();
-      object.readObject(buffer);
+      object.readObject(buffer, serializer);
       return object;
     } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
       throw new SerializationException("failed to instantiate object: must provide a no argument constructor", e);
